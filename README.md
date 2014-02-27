@@ -5,9 +5,11 @@ Create a dynamically drawn, browsable family tree using data from WikiTree.
 
 ## Prerequisites
 * wikitree-javascript-sdk (https://github.com/wikitree/wikitree-javascript-sdk)
-** jQuery 1.10 or higher (may work with lower versions)
-** jQuery Cookie Plugin 1.3.1 or later (https://github.com/carhartl/jquery-cookie)
 * D3.js (http://d3js.org)
+
+Required by wikitree-javascript-sdk...
+* jQuery 1.10 or higher (may work with lower versions)
+* jQuery Cookie Plugin 1.3.1 or later (https://github.com/carhartl/jquery-cookie)
 
 ## Usage
 
@@ -21,15 +23,15 @@ Create a dynamically drawn, browsable family tree using data from WikiTree.
 
 <script type="text/javascript">
 
-	wikitree.init({});
-	wikitree.session.checkLogin().then(function(data){ ... });
+	// Optionally do something for login
 
-	wikitree.session.log( { email: 'xxx', password: 'yyyy' }).then(function(data) {
+	var treeDisplay = new TreeDisplay({
+		'rootId': wikitree.session.user_id, 
+		'paneId': '#window' ,
+		'infoId': '#infoContainer' ,
+		'margin': { top: 10, right: 10, bottom: 10, left: 10 }
 	});
 
-	var p = new wikitree.Person( { user_id: #### } );
-	p.load({}).then(function(data){ 
-	});
 
 </script>
 ````
@@ -38,8 +40,9 @@ Some necessary CSS:
 ````css
 // Required to get pan/zoom functions to work 
 svg { 
-	porinter-events: all;
+	pointer-events: all;
 }
+
 ````
 
 ## Example
