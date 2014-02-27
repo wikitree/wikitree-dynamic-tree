@@ -1,0 +1,87 @@
+.name {
+  font-weight: bold;
+}
+
+.about {
+  fill: #777;
+  font-size: smaller;
+}
+
+.link {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+svg { 
+	pointer-events: all;
+}
+
+.node {
+  width: 174px;
+  height: 50px;
+  overflow: hidden;
+  border: 1px solid black;
+  padding: 2px;
+  background-color: #ddd;
+  color: black;
+}
+.node .name { 
+  float: left;
+  font-weight: bold;
+}
+.node .about {  
+  clear: left;
+  float: left;
+  font-size: smaller;
+  color: #777;
+}
+
+.node .dates {  
+  clear: left;
+  float: left;
+  font-size: smaller;
+  color: #777;
+}
+
+.node .links {  
+  clear: left;
+  float: left;
+  font-size: smaller;
+  color: #777;
+}
+
+
+.node .clear { 
+   clear: both;
+}
+
+.parentlink { 
+   float: right;
+   font-weight: bold;
+   color: blue;
+   cursor: pointer;
+}
+
+#treeContainer { 
+	float: left;
+}
+#infoContainer { 
+	float: right;
+	margin-top: 50px;
+	width: 200px;
+	border: 1px solid black;
+	min-height: 200px;
+}
+
+#nodeHover { 
+  position: relative;
+  width: 100px;
+  height: 100px;
+  background-color: white;
+  border: 2px solid green;
+  padding: 5px;
+  display: none;
+}
+#nodeHover .inner { 
+}
