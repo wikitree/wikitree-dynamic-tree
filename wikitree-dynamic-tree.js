@@ -73,7 +73,7 @@ TreeDisplay.prototype.init = function () {
 		console.log("Got root p:"+p.Name);
 
 		$.ajax({
-			url: '//dev4.wikitree.com/api.php',
+			url: '/api.php',
 			type: 'POST',
 			crossDomain: true,
 			xhrFields: { withCredentials: true },
