@@ -19,6 +19,7 @@ Required by wikitree-javascript-sdk...
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script src="jquery.cookie.js"></script>
 <script src="wikitree-javascript-sdk/wikitree.js"></script>
+<script src="d3.v3.min.js" chartset="utf-8"></script>
 <script src="wikitree-dynamic_tree/wikitree-dynamic-tree.js"></script>
 
 <script type="text/javascript">

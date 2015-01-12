@@ -1,7 +1,24 @@
 /*
+ * wikitree-dynamic-tree.js
  *
+ * Display a "dynamic" family tree with information about a person's ancestors.
  *
+ * This program uses the wikitree-javascript-sdk to query the API functions at wikitree.com and
+ * gather profile data for the starting WikiTree ID and their ancestors. 
  *
+ * The tree is then drawn using the D3.js library for Data-Driven documents.
+ *
+ * This beta gathers three generations and displays the tree with name, birth date, death date, and
+ * a male/female icon. An anchor box can be hovered to display additional profile information (parents, 
+ * birth location, etc). The display can be zoomed in and out (mouse wheel or </>) and panned around (click+drag or arrow keys). 
+ *
+ * This code is essentially functional, but the display is significantly lacking, and it also needs to have a way to dynamically grow
+ * the displayed tree instead of just restarting at new ancestors.  The D3.js library is powerful and does a lot of drawing for us,
+ * but in the end may be too cumbersome to be worth it. Perhaps drawing with just positioned HTML divs would make more sense.
+ *
+ *  Brian Casey
+ *  Root Level Services, LLC
+ *  brian@wikitree.com
  */
 
 
@@ -37,8 +54,6 @@ function TreeDisplay( opts ) {
 	// These get edited when we draw the tree based on the nodes we have.
    	this.width  = this.pane.width()  - this.margin.left - this.margin.right;
    	this.height = this.pane.height() - this.margin.top  - this.margin.bottom;
-	console.log("canvas width = "+this.width + ", height = "+this.height);
-
 
 	/* Internally defined references, etc. */
    	
@@ -59,7 +74,6 @@ function TreeDisplay( opts ) {
 // Initialize the TreeDisplay object. 
 // This loads the starting/root person and, once we have that, draws the tree.
 TreeDisplay.prototype.init = function () {
-	console.log("TREE DISPLAY INIT");
 
 	// We get a new "this" in sub-functions below, so copy the TreeDisplay->init() "this" to "self" for reference in those.
 	var self = this;
@@ -70,7 +84,6 @@ TreeDisplay.prototype.init = function () {
 	// Get the root profile and ancestors.
 	var p = new wikitree.Person( { user_id: this.rootId } );
 	p.load( { fields: this.fields} ).then(function(data){ 
-		console.log("Got root p:"+p.Name);
 
 		$.ajax({
 			url: '/api.php',
@@ -80,9 +93,7 @@ TreeDisplay.prototype.init = function () {
 			dataType: 'json',
 			data: { 'action': 'getAncestors', 'key': p.Id, 'depth': 5, 'format': 'json' },
 			success: function(data) { 
-				console.log("success back from getAncestors");
 				for (i in data[0].ancestors) { 
-					console.log("id: "+data[0].ancestors[i].Id+", name:"+data[0].ancestors[i].Name);
 					self.profileById[ data[0].ancestors[i].Id ] = data[0].ancestors[i];
 				}
 				self.rootNode = p;
@@ -90,7 +101,6 @@ TreeDisplay.prototype.init = function () {
 				self.setWorking(false);
 			},
 			error: function(xhr, status) { 
-				console.log("error back from getAncestors");
 				self.rootNode = {};
 				self.nodes = false;
 				self.setWorking(false);
@@ -101,8 +111,8 @@ TreeDisplay.prototype.init = function () {
 
 };
 
+/* This just sets the HTML in a status div to alert the viewer to some info. */
 TreeDisplay.prototype.setWorking = function (working) { 
-	console.log("Setting working = "+working);
 	if (this.statusId) { 
 		if (working) { 
 			$(this.statusId).html(working);
@@ -113,7 +123,6 @@ TreeDisplay.prototype.setWorking = function (working) {
 }
 
 // (Re)Draw the tree data into the SVG canvas. 
-// ...
 TreeDisplay.prototype.drawTree = function () {
 
 	var self = this;
@@ -131,52 +140,41 @@ TreeDisplay.prototype.drawTree = function () {
 	// These are always a click behind because we don't reparse our nodes from a click until below...	
 	// Ugly.
 	// Now we just load a set number of generations from the start, and don't add more.
+	// Find a better way to actually grow this tree...
 	var max_generation = self.maxGeneration();
 	if (max_generation < 2) { max_generation = 2; }
-	console.log("max generation number we have is "+max_generation);
 
    	//var min_width = self.pane.width()   - self.margin.left - self.margin.right;
    	//var min_height = self.pane.height() - self.margin.top  - self.margin.bottom;
    	var min_width  = self.node_width  + 100;
    	var min_height = self.node_height + 100;
 
-	console.log("min_width,min_height = "+min_width+","+min_height);
-
 	//self.width  = (max_generation + 1) * (self.node_width + self.node_buffer) + 100;
 	//self.height = Math.pow((max_generation + 1), 2) * (self.node_height + self.node_buffer) + 100;
-	//
 	self.height = (max_generation + 1) * (self.node_height + self.node_buffer+100) + 100;
 	self.width  = Math.pow((max_generation + 1), 2) * (self.node_width + self.node_buffer) + 100;
 
 	if (self.width  < min_width)  { self.width  = min_width; }
 	if (self.height < min_height) { self.height = min_height; }
 
-	console.log("self.width = "+self.width);
-	console.log("self.height = "+self.height);
-
 	// Do initial D3 layout into a tree object.
 	var tree = d3.layout.tree()
 		.separation(function(a, b) { return a.parent === b.parent ? 1.0 : 1.0; })
     		.children(function(d) { 
 				return self.getParents(d);
-				//return d.parents; 
 			})
     		.size([this.width, this.height]);
 
 	// (Re)Parse our wikitree profiles into d3.tree nodes, recalculating the positions of each node and connecting line
 	this.nodes = tree.nodes( this.rootNode );
 
-	// d3.tree_scale = 1.0 - 0.125 * (max_generation+1); 
-	// if (d3.tree_scale < 0.10) { d3.tree_scale = 0.10; }
-	// console.log("d3.tree_scale = "+d3.tree_scale);
+	// Set our initial scale and center if we don't have it.
 	if (!d3.tree_scale) { 
 		d3.tree_scale = 0.50;
-		console.log('initialize d3.tree_scale = '+d3.tree_scale);
 	}
 	if (!d3.tree_center) { 
 		var n = this.nodes[0];
 		d3.tree_center = [ (-n.x * d3.tree_scale + this.pane.width() / 2), 100 ];
-		console.log('initialize d3.tree_center = '+d3.tree_center);
 	}
 
 	// Add an SVG object to our display window (https://github.com/mbostock/d3/wiki/SVG-Shapes).
@@ -193,18 +191,13 @@ TreeDisplay.prototype.drawTree = function () {
 			.attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")")
 	;
 
-
-	//for (i in this.nodes ) { 
-	//	console.log( i+')'+this.nodes[i].Name+' - '+this.nodes[i].x+','+this.nodes[i].y + "; a = "+this.nodes[i].ahnentafel ); 
-	//	for (x in this.nodes[i]) { console.log( 'node '+i+'.'+x+')'+this.nodes[i]); }
-	//}
 	var max_generation = self.maxGeneration();
-	console.log("max generation number we have is "+max_generation);
 
 	// Define the links between our elements. Each one has a CSS class of "link".
 	// The path is defined by our "elbow" function.
 
 	// Stroke width 3 at min scale of 0.5 and 1 at scales 1 or greater
+	// These lines don't work well at some scales... need a connector of a set pixel size instead? 
 	var stroke_width = 2;
 	if (d3.tree_scale < 0.75) { stroke_width = 3; }
 	if (d3.tree_scale < 0.65) { stroke_width = 4; }
@@ -247,7 +240,7 @@ TreeDisplay.prototype.drawTree = function () {
 	;
 
 	// Define some mouse-over / click behavior
-
+	// Here if we hover the anchor we've put into the nodes we want to display extra information
 	$('.hoverAnchor').mouseover( function(e) { treeDisplay.nodeHover(e, $(this)); } );
 
 	/*
@@ -312,7 +305,6 @@ TreeDisplay.prototype.drawTree = function () {
 	self.svg = svg;
 
 	// Add zoom/pan behavior, starting at our current location and zoom
-	console.log("Adding zoom behavior with d3.tree_scale="+d3.tree_scale+", and d3.tree_center="+d3.tree_center);
 	d3.select("svg").call(d3.behavior.zoom().scale(d3.tree_scale).scaleExtent([0.1,2]).translate(d3.tree_center).on("zoom", zoom));
 };
 
@@ -355,7 +347,7 @@ function keydown() {
 			redraw = 1;
 			break;
 
-		case 189: // -
+		case 188: // <
 			var oldScale = scale;
 			scale -= 0.01;
 			translation[0] = parseInt(translation[0]) * (scale / oldScale);
@@ -363,7 +355,7 @@ function keydown() {
 			redraw = 1;
 			break;
 
-		case 187: { // +
+		case 190: { // >
 			var oldScale = scale;
 			scale += 0.01;
 			translation[0] = parseInt(translation[0]) * (scale / oldScale);
@@ -371,6 +363,7 @@ function keydown() {
 			redraw = 1;
 			break;
 		}
+
 	}
 
 	if (redraw) { 
@@ -398,7 +391,6 @@ function nodeHTML(d) {
 	if (d.Gender == 'Male') { c += "genderMale"; } else if (d.Gender == 'Female') { c += "genderFemale"; }
 	html += "<div id='node_"+d.Id+"' class='"+c+"'>";
 
-	//console.log("PhotoData:"+JSON.stringify(d.PhotoData));
 	html += "<div class='nodeImage'>";
 	if (d.PhotoData) { 
 		html += "<img src=\""+d.PhotoData.url+"\" width=\""+d.PhotoData.width+"\" height=\""+d.PhotoData.height+"\" />"
@@ -430,15 +422,11 @@ function nodeHTML(d) {
 	html += x + "</div>";
 
 	html += "<div class='clear'></div>";
-
-	//html += "<div class='hoverAnchor' onMouseOver=\"treeDisplay.nodeHover("+d.Id+");\"></div>";
 	html += "<div class='hoverAnchor' id='hoverAnchor_"+d.Id+"'></div>";
-
 	html += "<div class='clear'></div>";
 
 	html += "</div>";
 
-	//console.log(html);
 	return html;
 
 }
@@ -493,7 +481,6 @@ TreeDisplay.prototype.infoHTML = function(p) {
 	var html = "";
 
 	html += "<span style='float:right;' onClick=\"treeDisplay.nodeHoverOff();\">X</span>";
-
 	html += "<h3><a href='http://www.wikitree.com/wiki/"+p.Name+"' target='_new'>"+p.Name+"</a></h3>";
 	
 	if (p.Prefix) { html += "" + p.Prefix+" "; }
@@ -570,8 +557,6 @@ TreeDisplay.prototype.infoHTML = function(p) {
 function zoom() {
 	var scale = d3.event.scale;
 	var translation = d3.event.translate;
-
-	//console.log("in zoom, translation = "+translation + ", scale = "+scale);
 
 	d3.select(".drawarea").attr("transform", "translate(" + translation + ")scale(" + scale + ")");
 	d3.tree_scale = scale;
