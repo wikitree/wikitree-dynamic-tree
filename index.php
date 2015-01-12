@@ -19,10 +19,14 @@
 
 <!-- CSS styles to describe nodes, etc. --> 
 <link rel="stylesheet" href="tree.css" type="text/css" />
+<link rel="stylesheet" href="main-new.css" type="text/css" />
+<link rel="stylesheet" href="skeleton.css" type="text/css" />
+<link rel="stylesheet" href="base.css" type="text/css" />
 
 
 <script type="text/javascript">
 var wikitreeProfiles = [];
+var treeDisplay;
 
 
 $(document).ready(function(){ 
@@ -61,10 +65,11 @@ function tryLogin() {
 
 
 function go() { 
-	var treeDisplay = new TreeDisplay({ 
+	treeDisplay = new TreeDisplay({ 
 		'rootId': wikitree.session.user_id, 
 		'paneId': '#window' ,
 		'infoId': '#infoContainer' ,
+		'statusId': '#status' ,
 		'margin': { top: 10, right: 10, bottom: 10, left: 10 }
 	});
 }
@@ -81,6 +86,8 @@ function restartTree() {
 			var treeDisplay = new TreeDisplay({ 
 				'rootId': p.user_id,
 				'paneId': '#window' ,
+				'infoId': '#infoContainer' ,
+				'statusId': '#status' ,
 				'margin': { top: 10, right: 10, bottom: 10, left: 10 }
 			});
 		} else { 
@@ -95,11 +102,26 @@ function restartTree() {
 
 <body class="mediawiki ns-0 ltr page-Main_Page">
 
-<div id="HEADLINE">
-	<h1>Dynamic Family Tree</h1>
+
+
+<div id="header">
+
+		<div class="logo"><img src="/images/wikitree-logo.png" border="0" width="420" alt="WikiTree" title="WikiTree" /></div>
+		<h1>Dynamic Family Tree</h1>
+
 </div>
 
-<div id="CONTENT" class="MISC-PAGE">
+
+
+
+<div id="content" class="container tree">
+
+<div class="full-width columns">
+
+
+	
+
+
 
 
 <!-- This div is shown if the user is logged in. -->
@@ -126,21 +148,24 @@ function restartTree() {
 <div style="clear: both;"></div>
 <div id="treeContainer">
 	<form id="restartForm" action="#" onSubmit='return false;'>
-	New Tree starting with WikiTree ID: <input type=text id="rootWikiTreeId" name="rootWikiTreeId" value="" size=20 />
-	<input type=button value="Restart Tree" onClick="restartTree();" />
+	New Tree starting with WikiTree ID: <input class="small"  type=text id="rootWikiTreeId" name="rootWikiTreeId" value="" size=20 />
+	<input class="small" type=button value="Restart Tree" onClick="restartTree();" />
+	<div id="status"></div>
 	</form>
 
 	<br clear=both>
-	<div id="window" style='width:600px; height:600px; overflow:scroll; border: 1px solid black;'>
-	<div id="nodeHover"></div>
+	<div id="window" style='width:100%; height:600px; overflow:hidden; border: 1px solid black;'>
 	</div>
 </div>
-<div id="infoContainer">
-</div>
+<div style="clear: both;"></div>
+<!-- <div id="infoContainer"></div> -->
 
 <div style="clear: both;"></div>
 
-</div><!-- eo CONTENT -->
 
+</div>
+</div>
+
+<div id="nodeHover" style='position:absolute;'></div>
 </body>
 </html>

@@ -1,3 +1,11 @@
+body {background:#fff!important;}
+.container.tree {width:90%;}
+#header {padding:10px;}
+#header {background:#f7f6f0 url("images/header-bg-sm.gif") repeat-x bottom!important;}
+
+#header .logo img {width:250px;}
+#header h1 {background-color:transparent;line-height:2em;}
+
 .name {
   font-weight: bold;
 }
@@ -18,66 +26,77 @@ svg {
 }
 
 .node {
-  width: 174px;
-  height: 50px;
+  width: 380px;
+  height: 120px;
   overflow: hidden;
   border: 1px solid black;
   padding: 2px;
   background-color: #ddd;
   color: black;
+  margin: 0px;
 }
+.node .genderMale { background-color: #eeeeff;}
+.node .genderFemale { background-color: #ffeeee; } 
+.node .nodeImage { 
+	float: left; 
+	margin-right: 5px;
+	max-height: 100px;
+	overflow: hidden;
+	width: 75px;
+}
+
 .node .name { 
-  float: left;
-  font-weight: bold;
-}
-.node .about {  
-  clear: left;
-  float: left;
-  font-size: smaller;
-  color: #777;
+	float: left;
+	font-weight: bold;
+	font-size: 16pt;
+	/*width: 215px;*/
 }
 
 .node .dates {  
-  clear: left;
-  float: left;
-  font-size: smaller;
-  color: #777;
+	width: 215px;
+	float: left;
+	font-size: 12pt;
+	color: #777;
 }
 
-.node .links {  
-  clear: left;
-  float: left;
-  font-size: smaller;
-  color: #777;
+.node .hoverAnchor { 
+	border: 1px solid blue;
+	background-color: yellow;
+	width: 20px;
+	height: 20px;
+	padding: 0px;
+	margin: 0px;
+	margin-top: -10px;
+	margin-right: 5px;
+	float:right;
 }
-
 
 .node .clear { 
    clear: both;
 }
 
-.parentlink { 
-   float: right;
-   font-weight: bold;
-   color: blue;
-   cursor: pointer;
-}
-
 #treeContainer { 
 	float: left;
+	width: 100%;
 }
 #infoContainer { 
-	float: right;
+	float: left;
 	margin-top: 50px;
-	width: 200px;
 	border: 1px solid black;
 	min-height: 200px;
+}
+#status { 
+	float: right;
+	width: 200px;
+	border: 1px solid #a00000;
+	min-height: 20px;
+	color: #a00;
 }
 
 #nodeHover { 
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 200px;
   background-color: white;
   border: 2px solid green;
   padding: 5px;
@@ -85,3 +104,4 @@ svg {
 }
 #nodeHover .inner { 
 }
+

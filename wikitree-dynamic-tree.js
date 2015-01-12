@@ -21,20 +21,21 @@ function TreeDisplay( opts ) {
 	if (opts.paneId) { this.paneId = opts.paneId; }
 	this.pane  = $(this.paneId);
 	if (opts.infoId) { this.infoId = opts.infoId; }
-	console.log("infoId: "+this.infoId);
+	if (opts.statusId) { this.statusId = opts.statusId; }
 
 	this.margin = { top: 10, right: 10, bottom: 10, left: 10 };
 	if (opts.margin) { this.margin = opts.margin; }
 
 	// Node dimensions
-	this.node_width = 175; this.node_height = 50;
-	this.node_buffer = 15;
+	this.node_width  = 400; 
+	this.node_height =  140;
+	this.node_buffer =  0;
 	if (opts.node_width)  { this.node_width = opts.node_width; }
 	if (opts.node_height) { this.node_height = opts.node_height; }
 
 	// Default/starting width of our canvas is the container pane size less the margins.
 	// These get edited when we draw the tree based on the nodes we have.
-   	this.width = this.pane.width()   - this.margin.left - this.margin.right;
+   	this.width  = this.pane.width()  - this.margin.left - this.margin.right;
    	this.height = this.pane.height() - this.margin.top  - this.margin.bottom;
 	console.log("canvas width = "+this.width + ", height = "+this.height);
 
@@ -42,9 +43,11 @@ function TreeDisplay( opts ) {
 	/* Internally defined references, etc. */
    	
 	// Define the data fields we want for profiles from the API.
-	this.fields = 'Id,Name,FirstName,MiddleName,RealName,LastNameAtBirth,LastNameCurrent,BirthDate,DeathDate,Father,Mother';
+	//this.fields = 'Id,Name,FirstName,MiddleName,RealName,LastNameAtBirth,LastNameCurrent,BirthDate,DeathDate,Father,Mother';
+	this.fields = '*';
 
 	// Start with an empty hash of nodes and an empty store of tree node/profile data.
+	this.profileById = {};
 	this.rootNode = {};
 	this.nodes = false;
 
@@ -56,25 +59,58 @@ function TreeDisplay( opts ) {
 // Initialize the TreeDisplay object. 
 // This loads the starting/root person and, once we have that, draws the tree.
 TreeDisplay.prototype.init = function () {
+	console.log("TREE DISPLAY INIT");
 
 	// We get a new "this" in sub-functions below, so copy the TreeDisplay->init() "this" to "self" for reference in those.
 	var self = this;
 
-	// Get the root profile.
+	// Say we're working, until we're done.
+	self.setWorking('Working...');
+
+	// Get the root profile and ancestors.
 	var p = new wikitree.Person( { user_id: this.rootId } );
 	p.load( { fields: this.fields} ).then(function(data){ 
 		console.log("Got root p:"+p.Name);
-		p.ahnentafel = 1;
-		for (x in p) { self.rootNode[x] = p[x]; }
-		self.drawTree();
+
+		$.ajax({
+			url: '//dev4.wikitree.com/api.php',
+			type: 'POST',
+			crossDomain: true,
+			xhrFields: { withCredentials: true },
+			dataType: 'json',
+			data: { 'action': 'getAncestors', 'key': p.Id, 'depth': 5, 'format': 'json' },
+			success: function(data) { 
+				console.log("success back from getAncestors");
+				for (i in data[0].ancestors) { 
+					console.log("id: "+data[0].ancestors[i].Id+", name:"+data[0].ancestors[i].Name);
+					self.profileById[ data[0].ancestors[i].Id ] = data[0].ancestors[i];
+				}
+				self.rootNode = p;
+				self.drawTree();
+				self.setWorking(false);
+			},
+			error: function(xhr, status) { 
+				console.log("error back from getAncestors");
+				self.rootNode = {};
+				self.nodes = false;
+				self.setWorking(false);
+			}
+		});
 
 	}); 
 
-	d3.tree_center = [ 0, 0 ];
-	d3.tree_scale = 1.0;
-	d3.tree_center_node = 0;
-	
 };
+
+TreeDisplay.prototype.setWorking = function (working) { 
+	console.log("Setting working = "+working);
+	if (this.statusId) { 
+		if (working) { 
+			$(this.statusId).html(working);
+		} else { 
+			$(this.statusId).html("");
+		}
+	}
+}
 
 // (Re)Draw the tree data into the SVG canvas. 
 // ...
@@ -90,53 +126,66 @@ TreeDisplay.prototype.drawTree = function () {
 	// .nodeSize()
 	// .sort(a,b)  - sort order of sibling nodes
 
-
 	// The size needs to be large enough to hold all displayed generations.
 	// The number of generations is mod-base-2 of the largest Ahnentafel number
-	// These are always click behind because we don't reparse our nodes from a click until below...	
+	// These are always a click behind because we don't reparse our nodes from a click until below...	
 	// Ugly.
-	var max_ahnentafel = self.maxAhnentafel();
+	// Now we just load a set number of generations from the start, and don't add more.
 	var max_generation = self.maxGeneration();
+	if (max_generation < 2) { max_generation = 2; }
+	console.log("max generation number we have is "+max_generation);
 
    	//var min_width = self.pane.width()   - self.margin.left - self.margin.right;
    	//var min_height = self.pane.height() - self.margin.top  - self.margin.bottom;
-   	var min_width = self.node_width + 100;
+   	var min_width  = self.node_width  + 100;
    	var min_height = self.node_height + 100;
 
 	console.log("min_width,min_height = "+min_width+","+min_height);
 
-	self.width  = (max_generation + 1) * (self.node_width + self.node_buffer) + 100;
-	self.height = Math.pow((max_generation + 1), 2) * (self.node_height + self.node_buffer) + 100;
+	//self.width  = (max_generation + 1) * (self.node_width + self.node_buffer) + 100;
+	//self.height = Math.pow((max_generation + 1), 2) * (self.node_height + self.node_buffer) + 100;
+	//
+	self.height = (max_generation + 1) * (self.node_height + self.node_buffer+100) + 100;
+	self.width  = Math.pow((max_generation + 1), 2) * (self.node_width + self.node_buffer) + 100;
 
-	if (self.width < min_width) { self.width = min_width; }
+	if (self.width  < min_width)  { self.width  = min_width; }
 	if (self.height < min_height) { self.height = min_height; }
 
 	console.log("self.width = "+self.width);
 	console.log("self.height = "+self.height);
 
-	d3.tree_scale = 1.0 - 0.125 * (max_generation+1); 
-	if (d3.tree_scale < 0.50) { d3.tree_scale = 0.50; }
-	console.log("d3.tree_scale = "+d3.tree_scale);
-
-
+	// Do initial D3 layout into a tree object.
 	var tree = d3.layout.tree()
-		.separation(function(a, b) { return a.parent === b.parent ? 0.5 : 0.5; })
-    		.children(function(d) { return d.parents; })
-    		.size([this.height, this.width]);
-
-	console.log("d3.tree_center_node = "+d3.tree_center_node);
-	console.log("d3.tree_center = "+d3.tree_center);
+		.separation(function(a, b) { return a.parent === b.parent ? 1.0 : 1.0; })
+    		.children(function(d) { 
+				return self.getParents(d);
+				//return d.parents; 
+			})
+    		.size([this.width, this.height]);
 
 	// (Re)Parse our wikitree profiles into d3.tree nodes, recalculating the positions of each node and connecting line
 	this.nodes = tree.nodes( this.rootNode );
+
+	// d3.tree_scale = 1.0 - 0.125 * (max_generation+1); 
+	// if (d3.tree_scale < 0.10) { d3.tree_scale = 0.10; }
+	// console.log("d3.tree_scale = "+d3.tree_scale);
+	if (!d3.tree_scale) { 
+		d3.tree_scale = 0.50;
+		console.log('initialize d3.tree_scale = '+d3.tree_scale);
+	}
+	if (!d3.tree_center) { 
+		var n = this.nodes[0];
+		d3.tree_center = [ (-n.x * d3.tree_scale + this.pane.width() / 2), 100 ];
+		console.log('initialize d3.tree_center = '+d3.tree_center);
+	}
 
 	// Add an SVG object to our display window (https://github.com/mbostock/d3/wiki/SVG-Shapes).
 	// Set the svg space to be as wide as the Tree's width.
 	// Add a single group element to our SVG element to hold our nodes.
 	d3.select("svg").remove();
 	var svg = d3.select(this.paneId).append("svg")
-		.attr("width", this.width + this.margin.left + this.margin.right + (this.node_width+this.node_buffer) )
-		.attr("height", this.height + this.margin.top + this.margin.bottom + (this.node_height+this.node_buffer) )
+		.attr("width",  this.width  + this.margin.left + this.margin.right  + (this.node_width  + this.node_buffer) )
+		.attr("height", this.height + this.margin.top  + this.margin.bottom + (this.node_height + this.node_buffer) )
 		.append("g")
 			.attr("class", "drawarea")
 			.attr("transform", "translate(" + d3.tree_center + ")scale(" + d3.tree_scale + ")")
@@ -145,10 +194,10 @@ TreeDisplay.prototype.drawTree = function () {
 	;
 
 
-	for (i in this.nodes ) { 
-		console.log( i+')'+this.nodes[i].Name+' - '+this.nodes[i].x+','+this.nodes[i].y + "; a = "+this.nodes[i].ahnentafel ); 
-		//for (x in this.nodes[i]) { console.log( 'node '+i+'.'+x+')'+this.nodes[i]); }
-	}
+	//for (i in this.nodes ) { 
+	//	console.log( i+')'+this.nodes[i].Name+' - '+this.nodes[i].x+','+this.nodes[i].y + "; a = "+this.nodes[i].ahnentafel ); 
+	//	for (x in this.nodes[i]) { console.log( 'node '+i+'.'+x+')'+this.nodes[i]); }
+	//}
 	var max_generation = self.maxGeneration();
 	console.log("max generation number we have is "+max_generation);
 
@@ -159,6 +208,7 @@ TreeDisplay.prototype.drawTree = function () {
 	var stroke_width = 2;
 	if (d3.tree_scale < 0.75) { stroke_width = 3; }
 	if (d3.tree_scale < 0.65) { stroke_width = 4; }
+	if (d3.tree_scale < 0.45) { stroke_width = 5; }
 
 	var link = svg.selectAll(".link")
 		.data(tree.links(this.nodes))
@@ -176,7 +226,7 @@ TreeDisplay.prototype.drawTree = function () {
 		.data(this.nodes)
 		.enter().append("g")
 		.attr("class", "node")
-		.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+		.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 
 
 	// *** 
@@ -184,117 +234,156 @@ TreeDisplay.prototype.drawTree = function () {
 	// * We shift these elements about and apply CSS styles to control the appearance.
 	// ***
 
-	/* 
-	node.append("text")
-		.attr("class", "name")
-		.attr("x", 8)
-		.attr("y", -6)
-		.text(function(d) { return d.Name; });
-
-	node.append("text")
-		.attr("x", 8)
-		.attr("y", 8)
-		.attr("dy", ".71em")
-		.attr("class", "about lifespan")
-		.text(function(d) { 
-			var x = '';
-			if (!d.BirthDate || d.BirthDate == '0000-00-00') { x += "?"; } else { x += d.BirthDate; }
-			x += ' - ';
-			if (!d.DeathDate || d.DeathDate == '0000-00-00') { x += "?"; } else { x += d.DeathDate; }
-			return x;
-		});
-
-	node.append("text")
-		.attr("x", 8)
-		.attr("y", 8)
-		.attr("dy", "1.86em")
-		.attr("class", "about location")
-		.text(function(d) { return d.BirthLocation; });
-	*/
-
 	// *** 
 	// * Render each node with HTML inside the SVG as a foreign object.
 	// *** 
 	node.append("foreignObject")
-		.attr('width',180)
-		.attr('height',60)
-		.attr("x", 8)
-		.attr("y", -25)
+		.attr('width',self.node_width)
+		.attr('height',self.node_height)
+		.attr("x", -(self.node_width/2))
+		.attr("y", 0)
 		.append("xhtml:body")
 		.html(function(d){ return nodeHTML(d); })
 	;
 
-	// Define some mouse-over behavior
+	// Define some mouse-over / click behavior
 
+	$('.hoverAnchor').mouseover( function(e) { treeDisplay.nodeHover(e, $(this)); } );
+
+	/*
 	node.on("click", function(d){ 
+
 		var mousePosition = d3.mouse(this);
-		console.log("mouseover on "+d.Id+" mousePos:"+mousePosition);
+		console.log("mouse click on node id="+d.Id+" mousePos:"+mousePosition);
 		var nodePosition = $(this).position();
-		console.log("nodePosition:"+nodePosition.left+","+nodePosition.top);
+		console.log("nodePosition: "+nodePosition.left+","+nodePosition.top);
 		d3.tree_center_node = d.Id;
 
-		console.log('Node '+d.Id+' has parents:'+d.parents);
-		var this_node = d;
-		if (!this_node.parents) { 
-
-			var f = new wikitree.Person( { user_id: this_node.Father } );
-			var m = new wikitree.Person( { user_id: this_node.Mother } );
-
-			$.when( 
-				f.load( { fields: self.fields } ),
-				m.load( { fields: self.fields} )
-			).then(function() { 
-				this_node.parents = [];
-		
-				if (f && f.Name) { 
-					f.ahnentafel = this_node.ahnentafel * 2;
-					this_node.parents.push( f );
-				}
-				if (m && m.Name) { 
-					m.ahnentafel = this_node.ahnentafel * 2 + 1;
-					this_node.parents.push( m );
-				}
-
-				self.drawTree();
-
-
-			}); // End first then on getting root profile mother/father
-
-		}
-
+		console.log('Node id#'+d.Id+' - '+d.Name);
+		console.log("self.infoId: "+self.infoId);
 		if (self.infoId) { 
-			var p = new wikitree.Person( {user_id: d.Id} );
-			p.load({fields: '*'}).then(function(d){ 
-				var html = infoHTML( p );
-				$(self.infoId).html(html);
-			});
+			//var p = new wikitree.Person( {user_id: d.Id} );
+			//p.load({fields: '*'}).then(function(d){ 
+			//	var html = infoHTML( p );
+			//	$(self.infoId).html(html);
+			//});
+
+			var html = infoHTML( d );
+			$(self.infoId).html(html);
 		}
 
-		/*
-		var html = "<div class='inner'>This is a click on an item</div>";
-		var hover_left = nodePosition.left - 50;
-		var hover_top  = nodePosition.top  - 50;
+	}); // End node.on("click")
+	*/
+
+	// This seems to only trigger on the node edges themselves. Anything inside (like our div containing person info) does _not_ trigger the hover...
+	/*
+	node.on("mouseover", function(d) { 
+		var mousePosition = d3.mouse(this);
+		var nodePosition = $(this).position();
+		console.log("mouse over on node id="+d.Id+" mousePos:"+mousePosition);
+		console.log("nodePosition: "+nodePosition.left+","+nodePosition.top);
+
+		var pageX = d3.event.pageX;
+		var pageY = d3.event.pageY;
+		console.log("pageX = "+pageX+", pageY="+pageY);
+
+		var html = "<div class='inner'>This is a hover on an item</div>";
+		var hover_left = pageX + 50;
+		var hover_top  = pageY;
 		$('#nodeHover').html(html)
 			.css('top',hover_top+"px")
 			.css('left',hover_left+"px")
 			.click(function(){ $('#nodeHover').hide(100); })
-			.show(100)
+			.show()
 		;
-		*/
+	}); // End node.on("mouseover")
+	*/
 
-	}); // End node.on("click")
 
+	/*
+	node.on("mouseout", function(d) { 
+		$('#nodeHover').hide(50);
+	}); // End node.on("mouseout")
+	*/
 
-	//node.on("mouseout", function(d) { 
-	//	$('#nodeHover').hide(50);
-	//});
+	// Catch key-down events in the window so we can translate them into pan/zoom actions.
+	d3.select(window).on('keydown', function(event){ keydown(); } );
 
 	self.svg = svg;
 
-	// Add zoom/pan behavior
-	d3.select("svg").call(d3.behavior.zoom().scaleExtent([0.5, 8]).scale(d3.tree_scale).on("zoom",zoom));
-
+	// Add zoom/pan behavior, starting at our current location and zoom
+	console.log("Adding zoom behavior with d3.tree_scale="+d3.tree_scale+", and d3.tree_center="+d3.tree_center);
+	d3.select("svg").call(d3.behavior.zoom().scale(d3.tree_scale).scaleExtent([0.1,2]).translate(d3.tree_center).on("zoom", zoom));
 };
+
+// Return the parents for the tree.layout().children() nodes
+TreeDisplay.prototype.getParents = function (d) {
+	var parents = new Array;
+	if (d.Father && this.profileById[d.Father]) { parents.push( this.profileById[d.Father] ); }
+	if (d.Mother && this.profileById[d.Mother]) { parents.push( this.profileById[d.Mother] ); }
+	return parents;
+}
+
+
+// Handle a key-down event from the D3 window
+function keydown() { 
+	var scale = d3.tree_scale;
+	var translation = d3.tree_center;
+
+	var redraw = 0;
+	switch (d3.event.keyCode) {
+		case 13: // return
+			break;
+
+		case 37: // Left
+			translation[0] = parseInt(translation[0]) -10;
+			redraw = 1;
+			break;
+
+		case 38: // Up
+			translation[1] = parseInt(translation[1]) -10;
+			redraw = 1;
+			break;
+
+		case 39: // Right
+			translation[0] = parseInt(translation[0]) +10;
+			redraw = 1;
+			break;
+
+		case 40: // Down
+			translation[1] = parseInt(translation[1]) +10;
+			redraw = 1;
+			break;
+
+		case 189: // -
+			var oldScale = scale;
+			scale -= 0.01;
+			translation[0] = parseInt(translation[0]) * (scale / oldScale);
+			translation[1] = parseInt(translation[1]) * (scale / oldScale);
+			redraw = 1;
+			break;
+
+		case 187: { // +
+			var oldScale = scale;
+			scale += 0.01;
+			translation[0] = parseInt(translation[0]) * (scale / oldScale);
+			translation[1] = parseInt(translation[1]) * (scale / oldScale);
+			redraw = 1;
+			break;
+		}
+	}
+
+	if (redraw) { 
+		d3.select(".drawarea").attr("transform", "translate(" + translation + ")scale(" + scale + ")");
+		d3.tree_scale = scale;
+		d3.tree_center = translation;
+		$('#status').html('Scale='+parseFloat(scale).toFixed(2)+', Translation='+parseInt(translation[0])+', '+parseInt(translation[1]));
+		treeDisplay.nodeHoverOff();
+
+		treeDisplay.drawTree();
+		d3.event.preventDefault();
+	}
+}
 
 // Build the HTML div for a node display of a particular profile.
 // <div id='##' class='node'>
@@ -304,9 +393,27 @@ TreeDisplay.prototype.drawTree = function () {
 // </div>
 function nodeHTML(d) { 
 	var html = "";
-	html += "<div d='"+d.Id+"' class='node'>";
 
-	//html += "<div class='parentlink' onClick='parentlink(this);' id='parentlink_"+d.Id+"'>+</div>";
+	var c = "node ";
+	if (d.Gender == 'Male') { c += "genderMale"; } else if (d.Gender == 'Female') { c += "genderFemale"; }
+	html += "<div id='node_"+d.Id+"' class='"+c+"'>";
+
+	//console.log("PhotoData:"+JSON.stringify(d.PhotoData));
+	html += "<div class='nodeImage'>";
+	if (d.PhotoData) { 
+		html += "<img src=\""+d.PhotoData.url+"\" width=\""+d.PhotoData.width+"\" height=\""+d.PhotoData.height+"\" />"
+	} else { 
+		if (d.Gender == 'Male') { 
+			html += "<img src=\"/images/icons/male.gif\" width=\"75\">";
+		}
+		else if (d.Gender == 'Female') { 
+			html += "<img src=\"/images/icons/female.gif\" width=\"75\">";
+		}
+		else { 
+			html += "<img src=\"/images/icons/unknown.gif\" width=\"75\">";
+		}
+	}
+	html += "</div>";
 
 	html += "<div class='name'>";
 	if (d.RealName) { html += d.RealName; } else { html == d.FirstName; }
@@ -322,18 +429,59 @@ function nodeHTML(d) {
 	if (!d.DeathDate || d.DeathDate == '0000-00-00') { x += " "; } else { x += d.DeathDate.substr(0,4); }
 	html += x + "</div>";
 
-	//x += " (" + d.ahnentafel + ") ";
-	//html += "<div class='about'>"+x+"</div>";
+	html += "<div class='clear'></div>";
 
+	//html += "<div class='hoverAnchor' onMouseOver=\"treeDisplay.nodeHover("+d.Id+");\"></div>";
+	html += "<div class='hoverAnchor' id='hoverAnchor_"+d.Id+"'></div>";
 
 	html += "<div class='clear'></div>";
+
 	html += "</div>";
+
+	//console.log(html);
 	return html;
 
 }
 
 
-function infoHTML(p) { 
+// This function displays the "hover box" that comes up with extra information about 
+// a particular profile node. The contents come from the infoHTML() function, which works with the
+// profile data grabbed from the cache this.profileById[]. Positioning of this box is a bit tricky.
+// The offsets are thrown off if the starting (hidden) div with id='nodeHover' is inside other divs used
+// to build the page. This function assumes that div (see index.php) is outside all of that, and just inside
+// the HTML <body> tags. 
+TreeDisplay.prototype.nodeHover = function(e, item) { 
+	// Translate the DOM item id into a profile id
+	var x = item.attr('id');
+	var id = x.replace('hoverAnchor_', '');
+
+	// Get the Profile data, and then build the HTML for the hover box from that.
+	var p = this.profileById[id];
+	var html = this.infoHTML(p);
+
+	// Pop-up our hover box at the same position as the triggering item
+	//var mouse_left = e.pageX;
+	//var mouse_top = e.pageY;
+	var hover_left = item.offset().left;
+	var hover_top  = item.offset().top;
+
+	$('#nodeHover').html(html)
+			.css('position', 'absolute')
+			.css('left',hover_left+"px")
+			.css('top',hover_top+"px")
+			.css('margin', '0px')
+			.click(function(){ $('#nodeHover').hide(100); })
+			.show(100)
+	;
+}
+
+// To turn off the hover box, just hide it. We don't care about its position or content.
+TreeDisplay.prototype.nodeHoverOff = function() { 
+	$('#nodeHover').hide(100);
+}
+
+
+TreeDisplay.prototype.infoHTML = function(p) { 
 	/*
 	var html = $('#infoHTML_template').html();
 	for (var k in p) { 
@@ -343,6 +491,8 @@ function infoHTML(p) {
 	*/
 
 	var html = "";
+
+	html += "<span style='float:right;' onClick=\"treeDisplay.nodeHoverOff();\">X</span>";
 
 	html += "<h3><a href='http://www.wikitree.com/wiki/"+p.Name+"' target='_new'>"+p.Name+"</a></h3>";
 	
@@ -374,13 +524,15 @@ function infoHTML(p) {
 	if (p.Gender == 'Male') { html += "Son"; } else if (p.Gender == 'Female') { html += "Daughter"; } else { html += 'Child'; } 
 	html += " of ";
 	if (p.Father) { 
-		html += "<a href='http://www.wikitree.com/wiki/"+p.Parents[ p.Father ].Name+"' target='_new'>"+p.Parents[p.Father].FirstName+" "+p.Parents[p.Father].LastNameCurrent+"</a>";
+		//html += "<a href='http://www.wikitree.com/wiki/"+p.Parents[ p.Father ].Name+"' target='_new'>"+p.Parents[p.Father].FirstName+" "+p.Parents[p.Father].LastNameCurrent+"</a>";
+		html += "Father: "+p.Father+"<br>\n";
 	} else { 
 		html += "[father]";
 	}
 	html += " and ";
 	if (p.Mother) { 
-		html += "<a href='http://www.wikitree.com/wiki/"+p.Parents[ p.Mother ].Name+"' target='_new'>"+p.Parents[p.Mother].FirstName+" "+p.Parents[p.Mother].LastNameCurrent+"</a>";
+		//html += "<a href='http://www.wikitree.com/wiki/"+p.Parents[ p.Mother ].Name+"' target='_new'>"+p.Parents[p.Mother].FirstName+" "+p.Parents[p.Mother].LastNameCurrent+"</a>";
+		html += "Mother: "+p.Mother+"<br>\n";
 	} else { 
 		html += "[mother]";
 	}
@@ -416,51 +568,36 @@ function infoHTML(p) {
 }
 
 function zoom() {
-	var scale = d3.event.scale,
-	    translation = d3.event.translate;
+	var scale = d3.event.scale;
+	var translation = d3.event.translate;
 
-	console.log("zoom translation = "+translation + ", scale = "+scale);
+	//console.log("in zoom, translation = "+translation + ", scale = "+scale);
 
 	d3.select(".drawarea").attr("transform", "translate(" + translation + ")scale(" + scale + ")");
 	d3.tree_scale = scale;
 	d3.tree_center = translation;
+
+	$('#status').html('Scale='+parseFloat(scale).toFixed(2)+', Translation='+parseInt(translation[0])+', '+parseInt(translation[1]));
+	treeDisplay.nodeHoverOff();
 }
 
-TreeDisplay.prototype.maxAhnentafel = function() { 
-	var max_ahnentafel = 1;
-	for (i in this.nodes ) { 
-		console.log("i="+i+", a = "+this.nodes[i].ahnentafel);
-		if (this.nodes[i].ahnentafel > max_ahnentafel) { max_ahnentafel = this.nodes[i].ahnentafel; }
-	}
-	return max_ahnentafel;
-}
 TreeDisplay.prototype.maxGeneration = function() { 
-	var max_ahnentafel = this.maxAhnentafel();
-	var max_generation = parseInt( Math.log( max_ahnentafel ) / Math.log(2) );
-	return max_generation;
+	return 5;
 }
 
 TreeDisplay.prototype.pathFunction = function (d,i) {
 	// "elbow"
-	
-	// this doesn't know about "this" from Tree Display to get the margin....
-	var right = 10;
+	// https://www.dashingd3js.com/svg-paths-and-d3js
+	// M(m) = put pen down at (m)
+	// H(h) = Horizontal line to (h)
+	// V(v) = Vertical line to (v)
+	// h(j) = relative horziontal line to j
 
-	return "M" + d.source.y + "," + d.source.x
-       	+ "H" + d.target.y + "V" + d.target.x
-       	+ (d.target.children ? "" : "h" + right);
-};
-
-
-
-// Define an "elbow" path control for right-angled lines between nodes
-function elbow(d, i) {
-	return "M" + d.source.y + "," + d.source.x
-       	+ "H" + d.target.y + "V" + d.target.x
-       	+ (d.target.children ? "" : "h" + this.margin.right);
+	var path = "M" + d.source.x + "," + d.source.y
+		 + "V" + (d.source.y + (d.target.y-d.source.y)/2)
+       		 + "H" + d.target.x 
+		 + "V" + d.target.y
+	;
+ 
+	return path;
 }
-
-function parentlink(e) {
-	console.log('parentlink:'+e.id);
-}
-
