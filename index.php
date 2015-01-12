@@ -106,7 +106,7 @@ function restartTree() {
 
 <div id="header">
 
-		<div class="logo"><img src="/images/wikitree-logo.png" border="0" width="420" alt="WikiTree" title="WikiTree" /></div>
+		<div class="logo"><img src="http://www.wikitree.com/images/wikitree-logo.png" border="0" width="420" alt="WikiTree" title="WikiTree" /></div>
 		<h1>Dynamic Family Tree</h1>
 
 </div>
