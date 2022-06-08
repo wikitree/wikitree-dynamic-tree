@@ -64,9 +64,9 @@ function newTree() {
 		} else {
 			if (data[0].person.Id) {
 				$('#treeViewerCanvasContainer').empty();
-    				viewTreePersonId = data[0].person.Id;
+    		viewTreePersonId = data[0].person.Id;
 				var tree = new TreeViewer('#treeViewerCanvasContainer', viewTreePersonId);
-				updateViewedPersonContent(viewTreePersonId);
+				updateViewedPersonContent(data[0].person);
 			} else {
 				alert("Error retrieiving \""+key+"\" from API.");
 			}
@@ -687,7 +687,6 @@ function newTree() {
   * Create navigation bar with the number ID of a profile, and update spans/links to have the person data.
   */
 function updateViewedPersonContent(person) {
-
   $('#treeNavigation').html(`
       <button id="dropdown-button" onclick="showMenu()">Other Views &#9660;</button>
       <div id="dropdown-items" class="dropdown-content">
