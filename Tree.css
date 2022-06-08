@@ -1,0 +1,143 @@
+#window {
+  background-color: #fafafa;  
+  font-family: sans-serif;
+}
+
+.person rect {
+  stroke: #6c6;
+  stroke-width: 1px;
+  fill: #fff;
+}
+
+.person .box {
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 5px;
+  text-align: center;
+  padding: 5px;
+  background-color: #fff;
+}
+
+.person .spouse-box {
+  border: solid black 1px;
+  height: 20px;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  border-top: none;
+  background-color: #fff;
+  padding-left: 5px;
+}
+
+.person:hover rect {
+  cursor: pointer;
+  stroke: #FCBB71;
+}
+
+.person .name {
+  font-size: 18px;
+}
+
+.person .lifespan {
+  font-size: 12px;
+}
+
+.link {
+  fill: none;
+  stroke: #aaa;
+  stroke-width: 1px;
+}
+
+.plus {
+  fill: #fff;
+  cursor: pointer;
+  stroke: #333;
+  stroke-width: 1px;
+}
+
+.plus:hover {
+  stroke: #FCBB71;
+}
+
+.popup rect {
+  stroke: steelblue;
+  stroke-width: 1px;
+  fill: #fff;
+}
+
+.popup .name {
+  font-size: 24px;
+}
+
+.popup .vital {
+  font-size: 14px;
+  padding-top: 10px;
+}
+
+.popup-link {
+/*  fill: #060;
+  text-decoration: underline;*/
+  padding: 10px;
+}
+
+.popup-link:hover {
+/*  text-decoration: none;
+  cursor: pointer;*/
+}
+
+.popup-box {
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 10px;
+  background-color: white;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-box .image-box {
+  width: 75px;
+  height: 75px;
+}
+
+.image-box img {
+  max-height: 100%;
+}
+
+.top-info {
+  display: flex;
+}
+
+.vital-info {
+  padding: 0 0 10px 10px;
+}
+
+#tree-links a img {
+  height: 15px;
+}
+
+#treeNavigation {
+  position: relative;
+  display: inline-block;
+  float: right;
+}
+
+#dropdown-button {
+  padding: 16px;
+  font-size: 16px;
+}
+
+.dropdown-content {
+  display: none;
+  min-width: 160px;
+  position: absolute;
+  z-index: 1;
+}
+
+.dropdown-content a {
+  padding: 10px;
+  display: block;
+  border: 1px solid #CCCCCC;
+  background: #FFFFFF; 
+  text-decoration: none;
+}

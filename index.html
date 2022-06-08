@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" dir="ltr" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<title>WikiTree Dynamic Family Tree</title>
+
+<style type="text/css">
+	#treeViewerCanvasContainer {
+		height: 800px;
+		border: 1px solid #aaa;
+		margin-top: 16px;
+		display:none;
+	}
+	#treeViewerContent {
+		display: none;
+	}
+	#confirmAuth {
+		display: none;
+	}
+	#getAPILogin {
+		display: none;
+	}
+</style>
+<base target="_parent">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script src="/apps/jquery.cookie.js"></script>
+<script src="TreeAPI.js"></script>
+<script src="Tree.js"></script>
+<link rel="stylesheet" href="Tree.css"></script>
+
+<script>
+var viewTreePersonId = 0;
+</script>
+
+</head>
+<body>    
+
+<div id="content" class="container">
+<div class="sixteen columns">
+
+<div id="treeViewerContent">
+	<div id="treeNavigation"></div>
+
+	<h2>Dynamic Tree for <span class="viewTreePersonBirthName"></h2> 
+	WikiTree Profile Page: <a class="viewTreePersonURL" href="" target="_new"></a><br />
+
+	Click on the tree and use your mouse wheel to zoom. Click and drag to pan around. 
+	<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help">More info</a>
+	<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help"><img src="https://www.WikiTree.com/images/icons/help.gif" border="0" width="11" height="11" alt="Help" title="Help using the dynamic tree"></a></span><br /><br />
+
+	View a new tree: <input type="text" id="key" size="30" value="">
+	<button onClick="newTree()">Go</button>
+</div>
+
+<div id="getAPILogin">
+	<p> Please login to the WikiTree API to use the Tree Viewer.  </p>
+	<form action="https://api.wikitree.com/api.php" method="POST">
+		<input type="hidden" name="action" value="clientLogin">
+		<input type="hidden" id="returnURL" name="returnURL" value="">
+		<input type="submit" value="Click to Login at WikiTree API">
+	</form>
+</div>
+
+<div id="confirmAuth">
+	<p> Just a moment... <img src="https://www.WikiTree.com/images/ajax-loader.gif" height=16 width=16 /> </p>
+</div>
+
+</div><!-- close sixteen -->
+</div><!-- close container -->
+</div><!-- end wrapper opened in header -->
+
+
+<!-- Container where the tree canvas gets built. -->
+<div id="treeViewerCanvasContainer"></div>
+
+</body></html>
