@@ -55,7 +55,9 @@ $(document).ready(function() {
  * When a new tree is desired, we lookup the profile with the API. If one is found, we start a new tree.
  *
  */
-function newTree() {
+function newTree(k) {
+  var key;
+  if (k) { $('#key').val(k); }
 	var key = $('#key').val();
 	WikiTreeAPI.postToAPI( {'action':'getPerson', 'key':key } )
 	.then(function(data) {
@@ -475,11 +477,11 @@ function newTree() {
       .html(`
         <div class="popup-box" style="border-color: ${borderColor}">
           <div class="top-info">
-            <div class="image-box"><img src="${photoUrl}"></div>
+            <div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
             <div class="vital-info">
               <div class="name">
-                <a href="/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-                <span id="tree-links"><a href="/treewidget/${person.getName()}/701"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a></span>
+                <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
+                <span class="tree-links"><a onClick="newTree('${person.getName()}');" href="#"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a></span>
               </div>
               <div class="birth vital">${birthString(person)}</div>
               <div class="death vital">${deathString(person)}</div>
