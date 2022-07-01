@@ -148,6 +148,7 @@ function newTree(k) {
 	if (k) { $('#viewTreePersonName').val(k); }
 	var key = $('#viewTreePersonName').val();
 
+	WikiTreeAPI.clearCache();
 	WikiTreeAPI.postToAPI( {'action':'getPerson', 'key':key } )
 	.then(function(data) {
 		if (data.error) {

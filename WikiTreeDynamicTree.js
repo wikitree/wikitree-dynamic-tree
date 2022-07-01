@@ -8,18 +8,177 @@
 		boxWidth = 200,
 		boxHeight = 50,
 		nodeWidth = boxWidth * 1.5,
-		nodeHeight = boxHeight * 2;
+		nodeHeight = boxHeight * 3;
+
+	const L = -1, R = 1;
+
+
+	class Couple {
+		constructor(relationId, a, b, focus) {
+			this.rId = relationId;
+			if (b === undefined) {
+				if (a === undefined) {
+					throw new Error('Attempting to create an empty couple');
+				}
+				b = a.getSpouse();
+			}
+			if (focus == L || focus == R) {
+				this.focus = focus;
+			} else {
+				if (a) {
+					this.focus = L;
+				} else {
+					this.focus = R;
+				}
+			}
+			if ((focus == L && !a) || (focus == R && !b)) {
+				console.error(`Internal ERROR: The focus of a couple cannot be undefined: a=${a}, b=${b}, focus=${focus}`);
+			}
+
+			if ((a && a.isFemale() || !a) && (b && b.isMale() || !b)) {
+				// Swap a and b
+				this.a = b;
+				this.b = a;
+				this.focus = -this.focus;
+			} else {
+				this.a = a;
+				this.b = b;
+				this.focus = this.focus;
+			}
+			condLog(`new Couple: focus=${this.focus}, ${this.toString()}`, this.a, this.b)
+		}
+
+		getId() {
+			return `${this.getSimpleId()}-${this.rId}`;
+		}
+
+		getSimpleId() {
+			let aId = this.a ? this.a.getId() : '';
+			let bId = this.b ? this.b.getId() : '';
+			return `${aId}:${bId}`;
+		}
+
+		getInFocus() {
+			if (this.focus == R) {
+				return this.b;
+			} else {
+				return this.a;
+			}
+		}
+
+		getNotInFocus() {
+			if (this.focus == R) {
+				return this.a;
+			} else {
+				return this.b;
+			}
+		}
+
+		getJointChildren() {
+			let fatherId = this.a ? this.a.getId() : undefined;
+			let motherId = this.b ? this.b.getId() : undefined;
+			let children = this.getInFocus().getChildren();
+			let list = [];
+
+			for (var i in children) {
+				var child = children[i];
+				if (child.getFatherId() == fatherId && child.getMotherId() == motherId) {
+					list.push(child);
+				}
+			}
+			return list;
+		}
+
+		isComplete() {
+			return this.a && this.b;
+		}
+
+		hasAParent() {
+			return (this.a && this.a.hasAParent()) || (this.b && this.b.hasAParent());
+		}
+
+		isExpandable() {
+			return (this.a && !this.a.getChildren()) && (this.b && !this.a.getChildren()) && this.hasAParent();
+		}
+
+		setA(person) {
+			this.a = person;
+			return this;
+		}
+
+		setB(person) {
+			this.b = person;
+			return this;
+		}
+
+		setSpouse(person) {
+			if (person.isMale()) {
+				if (!this.a || this.b) {
+					this.a = person;
+				} else {
+					this.b = person;
+				}
+			} else {
+				if (!this.b || this.a) {
+					this.b = person;
+				} else {
+					this.a = person;
+				}
+			}
+			return this;
+		}
+
+		refreshPerson(newPerson) {
+			let oldPerson = undefined;
+			let oldSpouse = undefined;
+			let side = undefined;
+			let newId = newPerson.getId();
+			if (this.a && this.a.getId() == newId) {
+				oldPerson = this.a;
+				oldSpouse = this.b;
+				side = L;
+			} else if (this.b && this.b.getId() == newId) {
+				oldPerson = this.b;
+				oldSpouse = this.a;
+				side = R;
+			}
+			if (!oldPerson) {
+				console.error(`Person ${newPerson.toString()} cannot be refreshed in couple Couple ${this.toString} - person not found`);
+				return;
+			}
+			if (oldSpouse) {
+				// Refresh the spouse data
+				let newSpouse = newPerson.getSpouses()[oldSpouse.getId()];
+				if (newSpouse) {
+					oldSpouse.refreshFrom(newSpouse);
+				} else {
+					newSpouse = newPerson.getSpouse();
+					console.error(`Couple ${this.toString} unexpectedly has a new spouse ${newSpouse}; was ${oldSpouse}`);
+					if (side == L) {
+						this.b = newSpouse;
+					} else {
+						this.a = newSpouse;
+					}
+				}
+			}
+			oldPerson.refreshFrom(newPerson);
+		}
+
+		toString() {
+			return `${this.a ? this.a.toString() : 'none'} and ${this.b ? this.b.toString() : 'none'}`
+		}
+	}
 
 
 	/**
 	 * Constructor
 	 */
 	var WikiTreeDynamicTreeViewer = window.WikiTreeDynamicTreeViewer = function(selector, startId){
-		 
+
 		var container = document.querySelector(selector),
 			width = container.offsetWidth,
 			height = container.offsetHeight;
-		
+
 		var self = this;
 
 		// Setup zoom and pan
@@ -30,19 +189,19 @@
 			})
 			// Offset so that first pan and zoom does not jump back to the origin
 			.translate([originOffsetX, originOffsetY]);
-		
+
 		var svg = d3.select(container).append('svg')
 			.attr('width', width)
 			.attr('height', height)
 			.call(zoom)
 			.append('g')
 			// Left padding of tree; TODO: find a better way
-			.attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");    
-		
+			.attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
+
 		// Setup controllers for the ancestor and descendant trees
 		self.ancestorTree = new AncestorTree(svg);
 		self.descendantTree = new DescendantTree(svg);
-		
+
 		// Listen to tree events
 		self.ancestorTree.expand(function(person){
 			return self.loadMore(person);
@@ -51,7 +210,7 @@
 		self.descendantTree.expand(function(person){
 			return self.loadMore(person);
 		});
-		
+
 		// Setup pattern
 		svg.append('defs')
 			.append('pattern')
@@ -66,87 +225,146 @@
 				height: 20,
 				//'xlink:href': 'ringLoader.svg'
 			});
-		
-		self.load(startId);
+
+		self.loadAndDraw(startId);
 
 	};
 
 	/** Static variable to hold unique ids for private persons **/
 	WikiTreeDynamicTreeViewer.nextPrivateId = -1;
-	
+
 	/**
-	 * Load and display a person
+	 * Load and display a person and their spouse
 	 */
-	WikiTreeDynamicTreeViewer.prototype.load = function(id){
+	WikiTreeDynamicTreeViewer.prototype.loadAndDraw = function(id){
+		condLog(`loadAndDraw(${id})`);
 		var self = this;
-		self._load(id).then(function(person){
-			self.drawTree(person);
+		self.richLoad(id).then(function(person){
+			condLog(`=======RICH_LOADed ${person.toString()}`, person);
+			let aRoot = new Couple(0, person);
+			let dRoot = new Couple(1, person);
+			self.drawTree(aRoot, dRoot);
 		});
 	};
-	
+
+	/**
+	 * Feth the given person's data via an API call, and make separate API calls
+	 * for each of their parents, spouses, and children.  This is to ensure that
+	 * the related people also 'enriched', i.e. each have parent, spouse and children
+	 * collections (since they are absent if the person data was retrieved as part of
+	 * a getPerson for another person ID).  We'll only call the API if we have not
+	 * already retrieved the 'enriched' person in the past.
+	 */
+	WikiTreeDynamicTreeViewer.prototype.richLoad = function(id){
+		var self = this;
+		condLog(`=======RICH_LOAD ${id}`);
+		return self._load(id).then(function(person){
+			condLog(`=======RICH_LOAD _loaded ${person.toString()}`)
+			return person;
+		}).then(function(person){
+			return self.loadRelated(person);
+		});
+	};
+
+	WikiTreeDynamicTreeViewer.prototype.loadRelated = async function(person){
+		var self = this;
+		let loadPromises = [];
+		condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`)
+		if (person._data.Spouses) {
+			let col = person._data.Spouses;
+			condLog(`Spouses`,col);
+			for (let i in col) {
+				loadPromises.push(self._load(col[i].getId()))
+			}
+		} else {
+			console.error(`loadRelated called on Person ${person.getId()} without Spouses[]`)
+		}
+		if (person._data.Children) {
+			let col = person._data.Children;
+			condLog(`Children`,col);
+			for (let i in col) {
+				condLog(`_loadWithoutChildren ${col[i].toString()}`)
+				loadPromises.push(self._loadWithoutChildren(col[i].getId()))
+			}
+		} else {
+			console.error(`loadRelated called on Person ${person.getId()} without Children[]`)
+		}
+		const results = await Promise.all(loadPromises);
+		for (let i in results) {
+			let newPerson = results[i];
+			let id = newPerson.getId();
+			// if (person._data.Parents[id]) {
+			// 	consLog(`Setting as parent ${newPerson.toString()}`);
+			// 	person._data.Parents[id] = newPerson;
+			// }
+			if (person._data.Spouses[id]) {
+				condLog(`Setting as spouse ${newPerson.toString()}`);
+				person._data.Spouses[id] = newPerson;
+			}
+			if (person._data.Children[id]) {
+				condLog(`Setting as child ${newPerson.toString()}`);
+				person._data.Children[id] = newPerson;
+			}
+		}
+		return person;
+	};
+
 	/**
 	 * Load more ancestors. Update existing data in place
 	 */
-	WikiTreeDynamicTreeViewer.prototype.loadMore = function(oldPerson){
+	WikiTreeDynamicTreeViewer.prototype.loadMore = function(couple){
 		var self = this;
+		condLog(`loadMore for ${couple.toString()}`, couple)
+		let oldPerson = couple.getInFocus();
+		if (oldPerson && !oldPerson.isEnriched()) {
+			return self.richLoad(oldPerson.getId()).then(function(newPerson){
+				condLog(`=======RICH_LOADed (in loadMore) ${oldPerson.toString()}`, newPerson);
+				console.error('RICH_LOAD (in loadMore) completed'); // error just for better visibiity
 
-		return self._load(oldPerson.getId()).then(function(newPerson){
-			var mother = newPerson.getMother(),
-					father = newPerson.getFather();
+				couple.refreshPerson(newPerson)
 
-			if(mother){
-				oldPerson.setMother(mother);
-			}
-			if(father){
-				oldPerson.setFather(father);
-			}
-			oldPerson.setChildren(newPerson.getChildren());
-			self.drawTree();
-		});
+				condLog(`loadMore done for ${couple.toString()}`, couple)
+				self.drawTree();
+			});
+		}
+		console.error('Attempted to loadMore for non-enriched person!');
+		// what to return here?
 	};
 
-	
 	/**
 	 * Main WikiTree API call
 	 */
 	WikiTreeDynamicTreeViewer.prototype._load = function(id){
-		return WikiTreeAPI.getPerson(id, [
-			'Id',
-			'Derived.BirthName',
-			'Derived.BirthNamePrivate',
-			'FirstName',
-			'MiddleInitial',
-			'LastNameAtBirth',
-			'LastNameCurrent',
-			'BirthDate',
-			'BirthLocation',
-			'DeathDate',
-			'DeathLocation',
-			'Mother',
-			'Father',
-			'Children',
-			'Parents',
-			'Spouses',
-			'Siblings',
-			'Photo',
-			'Name',
-			'Gender',
-			'Privacy'
-		]);
+		return WikiTreeAPI.getPerson(id).then(function(person){
+			return person;
+		});
 	};
-	
+
+	WikiTreeDynamicTreeViewer.prototype._loadWithoutChildren = function(id){
+		let fields = REQUIRED_FIELDS.filter(item => item != 'Children');
+		return WikiTreeAPI.getPerson(id, fields).then(function(person){
+			return person;
+		});
+	};
+
 	/**
 	 * Draw/redraw the tree
 	 */
-	WikiTreeDynamicTreeViewer.prototype.drawTree = function(data){
-		if(data){
-			this.ancestorTree.data(data);
-			this.descendantTree.data(data);
+	WikiTreeDynamicTreeViewer.prototype.drawTree = function(ancestorRoot, descendentRoot){
+		condLog('drawTree for:', ancestorRoot);
+		if(ancestorRoot){
+			this.ancestorTree.data(ancestorRoot);
 		}
+		if(descendentRoot){
+			this.descendantTree.data(descendentRoot);
+		}
+		condLog('draw ancestorTree:', this.ancestorTree);
 		this.ancestorTree.draw();
+		condLog('draw descendantTree:', this.descendantTree);
 		this.descendantTree.draw();
-	}; 
-	
+		condLog('drawTree done', this.ancestorTree, this.descendantTree)
+	};
+
 	/**
 	 * Shared code for drawing ancestors or descendants.
 	 * `selector` is a class that will be applied to links
@@ -159,18 +377,18 @@
 		this.root = null;
 		this.selector = selector;
 		this.direction = typeof direction === 'undefined' ? 1 : direction;
-		
+
 		this._expand = function(){
 			return $.Deferred().resolve().promise();
 		};
-		
+
 		this.tree = d3.layout.tree()
 			.nodeSize([nodeHeight, nodeWidth])
 			.separation(function(){
 				return 1;
 			});
 	};
-	
+
 	/**
 	 * Set the `children` function for the tree
 	 */
@@ -178,7 +396,7 @@
 		this.tree.children(fn);
 		return this;
 	};
-	
+
 	/**
 	 * Set the root of the tree
 	 */
@@ -186,7 +404,7 @@
 		this.root = data;
 		return this;
 	};
-	
+
 	/**
 	 * Set a function to be called when the tree is expanded.
 	 * The function will be passed a person representing whose
@@ -198,14 +416,14 @@
 		this._expand = fn;
 		return this;
 	};
-	
+
 	/**
 	 * Draw/redraw the tree
 	 */
 	Tree.prototype.draw = function(){
 		if(this.root){
 			var nodes = this.tree.nodes(this.root),
-					links = this.tree.links(nodes);    
+					links = this.tree.links(nodes);
 			this.drawLinks(links);
 			this.drawNodes(nodes);
 		} else {
@@ -213,33 +431,33 @@
 		}
 		return this;
 	};
-	
+
 	/**
 	 * Draw/redraw the connecting lines
 	 */
 	Tree.prototype.drawLinks = function(links){
-		
+
 		var self = this;
-		
+
 		// Get a list of existing links
 		var link = this.svg.selectAll("path.link." + this.selector)
 				.data(links, function(link){
 					return link.target.getId();
 				});
-		
+
 		// Add new links
 		link.enter().append("path")
 				.attr("class", "link " + this.selector);
-		
+
 		// Remove old links
 		link.exit().remove();
-		
+
 		// Update the paths
 		link.attr("d", function(d){
 			return self.elbow(d);
 		});
 	};
-	
+
 	/**
 	 * Helper function for drawing straight connecting lines
 	 * http://stackoverflow.com/a/10249720/879121
@@ -250,26 +468,26 @@
 				sourceY = dir * (d.source.y + (boxWidth / 2)),
 				targetX = d.target.x,
 				targetY = dir * (d.target.y - (boxWidth / 2));
-				
+
 		return "M" + sourceY + "," + sourceX
 			+ "H" + (sourceY + (targetY-sourceY)/2)
-			+ "V" + targetX 
+			+ "V" + targetX
 			+ "H" + targetY;
 	}
-	
+
 	/**
 	 * Draw the person boxes.
 	 */
 	Tree.prototype.drawNodes = function(nodes){
 
 		var self = this;
-	 
+
 		// Get a list of existing nodes
 		var node = this.svg.selectAll("g.person." + this.selector)
-				.data(nodes, function(person){
-					return person.getId();
+				.data(nodes, function(couple){
+					return couple.getId();
 				});
-		
+
 		// Add new nodes
 		var nodeEnter = node.enter()
 				.append("g")
@@ -282,62 +500,72 @@
 				width: boxWidth,
 				height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
 				x: -boxWidth / 2,
-				y: -boxHeight / 2,
+				y: -boxHeight,
 			})
 			.style('overflow', 'visible') // so the name will wrap
 			.append("xhtml:div")
-			.html(person => {
-
-				let borderColor = 'rgba(102, 204, 102, .5)';
-				if (person.getGender() == 'Male') { borderColor = 'rgba(102, 102, 204, .5)'; }
-				if (person.getGender() == 'Female') { borderColor = 'rgba(204, 102, 102, .5)'; }
-
-				return `
-				<div class="box" style="border-color: ${borderColor}">
-					<div class="name">${getShortName(person)}</div>
-					<div class="lifespan">${lifespan(person)}</div>
-				</div>
-				`;
+			.html(couple => {
+				return self.drawPerson(couple.a)
+					.concat(self.drawPerson(couple.b));
 			});
-	
+
 		// Show info popup on click
-		nodeEnter.on('click', function(person){
+		nodeEnter.on('click', function(couple){
 			d3.event.stopPropagation();
-			self.personPopup(person, d3.mouse(self.svg.node()));
+			self.personPopup(couple, d3.mouse(self.svg.node())); // TODO: fix to show correct person
 		});
-				
+
 		// Draw the plus icons
-		var expandable = node.filter(function(person){
-			return !person.getChildren() && (person.getFatherId() || person.getMotherId());
+		var expandable = node.filter(function(couple){
+			return !couple.children && couple.isExpandable();
 		});
-				
+
 		self.drawPlus(expandable.data());
-		
+
 		// Remove old nodes
 		node.exit().remove();
-		
+
 		// Position
 		node.attr("transform", function(d) { return "translate(" + (self.direction * d.y) + "," + d.x + ")"; });
 	};
 
+	Tree.prototype.drawPerson = function(person) {
+		let borderColor = 'rgba(102, 204, 102, .5)';
+		let name = '?'
+		let lifeSpan = '? - ?'
+		if (person) {
+			if (person.getGender() == 'Male') { borderColor = 'rgba(102, 102, 204, .5)'; }
+			if (person.getGender() == 'Female') { borderColor = 'rgba(204, 102, 102, .5)'; }
+			name = getShortName(person);
+			lifeSpan = lifespan(person);
+		}
+
+		return `
+			<div class="box" style="border-color: ${borderColor}">
+				<div class="name">${name}</div>
+				<div class="lifespan">${lifeSpan}</div>
+			</div>
+			`;
+	}
+
 	/**
-	 * Add an plus icons (expand indicator)
+	 * Add any plus icons (expand indicator)
 	 * We add icons to the svg element
 	 * so that it's not considered part of the person box.
 	 * This makes styling and events easier, sometimes
 	 * It means we have to keep it's position in sync
 	 * with the person's box.
 	 */
-	Tree.prototype.drawPlus = function(persons){
+	Tree.prototype.drawPlus = function(couples){
 		var self = this;
-		
+
 		var buttons = self.svg.selectAll('g.plus')
-				.data(persons, function(person){
-					return person.getId();
+				.data(couples, function(couple){
+					return couple.getId();
 				});
-		
+
 		buttons.enter().append(drawPlus())
-				.on('click', function(person){
+				.on('click', function(couple){
 					var plus = d3.select(this);
 					var loader = self.svg.append('image')
 						  .attr({
@@ -347,30 +575,31 @@
 						    // transform: plus.attr('transform')
 						  })
 						  .attr("transform", function() {
-						    var y = self.direction * (person.y + (boxWidth / 2) + 12);
-						    return "translate(" + y + "," + (person.x - 8) + ")"; 
+						    var y = self.direction * (couple.y + (boxWidth / 2) + 12);
+						    return "translate(" + y + "," + (couple.x - 8) + ")";
 						  });
 					plus.remove();
-					self._expand(person).then(function(){
+					self._expand(couple).then(function(){
 						loader.remove();
 					});
 				});
-		
-		buttons.attr("transform", function(person) {
-					var y = self.direction * (person.y + (boxWidth / 2) + 20);
-					return "translate(" + y + "," + person.x + ")"; 
+
+		buttons.attr("transform", function(couple) {
+					var y = self.direction * (couple.y + (boxWidth / 2) + 20);
+					return "translate(" + y + "," + couple.x + ")";
 				});
 	};
-	
+
 	/**
 	 * Show a popup for the person.
 	 */
-	Tree.prototype.personPopup = function(person, event){
+	Tree.prototype.personPopup = function(couple, event){
 		this.removePopups();
-		
+
+		let person = couple.getInFocus();
 		var photoUrl = person.getPhotoUrl(75),
 				treeUrl = window.location.pathname + '?id=' + person.getName();
-				
+
 		// Use generic gender photos if there is not profile photo available
 		if(!photoUrl){
 			if(person.getGender() === 'Male'){
@@ -382,7 +611,7 @@
 
 		var popup = this.svg.append('g')
 				.attr('class', 'popup')
-				.attr('transform', 'translate('+event[0]+','+event[1]+')');    
+				.attr('transform', 'translate('+event[0]+','+event[1]+')');
 
 		let borderColor = 'rgba(102, 204, 102, .5)';
 		if (person.getGender() == 'Male') { borderColor = 'rgba(102, 102, 204, .5)'; }
@@ -411,12 +640,12 @@
 
 				</div>
 			`);
-				
+
 		d3.select('#treeViewerContainer').on('click', function(){
 			popup.remove();
 		});
 	};
-	
+
 	/**
 	 * Remove all popups. It will also remove
 	 * any popups displayed by other trees on the
@@ -428,54 +657,67 @@
 	Tree.prototype.removePopups = function(){
 		d3.selectAll('.popup').remove();
 	};
-	
+
 	/**
 	 * Manage the ancestors tree
 	 */
 	var AncestorTree = function(svg){
 		Tree.call(this, svg, 'ancestor', 1);
-		this.children(function(person){
-			var children = [],
-					mother = person.getMother(),
-					father = person.getFather();
 
-			if(father){
-				children.push(father);
+		this.children(function(couple){
+			condLog(`AncestorTree children for ${couple.toString()}`,couple)
+			var children = [];
+			if (couple.a) {
+				let father = couple.a.getFather();
+				let mother = couple.a.getMother();
+				if(father || mother) {
+					children.push(new Couple(couple.getSimpleId(), father, mother));
+				}
 			}
-			if(mother){
-				children.push(mother);
+			if (couple.b) {
+				let father = couple.b.getFather();
+				let mother = couple.b.getMother();
+				if(father || mother) {
+					children.push(new Couple(couple.getSimpleId(), father, mother));
+				}
 			}
+			condLog(`Returning AncestorTree children for ${couple.toString()}`, children)
 			return children;
 		});
 	};
-	
+
 	// Inheritance
 	AncestorTree.prototype = Object.create(Tree.prototype);
-	
+
 	/**
 	 * Manage the descendants tree
 	 */
 	var DescendantTree = function(svg){
 		Tree.call(this, svg, 'descendant', -1);
-		
-		this.children(function(person){
-			// Convert children map to an array
-			var children = person.getChildren(),
+
+		this.children(function(couple){
+			// Convert children map to an array of couples
+			if (couple.a && couple.a.getId() == 27784335){
+				condLog('got JJvanZyl')
+			}
+			var children = couple.getJointChildren(),
 					list = [];
 
 			for(var i in children){
-				list.push(children[i]);
+				let child = children[i];
+				list.push(new Couple(couple.getSimpleId(), child));
 			}
-			
+
 			sortByBirthDate(list);
 
+			condLog(`Returning DescendantTree children for ${couple.toString()}`, list)
 			return list;
 		});
 	};
-	
+
 	// Inheritance
 	DescendantTree.prototype = Object.create(Tree.prototype);
-	
+
 	/**
 	 * Create an unattached svg group representing the plus sign
 	 */
@@ -483,21 +725,21 @@
 		return function(){
 			var group = d3.select(document.createElementNS(d3.ns.prefix.svg, 'g'))
 					.attr('class', 'plus');
-					
+
 			group.append('circle')
 					.attr({
 						cx: 0,
 						cy: 0,
 						r: 10
 					});
-					
+
 			group.append('path')
 					.attr('d', 'M0,5v-10M5,0h-10');
-					
+
 			return group.node();
 		}
 	};
-	
+
 	/**
 	 * Generate a string representing this person's lifespan 0000 - 0000
 	 */
@@ -513,7 +755,7 @@
 
 		return lifespan;
 	};
-	
+
 	/**
 	 * Generate text that display when and where the person was born
 	 */
@@ -524,7 +766,7 @@
 
 		return `B. ${date ? `<strong>${date}</strong>` : '[date unknown]'} ${place ? `in ${place}` : '[location unknown]'}.`
 	};
-	
+
 	/**
 	 * Generate text that display when and where the person died
 	 */
@@ -535,14 +777,14 @@
 
 		return `D. ${date ? `<strong>${date}</strong>` : '[date unknown]'} ${place ? `in ${place}` : '[location unknown]'}.`;
 	};
-	
+
 	var monthNames = [
 		'Jan', 'Feb', 'Mar',
 		'Apr', 'May', 'Jun',
 		'Jul', 'Aug', 'Sep',
 		'Oct', 'Nov', 'Dec'
 	];
-	
+
 	/**
 	 * Turn a wikitree formatted date into a humanreadable date
 	 */
@@ -575,8 +817,14 @@
 		const maxLength = 20;
 
 		const birthName = person.getDisplayName();
-		const middleInitialName = `${person._data.FirstName} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
-		const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
+		const names = person._data.FirstName.split(' ');
+		const firstName = names[0];
+		let middleInitials = person._data.MiddleInitial;
+		if (middleInitials == '.') {
+			middleInitials = names.slice(1).map(item => item.substring(0,1).toUpperCase()).join(' ');
+		}
+		const middleInitialName = `${firstName} ${middleInitials} ${person._data.LastNameAtBirth}`;
+		const noMiddleInitialName = `${firstName} ${person._data.LastNameAtBirth}`;
 
 		if (birthName.length < maxLength) {
 			return birthName;
@@ -591,17 +839,16 @@
 	}
 
 	/**
-	 * Sort by the birth year from earliest to latest.
+	 * Sort a list of couples by the birth year of the in-focus person from earliest to latest.
 	 */
 	function sortByBirthDate(list) {
 		list.sort((a, b) => {
-			const aBirthYear = a._data.BirthDate.split('-')[0];
-			const bBirthYear = b._data.BirthDate.split('-')[0];
+			const aBirthYear = a.getInFocus()._data.BirthDate.split('-')[0];
+			const bBirthYear = b.getInFocus()._data.BirthDate.split('-')[0];
 
 			return aBirthYear - bBirthYear;
 		});
 	}
 
-	
 
 }());
