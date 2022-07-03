@@ -35,7 +35,8 @@
 				console.error(`Internal ERROR: The focus of a couple cannot be undefined: a=${a}, b=${b}, focus=${focus}`);
 			}
 
-			if ((a && a.isFemale() || !a) && (b && b.isMale() || !b)) {
+			if ( (this.a && this.a.isFemale() && this.b && !this.b.isFemale())
+			  || (this.b && this.b.isMale() && this.a && !this.a.isMale()) ) {
 				// Swap a and b
 				this.a = b;
 				this.b = a;
@@ -534,8 +535,8 @@
 		let name = '?'
 		let lifeSpan = '? - ?'
 		if (person) {
-			if (person.getGender() == 'Male') { borderColor = 'rgba(102, 102, 204, .5)'; }
-			if (person.getGender() == 'Female') { borderColor = 'rgba(204, 102, 102, .5)'; }
+			if (person.isMale()) { borderColor = 'rgba(102, 102, 204, .5)'; }
+			if (person.isFemale()) { borderColor = 'rgba(204, 102, 102, .5)'; }
 			name = getShortName(person);
 			lifeSpan = lifespan(person);
 		}
@@ -744,6 +745,9 @@
 	 * Generate a string representing this person's lifespan 0000 - 0000
 	 */
 	function lifespan(person){
+		if (person.isNoSpouse) {
+			return '-';
+		}
 		var birth = '', death = '';
 		if (person.getBirthDate()) { birth = person.getBirthDate().substr(0,4); }
 		if (person.getDeathDate()) { death = person.getDeathDate().substr(0,4); }
@@ -814,6 +818,9 @@
 	 * Shorten the name if it will be too long to display in full.
 	 */
 	function getShortName(person) {
+		if (person.isNoSpouse) {
+			return '';
+		}
 		const maxLength = 20;
 
 		const birthName = person.getDisplayName();

@@ -35,6 +35,7 @@ WikiTreeAPI.Person = function(data){
 			self._data.Children[c] = WikiTreeAPI.makePerson(data.Children[c]);
 		}
 	}
+	this._data.noMoreSpouses = data.DataStatus.Spouse == 'blank';
 	// consLog('Person created:', this._data)
 };
 
@@ -78,6 +79,7 @@ WikiTreeAPI.Person.prototype.getChildren = function() { return this._data.Childr
 WikiTreeAPI.Person.prototype.getFatherId = function() { return this._data.Father; }
 WikiTreeAPI.Person.prototype.getMotherId = function() { return this._data.Mother; }
 WikiTreeAPI.Person.prototype.hasAParent = function() { return this.getFatherId() || this.getMotherId(); }
+WikiTreeAPI.Person.prototype.hasNoSpouse = function() { return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0; }
 WikiTreeAPI.Person.prototype.getDisplayName = function() { return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate; }
 WikiTreeAPI.Person.prototype.getPhotoUrl = function() {
 	if (this._data.PhotoData && this._data.PhotoData['url']) {
@@ -102,6 +104,9 @@ WikiTreeAPI.Person.prototype.getSpouse = function() {
 	var self = this;
 	if (this.hasSpouse()) {
 		return self._data.Spouses[self._data.FirstSpouseId];
+	}
+	if (this.hasNoSpouse()) {
+		return NoSpouse;
 	}
 	return undefined;
 };
@@ -155,6 +160,12 @@ WikiTreeAPI.Person.prototype.toString = function() {
 	return `${this.getId()}: ${this._data.BirthName} (${this.isEnriched() ? '*' : this.getRichness()})`;
 }
 
+const NoSpouse = {
+	isNoSpouse: true,
+	getId: function() { return '0000';},
+	isFemale: function() { return false;},
+	isMale: function() { return false;},
+}
 
 const peopleCache = new Map();
 WikiTreeAPI.clearCache = function() {
@@ -213,10 +224,10 @@ const REQUIRED_FIELDS = [
 	'DeathLocation',
 	'Mother',
 	'Father',
-	'Children',
+	'DataStatus',
 	'Parents',
 	'Spouses',
-	'Siblings',
+	'Children',
 	'Photo',
 	'Name',
 	'Gender',
