@@ -320,7 +320,7 @@
 		if (oldPerson && !oldPerson.isEnriched()) {
 			return self.richLoad(oldPerson.getId()).then(function(newPerson){
 				condLog(`=======RICH_LOADed (in loadMore) ${oldPerson.toString()}`, newPerson);
-				console.error('RICH_LOAD (in loadMore) completed'); // error just for better visibiity
+				// console.error('RICH_LOAD (in loadMore) completed'); // error just for better visibiity
 
 				couple.refreshPerson(newPerson)
 
@@ -328,7 +328,7 @@
 				self.drawTree();
 			});
 		}
-		console.error('Attempted to loadMore for non-enriched person!');
+		console.error('Attempted to loadMore for non-enriched person', oldPerson);
 		// what to return here?
 	};
 
@@ -824,11 +824,18 @@
 		const maxLength = 20;
 
 		const birthName = person.getDisplayName();
-		const names = person._data.FirstName.split(' ');
+		let names = birthName.split(' ').slice(0,-1);
+		if (person._data.FirstName) {
+			names = person._data.FirstName.split(' ');
+		}
 		const firstName = names[0];
 		let middleInitials = person._data.MiddleInitial;
 		if (middleInitials == '.') {
-			middleInitials = names.slice(1).map(item => item.substring(0,1).toUpperCase()).join(' ');
+			if (names.length > 1) {
+				middleInitials = names.slice(1).map(item => item.substring(0,1).toUpperCase()).join(' ');
+			} else {
+				middleInitials = '';
+			}
 		}
 		const middleInitialName = `${firstName} ${middleInitials} ${person._data.LastNameAtBirth}`;
 		const noMiddleInitialName = `${firstName} ${person._data.LastNameAtBirth}`;

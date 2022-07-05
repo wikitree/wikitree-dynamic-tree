@@ -263,7 +263,7 @@ WikiTreeAPI.postToAPI = function(postData) {
 		'url': API_URL,
 
 		// We tell the browser to send any cookie credentials we might have (in case we authenticated).
-		'xhrFields': { withCredentials: false },
+		'xhrFields': { withCredentials: true },
 
 		// We're POSTing the data so we don't worry about URL size limits and want JSON back.
 		type: 'POST',
