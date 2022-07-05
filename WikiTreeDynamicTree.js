@@ -278,7 +278,7 @@
 				loadPromises.push(self._load(col[i].getId()))
 			}
 		} else {
-			console.error(`loadRelated called on Person ${person.getId()} without Spouses[]`)
+			console.error(`loadRelated called on Person ${person.toString()} without Spouses[]`, person)
 		}
 		if (person._data.Children) {
 			let col = person._data.Children;
@@ -288,16 +288,12 @@
 				loadPromises.push(self._loadWithoutChildren(col[i].getId()))
 			}
 		} else {
-			console.error(`loadRelated called on Person ${person.getId()} without Children[]`)
+			console.error(`loadRelated called on Person ${person.toString()} without Children[]`, person)
 		}
 		const results = await Promise.all(loadPromises);
 		for (let i in results) {
 			let newPerson = results[i];
 			let id = newPerson.getId();
-			// if (person._data.Parents[id]) {
-			// 	consLog(`Setting as parent ${newPerson.toString()}`);
-			// 	person._data.Parents[id] = newPerson;
-			// }
 			if (person._data.Spouses[id]) {
 				condLog(`Setting as spouse ${newPerson.toString()}`);
 				person._data.Spouses[id] = newPerson;
@@ -513,7 +509,7 @@
 		// Show info popup on click
 		nodeEnter.on('click', function(couple){
 			d3.event.stopPropagation();
-			self.personPopup(couple, d3.mouse(self.svg.node())); // TODO: fix to show correct person
+			self.personPopup(couple, d3.mouse(self.svg.node()), d3.mouse(this));
 		});
 
 		// Draw the plus icons
@@ -594,10 +590,17 @@
 	/**
 	 * Show a popup for the person.
 	 */
-	Tree.prototype.personPopup = function(couple, event){
+	Tree.prototype.personPopup = function(couple, event, xyInCouple){
 		this.removePopups();
 
-		let person = couple.getInFocus();
+		let person = undefined;
+		if (xyInCouple[1] < 0) {
+			person = couple.a;
+		} else {
+			person = couple.b;
+		}
+		if (!person || person.isNoSpouse) person = couple.getInFocus();
+
 		var photoUrl = person.getPhotoUrl(75),
 				treeUrl = window.location.pathname + '?id=' + person.getName();
 
