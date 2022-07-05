@@ -7,6 +7,8 @@
 		originOffsetY = 300,
 		boxWidth = 200,
 		boxHeight = 50,
+		halfBoxWidth = boxWidth / 2,
+		halfBoxHeight = boxHeight / 2,
 		nodeWidth = boxWidth * 1.5,
 		nodeHeight = boxHeight * 3;
 
@@ -456,15 +458,16 @@
 	};
 
 	/**
-	 * Helper function for drawing straight connecting lines
+	 * Helper function for drawing angled connecting lines
 	 * http://stackoverflow.com/a/10249720/879121
 	 */
 	Tree.prototype.elbow = function(d) {
 		var dir = this.direction,
-				sourceX = d.source.x,
-				sourceY = dir * (d.source.y + (boxWidth / 2)),
+				offsetDir = dir < 0 ? 0 : (d.target.x - d.source.x > 0 ? 1 : -1);
+				sourceX = d.source.x + offsetDir * halfBoxHeight,
+				sourceY = dir * (d.source.y + halfBoxWidth),
 				targetX = d.target.x,
-				targetY = dir * (d.target.y - (boxWidth / 2));
+				targetY = dir * (d.target.y - halfBoxWidth);
 
 		return "M" + sourceY + "," + sourceX
 			+ "H" + (sourceY + (targetY-sourceY)/2)
@@ -496,7 +499,7 @@
 			.attr({
 				width: boxWidth,
 				height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
-				x: -boxWidth / 2,
+				x: -halfBoxWidth,
 				y: -boxHeight,
 			})
 			.style('overflow', 'visible') // so the name will wrap
@@ -572,7 +575,7 @@
 						    // transform: plus.attr('transform')
 						  })
 						  .attr("transform", function() {
-						    var y = self.direction * (couple.y + (boxWidth / 2) + 12);
+						    var y = self.direction * (couple.y + halfBoxWidth + 12);
 						    return "translate(" + y + "," + (couple.x - 8) + ")";
 						  });
 					plus.remove();
@@ -582,7 +585,7 @@
 				});
 
 		buttons.attr("transform", function(couple) {
-					var y = self.direction * (couple.y + (boxWidth / 2) + 20);
+					var y = self.direction * (couple.y + halfBoxWidth + 20);
 					return "translate(" + y + "," + couple.x + ")";
 				});
 	};
@@ -607,9 +610,9 @@
 		// Use generic gender photos if there is not profile photo available
 		if(!photoUrl){
 			if(person.getGender() === 'Male'){
-				photoUrl = 'https://www.wikitree.com/images/icons/male.gif';
+				photoUrl = 'images/icons/male.gif';
 			} else {
-				photoUrl = 'https://www.wikitree.com/images/icons/female.gif';
+				photoUrl = 'images/icons/female.gif';
 			}
 		}
 
