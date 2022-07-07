@@ -1,5 +1,5 @@
 #window {
-  background-color: #fafafa;  
+  background-color: #fafafa;
   font-family: sans-serif;
 }
 
@@ -73,6 +73,13 @@
 }
 
 .plus {
+  fill: #fff;
+  cursor: pointer;
+  stroke: #333;
+  stroke-width: 1px;
+}
+
+.minus {
   fill: #fff;
   cursor: pointer;
   stroke: #333;
@@ -157,6 +164,6 @@
   padding: 10px;
   display: block;
   border: 1px solid #CCCCCC;
-  background: #FFFFFF; 
+  background: #FFFFFF;
   text-decoration: none;
 }

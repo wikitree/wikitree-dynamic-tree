@@ -37,8 +37,8 @@
 				console.error(`Internal ERROR: The focus of a couple cannot be undefined: a=${a}, b=${b}, focus=${focus}`);
 			}
 
-			if ( (this.a && this.a.isFemale() && this.b && !this.b.isFemale())
-			  || (this.b && this.b.isMale() && this.a && !this.a.isMale()) ) {
+			if ( (a && a.isFemale() && b && !b.isFemale())
+			  || (b && b.isMale() && a && !a.isMale()) ) {
 				// Swap a and b
 				this.a = b;
 				this.b = a;
@@ -48,7 +48,7 @@
 				this.b = b;
 				this.focus = this.focus;
 			}
-			condLog(`new Couple: focus=${this.focus}, ${this.toString()}`, this.a, this.b)
+			condLog(`new Couple: rId=${this.rId}, focus=${this.focus}, ${this.toString()}`, this.a, this.b)
 		}
 
 		getId() {
@@ -100,8 +100,13 @@
 			return (this.a && this.a.hasAParent()) || (this.b && this.b.hasAParent());
 		}
 
-		isExpandable() {
-			return (this.a && !this.a.getChildren()) && (this.b && !this.a.getChildren()) && this.hasAParent();
+		isAncestorExpandable() {
+			return !this.children && this.hasAParent() &&
+				((this.a && !this.a._data.Parents) || (this.b && !this.b._data.Parents));
+		}
+
+		isDescendentExpandable() {
+			return !this.children && (this.a && !this.a.getChildren()) && (this.b && !this.b.getChildren());
 		}
 
 		setA(person) {
@@ -167,6 +172,20 @@
 			oldPerson.refreshFrom(newPerson);
 		}
 
+		removeAncestors() {
+			if (this.a && this.a._data.Parents) delete this.a._data.Parents;
+			if (this.b && this.b._data.Parents) delete this.b._data.Parents;
+			if (this.children) delete this.children;
+			return new Promise((resolve, reject) => {resolve(this);});
+		}
+
+		removeDescendents() {
+			if (this.a && this.a._data.Children) delete this.a._data.Children;
+			if (this.b && this.b._data.Children) delete this.b._data.Children;
+			if (this.children) delete this.children;
+			return new Promise((resolve, reject) => {resolve(this);});
+		}
+
 		toString() {
 			return `${this.a ? this.a.toString() : 'none'} and ${this.b ? this.b.toString() : 'none'}`
 		}
@@ -206,12 +225,20 @@
 		self.descendantTree = new DescendantTree(svg);
 
 		// Listen to tree events
-		self.ancestorTree.expand(function(person){
-			return self.loadMore(person);
+		self.ancestorTree.expand(function(couple){
+			return self.loadMore(couple);
 		});
 
-		self.descendantTree.expand(function(person){
-			return self.loadMore(person);
+		self.descendantTree.expand(function(couple){
+			return self.loadMore(couple);
+		});
+
+		self.ancestorTree.contract(function(couple){
+			return self.removeAncestors(couple);
+		});
+
+		self.descendantTree.contract(function(couple){
+			return self.removeDescendents(couple);
 		});
 
 		// Setup pattern
@@ -330,6 +357,22 @@
 		// what to return here?
 	};
 
+	WikiTreeDynamicTreeViewer.prototype.removeAncestors = function(couple){
+		var self = this;
+		condLog(`Removing Ancestors for ${couple.toString()}`, couple)
+		return couple.removeAncestors().then(function(){
+			self.drawTree();
+		});
+	};
+
+	WikiTreeDynamicTreeViewer.prototype.removeDescendents = function(couple){
+		var self = this;
+		condLog(`Removing Descendents for ${couple.toString()}`, couple)
+		return couple.removeDescendents().then(function(){
+			self.drawTree();
+		});
+	};
+
 	/**
 	 * Main WikiTree API call
 	 */
@@ -381,6 +424,10 @@
 			return $.Deferred().resolve().promise();
 		};
 
+		this._contract = function(){
+			return $.Deferred().resolve().promise();
+		};
+
 		this.tree = d3.layout.tree()
 			.nodeSize([nodeHeight, nodeWidth])
 			.separation(function(){
@@ -406,13 +453,21 @@
 
 	/**
 	 * Set a function to be called when the tree is expanded.
-	 * The function will be passed a person representing whose
+	 * The function will be passed a couple representing whose
 	 * line needs to be expanded. The registered function
 	 * should return a promise. When it's resolved the state
 	 * will be updated.
 	 */
 	Tree.prototype.expand = function(fn){
 		this._expand = fn;
+		return this;
+	};
+
+	/**
+	 * Same as above, but for contracting the tree (i.e. removing a branch)
+	 */
+	Tree.prototype.contract = function(fn){
+		this._contract = fn;
 		return this;
 	};
 
@@ -493,7 +548,6 @@
 				.append("g")
 				.attr("class", "person " + this.selector);
 
-
 		// Draw the person boxes
 		nodeEnter.append('foreignObject')
 			.attr({
@@ -517,10 +571,16 @@
 
 		// Draw the plus icons
 		var expandable = node.filter(function(couple){
-			return !couple.children && couple.isExpandable();
+			return !couple.children && (couple.isAncestorExpandable() || couple.isDescendentExpandable());
 		});
 
-		self.drawPlus(expandable.data());
+		var contractable = node.filter(function(couple){
+			return couple.children != undefined;
+		});
+
+		self.drawPlus(expandable.data(), this.selector);
+
+		self.drawMinus(contractable.data(), this.selector);
 
 		// Remove old nodes
 		node.exit().remove();
@@ -556,15 +616,15 @@
 	 * It means we have to keep it's position in sync
 	 * with the person's box.
 	 */
-	Tree.prototype.drawPlus = function(couples){
+	Tree.prototype.drawPlus = function(couples, selector){
 		var self = this;
 
-		var buttons = self.svg.selectAll('g.plus')
+		var buttons = self.svg.selectAll('g.plus.' + selector)
 				.data(couples, function(couple){
 					return couple.getId();
 				});
 
-		buttons.enter().append(drawPlus())
+		buttons.enter().append(drawPlus(selector))
 				.on('click', function(couple){
 					var plus = d3.select(this);
 					var loader = self.svg.append('image')
@@ -583,6 +643,45 @@
 						loader.remove();
 					});
 				});
+
+		buttons.exit().remove();
+
+		buttons.attr("transform", function(couple) {
+					var y = self.direction * (couple.y + halfBoxWidth + 20);
+					return "translate(" + y + "," + couple.x + ")";
+				});
+
+	};
+
+	Tree.prototype.drawMinus = function(couples, selector){
+		var self = this;
+
+		var buttons = self.svg.selectAll('g.minus.' + selector)
+				.data(couples, function(couple){
+					return couple.getId();
+				});
+
+		buttons.enter().append(drawMinus(selector))
+				.on('click', function(couple){
+					var minus = d3.select(this);
+					var loader = self.svg.append('image')
+						  .attr({
+						    //'xlink:href': 'https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif',
+						    height: 16,
+						    width: 16,
+						    // transform: minus.attr('transform')
+						  })
+						  .attr("transform", function() {
+						    var y = self.direction * (couple.y + halfBoxWidth + 12);
+						    return "translate(" + y + "," + (couple.x - 8) + ")";
+						  });
+					minus.remove();
+					self._contract(couple).then(function(){
+						loader.remove();
+					});
+				});
+
+		buttons.exit().remove();
 
 		buttons.attr("transform", function(couple) {
 					var y = self.direction * (couple.y + halfBoxWidth + 20);
@@ -704,9 +803,6 @@
 
 		this.children(function(couple){
 			// Convert children map to an array of couples
-			if (couple.a && couple.a.getId() == 27784335){
-				condLog('got JJvanZyl')
-			}
 			var children = couple.getJointChildren(),
 					list = [];
 
@@ -728,10 +824,10 @@
 	/**
 	 * Create an unattached svg group representing the plus sign
 	 */
-	function drawPlus(){
+	function drawPlus(selector){
 		return function(){
 			var group = d3.select(document.createElementNS(d3.ns.prefix.svg, 'g'))
-					.attr('class', 'plus');
+					.attr('class', 'plus ' + selector);
 
 			group.append('circle')
 					.attr({
@@ -742,6 +838,28 @@
 
 			group.append('path')
 					.attr('d', 'M0,5v-10M5,0h-10');
+
+			return group.node();
+		}
+	};
+
+	/**
+	 * Create an unattached svg group representing the minus sign
+	 */
+	 function drawMinus(selector){
+		return function(){
+			var group = d3.select(document.createElementNS(d3.ns.prefix.svg, 'g'))
+					.attr('class', 'minus ' + selector);
+
+			group.append('circle')
+					.attr({
+						cx: 0,
+						cy: 0,
+						r: 10
+					});
+
+			group.append('path')
+					.attr('d', 'M5,0h-10');
 
 			return group.node();
 		}

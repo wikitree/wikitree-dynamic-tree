@@ -162,6 +162,7 @@ WikiTreeAPI.Person.prototype.toString = function() {
 
 const NoSpouse = {
 	isNoSpouse: true,
+	_data: {},
 	getId: function() { return '0000';},
 	isFemale: function() { return false;},
 	isMale: function() { return false;},
@@ -374,7 +375,7 @@ function summaryOfPeople(collection) {
 	return result;
 }
 
-const logit = false;
+const logit = true;
 function condLog(...args) {
 	if (logit) {
 		console.log.apply(null, args)
