@@ -16,8 +16,8 @@
 
 
 	class Couple {
-		constructor(relationId, a, b, focus) {
-			this.rId = relationId;
+		constructor(id, a, b, focus) {
+			this.id = id;
 			if (b === undefined) {
 				if (a === undefined) {
 					throw new Error('Attempting to create an empty couple');
@@ -37,8 +37,8 @@
 				console.error(`Internal ERROR: The focus of a couple cannot be undefined: a=${a}, b=${b}, focus=${focus}`);
 			}
 
-			if ( (a && a.isFemale() && b && !b.isFemale())
-			  || (b && b.isMale() && a && !a.isMale()) ) {
+			if ( (a && a.isFemale() && (!b || !b.isFemale()))
+			  || (b && b.isMale() && (!a || !a.isMale())) ) {
 				// Swap a and b
 				this.a = b;
 				this.b = a;
@@ -48,17 +48,11 @@
 				this.b = b;
 				this.focus = this.focus;
 			}
-			condLog(`new Couple: rId=${this.rId}, focus=${this.focus}, ${this.toString()}`, this.a, this.b)
+			condLog(`new Couple: id=${this.getId()}, focus=${this.focus}, ${this.toString()}`, this.a, this.b)
 		}
 
 		getId() {
-			return `${this.getSimpleId()}-${this.rId}`;
-		}
-
-		getSimpleId() {
-			let aId = this.a ? this.a.getId() : '';
-			let bId = this.b ? this.b.getId() : '';
-			return `${aId}:${bId}`;
+			return this.id;
 		}
 
 		getInFocus() {
@@ -89,7 +83,7 @@
 					list.push(child);
 				}
 			}
-			return list;
+			return sortByBirthDate(list);
 		}
 
 		isComplete() {
@@ -266,8 +260,8 @@
 		var self = this;
 		self.richLoad(id).then(function(person){
 			condLog(`=======RICH_LOADed ${person.toString()}`, person);
-			let aRoot = new Couple(0, person);
-			let dRoot = new Couple(1, person);
+			let aRoot = new Couple('A', person);
+			let dRoot = new Couple('D', person);
 			self.drawTree(aRoot, dRoot);
 		});
 	};
@@ -296,20 +290,21 @@
 		let loadPromises = [];
 		condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`)
 		if (person._data.Spouses) {
-			let col = person._data.Spouses;
-			condLog(`Spouses`,col);
-			for (let i in col) {
-				loadPromises.push(self._load(col[i].getId()));
+			let collection = person._data.Spouses;
+			condLog(`Spouses`,collection);
+			for (let i in collection) {
+				loadPromises.push(self._load(collection[i].getId()));
+				loadPromises.push(self._load(collection[i].getId()));
 			}
 		} else {
 			condLog(`loadRelated called on Person ${person.toString()} without Spouses[]`, person)
 		}
 		if (person._data.Children) {
-			let col = person._data.Children;
-			condLog(`Children`,col);
-			for (let i in col) {
-				condLog(`_loadWithoutChildren ${col[i].toString()}`)
-				loadPromises.push(self._loadWithoutChildren(col[i].getId()));
+			let collection = person._data.Children;
+			condLog(`Children`,collection);
+			for (let i in collection) {
+				condLog(`_loadWithoutChildren ${collection[i].toString()}`)
+				loadPromises.push(self._loadWithoutChildren(collection[i].getId()));
 			}
 		} else {
 			condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person)
@@ -325,7 +320,7 @@
 				condLog(`Setting as child ${newPerson.toString()}`);
 				person._data.Children[id] = newPerson;
 			} else {
-				console.error(`loadRelated ${person.toString()} Promise resolved for neither spouse nor child`, newPerson);
+				console.error(`loadRelated ${person.toString()} Promises resolved for neither spouse nor child`, newPerson);
 			}
 		}
 		return person;
@@ -786,14 +781,14 @@
 				let father = couple.a.getFather();
 				let mother = couple.a.getMother();
 				if(father || mother) {
-					children.push(new Couple(couple.getSimpleId(), father, mother));
+					children.push(new Couple(couple.getId() + 'a', father, mother));
 				}
 			}
 			if (couple.b) {
 				let father = couple.b.getFather();
 				let mother = couple.b.getMother();
 				if(father || mother) {
-					children.push(new Couple(couple.getSimpleId(), father, mother));
+					children.push(new Couple(couple.getId() + 'b', father, mother));
 				}
 			}
 			condLog(`Returning AncestorTree children for ${couple.toString()}`, children)
@@ -817,10 +812,8 @@
 
 			for(var i in children){
 				let child = children[i];
-				list.push(new Couple(couple.getSimpleId(), child));
+				list.push(new Couple(`${couple.getId()}.${i}`, child));
 			}
-
-			sortByBirthDate(list);
 
 			condLog(`Returning DescendantTree children for ${couple.toString()}`, list)
 			return list;
@@ -885,7 +878,7 @@
 		if (person.getBirthDate()) { birth = person.getBirthDate().substr(0,4); }
 		if (person.getDeathDate()) { death = person.getDeathDate().substr(0,4); }
 
-		var lifespan = '';
+		var lifespan = localTesting ? `${person.getId()}: ` : '';
 		if (birth && birth != '0000') { lifespan += birth; }
 		lifespan += ' - ';
 		if (death && death != '0000') { lifespan += death; }
@@ -985,12 +978,13 @@
 	}
 
 	/**
-	 * Sort a list of couples by the birth year of the in-focus person from earliest to latest.
+	 * Sort a list of people by their birth year from earliest to latest.
+	 * People with no birth year is put last.
 	 */
 	function sortByBirthDate(list) {
-		list.sort((a, b) => {
-			const aBirthDate = a.getInFocus().getBirthDate();
-			const bBirthDate = b.getInFocus().getBirthDate();
+		return list.sort((a, b) => {
+			const aBirthDate = a.getBirthDate();
+			const bBirthDate = b.getBirthDate();
 			const aBirthYear = aBirthDate ? aBirthDate.split('-')[0] : 9999;
 			const bBirthYear = bBirthDate ? bBirthDate.split('-')[0] : 9999;
 

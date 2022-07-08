@@ -162,17 +162,18 @@ WikiTreeAPI.Person.prototype.refreshFrom = function(newPerson){
 }
 
 WikiTreeAPI.Person.prototype.toString = function() {
-	return `${this.getId()}: ${this.getDisplayName()} (${this.isEnriched() ? '*' : this.getRichness()})`;
+	return `${this.getId()}: ${this.getDisplayName()} (${this.getRichness()})`;
 }
 
 const NoSpouse = {
 	isNoSpouse: true,
 	_data: {},
-	getId: function() { return '0000';},
-	isFemale: function() { return false;},
-	isMale: function() { return false;},
-	hasAParent: function() { return false;},
-	getSpouse: function(id) { return undefined; }
+	getId: function() { return '0000'; },
+	isFemale: function() { return false; },
+	isMale: function() { return false; },
+	hasAParent: function() { return false; },
+	getSpouse: function(id) { return undefined; },
+	toString: function() { return 'No Spouse'; }
 }
 
 const peopleCache = new Map();
@@ -225,7 +226,6 @@ const REQUIRED_FIELDS = [
 	'FirstName',
 	'MiddleInitial',
 	'LastNameAtBirth',
-	'LastNameCurrent',
 	'BirthDate',
 	'BirthLocation',
 	'DeathDate',
@@ -238,8 +238,7 @@ const REQUIRED_FIELDS = [
 	'Children',
 	'Photo',
 	'Name',
-	'Gender',
-	'Privacy'
+	'Gender'
 ];
 
 // To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
