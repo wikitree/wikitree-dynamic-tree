@@ -155,18 +155,13 @@
 				return;
 			}
 			if (oldSpouse) {
-				// Refresh the spouse data
-				let newSpouse = newPerson.getSpouses()[oldSpouse.getId()];
+				// Refresh the couple spouse if we have new data for the current couple spouse
+				// because the two people forming a couple may not in fact be spouses of each other
+				let newSpouse = newPerson.getSpouse(oldSpouse.getId());
 				if (newSpouse) {
 					oldSpouse.refreshFrom(newSpouse);
 				} else {
-					newSpouse = newPerson.getSpouse();
-					console.error(`Couple ${this.toString} unexpectedly has a new spouse ${newSpouse}; was ${oldSpouse}`);
-					if (side == L) {
-						this.b = newSpouse;
-					} else {
-						this.a = newSpouse;
-					}
+					condLog(`Couple ${this.toString()} spouse ${oldSpouse.toString()} is not a spouse of ${newPerson.toString()}`, newPerson);
 				}
 			}
 			oldPerson.refreshFrom(newPerson);
@@ -304,32 +299,33 @@
 			let col = person._data.Spouses;
 			condLog(`Spouses`,col);
 			for (let i in col) {
-				loadPromises.push(self._load(col[i].getId()))
+				loadPromises.push(self._load(col[i].getId()));
 			}
 		} else {
-			console.error(`loadRelated called on Person ${person.toString()} without Spouses[]`, person)
+			condLog(`loadRelated called on Person ${person.toString()} without Spouses[]`, person)
 		}
 		if (person._data.Children) {
 			let col = person._data.Children;
 			condLog(`Children`,col);
 			for (let i in col) {
 				condLog(`_loadWithoutChildren ${col[i].toString()}`)
-				loadPromises.push(self._loadWithoutChildren(col[i].getId()))
+				loadPromises.push(self._loadWithoutChildren(col[i].getId()));
 			}
 		} else {
-			console.error(`loadRelated called on Person ${person.toString()} without Children[]`, person)
+			condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person)
 		}
 		const results = await Promise.all(loadPromises);
 		for (let i in results) {
 			let newPerson = results[i];
 			let id = newPerson.getId();
-			if (person._data.Spouses[id]) {
+			if (person._data.Spouses && person._data.Spouses[id]) {
 				condLog(`Setting as spouse ${newPerson.toString()}`);
 				person._data.Spouses[id] = newPerson;
-			}
-			if (person._data.Children[id]) {
+			} else if (person._data.Children && person._data.Children[id]) {
 				condLog(`Setting as child ${newPerson.toString()}`);
 				person._data.Children[id] = newPerson;
+			} else {
+				console.error(`loadRelated ${person.toString()} Promise resolved for neither spouse nor child`, newPerson);
 			}
 		}
 		return person;
@@ -342,13 +338,26 @@
 		var self = this;
 		condLog(`loadMore for ${couple.toString()}`, couple)
 		let oldPerson = couple.getInFocus();
+		let oldSpouse = couple.getNotInFocus();
+		let oldSpouseId = oldSpouse && !oldSpouse.isNoSpouse ? oldSpouse.getId() : undefined;
 		if (oldPerson && !oldPerson.isEnriched()) {
 			return self.richLoad(oldPerson.getId()).then(function(newPerson){
-				condLog(`=======RICH_LOADed (in loadMore) ${oldPerson.toString()}`, newPerson);
-				// console.error('RICH_LOAD (in loadMore) completed'); // error just for better visibiity
-
-				couple.refreshPerson(newPerson)
-
+				condLog(`=======RICH_LOADed (in loadMore) ${oldPerson.toString()} getting ${newPerson.toString()}`, newPerson);
+				couple.refreshPerson(newPerson);
+				return newPerson;
+			}).then(function(newPerson){
+				condLog(`=======RICH_LOADed (in loadMore) refreshed ${newPerson.toString()}`, newPerson);
+				let newSpouses = newPerson.getSpouses();
+				if (oldSpouseId && (!newSpouses || !newSpouses[oldSpouseId])) {
+					// the couple partner has not been updated, so we better do that
+					condLog(`Rich loading spouse ${oldSpouse.toString()}`)
+					return self.richLoad(oldSpouseId).then(function(newSpouse){
+						condLog(`=======RICH_LOADed (in loadMore) refreshed spouse ${newPerson.toString()}`, newPerson);
+						couple.refreshPerson(newSpouse);
+					});
+				}
+				condLog('Spouse already refreshed')
+			}).then(function(){
 				condLog(`loadMore done for ${couple.toString()}`, couple)
 				self.drawTree();
 			});
@@ -973,7 +982,6 @@
 		} else {
 			return `${person._data.FirstName.substring(0,1)}. ${person._data.LastNameAtBirth}`;
 		}
-
 	}
 
 	/**
@@ -981,8 +989,10 @@
 	 */
 	function sortByBirthDate(list) {
 		list.sort((a, b) => {
-			const aBirthYear = a.getInFocus()._data.BirthDate.split('-')[0];
-			const bBirthYear = b.getInFocus()._data.BirthDate.split('-')[0];
+			const aBirthDate = a.getInFocus().getBirthDate();
+			const bBirthDate = b.getInFocus().getBirthDate();
+			const aBirthYear = aBirthDate ? aBirthDate.split('-')[0] : 9999;
+			const bBirthYear = bBirthDate ? bBirthDate.split('-')[0] : 9999;
 
 			return aBirthYear - bBirthYear;
 		});

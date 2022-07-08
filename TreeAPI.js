@@ -16,8 +16,7 @@ window.WikiTreeAPI = window.WikiTreeAPI || {};
 WikiTreeAPI.Person = function(data){
 	let self = this;
 	this._data = data;
-	let name = data.BirthName;
-	//consLog(`New person data ${data.Id}: ${data.BirthName}`, data)
+	let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
 	condLog(`New person data: for ${name} (${getRichness(data)})`, data)
 
 	if(data.Parents){
@@ -100,8 +99,14 @@ WikiTreeAPI.Person.prototype.getFather = function() {
 };
 WikiTreeAPI.Person.prototype.hasSpouse = function() { return this._data.Spouses && this._data.FirstSpouseId; }
 WikiTreeAPI.Person.prototype.getSpouses = function() { return this._data.Spouses; }
-WikiTreeAPI.Person.prototype.getSpouse = function() {
+WikiTreeAPI.Person.prototype.getSpouse = function(id) {
 	var self = this;
+	if (id) {
+		if (self._data.Spouses) {
+			return self._data.Spouses[id];
+		}
+		return undefined;
+	}
 	if (this.hasSpouse()) {
 		return self._data.Spouses[self._data.FirstSpouseId];
 	}
@@ -136,10 +141,10 @@ WikiTreeAPI.Person.prototype.setChildren = function(children) { this._data.Child
 
 WikiTreeAPI.Person.prototype.refreshFrom = function(newPerson){
 	if (this.isEnriched()) {
-		console.error(`Suspect refreshFrom called for already enriched ${this.toString()}`)
+		console.error(`Suspect Person.refreshFrom called for already enriched ${this.toString()}`)
 	}
-	if (!newPerson.isEnriched()) {
-		console.error(`Suspect refreshFrom called for from un-enriched ${this.toString()}`)
+	if (!isSameOrHigherRichness(newPerson._data, this._data)) {
+		console.error(`Suspect Person.refreshFrom called on ${this.toString()} for less enriched ${newPerson.toString()}`)
 	}
 	var mother = newPerson.getMother();
 	var father = newPerson.getFather();
@@ -157,7 +162,7 @@ WikiTreeAPI.Person.prototype.refreshFrom = function(newPerson){
 }
 
 WikiTreeAPI.Person.prototype.toString = function() {
-	return `${this.getId()}: ${this._data.BirthName} (${this.isEnriched() ? '*' : this.getRichness()})`;
+	return `${this.getId()}: ${this.getDisplayName()} (${this.isEnriched() ? '*' : this.getRichness()})`;
 }
 
 const NoSpouse = {
@@ -166,6 +171,8 @@ const NoSpouse = {
 	getId: function() { return '0000';},
 	isFemale: function() { return false;},
 	isMale: function() { return false;},
+	hasAParent: function() { return false;},
+	getSpouse: function(id) { return undefined; }
 }
 
 const peopleCache = new Map();
@@ -200,7 +207,7 @@ WikiTreeAPI.clearCache = function() {
 WikiTreeAPI.makePerson = function(data) {
 	let id = data.Id;
 	let cachedPerson = peopleCache.get(id);
-	if (cachedPerson && (cachedPerson.isEnriched() || isSameRichness(cachedPerson._data, data))) {
+	if (cachedPerson && (cachedPerson.isEnriched() || isSameOrHigherRichness(cachedPerson._data, data))) {
 		condLog(`makePerson from cache ${cachedPerson.toString()}`)
 		return cachedPerson;
 	}
@@ -264,7 +271,7 @@ WikiTreeAPI.postToAPI = function(postData) {
 		'url': API_URL,
 
 		// We tell the browser to send any cookie credentials we might have (in case we authenticated).
-		'xhrFields': { withCredentials: true },
+		'xhrFields': { withCredentials: !localTesting },
 
 		// We're POSTing the data so we don't worry about URL size limits and want JSON back.
 		type: 'POST',
@@ -355,8 +362,16 @@ function getRichness(data) {
 	return r;
 }
 
-function isSameRichness(a, b) {
-	return (getRichness(a) ^ getRichness(b)) == 0;
+function getRichnessCount(data) {
+	let c = 0;
+	if (data.Parents) { c += 1 }
+	if (data.Spouses) { c += 1 }
+	if (data.Children) { c += 1 }
+	return c;
+}
+
+function isSameOrHigherRichness(a, b) {
+	return (getRichness(a) ^ getRichness(b)) == 0 || (getRichnessCount(a) > getRichnessCount(b));
 }
 
 // ===================================================================
@@ -375,9 +390,9 @@ function summaryOfPeople(collection) {
 	return result;
 }
 
-const logit = true;
+const localTesting = false;
 function condLog(...args) {
-	if (logit) {
+	if (localTesting) {
 		console.log.apply(null, args)
 	}
 }
