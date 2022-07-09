@@ -416,7 +416,8 @@
 	 * `selector` is a class that will be applied to links
 	 * and nodes so that they can be queried later when
 	 * the tree is redrawn.
-	 * `direction` is either 1 (forward) or -1 (backward).
+	 * `direction` is either 1 (forward, i.e. ancestors) or
+	 * -1 (backward, i.e. descendents).
 	 */
 	var Tree = function(svg, selector, direction){
 		this.svg = svg;
@@ -528,6 +529,9 @@
 				targetX = d.target.x,
 				targetY = dir * (d.target.y - halfBoxWidth);
 
+		// We flip x and y because we draw the tree "on its side", i.e from
+		// left to right rather than from top to bottom which is what the
+		// default coordinate system assumes
 		return "M" + sourceY + "," + sourceX
 			+ "H" + (sourceY + (targetY-sourceY)/2)
 			+ "V" + targetX
@@ -563,8 +567,8 @@
 			.style('overflow', 'visible') // so the name will wrap
 			.append("xhtml:div")
 			.html(couple => {
-				return self.drawPerson(couple.a)
-					.concat(self.drawPerson(couple.b));
+				return self.drawPerson(couple.a, couple.focus == L)
+					.concat(self.drawPerson(couple.b, couple.focus == R));
 			});
 
 		// Show info popup on click
@@ -593,19 +597,23 @@
 		node.attr("transform", function(d) { return "translate(" + (self.direction * d.y) + "," + d.x + ")"; });
 	};
 
-	Tree.prototype.drawPerson = function(person) {
-		let borderColor = 'rgba(102, 204, 102, .5)';
+	Tree.prototype.drawPerson = function(person, inFocus) {
+		let borderColorCode = '102, 204, 102';
 		let name = '?'
 		let lifeSpan = '? - ?'
 		if (person) {
-			if (person.isMale()) { borderColor = 'rgba(102, 102, 204, .5)'; }
-			if (person.isFemale()) { borderColor = 'rgba(204, 102, 102, .5)'; }
+			if (person.isMale()) { borderColorCode = '102, 102, 204'; }
+			if (person.isFemale()) { borderColorCode = '204, 102, 102'; }
 			name = getShortName(person);
 			lifeSpan = lifespan(person);
 		}
 
+		let shading = inFocus && this.direction == -1
+			? `; background-image: linear-gradient(to top right, rgba(${borderColorCode},.2), rgba(${borderColorCode},0), rgba(${borderColorCode},0));`
+			: '';
+
 		return `
-			<div class="box" style="border-color: ${borderColor}">
+			<div class="box" style="border-color: rgba(${borderColorCode},.5)${shading}">
 				<div class="name">${name}</div>
 				<div class="lifespan">${lifeSpan}</div>
 			</div>
@@ -710,7 +718,7 @@
 		var photoUrl = person.getPhotoUrl(75),
 				treeUrl = window.location.pathname + '?id=' + person.getName();
 
-		// Use generic gender photos if there is not profile photo available
+		// Use generic gender photos if there is no profile photo available
 		if(!photoUrl){
 			if(person.getGender() === 'Male'){
 				photoUrl = 'images/icons/male.gif';
