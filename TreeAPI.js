@@ -173,6 +173,7 @@ const NoSpouse = {
 	isMale: function() { return false; },
 	hasAParent: function() { return false; },
 	getSpouse: function(id) { return undefined; },
+	getChildren: function(id) { return []; },
 	toString: function() { return 'No Spouse'; }
 }
 

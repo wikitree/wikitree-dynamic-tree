@@ -13,6 +13,8 @@
 		nodeHeight = boxHeight * 3;
 
 	const L = -1, R = 1;
+	const ANCESTORS = 1;
+	const DESCENDANTS = -1;
 
 
 	class Couple {
@@ -99,8 +101,8 @@
 				((this.a && !this.a._data.Parents) || (this.b && !this.b._data.Parents));
 		}
 
-		isDescendentExpandable() {
-			return !this.children && (this.a && !this.a.getChildren()) && (this.b && !this.b.getChildren());
+		isDescendantExpandable() {
+			return !this.children && ((this.a && !this.a.getChildren()) || (this.b && !this.b.getChildren()));
 		}
 
 		setA(person) {
@@ -168,7 +170,7 @@
 			return new Promise((resolve, reject) => {resolve(this);});
 		}
 
-		removeDescendents() {
+		removeDescendants() {
 			if (this.a && this.a._data.Children) delete this.a._data.Children;
 			if (this.b && this.b._data.Children) delete this.b._data.Children;
 			if (this.children) delete this.children;
@@ -227,7 +229,7 @@
 		});
 
 		self.descendantTree.contract(function(couple){
-			return self.removeDescendents(couple);
+			return self.removeDescendants(couple);
 		});
 
 		// Setup pattern
@@ -369,10 +371,10 @@
 		});
 	};
 
-	WikiTreeDynamicTreeViewer.prototype.removeDescendents = function(couple){
+	WikiTreeDynamicTreeViewer.prototype.removeDescendants = function(couple){
 		var self = this;
-		condLog(`Removing Descendents for ${couple.toString()}`, couple)
-		return couple.removeDescendents().then(function(){
+		condLog(`Removing Descendants for ${couple.toString()}`, couple)
+		return couple.removeDescendants().then(function(){
 			self.drawTree();
 		});
 	};
@@ -396,13 +398,13 @@
 	/**
 	 * Draw/redraw the tree
 	 */
-	WikiTreeDynamicTreeViewer.prototype.drawTree = function(ancestorRoot, descendentRoot){
+	WikiTreeDynamicTreeViewer.prototype.drawTree = function(ancestorRoot, descendantRoot){
 		condLog('drawTree for:', ancestorRoot);
 		if(ancestorRoot){
 			this.ancestorTree.data(ancestorRoot);
 		}
-		if(descendentRoot){
-			this.descendantTree.data(descendentRoot);
+		if(descendantRoot){
+			this.descendantTree.data(descendantRoot);
 		}
 		condLog('draw ancestorTree:', this.ancestorTree);
 		this.ancestorTree.draw();
@@ -417,13 +419,13 @@
 	 * and nodes so that they can be queried later when
 	 * the tree is redrawn.
 	 * `direction` is either 1 (forward, i.e. ancestors) or
-	 * -1 (backward, i.e. descendents).
+	 * -1 (backward, i.e. descendants).
 	 */
-	var Tree = function(svg, selector, direction){
+	var Tree = function(svg, direction){
 		this.svg = svg;
+		this.direction = direction != DESCENDANTS ? ANCESTORS : DESCENDANTS;
+		this.selector = this.getSelector();
 		this.root = null;
-		this.selector = selector;
-		this.direction = typeof direction === 'undefined' ? 1 : direction;
 
 		this._expand = function(){
 			return $.Deferred().resolve().promise();
@@ -438,6 +440,14 @@
 			.separation(function(){
 				return 1;
 			});
+	};
+
+	Tree.prototype.getSelector = function(){
+		if (this.selector) {
+			return this.selector;
+		}
+		this.selector = this.direction == DESCENDANTS ? 'descendant' : 'ancestor';
+		return this.selector;
 	};
 
 	/**
@@ -579,7 +589,7 @@
 
 		// Draw the plus icons
 		var expandable = node.filter(function(couple){
-			return !couple.children && (couple.isAncestorExpandable() || couple.isDescendentExpandable());
+			return!couple.children && self.direction == ANCESTORS ? couple.isAncestorExpandable() : couple.isDescendantExpandable();
 		});
 
 		var contractable = node.filter(function(couple){
@@ -608,7 +618,7 @@
 			lifeSpan = lifespan(person);
 		}
 
-		let shading = inFocus && this.direction == -1
+		let shading = inFocus && this.direction == DESCENDANTS
 			? `; background-image: linear-gradient(to top right, rgba(${borderColorCode},.2), rgba(${borderColorCode},0), rgba(${borderColorCode},0));`
 			: '';
 
@@ -780,7 +790,7 @@
 	 * Manage the ancestors tree
 	 */
 	var AncestorTree = function(svg){
-		Tree.call(this, svg, 'ancestor', 1);
+		Tree.call(this, svg, ANCESTORS);
 
 		this.children(function(couple){
 			condLog(`AncestorTree children for ${couple.toString()}`,couple)
@@ -811,14 +821,14 @@
 	 * Manage the descendants tree
 	 */
 	var DescendantTree = function(svg){
-		Tree.call(this, svg, 'descendant', -1);
+		Tree.call(this, svg, DESCENDANTS);
 
 		this.children(function(couple){
 			// Convert children map to an array of couples
 			var children = couple.getJointChildren(),
 					list = [];
 
-			for(var i in children){
+			for (var i in children){
 				let child = children[i];
 				list.push(new Couple(`${couple.getId()}.${i}`, child));
 			}
