@@ -394,10 +394,10 @@
 			return await WikiTreeAPI.getPerson(id);
 		};
 
-		REQUIRED_FIELDS_NO_CHILDREN = REQUIRED_FIELDS.filter(item => item != 'Children');
+		static REQUIRED_FIELDS_NO_CHILDREN = REQUIRED_FIELDS.filter(item => item != 'Children');
 
 		async loadWithoutChildren(id) {
-			return await WikiTreeAPI.getPerson(id, REQUIRED_FIELDS_NO_CHILDREN);
+			return await WikiTreeAPI.getPerson(id, WikiTreeDynamicTreeViewer.REQUIRED_FIELDS_NO_CHILDREN);
 		};
 
 		/**
