@@ -13,14 +13,14 @@ The index page sets up a basic control container where the user can provide a st
 
 Once there is a starting profile id (either provided in the form or taken from the API login) and a view is selected (defaulting to the WikiTree Dynamic Tree), the view is drawn in a container.
 
-The dynamic tree can be zoomed and panned with the mouse. Clicking on a plus-sign expands the tree by loading additional ancestors or descendants. Clicking a node displays a pop-up with additional profile information.
+The dynamic tree can be zoomed and panned with the mouse. Clicking on a plus-sign expands the tree by loading additional ancestors or descendants. Clicking on a minus-sign prunes the relevant ancestor or descendant subtree. Clicking a node displays a pop-up with additional profile information.
 
-A new tree can be displayed by entering a new WikiTree ID in the form and clicking "go". 
+A new tree can be displayed by entering a new WikiTree ID in the form and clicking "go".
 
 
 ## Notes
 
-### [Tree.js](Tree.js) 
+### [Tree.js](Tree.js)
 This is the scaffolding code to set things up on page load and launch the appropriate tree view when a new one is selected or a new starting profile is provided.
 
 Cookies are used to store the API login id (if there is one), the starting profile id, and the selected view. Those are used as defaults when the page reloads.

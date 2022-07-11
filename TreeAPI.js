@@ -6,6 +6,11 @@
  *
  */
 
+// Set to true if you run this from your desktop. This would require that you have installed a browser
+// extension like the following one for Chrome
+//     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
+// Setting this to true also enables a lot of logging to the console.
+const localTesting = false;
 
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
@@ -13,172 +18,167 @@ window.WikiTreeAPI = window.WikiTreeAPI || {};
 // Our basic constructor for a Person. We expect the "person" data from the API returned result
 // (see getPersonViaAPI below). The basic fields are just stored in the internal _data array.
 // We pull out the Parent and Child elements as their own Person objects.
-WikiTreeAPI.Person = function(data){
-	let self = this;
-	this._data = data;
-	let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
-	condLog(`New person data: for ${name} (${getRichness(data)})`, data)
+WikiTreeAPI.Person = class Person {
+	constructor(data) {
+		this._data = data;
+		let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
+		condLog(`New person data: for ${name} (${getRichness(data)})`, data)
 
-	if(data.Parents){
-		condLog(`Setting parents for ${name}`)
-		for(var p in data.Parents){
-			self._data.Parents[p] = WikiTreeAPI.makePerson(data.Parents[p]);
+		if (data.Parents) {
+			condLog(`Setting parents for ${name}`)
+			for (let p in data.Parents) {
+				this._data.Parents[p] = WikiTreeAPI.makePerson(data.Parents[p]);
+			}
 		}
-	}
 
-	self.setSpouses(data);
+		this.setSpouses(data);
 
-	if(data.Children){
-		condLog(`Setting children for ${name}`)
-		for(var c in data.Children){
-			self._data.Children[c] = WikiTreeAPI.makePerson(data.Children[c]);
+		if (data.Children) {
+			condLog(`Setting children for ${name}`)
+			for (let c in data.Children) {
+				this._data.Children[c] = WikiTreeAPI.makePerson(data.Children[c]);
+			}
 		}
-	}
-	this._data.noMoreSpouses = data.DataStatus.Spouse == 'blank';
-	// consLog('Person created:', this._data)
-};
+		this._data.noMoreSpouses = data.DataStatus.Spouse == 'blank';
+	};
 
-WikiTreeAPI.Person.prototype.setSpouses = function(data) {
-	let self = this;
-	self._data.FirstSpouseId = undefined
-	if(data.Spouses) {
-		condLog(`setSpouses for ${data.BirthName}: ${summaryOfPeople(data.Spouses)}`, data.Spouses)
-		let list = [];
-		for(let s in data.Spouses) {
-			list.push(WikiTreeAPI.makePerson(data.Spouses[s]));
-		}
-		sortByMarriageDate(list);
-		if (list.length > 0) {
-			self._data.FirstSpouseId = list[0].getId();
-			for (let i in list) {
-				let spouse = list[i];
-				self._data.Spouses[spouse.getId()] = spouse;
+	setSpouses(data) {
+		this._data.FirstSpouseId = undefined
+		if (data.Spouses) {
+			condLog(`setSpouses for ${data.BirthName}: ${summaryOfPeople(data.Spouses)}`, data.Spouses)
+			let list = [];
+			for (let s in data.Spouses) {
+				list.push(WikiTreeAPI.makePerson(data.Spouses[s]));
+			}
+			sortByMarriageDate(list);
+			if (list.length > 0) {
+				this._data.FirstSpouseId = list[0].getId();
+				for (let i in list) {
+					let spouse = list[i];
+					this._data.Spouses[spouse.getId()] = spouse;
+				}
 			}
 		}
 	}
-}
 
-WikiTreeAPI.Person.prototype.copySpouses = function(person) {
-	this._data.FirstSpouseId = person._data.FirstSpouseId
-	this._data.Spouses = person._data.Spouses
-}
+	copySpouses(person) {
+		this._data.FirstSpouseId = person._data.FirstSpouseId
+		this._data.Spouses = person._data.Spouses
+	}
 
-// Basic "getters" for the data elements.
-WikiTreeAPI.Person.prototype.getId = function() { return this._data.Id; }
-WikiTreeAPI.Person.prototype.getName = function() { return this._data.Name; }
-WikiTreeAPI.Person.prototype.getGender = function() { return this._data.Gender; }
-WikiTreeAPI.Person.prototype.isMale = function() { return this.getGender() == 'Male'; }
-WikiTreeAPI.Person.prototype.isFemale = function() { return this.getGender() == 'Female'; }
-WikiTreeAPI.Person.prototype.isEnriched = function() { return this._data.Parents && this._data.Spouses && this._data.Children; }
-WikiTreeAPI.Person.prototype.getBirthDate = function() { return this._data.BirthDate; }
-WikiTreeAPI.Person.prototype.getBirthLocation = function() { return this._data.BirthLocation; }
-WikiTreeAPI.Person.prototype.getDeathDate = function() { return this._data.DeathDate; }
-WikiTreeAPI.Person.prototype.getDeathLocation = function() { return this._data.DeathLocation; }
-WikiTreeAPI.Person.prototype.getChildren = function() { return this._data.Children; }
-WikiTreeAPI.Person.prototype.getFatherId = function() { return this._data.Father; }
-WikiTreeAPI.Person.prototype.getMotherId = function() { return this._data.Mother; }
-WikiTreeAPI.Person.prototype.hasAParent = function() { return this.getFatherId() || this.getMotherId(); }
-WikiTreeAPI.Person.prototype.hasNoSpouse = function() { return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0; }
-WikiTreeAPI.Person.prototype.getDisplayName = function() { return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate; }
-WikiTreeAPI.Person.prototype.getPhotoUrl = function() {
-	if (this._data.PhotoData && this._data.PhotoData['url']) {
-		return this._data.PhotoData['url'];
+	// Basic "getters" for the data elements.
+	getId() { return this._data.Id; }
+	getName() { return this._data.Name; }
+	getGender() { return this._data.Gender; }
+	isMale() { return this.getGender() == 'Male'; }
+	isFemale() { return this.getGender() == 'Female'; }
+	isEnriched() { return this._data.Parents && this._data.Spouses && this._data.Children; }
+	getBirthDate() { return this._data.BirthDate; }
+	getBirthLocation() { return this._data.BirthLocation; }
+	getDeathDate() { return this._data.DeathDate; }
+	getDeathLocation() { return this._data.DeathLocation; }
+	getChildren() { return this._data.Children; }
+	getFatherId() { return this._data.Father; }
+	getMotherId() { return this._data.Mother; }
+	hasAParent() { return this.getFatherId() || this.getMotherId(); }
+	hasNoSpouse() { return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0; }
+	getDisplayName() { return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate; }
+	getPhotoUrl() {
+		if (this._data.PhotoData && this._data.PhotoData['url']) {
+			return this._data.PhotoData['url'];
+		}
 	}
-}
-// Getters for Mother and Father return the Person objects, if there is one.
-// The getMotherId and getFatherId functions above return the actual .Mother and .Father data elements (ids).
-WikiTreeAPI.Person.prototype.getMother = function() {
-	if (this._data.Mother && this._data.Parents) {
-		return this._data.Parents[this._data.Mother];
-	}
-};
-WikiTreeAPI.Person.prototype.getFather = function() {
-	if (this._data.Father && this._data.Parents) {
-		return this._data.Parents[this._data.Father];
-	}
-};
-WikiTreeAPI.Person.prototype.hasSpouse = function() { return this._data.Spouses && this._data.FirstSpouseId; }
-WikiTreeAPI.Person.prototype.getSpouses = function() { return this._data.Spouses; }
-WikiTreeAPI.Person.prototype.getSpouse = function(id) {
-	var self = this;
-	if (id) {
-		if (self._data.Spouses) {
-			return self._data.Spouses[id];
+	// Getters for Mother and Father return the Person objects, if there is one.
+	// The getMotherId and getFatherId functions above return the actual .Mother and .Father data elements (ids).
+	getMother() {
+		if (this._data.Mother && this._data.Parents) {
+			return this._data.Parents[this._data.Mother];
+		}
+	};
+	getFather() {
+		if (this._data.Father && this._data.Parents) {
+			return this._data.Parents[this._data.Father];
+		}
+	};
+	hasSpouse() { return this._data.Spouses && this._data.FirstSpouseId; }
+	getSpouses() { return this._data.Spouses; }
+	getSpouse(id) {
+		if (id) {
+			if (this._data.Spouses) {
+				return this._data.Spouses[id];
+			}
+			return undefined;
+		}
+		if (this.hasSpouse()) {
+			return this._data.Spouses[this._data.FirstSpouseId];
+		}
+		if (this.hasNoSpouse()) {
+			return NoSpouse;
 		}
 		return undefined;
+	};
+	getRichness() {
+		return getRichness(this._data);
 	}
-	if (this.hasSpouse()) {
-		return self._data.Spouses[self._data.FirstSpouseId];
+
+	// We use a few "setters". For the parents, we want to update the Parents Person objects as well as the ids themselves.
+	// For TreeViewer we only set the parents and children, so we don't need setters for all the _data elements.
+	setMother(person) {
+		let id = person.getId();
+		let oldId = this._data.Mother;
+		this._data.Mother = id;
+		if (!this._data.Parents) { this._data.Parents = {}; }
+		else if (oldId) { delete this._data.Parents[oldId]; }
+		this._data.Parents[id] = person;
+	};
+	setFather(person) {
+		let id = person.getId();
+		let oldId = this._data.Father;
+		this._data.Father = id;
+		if (!this._data.Parents) { this._data.Parents = {}; }
+		else if (oldId) { delete this._data.Parents[oldId]; }
+		this._data.Parents[id] = person;
+	};
+	setChildren(children) { this._data.Children = children; }
+
+	refreshFrom(newPerson) {
+		if (this.isEnriched()) {
+			console.error(`Suspect Person.refreshFrom called for already enriched ${this.toString()}`)
+		}
+		if (!isSameOrHigherRichness(newPerson._data, this._data)) {
+			console.error(`Suspect Person.refreshFrom called on ${this.toString()} for less enriched ${newPerson.toString()}`)
+		}
+		let mother = newPerson.getMother();
+		let father = newPerson.getFather();
+
+		if (mother) {
+			this.setMother(mother);
+		}
+		if (father) {
+			this.setFather(father);
+		}
+		if (newPerson.hasSpouse()) {
+			this.copySpouses(newPerson);
+		}
+		this.setChildren(newPerson.getChildren());
 	}
-	if (this.hasNoSpouse()) {
-		return NoSpouse;
+
+	toString() {
+		return `${this.getId()}: ${this.getDisplayName()} (${this.getRichness()})`;
 	}
-	return undefined;
-};
-WikiTreeAPI.Person.prototype.getRichness = function() {
-	return getRichness(this._data);
 }
 
-// We use a few "setters". For the parents, we want to update the Parents Person objects as well as the ids themselves.
-// For TreeViewer we only set the parents and children, so we don't need setters for all the _data elements.
-WikiTreeAPI.Person.prototype.setMother = function(person) {
-	var id = person.getId();
-	var oldId = this._data.Mother;
-	this._data.Mother = id;
-	if (!this._data.Parents) { this._data.Parents = {}; }
-	else if (oldId) { delete this._data.Parents[oldId]; }
-	this._data.Parents[id] = person;
-};
-WikiTreeAPI.Person.prototype.setFather = function(person) {
-	var id = person.getId();
-	var oldId = this._data.Father;
-	this._data.Father = id;
-	if (!this._data.Parents) { this._data.Parents = {}; }
-	else if (oldId) { delete this._data.Parents[oldId]; }
-	this._data.Parents[id] = person;
-};
-WikiTreeAPI.Person.prototype.setChildren = function(children) { this._data.Children = children; }
-
-WikiTreeAPI.Person.prototype.refreshFrom = function(newPerson){
-	if (this.isEnriched()) {
-		console.error(`Suspect Person.refreshFrom called for already enriched ${this.toString()}`)
+class NullPerson extends WikiTreeAPI.Person{
+	constructor(){
+		super({Id: '0000', Children: [], DataStatus: {Spouse: 'blank'}});
+		this.isNoSpouse = true;
 	}
-	if (!isSameOrHigherRichness(newPerson._data, this._data)) {
-		console.error(`Suspect Person.refreshFrom called on ${this.toString()} for less enriched ${newPerson.toString()}`)
-	}
-	var mother = newPerson.getMother();
-	var father = newPerson.getFather();
-
-	if(mother){
-		this.setMother(mother);
-	}
-	if(father){
-		this.setFather(father);
-	}
-	if (newPerson.hasSpouse()) {
-		this.copySpouses(newPerson);
-	}
-	this.setChildren(newPerson.getChildren());
+	toString() { return 'No Spouse'; }
 }
 
-WikiTreeAPI.Person.prototype.toString = function() {
-	return `${this.getId()}: ${this.getDisplayName()} (${this.getRichness()})`;
-}
-
-const NoSpouse = {
-	isNoSpouse: true,
-	_data: {},
-	getId: function() { return '0000'; },
-	isFemale: function() { return false; },
-	isMale: function() { return false; },
-	hasAParent: function() { return false; },
-	getSpouse: function(id) { return undefined; },
-	getChildren: function(id) { return []; },
-	toString: function() { return 'No Spouse'; }
-}
-
+const NoSpouse = new NullPerson();
 const peopleCache = new Map();
-WikiTreeAPI.clearCache = function() {
+WikiTreeAPI.clearCache = function () {
 	peopleCache.clear();
 }
 
@@ -187,18 +187,17 @@ WikiTreeAPI.clearCache = function() {
  * However, if an enriched person with the given id already exists in our cache,
  * rather return the cached value in the promise rather than making a new API call.
  */
- WikiTreeAPI.getPerson = function(id, fields) {
+WikiTreeAPI.getPerson = async function (id, fields) {
 	let cachedPerson = peopleCache.get(id);
 	if (cachedPerson && cachedPerson.isEnriched()) {
 		condLog(`getPerson from cache ${cachedPerson.toString()}`)
-		return new Promise((resolve, reject) => {resolve(cachedPerson);});
+		return new Promise((resolve, reject) => { resolve(cachedPerson); });
 	}
 
-	return WikiTreeAPI.getPersonViaAPI(id, fields).then(function(newPerson){
-		condLog(`getPerson caching ${newPerson.toString()}`)
-		peopleCache.set(id, newPerson);
-		return newPerson;
-	});
+	const newPerson = await WikiTreeAPI.getPersonViaAPI(id, fields);
+	condLog(`getPerson caching ${newPerson.toString()}`);
+	peopleCache.set(id, newPerson);
+	return newPerson;
 }
 
 /**
@@ -206,7 +205,7 @@ WikiTreeAPI.clearCache = function() {
  * However, if an enriched person with the given id already exists in our cache,
  * rather return the cached value.
  */
-WikiTreeAPI.makePerson = function(data) {
+WikiTreeAPI.makePerson = function (data) {
 	let id = data.Id;
 	let cachedPerson = peopleCache.get(id);
 	if (cachedPerson && (cachedPerson.isEnriched() || isSameOrHigherRichness(cachedPerson._data, data))) {
@@ -244,44 +243,39 @@ const REQUIRED_FIELDS = [
 
 // To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
 // we convert the returned JSON data into a Person object.
-// Note that postToAPI returns the Promise from jquery's .ajax() call.
+// Note that fetchViaAPI returns the Promise from JavaScript's fetch() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 // So we can use this through our asynchronous actions with something like:
 //    WikiTree.getPersonViaAPI.then(function(result) {
 //       // the "result" here is that from our API call. The profile data is in result[0].person.
 // 	  });
 //
-WikiTreeAPI.getPersonViaAPI = function(id,fields=REQUIRED_FIELDS) {
-	return WikiTreeAPI.postToAPI( { 'action': 'getPerson', 'key': id, 'fields': fields.join(','), 'resolveRedirect': 1 } )
-		.then(function(result) {
-			//condLog('getPersonViaAPI return data', result[0].person)
-			return new WikiTreeAPI.Person(result[0].person);
-		});
+WikiTreeAPI.getPersonViaAPI = async function(id,fields=REQUIRED_FIELDS) {
+	const result = await WikiTreeAPI.fetchViaAPI(
+		{ 'action': 'getPerson', 'key': id, 'fields': fields.join(','), 'resolveRedirect': 1 });
+	return new WikiTreeAPI.Person(result[0].person);
 }
 
-// This is just a wrapper for the Ajax call, sending along necessary options for the WikiTree API.
-WikiTreeAPI.postToAPI = function(postData) {
-	var API_URL = 'https://api.wikitree.com/api.php';
 
-	// let f = [];
-	// if (postData.fields) {f = postData.fields.split(',')}
-	// condLog(`postToAPI: ${postData.action} ${postData.key}`, f)
-	var ajax = $.ajax({
-		// The WikiTree API endpoint
-		'url': API_URL,
-
-		// We tell the browser to send any cookie credentials we might have (in case we authenticated).
-		'xhrFields': { withCredentials: !localTesting },
-
-		// We're POSTing the data so we don't worry about URL size limits and want JSON back.
-		type: 'POST',
-		dataType: 'json',
-		data: postData
-	});
-
-	return ajax;
+WikiTreeAPI.fetchViaAPI = async function (postData) {
+	let formData = new FormData();
+	for (var key in postData) {
+		formData.append(key, postData[key]);
+	}
+	let options = {
+		method: 'POST',
+		credentials: localTesting ? 'omit' : 'include',
+		headers: {
+		    'Content-Type': 'application/x-www-form-urlencoded',
+		},
+		body: new URLSearchParams(formData)
+	}
+	const response = await fetch('https://api.wikitree.com/api.php', options)
+	if (!response.ok) {
+		throw new Error(`HTTP error! Status: ${response.status}: ${response.statusText}`);
+	}
+	return await response.json();
 }
-
 
 // Utility function to get/set cookie data.
 // Adapated from https://github.com/carhartl/jquery-cookie which is obsolete and has been
@@ -297,14 +291,14 @@ WikiTreeAPI.postToAPI = function(postData) {
 //           options.path, e.g. "/"
 //           options.domain, e.g. "apps.wikitree.com"
 //           options.secure, if true then cookie created with ";secure"
-WikiTreeAPI.cookie = function(key, value, options) {
+WikiTreeAPI.cookie = function (key, value, options) {
 	if (options === undefined) { options = {}; }
 
 	// If we have a value, we're writing/setting the cookie.
 	if (value !== undefined) {
 		if (value === null) { options.expires = -1; }
 		if (typeof options.expires === 'number') {
-			var days = options.expires;
+			let days = options.expires;
 			options.expires = new Date();
 			options.expires.setDate(options.expires.getDate() + days);
 		}
@@ -312,21 +306,21 @@ WikiTreeAPI.cookie = function(key, value, options) {
 		return (document.cookie = [
 			encodeURIComponent(key), '=', value,
 			options.expires ? '; expires=' + options.expires.toUTCString() : '',
-			options.path    ? '; path=' + options.path : '',
-			options.domain  ? '; domain=' + options.domain : '',
-			options.secure  ? '; secure' : ''
+			options.path ? '; path=' + options.path : '',
+			options.domain ? '; domain=' + options.domain : '',
+			options.secure ? '; secure' : ''
 		].join(''));
 	}
 
 	// We're not writing/setting the cookie, we're reading a value from it.
-	var cookies = document.cookie.split('; ');
+	let cookies = document.cookie.split('; ');
 
-	var result = key ? null : {};
-	for (var i=0,l=cookies.length; i<l; i++) {
-		var parts = cookies[i].split('=');
-		var name = parts.shift();
+	let result = key ? null : {};
+	for (let i = 0, l = cookies.length; i < l; i++) {
+		let parts = cookies[i].split('=');
+		let name = parts.shift();
 		name = decodeURIComponent(name.replace(/\+/g, ' '));
-		var value = parts.join('=');
+		let value = parts.join('=');
 		value = decodeURIComponent(value.replace(/\+/g, ' '));
 
 		if (key && key === name) {
@@ -342,7 +336,7 @@ WikiTreeAPI.cookie = function(key, value, options) {
 }
 
 /**
- * Sort a list of Person objects by their marriage data.
+ * Sort a list of Person objects by their marriage date.
  * A person with no marriage date is placed at the end.
  */
 function sortByMarriageDate(list) {
@@ -384,13 +378,12 @@ function personSummary(data) {
 function summaryOfPeople(collection) {
 	let result = '';
 	for (let i in collection) {
-		if (result.length > 0) {result = result.concat(',');}
+		if (result.length > 0) { result = result.concat(','); }
 		result = result.concat(personSummary(collection[i]));
 	}
 	return result;
 }
 
-const localTesting = false;
 function condLog(...args) {
 	if (localTesting) {
 		console.log.apply(null, args)
