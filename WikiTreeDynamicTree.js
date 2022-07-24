@@ -300,28 +300,27 @@
 			let loadPromises = [];
 			condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`)
 			if (person._data.Spouses) {
-				let collection = person._data.Spouses;
-				condLog(`Spouses`, collection);
-				for (let i in collection) {
-					loadPromises.push(this.load(collection[i].getId()));
-					loadPromises.push(this.load(collection[i].getId()));
+				let spouses = person._data.Spouses;
+				condLog(`Spouses`, spouses);
+				for (let i in spouses) {
+					condLog(`load ${spouses[i].toString()}`)
+					loadPromises.push(this.load(spouses[i].getId()));
 				}
 			} else {
 				condLog(`loadRelated called on Person ${person.toString()} without Spouses[]`, person)
 			}
 			if (person._data.Children) {
-				let collection = person._data.Children;
-				condLog(`Children`, collection);
-				for (let i in collection) {
-					condLog(`loadWithoutChildren ${collection[i].toString()}`)
-					loadPromises.push(this.loadWithoutChildren(collection[i].getId()));
+				let children = person._data.Children;
+				condLog(`Children`, children);
+				for (let i in children) {
+					condLog(`loadWithoutChildren ${children[i].toString()}`)
+					loadPromises.push(this.loadWithoutChildren(children[i].getId()));
 				}
 			} else {
 				condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person)
 			}
 			const results = await Promise.all(loadPromises);
-			for (let i in results) {
-				let newPerson = results[i];
+			for (let newPerson of results) {
 				let id = newPerson.getId();
 				if (person._data.Spouses && person._data.Spouses[id]) {
 					condLog(`Setting as spouse ${newPerson.toString()}`);
@@ -825,11 +824,11 @@
 
 			this.children(function (couple) {
 				// Convert children map to an array of couples
-				let children = couple.getJointChildren(), list = [];
+				let children = couple.getJointChildren();
+				let list = [];
 
 				for (let i in children) {
-					let child = children[i];
-					list.push(new Couple(`${couple.getId()}.${i}`, child));
+					list.push(new Couple(`${couple.getId()}.${i}`, children[i]));
 				}
 
 				condLog(`Returning DescendantTree children for ${couple.toString()}`, list);

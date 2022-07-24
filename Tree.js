@@ -54,7 +54,7 @@ $(document).ready(function() {
 		// We have an auth code to confirm. Show our interim message div while we do.
 		// This is very brief; one the clientLogin() returns we redirect back to ourselves.
 		$('#confirmAuth').show();
-		WikiTreeAPI.postToAPI( { 'action':'clientLogin', 'authcode': authcode } )
+		WikiTreeAPI.fetchViaAPI( { 'action':'clientLogin', 'authcode': authcode } )
 		.then(function(data) {
 			if (data.clientLogin.result == 'Success') {
 				WikiTreeAPI.cookie('WikiTreeAPI_userName', data.clientLogin.username, { 'path': '/'} );
@@ -129,7 +129,7 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 			<div id="treeViewerContainerInner"></div>
 		`);
 
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields} )
+		WikiTreeAPI.fetchViaAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields} )
 		.then(function(data) {
 			updateViewedPersonContent(data[0].person);
 			$('#treeViewerContainerInner').html("<xmp>"+JSON.stringify(data,null,3)+"</xmp>");

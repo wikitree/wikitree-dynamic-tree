@@ -6,11 +6,12 @@
  *
  */
 
-// Set to true if you run this from your desktop. This would require that you have installed a browser
-// extension like the following one for Chrome
+// Set localTesting to true if you run this from your desktop. This would require that you have installed a browser
+// extension to fiddle with CORS permissions, like the following one for Chrome
 //     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
 // Setting this to true also enables a lot of logging to the console.
 const localTesting = false;
+const logit = localTesting || false	// changing false to true allows one to turn on logging even if not local testing
 
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
@@ -53,8 +54,7 @@ WikiTreeAPI.Person = class Person {
 			sortByMarriageDate(list);
 			if (list.length > 0) {
 				this._data.FirstSpouseId = list[0].getId();
-				for (let i in list) {
-					let spouse = list[i];
+				for (let spouse of list) {
 					this._data.Spouses[spouse.getId()] = spouse;
 				}
 			}
@@ -375,17 +375,17 @@ function personSummary(data) {
 	return `${data.BirthName} (${getRichness(data)})`
 }
 
-function summaryOfPeople(collection) {
+function summaryOfPeople(people) {
 	let result = '';
-	for (let i in collection) {
+	for (let person in people) {
 		if (result.length > 0) { result = result.concat(','); }
-		result = result.concat(personSummary(collection[i]));
+		result = result.concat(personSummary(person));
 	}
 	return result;
 }
 
 function condLog(...args) {
-	if (localTesting) {
+	if (logit) {
 		console.log.apply(null, args)
 	}
 }
