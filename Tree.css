@@ -16,6 +16,7 @@
   margin: 16px;
   display:none;
   overflow: auto;
+  font-family: sans-serif;
 }
 
 /* An interim div that's just briefly displayed when the API clientLogin returns with an authcode to be verified. */
@@ -59,11 +60,30 @@
 }
 
 .person .name {
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .person .lifespan {
   font-size: 12px;
+}
+
+.altSpouse {
+  font-size: 14px;
+}
+
+.alt-spouse-list-wrapper h4 {
+  margin: 12px;
+}
+
+.spouse-list ol, .children-list ol {
+  border: none;
+  margin: 12px;
+  padding-top: 0px;
+  padding-left: 20px;
+}
+
+.children-list-wrapper {
+  font-size: 14px;
 }
 
 .link {

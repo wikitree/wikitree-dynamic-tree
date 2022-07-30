@@ -22,11 +22,11 @@ window.WikiTreeAPI = window.WikiTreeAPI || {};
 WikiTreeAPI.Person = class Person {
 	constructor(data) {
 		this._data = data;
-		let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
-		condLog(`New person data: for ${name} (${getRichness(data)})`, data)
+		let name = this.getDisplayName();
+		condLog(`New person data: for ${this.getId()}: ${name} (${getRichness(data)})`, data)
 
 		if (data.Parents) {
-			condLog(`Setting parents for ${name}`)
+			condLog(`Setting parents for ${this.getId()}: ${name}...`)
 			for (let p in data.Parents) {
 				this._data.Parents[p] = WikiTreeAPI.makePerson(data.Parents[p]);
 			}
@@ -35,18 +35,19 @@ WikiTreeAPI.Person = class Person {
 		this.setSpouses(data);
 
 		if (data.Children) {
-			condLog(`Setting children for ${name}`)
+			condLog(`Setting children for ${this.getId()}: ${name}`)
 			for (let c in data.Children) {
 				this._data.Children[c] = WikiTreeAPI.makePerson(data.Children[c]);
 			}
 		}
-		this._data.noMoreSpouses = data.DataStatus.Spouse == 'blank';
+
+		this._data.noMoreSpouses = data.DataStatus ? data.DataStatus.Spouse == 'blank' : false;
 	};
 
 	setSpouses(data) {
 		this._data.FirstSpouseId = undefined
 		if (data.Spouses) {
-			condLog(`setSpouses for ${data.BirthName}: ${summaryOfPeople(data.Spouses)}`, data.Spouses)
+			condLog(`setSpouses for ${this.getId()}: ${this.getDisplayName()}: ${summaryOfPeople(data.Spouses)}`, data.Spouses)
 			let list = [];
 			for (let s in data.Spouses) {
 				list.push(WikiTreeAPI.makePerson(data.Spouses[s]));
@@ -139,7 +140,9 @@ WikiTreeAPI.Person = class Person {
 		else if (oldId) { delete this._data.Parents[oldId]; }
 		this._data.Parents[id] = person;
 	};
-	setChildren(children) { this._data.Children = children; }
+	setChildren(children) {
+		this._data.Children = children;
+	}
 
 	refreshFrom(newPerson) {
 		if (this.isEnriched()) {
@@ -200,6 +203,28 @@ WikiTreeAPI.getPerson = async function (id, fields) {
 	return newPerson;
 }
 
+WikiTreeAPI.getWithoutChildren = async function (id) {
+	return WikiTreeAPI.getPerson(id, REQUIRED_FIELDS_NO_CHILDREN);
+};
+
+WikiTreeAPI.getSpouseAndChildrenNames = async function (id) {
+	let cachedPerson = peopleCache.get(id);
+	if (cachedPerson && cachedPerson.getChildren() && cachedPerson.getSpouses()) {
+		condLog(`getSpouseAndChildrenNames from cache ${cachedPerson.toString()}`)
+		return new Promise((resolve, reject) => { resolve(cachedPerson); });
+	}
+
+	const result = await WikiTreeAPI.fetchViaAPI({
+		'action': 'getRelatives',
+		'keys': id,
+		'fields': 'Id,Name,FirstName,LastName,Derived.BirthName,Derived.BirthNamePrivate,LastNameAtBirth,MiddleInitial,BirthDate,DeathDate',
+		'getChildren': 1,
+		'getSpouses': 1
+	} );
+	//condLog('>>>Creating new Person from getSpouseAndChildrenNames...')
+	return new WikiTreeAPI.Person(result[0].items[0].person);
+}
+
 /**
  * Construct a person object from the given data object rerieved via an API call.
  * However, if an enriched person with the given id already exists in our cache,
@@ -240,6 +265,7 @@ const REQUIRED_FIELDS = [
 	'Name',
 	'Gender'
 ];
+const REQUIRED_FIELDS_NO_CHILDREN = REQUIRED_FIELDS.filter(item => item != 'Children');
 
 // To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
 // we convert the returned JSON data into a Person object.
@@ -258,6 +284,7 @@ WikiTreeAPI.getPersonViaAPI = async function(id,fields=REQUIRED_FIELDS) {
 
 
 WikiTreeAPI.fetchViaAPI = async function (postData) {
+	// condLog(`-----Fetch via API, key=${postData.key ? postData.key : postData.keys}`, postData.fields)
 	let formData = new FormData();
 	for (var key in postData) {
 		formData.append(key, postData[key]);
@@ -372,14 +399,14 @@ function isSameOrHigherRichness(a, b) {
 // Functions used in debug logging
 
 function personSummary(data) {
-	return `${data.BirthName} (${getRichness(data)})`
+	return `${data.Id}: ${data.BirthName} (${getRichness(data)})`
 }
 
 function summaryOfPeople(people) {
 	let result = '';
-	for (let person in people) {
+	for (let i in people) {
 		if (result.length > 0) { result = result.concat(','); }
-		result = result.concat(personSummary(person));
+		result = result.concat(personSummary(people[i]));
 	}
 	return result;
 }

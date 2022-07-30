@@ -6,7 +6,7 @@
 	let originOffsetX = 500,
 		originOffsetY = 300,
 		boxWidth = 200,
-		boxHeight = 50,
+		boxHeight = 46,
 		halfBoxWidth = boxWidth / 2,
 		halfBoxHeight = boxHeight / 2,
 		nodeWidth = boxWidth * 1.5,
@@ -15,6 +15,8 @@
 	const L = -1, R = 1;
 	const ANCESTORS = 1;
 	const DESCENDANTS = -1;
+	const DOWN_ARROW = '\u21e9';
+	const UP_ARROW = '\u21e7';
 
 
 	/**
@@ -287,7 +289,13 @@
 		 * already retrieved the 'enriched' person in the past.
 		 *
 		 * We do not have to make API calls for the parents as part of loadRelated since
-		 * a parent will be richLoaded before they are expanded.
+		 * a parent will be richLoaded before they are expanded. However, since we need
+		 * to know the names of a person's siblings and the names of both of their parents'
+		 * other spouses (if any) in order to construct children and spouse dropdowns for
+		 * each profile, we make getRelatives calls (if necessary) on each parent of the
+		 * profile being richLoaded as well as on the parents of his/her spouses.
+		 *
+		 * These calls are only made if we have not rerieved the relevant data inthe past.
 		 */
 		 async richLoad(id) {
 			condLog(`=======RICH_LOAD ${id}`);
@@ -298,28 +306,33 @@
 
 		async loadRelated(person) {
 			let loadPromises = [];
-			condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`)
+			condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`);
+
+			condLog(`getPromisesforNames for ${person.toString()}`);
+			loadPromises = getPromisesforNamesOfSiblingsAndStepParents(person, loadPromises);
+
 			if (person._data.Spouses) {
 				let spouses = person._data.Spouses;
-				condLog(`Spouses`, spouses);
+				condLog(`loadRelated Spouses`, spouses);
 				for (let i in spouses) {
-					condLog(`load ${spouses[i].toString()}`)
+					condLog(`get load promise for ${spouses[i].toString()}`);
 					loadPromises.push(this.load(spouses[i].getId()));
 				}
 			} else {
-				condLog(`loadRelated called on Person ${person.toString()} without Spouses[]`, person)
+				condLog(`loadRelated called on Person ${person.toString()} without Spouses[]`, person);
 			}
 			if (person._data.Children) {
 				let children = person._data.Children;
-				condLog(`Children`, children);
+				condLog(`loadRelated Children`, children);
 				for (let i in children) {
-					condLog(`loadWithoutChildren ${children[i].toString()}`)
-					loadPromises.push(this.loadWithoutChildren(children[i].getId()));
+					condLog(`get loadWithoutChildren promise for ${children[i].toString()}`);
+					loadPromises.push(WikiTreeAPI.getWithoutChildren(children[i].getId()));
 				}
 			} else {
-				condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person)
+				condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person);
 			}
-			const results = await Promise.all(loadPromises);
+			condLog(`=======loadRelated awaiting promise fulfillment for ${person.toString()}`);
+			let results = await Promise.all(loadPromises);
 			for (let newPerson of results) {
 				let id = newPerson.getId();
 				if (person._data.Spouses && person._data.Spouses[id]) {
@@ -328,15 +341,75 @@
 				} else if (person._data.Children && person._data.Children[id]) {
 					condLog(`Setting as child ${newPerson.toString()}`);
 					person._data.Children[id] = newPerson;
+				} else if (person._data.Parents && person._data.Parents[id]) {
+					condLog(`Updating due to getSpouseAndChildrenNames on parent ${newPerson.toString()}`);
+					updateNames(person._data.Parents[id], newPerson);
 				} else {
-					console.error(`loadRelated ${person.toString()} Promises resolved for neither spouse nor child`, newPerson);
+					console.error(`loadRelated ${person.toString()} Promises resolved for none of spouse, child or parent`, newPerson);
 				}
 			}
+
+			// Now that we have loaded all the spouses, make sure we have all their sibling and parent names as well
+			loadPromises = [];
+			if (person._data.Spouses) {
+				condLog('=======loadRelated get promises for spouses')
+				let spouses = person._data.Spouses;
+				for (let i in spouses) {
+					condLog(`getPromisesforNames for spouse ${spouses[i].toString()}`);
+					loadPromises = getPromisesforNamesOfSiblingsAndStepParents(spouses[i], loadPromises);
+				}
+				condLog(`=======loadRelated awaiting spouse promise fulfillment for ${person.toString()}`)
+				results = await Promise.all(loadPromises);
+				for (let newPerson of results) {
+					condLog(`Updating due to getSpouseAndChildrenNames on spouse's parent ${newPerson.toString()}`);
+					let id = newPerson.getId();
+					for (let s in spouses) {
+						let spouse = spouses[s];
+						if (spouse._data.Parents && spouse._data.Parents[id]) {
+							updateNames(spouse._data.Parents[id], newPerson);
+							// check other results
+							break;
+						}
+					}
+				}
+				condLog(`${person.toString()} parents' children were loaded`, person);
+			}
 			return person;
+
+			// Obtain promises for the loading of the names of the children of both of the parents of the given person
+			// as well as the names of all their spouses
+			function getPromisesforNamesOfSiblingsAndStepParents(person, promises) {
+				if (person._data.Parents) {
+					let parents = person._data.Parents;
+					for (let p in parents) {
+						let parent = parents[p];
+						if (!parent.getChildren() || !parent.getSpouses()) {
+							condLog(`loadNames ${parent.toString()}`)
+							promises.push(WikiTreeAPI.getSpouseAndChildrenNames(parent.getId()));
+						}
+					}
+				}
+				return promises;
+			}
+
+			function updateNames(parent, newPerson) {
+				condLog(`Setting children of parent ${newPerson.toString()}`, newPerson);
+				if (parent.getChildren()) {
+					console.error(`Unexpected update of Children for ${parent.toString()}`, parent, newPerson);
+				} else if (newPerson.getChildren()) {
+					parent.setChildren(newPerson.getChildren());
+				}
+				condLog(`Setting spouses of parent ${newPerson.toString()}`, newPerson);
+				if (parent.getSpouses()) {
+					console.error(`Unexpected update of Spouses for ${parent.toString()}`, parent, newPerson);
+				} else if (newPerson.getSpouses()) {
+					parent.copySpouses(newPerson);
+				}
+			}
 		};
 
 		/**
-		 * Load more ancestors. Update existing data in place
+		 * Load more ancestors or descendants. Update existing data in place
 		 */
 		loadMore(couple) {
 			let self = this;
@@ -393,17 +466,11 @@
 			return await WikiTreeAPI.getPerson(id);
 		};
 
-		static REQUIRED_FIELDS_NO_CHILDREN = REQUIRED_FIELDS.filter(item => item != 'Children');
-
-		async loadWithoutChildren(id) {
-			return await WikiTreeAPI.getPerson(id, WikiTreeDynamicTreeViewer.REQUIRED_FIELDS_NO_CHILDREN);
-		};
-
 		/**
 		 * Draw/redraw the tree
 		 */
 		drawTree(ancestorRoot, descendantRoot) {
-			condLog('drawTree for:', ancestorRoot);
+			condLog('=======drawTree for:', ancestorRoot, descendantRoot);
 			if (ancestorRoot) {
 				this.ancestorTree.data(ancestorRoot);
 			}
@@ -495,7 +562,8 @@
 		 */
 		draw() {
 			if (this.root) {
-				let nodes = this.tree.nodes(this.root), links = this.tree.links(nodes);
+				let nodes = this.tree.nodes(this.root);
+				let links = this.tree.links(nodes);
 				this.drawLinks(links);
 				this.drawNodes(nodes);
 			} else {
@@ -533,7 +601,8 @@
 		 * http://stackoverflow.com/a/10249720/879121
 		 */
 		elbow(d) {
-			let dir = this.direction, offsetDir = dir < 0 ? 0 : (d.target.x - d.source.x > 0 ? 1 : -1);
+			let dir = this.direction;
+			let offsetDir = dir < 0 ? 0 : (d.target.x - d.source.x > 0 ? 1 : -1);
 			let sourceX = d.source.x + offsetDir * halfBoxHeight,
 				sourceY = dir * (d.source.y + halfBoxWidth),
 				targetX = d.target.x,
@@ -573,17 +642,9 @@
 					y: -boxHeight,
 				})
 				.style('overflow', 'visible') // so the name will wrap
-				.append("xhtml:div")
-				.html(couple => {
-					return self.drawPerson(couple.a, couple.focus == L)
-						.concat(self.drawPerson(couple.b, couple.focus == R));
+				.append(couple => {
+					return self.drawCouple(couple);
 				});
-
-			// Show info popup on click
-			nodeEnter.on('click', function (couple) {
-				d3.event.stopPropagation();
-				self.personPopup(couple, d3.mouse(self.svg.node()), d3.mouse(this));
-			});
 
 			// Draw the plus icons
 			let expandable = node.filter(function (couple) {
@@ -601,34 +662,109 @@
 			// Remove old nodes
 			node.exit().remove();
 
+			this.svg.selectAll('.box').on('click', function(event) {
+				d3.event.stopPropagation();
+				let person = undefined;
+				if (this.classList.contains('L')) {
+					person = this.parentNode.__data__.a;
+				} else if (this.classList.contains('R')) {
+					person = this.parentNode.__data__.b;
+				} else {
+					return;
+				}
+				self.personPopup(person, d3.mouse(self.svg.node()), d3.mouse(this));
+			});
+
 			// Position
 			node.attr("transform", function (d) { return "translate(" + (self.direction * d.y) + "," + d.x + ")"; });
+		}
+
+		drawCouple(couple) {
+			let div = document.createElement('xhtml:div');
+			div.appendChild(this.drawPerson(couple.a, couple.b, L, couple.focus == L));
+			div.appendChild(this.drawPerson(couple.b, couple.a, R, couple.focus == R));
+			if (this.direction == ANCESTORS) {
+				div.appendChild(this.drawChildrenList(couple));
+			}
+			return div;
 		}
 		/**
 		 * Draw a person box.
 		 */
-		 drawPerson(person, inFocus) {
+		drawPerson(person, spouse, side, inFocus) {
 			let borderColorCode = '102, 204, 102';
 			let name = '?';
 			let lifeSpan = '? - ?';
+			let personId = undefined;
 			if (person) {
 				if (person.isMale()) { borderColorCode = '102, 102, 204'; }
 				if (person.isFemale()) { borderColorCode = '204, 102, 102'; }
 				name = getShortName(person);
 				lifeSpan = lifespan(person);
+				personId = person.getId();
 			}
-
-			let shading = inFocus && this.direction == DESCENDANTS
-				? `; background-image: linear-gradient(to top right, rgba(${borderColorCode},.2), rgba(${borderColorCode},0), rgba(${borderColorCode},0));`
-				: '';
-
-			return `
-			<div class="box" style="border-color: rgba(${borderColorCode},.5)${shading}">
-				<div class="name">${name}</div>
-				<div class="lifespan">${lifeSpan}</div>
-			</div>
-			`;
+			let div = document.createElement('div');
+			div.className = `box ${side == R ? 'R' : 'L'}`;
+			div.style.borderColor = `rgba(${borderColorCode},.5)`;
+			if (inFocus && this.direction == DESCENDANTS) {
+				div.style.backgroundImage = `linear-gradient(to top right, rgba(${borderColorCode},.2), rgba(${borderColorCode},0), rgba(${borderColorCode},0))`;
+			}
+			let [button, spouseList] = getSpouseSelection(spouse, personId);
+			if (button) {
+				button.style.borderColor = `rgba(${borderColorCode},.2)`;
+				spouseList.style.borderColor = `rgba(${borderColorCode},.5)`;
+				let nameWrapper = document.createElement('div');
+				nameWrapper.className = 'name';
+				nameWrapper.appendChild(button);
+				nameWrapper.appendChild(document.createTextNode(' ' + name));
+				div.appendChild(nameWrapper);
+				div.appendChild(divWith('lifespan', lifeSpan));
+				div.appendChild(spouseList);
+			} else {
+				div.appendChild(divWith('name', name));
+				div.appendChild(divWith('lifespan', lifeSpan));
+			}
+			return div;
 		}
+
+		drawChildrenList(couple) {
+			let listDiv = document.createElement('div');
+			listDiv.className = 'children-list';
+			listDiv.style.display = 'none';
+
+			let children = couple.getJointChildren();
+			let childrenList = document.createElement('ol');
+			for (let child of children) {
+				let elem = document.createElement('li');
+				let t = document.createTextNode(getShortName(child));
+ 				elem.appendChild(t);
+ 				childrenList.appendChild(elem);
+			}
+			listDiv.appendChild(childrenList);
+
+			let wrapper = document.createElement('div');
+			wrapper.className = 'children-list-wrapper';
+
+			let button = document.createElement('button');
+			button.style.backgroundColor = 'transparent';
+			button.style.borderColor = 'rgba(0, 0, 0, .2)';
+			let down = document.createTextNode(`${DOWN_ARROW} Children`);
+			let up = document.createTextNode(`${UP_ARROW} Children`);
+			button.appendChild(down)
+			button.onclick = (event) => {
+				if (listDiv.style.display == 'none') {
+					listDiv.style.display = 'block';
+					button.replaceChild(up, down)
+				} else {
+					listDiv.style.display = 'none';
+					button.replaceChild(down, up)
+				}
+			}
+			wrapper.appendChild(button);
+			wrapper.appendChild(listDiv);
+			return wrapper;
+		}
+
 		/**
 		 * Add any plus icons (expand indicator)
 		 * We add icons to the svg element
@@ -711,17 +847,11 @@
 		/**
 		 * Show a popup for the person.
 		 */
-		personPopup(couple, event, xyInCouple) {
+		personPopup(person, event, xyInCouple) {
 			this.removePopups();
-
-			let person = undefined;
-			if (xyInCouple[1] < 0) {
-				person = couple.a;
-			} else {
-				person = couple.b;
+			if (!person || person.isNoSpouse) {
+				return;
 			}
-			if (!person || person.isNoSpouse)
-				person = couple.getInFocus();
 
 			let photoUrl = person.getPhotoUrl(75), treeUrl = window.location.pathname + '?id=' + person.getName();
 
@@ -1007,5 +1137,85 @@
 		});
 	}
 
+	function getSpouseSelection(person, selectedSpouseId) {
+		if (!person) return [];
+
+		// Collect a list of the names and lifespans of all the spouses of the given person
+		let spouses = person.getSpouses();
+		let list = [];
+		let selectedIdx = 0;
+		if (spouses) {
+			for (let s in spouses) {
+				let spouse = spouses[s];
+				list.push({
+					'name': getShortName(spouse),
+					'lifespan': lifespan(spouse),
+					'wtId': spouse.getName()
+				});
+				if (s == selectedSpouseId) {
+					selectedIdx = list.length - 1;
+				}
+			}
+		}
+		if (list.length <= 1) return [];
+
+		let wrapper = document.createElement('div');
+		wrapper.className = 'box alt-spouse-list-wrapper';
+		wrapper.style.display = 'none';
+		let heading = document.createElement('h4');
+		heading.textContent = `Spouses for ${getShortName(person)}`
+		wrapper.appendChild(heading)
+
+		let listDiv = document.createElement('div');
+		listDiv.className = 'spouse-list';
+
+		let spouseList = document.createElement('ol');
+		spouseList.style.textAlign = 'left';
+		for (let spouse of list) {
+			let item = document.createElement('li');
+			item.appendChild(divWithNewTreeLink('altSpouse', spouse.name, spouse.wtId));
+			item.appendChild(divWith('lifespan', spouse.lifespan));
+			spouseList.appendChild(item);
+		}
+		listDiv.appendChild(spouseList);
+
+		let button = document.createElement('button');
+		button.textContent = DOWN_ARROW;
+		button.style.backgroundColor = 'transparent';
+		button.onclick = (event) => {
+			if (wrapper.style.display == 'none') {
+				wrapper.style.display = 'block';
+				button.textContent = UP_ARROW;
+			} else {
+				wrapper.style.display = 'none';
+				button.textContent = DOWN_ARROW;
+			}
+			event.stopPropagation();
+		}
+		wrapper.appendChild(listDiv);
+		return [button, wrapper];
+	}
+
+	function divWith(itsClass, itsText) {
+		let div = document.createElement('div');
+		div.className = itsClass;
+		div.textContent = itsText;
+		return div;
+	}
+
+	function divWithNewTreeLink(itsClass, itsText, personId) {
+		let div = document.createElement('div');
+		div.className = itsClass;
+
+		let a = document.createElement('a');
+		a.appendChild(document.createTextNode(itsText));
+		a.href = '#';
+		a.onclick = (event) => {
+			newTree(personId);
+		}
+
+		div.appendChild(a);
+		return div;
+	}
 
 }());
