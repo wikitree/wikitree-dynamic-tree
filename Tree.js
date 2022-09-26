@@ -118,15 +118,7 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 
 	// The base/core/default tree view
 	if (viewTreeId == 'wikitree-dynamic-tree') {
-		$('#treeInfo').html(`
-			<h2>Dynamic Tree for <span class="viewTreePersonBirthName"></span></h2> 
-			WikiTree Profile Page: <a class="viewTreePersonURL" href="" target="_new"></a><br />
-		
-			Click on the tree and use your mouse wheel to zoom. Click and drag to pan around. 
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help">More info</a>
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help"><img src="https://www.WikiTree.com/images/icons/help.gif" border="0" width="11" height="11" alt="Help" title="Help using the dynamic tree"></a></span><br /><br />
-		`);
-
+		$('#treeInfo').load('views/baseDynamicTree/treeInfo.html');
 		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
 		.then(function(data) {
 			updateViewedPersonContent(data[0].person);
@@ -135,15 +127,7 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 
 	}
 	if (viewTreeId == 'restyled-base') {
-		$('#treeInfo').html(`
-			<h2>Dynamic Tree Alternate View Example for <span class="viewTreePersonBirthName"></span></h2> 
-			WikiTree Profile Page: <a class="viewTreePersonURL" href="" target="_new"></a><br />
-		
-			Click on the tree and use your mouse wheel to zoom. Click and drag to pan around. 
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help">More info</a>
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help"><img src="https://www.WikiTree.com/images/icons/help.gif" border="0" width="11" height="11" alt="Help" title="Help using the dynamic tree"></a></span><br /><br />
-		`);
-
+		$('#treeInfo').load('views/restyledBaseExample/treeInfo.html');
 		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
 		.then(function(data) {
 			updateViewedPersonContent(data[0].person);
@@ -151,33 +135,6 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 		});
 
 	}
-
-
-	// An example alternative view.
-	else if (viewTreeId == 'dummy') {
-		$('#treeInfo').html(`
-			<h2>Dummy/Placeholder View</h2>
-
-			Anything with class "viewTreePersonBirthName" gets the name of the starting profile filled:
-			<span class="viewTreePersonBirthName"></span>
-			<br><br>
-			Anything a-href with class "viewTreePersonURL" gets the URL of the starting profile filled:
-			<a class="viewTreePersonURL"></a>
-		`);
-
-		$('#treeViewerContainer').html(`
-			<h3>Displaying a "view" for <span class="viewTreePersonURL"></span></h3>
-			<div id="treeViewerContainerInner"></div>
-		`);
-
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields} )
-		.then(function(data) {
-			updateViewedPersonContent(data[0].person);
-			$('#treeViewerContainerInner').html("<xmp>"+JSON.stringify(data,null,3)+"</xmp>");
-		});
-
-	}
-
 }
 
 
