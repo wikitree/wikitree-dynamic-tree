@@ -10,8 +10,10 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js""></script>
 <script src="TreeAPI.js"></script>
 <script src="Tree.js"></script>
-<script src="WikiTreeDynamicTree.js"></script>
-<script src="alternateViewExample.js"></script>
+
+<script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
+<script src="views/restyledBaseExample/restyledBaseExample.js"></script>
+
 <link rel="stylesheet" href="Tree.css"></script>
 </head>
 <body>    
@@ -48,9 +50,10 @@
 			</p>
 			<p>
 				Select a new view: 
+				<!-- To add a new view, add a new option here, and update launchTree() in Tree.js to trigger with the new value. -->
 				<select id="viewTreeId">
 					<option value="wikitree-dynamic-tree">Base WikiTree Dynamic Tree</option>
-					<option value="alternate-view">Alternate View Example</option>
+					<option value="restyled-base">Restyled Base View Example</option>
 					<option value="dummy">Dummy/Placeholder</option>
 				</select>
 				<button onClick="newTree()">Go</button>

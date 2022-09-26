@@ -134,7 +134,7 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 		});
 
 	}
-	if (viewTreeId == 'alternate-view') {
+	if (viewTreeId == 'restyled-base') {
 		$('#treeInfo').html(`
 			<h2>Dynamic Tree Alternate View Example for <span class="viewTreePersonBirthName"></span></h2> 
 			WikiTree Profile Page: <a class="viewTreePersonURL" href="" target="_new"></a><br />
