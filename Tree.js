@@ -118,22 +118,28 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 
 	// The base/core/default tree view
 	if (viewTreeId == 'wikitree-dynamic-tree') {
-		$('#treeInfo').load('views/baseDynamicTree/treeInfo.html');
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
-		.then(function(data) {
-			updateViewedPersonContent(data[0].person);
-			var tree = new WikiTreeDynamicTreeViewer('#treeViewerContainer', viewTreePersonId);
-		});
-
+		$('#treeInfo').load(
+			'views/baseDynamicTree/treeInfo.html',
+			function() {
+				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
+				.then(function(data) {
+					updateViewedPersonContent(data[0].person);
+					var tree = new WikiTreeDynamicTreeViewer('#treeViewerContainer', viewTreePersonId);
+				});		
+			}
+		);
 	}
 	if (viewTreeId == 'restyled-base') {
-		$('#treeInfo').load('views/restyledBaseExample/treeInfo.html');
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
-		.then(function(data) {
-			updateViewedPersonContent(data[0].person);
-			var tree = new alternateViewExample('#treeViewerContainer', viewTreePersonId);
-		});
-
+		$('#treeInfo').load(
+			'views/restyledBaseExample/treeInfo.html',
+			function() {
+				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
+				.then(function(data) {
+					updateViewedPersonContent(data[0].person);
+					var tree = new alternateViewExample('#treeViewerContainer', viewTreePersonId);
+				});		
+			}
+		);
 	}
 }
 
