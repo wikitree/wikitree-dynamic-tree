@@ -1,5 +1,6 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
+ * This example just has some modified styling compared to the base view.
  */
 (function(){
 
@@ -14,7 +15,7 @@
 	/**
 	 * Constructor
 	 */
-	var WikiTreeDynamicTreeViewer = window.WikiTreeDynamicTreeViewer = function(selector, startId){
+	var alternateViewExample = window.alternateViewExample = function(selector, startId){
 		 
 		var container = document.querySelector(selector),
 			width = container.offsetWidth,
@@ -72,12 +73,12 @@
 	};
 
 	/** Static variable to hold unique ids for private persons **/
-	WikiTreeDynamicTreeViewer.nextPrivateId = -1;
+	alternateViewExample.nextPrivateId = -1;
 	
 	/**
 	 * Load and display a person
 	 */
-	WikiTreeDynamicTreeViewer.prototype.load = function(id){
+	alternateViewExample.prototype.load = function(id){
 		var self = this;
 		self._load(id).then(function(person){
 			self.drawTree(person);
@@ -87,7 +88,7 @@
 	/**
 	 * Load more ancestors. Update existing data in place
 	 */
-	WikiTreeDynamicTreeViewer.prototype.loadMore = function(oldPerson){
+	alternateViewExample.prototype.loadMore = function(oldPerson){
 		var self = this;
 
 		return self._load(oldPerson.getId()).then(function(newPerson){
@@ -109,7 +110,7 @@
 	/**
 	 * Main WikiTree API call
 	 */
-	WikiTreeDynamicTreeViewer.prototype._load = function(id){
+	alternateViewExample.prototype._load = function(id){
 		return WikiTreeAPI.getPerson(id, [
 			'Id',
 			'Derived.BirthName',
@@ -138,7 +139,7 @@
 	/**
 	 * Draw/redraw the tree
 	 */
-	WikiTreeDynamicTreeViewer.prototype.drawTree = function(data){
+	alternateViewExample.prototype.drawTree = function(data){
 		if(data){
 			this.ancestorTree.data(data);
 			this.descendantTree.data(data);
@@ -293,7 +294,7 @@
 				if (person.getGender() == 'Female') { borderColor = 'rgba(204, 102, 102, .5)'; }
 
 				return `
-				<div class="box" style="border-color: ${borderColor}">
+				<div class="box" style="background-color: ${borderColor}">
 					<div class="name">${getShortName(person)}</div>
 					<div class="lifespan">${lifespan(person)}</div>
 				</div>

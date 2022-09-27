@@ -1,8 +1,24 @@
 /*
  * Tree.js
  * 
- * Code to handle the tree/viewer page, selecting new starting profile IDs or views, etc.
- * When new views are added, update launchTree() to call it when the tree's id is selected.
+ * This is the general JS run in index.html. This handles a couple of functions:
+ * A) Logins to the WikiTree API.
+ *    Some views (or views of particular profiles) will require the user be logged into the API.
+ *    The view page (i.e. index.html) should have a form/button that posts to the clientLogin action of the API,
+ *    with a returnURL back to the viewed page. The code here handles checking the auth code that comes back,
+ *    and saving the API user name and Id in cookies so that the page knows the user is logged in.
+ * 
+ * B) New Tree/Start-Profile selection
+ *    Each Tree is a separate view, built into the id="treeViewerContainer" div. There's a selection element
+ *    that let's the user select a new view. When the "Go" button there is clicked, newTree() is called. That
+ *    pulls out the tree view id from the selected option and then switches the display to that view with launchTree().
+ * 
+ *    Similarly, a new starting profile can be selected by providing a new WikiTree ID and clicking the associated "Go" button.
+ *    The same newTree() function is called, followed by launchTree() if we have a selected tree and profile.
+ * 
+ * To add a new view to the dynamic tree:
+ *    - Add a new <option> to the selection field in index.html
+ *    - Add the appropriate code to launch/display the view in launchTree(). 
  * 
  */
 
@@ -46,7 +62,7 @@ $(document).ready(function() {
 			viewTreePersonName = userName;
 		}
 
-		// Launch our desired tree
+		// Launch our desired tree on page load.
 		launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
 
 	}
@@ -70,6 +86,7 @@ $(document).ready(function() {
 		});
 	}
 	else if (viewTreePersonId && viewTreePersonName && viewTreeId) {
+		// If there's no auth code to process, and no user id to check, we can just trying displaying the current view.
 		launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
 	}
 	else {
@@ -83,6 +100,8 @@ $(document).ready(function() {
  * 
  */
 function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
+	// Grab the new view options - the id of the selected view and the starting profile. Save these in cookies
+	// so we can return to this view automatically when the page reloads.
 	$('#viewTreeId').val(viewTreeId);
 	$('#viewTreePersonId').val(viewTreePersonId);
 	$('#viewTreePersonName').val(viewTreePersonName);
@@ -90,78 +109,45 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 	WikiTreeAPI.cookie('viewTreePersonId', viewTreePersonId);
 	WikiTreeAPI.cookie('viewTreePersonName', viewTreePersonName);
 
+	// In case the container was hidden (e.g. during login/auth-code verification), display it.
 	$('#treeViewerContainer').show();
 
 	// Define the Person profile fields to retrieve, which we can use to fill the treeInfo selection
 	// and some elements in the page.
 	var infoFields = "Id,Name,FirstName,LastName,Derived.BirthName,Derived.BirthNamePrivate";
 
+	// The base/core/default tree view
 	if (viewTreeId == 'wikitree-dynamic-tree') {
-		$('#treeInfo').html(`
-			<h2>Dynamic Tree for <span class="viewTreePersonBirthName"></span></h2> 
-			WikiTree Profile Page: <a class="viewTreePersonURL" href="" target="_new"></a><br />
-		
-			Click on the tree and use your mouse wheel to zoom. Click and drag to pan around. 
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help">More info</a>
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help"><img src="https://www.WikiTree.com/images/icons/help.gif" border="0" width="11" height="11" alt="Help" title="Help using the dynamic tree"></a></span><br /><br />
-		`);
-
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
-		.then(function(data) {
-			updateViewedPersonContent(data[0].person);
-			var tree = new WikiTreeDynamicTreeViewer('#treeViewerContainer', viewTreePersonId);
-		});
-
+		$('#treeInfo').load(
+			'views/baseDynamicTree/treeInfo.html',
+			function() {
+				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
+				.then(function(data) {
+					updateViewedPersonContent(data[0].person);
+					var tree = new WikiTreeDynamicTreeViewer('#treeViewerContainer', viewTreePersonId);
+				});		
+			}
+		);
 	}
-	if (viewTreeId == 'alternate-view') {
-		$('#treeInfo').html(`
-			<h2>Dynamic Tree Alternate View Example for <span class="viewTreePersonBirthName"></span></h2> 
-			WikiTree Profile Page: <a class="viewTreePersonURL" href="" target="_new"></a><br />
-		
-			Click on the tree and use your mouse wheel to zoom. Click and drag to pan around. 
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help">More info</a>
-			<a href="https://www.WikiTree.com/wiki/Dynamic_Tree" target="_Help"><img src="https://www.WikiTree.com/images/icons/help.gif" border="0" width="11" height="11" alt="Help" title="Help using the dynamic tree"></a></span><br /><br />
-		`);
-
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
-		.then(function(data) {
-			updateViewedPersonContent(data[0].person);
-			var tree = new alternateViewExample('#treeViewerContainer', viewTreePersonId);
-		});
-
+	if (viewTreeId == 'restyled-base') {
+		$('#treeInfo').load(
+			'views/restyledBaseExample/treeInfo.html',
+			function() {
+				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
+				.then(function(data) {
+					updateViewedPersonContent(data[0].person);
+					var tree = new alternateViewExample('#treeViewerContainer', viewTreePersonId);
+				});		
+			}
+		);
 	}
-
-
-
-	else if (viewTreeId == 'dummy') {
-		$('#treeInfo').html(`
-			<h2>Dummy/Placeholder View</h2>
-
-			Anything with class "viewTreePersonBirthName" gets the name of the starting profile filled:
-			<span class="viewTreePersonBirthName"></span>
-			<br><br>
-			Anything a-href with class "viewTreePersonURL" gets the URL of the starting profile filled:
-			<a class="viewTreePersonURL"></a>
-		`);
-
-		$('#treeViewerContainer').html(`
-			<h3>Displaying a "view" for <span class="viewTreePersonURL"></span></h3>
-			<div id="treeViewerContainerInner"></div>
-		`);
-
-		WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields} )
-		.then(function(data) {
-			updateViewedPersonContent(data[0].person);
-			$('#treeViewerContainerInner').html("<xmp>"+JSON.stringify(data,null,3)+"</xmp>");
-		});
-
-	}
-
 }
 
 
 /* 
  * When a new tree or starting profile is desired, we lookup the profile with the API. If one is found, we start a new tree.
+ * This function is called when one of the "Go" buttons is clicked in index.html for either a new starting profile or a 
+ * new view option.
  */
 function newTree(k) {
 	var key;

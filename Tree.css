@@ -5,8 +5,8 @@
 
 /* The "login" button for the API, replaced with logged-in status after that's complete. */
 #getAPILogin {
-  position: relative;
   float: right;
+  clear:both;
 }
 
 /* The div that's filled with the view itself, e.g. the SVG canvas created by the wikitree-dynamic-tree view. */
@@ -23,10 +23,23 @@
   display: none;
 }
 
+#treeIntro {
+  clear:both;
+}
+
+/* A div that can be filled by launchTree() with specific information for each view. */
+#treeInfo {
+  border-top: 1px solid black;
+}
+
+/* Make our view selection field wider than default */
+#viewTreeId {
+  padding: 13px 120px 14px 13px;
+}
 
 
 
-/* For WikiTree Dynamic Tree */
+/* For base/core WikiTree Dynamic Tree */
 .person rect {
   stroke: #6c6;
   stroke-width: 1px;
