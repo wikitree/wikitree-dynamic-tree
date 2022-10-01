@@ -22,15 +22,12 @@
  * 
  */
 
-<<<<<<< HEAD
-$(document).ready(function () {
-=======
 class View {
 	constructor() {
 		Object.assign(this, this?.meta())
 	}
 
-	meta(){
+	meta() {
 		return {
 			'id': 'template',
 			'title': "Template view",
@@ -39,7 +36,7 @@ class View {
 		}
 	}
 
-	render(person_id){
+	render(person_id) {
 		return `Template View for person with ID: ${person_id}`
 	}
 }
@@ -57,7 +54,7 @@ class WTDynamicTree extends View {
 		}
 	}
 
-	render(person_id){
+	render(person_id) {
 		return `Dynamic Tree View for person with ID: ${person_id}`
 	}
 }
@@ -110,7 +107,7 @@ class ViewsRegistry {
 		const wtID = document.querySelector(`#${this.WT_ID_TEXT_ID}`).value
 		const view = this.views[document.querySelector(`#${this.VIEW_SELECT_ID}`).value]
 		const parentContainer = document.querySelector(`#${this.NAME_PLACEHOLDER}`).closest('div')
-		const viewLoader = document.querySelector(`#${this.VIEW_LOADER_ID}`)		
+		const viewLoader = document.querySelector(`#${this.VIEW_LOADER_ID}`)
 		const notFound = document.querySelector(`#${this.PERSON_NOT_FOUND_ID}`)
 		const viewContainer = document.querySelector(`#${this.VIEW_CONTAINER_ID}`)
 
@@ -125,7 +122,7 @@ class ViewsRegistry {
 			WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': wtID, 'fileds': basicFields.join() }).then(data => {
 				if (data[0]['person']) {
 					this.fillData(view, data[0]['person'])
-					
+
 					viewContainer.innerHTML = view.render(data[0]['person']['Id'])
 
 					notFound.classList.add('hidden')
@@ -155,15 +152,123 @@ class ViewsRegistry {
 	}
 }
 
+class WTUser {
+	constructor(name = null, id = null) {
+		this.name = name
+		this.id = id
+	}
+
+	isLoggedIn() {
+		return this.name && this.id
+	}
+}
+
+class LoginManager {
+	C_WT_USERNAME = 'WikiTreeAPI_userName'
+	C_WT_USER_ID = 'WikiTreeAPI_userId'
+
+	constructor(wtAPI, events = {}) {
+		this.wtAPI = wtAPI
+		this.events = events
+
+		this.user = new WTUser()
+
+		this.loadCookies()
+	}
+
+	loadCookies() {
+		this.user.name = this.wtAPI.cookie(this.C_WT_USERNAME) || null
+		this.user.id = this.wtAPI.cookie(this.C_WT_USER_ID) || null
+	}
+
+	saveCookies(){
+		this.wtAPI.cookie(this.C_WT_USERNAME, this.user.name, { 'path': '/' });
+		this.wtAPI.cookie(this.C_WT_USER_ID, this.user.id, { 'path': '/' });
+	}
+
+	login() {
+		const searchParams = new URLSearchParams(window.location.search)
+		const authcode = searchParams.get('authcode') ? searchParams.get('authcode') : null;
+
+		if (this.user.isLoggedIn()) {			
+			this.events?.onLoggedIn(this.user)
+		} else if (authcode) { 	// user is not logged in yet, but we've received authcode
+			this.wtAPI.postToAPI({ 'action': 'clientLogin', 'authcode': authcode })
+				.then(data => this.onAuth(data));
+		} else{
+			this.events?.onUnlogged()
+		}
+	}
+
+	onAuth(data) {
+		if (data.clientLogin.result === 'Success') {
+			
+			this.user.name = data.clientLogin.username
+			this.user.id = data.clientLogin.userid
+			
+			// changes browser url without additional redirect
+			window.history.pushState("", "", window.location.href.split('?')[0]);
+			this.saveCookies()
+			this.login()
+		} else {
+			this.events?.onAuthFail(data)
+		}
+	}
+}
+class SessionManager {
+	constructor(wtAPI, loginManager, events) {
+		this.wtAPI = wtAPI
+		this.lm = loginManager
+		this.events = events || {}
+
+		this.viewID = null
+		this.personID = null
+		this.personName = null
+
+		this.loadCookies()
+		
+		const orig_onLoggedIn_cb = this.lm.events?.onLoggedIn
+		this.lm.events['onLoggedIn'] = (user) => {
+			this.personID ||= user.id
+			this.personName ||= user.name
+
+			orig_onLoggedIn_cb(user)
+		}
+
+		this.lm.login()
+	}
+
+	loadCookies() {
+		this.viewID = this.wtAPI.cookie('viewTreeId') || 'wikitree-dynamic-tree'
+		this.personID = this.wtAPI.cookie('viewTreePersonId') || null
+		this.personName = this.wtAPI.cookie('viewTreePersonName') || null
+	}	
+}
+
+
+
 $(document).ready(function () {
 
-	const v = new ViewsRegistry([
-		new TemplateView(),
-		new WTDynamicTree()
-	], 'views')
-	v.render()
+	const loginManager = new LoginManager(WikiTreeAPI, events={
+		'onLoggedIn': user => {
+			document.querySelector('#wt-api-login').innerHTML = `Logged into API: ${user.name}`
+		},
+		'onUnlogged': () => {
+			document.querySelector('#wt-api-login').innerHTML = `
+				<p>Please login to the WikiTree API to use the Tree Viewer on non-public profiles.</p>
+				<form action="https://api.wikitree.com/api.php" method="POST">
+					<input type="hidden" name="action" value="clientLogin">
+					<input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
+					<input type="submit" class="small" value="Click to Login at WikiTree API">
+				</form>
+				`
+		}
+	})
 
->>>>>>> 9a6aaff (Simplify views registration - basic draft)
+	const session = new SessionManager(WikiTreeAPI, loginManager)
+})
+
+
 	// In order to view non-public profiles, the user must be logged into the WikiTree API.
 	// That's on a separate hostname, so while the credentials are the same for the user, the browser doesn't carry over a login from WikiTree.com.
 	// If the user is not yet logged into the API, there's a button they can use to log in through API clientLogin().
@@ -171,45 +276,46 @@ $(document).ready(function () {
 	// See: https://github.com/wikitree/wikitree-api/blob/main/authentication.md
 
 	// We want the API login process to return back where we started.
-	$('#returnURL').val(window.location.href);
+	// $('#returnURL').val(window.location.href);
 
 	// We store userName and userId of the logged-in user locally in a cookie, so we know on return that
 	// the user is signed in (and so we can use it as a default starting point for tree views).
-	var userName = WikiTreeAPI.cookie('WikiTreeAPI_userName');
-	var userId = WikiTreeAPI.cookie('WikiTreeAPI_userId');
+	// var userName = WikiTreeAPI.cookie('WikiTreeAPI_userName');
+	// var userId = WikiTreeAPI.cookie('WikiTreeAPI_userId');
 
 	// We also track the last treeId the user was viewing and the starting personId in case they return from elsewhere.
-	var viewTreeId = WikiTreeAPI.cookie('viewTreeId');
-	var viewTreePersonId = WikiTreeAPI.cookie('viewTreePersonId');
-	var viewTreePersonName = WikiTreeAPI.cookie('viewTreePersonName');
+	// var viewTreeId = WikiTreeAPI.cookie('viewTreeId');
+	// var viewTreePersonId = WikiTreeAPI.cookie('viewTreePersonId');
+	// var viewTreePersonName = WikiTreeAPI.cookie('viewTreePersonName');
 
 	// If we've arrived with an "authcode", it's the redirect back from the API clientLogin(), and we should
 	// verify the code and then redirect back to ourselves to clear out the parameter.
-	var u = new URLSearchParams(window.location.search)
-	var authcode = u.get('authcode');
+	// var u = new URLSearchParams(window.location.search)
+	// var authcode = u.get('authcode');
 
-	if ((typeof (userName) != 'undefined') && (userName != null) && (userName != '')) {
+	// if ((typeof (userName) != 'undefined') && (userName != null) && (userName != '')) {
 		// According to our saved cookie, we have a user that is logged into the API.
 		// Update the login div with a status instead of the button.
-		$('#getAPILogin').html("Logged into API: " + userName);
+		//$('#getAPILogin').html("Logged into API: " + userName);
 
 		// Display our tree. If we don't have one, use the wikitree-dynamic-tree as a default.
 		// If we have a cookie-saved starting personId, use that, otherwise start with the logged-in user's id.
-		if ((typeof (viewTreeId) == 'undefined') || !viewTreeId) {
-			viewTreeId = 'wikitree-dynamic-tree';
-		}
-		if ((typeof (viewTreePersonId) == 'undefined') || !viewTreePersonId) {
-			viewTreePersonId = userId;
-			viewTreePersonName = userName;
-		}
+		// if ((typeof (viewTreeId) == 'undefined') || !viewTreeId) {
+		// 	viewTreeId = 'wikitree-dynamic-tree';
+		// }
+		// if ((typeof (viewTreePersonId) == 'undefined') || !viewTreePersonId) {
+		// 	viewTreePersonId = userId;
+		// 	viewTreePersonName = userName;
+		// }
 
-		// Launch our desired tree on page load.
-		launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
+		// // Launch our desired tree on page load.
+		// launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
 
-	}
-	else if ((typeof authcode != 'undefined') && (authcode != null) && (authcode != '')) {
+	// }
+	// else if ((typeof authcode != 'undefined') && (authcode != null) && (authcode != '')) {
 		// We have an auth code to confirm. Show our interim message div while we do.
 		// This is very brief; one the clientLogin() returns we redirect back to ourselves.
+<<<<<<< HEAD
 		$('#confirmAuth').show();
 		WikiTreeAPI.postToAPI({ 'action': 'clientLogin', 'authcode': authcode })
 			.then(function (data) {
@@ -234,6 +340,32 @@ $(document).ready(function () {
 		// No tree to launch!
 	}
 });
+=======
+		// $('#confirmAuth').show();
+		// WikiTreeAPI.postToAPI({ 'action': 'clientLogin', 'authcode': authcode })
+		// 	.then(function (data) {
+		// 		if (data.clientLogin.result == 'Success') {
+		// 			WikiTreeAPI.cookie('WikiTreeAPI_userName', data.clientLogin.username, { 'path': '/' });
+		// 			WikiTreeAPI.cookie('WikiTreeAPI_userId', data.clientLogin.userid, { 'path': '/' });
+		// 			var urlPieces = [location.protocol, '//', location.host, location.pathname]
+		// 			var url = urlPieces.join('');
+		// 			window.location = url;
+		// 		} else {
+		// 			// The login at the API failed. We should have a friendlier error here.
+		// 			alert('API login failure');
+		// 			$('#confirmAuth').hide();
+		// 		}
+		// 	});
+	// }
+	// else if (viewTreePersonId && viewTreePersonName && viewTreeId) {
+		// If there's no auth code to process, and no user id to check, we can just trying displaying the current view.
+		// launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
+// 	}
+// 	else {
+// 		// No tree to launch!
+// 	}
+// });
+>>>>>>> 6768836 (Standalone login manager)
 
 /*
  * Given a viewTreeId, we have different code to instantiate that particular view, using the

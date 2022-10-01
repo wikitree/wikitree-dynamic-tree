@@ -4,7 +4,7 @@
 }
 
 /* The "login" button for the API, replaced with logged-in status after that's complete. */
-#getAPILogin {
+#wt-api-login {
   float: right;
   clear:both;
 }

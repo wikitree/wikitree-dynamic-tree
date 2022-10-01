@@ -29,6 +29,15 @@
 </head>
 
 <body>
+	<script>
+		window.addEventListener('DOMContentLoaded', (event) => {
+			new ViewsRegistry([
+				new TemplateView(),
+				new WTDynamicTree()
+			], 'views').render()
+		});
+	</script>
+
 	<div class="wrapper">
 		<div id="header">
 			<div class="sixteen columns full-width header">
@@ -45,14 +54,8 @@
 							width="16" /> </p>
 				</div>
 				<div id="treeViewerContent" style="display:block;">
-					<div id="getAPILogin">
-						<p>Please login to the WikiTree API to use the Tree Viewer on non-public profiles.</p>
-						<form action="https://api.wikitree.com/api.php" method="POST">
-							<input type="hidden" name="action" value="clientLogin">
-							<input type="hidden" id="returnURL" name="returnURL" value="">
-							<input type="submit" class="small" value="Click to Login at WikiTree API">
-						</form>
-					</div>
+					<div id="wt-api-login"></div>
+					
 					<span class="larger"><strong>WikiTree Dynamic Tree</strong></span>
 
 					<div id="views"></div>
