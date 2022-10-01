@@ -1,95 +1,114 @@
-<!DOCTYPE html
-	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html lang="en" dir="ltr" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>WikiTree Dynamic Family Tree</title>
 
-	<title>WikiTree Dynamic Family Tree</title>
+    <base target="_parent" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="TreeAPI.js"></script>
+    <script src="Tree.js"></script>
 
-	<base target="_parent">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-	<script src="TreeAPI.js"></script>
-	<script src="Tree.js"></script>
+    <link rel="stylesheet" href="https://www.wikitree.com/css/base.css" />
+    <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton.css" />
+    <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton-wide.css" />
+    <link rel="stylesheet" href="https://www.wikitree.com/css/layout.css" />
 
-	<link rel="stylesheet" href="https://www.wikitree.com/css/base.css">
-	<link rel="stylesheet" href="https://www.wikitree.com/css/skeleton.css">
-	<link rel="stylesheet" href="https://www.wikitree.com/css/skeleton-wide.css">
-	<link rel="stylesheet" href="https://www.wikitree.com/css/layout.css">
+    <script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
+    <script src="views/restyledBaseExample/restyledBaseExample.js"></script>
 
-	<script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
-	<script src="views/restyledBaseExample/restyledBaseExample.js"></script>
-	<script src="views/timeline/timeline.js"></script>
-	<script src="views/fanChart/FanChartView.js"></script>
-	<link rel="stylesheet" href="views/timeline/timeline.css">
+    <link rel="stylesheet" href="Tree.css" />
+  </head>
 
-	<link rel="stylesheet" href="Tree.css">
-	</script>
-</head>
+  <body>
+    <script>
+      window.addEventListener("DOMContentLoaded", (event) => {
+        const loginManager = new LoginManager(
+          WikiTreeAPI,
+          (events = {
+            onLoggedIn: (user) => {
+              document.querySelector("#wt-api-login").innerHTML = `Logged into API: ${user.name}`;
+            },
+            onUnlogged: () => {
+              document.querySelector("#wt-api-login").innerHTML = `
+                <p>Please login to the WikiTree API to use the Tree Viewer on non-public profiles.</p>
+                <form action="https://api.wikitree.com/api.php" method="POST">
+                    <input type="hidden" name="action" value="clientLogin">
+                    <input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
+                    <input type="submit" class="small" value="Click to Login at WikiTree API">
+                </form>
+                `;
+            },
+          })
+        );
 
-<body>
-	<script>
-		window.addEventListener('DOMContentLoaded', (event) => {
-			new ViewsRegistry([
-				new TemplateView(),
-				new WTDynamicTree()
-			], 'views').render()
-		});
-	</script>
+        const session = new SessionManager(WikiTreeAPI, loginManager);
 
-	<div class="wrapper">
-		<div id="header">
-			<div class="sixteen columns full-width header">
-				<div class="logo"><a class="nohover" href="https://www.wikitree.com/"><img
-							src="https://www.wikitree.com/images/wikitree-small.png" width="250" height="42" border="0"
-							alt="WikiTree: Where genealogists collaborate"
-							title="WikiTree: Where genealogists collaborate" /></a></div>
-			</div>
-		</div>
-		<div id="content" class="container">
-			<div class="sixteen columns">
-				<div id="confirmAuth">
-					<p> Just a moment... <img src="https://www.WikiTree.com/images/ajax-loader.gif" height="16"
-							width="16" /> </p>
-				</div>
-				<div id="treeViewerContent" style="display:block;">
-					<div id="wt-api-login"></div>
-					
-					<span class="larger"><strong>WikiTree Dynamic Tree</strong></span>
+        new ViewsRegistry([new TemplateView(), new WTDynamicTree()], "views").render();
+      });
+    </script>
 
-					<div id="views"></div>
+    <div class="wrapper">
+      <div id="header">
+        <div class="sixteen columns full-width header">
+          <div class="logo">
+            <a class="nohover" href="https://www.wikitree.com/"
+              ><img
+                src="https://www.wikitree.com/images/wikitree-small.png"
+                width="250"
+                height="42"
+                border="0"
+                alt="WikiTree: Where genealogists collaborate"
+                title="WikiTree: Where genealogists collaborate"
+            /></a>
+          </div>
+        </div>
+      </div>
+      <div id="content" class="container">
+        <div class="sixteen columns">
+          <div id="confirmAuth">
+            <p>
+              Just a moment...
+              <img src="https://www.WikiTree.com/images/ajax-loader.gif" height="16" width="16" />
+            </p>
+          </div>
+          <div id="treeViewerContent" style="display: block">
+            <div id="wt-api-login"></div>
 
-					<!-- Let the user provide a new starting profile ID and select a different view. -->
-					<div id="treeNavigation">
-						<p>
-							<input type="hidden" id="viewTreePersonId">
-							Select a View and a Starting Profile:
+            <span class="larger"><strong>WikiTree Dynamic Tree</strong></span>
 
-							<!-- To add a new view, add a new option here, and update launchTree() in Tree.js to trigger with the new value. -->
-							<select id="viewTreeId">
-								<option value="">Select a View</option>
-								<option value="wikitree-dynamic-tree">Base WikiTree Dynamic Tree</option>
-								<option value="restyled-base">Restyled Base View Example</option>
-								<option value="profile-timeline">Profile Timeline</option>
-								<option value="fan-chart">Fan Chart</option>
-							</select>
+            <div id="views"></div>
 
-							<input type="text" id="viewTreePersonName" size="30" value="" placeholder="WikiTreeID-#">
-							<button onClick="newTree()">Go</button>
-						</p>
-					</div>
+            <!-- Let the user provide a new starting profile ID and select a different view. -->
+            <div id="treeNavigation">
+              <p>
+                <input type="hidden" id="viewTreePersonId" />
+                Select a View and a Starting Profile:
 
-					<!-- This container is filled with information about the particular tree being viewed. -->
-					<div id="treeInfo"></div>
-				</div>
-			</div>
-		</div><!-- close sixteen -->
-	</div><!-- close content container -->
-	</div>
-	<!-- Container where the tree canvas gets built. -->
-	<div id="treeViewerContainer"></div>
+                <!-- To add a new view, add a new option here, and update launchTree() in Tree.js to trigger with the new value. -->
+                <select id="viewTreeId">
+                  <option value="">Select a View</option>
+                  <option value="wikitree-dynamic-tree">Base WikiTree Dynamic Tree</option>
+                  <option value="restyled-base">Restyled Base View Example</option>
+                </select>
 
-</body>
+                <input type="text" id="viewTreePersonName" size="30" value="" placeholder="WikiTreeID-#" />
+                <button onClick="newTree()">Go</button>
+              </p>
+            </div>
 
+            <!-- This container is filled with information about the particular tree being viewed. -->
+            <div id="treeInfo"></div>
+          </div>
+        </div>
+      </div>
+      <!-- close sixteen -->
+    </div>
+    <!-- close content container -->
+
+    <!-- Container where the tree canvas gets built. -->
+    <div id="treeViewerContainer"></div>
+  </body>
 </html>
