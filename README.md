@@ -1,6 +1,6 @@
 # wikitree-dynamic-tree
 
-This app displays a family tree starting from one person profile at WikiTree. The display can be panned and zoomed, as well as expanded to include more ancestors or decendants. The [WikiTree API](https://github.com/wikitree/wikitree-api) is used to gather the profile data. The [D3.js](https://d3js.org/) library is used to draw the graph.
+This app displays a family tree starting from one person profile at WikiTree. The display can be panned and zoomed, as well as expanded to include more ancestors or descendants. The [WikiTree API](https://github.com/wikitree/wikitree-api) is used to gather the profile data. The [D3.js](https://d3js.org/) library is used to draw the graph.
 
 ## Prerequisites
 * [WikiTree API](https://github.com/wikitree/wikitree-api)
@@ -9,7 +9,7 @@ This app displays a family tree starting from one person profile at WikiTree. Th
 
 ## Usage
 
-The index page sets up a basic control container where the user can provide a starting WikiTree Person ID and select a tree view to use. There is also a button the user can click to sign into the API (required to view content on non-public profiles).
+The index page sets up a basic control container where the user can provide a starting WikiTree Person ID and select a tree view to use. There is also a button the user can click to sign in to the API (required to view content on non-public profiles).
 
 Once there is a starting profile id (either provided in the form or taken from the API login) and a view is selected (defaulting to the WikiTree Dynamic Tree), the view is drawn in a container.
 
@@ -25,8 +25,11 @@ This is the scaffolding code to set things up on page load and launch the approp
 
 Cookies are used to store the API login id (if there is one), the starting profile id, and the selected view. Those are used as defaults when the page reloads.
 
-### [WikiTreeDynamicTree.js](WikiTreeDynamicTree.js)
+### [WikiTreeDynamicTree.js](views/baseDynamicTree/WikiTreeDynamicTreeViewer.js)
 This contains the code specific to drawing the WikiTree Dynamic Tree. It uses D3.js for the rendering and code from TreeAPI.js to pull data from the API.
+
+### [WikiTreeDynamicTree.js](views/restyledBaseExample/restyledBaseExample.js)
+This contains the code specific to drawing the WikiTree Dynamic Tree. This is the same as the main version but with a different styling. The purpose is to show how new view types may be added.
 
 ### [TreeAPI.js](TreeAPI.js)
 Utility functions for getting Person data from the WikiTree API.
