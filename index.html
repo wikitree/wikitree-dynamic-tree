@@ -44,9 +44,14 @@
           })
         );
 
-        const session = new SessionManager(WikiTreeAPI, loginManager);
-
-        new ViewsRegistry([new TemplateView(), new WTDynamicTree()], "views").render();
+        new ViewRegistry(
+          {
+            "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+            "restyled-dynamic-tree": new AlternateViewExample(),
+          },
+          "views",
+          new SessionManager(WikiTreeAPI, loginManager)
+        ).render();
       });
     </script>
 
@@ -80,24 +85,6 @@
             <span class="larger"><strong>WikiTree Dynamic Tree</strong></span>
 
             <div id="views"></div>
-
-            <!-- Let the user provide a new starting profile ID and select a different view. -->
-            <div id="treeNavigation">
-              <p>
-                <input type="hidden" id="viewTreePersonId" />
-                Select a View and a Starting Profile:
-
-                <!-- To add a new view, add a new option here, and update launchTree() in Tree.js to trigger with the new value. -->
-                <select id="viewTreeId">
-                  <option value="">Select a View</option>
-                  <option value="wikitree-dynamic-tree">Base WikiTree Dynamic Tree</option>
-                  <option value="restyled-base">Restyled Base View Example</option>
-                </select>
-
-                <input type="text" id="viewTreePersonName" size="30" value="" placeholder="WikiTreeID-#" />
-                <button onClick="newTree()">Go</button>
-              </p>
-            </div>
 
             <!-- This container is filled with information about the particular tree being viewed. -->
             <div id="treeInfo"></div>

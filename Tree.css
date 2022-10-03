@@ -1,12 +1,12 @@
 #window {
-  background-color: #fafafa;  
+  background-color: #fafafa;
   font-family: sans-serif;
 }
 
 /* The "login" button for the API, replaced with logged-in status after that's complete. */
 #wt-api-login {
   float: right;
-  clear:both;
+  clear: both;
 }
 
 /* The div that's filled with the view itself, e.g. the SVG canvas created by the wikitree-dynamic-tree view. */
@@ -14,7 +14,6 @@
   height: 800px;
   border: 1px solid #aaa;
   margin: 16px;
-  display:none;
   overflow: auto;
 }
 
@@ -24,7 +23,7 @@
 }
 
 #treeIntro {
-  clear:both;
+  clear: both;
 }
 
 /* A div that can be filled by launchTree() with specific information for each view. */
@@ -36,8 +35,6 @@
 #viewTreeId {
   padding: 13px 120px 14px 13px;
 }
-
-
 
 /* For base/core WikiTree Dynamic Tree */
 .person rect {
@@ -68,7 +65,7 @@
 
 .person:hover rect {
   cursor: pointer;
-  stroke: #FCBB71;
+  stroke: #fcbb71;
 }
 
 .person .name {
@@ -93,7 +90,7 @@
 }
 
 .plus:hover {
-  stroke: #FCBB71;
+  stroke: #fcbb71;
 }
 
 .popup rect {
@@ -112,13 +109,13 @@
 }
 
 .popup-link {
-/*  fill: #060;
+  /*  fill: #060;
   text-decoration: underline;*/
   padding: 10px;
 }
 
 .popup-link:hover {
-/*  text-decoration: none;
+  /*  text-decoration: none;
   cursor: pointer;*/
 }
 
@@ -153,7 +150,6 @@
   height: 15px;
 }
 
-
 #dropdown-button {
   padding: 16px;
   font-size: 16px;
@@ -169,7 +165,7 @@
 .dropdown-content a {
   padding: 10px;
   display: block;
-  border: 1px solid #CCCCCC;
-  background: #FFFFFF; 
+  border: 1px solid #cccccc;
+  background: #ffffff;
   text-decoration: none;
 }
