@@ -36,11 +36,7 @@ Style elements for the scaffolding and the dynamic-tree nodes.
 
 ## New Views
 
-The tree viewer can be extended with additional views. The selection drop-down in index.html should be given a new option. The value of that option should be identified in launchTree() in Tree.js. The appropriate code should then be called to do the rendering (probably in its own JS file).
-
-When building a view, it should be placed in the div with id "treeViewerContainer". In addition the div with id "treeInfo" can be updated with descriptive information about the view.
-
-An example of expanding to a new view is done with a dummy/placeholder view. That simply displays some JSON of person data for the starting profile.
+The tree viewer can be extended with additional views.  See [documentation](contributing.md).
 
 ## Example
 
