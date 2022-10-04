@@ -84,7 +84,7 @@ WikiTreeAPI.Person = class Person {
 
 // To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
 // we convert the returned JSON data into a Person object.
-// Note that postToAPI returns the Promise from jquery's .ajax() call.
+// Note that postToAPI returns the Promise from jquerys .ajax() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 // So we can use this through our asynchronous actions with something like:
 // WikiTree.getPerson.then(function(result) {
@@ -109,7 +109,7 @@ WikiTreeAPI.postToAPI = function (postData) {
 		// We tell the browser to send any cookie credentials we might have (in case we authenticated).
 		'xhrFields': { withCredentials: true },
 
-		// We're POSTing the data so we don't worry about URL size limits and want JSON back.
+		// We're POSTing the data, so we don't worry about URL size limits and want JSON back.
 		type: 'POST',
 		dataType: 'json',
 		data: postData
@@ -120,8 +120,8 @@ WikiTreeAPI.postToAPI = function (postData) {
 
 
 // Utility function to get/set cookie data.
-// Adapated from https://github.com/carhartl/jquery-cookie which is obsolete and has been
-// superceded by https://github.com/js-cookie/js-cookie. The latter is a much more complete cookie utility.
+// Adapted from https://github.com/carhartl/jquery-cookie which is obsolete and has been
+// superseded by https://github.com/js-cookie/js-cookie. The latter is a much more complete cookie utility.
 // Here we just want to get and set some simple values in limited circumstances to track an API login.
 // So we'll use a stripped-down function here and eliminate a prerequisite. This function should not be used
 // in complex circumstances.

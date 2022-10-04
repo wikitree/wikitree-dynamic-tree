@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The WikiTree Dynamic Tree viewer is an application for viewing trees, charts, ancestor lists, etc. from the world [single family tree](https://www.wikitree.com/wiki/Help:Collaborative_Family_Tree). The goal is to have many different views, where each view is created and maintained by one or a few individual volunteers, but they are connected through the dynamic tree for easy switching between views. This project, and the views it contains, are open source on [GitHub](https://github.com/wikitree/wikitree-dynamic-tree) so that they can live on past their original creators, and in case anyone else can help improve on them.
+The WikiTree Dynamic Tree viewer is an application for viewing trees, charts, ancestor lists, etc. from the world [single family tree](https://www.wikitree.com/wiki/Help:Collaborative_Family_Tree). The goal is to have many views, where each view is created and maintained by one or a few individual volunteers, but they are connected through the dynamic tree for easy switching between views. This project and the views it contains, are open source on [GitHub](https://github.com/wikitree/wikitree-dynamic-tree) so that they can live on past their original creators, and in case anyone else can help improve on them.
 
 The WikiTree team has created a base/core view, which is a forked family tree graph that can be scrolled, zoomed, and expanded dynamically. You can see this in action on the [Apps server](https://apps.wikitree.com/apps/wikitree-dynamic-tree/). The code for that view can be copied to use as a starting point for a new one, or an entirely new view can be created and integrated into the view selection.
 

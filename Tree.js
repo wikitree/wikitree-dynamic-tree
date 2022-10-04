@@ -6,11 +6,11 @@
  *    Some views (or views of particular profiles) will require the user be logged into the API.
  *    The view page (i.e. index.html) should have a form/button that posts to the clientLogin action of the API,
  *    with a returnURL back to the viewed page. The code here handles checking the auth code that comes back,
- *    and saving the API user name and Id in cookies so that the page knows the user is logged in.
+ *    and saving the API username and ID in cookies so that the page knows the user is logged in.
  * 
  * B) New Tree/Start-Profile selection
  *    Each Tree is a separate view, built into the id="treeViewerContainer" div. There's a selection element
- *    that let's the user select a new view. When the "Go" button there is clicked, newTree() is called. That
+ *    that lets the user select a new view. When the "Go" button there is clicked, newTree() is called. That
  *    pulls out the tree view id from the selected option and then switches the display to that view with launchTree().
  * 
  *    Similarly, a new starting profile can be selected by providing a new WikiTree ID and clicking the associated "Go" button.
@@ -25,14 +25,14 @@
 $(document).ready(function () {
 	// In order to view non-public profiles, the user must be logged into the WikiTree API.
 	// That's on a separate hostname, so while the credentials are the same for the user, the browser doesn't carry over a login from WikiTree.com.
-	// If the user is not yet logged into the API, there's a button they can use to login through API clientLogin().
+	// If the user is not yet logged into the API, there's a button they can use to log in through API clientLogin().
 	// When there's a successful login, we store this status in a cookie so future loads of this page don't have to repeat it.
 	// See: https://github.com/wikitree/wikitree-api/blob/main/authentication.md
 
 	// We want the API login process to return back where we started.
 	$('#returnURL').val(window.location.href);
 
-	// We store userName and userId of the logged-in user locally in a cookie so we know on return that
+	// We store userName and userId of the logged-in user locally in a cookie, so we know on return that
 	// the user is signed in (and so we can use it as a default starting point for tree views).
 	var userName = WikiTreeAPI.cookie('WikiTreeAPI_userName');
 	var userId = WikiTreeAPI.cookie('WikiTreeAPI_userId');
@@ -86,7 +86,7 @@ $(document).ready(function () {
 			});
 	}
 	else if (viewTreePersonId && viewTreePersonName && viewTreeId) {
-		// If there's no auth code to process, and no user id to check, we can just trying displaying the current view.
+		// If there's no auth code to process, and no user id to check, we can just try displaying the current view.
 		launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
 	}
 	else {
@@ -100,7 +100,7 @@ $(document).ready(function () {
  * 
  */
 function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
-	// Grab the new view options - the id of the selected view and the starting profile. Save these in cookies
+	// Grab the new view options - the id of the selected view and the starting profile. Save these in cookies,
 	// so we can return to this view automatically when the page reloads.
 	$('#viewTreeId').val(viewTreeId);
 	$('#viewTreePersonId').val(viewTreePersonId);
@@ -157,7 +157,7 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 }
 
 /* 
- * When a new tree or starting profile is desired, we lookup the profile with the API. If one is found, we start a new tree.
+ * When a new tree or starting profile is desired, we look up the profile with the API. If one is found, we start a new tree.
  * This function is called when one of the "Go" buttons is clicked in index.html for either a new starting profile or a 
  * new view option.
  */
@@ -169,7 +169,7 @@ function newTree(k) {
 	WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': key })
 		.then(function (data) {
 			if (data.error) {
-				alert("Error retrieiving \"" + key + "\" from API.");
+				alert("Error retrieving \"" + key + "\" from API.");
 			} else {
 				if (data[0].person.Id) {
 					$('#treeViewerContainer').empty();
@@ -180,7 +180,7 @@ function newTree(k) {
 					launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
 					updateViewedPersonContent(data[0].person);
 				} else {
-					alert("Error retrieiving \"" + key + "\" from API.");
+					alert("Error retrieving \"" + key + "\" from API.");
 				}
 			}
 		});
