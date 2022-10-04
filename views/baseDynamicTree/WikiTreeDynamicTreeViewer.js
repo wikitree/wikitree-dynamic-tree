@@ -434,7 +434,7 @@
 				</div>
 			`);
 
-        d3.select("#treeViewerContainer").on("click", function () {
+        d3.select("#view-container").on("click", function () {
             popup.remove();
         });
     };

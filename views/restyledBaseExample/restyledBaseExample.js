@@ -26,6 +26,8 @@
     };
 
     AlternateViewExample.prototype.init = function (selector, startId) {
+        this.containerSelector = selector;
+
         var container = document.querySelector(selector),
             width = container.offsetWidth,
             height = container.offsetHeight;
@@ -433,7 +435,7 @@
 				</div>
 			`);
 
-        d3.select("#treeViewerContainer").on("click", function () {
+        d3.select("#view-container").on("click", function () {
             popup.remove();
         });
     };

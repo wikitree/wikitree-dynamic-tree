@@ -55,6 +55,7 @@
 
 class View {
     constructor() {
+        this.id = null;
         Object.assign(this, this?.meta()); // this will spread object into object fields for easier access
     }
 
@@ -72,55 +73,49 @@ class View {
 }
 
 class ViewRegistry {
-    VIEW_SELECT_ID = "view-select";
-    WT_ID_TEXT_ID = "wt-id-text";
-    SHOW_BTN = "show-btn";
-    VIEW_CONTAINER_ID = "treeViewerContainer";
-    VIEW_TITLE_ID = "view-title";
-    VIEW_DESCRIPTION_ID = "view-description";
-    NAME_PLACEHOLDER = "name-placeholder";
-    WT_ID_LINK = "wt-id-link";
-    VIEW_LOADER_ID = "view-loader";
-    PERSON_NOT_FOUND_ID = "person-not-found";
+    VIEW_SELECT = "#view-select";
+    WT_ID_TEXT = "#wt-id-text";
+    SHOW_BTN = "#show-btn";
+    VIEW_CONTAINER = "#view-container";
+    VIEW_TITLE = "#view-title";
+    VIEW_DESCRIPTION = " #view-description";
+    NAME_PLACEHOLDER = "#name-placeholder";
+    WT_ID_LINK = " #wt-id-link";
+    VIEW_LOADER = "#view-loader";
+    PERSON_NOT_FOUND = "#person-not-found";
 
-    constructor(views, container_id, session_manager) {
+    constructor(views, session_manager) {
         this.views = views;
-
-        this.container = document.querySelector(`#${container_id}`);
         this.session = session_manager;
     }
 
     render() {
-        const options =
-            "" + //"<option>Select a View</option>"
-            Object.keys(this.views)
-                .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
-                .join("");
+        const options = Object.keys(this.views)
+            .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
+            .join("");
 
-        this.container.innerHTML = `
-            <p>Select a View and a Starting Profile:</p>
-            <select id="${this.VIEW_SELECT_ID}">${options}</select>
-            <input id="${this.WT_ID_TEXT_ID}" type="text" value="Vašut-2">
-            <input id="${this.SHOW_BTN}" type="button" value="GO" />
-            <div id="${this.VIEW_LOADER_ID}" class="hidden">Loading...</div>
-            <div id="${this.PERSON_NOT_FOUND_ID}" class="hidden">Person not found</div>
-            <div class="hidden">
-                <h2>
-                    <span id="${this.VIEW_TITLE_ID}"></span> for 
-                    <span id="${this.NAME_PLACEHOLDER}"></span>
-                </h2>
-                <p>WikiTree profile page: <a id="${this.WT_ID_LINK}" target="_blank"></a></p>
-                <p id="${this.VIEW_DESCRIPTION_ID}"></p>
-            </div>
-            `;
+        const submitBtn = document.querySelector(this.SHOW_BTN);
+        submitBtn.addEventListener("click", (e) => this.onSubmit(e));
 
-        document.querySelector(`#${this.SHOW_BTN}`).addEventListener("click", (e) => this.onSubmit(e));
+        const viewSelect = document.querySelector(this.VIEW_SELECT);
+        viewSelect.innerHTML = options;
+        viewSelect.value = this.session.viewID;
+
+        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+
+        submitBtn.click();
     }
 
     onSubmit(e) {
-        const wtID = document.querySelector(`#${this.WT_ID_TEXT_ID}`).value;
-        const view = this.views[document.querySelector(`#${this.VIEW_SELECT_ID}`).value];
-        const viewLoader = document.querySelector(`#${this.VIEW_LOADER_ID}`);
+        e.preventDefault();
+
+        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const viewID = document.querySelector(this.VIEW_SELECT).value;
+
+        const view = this.views[viewID];
+        view.id = viewID;
+
+        const viewLoader = document.querySelector(this.VIEW_LOADER);
 
         if (view === undefined) return;
 
@@ -140,17 +135,18 @@ class ViewRegistry {
     }
 
     onPersonDataReceived(view, data) {
-        const parentContainer = document.querySelector(`#${this.NAME_PLACEHOLDER}`).closest("div");
-        const notFound = document.querySelector(`#${this.PERSON_NOT_FOUND_ID}`);
+        const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
+        const notFound = document.querySelector(this.PERSON_NOT_FOUND);
 
         if (data[0]["person"]) {
             this.initView(view, data[0]["person"]);
 
             this.session.personID = data[0]["person"]["Id"];
             this.session.personName = data[0]["person"]["Name"];
+            this.session.viewID = view.id;
             this.session.saveCookies();
 
-            view.init(`#${this.VIEW_CONTAINER_ID}`, data[0]["person"]["Id"]);
+            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
 
             notFound.classList.add("hidden");
             parentContainer.classList.remove("hidden");
@@ -161,10 +157,10 @@ class ViewRegistry {
     }
 
     initView(view, person) {
-        const wtLink = document.querySelector(`#${this.WT_ID_LINK}`);
-        const viewTitle = document.querySelector(`#${this.VIEW_TITLE_ID}`);
-        const viewDescription = document.querySelector(`#${this.VIEW_DESCRIPTION_ID}`);
-        const name = document.querySelector(`#${this.NAME_PLACEHOLDER}`);
+        const wtLink = document.querySelector(this.WT_ID_LINK);
+        const viewTitle = document.querySelector(this.VIEW_TITLE);
+        const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
+        const name = document.querySelector(this.NAME_PLACEHOLDER);
 
         wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
         wtLink.innerHTML = person.Name;
@@ -173,7 +169,7 @@ class ViewRegistry {
         viewDescription.innerHTML = view.description;
         name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
-        document.querySelector(`#${this.VIEW_CONTAINER_ID}`).innerHTML = "";
+        document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
     }
 }
 

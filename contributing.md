@@ -73,7 +73,7 @@ When the "Go" button is clicked, the launchTree() will get called with the value
 					updateViewedPersonContent(data[0].person);
 
                     // Launch our tree, telling it what div id we're using for the view display, and the id).
-					var tree = new alternateViewExample('#treeViewerContainer', viewTreePersonId);
+					var tree = new alternateViewExample('#view-container', viewTreePersonId);
 				});		
 			}
 		);

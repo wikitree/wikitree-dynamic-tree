@@ -1,39 +1,77 @@
-#window {
-  background-color: #fafafa;
+:root {
+  --content-padding: 1.5em;
+}
+
+html,
+body {
   font-family: sans-serif;
+}
+
+header {
+  background: #f7f6f0;
+  height: auto;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--content-padding);
+}
+
+header > * {
+  margin: 0;
+}
+
+#logo {
+  background-image: url("https://www.wikitree.com/images/wikitree-small.png");
+  background-repeat: no-repeat;
+  display: block;
+  height: 42px;
+  width: 250px;
 }
 
 /* The "login" button for the API, replaced with logged-in status after that's complete. */
 #wt-api-login {
-  float: right;
-  clear: both;
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+}
+
+#wt-api-login > * {
+  margin: 0;
+}
+
+main {
+  background: white;
+  padding: var(--content-padding);
+}
+
+#settings-panel {
+  display: flex;
+  justify-content: space-between;
+}
+
+#settings-panel * {
+  margin: 0;
+}
+
+#view-select {
+  border-radius: 5px;
+  border: 3px solid #ddd;
+  text-transform: uppercase;
+  background: none;
+  appearance: auto;
 }
 
 /* The div that's filled with the view itself, e.g. the SVG canvas created by the wikitree-dynamic-tree view. */
-#treeViewerContainer {
-  height: 800px;
+#view-container {
   border: 1px solid #aaa;
-  margin: 16px;
   overflow: auto;
-}
-
-/* An interim div that's just briefly displayed when the API clientLogin returns with an authcode to be verified. */
-#confirmAuth {
-  display: none;
-}
-
-#treeIntro {
-  clear: both;
+  min-height: 1000px;
 }
 
 /* A div that can be filled by launchTree() with specific information for each view. */
 #treeInfo {
   border-top: 1px solid black;
-}
-
-/* Make our view selection field wider than default */
-#viewTreeId {
-  padding: 13px 120px 14px 13px;
 }
 
 /* For base/core WikiTree Dynamic Tree */
