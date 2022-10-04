@@ -16,8 +16,11 @@
     <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton-wide.css" />
     <link rel="stylesheet" href="https://www.wikitree.com/css/layout.css" />
 
+    <link rel="stylesheet" href="views/timeline/timeline.css" />
+
     <script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
     <script src="views/restyledBaseExample/restyledBaseExample.js"></script>
+    <script src="views/timeline/timeline.js"></script>
 
     <link rel="stylesheet" href="Tree.css" />
   </head>
@@ -48,6 +51,7 @@
           {
             "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
             "restyled-dynamic-tree": new AlternateViewExample(),
+            "timeline": new TimelineView(),
           },
           "views",
           new SessionManager(WikiTreeAPI, loginManager)

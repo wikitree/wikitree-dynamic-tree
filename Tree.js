@@ -66,8 +66,8 @@ class View {
         };
     }
 
-    init(container_id, person_id) {
-        document.querySelector(`#${container_id}`).innerHTML = `Template View for person with ID: ${person_id}`;
+    init(container_selector, person_id) {
+        document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
 }
 

@@ -6,6 +6,7 @@
   "bracketSameLine": true,
   "singleAttributePerLine": false,
   "printWidth": 120,
+  "quoteProps": "consistent",
   "overrides": [
     {
       "files": ["**/*.html","**/*.css"],
