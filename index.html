@@ -10,6 +10,7 @@
 	<base target="_parent">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 	<script src="TreeAPI.js"></script>
 	<script src="Tree.js"></script>
 
@@ -20,8 +21,10 @@
 
 	<script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
 	<script src="views/restyledBaseExample/restyledBaseExample.js"></script>
-	<script src="views/timeline/timeline.js"></script>
-	<link rel="stylesheet" href="views/timeline/timeline.css">
+	<script src="views/profile-timeline/timeline.js"></script>
+	<link rel="stylesheet" href="views/profile-timeline/timeline.css">
+	<script src="views/location-timeline/timeline.js"></script>
+	<script src="views/chronology-chart/chronology.js"></script>
 
 	<link rel="stylesheet" href="Tree.css">
 	</script>
@@ -66,6 +69,8 @@
 								<option value="wikitree-dynamic-tree">Base WikiTree Dynamic Tree</option>
 								<option value="restyled-base">Restyled Base View Example</option>
 								<option value="profile-timeline">Profile Timeline</option>
+								<option value="location-timeline">Location Timeline</option>
+								<option value="chronology-chart">Chronology Chart</option>
 							</select>
 
 							<input type="text" id="viewTreePersonName" size="30" value="" placeholder="WikiTreeID-#">
