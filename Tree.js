@@ -172,7 +172,7 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 		$('#treeInfo').load(
 			'views/chronology-chart/treeInfo.html',
 			function () {
-				WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': viewTreePersonId, 'fields': 'Parents,Siblings,Derived.ShortName,BirthDate,DeathDate,BirthLocation,DeathLocation,Children,Spouses,Father,Mother' })
+				WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': viewTreePersonId, 'fields': 'Parents,Siblings,Derived.ShortName,Name,BirthDate,DeathDate,Children,Spouses,Father,Mother' })
 					.then(function (data) {
 						updateViewedPersonContent(data[0].person);
 						getChronology(data[0].person, 'treeViewerContainer');
