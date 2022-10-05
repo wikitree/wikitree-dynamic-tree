@@ -42,45 +42,66 @@ To create your new view, you may want to start with a separate GitHub branch. Th
 
 ### Create some new files for your project
 
-* Create a new subdirectory (e.g. "views/newView/") inside "views/" to hold the new code
-* Create "views/newView/newView.js". This will typically be a function that accepts a Person to start of its display.
-* Optionally create "views/newView/treeInfo.html" to hold the "info" as plain HTML. If you have a very basic description, you can just put it directly into the launchTree() code instead.
+1. Create a new subdirectory (e.g. `views/newView/`) inside `views/` to hold the new code
+1. Create `views/newView/newView.js`
 
-### Update index.html 
+    * in the file create new structure
 
-The "index.html" page is what gets viewed in the browser. To add your view you need to:
+        `[class based]` Create descendant of View class and override method
 
-* Near the end of the ````<head>```` container, add the script for your new view: ````<script src="views/newView/newView.js"></script>````
-* Add a new option to the view selection (````<select id="viewTreeId">````): ````<option value="newView">My New View</option>````
+        `meta`: use you own title, description and docs
+
+        `init`: use your own implementation of view
+
+        e.g.
+
+        ```js
+        class NewView extends View {
+            meta() {
+                return {
+                    // short title - will be in select control
+                    title: "Profile Timeline",
+                    // some longer description or usage
+                    description: "",
+                    // link pointing at some webpage with documentation
+                    docs: "",
+                };
+            }
+
+            init(container_selector, person_id) {
+                // do whathever you want there 
+                // to showcase your awesome view, e.g.
+                document.querySelector(container_selector).innerHTML = `<p>WikiTree ID of selected person is: ${person_id}</p>`
+            }
+        }
+        ```
+
+        or
+
+        `[prototype based]` Create similar structure as in class based approach and add following code into the constructor:
+
+        ```js
+        Object.assign(this, this?.meta()); // this will spread object into object fields for easier access
+        ```
+
+        alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
+
+1. link your new script file in `<head>` section of the `index.html` and register your new view in `ViewRegistry`, e.g.
+
+    ```js
+    new ViewRegistry(
+            {
+                "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+                
+                // ...
+                
+                "new-view": new NewView(), // <-- your new view
+            },
+            new SessionManager(WikiTreeAPI, loginManager)
+            ).render(); 
+    ```
 
 
-### Add code to kick off your new view to the ````launchTree()```` function in Tree.js
-
-When the "Go" button is clicked, the launchTree() will get called with the value of the selected ````<option>```, and the Id and WikiTree ID/Name of the starting profile. You should add a section that matches the ````viewTreeId``` to the value you used in your added ````<option>```` to launch your code. This usually involves filling the div '#treeInfo' with content describing your view, posting to the WikiTree API to get the Person to view, and then calling the code you added in newView.js. For example:
-
-````
-	if (viewTreeId == 'newView') {
-
-        // Pull the description from a static HTML file rather than including it all here in the JavaScript.
-        // The jquery.load() function is asynchronous, so we put the rest of our launch in the "complete" function.
-		$('#treeInfo').load(
-			'views/newView/treeInfo.html',
-			function() {
-                // Post to the API to gather the data for the desired start Person.
-				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
-				.then(function(data) {
-                    // Update content in the page with data from the start person (e.g. in treeInfo.html).
-					updateViewedPersonContent(data[0].person);
-
-                    // Launch our tree, telling it what div id we're using for the view display, and the id).
-					var tree = new alternateViewExample('#view-container', viewTreePersonId);
-				});		
-			}
-		);
-	}
-````
-
-Then inside your newView.js add your code to create your great new display, filling it into the '#viewTreeContainer' div.
 
 ## Share your view
 
