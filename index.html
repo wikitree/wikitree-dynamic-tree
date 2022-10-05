@@ -61,27 +61,29 @@
     </script>
 
     <header>
-      <a id="logo" title="WikiTree: Where genealogists collaborate"></a>
-      <h1>WikiTree: View registry</h1>
-      <div id="wt-api-login"></div>
-    </header>
-    <main>
+      <a
+        href="https://www.wikitree.com/"
+        id="logo"
+        title="WikiTree: Where genealogists collaborate"
+        target="_blank"></a>
       <div id="settings-panel">
         <form>
           <label for="wt-id-text">WikiTree ID:</label>
-          <input id="wt-id-text" type="text" placeholder="Windsor-1" />
+          <input id="wt-id-text" type="text" placeholder="e.g. Windsor-1" />
           <select id="view-select"></select>
           <input id="show-btn" type="submit" value="GO" />
         </form>
       </div>
+      <div id="wt-api-login"></div>
+    </header>
+    <main>
       <div id="view-loader" class="hidden">Loading...</div>
       <div id="person-not-found" class="hidden">Person not found</div>
-      <div class="hidden">
+      <div id="info-panel" class="hidden">
         <h2>
-          <span id="view-title"></span> for
-          <span id="name-placeholder"></span>
+          <span id="view-title"></span> for <span id="name-placeholder"></span> -
+          <a id="wt-id-link" target="_blank"></a>
         </h2>
-        <p>WikiTree profile page: <a id="wt-id-link" target="_blank"></a></p>
         <p id="view-description"></p>
       </div>
     </main>

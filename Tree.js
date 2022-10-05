@@ -87,6 +87,14 @@ class ViewRegistry {
     constructor(views, session_manager) {
         this.views = views;
         this.session = session_manager;
+
+        const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
+        this.session.lm.events["onLoggedIn"] = (user) => {
+            document.querySelector(this.WT_ID_TEXT).value = user.name;
+
+            orig_onLoggedIn_cb(user);
+            document.querySelector(this.SHOW_BTN).click();
+        };
     }
 
     render() {
@@ -99,11 +107,11 @@ class ViewRegistry {
 
         const viewSelect = document.querySelector(this.VIEW_SELECT);
         viewSelect.innerHTML = options;
-        viewSelect.value = this.session.viewID;
+        viewSelect.value = this.session.viewID || (Object.keys(this.views).length ? Object.keys(this.views)[0] : "");
 
         document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
 
-        submitBtn.click();
+        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
     }
 
     onSubmit(e) {
@@ -263,7 +271,7 @@ class SessionManager {
     }
 
     loadCookies() {
-        this.viewID = this.wtAPI.cookie(this.C_VIEW_ID) || "wikitree-dynamic-tree";
+        this.viewID = this.wtAPI.cookie(this.C_VIEW_ID) || null;
         this.personID = this.wtAPI.cookie(this.C_PERSON_ID) || null;
         this.personName = this.wtAPI.cookie(this.C_PERSON_NAME) || null;
     }

@@ -1,5 +1,5 @@
 :root {
-  --content-padding: 1.5em;
+  --content-padding: 1em;
 }
 
 html,
@@ -11,7 +11,7 @@ header {
   background: #f7f6f0;
   height: auto;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   padding: var(--content-padding);
@@ -27,6 +27,11 @@ header > * {
   display: block;
   height: 42px;
   width: 250px;
+}
+
+#logo:hover {
+  background-color: transparent;
+  cursor: pointer;
 }
 
 /* The "login" button for the API, replaced with logged-in status after that's complete. */
@@ -54,12 +59,21 @@ main {
   margin: 0;
 }
 
+#info-panel > h2 {
+  margin: 0;
+}
+
 #view-select {
   border-radius: 5px;
   border: 3px solid #ddd;
   text-transform: uppercase;
-  background: none;
+  background: white;
   appearance: auto;
+  padding: 13px;
+}
+
+#wt-id-link {
+  font-size: 0.75em;
 }
 
 /* The div that's filled with the view itself, e.g. the SVG canvas created by the wikitree-dynamic-tree view. */
