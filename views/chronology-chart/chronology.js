@@ -39,14 +39,14 @@ function getChronology(f, selector) {
                     list.push({
                         x: f.Children[childrenIDs[i]].DeathDate.split('-')[0] - f.Children[childrenIDs[i]].BirthDate.split('-')[0],
                         base: f.Children[childrenIDs[i]].BirthDate.split('-')[0],
-                        text: f.Children[childrenIDs[i]].ShortName
+                        text: `<b>${f.Children[childrenIDs[i]].ShortName}</b> (${f.Children[childrenIDs[i]].BirthDate.split('-')[0]}-${f.Children[childrenIDs[i]].DeathDate.split('-')[0]})`
                     });
                 }
             } else {
                 list.push({
                     x: new Date().getFullYear() - f.Children[childrenIDs[i]].BirthDate.split('-')[0],
                     base: f.Children[childrenIDs[i]].BirthDate.split('-')[0],
-                    text: f.Children[childrenIDs[i]].ShortName
+                    text: `<b>${f.Children[childrenIDs[i]].ShortName}</b> (${f.Children[childrenIDs[i]].BirthDate.split('-')[0]}-})`
                 });
             }
         }
@@ -60,13 +60,13 @@ function getChronology(f, selector) {
                 list.push({
                     x: f.Parents[parentIDs[i]].DeathDate.split('-')[0] - f.Parents[parentIDs[i]].BirthDate.split('-')[0],
                     base: f.Parents[parentIDs[i]].BirthDate.split('-')[0],
-                    text: f.Parents[parentIDs[i]].ShortName
+                    text: `<b>${f.Parents[parentIDs[i]].ShortName}</b> (${f.Parents[parentIDs[i]].BirthDate.split('-')[0]}-${f.Parents[parentIDs[i]].DeathDate.split('-')[0]})`
                 });
             } else {
                 list.push({
                     x: new Date().getFullYear() - f.Parents[parentIDs[i]].BirthDate.split('-')[0],
                     base: f.Parents[parentIDs[i]].BirthDate.split('-')[0],
-                    text: f.Parents[parentIDs[i]].ShortName
+                    text: `<b>${f.Parents[parentIDs[i]].ShortName}</b> (${f.Parents[parentIDs[i]].BirthDate.split('-')[0]}-})`
                 });
             }
         }
@@ -80,13 +80,13 @@ function getChronology(f, selector) {
                 list.push({
                     x: f.Spouses[spouseIDs[i]].DeathDate.split('-')[0] - f.Spouses[spouseIDs[i]].BirthDate.split('-')[0],
                     base: f.Spouses[spouseIDs[i]].BirthDate.split('-')[0],
-                    text: f.Spouses[spouseIDs[i]].ShortName
+                    text: `<b>${f.Spouses[spouseIDs[i]].ShortName}</b> (${f.Spouses[spouseIDs[i]].BirthDate.split('-')[0]}-${f.Spouses[spouseIDs[i]].DeathDate.split('-')[0]})`
                 });
             } else {
                 list.push({
                     x: new Date().getFullYear() - f.Spouses[spouseIDs[i]].BirthDate.split('-')[0],
                     base: f.Spouses[spouseIDs[i]].BirthDate.split('-')[0],
-                    text: f.Spouses[spouseIDs[i]].ShortName
+                    text: `<b>${f.Spouses[spouseIDs[i]].ShortName}</b> (${f.Spouses[spouseIDs[i]].BirthDate.split('-')[0]}-})`
                 });
             }
         }
@@ -100,13 +100,13 @@ function getChronology(f, selector) {
                 list.push({
                     x: f.Siblings[siblingIDs[i]].DeathDate.split('-')[0] - f.Siblings[siblingIDs[i]].BirthDate.split('-')[0],
                     base: f.Siblings[siblingIDs[i]].BirthDate.split('-')[0],
-                    text: f.Siblings[siblingIDs[i]].ShortName
+                    text: `<b>${f.Siblings[siblingIDs[i]].ShortName}</b> (${f.Siblings[siblingIDs[i]].BirthDate.split('-')[0]}-${f.Siblings[siblingIDs[i]].DeathDate.split('-')[0]})`
                 });
             } else {
                 list.push({
                     x: new Date().getFullYear() - f.Siblings[siblingIDs[i]].BirthDate.split('-')[0],
                     base: f.Siblings[siblingIDs[i]].BirthDate.split('-')[0],
-                    text: f.Siblings[siblingIDs[i]].ShortName
+                    text: `<b>${f.Siblings[siblingIDs[i]].ShortName}</b> (${f.Siblings[siblingIDs[i]].BirthDate.split('-')[0]}-})`
                 });
             }
         }
