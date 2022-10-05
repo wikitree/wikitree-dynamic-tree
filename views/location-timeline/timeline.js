@@ -16,7 +16,6 @@ function getLocationTimeline(f, selector) {
             text: `Birth of ${f.ShortName}`
         });
     }
-
     if (f.DeathDate.split('-')[0] != '0000') {
         list.push({
             x: f.DeathDate.split('-')[0],
@@ -28,14 +27,16 @@ function getLocationTimeline(f, selector) {
     // Children Birth Dates & Locations
     var childrenIDs = Object.keys(f.Children);
     for (var i = 0; i < Object.keys(f.Children).length; i++) {
-        if (f.Children[childrenIDs[i]].BirthDate.split('-')[0] >= f.BirthDate.split('-')[0]
-            && f.Children[childrenIDs[i]].BirthDate.split('-')[0] <= f.DeathDate.split('-')[0]) {
-            if (f.Children[childrenIDs[i]].BirthDate.split('-')[0] != '0000') {
-                list.push({
-                    x: f.Children[childrenIDs[i]].BirthDate.split('-')[0],
-                    y: f.Children[childrenIDs[i]].BirthLocation,
-                    text: `Birth of ${f.Children[childrenIDs[i]].ShortName}`
-                });
+        if (f.Children[childrenIDs[i]].BirthDate) {
+            if (f.Children[childrenIDs[i]].BirthDate.split('-')[0] >= f.BirthDate.split('-')[0]
+                && f.Children[childrenIDs[i]].BirthDate.split('-')[0] <= f.DeathDate.split('-')[0]) {
+                if (f.Children[childrenIDs[i]].BirthDate.split('-')[0] != '0000') {
+                    list.push({
+                        x: f.Children[childrenIDs[i]].BirthDate.split('-')[0],
+                        y: f.Children[childrenIDs[i]].BirthLocation,
+                        text: `Birth of ${f.Children[childrenIDs[i]].ShortName}`
+                    });
+                }
             }
         }
     }
@@ -43,12 +44,14 @@ function getLocationTimeline(f, selector) {
     // Marriage Dates & Locations
     var spouseIDs = Object.keys(f.Spouses);
     for (var i = 0; i < Object.keys(f.Spouses).length; i++) {
-        if (f.Spouses[spouseIDs[i]].marriage_date.split('-')[0] != '0000') {
-            list.push({
-                x: f.Spouses[spouseIDs[i]].marriage_date.split('-')[0],
-                y: f.Spouses[spouseIDs[i]].marriage_location,
-                text: `Marriage to ${f.Spouses[spouseIDs[i]].ShortName}`
-            });
+        if (f.Spouses[spouseIDs[i]].marriage_date) {
+            if (f.Spouses[spouseIDs[i]].marriage_date.split('-')[0] != '0000') {
+                list.push({
+                    x: f.Spouses[spouseIDs[i]].marriage_date.split('-')[0],
+                    y: f.Spouses[spouseIDs[i]].marriage_location,
+                    text: `Marriage to ${f.Spouses[spouseIDs[i]].ShortName}`
+                });
+            }
         }
     }
 
@@ -66,7 +69,6 @@ function getLocationTimeline(f, selector) {
     // Build the Line Graph
     var chrono = [trace]; // allows us to add additional traces
     var options = {
-        title: `${f.ShortName}'s Location Timeline`,
         showlegend: false,
         xaxis: {
             autotick: true
@@ -75,5 +77,6 @@ function getLocationTimeline(f, selector) {
             automargin: true,
         }
     };
-    Plotly.newPlot(selector, chrono, options, { responsive: true, displayModeBar: false });
+    var config = { displayModeBar: true, displaylogo: false, modeBarButtonsToRemove: ['toggleSpikelines', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toggleHover', 'lasso2d', 'select2d'] }
+    Plotly.newPlot(selector, chrono, options, config);
 }
