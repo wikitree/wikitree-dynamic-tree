@@ -337,11 +337,11 @@
     };
 
     /**
-     * Add an plus icons (expand indicator)
+     * Add a plus icons (expand indicator)
      * We add icons to the svg element
      * so that it's not considered part of the person box.
      * This makes styling and events easier, sometimes
-     * It means we have to keep it's position in sync
+     * It means we have to keep its position in sync
      * with the person's box.
      */
     Tree.prototype.drawPlus = function (persons) {
@@ -389,7 +389,7 @@
         var photoUrl = person.getPhotoUrl(75),
             treeUrl = window.location.pathname + "?id=" + person.getName();
 
-        // Use generic gender photos if there is not profile photo available
+        // Use generic gender photos if there is no profile photo available
         if (!photoUrl) {
             if (person.getGender() === "Male") {
                 photoUrl = "https://www.wikitree.com/images/icons/male.gif";
@@ -572,7 +572,7 @@
     var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     /**
-     * Turn a wikitree formatted date into a humanreadable date
+     * Turn a wikitree formatted date into a human-readable date
      */
     function humanDate(dateString) {
         if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
