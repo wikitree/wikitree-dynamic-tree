@@ -1,6 +1,4 @@
 function getChronology(f, selector) {
-    console.log(f);
-
     var list = [];
     var trace = {
         type: 'bar',
@@ -111,8 +109,6 @@ function getChronology(f, selector) {
             }
         }
     }
-
-    console.log(list)
 
     // Sort our list by dates
     list.sort(function (a, b) {
