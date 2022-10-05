@@ -82,7 +82,7 @@ WikiTreeAPI.Person = class Person {
 
 } // End Person class definition
 
-// To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
+// To get a Person for a given id, we POST to the APIs getPerson action. When we get a result back,
 // we convert the returned JSON data into a Person object.
 // Note that postToAPI returns the Promise from jquerys .ajax() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
