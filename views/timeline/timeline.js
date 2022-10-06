@@ -1,4 +1,4 @@
-class TimelineView extends View {
+window.TimelineView = class TimelineView extends View {
     meta() {
         return {
             title: "Profile Timeline",
