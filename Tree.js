@@ -7,9 +7,9 @@
  *  - handles login process and cookies saving and loading to preserve logged in usr on the local machine
  *  - keeps info about logged in user with
  *
- *    WTUser object
- *      - properties: id:int, name: str
- *      - methods: isLoggedIn() -> bool
+ * WTUser object
+ * - properties: id:int, name: str
+ * - methods: isLoggedIn() -> bool
  *
  * Session Manager
  *  - handles app status (lastly logged user Name and ID, lastly used view ID) and preserves it using cookies
@@ -39,7 +39,7 @@
  *
  *     alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
  *
- *   2. register view in ViewRegistry
+ *  2. register view in ViewRegistry
  *
  *     a) link script file in header section of index.html, e.g.:
  *
@@ -49,11 +49,11 @@
  *
  *        "new-view-id": new NewViewObject(),
  *
- *   3. Enjoy your newly registered view ;-)
+ *  3. Enjoy your newly registered view ;-)
  *
  */
 
-class View {
+window.View = class View {
     constructor() {
         this.id = null;
         Object.assign(this, this?.meta()); // this will spread object into object fields for easier access
@@ -72,7 +72,13 @@ class View {
     }
 }
 
-class ViewRegistry {
+
+/* 
+ * The ViewRegistry holds the configuration for our collection of different views, builds the <select> field to change between them,
+ * and launches the selected view when the "Go" button is clicked. 
+ */
+window.ViewRegistry = class ViewRegistry {
+    // These are all divs in index.html holding the various content sections.
     VIEW_SELECT = "#view-select";
     WT_ID_TEXT = "#wt-id-text";
     SHOW_BTN = "#show-btn";
@@ -84,10 +90,12 @@ class ViewRegistry {
     VIEW_LOADER = "#view-loader";
     PERSON_NOT_FOUND = "#person-not-found";
 
+    // index.html starts with a script that creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
     constructor(views, session_manager) {
         this.views = views;
         this.session = session_manager;
 
+        // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
         this.session.lm.events["onLoggedIn"] = (user) => {
             document.querySelector(this.WT_ID_TEXT).value = user.name;
@@ -97,6 +105,9 @@ class ViewRegistry {
         };
     }
 
+    // Build the <select> option list from the individual views in the registry. 
+    // Add an event listener to the "go" button to call onSubmit() when clicked.
+    // Fill in some data from the logged-in user.
     render() {
         const options = Object.keys(this.views)
             .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
@@ -114,6 +125,10 @@ class ViewRegistry {
         if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
     }
 
+    // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View. 
+    // Currently we call getPerson() at the API to see that the provided ID is valid, and then launch the view.
+    // Possibly this should be changed/removed. Different views require different incoming data, and some are just using the ID
+    // and then immediately recalling getPerson() on that ID, which is a waste. 
     onSubmit(e) {
         e.preventDefault();
 
@@ -125,6 +140,7 @@ class ViewRegistry {
 
         const viewLoader = document.querySelector(this.VIEW_LOADER);
 
+        // This shouldn't happen, but perhaps we should display an error so new View builders can see what happened.
         if (view === undefined) return;
 
         viewLoader.classList.remove("hidden");
@@ -142,10 +158,14 @@ class ViewRegistry {
         }
     }
 
+    // After the initial getPerson from the onSubmit() launch returns, this method is called.
     onPersonDataReceived(view, data) {
         const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
         const notFound = document.querySelector(this.PERSON_NOT_FOUND);
 
+        // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
+        // If we have no person, we show an error div.
+        // Possibly we should generalize the 'person-not-found' div into a 'view-status' div, or something similar so we can display more general errors.
         if (data[0]["person"]) {
             this.initView(view, data[0]["person"]);
 
@@ -181,7 +201,8 @@ class ViewRegistry {
     }
 }
 
-class WTUser {
+// This just stores the WikiTree ID (i.e. "name") and ID of the viewing user, if they are logged into the API.
+window.WTUser = class WTUser {
     constructor(name = null, id = null) {
         this.name = name;
         this.id = id;
@@ -192,7 +213,9 @@ class WTUser {
     }
 }
 
-class LoginManager {
+// This mediates the login to the WikiTree API.
+// See: https://github.com/wikitree/wikitree-api/blob/main/authentication.md
+window.LoginManager = class LoginManager {
     C_WT_USERNAME = "WikiTreeAPI_userName";
     C_WT_USER_ID = "WikiTreeAPI_userId";
 
@@ -243,7 +266,7 @@ class LoginManager {
         }
     }
 }
-class SessionManager {
+window.SessionManager = class SessionManager {
     C_PERSON_ID = "viewTreePersonId";
     C_PERSON_NAME = "viewTreePersonName";
     C_VIEW_ID = "viewTreeId";
