@@ -1,213 +1,284 @@
 /*
  * Tree.js
- * 
- * This is the general JS run in index.html. This handles a couple of functions:
- * A) Logins to the WikiTree API.
- *    Some views (or views of particular profiles) will require the user be logged into the API.
- *    The view page (i.e. index.html) should have a form/button that posts to the clientLogin action of the API,
- *    with a returnURL back to the viewed page. The code here handles checking the auth code that comes back,
- *    and saving the API username and ID in cookies so that the page knows the user is logged in.
- * 
- * B) New Tree/Start-Profile selection
- *    Each Tree is a separate view, built into the id="treeViewerContainer" div. There's a selection element
- *    that lets the user select a new view. When the "Go" button there is clicked, newTree() is called. That
- *    pulls out the tree view id from the selected option and then switches the display to that view with launchTree().
- * 
- *    Similarly, a new starting profile can be selected by providing a new WikiTree ID and clicking the associated "Go" button.
- *    The same newTree() function is called, followed by launchTree() if we have a selected tree and profile.
- * 
- * To add a new view to the dynamic tree:
- *    - Add a new <option> to the selection field in index.html
- *    - Add the appropriate code to launch/display the view in launchTree(). 
- * 
+ *
+ * This file contains following functionalities
+ *
+ * Login manager
+ *  - handles login process and cookies saving and loading to preserve logged in usr on the local machine
+ *  - keeps info about logged in user with
+ *
+ *    WTUser object
+ *      - properties: id:int, name: str
+ *      - methods: isLoggedIn() -> bool
+ *
+ * Session Manager
+ *  - handles app status (lastly logged user Name and ID, lastly used view ID) and preserves it using cookies
+ *  - takes control over Login manager and calls login method during app start
+ *
+ * View
+ *  - contains basic methods and at the same time serves as a template for class based views
+ *
+ * View Registry
+ *  - serves as main object that orchestrates everything
+ *  - usage is demonstrated in index.html
+ *
+ * ---------------------------------------------------------------------------------------------------------------------
+ *
+ * How to add create new view and register it:
+ *
+ *  1. [class based] Create ancestor of View class and override method
+ *    - meta: use you own title, description and docs
+ *    - init: use your own implementation of view
+ *
+ *  or
+ *
+ *  1. [prototype based] Create similar structure as in class based approach and add
+ *     following code into the constructor:
+ *
+ *     Object.assign(this, this?.meta()); // this will spread object into object fields for easier access
+ *
+ *     alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
+ *
+ *   2. register view in ViewRegistry
+ *
+ *     a) link script file in header section of index.html, e.g.:
+ *
+ *        <script src="views/new_view/NewView.js"></script>
+ *
+ *     b) create new entry ("new-view-id": <NewViewObject>) in first parameter of ViewRegistry constructor (also in index.html), e.g.:
+ *
+ *        "new-view-id": new NewViewObject(),
+ *
+ *   3. Enjoy your newly registered view ;-)
+ *
  */
 
-$(document).ready(function () {
-	// In order to view non-public profiles, the user must be logged into the WikiTree API.
-	// That's on a separate hostname, so while the credentials are the same for the user, the browser doesn't carry over a login from WikiTree.com.
-	// If the user is not yet logged into the API, there's a button they can use to log in through API clientLogin().
-	// When there's a successful login, we store this status in a cookie so future loads of this page don't have to repeat it.
-	// See: https://github.com/wikitree/wikitree-api/blob/main/authentication.md
+class View {
+    constructor() {
+        this.id = null;
+        Object.assign(this, this?.meta()); // this will spread object into object fields for easier access
+    }
 
-	// We want the API login process to return back where we started.
-	$('#returnURL').val(window.location.href);
+    meta() {
+        return {
+            title: "Template view",
+            description: "Showcase of the views and their registration.",
+            docs: "https://example.com",
+        };
+    }
 
-	// We store userName and userId of the logged-in user locally in a cookie, so we know on return that
-	// the user is signed in (and so we can use it as a default starting point for tree views).
-	var userName = WikiTreeAPI.cookie('WikiTreeAPI_userName');
-	var userId = WikiTreeAPI.cookie('WikiTreeAPI_userId');
-
-	// We also track the last treeId the user was viewing and the starting personId in case they return from elsewhere.
-	var viewTreeId = WikiTreeAPI.cookie('viewTreeId');
-	var viewTreePersonId = WikiTreeAPI.cookie('viewTreePersonId');
-	var viewTreePersonName = WikiTreeAPI.cookie('viewTreePersonName');
-
-	// If we've arrived with an "authcode", it's the redirect back from the API clientLogin(), and we should
-	// verify the code and then redirect back to ourselves to clear out the parameter.
-	var u = new URLSearchParams(window.location.search)
-	var authcode = u.get('authcode');
-
-	if ((typeof (userName) != 'undefined') && (userName != null) && (userName != '')) {
-		// According to our saved cookie, we have a user that is logged into the API.
-		// Update the login div with a status instead of the button.
-		$('#getAPILogin').html("Logged into API: " + userName);
-
-		// Display our tree. If we don't have one, use the wikitree-dynamic-tree as a default.
-		// If we have a cookie-saved starting personId, use that, otherwise start with the logged-in user's id.
-		if ((typeof (viewTreeId) == 'undefined') || !viewTreeId) {
-			viewTreeId = 'wikitree-dynamic-tree';
-		}
-		if ((typeof (viewTreePersonId) == 'undefined') || !viewTreePersonId) {
-			viewTreePersonId = userId;
-			viewTreePersonName = userName;
-		}
-
-		// Launch our desired tree on page load.
-		launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
-
-	}
-	else if ((typeof authcode != 'undefined') && (authcode != null) && (authcode != '')) {
-		// We have an auth code to confirm. Show our interim message div while we do.
-		// This is very brief; one the clientLogin() returns we redirect back to ourselves.
-		$('#confirmAuth').show();
-		WikiTreeAPI.postToAPI({ 'action': 'clientLogin', 'authcode': authcode })
-			.then(function (data) {
-				if (data.clientLogin.result == 'Success') {
-					WikiTreeAPI.cookie('WikiTreeAPI_userName', data.clientLogin.username, { 'path': '/' });
-					WikiTreeAPI.cookie('WikiTreeAPI_userId', data.clientLogin.userid, { 'path': '/' });
-					var urlPieces = [location.protocol, '//', location.host, location.pathname]
-					var url = urlPieces.join('');
-					window.location = url;
-				} else {
-					// The login at the API failed. We should have a friendlier error here.
-					alert('API login failure');
-					$('#confirmAuth').hide();
-				}
-			});
-	}
-	else if (viewTreePersonId && viewTreePersonName && viewTreeId) {
-		// If there's no auth code to process, and no user id to check, we can just try displaying the current view.
-		launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
-	}
-	else {
-		// No tree to launch!
-	}
-});
-
-/*
- * Given a viewTreeId, we have different code to instantiate that particular view, using the
- * id or name (WikiTree ID) of the starting profile.
- * 
- */
-function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
-	// Grab the new view options - the id of the selected view and the starting profile. Save these in cookies,
-	// so we can return to this view automatically when the page reloads.
-	$('#viewTreeId').val(viewTreeId);
-	$('#viewTreePersonId').val(viewTreePersonId);
-	$('#viewTreePersonName').val(viewTreePersonName);
-	WikiTreeAPI.cookie('viewTreeId', viewTreeId);
-	WikiTreeAPI.cookie('viewTreePersonId', viewTreePersonId);
-	WikiTreeAPI.cookie('viewTreePersonName', viewTreePersonName);
-
-	// In case the container was hidden (e.g. during login/auth-code verification), display it.
-	$('#treeViewerContainer').show();
-
-	// Define the Person profile fields to retrieve, which we can use to fill the treeInfo selection
-	// and some elements in the page.
-	var infoFields = "Id,Name,FirstName,LastName,Derived.BirthName,Derived.BirthNamePrivate";
-
-	// The base/core/default tree view
-	if (viewTreeId == 'wikitree-dynamic-tree') {
-		$('#treeInfo').load(
-			'views/baseDynamicTree/treeInfo.html',
-			function () {
-				WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields })
-					.then(function (data) {
-						updateViewedPersonContent(data[0].person);
-						var tree = new WikiTreeDynamicTreeViewer('#treeViewerContainer', viewTreePersonId);
-					});
-			}
-		);
-	}
-	if (viewTreeId == 'restyled-base') {
-		$('#treeInfo').load(
-			'views/restyledBaseExample/treeInfo.html',
-			function () {
-				WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields })
-					.then(function (data) {
-						updateViewedPersonContent(data[0].person);
-						var tree = new alternateViewExample('#treeViewerContainer', viewTreePersonId);
-					});
-			}
-		);
-	}
-	// Basic timeline view
-	if (viewTreeId == 'profile-timeline') {
-		$('#treeInfo').load(
-			'views/timeline/treeInfo.html',
-			function () {
-				WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': viewTreePersonId, 'fields': 'Categories,Father,Mother,Derived.ShortName,Name,BirthDate,DeathDate,TrustedList,BirthLocation,DeathLocation,Parents,Children,Spouses,Siblings,Gender,Photo,PhotoData,Privacy,DataStatus,Bio' })
-					.then(function (data) {
-						updateViewedPersonContent(data[0].person);
-						getTimeline(data[0].person, '#treeViewerContainer');
-					});
-			}
-		);
-	}
-
-	// Fan Chart view
-	if (viewTreeId == 'fan-chart') {
-		$('#treeInfo').load(
-			'views/fanChart/treeInfo.html',
-			function() {
-				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
-				.then(function(data) {
-					updateViewedPersonContent(data[0].person);
-					var tree = new FanChartView('#treeViewerContainer', viewTreePersonId);
-				});		
-			}
-		);
-	}
+    init(container_selector, person_id) {
+        document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
+    }
 }
 
-/* 
- * When a new tree or starting profile is desired, we look up the profile with the API. If one is found, we start a new tree.
- * This function is called when one of the "Go" buttons is clicked in index.html for either a new starting profile or a 
- * new view option.
- */
-function newTree(k) {
-	var key;
-	if (k) { $('#viewTreePersonName').val(k); }
-	var key = $('#viewTreePersonName').val();
+class ViewRegistry {
+    VIEW_SELECT = "#view-select";
+    WT_ID_TEXT = "#wt-id-text";
+    SHOW_BTN = "#show-btn";
+    VIEW_CONTAINER = "#view-container";
+    VIEW_TITLE = "#view-title";
+    VIEW_DESCRIPTION = " #view-description";
+    NAME_PLACEHOLDER = "#name-placeholder";
+    WT_ID_LINK = " #wt-id-link";
+    VIEW_LOADER = "#view-loader";
+    PERSON_NOT_FOUND = "#person-not-found";
 
-	WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': key })
-		.then(function (data) {
-			if (data.error) {
-				alert("Error retrieving \"" + key + "\" from API.");
-			} else {
-				if (data[0].person.Id) {
-					$('#treeViewerContainer').empty();
-					viewTreePersonId = data[0].person.Id;
-					viewTreePersonName = data[0].person.Name;
-					viewTreeId = $('#viewTreeId').val();
+    constructor(views, session_manager) {
+        this.views = views;
+        this.session = session_manager;
 
-					launchTree(viewTreeId, viewTreePersonId, viewTreePersonName);
-					updateViewedPersonContent(data[0].person);
-				} else {
-					alert("Error retrieving \"" + key + "\" from API.");
-				}
-			}
-		});
-};
+        const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
+        this.session.lm.events["onLoggedIn"] = (user) => {
+            document.querySelector(this.WT_ID_TEXT).value = user.name;
 
-/*
- * Create navigation bar with the number ID of a profile, and update spans/links to have the person data.
- */
-function updateViewedPersonContent(person) {
-	// Stash the info into the web page.
-	$('.viewTreePersonId').html(person.Id);
-	$('.viewTreePersonName').html(person.Name);
-	$('.viewTreePersonBirthName').html(person.BirthName ? person.BirthName : person.BirthNamePrivate);
-	$('.viewTreePersonURL').html(person.Name);
-	$('.viewTreePersonURL').attr("href", "https://www.WikiTree.com/wiki/" + person.Name);
+            orig_onLoggedIn_cb(user);
+            document.querySelector(this.SHOW_BTN).click();
+        };
+    }
+
+    render() {
+        const options = Object.keys(this.views)
+            .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
+            .join("");
+
+        const submitBtn = document.querySelector(this.SHOW_BTN);
+        submitBtn.addEventListener("click", (e) => this.onSubmit(e));
+
+        const viewSelect = document.querySelector(this.VIEW_SELECT);
+        viewSelect.innerHTML = options;
+        viewSelect.value = this.session.viewID || (Object.keys(this.views).length ? Object.keys(this.views)[0] : "");
+
+        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+
+        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
+    }
+
+    onSubmit(e) {
+        e.preventDefault();
+
+        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const viewID = document.querySelector(this.VIEW_SELECT).value;
+
+        const view = this.views[viewID];
+        view.id = viewID;
+
+        const viewLoader = document.querySelector(this.VIEW_LOADER);
+
+        if (view === undefined) return;
+
+        viewLoader.classList.remove("hidden");
+
+        const basicFields = ["Id", "Name", "FirstName", "LastName", "Derived.BirthName", "Derived.BirthNamePrivate"];
+
+        try {
+            WikiTreeAPI.postToAPI({
+                action: "getPerson",
+                key: wtID,
+                fields: basicFields.join(),
+            }).then((data) => this.onPersonDataReceived(view, data));
+        } finally {
+            viewLoader.classList.add("hidden");
+        }
+    }
+
+    onPersonDataReceived(view, data) {
+        const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
+        const notFound = document.querySelector(this.PERSON_NOT_FOUND);
+
+        if (data[0]["person"]) {
+            this.initView(view, data[0]["person"]);
+
+            this.session.personID = data[0]["person"]["Id"];
+            this.session.personName = data[0]["person"]["Name"];
+            this.session.viewID = view.id;
+            this.session.saveCookies();
+
+            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+
+            notFound.classList.add("hidden");
+            parentContainer.classList.remove("hidden");
+        } else {
+            parentContainer.classList.add("hidden");
+            notFound.classList.remove("hidden");
+        }
+    }
+
+    initView(view, person) {
+        const wtLink = document.querySelector(this.WT_ID_LINK);
+        const viewTitle = document.querySelector(this.VIEW_TITLE);
+        const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
+        const name = document.querySelector(this.NAME_PLACEHOLDER);
+
+        wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
+        wtLink.innerHTML = person.Name;
+
+        viewTitle.innerHTML = view.title;
+        viewDescription.innerHTML = view.description;
+        name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
+
+        document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
+    }
+}
+
+class WTUser {
+    constructor(name = null, id = null) {
+        this.name = name;
+        this.id = id;
+    }
+
+    isLoggedIn() {
+        return this.name && this.id;
+    }
+}
+
+class LoginManager {
+    C_WT_USERNAME = "WikiTreeAPI_userName";
+    C_WT_USER_ID = "WikiTreeAPI_userId";
+
+    constructor(wtAPI, events = {}) {
+        this.wtAPI = wtAPI;
+        this.events = events;
+
+        this.user = new WTUser();
+
+        this.loadCookies();
+    }
+
+    loadCookies() {
+        this.user.name = this.wtAPI.cookie(this.C_WT_USERNAME) || null;
+        this.user.id = this.wtAPI.cookie(this.C_WT_USER_ID) || null;
+    }
+
+    saveCookies() {
+        this.wtAPI.cookie(this.C_WT_USERNAME, this.user.name, { path: "/" });
+        this.wtAPI.cookie(this.C_WT_USER_ID, this.user.id, { path: "/" });
+    }
+
+    login() {
+        const searchParams = new URLSearchParams(window.location.search);
+        const authcode = searchParams.get("authcode") ? searchParams.get("authcode") : null;
+
+        if (this.user.isLoggedIn()) {
+            this.events?.onLoggedIn(this.user);
+        } else if (authcode) {
+            // user is not logged in yet, but we've received authcode
+            this.wtAPI.postToAPI({ action: "clientLogin", authcode: authcode }).then((data) => this.onAuth(data));
+        } else {
+            this.events?.onUnlogged();
+        }
+    }
+
+    onAuth(data) {
+        if (data.clientLogin.result === "Success") {
+            this.user.name = data.clientLogin.username;
+            this.user.id = data.clientLogin.userid;
+
+            // changes browser url without additional redirect
+            history.replaceState("", "", location.href.split("?")[0]);
+            this.saveCookies();
+            this.login();
+        } else {
+            this.events?.onAuthFail(data);
+        }
+    }
+}
+class SessionManager {
+    C_PERSON_ID = "viewTreePersonId";
+    C_PERSON_NAME = "viewTreePersonName";
+    C_VIEW_ID = "viewTreeId";
+
+    constructor(wtAPI, loginManager, events) {
+        this.wtAPI = wtAPI;
+        this.lm = loginManager;
+        this.events = events || {};
+
+        this.viewID = null;
+        this.personID = null;
+        this.personName = null;
+
+        this.loadCookies();
+
+        const orig_onLoggedIn_cb = this.lm.events?.onLoggedIn;
+        this.lm.events["onLoggedIn"] = (user) => {
+            this.personID ||= user.id;
+            this.personName ||= user.name;
+
+            orig_onLoggedIn_cb(user);
+        };
+
+        this.lm.login();
+    }
+
+    loadCookies() {
+        this.viewID = this.wtAPI.cookie(this.C_VIEW_ID) || null;
+        this.personID = this.wtAPI.cookie(this.C_PERSON_ID) || null;
+        this.personName = this.wtAPI.cookie(this.C_PERSON_NAME) || null;
+    }
+
+    saveCookies() {
+        this.wtAPI.cookie(this.C_VIEW_ID, this.viewID);
+        this.wtAPI.cookie(this.C_PERSON_ID, this.personID);
+        this.wtAPI.cookie(this.C_PERSON_NAME, this.personName);
+    }
 }

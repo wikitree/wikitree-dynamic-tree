@@ -1,0 +1,28 @@
+{
+  "tabWidth": 4,
+  "useTabs": false,
+  "trailingComma": "es5",
+  "semi": true,
+  "bracketSameLine": true,
+  "singleAttributePerLine": false,
+  "printWidth": 120,
+  "quoteProps": "consistent",
+  "overrides": [
+    {
+      "files": ["**/*.html","**/*.css"],
+      "options": {
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": ["**/*.js"],
+      "options": {
+        "tabWidth": 4
+      }
+    },
+    {
+      "files": ".prettierrc",
+      "options": { "parser": "json" }
+    }
+  ]
+}
