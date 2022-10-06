@@ -28,6 +28,8 @@
     <script src="views/ahnentafel/ahnentafel.js"></script>
     <link rel="stylesheet" href="views/ahnentafel/ahnentafel.css" />
 
+    <script src="views/surnames/surnames.js"></script>
+    <link rel="stylesheet" href="views/surnames/surnames.css" />
 
     <link rel="stylesheet" href="Tree.css" />
   </head>
@@ -61,6 +63,7 @@
             "timeline": new TimelineView(),
             "fanchart": new FanChartView(),
             "ahnentafel": new AhnentafelView(),
+            "surnames": new SurnamesView(),
           },
           new SessionManager(WikiTreeAPI, loginManager)
         ).render();
