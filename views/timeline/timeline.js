@@ -1,9 +1,9 @@
 window.TimelineView = class TimelineView extends View {
     meta() {
         return {
-            title: "Profile Timeline",
+            title: "Timeline",
             description:
-                "The Timeline view is an interactive visualization chart that allows you to zoom and pan through a chronological order of events.",
+                "The Timeline view is an interactive visualization chart that allows zooming and panning through a family's chronology.",
             docs: "",
         };
     }
@@ -28,16 +28,24 @@ window.TimelineView = class TimelineView extends View {
              */
             buildEvents(focus);
             for (var i = 0; i < Object.keys(focus.Parents).length; i++) {
-                buildEvents(focus.Parents[parentIDs[i]]);
+                if (focus.Parents[parentIDs[i]].BirthDate) {
+                    buildEvents(focus.Parents[parentIDs[i]]);
+                }
             }
             for (var i = 0; i < Object.keys(focus.Siblings).length; i++) {
-                buildEvents(focus.Siblings[siblingIDs[i]]);
+                if (focus.Siblings[siblingIDs[i]].BirthDate) {
+                    buildEvents(focus.Siblings[siblingIDs[i]]);
+                }
             }
             for (var i = 0; i < Object.keys(focus.Spouses).length; i++) {
-                buildEvents(focus.Spouses[spouseIDs[i]]);
+                if (focus.Spouses[spouseIDs[i]].BirthDate) {
+                    buildEvents(focus.Spouses[spouseIDs[i]]);
+                }
             }
             for (var i = 0; i < Object.keys(focus.Children).length; i++) {
-                buildEvents(focus.Children[childIDs[i]]);
+                if (focus.Children[childIDs[i]].BirthDate) {
+                    buildEvents(focus.Children[childIDs[i]]);
+                }
             }
 
             /* This is global function to build our markers and timespans. For each
@@ -57,6 +65,7 @@ window.TimelineView = class TimelineView extends View {
                         }
                     }
                 }
+
                 if (bM == undefined && bD == undefined) {
                     var birth = bY;
                 } else if (bD == undefined) {
@@ -76,6 +85,7 @@ window.TimelineView = class TimelineView extends View {
                 } else {
                     var dY = new Date().toISOString().split("T")[0];
                 }
+
                 if (dM == undefined && dD == undefined) {
                     var death = dY;
                 } else if (dD == undefined) {
@@ -122,4 +132,4 @@ window.TimelineView = class TimelineView extends View {
             var timeline = new vis.Timeline(container, items, options);
         });
     }
-}
+};
