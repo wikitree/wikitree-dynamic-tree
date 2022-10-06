@@ -180,6 +180,20 @@ function launchTree(viewTreeId, viewTreePersonId, viewTreePersonName) {
 			}
 		);
 	}
+
+	// Fan Chart view
+	if (viewTreeId == 'fan-chart') {
+		$('#treeInfo').load(
+			'views/fanChart/treeInfo.html',
+			function() {
+				WikiTreeAPI.postToAPI( {'action': 'getPerson', 'key': viewTreePersonId, 'fields': infoFields } )
+				.then(function(data) {
+					updateViewedPersonContent(data[0].person);
+					var tree = new FanChartView('#treeViewerContainer', viewTreePersonId);
+				});		
+			}
+		);
+	}
 }
 
 /* 
