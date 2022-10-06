@@ -1,0 +1,11 @@
+.highlighted {
+	background-color: #fad158;
+}
+#ahnentafelAncestorList {
+	background-color: #fff;
+	padding: 20px;
+}
+#ahnentafelAncestorList p {
+	line-height: 1.5em;
+	margin: 1.5em 0;
+}
