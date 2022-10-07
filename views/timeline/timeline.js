@@ -64,6 +64,8 @@ window.TimelineView = class TimelineView extends View {
                             var bD = `-${x.BirthDate.split("-")[2]}`;
                         }
                     }
+                } else {
+                    var bY = "0000-01-01";
                 }
 
                 if (bM == undefined && bD == undefined) {
