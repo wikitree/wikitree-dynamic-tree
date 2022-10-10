@@ -1,7 +1,16 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * Fan Chart uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
- * There is a Button Bar TABLE at the top of the container, then the SVG graphic is below that.
+ 
+* There is a Button Bar TABLE at the top of the container, 
+ * then the SVG graphic is below that.
+ * 
+ * The FIRST chunk of code in the SVG graphic are the <path> objects for the individual wedges of the Fan Chart,
+ * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
+ * 
+ * The SECOND chunk in the SVG graphic are the individual people in the Fan Chart, created by the Nodes and the d3 deep magic
+ * they are each basically at the end of the day a <g class"person ancestor" transformed object with a translation from 0,0 and a rotation></g>
+ * 
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FanChartView, then calls a redraw
  */
 (function () {
@@ -12,12 +21,26 @@
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
 
+
     /**
      * Constructor
      */
     var FanChartView = (window.FanChartView = function () {
         Object.assign(this, this?.meta());
     });
+
+    // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
+
+    /** Static variable to hold unique ids for private persons **/
+    FanChartView.nextPrivateId = -1;
+
+    /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
+    FanChartView.maxAngle = 240;
+    FanChartView.lastAngle = 240;
+
+    /** Static variable to hold the NumberOfGenerations to display  */
+    FanChartView.numGens2Display = 3;
+
 
     FanChartView.prototype.meta = function () {
         return {
@@ -48,7 +71,9 @@
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version
         var btnBarHTML =
             '<table border=0 width="100%"><tr>' +
-            '<td width="30%"><A onclick="FanChartView.maxAngle = 360; FanChartView.redraw();">360˚</A> | <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();">240˚</A> | <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();">180˚</A></td>' +
+            '<td width="30%"><A onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' + 
+             ' <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' + 
+             ' <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="center">-1 [ 3 gens ] +1</td>' +
             '<td width="5%">&nbsp;</td>' +
@@ -57,7 +82,7 @@
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML;
-        // console.log("adding Button Bar HTML");
+        
         // CREATE the SVG object (which will be placed immediately under the button bar)
         var svg = d3
             .select(container)
@@ -75,7 +100,6 @@
 
         // Listen to tree events
         self.ancestorTree.expand(function (person) {
-            // console.log("line:66 - self.ancestorTre.expand")		;
             return self.loadMore(person);
         });
 
@@ -92,25 +116,331 @@
                 width: 20,
                 height: 20,
                 //'xlink:href': 'ringLoader.svg'
-            });
+            })
+        ;
 
+        // *********
+        // FUNCTIONS needed to create ARCS / WEDGES / SECTORS etc...
+        // *********
+        // Returns an array [x , y] that corresponds to the endpoint of rθ from (centreX,centreY)
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            angleInRadians = (angleInDegrees) * Math.PI / 180.0;
+
+            return [centerX + (radius * Math.cos(angleInRadians)),
+            centerY + (radius * Math.sin(angleInRadians)) ];
+            // };
+        }
+
+        // Returns an array of letters and numbers that correspond to g graphics drawing commands to create an Arc
+        function describeArc(x, y, radius, startAngle, endAngle){
+
+            start = polarToCartesian(x, y, radius, endAngle);
+            end = polarToCartesian(x, y, radius, startAngle);
+
+            largeArcFlag = (720 + endAngle - startAngle) % 360 <= 180 ? "0" : "1";
+            // largeArcFlag = 1;
+
+            d = [
+                "M", start[0], start[1], 
+                "A", radius, radius, 0, largeArcFlag, 0, end[0], end[1]
+            ] ;
+
+            return d;       
+        }
+
+       // Returns an attribute object that can be attached to a <path> object to create an Arc     
+       // IF the Arc is being redefined, only the "d" attribute need be updated
+       // Note: an Arc is simply a curved line, a piece of a circle
+        function getSVGforArc(x, y, radius, startAngle, endAngle, id='arc', clr='blue', thickness=2) {
+            fillClr='none';
+            if (startAngle == endAngle) {
+                startAngle = 0.0001;
+                endAngle = -0.0001;
+            }
+            theSVGpath = "";
+            arc = describeArc(x, y, radius, startAngle, endAngle);
+            
+            for (i=0; i < arc.length; i++) { 
+                theSVGpath += arc[i] + " ";
+            }
+            
+            let tempAttributes = {
+                'id':id ,
+                'fill':fillClr ,
+                'stroke': clr ,
+                'stroke-width':thickness ,
+                'd': theSVGpath
+            };
+            return tempAttributes;
+
+        }
+
+        // Returns an attribute object that can be attached to a <path> object to create an Sector     
+        // IF the Sector is being redefined, only the "d" attribute need be updated
+        // Note: a Sector is a 2 dimensional area, with 2 radii and an Arc in between (ie  - it's pointy at the centre of the circle it emanates from, defined by x,y )
+        function getSVGforSector(x, y, radius, startAngle, endAngle, id='arc', clr='blue', thickness=2, fillClr='none') {
+            if (startAngle == endAngle) {
+                startAngle = 0.0001;
+                endAngle = -0.0001;
+            }
+            theSVGpath = "";
+            arc = describeArc(x, y, radius, startAngle, endAngle);
+            
+            for (i=0; i < arc.length; i++) { 
+                theSVGpath += arc[i] + " ";
+            }
+            theSVGpath += " L " + x + " " + y + " ";
+            start = polarToCartesian(x, y, radius, endAngle);
+            theSVGpath += " L " + start[0] + " " + start[1] + " ";
+
+            let tempAttributes = {
+                'id':id ,
+                'fill':fillClr ,
+                'stroke': clr ,
+                'stroke-width':thickness ,
+                'd': theSVGpath
+            };
+            return tempAttributes;
+
+        }
+        // Returns an attribute object that can be attached to a <path> object to create an Wedge     
+        // IF the Wedge is being redefined, only the "d" attribute need be updated
+        // Note 1: the radius parameter refers to the OUTER edge of the Wedge, furthest from the centre. 
+        // Note 2:  the wedgeRadius parameter refers to the INNER edge of the Wedge, closest to the centre.
+        // Note 3: a Wedge is a 2 dimensional area, with an Arc for its outer edge, 2 partial radii for its side, and a straight line for its inner edge, closest to the centre of the circle at x,y (It is not pointy)
+        function getSVGforWedge(x, y, radius, wedgeRadius, startAngle, endAngle, id='arc', clr='blue', thickness=2, fillClr='none') {
+            if (startAngle == endAngle) {
+                startAngle = 0.0001;
+                endAngle = -0.0001;
+            }
+            theSVGpath = "";
+            arc = describeArc(x, y, radius, startAngle, endAngle);
+            
+            for (i=0; i < arc.length ; i++) { 
+                theSVGpath += arc[i] + " ";
+            }
+            // theSVGpath .= " L x y ";
+            endWedge = polarToCartesian(x, y, radius - wedgeRadius, endAngle);
+            startWedge = polarToCartesian(x, y, radius - wedgeRadius, startAngle);
+            startPoint = polarToCartesian(x, y, radius, endAngle);
+            theSVGpath += " L " + startWedge[0] + " " + startWedge[1] + " ";
+            theSVGpath += " L " + endWedge[0] + " " + endWedge[1] + " ";
+            theSVGpath += " L " + startPoint[0] + " " + startPoint[1] + " ";
+
+
+           let tempAttributes = {
+                'id':id ,
+                'fill':fillClr ,
+                'stroke': clr ,
+                'stroke-width':thickness ,
+                'd': theSVGpath
+            };
+            return tempAttributes;
+        }
+
+        
+      
+        // EXAMPLE uses for these functions
+        // svg.append("path")
+        //     .attr( getSVGforArc(0, 0, 200, 45, 90, 'arc0n0', 'red', 3) );  
+        // svg.append("path")
+        //     .attr( getSVGforSector(0, 0, 300, 145, 190, 'sect0n0', 'blue', 4, 'pink') );  
+        // svg.append("path")
+        //     .attr( getSVGforWedge(0, 0, 500, 300, 245, 290, 'wedge0n0', 'purple', 6, 'lime') );  
+         
+    
+        /*
+            CREATE the FAN CHART Backdrop 
+            * Made of mostly Wedges (starting with the outermost circle)
+            * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
+        */
+
+        for (let genIndex = FanChartView.numGens2Display; genIndex >= 0 ; genIndex--) {
+            for (let index = 0; index < 2**genIndex; index++) {
+                if (genIndex <= 1) {
+                    // Use a SECTOR for the parents
+                    svg.append("path")
+                        .attr( getSVGforSector(0, 0,  270*(genIndex + 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') );              
+
+                } else {
+                    // Use a WEDGE for ancestors further out
+                    svg.append("path")
+                        .attr( getSVGforWedge(0, 0,  270*(genIndex + 0.5),  270*(genIndex - 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') );              
+
+                }
+            } 
+        }
+        
+        // CREATE a CIRCLE for the Central Person to be drawn on top of
+        svg.append("circle")
+            .attr ( {
+                "cx" : 0,
+                "cy" : 0,
+                "r" : 135,
+                "id":"ctrCirc" ,
+                "fill":"white" ,
+                "stroke":"black" ,
+                "stroke-width":"2" ,
+
+            });
+       
+        // for (let index = 0; index < 4; index++) {
+        //     svg.append("path")
+        //         .attr( getSVGforWedge(0, 0, 270*2.5, 270*1.5, index*360/4, (index+1)*360/4, 'wedge2n' + index, 'black', 2, ' chocolate') );              
+        // } 
+    
         self.load(startId);
     };
 
-    // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
+    
 
-    /** Static variable to hold unique ids for private persons **/
-    FanChartView.nextPrivateId = -1;
+    function redoWedgesForFanChart() {
+        console.log("TIme to RE-WEDGIFY !", this, FanChartView);
 
-    /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
-    FanChartView.maxAngle = 240;
+                /*  HELP ME PLEASE REDO THIS CODE SO I DON'T HAVE TO REPEAT MYSELF REPEAT MYSELF HERE
+            
+                For SOME reason, I need to redefine these SVG helper functions here INSIDE this redoWedgesForFanChart function ...
+                    because if I do not - then the call later for getSVGforWedge gives me an error message (in the console) about unknown function
 
-    /** Static variable to hold the NumberOfGenerations to display  */
-    FanChartView.numGens2Display = 3;
+                    HELP!!!  WHY ??? MAKES NO SENSE !!!
+                */
+                function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+                    angleInRadians = (angleInDegrees) * Math.PI / 180.0;
+
+                    return [centerX + (radius * Math.cos(angleInRadians)),
+                    centerY + (radius * Math.sin(angleInRadians)) ];
+                    // };
+                }
+
+                function describeArc(x, y, radius, startAngle, endAngle){
+
+                    start = polarToCartesian(x, y, radius, endAngle);
+                    end = polarToCartesian(x, y, radius, startAngle);
+
+                    largeArcFlag = (720 + endAngle - startAngle) % 360 <= 180 ? "0" : "1";
+                    // largeArcFlag = 1;
+
+                    d = [
+                        "M", start[0], start[1], 
+                        "A", radius, radius, 0, largeArcFlag, 0, end[0], end[1]
+                    ] ;
+
+                    return d;       
+                }
+
+                function getSVGforArc(x, y, radius, startAngle, endAngle, id='arc', clr='blue', thickness=2) {
+                    fillClr='none';
+                    if (startAngle == endAngle) {
+                        startAngle = 0.0001;
+                        endAngle = -0.0001;
+                    }
+                    theSVGpath = "";
+                    arc = describeArc(x, y, radius, startAngle, endAngle);
+                    
+                    for (i=0; i < arc.length; i++) { 
+                        theSVGpath += arc[i] + " ";
+                    }
+                    
+                    let tempAttributes = {
+                        'id':id ,
+                        'fill':fillClr ,
+                        'stroke': clr ,
+                        'stroke-width':thickness ,
+                        'd': theSVGpath
+                    };
+                    return tempAttributes;
+
+                }
+
+                function getSVGforSector(x, y, radius, startAngle, endAngle, id='arc', clr='blue', thickness=2, fillClr='none') {
+                    if (startAngle == endAngle) {
+                        startAngle = 0.0001;
+                        endAngle = -0.0001;
+                    }
+                    theSVGpath = "";
+                    arc = describeArc(x, y, radius, startAngle, endAngle);
+                    
+                    for (i=0; i < arc.length; i++) { 
+                        theSVGpath += arc[i] + " ";
+                    }
+                    theSVGpath += " L " + x + " " + y + " ";
+                    start = polarToCartesian(x, y, radius, endAngle);
+                    theSVGpath += " L " + start[0] + " " + start[1] + " ";
+
+                    let tempAttributes = {
+                        'id':id ,
+                        'fill':fillClr ,
+                        'stroke': clr ,
+                        'stroke-width':thickness ,
+                        'd': theSVGpath
+                    };
+                    return tempAttributes;
+
+                }
+
+                function getSVGforWedge(x, y, radius, wedgeRadius, startAngle, endAngle, id='arc', clr='blue', thickness=2, fillClr='none') {
+                    if (startAngle == endAngle) {
+                        startAngle = 0.0001;
+                        endAngle = -0.0001;
+                    }
+                    theSVGpath = "";
+                    arc = describeArc(x, y, radius, startAngle, endAngle);
+                    
+                    for (i=0; i < arc.length ; i++) { 
+                        theSVGpath += arc[i] + " ";
+                    }
+                    // theSVGpath .= " L x y ";
+                    endWedge = polarToCartesian(x, y, radius - wedgeRadius, endAngle);
+                    startWedge = polarToCartesian(x, y, radius - wedgeRadius, startAngle);
+                    startPoint = polarToCartesian(x, y, radius, endAngle);
+                    theSVGpath += " L " + startWedge[0] + " " + startWedge[1] + " ";
+                    theSVGpath += " L " + endWedge[0] + " " + endWedge[1] + " ";
+                    theSVGpath += " L " + startPoint[0] + " " + startPoint[1] + " ";
+
+
+                    let tempAttributes = {
+                        'id':id ,
+                        'fill':fillClr ,
+                        'stroke': clr ,
+                        'stroke-width':thickness ,
+                        'd': theSVGpath
+                    };
+                    return tempAttributes;
+                }
+                 /*  HELP ME PLEASE REDO THIS CODE SO I DON'T HAVE TO REPEAT MYSELF REPEAT MYSELF HERE
+                
+                    END of STUPID REPEAT OF FUNCTIONS
+
+                     HELP!!!  WHY ??? MAKES NO SENSE !!!
+                */
+
+         if (FanChartView.lastAngle != FanChartView.maxAngle) {
+            // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
+             for (let genIndex = FanChartView.numGens2Display; genIndex >= 0 ; genIndex--) {
+                 for (let index = 0; index < 2**genIndex; index++) {
+                    let SVGcode = "";
+                    if (genIndex <= 1) {
+                        SVGcode = getSVGforSector(0, 0,  270*(genIndex + 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') ;              
+
+                    } else {
+                        SVGcode = getSVGforWedge(0, 0,  270*(genIndex + 0.5),  270*(genIndex - 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') ;                                  
+                    }
+                    
+                     console.log(SVGcode.id);
+                     d3.select("#" + SVGcode.id).attr({"d" : SVGcode.d});
+                     let theWedge = d3.select("#" + SVGcode.id);
+                     console.log( "theWedge:",theWedge[0][0] );
+                    } 
+         
+                }
+            FanChartView.lastAngle = FanChartView.maxAngle;
+        }
+    }
 
     /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
     FanChartView.redraw = function () {
         // console.log("FanChartView.redraw");
+        redoWedgesForFanChart();
         FanChartView.myAncestorTree.draw();
     };
 
@@ -284,33 +614,7 @@
         return this;
     };
 
-    // REVISE THIS FUNCTION to instead of drawing connecting lines to draw the FAN CHART SHELL around the peeps
-    /**
-     * Draw/redraw the connecting lines
-     */
-    // Tree.prototype.drawLinks = function(links){
-
-    // 	var self = this;
-
-    // 	// Get a list of existing links
-    // 	var link = this.svg.selectAll("path.link." + this.selector)
-    // 			.data(links, function(link){
-    // 				return link.target.getId();
-    // 			});
-
-    // 	// Add new links
-    // 	link.enter().append("path")
-    // 			.attr("class", "link " + this.selector);
-
-    // 	// Remove old links
-    // 	link.exit().remove();
-
-    // 	// Update the paths
-    // 	link.attr("d", function(d){
-    // 		return self.elbow(d);
-    // 	});
-    // };
-
+   
     /**
      * Helper function for drawing straight connecting lines
      * http://stackoverflow.com/a/10249720/879121
