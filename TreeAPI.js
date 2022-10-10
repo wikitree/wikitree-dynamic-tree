@@ -96,6 +96,28 @@ WikiTreeAPI.getPerson = function(id,fields) {
 		.then(function(result) {
 			return new WikiTreeAPI.Person(result[0].person);
 		});
+
+	}
+// To get a set of Ancestors for a given id, we POST to the API's getAncestors action. When we get a result back,
+// we leave the result as an array of objects
+// Note that postToAPI returns the Promise from jquerys .ajax() call.
+// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
+
+// So we can use this through our asynchronous actions with something like:
+// WikiTree.getAncestors(myID, 5, ['Id','Name', 'LastNameAtBirth']).then(function(result) {
+//    // the "result" here is that from our API call. The profile data is in result[0].ancestors, which will be an array of objects
+// });
+
+// WARNING:  If you just do a NewAncestorsArry = WikiTree.getAncestors(id,depth,fields);
+//     --> what you get is the promise object - NOT the array of ancestors you might expect.  
+// You HAVE to use the .then() with embedded function to wait and process the results
+//
+WikiTreeAPI.getAncestors = function(id, depth , fields) {
+	return WikiTreeAPI.postToAPI( { 'action': 'getAncestors', 'key': id,  'depth': depth, 'fields': fields.join(','), 'resolveRedirect': 1 } )
+		.then(function(result) {
+			// console.log( result[0].ancestors );
+ 			return result[0].ancestors;
+		});
 }
 
 // This is just a wrapper for the Ajax call, sending along necessary options for the WikiTree API.
