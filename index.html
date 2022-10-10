@@ -24,6 +24,7 @@
     <script src="views/restyledBaseExample/restyledBaseExample.js"></script>
     <script src="views/timeline/timeline.js"></script>
     <script src="views/fanChart/FanChartView.js"></script>
+    <script src="views/topolaViewer/topolaViewer.js"></script>
 
     <script src="views/ahnentafel/ahnentafel.js"></script>
     <link rel="stylesheet" href="views/ahnentafel/ahnentafel.css" />
@@ -61,6 +62,7 @@
             "timeline": new TimelineView(),
             "fanchart": new FanChartView(),
             "ahnentafel": new AhnentafelView(),
+            "topolaViewer": new TopolaViewerView(),
           },
           new SessionManager(WikiTreeAPI, loginManager)
         ).render();
