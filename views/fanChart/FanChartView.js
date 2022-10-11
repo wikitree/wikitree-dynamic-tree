@@ -37,6 +37,8 @@
     /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
     FanChartView.maxAngle = 240;
     FanChartView.lastAngle = 240;
+    FanChartView.lastNumGens = 5;
+    FanChartView.maxNumGens = 10;
 
     /** Static variable to hold the NumberOfGenerations to display  */
     FanChartView.numGens2Display = 5;
@@ -137,7 +139,7 @@
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
 
-        for (let genIndex = FanChartView.numGens2Display; genIndex >= 0 ; genIndex--) {
+        for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0 ; genIndex--) {
             for (let index = 0; index < 2**genIndex; index++) {
                 if (genIndex <= 1) {
                     // Use a SECTOR for the parents
@@ -145,13 +147,21 @@
                         .attr( SVGfunctions.getSVGforSector(0, 0,  270*(genIndex + 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') );              
 
                 } else {
-                    // Use a WEDGE for ancestors further out
+                    // Use a WEDGE for ancestors further out                   
                     svg.append("path")
                         .attr( SVGfunctions.getSVGforWedge(0, 0,  270*(genIndex + 0.5),  270*(genIndex - 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') );              
 
                 }
             } 
         }
+        // HIDE all the unused Wedges in the outer rims that we don't need yet    
+            for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1 ; genIndex--) {
+                for (let index = 0; index < 2**genIndex; index++) {                    
+                    d3.select("#" + 'wedge' + 2**genIndex + 'n' + index).attr({"display" : 'none'});
+                }
+                
+            }
+            
         
         // CREATE a CIRCLE for the Central Person to be drawn on top of
         svg.append("circle")
@@ -174,8 +184,8 @@
     function recalcAndDisplayNumGens() {
         if (FanChartView.numGens2Display < 3) {
             FanChartView.numGens2Display = 3;
-        } else if (FanChartView.numGens2Display > 12) {
-            FanChartView.numGens2Display = 12;
+        } else if (FanChartView.numGens2Display > FanChartView.maxNumGens) {
+            FanChartView.numGens2Display = FanChartView.maxNumGens;
         }
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FanChartView.numGens2Display;
@@ -189,9 +199,9 @@
 
               
 
-         if (FanChartView.lastAngle != FanChartView.maxAngle) {
+         if (FanChartView.lastAngle != FanChartView.maxAngle || FanChartView.lastNumGens != FanChartView.numGens2Display) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
-             for (let genIndex = FanChartView.numGens2Display; genIndex >= 0 ; genIndex--) {
+             for (let genIndex = FanChartView.numGens2Display - 1; genIndex >= 0 ; genIndex--) {
                  for (let index = 0; index < 2**genIndex; index++) {
                     let SVGcode = "";
                     if (genIndex <= 1) {
@@ -202,13 +212,22 @@
                     }
                     
                     //  console.log(SVGcode.id);
-                     d3.select("#" + SVGcode.id).attr({"d" : SVGcode.d});
+                     d3.select("#" + SVGcode.id).attr({"d" : SVGcode.d, 'display':'block'}); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
+                     
                      let theWedge = d3.select("#" + SVGcode.id);
                     //  console.log( "theWedge:",theWedge[0][0] );
                     } 
          
                 }
+            // HIDE all the unused Wedges in the outer rims that we don't need yet    
+            for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1 ; genIndex--) {
+                for (let index = 0; index < 2**genIndex; index++) {                    
+                    d3.select("#" + 'wedge' + 2**genIndex + 'n' + index).attr({"display" : 'none'});
+                }
+                
+            }
             FanChartView.lastAngle = FanChartView.maxAngle;
+            FanChartView.lastNumGens = FanChartView.numGens2Display;
         }
     }
 
