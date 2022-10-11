@@ -170,9 +170,13 @@ WikiTreeAPI.getAncestors = function (id, depth, fields) {
 
 // So we can use this through our asynchronous actions with something like:
 
-// WikiTree.getRelatives(nextIDsToLoad, ['Id','Name', 'LastNameAtBirth'], {getParents:true} ).then( function(result) {
-//     // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
-//	};
+// WikiTree.getRelatives(nextIDsToLoad, ['Id','Name', 'LastNameAtBirth'], {getParents:true} ).then( 
+//		function(result) {
+//  	 	  // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
+//				 for (let index = 0; index < result.length; index++) {
+//				 	thePeopleList.add(result[index].person);                        
+//				 }
+//		};
 
 // NOTE:  the "result" here that is the input to the .then function is the JSON from our API call. The profile data is in result[0].items, which will be an array of objects
 //  Each object (or item) has a key, user_id, user_name, then a person object (that contains the fields requested),
@@ -183,18 +187,20 @@ WikiTreeAPI.getAncestors = function (id, depth, fields) {
 // WARNING:  See note above about what you get if you don't use the .then() ....
 //
 WikiTreeAPI.getRelatives = function(IDs, fields, options = {}) {
-	let getRelativesParameters = { 'action': 'getRelatives', 'keys': IDs.join(','), 'fields': fields.join(','), 'resolveRedirect': 1 };
+	let getRelativesParameters = { action: 'getRelatives', keys: IDs.join(','), fields: fields.join(','), resolveRedirect: 1 };
+
+	// go through the options object, and add any of those options to the getRelativesParameters
 	for (const key in options) {
 		if (Object.hasOwnProperty.call(options, key)) {
 			const element = options[key];
 			getRelativesParameters[key] = element;
 		}
 	}
-	console.log("getRelativesParameters: ", getRelativesParameters);
+	// console.log("getRelativesParameters: ", getRelativesParameters);
 
 	return WikiTreeAPI.postToAPI( getRelativesParameters )
 		.then(function(result) {
-			console.log("RESULT from getRelatives:", result );
+			// console.log("RESULT from getRelatives:", result );
  			return result[0].items;
 		});
 }

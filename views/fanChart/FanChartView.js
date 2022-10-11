@@ -227,19 +227,20 @@
                     "Name",
                     "Gender",
                     "Privacy",
-                ] , {getParents:true} ).then( function (result) {
-                    if (result){ // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                        FanChartView.theAncestors = result;
-                        console.log("theAncestors:", FanChartView.theAncestors);
-                        // console.log("person with which to drawTree:", person);
-                        for (let index = 0; index < FanChartView.theAncestors.length; index++) {
-                            const element = FanChartView.theAncestors[index];
-                            thePeopleList.add(FanChartView.theAncestors[index].person);                        
+                ] , {getParents:true} ).then( 
+                    
+                    function (result) {
+                        if (result){ // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
+                            FanChartView.theAncestors = result;
+                            console.log("theAncestors:", FanChartView.theAncestors);
+                            // console.log("person with which to drawTree:", person);
+                            for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                                thePeopleList.add(FanChartView.theAncestors[index].person);                        
+                            }
+                            FanChartView.myAhnentafel.update();
                         }
-                        FanChartView.myAhnentafel.update();
-                    }
-                    // self.drawTree();
-                } );
+                        // self.drawTree();
+                    } );
 
     }
     // Redraw the Wedges if needed for the Fan Chart
@@ -730,6 +731,7 @@
      */
     var AncestorTree = function (svg) {
         console.log("new var ANCESTOR TREE");
+
         // RESET  the # of Gens parameters
         FanChartView.numGens2Display = 5;
         FanChartView.lastNumGens = 5;
