@@ -40,6 +40,10 @@ To create your new view, you may want to start with a separate GitHub branch. Th
 
 ````git checkout -b newView````
 
+### Check the WikiTree codestyle
+
+Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally set your editor to follow our formatting rules. The life will be much easier for everybody, especially when checking diffs of your changes at Github ;-).
+
 ### Create some new files for your project
 
 1. Create a new subdirectory (e.g. `views/newView/`) inside `views/` to hold the new code
