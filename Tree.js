@@ -70,12 +70,11 @@ window.View = class View {
     init(container_selector, person_id) {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
-}
+};
 
-
-/* 
+/*
  * The ViewRegistry holds the configuration for our collection of different views, builds the <select> field to change between them,
- * and launches the selected view when the "Go" button is clicked. 
+ * and launches the selected view when the "Go" button is clicked.
  */
 window.ViewRegistry = class ViewRegistry {
     // These are all divs in index.html holding the various content sections.
@@ -105,7 +104,7 @@ window.ViewRegistry = class ViewRegistry {
         };
     }
 
-    // Build the <select> option list from the individual views in the registry. 
+    // Build the <select> option list from the individual views in the registry.
     // Add an event listener to the "go" button to call onSubmit() when clicked.
     // Fill in some data from the logged-in user.
     render() {
@@ -125,10 +124,10 @@ window.ViewRegistry = class ViewRegistry {
         if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
     }
 
-    // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View. 
+    // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View.
     // Currently we call getPerson() at the API to see that the provided ID is valid, and then launch the view.
     // Possibly this should be changed/removed. Different views require different incoming data, and some are just using the ID
-    // and then immediately recalling getPerson() on that ID, which is a waste. 
+    // and then immediately recalling getPerson() on that ID, which is a waste.
     onSubmit(e) {
         e.preventDefault();
 
@@ -199,7 +198,7 @@ window.ViewRegistry = class ViewRegistry {
 
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
     }
-}
+};
 
 // This just stores the WikiTree ID (i.e. "name") and ID of the viewing user, if they are logged into the API.
 window.WTUser = class WTUser {
@@ -211,7 +210,7 @@ window.WTUser = class WTUser {
     isLoggedIn() {
         return this.name && this.id;
     }
-}
+};
 
 // This mediates the login to the WikiTree API.
 // See: https://github.com/wikitree/wikitree-api/blob/main/authentication.md
@@ -265,7 +264,7 @@ window.LoginManager = class LoginManager {
             this.events?.onAuthFail(data);
         }
     }
-}
+};
 window.SessionManager = class SessionManager {
     C_PERSON_ID = "viewTreePersonId";
     C_PERSON_NAME = "viewTreePersonName";
@@ -302,8 +301,8 @@ window.SessionManager = class SessionManager {
     // For the version of the tree hosted on WikiTree.com itself, we want to be able to set the starting parameters by setting the cookies we use to store them.
     // Since the tree can be hosted at other paths (e.g. /treewidget/...), we need to store the cookies at the root "/" path so they are shared.
     saveCookies() {
-        this.wtAPI.cookie(this.C_VIEW_ID, this.viewID, { 'path': '/' });
-        this.wtAPI.cookie(this.C_PERSON_ID, this.personID, { 'path': '/' });
-        this.wtAPI.cookie(this.C_PERSON_NAME, this.personName, { 'path': '/' });
+        this.wtAPI.cookie(this.C_VIEW_ID, this.viewID, { path: "/" });
+        this.wtAPI.cookie(this.C_PERSON_ID, this.personID, { path: "/" });
+        this.wtAPI.cookie(this.C_PERSON_NAME, this.personName, { path: "/" });
     }
-}
+};
