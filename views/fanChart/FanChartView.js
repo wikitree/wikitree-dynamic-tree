@@ -43,6 +43,7 @@
     FanChartView.lastNumGens = 5;
     FanChartView.numGensRetrieved = 5;
     FanChartView.maxNumGens = 10;
+    FanChartView.workingMaxNumGens = 6;
 
     
 
@@ -94,7 +95,7 @@
              '</td>' +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right"> &#x1F4BE; | <font size=+2>&#x2699;</font></td>' +
-            "</tr></table>";
+            "</tr></table><DIV id=WarningMessageBelowButtonBar></DIV>";
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML;
@@ -183,13 +184,37 @@
         self.load(startId);
     };
 
+    // Flash a message in the WarningMessageBelowButtonBar DIV 
+    function flashWarningMessageBelowButtonBar ( theMessage ) {
+        // console.log(theMessage);        
+        if (theMessage > "") {
+            theMessage = "<P align=center>" + theMessage + "</P>";
+        }
+        document.getElementById("WarningMessageBelowButtonBar").innerHTML = theMessage;
+    }
+
+    function showTemporaryMessageBelowButtonBar(theMessage) {
+        flashWarningMessageBelowButtonBar(theMessage);
+        setTimeout(clearMessageBelowButtonBar, 3000);
+    }
+
+    function clearMessageBelowButtonBar() {
+        document.getElementById("WarningMessageBelowButtonBar").innerHTML = "";
+    }    
     // Make sure that the Button Bar displays the proper number of generations - and - adjust the max / min if needed because of over-zealous clicking
     function recalcAndDisplayNumGens() {
         if (FanChartView.numGens2Display < 3) {
             FanChartView.numGens2Display = 3;
-        } else if (FanChartView.numGens2Display > FanChartView.maxNumGens) {
-            FanChartView.numGens2Display = FanChartView.maxNumGens;
+            showTemporaryMessageBelowButtonBar("3 is the minimum number of generations you can display.")
+        } else if (FanChartView.numGens2Display > FanChartView.workingMaxNumGens) {
+            FanChartView.numGens2Display = FanChartView.workingMaxNumGens;
+            if (FanChartView.workingMaxNumGens < FanChartView.maxNumGens) {
+                flashWarningMessageBelowButtonBar("Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears.");
+            } else {
+                showTemporaryMessageBelowButtonBar(FanChartView.maxNumGens + " is the maximum number of generations you can display.")
+            }
         }
+        
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FanChartView.numGens2Display;
         // console.log("numGensSpan:", numGensSpan);
@@ -237,9 +262,11 @@
                             for (let index = 0; index < FanChartView.theAncestors.length; index++) {
                                 thePeopleList.add(FanChartView.theAncestors[index].person);                        
                             }
-                            FanChartView.myAhnentafel.update();
+                            FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+                            FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
+                            
+                            clearMessageBelowButtonBar();
                         }
-                        // self.drawTree();
                     } );
 
     }
