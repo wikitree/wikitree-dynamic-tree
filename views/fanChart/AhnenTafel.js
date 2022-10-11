@@ -23,7 +23,8 @@ window.AhnenTafel = window.AhnenTafel || {};
 AhnenTafel.Ahnentafel = class Ahnentafel {
 
 	constructor(data) {
-		this.list = new Array([0]);        
+		this.list = new Array([0]);   
+        this.primaryPerson = "";     
     }
 	
     // The update method takes a Person object as input
@@ -31,15 +32,19 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // climbs through their ancestors to fill out the rest of the Ahnentafel
     update( newPerson ) {
         // console.log("Update the Ahnentafel object", newPerson);
-       if (newPerson && newPerson._data.Id) {
-            // this.PrimaryID = newPerson._data.Id
-            this.list = [0 , newPerson._data.Id]; // initialize the Array
 
-            if (newPerson._data.Father && newPerson._data.Father  > 0) {
-                this.addToAhnenTafel(newPerson._data.Father, 2);
+       if (newPerson && newPerson._data.Id) {
+            this.primaryPerson = newPerson;
+       }
+       if (this.primaryPerson) {
+            // this.PrimaryID = newPerson._data.Id
+            this.list = [0 , this.primaryPerson._data.Id]; // initialize the Array
+
+            if (this.primaryPerson._data.Father && this.primaryPerson._data.Father  > 0) {
+                this.addToAhnenTafel(this.primaryPerson._data.Father, 2);
             }
-            if (newPerson._data.Mother && newPerson._data.Mother  > 0) {
-                this.addToAhnenTafel(newPerson._data.Mother, 3);
+            if (this.primaryPerson._data.Mother && this.primaryPerson._data.Mother  > 0) {
+                this.addToAhnenTafel(this.primaryPerson._data.Mother, 3);
             }
         	this.listAll(); // sends message to the console.log for validation - this could be commented out and not hurt anything
        } 
@@ -99,5 +104,38 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // A very BASIC tool to use for quick console.log relief
     listAll() {
         console.log("Ahnentafel:", this);
+    }
+
+    // This function will go through all people at generation (newLevel - 1) - and find all the IDs for their parents
+    // IF that parent already exists in the thePeopleList - fine - no big whoop
+    // IF that parent DOES NOT EXIST, then add their ID to the huge list we're going to send back
+    listOfAncestorsToBeLoadedForLevel(numGens) {
+        let theList = [];
+        let maxNum = this.list.length;
+        let maxNumInGen = 2**numGens;
+        let theMax = Math.min(maxNum, maxNumInGen);
+
+        let minNum = 1;
+        let minNumInGen = 2**(numGens-1);
+        let theMin = Math.max(minNum, minNumInGen);
+
+		for (var i = theMin; i < theMax; i++) {
+			if(this.list[i] && this.list[i] > 0 &&  thePeopleList[ this.list[i] ] ){
+
+                let thePeep = thePeopleList[ this.list[i] ];
+                if (thePeep._data.Father && thePeep._data.Father > 0 && theList.indexOf(thePeep._data.Father) == -1 ) {
+                    theList.push(  thePeep._data.Father );
+                }
+                if (thePeep._data.Mother && thePeep._data.Mother > 0 && theList.indexOf(thePeep._data.Mother) == -1) {
+                    theList.push(  thePeep._data.Mother );
+                }
+
+
+                    // console.log("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);                
+			}
+		}
+        console.log("listOfAncestorsToBeLoadedForLevel has " , theList.length , " ancestors.");
+		return theList;
+
     }
 }
