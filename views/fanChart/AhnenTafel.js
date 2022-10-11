@@ -124,10 +124,19 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
 
                 let thePeep = thePeopleList[ this.list[i] ];
                 if (thePeep._data.Father && thePeep._data.Father > 0 && theList.indexOf(thePeep._data.Father) == -1 ) {
-                    theList.push(  thePeep._data.Father );
+                    if (thePeopleList[thePeep._data.Father ]) {
+                        // father already exists, so don't need to re-load him
+                    } else {
+                        theList.push(  thePeep._data.Father );
+                    }
+
                 }
                 if (thePeep._data.Mother && thePeep._data.Mother > 0 && theList.indexOf(thePeep._data.Mother) == -1) {
-                    theList.push(  thePeep._data.Mother );
+                    if (thePeopleList[thePeep._data.Mother ]) {
+                        // Mother already exists, so don't need to re-load her
+                    } else {
+                        theList.push(  thePeep._data.Mother );
+                    }
                 }
 
 
