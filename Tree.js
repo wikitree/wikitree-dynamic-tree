@@ -299,9 +299,11 @@ window.SessionManager = class SessionManager {
         this.personName = this.wtAPI.cookie(this.C_PERSON_NAME) || null;
     }
 
+    // For the version of the tree hosted on WikiTree.com itself, we want to be able to set the starting parameters by setting the cookies we use to store them.
+    // Since the tree can be hosted at other paths (e.g. /treewidget/...), we need to store the cookies at the root "/" path so they are shared.
     saveCookies() {
-        this.wtAPI.cookie(this.C_VIEW_ID, this.viewID);
-        this.wtAPI.cookie(this.C_PERSON_ID, this.personID);
-        this.wtAPI.cookie(this.C_PERSON_NAME, this.personName);
+        this.wtAPI.cookie(this.C_VIEW_ID, this.viewID, { 'path': '/' });
+        this.wtAPI.cookie(this.C_PERSON_ID, this.personID, { 'path': '/' });
+        this.wtAPI.cookie(this.C_PERSON_NAME, this.personName, { 'path': '/' });
     }
 }
