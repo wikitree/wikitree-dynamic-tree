@@ -37,11 +37,14 @@
     /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
     FanChartView.maxAngle = 240;
     FanChartView.lastAngle = 240;
+    
+    /** Static variables to hold the state of the Number of Generations to be displayed, currently and previously  **/
+    FanChartView.numGens2Display = 5;
     FanChartView.lastNumGens = 5;
+    FanChartView.numGensRetrieved = 5;
     FanChartView.maxNumGens = 10;
 
-    /** Static variable to hold the NumberOfGenerations to display  */
-    FanChartView.numGens2Display = 5;
+    
 
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FanChartView.myAhnentafel = new AhnenTafel.Ahnentafel();
@@ -190,9 +193,55 @@
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FanChartView.numGens2Display;
         // console.log("numGensSpan:", numGensSpan);
-
+        if ( FanChartView.numGens2Display > FanChartView.numGensRetrieved) {
+           
+            loadAncestorsAtLevel(FanChartView.numGens2Display);
+            FanChartView.numGensRetrieved = FanChartView.numGens2Display;
+        }
     }
 
+    function loadAncestorsAtLevel(newLevel) {
+        console.log("Need to load MORE peeps from Generation ", newLevel);
+        let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        console.log(theListOfIDs);
+
+        WikiTreeAPI.getRelatives(theListOfIDs,  [
+                    "Id",
+                    "Derived.BirthName",
+                    "Derived.BirthNamePrivate",
+                    "FirstName",
+                    "MiddleInitial",
+                    "LastNameAtBirth",
+                    "LastNameCurrent",
+                    "BirthDate",
+                    "BirthLocation",
+                    "DeathDate",
+                    "DeathLocation",
+                    "Mother",
+                    "Father",
+                    "Children",
+                    "Parents",
+                    "Spouses",
+                    "Siblings",
+                    "Photo",
+                    "Name",
+                    "Gender",
+                    "Privacy",
+                ] , {getParents:true} ).then( function (result) {
+                    if (result){ // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
+                        FanChartView.theAncestors = result;
+                        console.log("theAncestors:", FanChartView.theAncestors);
+                        // console.log("person with which to drawTree:", person);
+                        for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                            const element = FanChartView.theAncestors[index];
+                            thePeopleList.add(FanChartView.theAncestors[index].person);                        
+                        }
+                        FanChartView.myAhnentafel.update();
+                    }
+                    // self.drawTree();
+                } );
+
+    }
     // Redraw the Wedges if needed for the Fan Chart
     function redoWedgesForFanChart() {
         // console.log("TIme to RE-WEDGIFY !", this, FanChartView);
@@ -680,7 +729,13 @@
      * Manage the ancestors tree
      */
     var AncestorTree = function (svg) {
-        console.log("var ANCESTOR TREE");
+        console.log("new var ANCESTOR TREE");
+        // RESET  the # of Gens parameters
+        FanChartView.numGens2Display = 5;
+        FanChartView.lastNumGens = 5;
+        FanChartView.numGensRetrieved = 5;
+        FanChartView.maxNumGens = 10;
+
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
             console.log("Defining the CHILDREN for ", person._data.Name);
