@@ -662,7 +662,7 @@
                 // HOWEVER ... once we have Too Many cooks in the kitchen, we need to be more efficient with our space, so need to switch to a more vertical-ish approach, stand the name card on its end (now parallel to the spokes)
                 nameAngle += 90;
                 // AND ... if we go beyond the midpoint in this particular ring, we need to rotate it another 180 degrees so that we don't have to read upside down.  All name cards should be readable, facing inwards to the centre of the Fan Chart
-                if (thisPosNum > numSpotsThisGen / 2) {
+                if (thisPosNum >= numSpotsThisGen / 2) {
                     nameAngle += 180;
                 }
             }
