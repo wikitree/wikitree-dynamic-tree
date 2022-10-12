@@ -589,6 +589,9 @@
             .html((ancestorObject) => {
 
                 let person = ancestorObject.person;//thePeopleList[ person.id ];
+                // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
+                let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
+
                 let borderColor = "rgba(102, 204, 102, .5)";
                 if (person.getGender() == "Male") {
                     borderColor = "rgba(102, 102, 204, .5)";
@@ -597,12 +600,36 @@
                     borderColor = "rgba(204, 102, 102, .5)";
                 }
 
-                return `
-				<div class="box" style="background-color: ${borderColor}">
-					<div class="name">${getShortName(person)}</div>
-					<div class="lifespan">${lifespan(person)}</div>
-				</div>
-				`;
+                if (thisGenNum >= 9) {
+                    return `
+                        <div class="box" style="background-color: ${borderColor} ; padding: 0px;">
+                        <div class="name" style="font-size: 10px;" >${getShortName(person)}</div>
+                        </div>
+                    `;
+
+                } else if (thisGenNum >= 8) {
+                    return `
+                        <div class="box" style="background-color: ${borderColor} ; padding: 0px;">
+                        <div class="name" style="font-size: 14px;" >${getShortName(person)}</div>
+                        </div>
+                    `;
+
+                } else if (thisGenNum >= 7) {
+                    return `
+                        <div class="box" style="background-color: ${borderColor} ; padding: 3px;">
+                        <div class="name">${getShortName(person)}</div>
+                        </div>
+                    `;
+
+                }  else {
+                    return `
+                        <div class="box" style="background-color: ${borderColor}">
+                        <div class="name">${getShortName(person)}</div>
+                        <div class="lifespan">${lifespan(person)}</div>
+                        </div>
+                    `;
+
+                } 
             });
 
         // Show info popup on click
@@ -661,10 +688,25 @@
             if (thisGenNum > 4) {
                 // HOWEVER ... once we have Too Many cooks in the kitchen, we need to be more efficient with our space, so need to switch to a more vertical-ish approach, stand the name card on its end (now parallel to the spokes)
                 nameAngle += 90;
+
                 // AND ... if we go beyond the midpoint in this particular ring, we need to rotate it another 180 degrees so that we don't have to read upside down.  All name cards should be readable, facing inwards to the centre of the Fan Chart
                 if (thisPosNum >= numSpotsThisGen / 2) {
                     nameAngle += 180;
+                } 
+                
+                // IF we are in the outer rims, then we need to adjust / tweak the angle since it uses the baseline of the text as its frame of reference
+                if (thisGenNum > 6) {
+                    let fontRadii = {7:9, 8:13, 9:15};
+                    let fontRadius = fontRadii[thisGenNum];
+                    let tweakAngle = Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180 / Math.PI;
+                    // console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
+                    if (thisPosNum >= numSpotsThisGen / 2) {
+                        placementAngle += tweakAngle;                    
+                    } else {
+                        placementAngle -= tweakAngle;
+                    }
                 }
+
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
