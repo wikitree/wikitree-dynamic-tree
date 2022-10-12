@@ -16,7 +16,7 @@
 (function () {
     var originOffsetX = 500,
         originOffsetY = 300,
-        boxWidth = 200,
+        boxWidth = 200*2,
         boxHeight = 50,
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
@@ -95,7 +95,7 @@
              '</td>' +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right"> &#x1F4BE; | <font size=+2>&#x2699;</font></td>' +
-            "</tr></table><DIV id=WarningMessageBelowButtonBar></DIV>";
+            '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML;
@@ -228,47 +228,56 @@
     function loadAncestorsAtLevel(newLevel) {
         console.log("Need to load MORE peeps from Generation ", newLevel);
         let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
-        console.log(theListOfIDs);
+        // console.log(theListOfIDs);
+         if (theListOfIDs.length == 0) {
+            // console.log("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
+            clearMessageBelowButtonBar();
+            FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+            FanChartView.numGensRetrieved++;
+            FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
+        }  else {
 
-        WikiTreeAPI.getRelatives(theListOfIDs,  [
-                    "Id",
-                    "Derived.BirthName",
-                    "Derived.BirthNamePrivate",
-                    "FirstName",
-                    "MiddleInitial",
-                    "LastNameAtBirth",
-                    "LastNameCurrent",
-                    "BirthDate",
-                    "BirthLocation",
-                    "DeathDate",
-                    "DeathLocation",
-                    "Mother",
-                    "Father",
-                    "Children",
-                    "Parents",
-                    "Spouses",
-                    "Siblings",
-                    "Photo",
-                    "Name",
-                    "Gender",
-                    "Privacy",
-                ] , {getParents:true} ).then( 
-                    
-                    function (result) {
-                        if (result){ // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                            FanChartView.theAncestors = result;
-                            console.log("theAncestors:", FanChartView.theAncestors);
-                            // console.log("person with which to drawTree:", person);
-                            for (let index = 0; index < FanChartView.theAncestors.length; index++) {
-                                thePeopleList.add(FanChartView.theAncestors[index].person);                        
-                            }
-                            FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-                            FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
-                            
-                            clearMessageBelowButtonBar();
+            WikiTreeAPI.getRelatives(theListOfIDs,  [
+                "Id",
+                "Derived.BirthName",
+                "Derived.BirthNamePrivate",
+                "FirstName",
+                "MiddleInitial",
+                "LastNameAtBirth",
+                "LastNameCurrent",
+                "BirthDate",
+                "BirthLocation",
+                "DeathDate",
+                "DeathLocation",
+                "Mother",
+                "Father",
+                "Children",
+                "Parents",
+                "Spouses",
+                "Siblings",
+                "Photo",
+                "Name",
+                "Gender",
+                "Privacy",
+            ] , {getParents:true} ).then( 
+                
+                function (result) {
+                    if (result){ // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
+                        FanChartView.theAncestors = result;
+                        console.log("theAncestors:", FanChartView.theAncestors);
+                        // console.log("person with which to drawTree:", person);
+                        for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                            thePeopleList.add(FanChartView.theAncestors[index].person);                        
                         }
-                    } );
-
+                        FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+                        FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
+                        
+                        clearMessageBelowButtonBar();
+                    }
+                } );
+                
+                
+        }
     }
     // Redraw the Wedges if needed for the Fan Chart
     function redoWedgesForFanChart() {
@@ -384,6 +393,7 @@
                     }
                     FanChartView.myAhnentafel.update(person);
                     self.drawTree(person);
+                    clearMessageBelowButtonBar();
                 } );
 
         });
@@ -554,10 +564,10 @@
      * Draw the person boxes.
      */
     Tree.prototype.drawNodes = function (nodes) {
-        console.log("Tree.prototpe.DRAW NODES", nodes);
+        // console.log("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
         
-        console.log("this.selector = ", this.selector);
+        // console.log("this.selector = ", this.selector);
 
         // Get a list of existing nodes
         var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (ancestorObject) {
@@ -575,10 +585,13 @@
             .append("g")
             .attr("class", "person " + this.selector);
 
+        // console.log("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
+
         // Draw the person boxes
         nodeEnter
             .append("foreignObject")
             .attr({
+                id: "foreignObj4" ,
                 width: boxWidth,
                 height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
                 x: -boxWidth / 2,
@@ -594,39 +607,78 @@
 
                 let borderColor = "rgba(102, 204, 102, .5)";
                 if (person.getGender() == "Male") {
-                    borderColor = "rgba(102, 102, 204, .5)";
+                    // borderColor = "rgba(102, 102, 204, .5)";
                 }
                 if (person.getGender() == "Female") {
-                    borderColor = "rgba(204, 102, 102, .5)";
+                    // borderColor = "rgba(204, 102, 102, .5)";
                 }
+
+                // DEFAULT STYLE used to be style="background-color: ${borderColor} ;"
 
                 if (thisGenNum >= 9) {
                     return `
-                        <div class="box" style="background-color: ${borderColor} ; padding: 0px;">
-                        <div class="name" style="font-size: 10px;" >${getShortName(person)}</div>
+                        <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; padding: 0px;">
+                        <div class="name" style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
 
                 } else if (thisGenNum >= 8) {
                     return `
-                        <div class="box" style="background-color: ${borderColor} ; padding: 0px;">
-                        <div class="name" style="font-size: 14px;" >${getShortName(person)}</div>
+                        <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; padding: 0px;">
+                        <div class="name" style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
 
                 } else if (thisGenNum >= 7) {
                     return `
-                        <div class="box" style="background-color: ${borderColor} ; padding: 3px;">
-                        <div class="name">${getShortName(person)}</div>
+                        <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; padding: 3px;">
+                        <div class="name"><B>${getShortName(person)}</B></div>
                         </div>
                     `;
 
-                }  else {
+                }  else if (thisGenNum >= 4) {
+                    let photoUrl = person.getPhotoUrl(75),
+                    treeUrl = window.location.pathname + "?id=" + person.getName();
+
+                    // Use generic gender photos if there is not profile photo available
+                    if (!photoUrl) {
+                        if (person.getGender() === "Male") {
+                            photoUrl = "images/icons/male.gif";
+                        } else {
+                            photoUrl = "images/icons/female.gif";
+                        }
+                    }
                     return `
-                        <div class="box" style="background-color: ${borderColor}">
-                        <div class="name">${getShortName(person)}</div>
-                        <div class="lifespan">${lifespan(person)}</div>
-                        </div>
+                    <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; "> 
+                    <div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
+                    <div class="name"><B>${getShortName(person)}</B></div>
+                    <div class="lifespan">${lifespan(person)}</div>
+                    </div>
+                    `;
+
+                }  else {
+                    let photoUrl = person.getPhotoUrl(75),
+                    treeUrl = window.location.pathname + "?id=" + person.getName();
+
+                    // Use generic gender photos if there is not profile photo available
+                    if (!photoUrl) {
+                        if (person.getGender() === "Male") {
+                            photoUrl = "images/icons/male.gif";
+                        } else {
+                            photoUrl = "images/icons/female.gif";
+                        }
+                    }
+
+                     return   `<div class="top-info" id=wedgeInfoFor${ancestorObject.ahnNum}>
+                     <div class="vital-info">
+						<div class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
+						  <div class="name">
+						    <b>${person.getDisplayName()}</b>						    
+						  </div>
+						  <div class="birth vital">${birthString(person)}</div>
+						  <div class="death vital">${deathString(person)}</div>
+						</div>
+					</div>
                     `;
 
                 } 
@@ -667,8 +719,6 @@
             // console.log("node.attr.transform  - line:324 (x,y) = ",d.x, d.y, d._data.Name);
             d = ancestorObject.person; //thePeopleList[ person.id ];
 
-            // console.log("POSITION node ", ancestorObject.ahnNum , d);
-            
             let thisRadius = 270; // NEED TO CHANGE THIS FROM BEING HARD CODED EVENTUALLY
 
             // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
@@ -678,6 +728,38 @@
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
 
+
+            let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum)
+            if (theInfoBox) {
+                let theBounds = theInfoBox;//.getBBox();
+                // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
+                // theInfoBox.style.width = "300px";
+                // theInfoBox.style.x = "-190px";
+                theInfoBox.parentNode.parentNode.setAttribute("y", -100) ;
+                if (ancestorObject.ahnNum == 1) {
+                    theInfoBox.parentNode.parentNode.setAttribute("y", -120) ;
+                    theInfoBox.parentNode.parentNode.setAttribute("x", -125) ;
+                    theInfoBox.parentNode.parentNode.setAttribute("width", 250) ;
+                } else if (ancestorObject.ahnNum > 7 && FanChartView.maxAngle == 180) {
+                    theInfoBox.parentNode.parentNode.setAttribute("x", -140) ;
+                    theInfoBox.parentNode.parentNode.setAttribute("width", 280) ;
+                }
+                
+            } else {
+                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum)
+                theWedgeBox.parentNode.parentNode.setAttribute("width", 266) ;
+                theWedgeBox.parentNode.parentNode.setAttribute("x", -133) ;
+
+                if (thisGenNum == 4) {
+                    theWedgeBox.parentNode.parentNode.setAttribute("y", -80) ;
+                    if (FanChartView.maxAngle == 180) {
+                        theWedgeBox.parentNode.parentNode.setAttribute("x", -70) ;
+                        theWedgeBox.parentNode.parentNode.setAttribute("width", 140) ;
+                    }
+                }
+            }
+            
+           
             // Placement Angle = the angle at which the person's name card should be placed. (in degrees, where 0 = facing due east, thus the starting point being 180, due west, with modifications)
             let placementAngle =
                 180 +
@@ -694,6 +776,10 @@
                     nameAngle += 180;
                 } 
                 
+                // hide photos as well (for now at least)
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+                if (thePhotoDIV) {thePhotoDIV.style.display = 'none';}
+
                 // IF we are in the outer rims, then we need to adjust / tweak the angle since it uses the baseline of the text as its frame of reference
                 if (thisGenNum > 6) {
                     let fontRadii = {7:9, 8:13, 9:15};
@@ -766,7 +852,7 @@
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-						    <span class="tree-links"><a onClick="newTree('${person.getName()}');" href="#"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
+						    <span class="tree-links"><a onClick="newTree('${person.getName()}');" href="#"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>
