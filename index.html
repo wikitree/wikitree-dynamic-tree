@@ -23,6 +23,10 @@
     <script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
     <script src="views/restyledBaseExample/restyledBaseExample.js"></script>
     <script src="views/timeline/timeline.js"></script>
+
+    <script src="views/fanChart/SVGfunctions.js"></script>
+    <script src="views/fanChart/AhnenTafel.js"></script>
+    <script src="views/fanChart/PeopleCollection.js"></script>
     <script src="views/fanChart/FanChartView.js"></script>
 
     <script src="views/ahnentafel/ahnentafel.js"></script>
@@ -35,41 +39,8 @@
   </head>
 
   <body>
-    <script>
-      window.addEventListener("DOMContentLoaded", (event) => {
-        const loginManager = new LoginManager(
-          WikiTreeAPI,
-          (events = {
-            onLoggedIn: (user) => {
-              document.querySelector("#wt-api-login").innerHTML = `Logged into API: ${user.name}`;
-            },
-            onUnlogged: () => {
-              document.querySelector("#wt-api-login").innerHTML = `
-                <form action="https://api.wikitree.com/api.php" method="POST">
-                    <input type="hidden" name="action" value="clientLogin">
-                    <input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
-                    <input type="submit" class="small" value="Login at WikiTree API" 
-                      title="Please login to the WikiTree API to use the Tree Viewer on non-public profiles.">
-                </form>
-                `;
-            },
-          })
-        );
-
-        new ViewRegistry(
-          {
-            "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
-            "restyled-dynamic-tree": new AlternateViewExample(),
-            "timeline": new TimelineView(),
-            "fanchart": new FanChartView(),
-            "ahnentafel": new AhnentafelView(),
-            "surnames": new SurnamesView(),
-          },
-          new SessionManager(WikiTreeAPI, loginManager)
-        ).render();
-      });
-    </script>
-
+    <!-- The View Registry, for adding new views, is in index.js. -->
+    <script src="index.js"></script>
     <header>
       <a
         href="https://www.wikitree.com/"

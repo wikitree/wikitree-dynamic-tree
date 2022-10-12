@@ -1,7 +1,6 @@
-
-/* 
+/*
  * SurnamesView
- * 
+ *
  * Display surnames from ancestors, highlighting those that are unique.
  */
 
@@ -9,7 +8,7 @@ window.SurnamesView = class SurnamesView extends View {
     meta() {
         return {
             title: "Surnames List",
-            description: `Display the surnames of ancestors, highlighting those that are unique.`,            
+            description: `Display the surnames of ancestors, highlighting those that are unique.`,
             docs: "",
         };
     }
@@ -18,7 +17,7 @@ window.SurnamesView = class SurnamesView extends View {
         let view = new Surnames(container_selector, person_id);
         view.displaySurnames();
     }
-}
+};
 
 /*
  * Display a list of ancestor surnames.
@@ -41,20 +40,20 @@ window.Surnames = class Surnames {
         this.surnamesSeen = new Array();
 
         // Placeholder data when we don't have a particular ancestor.
-        this.blankPerson = { 'Id': 0, 'FirstName': 'Unknown' };
+        this.blankPerson = { Id: 0, FirstName: "Unknown" };
 
         // The data we want to retrieve for each profile. We need to get everything required to list the ancestor (in displayPerson())
         // as well as Mother and Father so we can go back more generations.
-        this.profileFields = 'Id,Name,FirstName,RealName,LastNameAtBirth,LastNameCurrent,Gender,DataStatus,Privacy,Father,Mother';
+        this.profileFields =
+            "Id,Name,FirstName,RealName,LastNameAtBirth,LastNameCurrent,Gender,DataStatus,Privacy,Father,Mother";
     }
-
 
     // This is the start of our view generation. We grab the starting profile by ID.
     // If that is valid, then we update the info in the View description and kick off the recursive gathering and display of ancestors.
     async displaySurnames() {
         $(this.selector).html("Working....");
 
-        let data = await WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': this.startId, 'fields': this.profileFields });
+        let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
         if (data.length != 1) {
             $(this.selector).html(`There was an error starting with ${this.startId}.`);
             return;
@@ -64,33 +63,37 @@ window.Surnames = class Surnames {
         // If the profile is private and the viewing user is not on the Trusted List, we still might not be able to continue.
         let p = data[0].person;
         if (p.Privacy < 50 && !p.Gender) {
-            $(this.selector).html(`<p>Sorry, this profile is <a href="/wiki/Privacy">Private</a> and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`);
+            $(this.selector).html(
+                `<p>Sorry, this profile is <a href="/wiki/Privacy">Private</a> and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
+            );
             return;
         }
 
         // Now clear out our tree view and start filling it.
         $(this.selector).html(`<div id="surnamesList"></div>`);
 
-        let x = p.Name.split('-');
-        let count = x[ x.length-1 ];
+        let x = p.Name.split("-");
+        let count = x[x.length - 1];
 
         let html = `<p>Here are the last names from <a href="https://www.wikitree.com/wiki/${p.Name}">${p.RealName} ${p.LastNameCurrent}</a>'s <a href="https://wikitree.com/genealogy/${p.LastNameAtBirth}-Family-Tree-${count}">family tree</a>.`;
         if (p.Privacy >= 35) {
             html += `<br /><span class="small">This page is made for sharing, especially with <a href="https://www.wikitree.com/wiki/DNA_Matches" target="_Help" title="Information on DNA match sharing features">DNA matches</a>: https://www.WikiTree.com/treewidget/${p.Name}/10</span>`;
         }
         html += `</p>`;
-        $('#view-description').html(html);
+        $("#view-description").html(html);
 
         // Add our starting profile.
-        $('#surnamesList').append(`<div class="generationRow"><div class="surnameItem gen0 newSurname"><a href="https://www.wikitree.com/wiki/${p.Name}">${p.LastNameAtBirth}</a></div></div>`);
+        $("#surnamesList").append(
+            `<div class="generationRow"><div class="surnameItem gen0 newSurname"><a href="https://www.wikitree.com/wiki/${p.Name}">${p.LastNameAtBirth}</a></div></div>`
+        );
         this.surnamesSeen.push(p.LastNameAtBirth);
 
         // Add ancestors recursively.
         let paternal = new Array();
-        paternal.push( await this.nextPerson(p.Father) );
+        paternal.push(await this.nextPerson(p.Father));
 
         let maternal = new Array();
-        maternal.push( await this.nextPerson(p.Mother) );
+        maternal.push(await this.nextPerson(p.Mother));
 
         this.displayAncestors(paternal, maternal);
     }
@@ -105,36 +108,36 @@ window.Surnames = class Surnames {
         let html = `<div class="generationRow">`;
 
         html += `<div class="paternalColumn">`;
-        for (let i=0; i<paternal.length; i++) {
+        for (let i = 0; i < paternal.length; i++) {
             html += this.displayPerson(paternal[i]);
-            nextPaternal.push( await this.nextPerson(paternal[i].Father) );
-            nextPaternal.push( await this.nextPerson(paternal[i].Mother) );
+            nextPaternal.push(await this.nextPerson(paternal[i].Father));
+            nextPaternal.push(await this.nextPerson(paternal[i].Mother));
         }
         html += `</div>`;
 
         html += `<div class="maternalColumn">`;
-        for (let i=0; i<maternal.length; i++) {
+        for (let i = 0; i < maternal.length; i++) {
             html += this.displayPerson(maternal[i]);
-            nextMaternal.push( await this.nextPerson(maternal[i].Father) );
-            nextMaternal.push( await this.nextPerson(maternal[i].Mother) );
+            nextMaternal.push(await this.nextPerson(maternal[i].Father));
+            nextMaternal.push(await this.nextPerson(maternal[i].Mother));
         }
         html += `</div>`;
 
         html += `<div style="clear:both;"></div>`;
         html += `</div>`; // end generation div
 
-        $('#surnamesList').append(html);
+        $("#surnamesList").append(html);
         this.generation++;
         if (this.generation <= this.maxGeneration) {
             this.displayAncestors(nextPaternal, nextMaternal);
         }
     }
 
-    // Grab a parent profile for the next generation. If we don't have an id, we use a place-holder instead, so the 
+    // Grab a parent profile for the next generation. If we don't have an id, we use a place-holder instead, so the
     // display keeps going with an "Unknown" relative displayed.
     async nextPerson(id) {
         if (id > 0) {
-            let data = await WikiTreeAPI.postToAPI({ 'action': 'getPerson', 'key': id, 'fields': this.profileFields });
+            let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: this.profileFields });
             if (data.length != 1) {
                 return this.blankPerson;
             } else {
@@ -149,21 +152,24 @@ window.Surnames = class Surnames {
     // new surnames, and sized by generation.
     displayPerson(person) {
         let classes = "surnameItem";
-        if ((this.surnamesSeen.indexOf(person.LastNameAtBirth) < 0) && (person.Id != 0)) {
+        if (this.surnamesSeen.indexOf(person.LastNameAtBirth) < 0 && person.Id != 0) {
             classes += " newSurname";
-            if (this.generation <= 6) { classes += ` gen${this.generation}`; } else { classes += " genx"; }
+            if (this.generation <= 6) {
+                classes += ` gen${this.generation}`;
+            } else {
+                classes += " genx";
+            }
         }
         this.surnamesSeen.push(person.LastNameAtBirth);
         let html = `<div class="${classes}">`;
 
         if (person.Id == 0) {
             html += `[?]`;
-        }
-        else {
+        } else {
             html += `<a href="https://www.wikitree.com/wiki/${person.Name}">${person.LastNameAtBirth}</a>`;
         }
         html += `</div>`;
 
         return html;
     }
-}
+};
