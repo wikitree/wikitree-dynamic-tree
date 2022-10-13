@@ -184,16 +184,16 @@ window.ViewRegistry = class ViewRegistry {
 
             wtStatus.classList.add("hidden");
             wtStatus.classList.remove("red");
-            wtStatus.setHTML("");
+            wtStatus.innerHTML = "";
 
             view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
             parentContainer.classList.remove("hidden");
         } else {
             parentContainer.classList.add("hidden");
             if (wtID) {
-                wtStatus.setHTML(`Person not found for WikiTree ID ${wtID}.`);
+                wtStatus.innerHTML =`Person not found for WikiTree ID ${wtID}.`;
             } else {
-                wtStatus.setHTML("Please enter a WikiTree ID.");
+                wtStatus.innerHTML = "Please enter a WikiTree ID.";
             }
             wtStatus.classList.add("red");
             wtStatus.classList.remove("hidden");
