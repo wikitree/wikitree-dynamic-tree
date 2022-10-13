@@ -420,7 +420,7 @@
             .append("xhtml:div").html(`
 				<div class="popup-box" style="border-color: ${borderColor}">
 					<div class="top-info">
-						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
+						<div class="image-box"><img src="${photoUrl}"></div>
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
@@ -621,8 +621,8 @@
      */
     function sortByBirthDate(list) {
         list.sort((a, b) => {
-            const aBirthYear = a._data.BirthDate.split("-")[0];
-            const bBirthYear = b._data.BirthDate.split("-")[0];
+            const aBirthYear = a._data.BirthDate ? a._data.BirthDate.split("-")[0] : "0000";
+            const bBirthYear = b._data.BirthDate ? b._data.BirthDate.split("-")[0] : "0000";
 
             return aBirthYear - bBirthYear;
         });
