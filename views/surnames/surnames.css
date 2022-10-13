@@ -4,22 +4,20 @@
 }
 
 .generationRow {
-  clear: both;
-  margin-left: auto;
-  margin-right: auto;
   text-align: center;
-  padding: 0px;
   border-bottom: 1px dotted black;
+  display: flex;
+  justify-content: center;
 }
 .paternalColumn {
   background-color: #eeeeff;
   width: 49%;
-  float: left;
+  margin-right: 20px;
 }
 .maternalColumn {
   background-color: #ffeeee;
   width: 49%;
-  float: right;
+  margin-left: 20px;
 }
 .surnameItem {
   display: inline-block;
