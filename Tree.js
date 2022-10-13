@@ -108,7 +108,16 @@ window.ViewRegistry = class ViewRegistry {
     // Add an event listener to the "go" button to call onSubmit() when clicked.
     // Fill in some data from the logged-in user.
     render() {
+        let views = this.views;
         const options = Object.keys(this.views)
+            .sort(function(a,b) {
+                // We want the base/core option to always be at the top of the drop-down
+                if (a == "wt-dynamic-tree") { return -1; }
+                if (b == "wt-dynamic-tree") { return 1; }
+
+                // Sort the rest alphabetically by title
+                return views[a].title.localeCompare(views[b].title);
+            })
             .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
             .join("");
 
