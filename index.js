@@ -32,7 +32,6 @@ window.addEventListener("DOMContentLoaded", (event) => {
     new ViewRegistry(
         {
             "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
-            "restyled-dynamic-tree": new AlternateViewExample(),
             "timeline": new TimelineView(),
             "fanchart": new FanChartView(),
             "fractal": new FractalView(),
