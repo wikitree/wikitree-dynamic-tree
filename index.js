@@ -35,6 +35,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "restyled-dynamic-tree": new AlternateViewExample(),
             "timeline": new TimelineView(),
             "fanchart": new FanChartView(),
+            "fractal": new FractalView(),
             "ahnentafel": new AhnentafelView(),
             "surnames": new SurnamesView(),
         },
