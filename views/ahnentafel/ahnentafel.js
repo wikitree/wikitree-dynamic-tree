@@ -156,7 +156,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     // This is the start of our view generation. We grab the starting profile by ID.
     // If that is valid, then we update the info in the View description and kick off the recursive gathering and display of ancestors.
     async displayAncestorList() {
-        $(this.selector).html("Working....");
+        //$(this.selector).html("Working....");
+        $('#wt-status').html(`Building the ancestor list to ${this.maxGeneration} generations...`).show();
 
         let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
         if (data.length != 1) {
@@ -206,6 +207,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.generation++;
         if (this.generation <= this.maxGeneration) {
             this.displayGeneration(nextPeople);
+        } else {
+            $('#wt-status').html("").hide();
         }
     }
 

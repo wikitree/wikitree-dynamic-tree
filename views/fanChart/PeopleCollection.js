@@ -37,7 +37,7 @@ PeopleCollection.PeopleList = class PeopleList {
         for (const key in this) {
             if (Object.hasOwnProperty.call(this, key)) {
                 const element = this[key];
-                console.log(key );
+                // console.log(key );
                 numPeeps++;
             }        
         };

@@ -87,7 +87,7 @@ window.ViewRegistry = class ViewRegistry {
     NAME_PLACEHOLDER = "#name-placeholder";
     WT_ID_LINK = " #wt-id-link";
     VIEW_LOADER = "#view-loader";
-    PERSON_NOT_FOUND = "#person-not-found";
+    WT_STATUS = "#wt-status";
 
     // index.html starts with a script that creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
     constructor(views, session_manager) {
@@ -159,12 +159,12 @@ window.ViewRegistry = class ViewRegistry {
 
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
     onPersonDataReceived(view, data) {
+        const wtID = document.querySelector(this.WT_ID_TEXT).value;
         const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
-        const notFound = document.querySelector(this.PERSON_NOT_FOUND);
+        const wtStatus = document.querySelector(this.WT_STATUS);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
-        // Possibly we should generalize the 'person-not-found' div into a 'view-status' div, or something similar so we can display more general errors.
         if (data[0]["person"]) {
             this.initView(view, data[0]["person"]);
 
@@ -173,13 +173,21 @@ window.ViewRegistry = class ViewRegistry {
             this.session.viewID = view.id;
             this.session.saveCookies();
 
-            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+            wtStatus.classList.add("hidden");
+            wtStatus.classList.remove("red");
+            wtStatus.setHTML("");
 
-            notFound.classList.add("hidden");
+            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
             parentContainer.classList.remove("hidden");
         } else {
             parentContainer.classList.add("hidden");
-            notFound.classList.remove("hidden");
+            if (wtID) {
+                wtStatus.setHTML(`Person not found for WikiTree ID ${wtID}.`);
+            } else {
+                wtStatus.setHTML("Please enter a WikiTree ID.");
+            }
+            wtStatus.classList.add("red");
+            wtStatus.classList.remove("hidden");
         }
     }
 
