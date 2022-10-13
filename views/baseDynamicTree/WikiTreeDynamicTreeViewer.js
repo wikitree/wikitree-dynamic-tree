@@ -385,7 +385,7 @@
     Tree.prototype.personPopup = function (person, event) {
         this.removePopups();
 
-        var photoUrl = person.getPhotoUrl(75),
+        var photoUrl = "https://www.wikitree.com" + person.getPhotoUrl(75),
             treeUrl = window.location.pathname + "?id=" + person.getName();
 
         // Use generic gender photos if there is no profile photo available
