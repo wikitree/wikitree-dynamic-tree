@@ -108,7 +108,6 @@ window.ViewRegistry = class ViewRegistry {
     // Add an event listener to the "go" button to call onSubmit() when clicked.
     // Fill in some data from the logged-in user.
     render() {
-        console.log('this.views: ',this.views);
         let views = this.views;
         const options = Object.keys(this.views)
             .sort(function(a,b) {
