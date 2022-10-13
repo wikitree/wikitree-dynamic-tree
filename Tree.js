@@ -76,18 +76,20 @@ window.View = class View {
  * The ViewRegistry holds the configuration for our collection of different views, builds the <select> field to change between them,
  * and launches the selected view when the "Go" button is clicked.
  */
+
+// These are all divs in index.html holding the various content sections.
+const VIEW_SELECT = "#view-select";
+const WT_ID_TEXT = "#wt-id-text";
+const SHOW_BTN = "#show-btn";
+const VIEW_CONTAINER = "#view-container";
+const VIEW_TITLE = "#view-title";
+const VIEW_DESCRIPTION = " #view-description";
+const NAME_PLACEHOLDER = "#name-placeholder";
+const WT_ID_LINK = " #wt-id-link";
+const VIEW_LOADER = "#view-loader";
+const WT_STATUS = "#wt-status";
+
 window.ViewRegistry = class ViewRegistry {
-    // These are all divs in index.html holding the various content sections.
-    VIEW_SELECT = "#view-select";
-    WT_ID_TEXT = "#wt-id-text";
-    SHOW_BTN = "#show-btn";
-    VIEW_CONTAINER = "#view-container";
-    VIEW_TITLE = "#view-title";
-    VIEW_DESCRIPTION = " #view-description";
-    NAME_PLACEHOLDER = "#name-placeholder";
-    WT_ID_LINK = " #wt-id-link";
-    VIEW_LOADER = "#view-loader";
-    WT_STATUS = "#wt-status";
 
     // index.html starts with a script that creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
     constructor(views, session_manager) {
@@ -97,10 +99,10 @@ window.ViewRegistry = class ViewRegistry {
         // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
         this.session.lm.events["onLoggedIn"] = (user) => {
-            document.querySelector(this.WT_ID_TEXT).value = user.name;
+            document.querySelector(WT_ID_TEXT).value = user.name;
 
             orig_onLoggedIn_cb(user);
-            document.querySelector(this.SHOW_BTN).click();
+            document.querySelector(SHOW_BTN).click();
         };
     }
 
@@ -121,16 +123,16 @@ window.ViewRegistry = class ViewRegistry {
             .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
             .join("");
 
-        const submitBtn = document.querySelector(this.SHOW_BTN);
+        const submitBtn = document.querySelector(SHOW_BTN);
         submitBtn.addEventListener("click", (e) => this.onSubmit(e));
 
-        const viewSelect = document.querySelector(this.VIEW_SELECT);
+        const viewSelect = document.querySelector(VIEW_SELECT);
         viewSelect.innerHTML = options;
         viewSelect.value = this.session.viewID || (Object.keys(this.views).length ? Object.keys(this.views)[0] : "");
 
-        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+        document.querySelector(WT_ID_TEXT).value = this.session.personName;
 
-        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
+        if (document.querySelector(WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
     }
 
     // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View.
@@ -140,13 +142,13 @@ window.ViewRegistry = class ViewRegistry {
     onSubmit(e) {
         e.preventDefault();
 
-        const wtID = document.querySelector(this.WT_ID_TEXT).value;
-        const viewID = document.querySelector(this.VIEW_SELECT).value;
+        const wtID = document.querySelector(WT_ID_TEXT).value;
+        const viewID = document.querySelector(VIEW_SELECT).value;
 
         const view = this.views[viewID];
         view.id = viewID;
 
-        const viewLoader = document.querySelector(this.VIEW_LOADER);
+        const viewLoader = document.querySelector(VIEW_LOADER);
 
         // This shouldn't happen, but perhaps we should display an error so new View builders can see what happened.
         if (view === undefined) return;
@@ -168,9 +170,9 @@ window.ViewRegistry = class ViewRegistry {
 
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
     onPersonDataReceived(view, data) {
-        const wtID = document.querySelector(this.WT_ID_TEXT).value;
-        const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
-        const wtStatus = document.querySelector(this.WT_STATUS);
+        const wtID = document.querySelector(WT_ID_TEXT).value;
+        const parentContainer = document.querySelector(NAME_PLACEHOLDER).closest("div");
+        const wtStatus = document.querySelector(WT_STATUS);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
@@ -186,7 +188,7 @@ window.ViewRegistry = class ViewRegistry {
             wtStatus.classList.remove("red");
             wtStatus.innerHTML = "";
 
-            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+            view.init(VIEW_CONTAINER, data[0]["person"]["Id"]);
             parentContainer.classList.remove("hidden");
         } else {
             parentContainer.classList.add("hidden");
@@ -201,10 +203,10 @@ window.ViewRegistry = class ViewRegistry {
     }
 
     initView(view, person) {
-        const wtLink = document.querySelector(this.WT_ID_LINK);
-        const viewTitle = document.querySelector(this.VIEW_TITLE);
-        const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
-        const name = document.querySelector(this.NAME_PLACEHOLDER);
+        const wtLink = document.querySelector(WT_ID_LINK);
+        const viewTitle = document.querySelector(VIEW_TITLE);
+        const viewDescription = document.querySelector(VIEW_DESCRIPTION);
+        const name = document.querySelector(NAME_PLACEHOLDER);
 
         wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
         wtLink.innerHTML = person.Name;
@@ -213,7 +215,7 @@ window.ViewRegistry = class ViewRegistry {
         viewDescription.innerHTML = view.description;
         name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
-        document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
+        document.querySelector(VIEW_CONTAINER).innerHTML = "";
     }
 };
 

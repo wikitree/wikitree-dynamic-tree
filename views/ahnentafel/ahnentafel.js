@@ -43,7 +43,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         // TODO: We should quit searching for ancestors if all of the current step are "unknown".
         // TODO: It might be nice to start with a small number here and have a "Get more" button that continues.
         // Note the original page (e.g. https://www.wikitree.com/treewidget/Adams-35/9) went to 7 generations.
-        this.maxGeneration = 7;
+        this.maxGeneration = 3;
 
         // Used in formatDate()
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -157,7 +157,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     // If that is valid, then we update the info in the View description and kick off the recursive gathering and display of ancestors.
     async displayAncestorList() {
         //$(this.selector).html("Working....");
-        $('#wt-status').html(`Building the ancestor list to ${this.maxGeneration} generations...`).show();
+        $(WT_STATUS).html(`Building the ancestor list to ${this.maxGeneration} generations...`).show();
 
         let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
         if (data.length != 1) {
@@ -208,7 +208,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if (this.generation <= this.maxGeneration) {
             this.displayGeneration(nextPeople);
         } else {
-            $('#wt-status').html("").hide();
+            $(WT_STATUS).html("").hide();
         }
     }
 
