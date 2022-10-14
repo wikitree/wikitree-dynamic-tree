@@ -23,7 +23,8 @@ window.AhnenTafel = window.AhnenTafel || {};
 AhnenTafel.Ahnentafel = class Ahnentafel {
 
 	constructor(data) {
-		this.list = new Array([0]);   
+		this.list = new Array([0]);   // LIST of person IDs:   this.list[ ahnentafelNumber ] = PersonID at that ahnentafelNumber
+		this.listByPerson = new Array();   // LIST of ahentafel numbers ascribed to a person:   this.listByPerson[ personID ] = Array of ahnentafelNumbers that this personID has (will be multiple entries for repeat ancestors)
         this.primaryPerson = "";     
     }
 	
@@ -39,6 +40,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
        if (this.primaryPerson) {
             // this.PrimaryID = newPerson._data.Id
             this.list = [0 , this.primaryPerson._data.Id]; // initialize the Array
+            this.listByPerson[this.primaryPerson._data.Id] = 1;  // initialize the Array
 
             if (this.primaryPerson._data.Father && this.primaryPerson._data.Father  > 0) {
                 this.addToAhnenTafel(this.primaryPerson._data.Father, 2);
@@ -54,6 +56,17 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // THEN ... if they are a person in thePeopleList collection, check for THEIR parents, and recurse up the tree adding them!
     addToAhnenTafel(nextPersonID, ahnNum) {
         this.list[ahnNum] = nextPersonID;
+        if (this.listByPerson[nextPersonID] && this.listByPerson[nextPersonID].length > 0) {
+            if (this.listByPerson[nextPersonID].indexOf(ahnNum) > -1) {
+                // THIS specific ahnNum (Ahnentafel #) is already in the list - so - we can ignore it - don't want duplicates if we can help it!
+            } else {
+                // this Ahnentafel # is not yet in the list - so let's add it!
+                this.listByPerson[nextPersonID].push(ahnNum);
+            }
+        } else {
+            this.listByPerson[nextPersonID] = [ ahnNum ];
+        }
+
 		let nextPerson = thePeopleList[nextPersonID];
          if (nextPerson && nextPerson._data.Father && nextPerson._data.Father  > 0) {
             this.addToAhnenTafel(nextPerson._data.Father, 2*ahnNum);
