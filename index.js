@@ -37,6 +37,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "fractal": new FractalView(),
             "ahnentafel": new AhnentafelView(),
             "surnames": new SurnamesView(),
+            "webs": new WebsView(),
         },
         new SessionManager(WikiTreeAPI, loginManager)
     ).render();
