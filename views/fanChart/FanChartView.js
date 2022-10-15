@@ -147,13 +147,9 @@
                             0,
                             0,
                             270 * (genIndex + 0.5),
+                            (180 - FanChartView.maxAngle) / 2 + 180 + (index * FanChartView.maxAngle) / 2 ** genIndex,
                             (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
+                                180 +
                                 ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
                             "wedge" + 2 ** genIndex + "n" + index,
                             "black",
@@ -169,13 +165,9 @@
                             0,
                             270 * (genIndex + 0.5),
                             270 * (genIndex - 0.5),
+                            (180 - FanChartView.maxAngle) / 2 + 180 + (index * FanChartView.maxAngle) / 2 ** genIndex,
                             (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
+                                180 +
                                 ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
                             "wedge" + 2 ** genIndex + "n" + index,
                             "black",
@@ -325,13 +317,9 @@
                             0,
                             0,
                             270 * (genIndex + 0.5),
+                            (180 - FanChartView.maxAngle) / 2 + 180 + (index * FanChartView.maxAngle) / 2 ** genIndex,
                             (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
+                                180 +
                                 ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
                             "wedge" + 2 ** genIndex + "n" + index,
                             "black",
@@ -344,13 +332,9 @@
                             0,
                             270 * (genIndex + 0.5),
                             270 * (genIndex - 0.5),
+                            (180 - FanChartView.maxAngle) / 2 + 180 + (index * FanChartView.maxAngle) / 2 ** genIndex,
                             (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
+                                180 +
                                 ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
                             "wedge" + 2 ** genIndex + "n" + index,
                             "black",
@@ -906,7 +890,7 @@
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-						    <span class="tree-links"><a onClick="newTree('${person.getName()}');" href="#"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>
