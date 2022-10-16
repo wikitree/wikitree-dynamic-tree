@@ -102,6 +102,20 @@ window.ViewRegistry = class ViewRegistry {
             orig_onLoggedIn_cb(user);
             document.querySelector(this.SHOW_BTN).click();
         };
+
+        if (location.hash) {
+            this.session.loadUrlHash(Object.keys(views), location.hash);
+        }
+
+        addEventListener("hashchange", (e) => this.onHashChange(e));
+    }
+
+    onHashChange(e) {
+        this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+
+        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+        document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
+        document.querySelector(this.SHOW_BTN).click();
     }
 
     // Build the <select> option list from the individual views in the registry.
@@ -311,6 +325,17 @@ window.SessionManager = class SessionManager {
         };
 
         this.lm.login();
+    }
+
+    loadUrlHash(viewIDs, urlHash) {
+        const fields = new URLSearchParams(urlHash.substring(1));
+        this.personName = fields.get("name") || this.personName;
+
+        const viewID = fields.get("view");
+
+        if (viewID && viewIDs.includes(viewID)) {
+            this.viewID = fields.get("view");
+        }
     }
 
     loadCookies() {
