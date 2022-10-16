@@ -8,27 +8,26 @@ The WikiTree team has created a base/core view, which is a forked family tree gr
 
 There are several places to share ideas and questions with other developers:
 
-* The WikiTree [G2G forum](https://www.wikitree.com/g2g/)
-* The WikiTree Apps [Google Group](https://groups.google.com/g/WikiTreeApps/)
-* The WikiTree [GitHub](https://github.com/wikitree/wikitree-dynamic-tree/)
-* The WikiTree [Discord](https://discord.gg/9EMSdccnn3)
-
+-   The WikiTree [G2G forum](https://www.wikitree.com/g2g/)
+-   The WikiTree Apps [Google Group](https://groups.google.com/g/WikiTreeApps/)
+-   The WikiTree [GitHub](https://github.com/wikitree/wikitree-dynamic-tree/)
+-   The WikiTree [Discord](https://discord.gg/9EMSdccnn3)
 
 ## Getting started
 
 ### Sign up
 
-If you haven't already, the first thing you should do is sign up at [WikiTree](https://wikitree.com/). Registration is free, and will enable you to start contributing your family tree content. 
+If you haven't already, the first thing you should do is sign up at [WikiTree](https://wikitree.com/). Registration is free, and will enable you to start contributing your family tree content.
 
 We're using [GitHub](https://github.com/wikitree/wikitree-dynamic-tree/) to collaborate on the dynamic tree viewer application. In order to create your own fork and submit pull requests to merge your contributions into the shared application, you'll need to create an account.
 
-You may also want to request a login for the WikiTree Apps server. This provides hosted space on apps.wikitree.com for your application, whether it's a new view for the dynamic tree viewer, or something completely new. We have a copy of the [dynamic tree](https://apps.wikitree.com/apps/wikitree-dynamic-tree]) running on Apps, as well as examples of the [WikiTree API](https://apps.wikitree.com/apps/wikitree-api-examples/) (which we use to gather data for the dynamic tree viewer). You can develop your code locally or in your own hosted space, but you'll have to deal with [CORS issues](#dealing-with-cors). 
+You may also want to request a login for the WikiTree Apps server. This provides hosted space on apps.wikitree.com for your application, whether it's a new view for the dynamic tree viewer, or something completely new. We have a copy of the [dynamic tree](https://apps.wikitree.com/apps/wikitree-dynamic-tree]) running on Apps, as well as examples of the [WikiTree API](https://apps.wikitree.com/apps/wikitree-api-examples/) (which we use to gather data for the dynamic tree viewer). You can develop your code locally or in your own hosted space, but you'll have to deal with [CORS issues](#dealing-with-cors).
 
 ### Get the code
 
 Once you have your accounts, it's time to grab the [code](https://github.com/wikitree/wikitree-dynamic-tree/). You can download the code (via zip or git clone) to experiment with locally. But if you want to contribute back to the collaborative WikiTree project, you'll want to create your own [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo). Then you can check out that repo locally for work:
 
-````git clone https://github.com/<your github id>/wikitree-dynamic-tree.git````
+`git clone https://github.com/<your github id>/wikitree-dynamic-tree.git`
 
 This will give you a copy of the current WikiTree Dynamic Tree project. The index.html is the page to view the tree(s). The file Tree.js contains the launcher that switches between the different views. Individual views are stored in subdirectories inside the "views/" directory.
 
@@ -38,14 +37,14 @@ This will give you a copy of the current WikiTree Dynamic Tree project. The inde
 
 To create your new view, you may want to start with a separate GitHub branch. This lets you proceed with making your changes without any impact on other work. You'll be able to switch back to "main" to see the current set of unmodified views (and pull down any updates since you cloned the repository). For a "newView" branch, you can use:
 
-````git checkout -b newView````
+`git checkout -b newView`
 
 ### Create some new files for your project
 
 1. Create a new subdirectory (e.g. `views/newView/`) inside `views/` to hold the new code
 1. Create `views/newView/newView.js`
 
-    * in the file create new structure
+    - in the file create new structure
 
         `[class based]` Create descendant of View class and override method
 
@@ -69,9 +68,11 @@ To create your new view, you may want to start with a separate GitHub branch. Th
             }
 
             init(container_selector, person_id) {
-                // do whathever you want there 
+                // do whathever you want there
                 // to showcase your awesome view, e.g.
-                document.querySelector(container_selector).innerHTML = `<p>WikiTree ID of selected person is: ${person_id}</p>`
+                document.querySelector(
+                    container_selector
+                ).innerHTML = `<p>WikiTree ID of selected person is: ${person_id}</p>`;
             }
         }
         ```
@@ -90,43 +91,40 @@ To create your new view, you may want to start with a separate GitHub branch. Th
 
     ```js
     new ViewRegistry(
-            {
-                "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
-                
-                // ...
-                
-                "new-view": new NewView(), // <-- your new view
-            },
-            new SessionManager(WikiTreeAPI, loginManager)
-            ).render(); 
+        {
+            "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+
+            // ...
+
+            "new-view": new NewView(), // <-- your new view
+        },
+        new SessionManager(WikiTreeAPI, loginManager)
+    ).render();
     ```
-
-
 
 ## Share your view
 
 When your new view is ready to share, you can announce it on G2G, Discord, or the Apps email group. You can upload it to your account at apps.wikitree.com for everyone to check out. And you can submit a pull request from your fork into the main project to get it incorporated into code for everyone to share.
 
-
 ## Dealing with CORS
 
 Cross-origin resource sharing ([CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)) is a security feature of web browsers, to restrict what code can be executed. By default, Ajax requests for data to a hostname other than the one on which the page is viewed are denied. CORS provides a way for the browser to know whether these requests should be allowed. Because the WikiTree API uses credentials (to provide access to privacy-limited content), it does not have an "allow all" wildcard for the Access-Control-Allow-Origin header. This basically means that if you run the dynamic tree viewer on your local computer or in your own hosted space, you'll get errors when it tries to get data from the API.
 
-````
+```
 Access to XMLHttpRequest at 'https://api.wikitree.com/api.php' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-````
+```
 
 One way to deal with this is to put your work up at apps.wikitree.com. Requests from the Apps hostname are permitted at the API, so CORS restrictions are satisfied. IDEs like Visual Studio Code and Sublime (and Notepad++) have features or plugins to facilitate easy or automatic upload of saved content, which lets you work locally but view through apps.wikitree.com.
 
 Other workarounds include:
 
-* A Chrome extension like [Moesif CORS](https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc)
-* CORS Anywhere Proxy: [Public demo](https://cors-anywhere.herokuapp.com/corsdemo) / [Example usage](https://stackblitz.com/edit/wikitree-getperson2?file=index.ts)
-
+-   A Chrome extension like [Moesif CORS](https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc)
+-   CORS Anywhere Proxy: [Public demo](https://cors-anywhere.herokuapp.com/corsdemo) / [Example usage](https://stackblitz.com/edit/wikitree-getperson2?file=index.ts)
 
 ## Other potentially useful tools
-* [WikiTree API](https://github.com/wikitree/wikitree-api) - documentation of available API functions
-* [WikiTree JS](https://github.com/PeWu/wikitree-js) - JavaScript to access the API
-* [Markdown viewer](https://chrome.google.com/webstore/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk) - Chrome extension to view Markdown (.md files in project documentation)
-* [JSON viewer](https://chrome.google.com/webstore/detail/json-viewer/gbmdgpbipfallnflgajpaliibnhdgobh) - Chrome extension to view JSON, like the output from the WikiTree API
-* [WikiTree Styles](https://www.wikitree.com/css/examples.html) - Some examples of CSS styles/colors/etc. for wikitree.com
+
+-   [WikiTree API](https://github.com/wikitree/wikitree-api) - documentation of available API functions
+-   [WikiTree JS](https://github.com/PeWu/wikitree-js) - JavaScript to access the API
+-   [Markdown viewer](https://chrome.google.com/webstore/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk) - Chrome extension to view Markdown (.md files in project documentation)
+-   [JSON viewer](https://chrome.google.com/webstore/detail/json-viewer/gbmdgpbipfallnflgajpaliibnhdgobh) - Chrome extension to view JSON, like the output from the WikiTree API
+-   [WikiTree Styles](https://www.wikitree.com/css/examples.html) - Some examples of CSS styles/colors/etc. for wikitree.com

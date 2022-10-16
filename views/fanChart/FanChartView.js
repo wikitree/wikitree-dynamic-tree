@@ -16,11 +16,10 @@
 (function () {
     var originOffsetX = 500,
         originOffsetY = 300,
-        boxWidth = 200*2,
+        boxWidth = 200 * 2,
         boxHeight = 50,
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
-
 
     /**
      * Constructor
@@ -37,15 +36,13 @@
     /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
     FanChartView.maxAngle = 240;
     FanChartView.lastAngle = 240;
-    
+
     /** Static variables to hold the state of the Number of Generations to be displayed, currently and previously  **/
     FanChartView.numGens2Display = 5;
     FanChartView.lastNumGens = 5;
     FanChartView.numGensRetrieved = 5;
     FanChartView.maxNumGens = 10;
     FanChartView.workingMaxNumGens = 6;
-
-    
 
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FanChartView.myAhnentafel = new AhnenTafel.Ahnentafel();
@@ -61,7 +58,6 @@
         };
     };
 
-    
     FanChartView.prototype.init = function (selector, startId) {
         // console.log("FanChartView.js - line:18", selector) ;
         var container = document.querySelector(selector),
@@ -79,27 +75,27 @@
             })
             // Offset so that first pan and zoom does not jump back to the origin
             // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
-            .translate([width/2, height/2]);
+            .translate([width / 2, height / 2]);
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
-            '<td width="30%"><A onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' + 
-             ' <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' + 
-             ' <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
+            '<td width="30%"><A onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
+            ' <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
+            ' <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
             '<td width="5%">&nbsp;</td>' +
-            '<td width="30%" align="center">' + 
-             ' <A onclick="FanChartView.numGens2Display -=1; FanChartView.redraw();"> -1 </A> ' +
-             '[ <span id=numGensInBBar>5</span> generations ]' +
-             ' <A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();"> +1 </A> ' +
-             '</td>' +
+            '<td width="30%" align="center">' +
+            ' <A onclick="FanChartView.numGens2Display -=1; FanChartView.redraw();"> -1 </A> ' +
+            "[ <span id=numGensInBBar>5</span> generations ]" +
+            ' <A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();"> +1 </A> ' +
+            "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right"> &#x1F4BE; | <font size=+2>&#x2699;</font></td>' +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML;
-        
+
         // CREATE the SVG object (which will be placed immediately under the button bar)
         var svg = d3
             .select(container)
@@ -110,7 +106,7 @@
             .append("g")
             // Left padding of tree; TODO: find a better way
             // .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
-            .attr("transform", "translate(" + ( width/2) + "," + ( height/2) + ")");
+            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
         // console.log("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
@@ -134,8 +130,7 @@
                 width: 20,
                 height: 20,
                 //'xlink:href': 'ringLoader.svg'
-            })
-        ;
+            });
 
         /*
             CREATE the FAN CHART Backdrop 
@@ -143,50 +138,78 @@
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
 
-        for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0 ; genIndex--) {
-            for (let index = 0; index < 2**genIndex; index++) {
+        for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
+            for (let index = 0; index < 2 ** genIndex; index++) {
                 if (genIndex <= 1) {
                     // Use a SECTOR for the parents
-                    svg.append("path")
-                        .attr( SVGfunctions.getSVGforSector(0, 0,  270*(genIndex + 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') );              
-
+                    svg.append("path").attr(
+                        SVGfunctions.getSVGforSector(
+                            0,
+                            0,
+                            270 * (genIndex + 0.5),
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                (index * FanChartView.maxAngle) / 2 ** genIndex,
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
+                            "wedge" + 2 ** genIndex + "n" + index,
+                            "black",
+                            2,
+                            "white"
+                        )
+                    );
                 } else {
-                    // Use a WEDGE for ancestors further out                   
-                    svg.append("path")
-                        .attr( SVGfunctions.getSVGforWedge(0, 0,  270*(genIndex + 0.5),  270*(genIndex - 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') );              
-
+                    // Use a WEDGE for ancestors further out
+                    svg.append("path").attr(
+                        SVGfunctions.getSVGforWedge(
+                            0,
+                            0,
+                            270 * (genIndex + 0.5),
+                            270 * (genIndex - 0.5),
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                (index * FanChartView.maxAngle) / 2 ** genIndex,
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
+                            "wedge" + 2 ** genIndex + "n" + index,
+                            "black",
+                            2,
+                            "white"
+                        )
+                    );
                 }
-            } 
-        }
-        // HIDE all the unused Wedges in the outer rims that we don't need yet    
-            for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1 ; genIndex--) {
-                for (let index = 0; index < 2**genIndex; index++) {                    
-                    d3.select("#" + 'wedge' + 2**genIndex + 'n' + index).attr({"display" : 'none'});
-                }
-                
             }
-            
-        
-        // CREATE a CIRCLE for the Central Person to be drawn on top of
-        svg.append("circle")
-            .attr ( {
-                "cx" : 0,
-                "cy" : 0,
-                "r" : 135,
-                "id":"ctrCirc" ,
-                "fill":"white" ,
-                "stroke":"black" ,
-                "stroke-width":"2" ,
+        }
+        // HIDE all the unused Wedges in the outer rims that we don't need yet
+        for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
+            for (let index = 0; index < 2 ** genIndex; index++) {
+                d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attr({ display: "none" });
+            }
+        }
 
-            });
-       
-        
+        // CREATE a CIRCLE for the Central Person to be drawn on top of
+        svg.append("circle").attr({
+            "cx": 0,
+            "cy": 0,
+            "r": 135,
+            "id": "ctrCirc",
+            "fill": "white",
+            "stroke": "black",
+            "stroke-width": "2",
+        });
+
         self.load(startId);
     };
 
-    // Flash a message in the WarningMessageBelowButtonBar DIV 
-    function flashWarningMessageBelowButtonBar ( theMessage ) {
-        // console.log(theMessage);        
+    // Flash a message in the WarningMessageBelowButtonBar DIV
+    function flashWarningMessageBelowButtonBar(theMessage) {
+        // console.log(theMessage);
         if (theMessage > "") {
             theMessage = "<P align=center>" + theMessage + "</P>";
         }
@@ -200,26 +223,29 @@
 
     function clearMessageBelowButtonBar() {
         document.getElementById("WarningMessageBelowButtonBar").innerHTML = "";
-    }    
+    }
     // Make sure that the Button Bar displays the proper number of generations - and - adjust the max / min if needed because of over-zealous clicking
     function recalcAndDisplayNumGens() {
         if (FanChartView.numGens2Display < 3) {
             FanChartView.numGens2Display = 3;
-            showTemporaryMessageBelowButtonBar("3 is the minimum number of generations you can display.")
+            showTemporaryMessageBelowButtonBar("3 is the minimum number of generations you can display.");
         } else if (FanChartView.numGens2Display > FanChartView.workingMaxNumGens) {
             FanChartView.numGens2Display = FanChartView.workingMaxNumGens;
             if (FanChartView.workingMaxNumGens < FanChartView.maxNumGens) {
-                flashWarningMessageBelowButtonBar("Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears.");
+                flashWarningMessageBelowButtonBar(
+                    "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
+                );
             } else {
-                showTemporaryMessageBelowButtonBar(FanChartView.maxNumGens + " is the maximum number of generations you can display.")
+                showTemporaryMessageBelowButtonBar(
+                    FanChartView.maxNumGens + " is the maximum number of generations you can display."
+                );
             }
         }
-        
+
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FanChartView.numGens2Display;
         // console.log("numGensSpan:", numGensSpan);
-        if ( FanChartView.numGens2Display > FanChartView.numGensRetrieved) {
-           
+        if (FanChartView.numGens2Display > FanChartView.numGensRetrieved) {
             loadAncestorsAtLevel(FanChartView.numGens2Display);
             FanChartView.numGensRetrieved = FanChartView.numGens2Display;
         }
@@ -229,88 +255,122 @@
         console.log("Need to load MORE peeps from Generation ", newLevel);
         let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
         // console.log(theListOfIDs);
-         if (theListOfIDs.length == 0) {
+        if (theListOfIDs.length == 0) {
             // console.log("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
             FanChartView.numGensRetrieved++;
             FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
-        }  else {
-
-            WikiTreeAPI.getRelatives(theListOfIDs,  [
-                "Id",
-                "Derived.BirthName",
-                "Derived.BirthNamePrivate",
-                "FirstName",
-                "MiddleInitial",
-                "LastNameAtBirth",
-                "LastNameCurrent",
-                "BirthDate",
-                "BirthLocation",
-                "DeathDate",
-                "DeathLocation",
-                "Mother",
-                "Father",
-                "Children",
-                "Parents",
-                "Spouses",
-                "Siblings",
-                "Photo",
-                "Name",
-                "Gender",
-                "Privacy",
-            ] , {getParents:true} ).then( 
-                
-                function (result) {
-                    if (result){ // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                        FanChartView.theAncestors = result;
-                        console.log("theAncestors:", FanChartView.theAncestors);
-                        // console.log("person with which to drawTree:", person);
-                        for (let index = 0; index < FanChartView.theAncestors.length; index++) {
-                            thePeopleList.add(FanChartView.theAncestors[index].person);                        
-                        }
-                        FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-                        FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
-                        
-                        clearMessageBelowButtonBar();
+        } else {
+            WikiTreeAPI.getRelatives(
+                theListOfIDs,
+                [
+                    "Id",
+                    "Derived.BirthName",
+                    "Derived.BirthNamePrivate",
+                    "FirstName",
+                    "MiddleInitial",
+                    "LastNameAtBirth",
+                    "LastNameCurrent",
+                    "BirthDate",
+                    "BirthLocation",
+                    "DeathDate",
+                    "DeathLocation",
+                    "Mother",
+                    "Father",
+                    "Children",
+                    "Parents",
+                    "Spouses",
+                    "Siblings",
+                    "Photo",
+                    "Name",
+                    "Gender",
+                    "Privacy",
+                ],
+                { getParents: true }
+            ).then(function (result) {
+                if (result) {
+                    // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
+                    FanChartView.theAncestors = result;
+                    console.log("theAncestors:", FanChartView.theAncestors);
+                    // console.log("person with which to drawTree:", person);
+                    for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                        thePeopleList.add(FanChartView.theAncestors[index].person);
                     }
-                } );
-                
-                
+                    FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+                    FanChartView.workingMaxNumGens = Math.min(
+                        FanChartView.maxNumGens,
+                        FanChartView.numGensRetrieved + 1
+                    );
+
+                    clearMessageBelowButtonBar();
+                }
+            });
         }
     }
     // Redraw the Wedges if needed for the Fan Chart
     function redoWedgesForFanChart() {
         // console.log("TIme to RE-WEDGIFY !", this, FanChartView);
 
-              
-
-         if (FanChartView.lastAngle != FanChartView.maxAngle || FanChartView.lastNumGens != FanChartView.numGens2Display) {
+        if (
+            FanChartView.lastAngle != FanChartView.maxAngle ||
+            FanChartView.lastNumGens != FanChartView.numGens2Display
+        ) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
-             for (let genIndex = FanChartView.numGens2Display - 1; genIndex >= 0 ; genIndex--) {
-                 for (let index = 0; index < 2**genIndex; index++) {
+            for (let genIndex = FanChartView.numGens2Display - 1; genIndex >= 0; genIndex--) {
+                for (let index = 0; index < 2 ** genIndex; index++) {
                     let SVGcode = "";
                     if (genIndex <= 1) {
-                        SVGcode = SVGfunctions.getSVGforSector(0, 0,  270*(genIndex + 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') ;              
-
+                        SVGcode = SVGfunctions.getSVGforSector(
+                            0,
+                            0,
+                            270 * (genIndex + 0.5),
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                (index * FanChartView.maxAngle) / 2 ** genIndex,
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
+                            "wedge" + 2 ** genIndex + "n" + index,
+                            "black",
+                            2,
+                            "white"
+                        );
                     } else {
-                        SVGcode = SVGfunctions.getSVGforWedge(0, 0,  270*(genIndex + 0.5),  270*(genIndex - 0.5), (180 - FanChartView.maxAngle) / 2 +  90 + 90 +index*FanChartView.maxAngle/(2**genIndex),(180 - FanChartView.maxAngle) / 2 +  90 + 90 +(index+1)*FanChartView.maxAngle/(2**genIndex), 'wedge' + 2**genIndex + 'n' + index, 'black', 2, 'white') ;                                  
+                        SVGcode = SVGfunctions.getSVGforWedge(
+                            0,
+                            0,
+                            270 * (genIndex + 0.5),
+                            270 * (genIndex - 0.5),
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                (index * FanChartView.maxAngle) / 2 ** genIndex,
+                            (180 - FanChartView.maxAngle) / 2 +
+                                90 +
+                                90 +
+                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
+                            "wedge" + 2 ** genIndex + "n" + index,
+                            "black",
+                            2,
+                            "white"
+                        );
                     }
-                    
+
                     //  console.log(SVGcode.id);
-                     d3.select("#" + SVGcode.id).attr({"d" : SVGcode.d, 'display':'block'}); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
-                     
-                     let theWedge = d3.select("#" + SVGcode.id);
+                    d3.select("#" + SVGcode.id).attr({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
+
+                    let theWedge = d3.select("#" + SVGcode.id);
                     //  console.log( "theWedge:",theWedge[0][0] );
-                    } 
-         
                 }
-            // HIDE all the unused Wedges in the outer rims that we don't need yet    
-            for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1 ; genIndex--) {
-                for (let index = 0; index < 2**genIndex; index++) {                    
-                    d3.select("#" + 'wedge' + 2**genIndex + 'n' + index).attr({"display" : 'none'});
+            }
+            // HIDE all the unused Wedges in the outer rims that we don't need yet
+            for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
+                for (let index = 0; index < 2 ** genIndex; index++) {
+                    d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attr({ display: "none" });
                 }
-                
             }
             FanChartView.lastAngle = FanChartView.maxAngle;
             FanChartView.lastNumGens = FanChartView.numGens2Display;
@@ -318,11 +378,10 @@
     }
 
     /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
-    
-    
+
     FanChartView.redraw = function () {
         // console.log("FanChartView.redraw");
-        // console.log("Now theAncestors = ", FanChartView.theAncestors);                
+        // console.log("Now theAncestors = ", FanChartView.theAncestors);
         // thePeopleList.listAll();
         recalcAndDisplayNumGens();
         redoWedgesForFanChart();
@@ -358,44 +417,40 @@
             }
             // console.log(".load person:",person);
 
-            
-            
-            
             WikiTreeAPI.getAncestors(id, 5, [
-                    "Id",
-                    "Derived.BirthName",
-                    "Derived.BirthNamePrivate",
-                    "FirstName",
-                    "MiddleInitial",
-                    "LastNameAtBirth",
-                    "LastNameCurrent",
-                    "BirthDate",
-                    "BirthLocation",
-                    "DeathDate",
-                    "DeathLocation",
-                    "Mother",
-                    "Father",
-                    "Children",
-                    "Parents",
-                    "Spouses",
-                    "Siblings",
-                    "Photo",
-                    "Name",
-                    "Gender",
-                    "Privacy",
-                ]).then( function (result) {
-                    FanChartView.theAncestors = result;
-                    console.log("theAncestors:", FanChartView.theAncestors);
-                    console.log("person with which to drawTree:", person);
-                    for (let index = 0; index < FanChartView.theAncestors.length; index++) {
-                        const element = FanChartView.theAncestors[index];
-                        thePeopleList.add(FanChartView.theAncestors[index]);                        
-                    }
-                    FanChartView.myAhnentafel.update(person);
-                    self.drawTree(person);
-                    clearMessageBelowButtonBar();
-                } );
-
+                "Id",
+                "Derived.BirthName",
+                "Derived.BirthNamePrivate",
+                "FirstName",
+                "MiddleInitial",
+                "LastNameAtBirth",
+                "LastNameCurrent",
+                "BirthDate",
+                "BirthLocation",
+                "DeathDate",
+                "DeathLocation",
+                "Mother",
+                "Father",
+                "Children",
+                "Parents",
+                "Spouses",
+                "Siblings",
+                "Photo",
+                "Name",
+                "Gender",
+                "Privacy",
+            ]).then(function (result) {
+                FanChartView.theAncestors = result;
+                console.log("theAncestors:", FanChartView.theAncestors);
+                console.log("person with which to drawTree:", person);
+                for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                    const element = FanChartView.theAncestors[index];
+                    thePeopleList.add(FanChartView.theAncestors[index]);
+                }
+                FanChartView.myAhnentafel.update(person);
+                self.drawTree(person);
+                clearMessageBelowButtonBar();
+            });
         });
     };
 
@@ -460,7 +515,7 @@
      */
     FanChartView.prototype.drawTree = function (data) {
         // console.log("FanChartView.prototype.drawTree");
-        
+
         if (data) {
             // console.log("(FanChartView.prototype.drawTree WITH data !)");
             this.ancestorTree.data(data);
@@ -528,13 +583,13 @@
      * Draw/redraw the tree
      */
     Tree.prototype.draw = function () {
-        console.log("Tree.prototype.draw")
+        console.log("Tree.prototype.draw");
         if (this.root) {
             // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
-            var nodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart( FanChartView.numGens2Display );// [];//this.tree.nodes(this.root);
+            var nodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
 
             console.log("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
-                // links = this.tree.links(nodes);
+            // links = this.tree.links(nodes);
             // this.drawLinks(links);
             this.drawNodes(nodes);
         } else {
@@ -543,7 +598,6 @@
         return this;
     };
 
-   
     /**
      * Helper function for drawing straight connecting lines
      * http://stackoverflow.com/a/10249720/879121
@@ -566,7 +620,7 @@
     Tree.prototype.drawNodes = function (nodes) {
         // console.log("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
-        
+
         // console.log("this.selector = ", this.selector);
 
         // Get a list of existing nodes
@@ -574,9 +628,9 @@
             let person = ancestorObject.person;
             // console.log("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
             // return person;
-            return ancestorObject.ahnNum;//getId();
+            return ancestorObject.ahnNum; //getId();
         });
-        
+
         // console.log("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
 
         // Add new nodes
@@ -591,7 +645,7 @@
         nodeEnter
             .append("foreignObject")
             .attr({
-                id: "foreignObj4" ,
+                id: "foreignObj4",
                 width: boxWidth,
                 height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
                 x: -boxWidth / 2,
@@ -600,8 +654,7 @@
             .style("overflow", "visible") // so the name will wrap
             .append("xhtml:div")
             .html((ancestorObject) => {
-
-                let person = ancestorObject.person;//thePeopleList[ person.id ];
+                let person = ancestorObject.person; //thePeopleList[ person.id ];
                 // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
                 let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
 
@@ -617,28 +670,31 @@
 
                 if (thisGenNum >= 9) {
                     return `
-                        <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; padding: 0px;">
+                        <div  id=wedgeBoxFor${
+                            ancestorObject.ahnNum
+                        } class="box" style="background-color: none ; border:0; padding: 0px;">
                         <div class="name" style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
-
                 } else if (thisGenNum >= 8) {
                     return `
-                        <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; padding: 0px;">
+                        <div  id=wedgeBoxFor${
+                            ancestorObject.ahnNum
+                        } class="box" style="background-color: none ; border:0; padding: 0px;">
                         <div class="name" style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
-
                 } else if (thisGenNum >= 7) {
                     return `
-                        <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; padding: 3px;">
+                        <div  id=wedgeBoxFor${
+                            ancestorObject.ahnNum
+                        } class="box" style="background-color: none ; border:0; padding: 3px;">
                         <div class="name"><B>${getShortName(person)}</B></div>
                         </div>
                     `;
-
-                }  else if (thisGenNum >= 4) {
+                } else if (thisGenNum >= 4) {
                     let photoUrl = person.getPhotoUrl(75),
-                    treeUrl = window.location.pathname + "?id=" + person.getName();
+                        treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     // Use generic gender photos if there is not profile photo available
                     if (!photoUrl) {
@@ -649,16 +705,19 @@
                         }
                     }
                     return `
-                    <div  id=wedgeBoxFor${ancestorObject.ahnNum} class="box" style="background-color: none ; border:0; "> 
-                    <div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
+                    <div  id=wedgeBoxFor${
+                        ancestorObject.ahnNum
+                    } class="box" style="background-color: none ; border:0; "> 
+                    <div  id=photoFor${
+                        ancestorObject.ahnNum
+                    } class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
                     <div class="name"><B>${getShortName(person)}</B></div>
                     <div class="lifespan">${lifespan(person)}</div>
                     </div>
                     `;
-
-                }  else {
+                } else {
                     let photoUrl = person.getPhotoUrl(75),
-                    treeUrl = window.location.pathname + "?id=" + person.getName();
+                        treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     // Use generic gender photos if there is not profile photo available
                     if (!photoUrl) {
@@ -669,7 +728,7 @@
                         }
                     }
 
-                     return   `<div class="top-info" id=wedgeInfoFor${ancestorObject.ahnNum}>
+                    return `<div class="top-info" id=wedgeInfoFor${ancestorObject.ahnNum}>
                      <div class="vital-info">
 						<div class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
 						  <div class="name">
@@ -680,13 +739,12 @@
 						</div>
 					</div>
                     `;
-
-                } 
+                }
             });
 
         // Show info popup on click
         nodeEnter.on("click", function (ancestorObject) {
-            let person = ancestorObject.person;//thePeopleList[ person.id ];
+            let person = ancestorObject.person; //thePeopleList[ person.id ];
             d3.event.stopPropagation();
             self.personPopup(person, d3.mouse(self.svg.node()));
         });
@@ -728,38 +786,35 @@
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
 
-
-            let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum)
+            let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
             if (theInfoBox) {
-                let theBounds = theInfoBox;//.getBBox();
+                let theBounds = theInfoBox; //.getBBox();
                 // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
                 // theInfoBox.style.width = "300px";
                 // theInfoBox.style.x = "-190px";
-                theInfoBox.parentNode.parentNode.setAttribute("y", -100) ;
+                theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
-                    theInfoBox.parentNode.parentNode.setAttribute("y", -120) ;
-                    theInfoBox.parentNode.parentNode.setAttribute("x", -125) ;
-                    theInfoBox.parentNode.parentNode.setAttribute("width", 250) ;
+                    theInfoBox.parentNode.parentNode.setAttribute("y", -120);
+                    theInfoBox.parentNode.parentNode.setAttribute("x", -125);
+                    theInfoBox.parentNode.parentNode.setAttribute("width", 250);
                 } else if (ancestorObject.ahnNum > 7 && FanChartView.maxAngle == 180) {
-                    theInfoBox.parentNode.parentNode.setAttribute("x", -140) ;
-                    theInfoBox.parentNode.parentNode.setAttribute("width", 280) ;
+                    theInfoBox.parentNode.parentNode.setAttribute("x", -140);
+                    theInfoBox.parentNode.parentNode.setAttribute("width", 280);
                 }
-                
             } else {
-                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum)
-                theWedgeBox.parentNode.parentNode.setAttribute("width", 266) ;
-                theWedgeBox.parentNode.parentNode.setAttribute("x", -133) ;
+                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                theWedgeBox.parentNode.parentNode.setAttribute("width", 266);
+                theWedgeBox.parentNode.parentNode.setAttribute("x", -133);
 
                 if (thisGenNum == 4) {
-                    theWedgeBox.parentNode.parentNode.setAttribute("y", -80) ;
+                    theWedgeBox.parentNode.parentNode.setAttribute("y", -80);
                     if (FanChartView.maxAngle == 180) {
-                        theWedgeBox.parentNode.parentNode.setAttribute("x", -70) ;
-                        theWedgeBox.parentNode.parentNode.setAttribute("width", 140) ;
+                        theWedgeBox.parentNode.parentNode.setAttribute("x", -70);
+                        theWedgeBox.parentNode.parentNode.setAttribute("width", 140);
                     }
                 }
             }
-            
-           
+
             // Placement Angle = the angle at which the person's name card should be placed. (in degrees, where 0 = facing due east, thus the starting point being 180, due west, with modifications)
             let placementAngle =
                 180 +
@@ -774,25 +829,26 @@
                 // AND ... if we go beyond the midpoint in this particular ring, we need to rotate it another 180 degrees so that we don't have to read upside down.  All name cards should be readable, facing inwards to the centre of the Fan Chart
                 if (thisPosNum >= numSpotsThisGen / 2) {
                     nameAngle += 180;
-                } 
-                
+                }
+
                 // hide photos as well (for now at least)
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
-                if (thePhotoDIV) {thePhotoDIV.style.display = 'none';}
+                if (thePhotoDIV) {
+                    thePhotoDIV.style.display = "none";
+                }
 
                 // IF we are in the outer rims, then we need to adjust / tweak the angle since it uses the baseline of the text as its frame of reference
                 if (thisGenNum > 6) {
-                    let fontRadii = {7:9, 8:13, 9:15};
+                    let fontRadii = { 7: 9, 8: 13, 9: 15 };
                     let fontRadius = fontRadii[thisGenNum];
-                    let tweakAngle = Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180 / Math.PI;
+                    let tweakAngle = (Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180) / Math.PI;
                     // console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
-                        placementAngle += tweakAngle;                    
+                        placementAngle += tweakAngle;
                     } else {
                         placementAngle -= tweakAngle;
                     }
                 }
-
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
@@ -804,8 +860,6 @@
             return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
     };
-
-   
 
     /**
      * Show a popup for the person.
@@ -918,8 +972,6 @@
 
     // Inheritance
     AncestorTree.prototype = Object.create(Tree.prototype);
-
-    
 
     /**
      * Generate a string representing this person's lifespan 0000 - 0000

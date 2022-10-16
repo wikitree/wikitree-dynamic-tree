@@ -15,12 +15,6 @@
       }
     },
     {
-      "files": ["**/*.js"],
-      "options": {
-        "tabWidth": 4
-      }
-    },
-    {
       "files": ".prettierrc",
       "options": { "parser": "json" }
     }
