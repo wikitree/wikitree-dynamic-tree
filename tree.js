@@ -232,6 +232,12 @@ window.ViewRegistry = class ViewRegistry {
         name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
+
+        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const viewSelect = document.querySelector(this.VIEW_SELECT).value;
+        let url = window.location.href.split("?")[0].split("#")[0];
+        url = `${url}#name=${wtID}&view=${viewSelect}`;
+        history.replaceState("", "", url);
     }
 };
 
