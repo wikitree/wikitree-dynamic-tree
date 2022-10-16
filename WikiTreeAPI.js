@@ -1,5 +1,5 @@
 /*
- * TreeAPI.js
+ * WikiTreeAPI.js
  *
  * Provide a "Person" object where data is gathered from the WikiTree API.
  * We use the WikiTree API action "getPerson" to retrieve the profile data and then store it in object fields.
@@ -137,7 +137,7 @@ WikiTreeAPI.getPerson = function (id, fields) {
 // });
 
 // WARNING:  If you just do a NewAncestorsArray = WikiTree.getAncestors(id,depth,fields);
-//     --> what you get is the promise object - NOT the array of ancestors you might expect.  
+//     --> what you get is the promise object - NOT the array of ancestors you might expect.
 // You HAVE to use the .then() with embedded function to wait and process the results
 //
 WikiTreeAPI.getAncestors = function (id, depth, fields) {
@@ -158,23 +158,23 @@ WikiTreeAPI.getAncestors = function (id, depth, fields) {
 // Note that postToAPI returns the Promise from jquerys .ajax() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 
-// PARAMETERS:  
+// PARAMETERS:
 //		IDs 	: can be a single string, with a single ID or a set of comma separated IDs - OR - it can be an array of IDs
 //		fields	: an array of fields to return for each profile (same as for getPerson or getProfile)
 //		options	: an option object which can contain these key-value pairs
-					// bioFormat	Optional: "wiki", "html", or "both"
-					// getParents	If true, the parents are returned
-					// getChildren	If true, the children are returned
-					// getSiblings	If true, the siblings are returned
-					// getSpouses	If true, the spouses are returned
+// bioFormat	Optional: "wiki", "html", or "both"
+// getParents	If true, the parents are returned
+// getChildren	If true, the children are returned
+// getSiblings	If true, the siblings are returned
+// getSpouses	If true, the spouses are returned
 
 // So we can use this through our asynchronous actions with something like:
 
-// WikiTree.getRelatives(nextIDsToLoad, ['Id','Name', 'LastNameAtBirth'], {getParents:true} ).then( 
+// WikiTree.getRelatives(nextIDsToLoad, ['Id','Name', 'LastNameAtBirth'], {getParents:true} ).then(
 //		function(result) {
 //  	 	  // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
 //				 for (let index = 0; index < result.length; index++) {
-//				 	thePeopleList.add(result[index].person);                        
+//				 	thePeopleList.add(result[index].person);
 //				 }
 //		};
 
@@ -186,25 +186,28 @@ WikiTreeAPI.getAncestors = function (id, depth, fields) {
 
 // WARNING:  See note above about what you get if you don't use the .then() ....
 //
-WikiTreeAPI.getRelatives = function(IDs, fields, options = {}) {
-	let getRelativesParameters = { action: 'getRelatives', keys: IDs.join(','), fields: fields.join(','), resolveRedirect: 1 };
+WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
+    let getRelativesParameters = {
+        action: "getRelatives",
+        keys: IDs.join(","),
+        fields: fields.join(","),
+        resolveRedirect: 1,
+    };
 
-	// go through the options object, and add any of those options to the getRelativesParameters
-	for (const key in options) {
-		if (Object.hasOwnProperty.call(options, key)) {
-			const element = options[key];
-			getRelativesParameters[key] = element;
-		}
-	}
-	// console.log("getRelativesParameters: ", getRelativesParameters);
+    // go through the options object, and add any of those options to the getRelativesParameters
+    for (const key in options) {
+        if (Object.hasOwnProperty.call(options, key)) {
+            const element = options[key];
+            getRelativesParameters[key] = element;
+        }
+    }
+    // console.log("getRelativesParameters: ", getRelativesParameters);
 
-	return WikiTreeAPI.postToAPI( getRelativesParameters )
-		.then(function(result) {
-			// console.log("RESULT from getRelatives:", result );
- 			return result[0].items;
-		});
-}
-
+    return WikiTreeAPI.postToAPI(getRelativesParameters).then(function (result) {
+        // console.log("RESULT from getRelatives:", result );
+        return result[0].items;
+    });
+};
 
 // This is just a wrapper for the Ajax call, sending along necessary options for the WikiTree API.
 WikiTreeAPI.postToAPI = function (postData) {

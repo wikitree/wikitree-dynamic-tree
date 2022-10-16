@@ -1,5 +1,5 @@
 /*
- * Tree.js
+ * tree.js
  *
  * This file contains following functionalities
  *
@@ -110,10 +110,14 @@ window.ViewRegistry = class ViewRegistry {
     render() {
         let views = this.views;
         const options = Object.keys(this.views)
-            .sort(function(a,b) {
+            .sort(function (a, b) {
                 // We want the base/core option to always be at the top of the drop-down
-                if (a == "wt-dynamic-tree") { return -1; }
-                if (b == "wt-dynamic-tree") { return 1; }
+                if (a == "wt-dynamic-tree") {
+                    return -1;
+                }
+                if (b == "wt-dynamic-tree") {
+                    return 1;
+                }
 
                 // Sort the rest alphabetically by title
                 return views[a].title.localeCompare(views[b].title);
@@ -191,7 +195,7 @@ window.ViewRegistry = class ViewRegistry {
         } else {
             parentContainer.classList.add("hidden");
             if (wtID) {
-                wtStatus.innerHTML =`Person not found for WikiTree ID ${wtID}.`;
+                wtStatus.innerHTML = `Person not found for WikiTree ID ${wtID}.`;
             } else {
                 wtStatus.innerHTML = "Please enter a WikiTree ID.";
             }
