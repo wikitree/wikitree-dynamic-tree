@@ -1,0 +1,44 @@
+#profiles {
+  display: grid;
+  grid-gap: 1px;
+  margin: 1px;
+  justify-content: center;
+}
+
+#profiles > div {
+  outline: 1px solid #000;
+  display: flex;
+  align-items: stretch;
+  padding: 0.5em;
+  text-align: center;
+  justify-items: stretch;
+}
+
+.unknown-relative {
+  flex-direction: column;
+  justify-content: end;
+}
+
+.unknown-relative > p {
+  font-size: 0.8em;
+  opacity: 0.5;
+  padding: 0.15em 1em 0 1em;
+  border-top: 1px solid rgb(0 0 0 / 0.5);
+  margin: 0;
+}
+
+.known-relative {
+  flex-direction: column;
+  justify-content: center;
+}
+
+.known-relative > .photo {
+  max-height: 100px;
+  object-fit: contain;
+}
+
+.known-relative h2 {
+  font-size: 1em;
+  margin: 0.5em;
+  line-height: 1em;
+}
