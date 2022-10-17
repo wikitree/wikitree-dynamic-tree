@@ -8,6 +8,9 @@
  * New Views are added here, in the View Registry below.
  *
  */
+
+var wtViewRegistry;
+
 window.addEventListener("DOMContentLoaded", (event) => {
     const loginManager = new LoginManager(
         WikiTreeAPI,
@@ -29,7 +32,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
     );
 
     // To add a new View, add a unique keyword with a value of the new View().
-    new ViewRegistry(
+    wtViewRegistry = new ViewRegistry(
         {
             "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
             "timeline": new TimelineView(),
@@ -40,5 +43,6 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "webs": new WebsView(),
         },
         new SessionManager(WikiTreeAPI, loginManager)
-    ).render();
+    );
+    wtViewRegistry.render();
 });

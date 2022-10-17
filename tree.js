@@ -188,7 +188,6 @@ window.ViewRegistry = class ViewRegistry {
     onPersonDataReceived(view, data) {
         const wtID = document.querySelector(this.WT_ID_TEXT).value;
         const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
-        const wtStatus = document.querySelector(this.WT_STATUS);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
@@ -200,21 +199,17 @@ window.ViewRegistry = class ViewRegistry {
             this.session.viewID = view.id;
             this.session.saveCookies();
 
-            wtStatus.classList.add("hidden");
-            wtStatus.classList.remove("red");
-            wtStatus.innerHTML = "";
+            this.clearStatus();
 
             view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
             parentContainer.classList.remove("hidden");
         } else {
             parentContainer.classList.add("hidden");
             if (wtID) {
-                wtStatus.innerHTML = `Person not found for WikiTree ID ${wtID}.`;
+                this.showError(`Person not found for WikiTree ID ${wtID}.`);
             } else {
-                wtStatus.innerHTML = "Please enter a WikiTree ID.";
+                this.showError("Please enter a WikiTree ID.");
             }
-            wtStatus.classList.add("red");
-            wtStatus.classList.remove("hidden");
         }
     }
 
@@ -238,6 +233,33 @@ window.ViewRegistry = class ViewRegistry {
         let url = window.location.href.split("?")[0].split("#")[0];
         url = `${url}#name=${wtID}&view=${viewSelect}`;
         history.replaceState("", "", url);
+    }
+
+    clearStatus() {
+        const wtStatus = document.querySelector(this.WT_STATUS);
+        wtStatus.classList.add("hidden");
+        wtStatus.classList.remove("red");
+        wtStatus.classList.remove("green");
+    }
+    showError(msg) {
+        const wtStatus = document.querySelector(this.WT_STATUS);
+        this.clearStatus();
+        wtStatus.innerHTML = msg;
+        wtStatus.classList.add("red");
+        wtStatus.classList.remove("hidden");
+    }
+    showWarning(msg) {
+        const wtStatus = document.querySelector(this.WT_STATUS);
+        this.clearStatus();
+        wtStatus.innerHTML = msg;
+        wtStatus.classList.remove("hidden");
+    }
+    showNotice(msg) {
+        const wtStatus = document.querySelector(this.WT_STATUS);
+        this.clearStatus();
+        wtStatus.innerHTML = msg;
+        wtStatus.classList.add("green");
+        wtStatus.classList.remove("hidden");
     }
 };
 
