@@ -98,7 +98,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // input --> data is the object passed through from the Dynamic View that needs the settings
     createSettingsDIV(data) {
         let theDIVhtml =
-            '<div id=settingsDIV style="display:inline-block; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; align:left"><A onclick="FanChartView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
             this.createULelements(data) +
             '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>';
