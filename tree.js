@@ -1,5 +1,5 @@
 /*
- * Tree.js
+ * tree.js
  *
  * This file contains following functionalities
  *
@@ -102,6 +102,20 @@ window.ViewRegistry = class ViewRegistry {
             orig_onLoggedIn_cb(user);
             document.querySelector(this.SHOW_BTN).click();
         };
+
+        if (location.hash) {
+            this.session.loadUrlHash(Object.keys(views), location.hash);
+        }
+
+        addEventListener("hashchange", (e) => this.onHashChange(e));
+    }
+
+    onHashChange(e) {
+        this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+
+        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+        document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
+        document.querySelector(this.SHOW_BTN).click();
     }
 
     // Build the <select> option list from the individual views in the registry.
@@ -110,10 +124,14 @@ window.ViewRegistry = class ViewRegistry {
     render() {
         let views = this.views;
         const options = Object.keys(this.views)
-            .sort(function(a,b) {
+            .sort(function (a, b) {
                 // We want the base/core option to always be at the top of the drop-down
-                if (a == "wt-dynamic-tree") { return -1; }
-                if (b == "wt-dynamic-tree") { return 1; }
+                if (a == "wt-dynamic-tree") {
+                    return -1;
+                }
+                if (b == "wt-dynamic-tree") {
+                    return 1;
+                }
 
                 // Sort the rest alphabetically by title
                 return views[a].title.localeCompare(views[b].title);
@@ -191,7 +209,7 @@ window.ViewRegistry = class ViewRegistry {
         } else {
             parentContainer.classList.add("hidden");
             if (wtID) {
-                wtStatus.innerHTML =`Person not found for WikiTree ID ${wtID}.`;
+                wtStatus.innerHTML = `Person not found for WikiTree ID ${wtID}.`;
             } else {
                 wtStatus.innerHTML = "Please enter a WikiTree ID.";
             }
@@ -214,6 +232,12 @@ window.ViewRegistry = class ViewRegistry {
         name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
+
+        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const viewSelect = document.querySelector(this.VIEW_SELECT).value;
+        let url = window.location.href.split("?")[0].split("#")[0];
+        url = `${url}#name=${wtID}&view=${viewSelect}`;
+        history.replaceState("", "", url);
     }
 };
 
@@ -307,6 +331,17 @@ window.SessionManager = class SessionManager {
         };
 
         this.lm.login();
+    }
+
+    loadUrlHash(viewIDs, urlHash) {
+        const fields = new URLSearchParams(urlHash.substring(1));
+        this.personName = fields.get("name") || this.personName;
+
+        const viewID = fields.get("view");
+
+        if (viewID && viewIDs.includes(viewID)) {
+            this.viewID = fields.get("view");
+        }
     }
 
     loadCookies() {

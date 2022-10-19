@@ -385,11 +385,13 @@
     Tree.prototype.personPopup = function (person, event) {
         this.removePopups();
 
-        var photoUrl = "https://www.wikitree.com" + person.getPhotoUrl(75),
-            treeUrl = window.location.pathname + "?id=" + person.getName();
+        var treeUrl = window.location.pathname + "?id=" + person.getName();
 
-        // Use generic gender photos if there is no profile photo available
-        if (!photoUrl) {
+        var photoUrl = person.getPhotoUrl(75);
+        if (photoUrl) {
+            photoUrl = "https://www.wikitree.com/" + photoUrl;
+        } else {
+            // Use generic gender photos if there is no profile photo available
             if (person.getGender() === "Male") {
                 photoUrl = "https://www.wikitree.com/images/icons/male.gif";
             } else {
@@ -424,7 +426,10 @@
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-						    <span class="tree-links"><a onClick="newTree('${person.getName()}');" href="#"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a></span>
+						    <span class="tree-links">
+                                <a href="#name=${person.getName()}"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a>
+                                <a href="#name=${person.getName()}&view=fanchart"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a>
+                            </span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>

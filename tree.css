@@ -198,7 +198,8 @@ main {
   padding: 0 0 10px 10px;
 }
 
-#tree-links a img {
+#tree-links a img,
+.tree-links a img {
   height: 15px;
 }
 
