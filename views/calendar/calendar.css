@@ -1,0 +1,35 @@
+.collapsible {
+  background-color: #eee;
+  color: #444;
+  cursor: pointer;
+  padding: 18px;
+  width: 50%;
+  border: none;
+  text-align: left;
+  outline: none;
+  display: block;
+  margin: auto;
+}
+
+button.collapsible:after {
+  content: "\002B";
+  color: #25422d;
+  font-weight: bold;
+  float: right;
+  margin-left: 5px;
+}
+
+.active,
+.collapsible:hover {
+  background-color: #ccc;
+  color: #25422d;
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+  width: 47%;
+  margin: auto;
+}

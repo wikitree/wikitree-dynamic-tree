@@ -41,6 +41,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "ahnentafel": new AhnentafelView(),
             "surnames": new SurnamesView(),
             "webs": new WebsView(),
+            "calendar": new calendarView(),
         },
         new SessionManager(WikiTreeAPI, loginManager)
     );
