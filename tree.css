@@ -222,3 +222,7 @@ main {
   background: #ffffff;
   text-decoration: none;
 }
+
+.centered {
+  text-align: center;
+}

@@ -18,7 +18,7 @@ window.PeopleCollection = window.PeopleCollection || {};
 // We pull out the Parent and Child elements as their own Person objects.
 PeopleCollection.PeopleList = class PeopleList {
     constructor(data) {
-        // Nothing needed for thsi very simple class, starts off as an empty object
+        // Nothing needed for this very simple class, starts off as an empty object
     }
 
     // THEN ... we use the add method to add one person to it, using the WikiTree ID as the key
