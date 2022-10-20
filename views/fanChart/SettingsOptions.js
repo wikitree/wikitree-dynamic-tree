@@ -84,7 +84,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         // console.log("createTabMapping : ", data.tabs);
         let theMapping = {};
         for (let tab in data.tabs) {
-            console.log("createTabMapping - TAB:", tab, data.tabs[tab].name);
+            // console.log("createTabMapping - TAB:", tab, data.tabs[tab].name);
             let tabName = data.tabs[tab].name;
             let theElement = { panelElement: tabName + "-panel", buttonElement: tabName + "-tab" };
             theMapping[tabName] = theElement;
@@ -111,7 +111,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // input --> data is the object passed through from the Dynamic View that needs the settings
     // this function is used by the createSettingsDIV function, but could be used standalone if you wanted a different wrapper for your settings
     createULelements(data) {
-        console.log("createULelements : ", data.tabs);
+        // console.log("createULelements : ", data.tabs);
         let theUL = "<ul class='profile-tabs'>";
         let theDIVs = "";
         for (let tab in data.tabs) {

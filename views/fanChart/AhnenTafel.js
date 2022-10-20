@@ -84,6 +84,32 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
         }
         return theList;
     }
+    // Returns an array of objects, each one holding the WikiTree ID # and the list of Ahnentafel #s associated with them for each repeat ancestor
+    listOfRepeatAncestors(numGens = 16) {
+        let theList = [];
+        let maxAhnNum = 2**numGens - 1;
+        for (var id in this.listByPerson) {
+            if (this.listByPerson[id] && this.listByPerson[id].length > 1) {
+                if (this.hasTwoAncestorsInThisAhnenRange(this.listByPerson[id] , maxAhnNum)) {
+                    theList.push({ id: id, AhnNums: this.listByPerson[id] });
+                }
+
+            }
+        }
+        return theList;
+    }
+
+    // Wee function to quickly look through a list of AhnenNumbers and determine if there are at least 2 of them within a specific range (determined by max # of gens currently being displayed)
+    hasTwoAncestorsInThisAhnenRange(listOfAhnNums , maxAhnNum) {
+        let numInRange = 0;
+        for (let index = 0; index < listOfAhnNums.length; index++) {
+            if ( listOfAhnNums[index] <= maxAhnNum) {
+                numInRange++;
+            }
+        }
+        
+        return (numInRange >= 2);
+    }    
 
     // Returns an array of objects for building the Fan Chart (and potentially other trees)
     // Each entry contains the Ahnentafel #, and the Person object for each ancestor
