@@ -9,6 +9,57 @@
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
+/**
+ * Serializes WikiTree fuzzy date
+ * @param  {object}  person Person object received from WikiTree API
+ * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
+ * @param  {boolean} [monthNames=true] Will use month names, instead of month numbers
+ * @param  {boolean} [shortened=true] Will shorten month names (if used) to 3-letter abbrevs
+ * @param  {boolean} [withCertainty=true] Will add certainty if loaded
+ * @return {string} Serialized date
+ */
+window.wtDate = function (person, fieldName, monthNames = true, shortened = true, withCertainty = true) {
+    const MONTHS = [
+        // just to keep it more compact and not too long (more than 120 characters)
+        ...["January", "February", "March", "April", "May", "June"],
+        ...["July", "August", "September", "October", "November", "December"],
+    ].map((item) => {
+        return shortened ? item.slice(0, 3) : item;
+    });
+
+    const CERTAINTY_MAP = { guess: "about", before: "before", after: "after" }; // '' & 'certain' will produce ''
+
+    let prop = person?.[fieldName];
+
+    if (!prop || prop === "0000-00-00") return "[unknown]";
+
+    prop = prop
+        .split("-")
+        .reverse()
+        .map((x) => parseInt(x));
+
+    if (monthNames) {
+        // this will produce one of following: `<year>` | `<month>, <year>` | `<month> <day>, <year>`
+        prop =
+            (prop[1] // if the month is known, serialize month and day
+                ? MONTHS[prop[1] - 1] +
+                  (prop[0] // if the day is known, serialize it
+                      ? ` ${prop[0]}`
+                      : "") +
+                  ", "
+                : "") + prop[2]; // and append the year
+    } else {
+        if (!prop[1]) prop = prop.slice(2); // if the month is unknown, remove day and month
+        else if (!prop[0]) prop = prop.slice(1); // otherwise if the day is unknown remove only day
+
+        prop = prop.join(".");
+    }
+
+    certainty = withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
+
+    return `${certainty}${prop}`;
+};
+
 // Our basic constructor for a Person. We expect the "person" data from the API returned result
 // (see getPerson below). The basic fields are just stored in the internal _data array.
 // We pull out the Parent and Child elements as their own Person objects.

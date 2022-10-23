@@ -1,6 +1,6 @@
 window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     WT_DOMAIN = "https://www.wikitree.com";
-    PERSON_FIELDS = ["Id", "Name", "Father", "Mother", "Gender", "Photo"];
+    PERSON_FIELDS = ["Id", "Name", "Father", "Mother", "Gender", "Photo", "DataStatus", "BirthDate", "DeathDate"];
 
     constructor(wtAPI, generationsCount) {
         super();
@@ -106,6 +106,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                 ${photo}
                 <div>
                     <h2>${person.Name}</h2>
+                    <p>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</p>
                 </div>
             </div>`;
     }
