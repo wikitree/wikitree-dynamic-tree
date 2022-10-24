@@ -9,55 +9,87 @@
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
+const dateTokenCache = {};
+
 /**
  * Serializes WikiTree fuzzy date
  * @param  {object}  person Person object received from WikiTree API
  * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
- * @param  {boolean} [monthNames=true] Will use month names, instead of month numbers
- * @param  {boolean} [shortened=true] Will shorten month names (if used) to 3-letter abbrevs
+ * @param  {string} [formatString="MMM DD, YYYY"] Will use specified formatting string to serialize the date
  * @param  {boolean} [withCertainty=true] Will add certainty if loaded
  * @return {string} Serialized date
  */
-window.wtDate = function (person, fieldName, monthNames = true, shortened = true, withCertainty = true) {
+window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", withCertainty = true) {
     const MONTHS = [
         // just to keep it more compact and not too long (more than 120 characters)
         ...["January", "February", "March", "April", "May", "June"],
         ...["July", "August", "September", "October", "November", "December"],
-    ].map((item) => {
-        return shortened ? item.slice(0, 3) : item;
-    });
+    ];
 
     const CERTAINTY_MAP = { guess: "about", before: "before", after: "after" }; // '' & 'certain' will produce ''
+
+    function tokenize(formatString) {
+        if (dateTokenCache[formatString]) return dateTokenCache[formatString];
+
+        let prev = null;
+        let tokens = [];
+
+        for (let letter of formatString) {
+            if (prev !== letter && ("DMY".includes(prev) || "DMY".includes(letter))) {
+                // prev and letter are different and one of them is one on D|M|Y
+                tokens[tokens.length] = letter;
+            } else if (
+                (!"DMY".includes(prev) && !"DMY".includes(letter)) || // both prev and letter are not one of D|M|Y
+                (prev === letter && "DMY".includes(letter)) || // prev and letter are same and one of D|M|Y
+                (!"DMY".includes(letter) && (prev !== letter || !"DMY".includes(prev)))
+            ) {
+                tokens[tokens.length - 1] += letter;
+            }
+            prev = letter;
+        }
+
+        dateTokenCache[formatString] = tokens;
+        return tokens;
+    }
+
+    tokens = tokenize(formatString);
 
     let prop = person?.[fieldName];
 
     if (!prop || prop === "0000-00-00") return "[unknown]";
 
-    prop = prop
+    let [day, month, year] = prop
         .split("-")
         .reverse()
         .map((x) => parseInt(x));
 
-    if (monthNames) {
-        // this will produce one of following: `<year>` | `<month>, <year>` | `<month> <day>, <year>`
-        prop =
-            (prop[1] // if the month is known, serialize month and day
-                ? MONTHS[prop[1] - 1] +
-                  (prop[0] // if the day is known, serialize it
-                      ? ` ${prop[0]}`
-                      : "") +
-                  ", "
-                : "") + prop[2]; // and append the year
-    } else {
-        if (!prop[1]) prop = prop.slice(2); // if the month is unknown, remove day and month
-        else if (!prop[0]) prop = prop.slice(1); // otherwise if the day is unknown remove only day
-
-        prop = prop.join(".");
+    if (month === 0) {
+        // month is unknown, rest doesn't makes sense
+        tokens = tokens.filter((token) => token.includes("Y"));
     }
+
+    tokens = tokens
+        .map((token) => {
+            if (!"DMY".includes(token[0])) return token;
+
+            return Object({
+                D: day ? day : null,
+                DD: day ? String(day).padStart(2, "0") : null,
+                M: month ? month : null,
+                MM: month ? String(month).padStart(2, "0") : null,
+                MMM: month ? MONTHS[month - 1].slice(0, 3) : null,
+                MMMM: month ? MONTHS[month - 1] : null,
+                YYYY: prop[2] ? String(year).padStart(4, "0") : null,
+            })[token];
+        })
+        .filter((token) => token !== null);
+
+    let serialized = tokens.join("");
+    serialized = serialized.replaceAll(" ,", ","); // solves one of many possible issues when the day is unknown
 
     certainty = withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
 
-    return `${certainty}${prop}`;
+    return `${certainty}${serialized}`;
 };
 
 // Our basic constructor for a Person. We expect the "person" data from the API returned result
