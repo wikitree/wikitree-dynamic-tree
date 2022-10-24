@@ -3,6 +3,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     PERSON_FIELDS = [
         ...["Id", "Name", "Father", "Mother", "Gender", "Photo", "DataStatus", "BirthDate", "DeathDate"],
         ...["Prefix", "FirstName", "RealName", "MiddleName", "Nicknames", "LastNameAtBirth", "LastNameCurrent"],
+        ...["BirthLocation", "DeathLocation"],
     ];
 
     constructor(wtAPI, generationsCount) {
@@ -104,13 +105,26 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const photoUrl = person.PhotoData ? `${this.WT_DOMAIN}/${person.PhotoData.url}` : "";
         const photo = person.dna.length <= 3 ? `<img src="${photoUrl}" class="photo">` : "";
 
+        let locations = "";
+
+        if (person.dna.length < 5) {
+            locations = [
+                person?.BirthLocation ? person.BirthLocation : "[unknown]",
+                person?.DeathLocation ? person.DeathLocation : "[unknown]",
+            ];
+
+            locations = `<div class="locations">${locations
+                .map((location) => "<div>" + location + "</div>")
+                .join("<div>-</div>")}</div>`;
+        }
+
         return `
             <div style="grid-area: ${person.dna};" class="known-relative">
                 ${photo}
                 <div>
                     <h2>${wtCompleteName(person, false)}</h2>
-                    ${person?.Nicknames ? '<p class="small">' + person.Nicknames + "</p>" : ""}
-                    <p>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</p>
+                    <div>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</div>
+                    ${locations}
                 </div>
             </div>`;
     }

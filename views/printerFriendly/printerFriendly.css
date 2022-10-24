@@ -5,11 +5,15 @@
   justify-content: center;
 }
 
+#profiles * {
+  font-size: 0.95em;
+}
+
 #profiles > div {
   outline: 1px solid #000;
   display: flex;
   align-items: stretch;
-  padding: 0.5em;
+  padding: 0 0.5em;
   text-align: center;
   justify-items: stretch;
 }
@@ -33,13 +37,22 @@
   justify-content: center;
 }
 
+.known-relative > div > * {
+  margin: 0.5em 0;
+}
+
 .known-relative > .photo {
   max-height: 100px;
   object-fit: contain;
+  margin: 0.5em 0;
 }
 
 .known-relative h2 {
   font-size: 1em;
-  margin: 0.5em;
   line-height: 1em;
+}
+
+.known-relative .locations div:nth-child(2) {
+  line-height: 0.5em;
+  vertival-align: middle;
 }

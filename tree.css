@@ -229,3 +229,16 @@ main {
 .marginBottomZero {
   margin-bottom: 0;
 }
+
+/* Print styling should follow everything else to overwrite it */
+
+@media print {
+  header,
+  main {
+    display: none;
+  }
+
+  #view-container {
+    border: none;
+  }
+}
