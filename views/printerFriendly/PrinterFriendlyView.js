@@ -1,6 +1,9 @@
 window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     WT_DOMAIN = "https://www.wikitree.com";
-    PERSON_FIELDS = ["Id", "Name", "Father", "Mother", "Gender", "Photo", "DataStatus", "BirthDate", "DeathDate"];
+    PERSON_FIELDS = [
+        ...["Id", "Name", "Father", "Mother", "Gender", "Photo", "DataStatus", "BirthDate", "DeathDate"],
+        ...["Prefix", "FirstName", "RealName", "MiddleName", "Nicknames", "LastNameAtBirth", "LastNameCurrent"],
+    ];
 
     constructor(wtAPI, generationsCount) {
         super();
@@ -105,7 +108,8 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             <div style="grid-area: ${person.dna};" class="known-relative">
                 ${photo}
                 <div>
-                    <h2>${person.Name}</h2>
+                    <h2>${wtCompleteName(person, false)}</h2>
+                    ${person?.Nicknames ? '<p class="small">' + person.Nicknames + "</p>" : ""}
                     <p>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</p>
                 </div>
             </div>`;

@@ -12,7 +12,7 @@ window.WikiTreeAPI = window.WikiTreeAPI || {};
 const dateTokenCache = {};
 
 /**
- * Serializes WikiTree fuzzy date
+ * Serializes WikiTree fuzzy date using formatting string
  * @param  {object}  person Person object received from WikiTree API
  * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
  * @param  {string} [formatString="MMM DD, YYYY"] Will use specified formatting string to serialize the date
@@ -90,6 +90,37 @@ window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", with
     certainty = withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
 
     return `${certainty}${serialized}`;
+};
+
+/**
+ * Serializes WikiTree complete name
+ * @param  {object}  person Person object received from WikiTree API
+ * @param  {boolean}  incNickname Includes nickname
+ * @param  {boolean}  incLastNameAtBirth Includes lastname at birth
+ * @param  {boolean}  incPrefix Includes prefix
+ * @param  {boolean}  incSuffix Includes suffix
+ * @return {string} Serialized name
+ */
+window.wtCompleteName = function (
+    person,
+    incNickname = true,
+    incLastNameAtBirth = false,
+    incPrefix = false,
+    incSuffix = false
+) {
+    const result = [
+        incPrefix && person?.Prefix ? person.Prefix : null,
+        person?.FirstName || person.RealName ? person.FirstName || person.RealName : null,
+        person?.MiddleName ? person.MiddleName : null,
+        incNickname && person?.Nicknames ? `<span class="nickname">„${person.Nicknames}"</span>` : null,
+        person?.LastNameCurrent ? person.LastNameCurrent : null,
+        incLastNameAtBirth && person?.LastNameAtBirth !== person?.LastNameCurrent
+            ? `(at birth: ${person.LastNameAtBirth})`
+            : null,
+        incSuffix && person?.Suffix ? person.Suffix : null,
+    ];
+
+    return result.filter((part) => part !== null).join(" ");
 };
 
 // Our basic constructor for a Person. We expect the "person" data from the API returned result
