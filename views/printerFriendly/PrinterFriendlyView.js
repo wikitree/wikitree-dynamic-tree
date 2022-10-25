@@ -108,14 +108,9 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         let locations = "";
 
         if (person.dna.length < 5) {
-            locations = [
-                person?.BirthLocation ? person.BirthLocation : "[unknown]",
-                person?.DeathLocation ? person.DeathLocation : "[unknown]",
-            ];
+            locations = [person?.BirthLocation ? person.BirthLocation : "[unknown]"];
 
-            locations = `<div class="locations">${locations
-                .map((location) => "<div>" + location + "</div>")
-                .join("<div>-</div>")}</div>`;
+            locations = `<div class="locations">${locations.map((location) => "<div>" + location + "</div>")}</div>`;
         }
 
         return `

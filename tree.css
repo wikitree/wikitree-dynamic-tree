@@ -233,6 +233,10 @@ main {
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
+  body {
+    background: transparent;
+  }
+
   header,
   main {
     display: none;
