@@ -321,8 +321,6 @@ window.LoginManager = class LoginManager {
             this.user.name = data.clientLogin.username;
             this.user.id = data.clientLogin.userid;
 
-            // changes browser url without additional redirect
-            history.replaceState("", "", location.href.split("?")[0]);
             this.saveCookies();
             this.login();
         } else {
