@@ -1,17 +1,19 @@
 window.calendarView = class calendarView extends View {
     meta() {
         return {
-            title: "Anniversary Calendar",
-            description: "Here are birthday and death date anniversaries from your ancestors, or watchlist.",
+            title: "Family Anniversaries",
+            description: `Here are birthdays, wedding dates, and death date anniversaries from your Watchlist. For non-living ancestors,
+                some members like to honor a special day by sharing the person's profile or a photo <a href="https://www.wikitree.com/wiki/Help:Shareable_Images">
+                or family tree or relationship image</a> on Facebook or another social network. For living family members, some like to
+                send an <a href="https://www.wikitree.com/wiki/Category:E-Cards">e-card</a>.`,
             docs: "",
         };
     }
-
     init(selector, person_id) {
         WikiTreeAPI.postToAPI({
             action: "getPerson",
             key: person_id,
-            fields: "Parents,Siblings,Derived.ShortName,FirstName,LastNameAtBirth,LastNameCurrent,Name,BirthDate,DeathDate,Children,Spouses,Father,Mother",
+            fields: "Name",
         }).then(function (data) {
             var AllMonths = {
                 January: [],
@@ -28,7 +30,10 @@ window.calendarView = class calendarView extends View {
                 December: [],
             };
 
-            getTenGenAncestors();
+            /* The default view for the Calendar is a vertical display of events from the logged in
+             * users watchlist. This is based on the original Special:Anniversaries view.
+             */
+            getWatchlistAncestors();
 
             function getWatchlistAncestors() {
                 $(".ancCalendar").remove();
@@ -53,12 +58,18 @@ window.calendarView = class calendarView extends View {
                         </div>
                     </div>
                 `);
+
+                WikiTreeAPI.getWatchlist(5000, 1, 0, [
+                    "Derived.ShortName",
+                    "BirthDate",
+                    "DeathDate",
+                    "Name",
+                    "Spouses",
+                ]).then(function (watchlist) {
+                    processData(watchlist);
+                });
             }
 
-            /* The default view for the Calendar is a vertical display of birth and death Events
-             * for ancestors out to 10 generations, dervied on the original Special:Anniversaries
-             * view.
-             */
             function getTenGenAncestors() {
                 $(".watchCalendar").remove();
                 $(selector).append(`
@@ -83,38 +94,44 @@ window.calendarView = class calendarView extends View {
                     </div>
                 `);
                 WikiTreeAPI.getAncestors(data[0].person.Name, 10, [
-                    "Id",
                     "Derived.ShortName",
-                    "LastNameAtBirth",
-                    "LastNameCurrent",
                     "BirthDate",
-                    "BirthLocation",
                     "DeathDate",
-                    "DeathLocation",
                     "Name",
-                ]).then(function (data) {
-                    processData(data);
+                    "Spouses",
+                ]).then(function (ancestors) {
+                    processData(ancestors);
                 });
             }
 
-            function processData(ancestor) {
-                // For each ancestor
-                for (var i = 0; i < ancestor.length; i++) {
+            function processData(x) {
+                // For each profile
+                for (var i = 0; i < x.length; i++) {
                     // Log the Birth Event
-                    if (getMonth(ancestor[i].BirthDate) != undefined) {
-                        pushEvents(ancestor[i], ancestor[i].BirthDate, " was born");
+                    if (getMonth(x[i].BirthDate) != undefined) {
+                        pushEvents(x[i], x[i].BirthDate, " was born", "");
                     }
                     // Log the Death Event
-                    if (getMonth(ancestor[i].DeathDate) != undefined) {
-                        pushEvents(ancestor[i], ancestor[i].DeathDate, " died");
+                    if (getMonth(x[i].DeathDate) != undefined) {
+                        pushEvents(x[i], x[i].DeathDate, " died", "");
                     }
-                    // Hide Loader when finished iterating through ancestors
-                    if (i == ancestor.length - 1) {
+                    // Log Marriage Events
+                    if (x[i].Spouses.length != 0) {
+                        //console.log(x[i].Spouses);
+                        //if (getMonth(x[i].Spouses[i].marriage_date) != undefined) {
+                        //pushEvents(x[i], x[i].Spouses.marriage_date, "  married ", );
+                    }
+                    if (i == x.length - 1) {
+                        // Hide Loader when finished iterating through profile
                         $(".loader").hide();
                         $(".calendar").css("display", "block");
+                        // Open the Current Month, and then scroll into view.
+                        var currMonth = months[new Date().getMonth()];
+                        $(`#${currMonth}`).prev().addClass("collapsible active");
+                        $(`#${currMonth}`).css("display", "block");
+                        // document.getElementById(currMonth).scrollIntoView();
                     }
                 }
-                // Now we can sort our content for the calendar, by day and then by year.
                 for (var i = 0; i < Object.keys(AllMonths).length; i++) {
                     var array = Object.keys(AllMonths)[i];
                     AllMonths[array].sort((a, b) => {
@@ -124,6 +141,9 @@ window.calendarView = class calendarView extends View {
                             return a.day < b.day ? -1 : 1;
                         }
                     });
+                }
+                // Now we can sort our content for the calendar, by day and then by year.
+                for (var i = 0; i < x.length; i++) {
                     // Then we insert the content into the correct month
                     // This could be simplified...
                     try {
@@ -226,16 +246,14 @@ window.calendarView = class calendarView extends View {
                 "November",
                 "December",
             ];
+
             function getMonth(date) {
-                if (date.split("-")[0] != "0000" && date.split("-")[1] != "00") {
+                if (date.split("-")[0] != "0000" && date.split("-")[1] != "00" && date.split("-")[2] != "00") {
                     return months[date.split("-")[1] - 1];
                 } else {
                     return undefined;
                 }
             }
-
-            $(`#${months[new Date().getMonth()]}`).prev().addClass("collapsible active");
-            $(`#${months[new Date().getMonth()]}`).css("display", "block");
 
             for (var i = 0; i < $(".collapsible").length; i++) {
                 $(".collapsible")[i].addEventListener("click", function () {
@@ -249,8 +267,8 @@ window.calendarView = class calendarView extends View {
                 });
             }
 
-            function pushEvents(person, date, text) {
-                if (getMonth(date) == "January") {
+            function pushEvents(person, date, text, marriage) {
+                if (getMonth(date) == "January" && getMonth(date) != undefined) {
                     AllMonths.January.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -259,8 +277,9 @@ window.calendarView = class calendarView extends View {
                         year: date.split("-")[0],
                         month: date.split("-")[1],
                         day: date.split("-")[2],
+                        marriage: marriage,
                     });
-                } else if (getMonth(date) == "February") {
+                } else if (getMonth(date) == "February" && getMonth(date) != undefined) {
                     AllMonths.February.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -270,7 +289,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "March") {
+                } else if (getMonth(date) == "March" && getMonth(date) != undefined) {
                     AllMonths.March.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -280,7 +299,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "April") {
+                } else if (getMonth(date) == "April" && getMonth(date) != undefined) {
                     AllMonths.April.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -290,7 +309,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "May") {
+                } else if (getMonth(date) == "May" && getMonth(date) != undefined) {
                     AllMonths.May.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -300,7 +319,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "June") {
+                } else if (getMonth(date) == "June" && getMonth(date) != undefined) {
                     AllMonths.June.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -310,7 +329,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "July") {
+                } else if (getMonth(date) == "July" && getMonth(date) != undefined) {
                     AllMonths.July.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -320,7 +339,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "August") {
+                } else if (getMonth(date) == "August" && getMonth(date) != undefined) {
                     AllMonths.August.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -330,7 +349,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "September") {
+                } else if (getMonth(date) == "September" && getMonth(date) != undefined) {
                     AllMonths.September.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -340,7 +359,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "October") {
+                } else if (getMonth(date) == "October" && getMonth(date) != undefined) {
                     AllMonths.October.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -350,7 +369,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "November") {
+                } else if (getMonth(date) == "November" && getMonth(date) != undefined) {
                     AllMonths.November.push({
                         id: person.Name,
                         name: person.ShortName,
@@ -360,7 +379,7 @@ window.calendarView = class calendarView extends View {
                         month: date.split("-")[1],
                         day: date.split("-")[2],
                     });
-                } else if (getMonth(date) == "December") {
+                } else if (getMonth(date) == "December" && getMonth(date) != undefined) {
                     AllMonths.December.push({
                         id: person.Name,
                         name: person.ShortName,
