@@ -113,11 +113,17 @@ window.ViewRegistry = class ViewRegistry {
     }
 
     onHashChange(e) {
-        this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+        // We only want to update our session and view information if the new hash looks like it is supposed to.
+        // Otherwise, it's just a regular in-page hash link "#here" that we should let operate normally.
 
-        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
-        document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
-        document.querySelector(this.SHOW_BTN).click();
+        let h = e.target.location.hash;
+        if (h.match(/^#name=.+(&view=.+)?/) || h.match(/^#view=.+(&name=.+)?/)) {
+            this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+
+            document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+            document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
+            document.querySelector(this.SHOW_BTN).click();
+        }
     }
 
     // Build the <select> option list from the individual views in the registry.
