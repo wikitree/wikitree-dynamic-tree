@@ -15,11 +15,12 @@ const dateTokenCache = {};
  * Serializes WikiTree fuzzy date using formatting string
  * @param  {object}  person Person object received from WikiTree API
  * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
- * @param  {string} [formatString="MMM DD, YYYY"] Will use specified formatting string to serialize the date
- * @param  {boolean} [withCertainty=true] Will add certainty if loaded
+ * @param  {object}  options object containing foloowing options
+ *                      * {string} [formatString="MMM DD, YYYY"]
+ *                      * {boolean} [withCertainty=true]
  * @return {string} Serialized date
  */
-window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", withCertainty = true) {
+window.wtDate = function (person, fieldName, options = {}) {
     const MONTHS = [
         // just to keep it more compact and not too long (more than 120 characters)
         ...["January", "February", "March", "April", "May", "June"],
@@ -27,6 +28,9 @@ window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", with
     ];
 
     const CERTAINTY_MAP = { guess: "about", before: "before", after: "after" }; // '' & 'certain' will produce ''
+
+    const DEFAULT_OPTIONS = { formatString: "MMM DD, YYYY", withCertainty: true };
+    options = { ...DEFAULT_OPTIONS, ...options };
 
     function tokenize(formatString) {
         if (dateTokenCache[formatString]) return dateTokenCache[formatString];
@@ -52,7 +56,7 @@ window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", with
         return tokens;
     }
 
-    tokens = tokenize(formatString);
+    tokens = tokenize(options.formatString);
 
     let prop = person?.[fieldName];
 
@@ -87,7 +91,7 @@ window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", with
     let serialized = tokens.join("");
     serialized = serialized.replaceAll(" ,", ","); // solves one of many possible issues when the day is unknown
 
-    certainty = withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
+    certainty = options.withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
 
     return `${certainty}${serialized}`;
 };
@@ -95,35 +99,35 @@ window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", with
 /**
  * Serializes WikiTree complete name
  * @param  {object}  person Person object received from WikiTree API
- * @param  {string}  lastNameType Possible options: `at-birth` (default), `current`, `both`
- * @param  {boolean}  incNickname Includes nickname
- * @param  {boolean}  incPrefix Includes prefix
- * @param  {boolean}  incSuffix Includes suffix
+ * @param  {object}  options object containing foloowing options
+ *                      * {array[string]} fields - possible values: `FirstName`, `LastNameCurrent`, `LastNameAtBirth`,
+ *                                                                  `MiddleName`, `Nickname`, `Prefix`, `Suffix`
  * @return {string} Serialized name
  */
-window.wtCompleteName = function (
-    person,
-    lastNameType = "at-birth",
-    incNickname = true,
-    incPrefix = false,
-    incSuffix = false
-) {
-    const lastName = Object({
-        "at-birth": person?.LastNameAtBirth ? person.LastNameAtBirth : person?.LastNameCurrent || null,
-        "current": person?.LastNameCurrent ? person.LastNameCurrent : person?.LastNameAtBirth || null,
-        "both":
+window.wtCompleteName = function (person, options = {}) {
+    const DEFAULT_OPTIONS = { fields: ["FirstName", "LastNameCurrent", "LastNameAtBirth", "MiddleName"] };
+    options = { ...DEFAULT_OPTIONS, ...options };
+
+    const has = (field) => options.fields.includes(field);
+
+    if (has("LastNameAtBirth") && has("LastNameCurrent")) {
+        lastName =
             person?.LastNameCurrent !== person.LastNameAtBirth
-                ? person.LastNameCurrent + (person?.LastNameAtBirth ? ` (at birth: ${person.LastNameAtBirth})` : null)
-                : person?.LastNameAtBirth || null,
-    })[lastNameType];
+                ? (person?.LastNameAtBirth ? `(${person.LastNameAtBirth}) ` : null) + person.LastNameCurrent
+                : person?.LastNameAtBirth || null;
+    } else if (has("LastNameAtBirth")) {
+        lastName = person?.LastNameAtBirth ? person.LastNameAtBirth : person?.LastNameCurrent || null;
+    } else if (has("LastNameCurrent")) {
+        lastName = person?.LastNameCurrent ? person.LastNameCurrent : person?.LastNameAtBirth || null;
+    }
 
     const result = [
-        incPrefix && person?.Prefix ? person.Prefix : null,
-        person?.FirstName || person.RealName ? person.FirstName || person.RealName : null,
-        person?.MiddleName ? person.MiddleName : null,
-        incNickname && person?.Nicknames ? `<span class="nickname">„${person.Nicknames}"</span>` : null,
+        has("Prefix") && person?.Prefix ? person.Prefix : null,
+        has("FirstName") && (person?.FirstName || person.RealName) ? person.FirstName || person.RealName : null,
+        has("MiddleName") && person?.MiddleName ? person.MiddleName : null,
+        has("Nickname") && person?.Nicknames ? `<span class="nickname">„${person.Nicknames}"</span>` : null,
         lastName,
-        incSuffix && person?.Suffix ? person.Suffix : null,
+        has("Suffix") && person?.Suffix ? person.Suffix : null,
     ];
 
     return result.filter((part) => part !== null).join(" ");

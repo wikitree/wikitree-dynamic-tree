@@ -244,5 +244,6 @@ main {
 
   #view-container {
     border: none;
+    min-height: initial;
   }
 }

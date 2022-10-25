@@ -40,8 +40,6 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         );
 
         this.render(containerSelector);
-
-        console.log(data);
     }
 
     prepareTemplate(remainingGens, dna) {
@@ -117,7 +115,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             <div style="grid-area: ${person.dna};" class="known-relative">
                 ${photo}
                 <div>
-                    <h2>${wtCompleteName(person, "at-birth", false)}</h2>
+                    <h2>${wtCompleteName(person)}</h2>
                     <div>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</div>
                     ${locations}
                 </div>
