@@ -16,7 +16,7 @@ window.FamilyView = class FamilyView extends View {
 window.FamilyGroup = class FamilyGroup {
     constructor(container_selector, person_id) {
         this.selector = container_selector;
-        this.person = person_id;
+        this.person_id = person_id;
         this.profileFields = "Id,Name,Gender," +
             "FirstName,LastNameAtBirth,LastNameCurrent,MiddleName," +
             // "Derived.ShortName,Derived.BirthName,Derived.LongName," + // These don't work.
@@ -49,7 +49,7 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     grabField(obj, fieldname) {
-        if (obj.hasOwnProperty(fieldname)) {
+        if (obj.hasOwnProperty(fieldname) && obj[fieldname]) {
             return obj[fieldname];
         }
         return '';
@@ -100,7 +100,7 @@ window.FamilyGroup = class FamilyGroup {
     }
 
     linkedProfileName(person) {
-        return this.profileLink(person, this.fullName(person));
+        return `${this.profileLink(person, this.fullName(person))}${this.makeLinkToSelf(person)}`;
     }
 
     extractParentLink(person, parentSide) {
@@ -144,6 +144,16 @@ window.FamilyGroup = class FamilyGroup {
         }
         ans += dateParts[0];
         return ans;
+    }
+
+    makeLinkToSelf(person) {
+        if (person.Id !== this.person_id) {
+            let html = ` <a href="#name=${person.Name}&view=familygroup">`;
+            html += `<img src="https://www.wikitree.com/images/icons/family-group.gif.pagespeed.ce.xRjS57QXMl.gif" border="0" width="7" height="11" alt="family group sheet" title="Family Group Sheet">`;
+            html += `</a>`;
+            return html;
+        }
+        return '';
     }
 
     createMiniBioHTML(person, showPic = true) {
@@ -196,12 +206,32 @@ window.FamilyGroup = class FamilyGroup {
         return html;
     }
 
+    setViewDescription(person) {
+        let html = `Here is a family group view for illustrating the marriage`;
+        if (person.Spouses && Object.keys(person.Spouses).length > 1) {
+            html += 's';
+        }
+        // html += ` [${Object.keys(person.Spouses).length}] `;
+        if (person.Children && Object.keys(person.Children).length > 0) {
+            html += ` and children`;
+        }
+        html += ` of ${this.linkedProfileName(person)}${this.makeLinkToSelf(person)},`;
+
+        let fatherName = this.extractParentLink(person, 'Father');
+        let motherName = this.extractParentLink(person, 'Mother');
+
+        html += ` the son of ${fatherName} and ${motherName}. 
+            See ${person.RealName}'s Tree & Tools page for more views.`;
+        $("#view-description").html(html);
+    }
+
+
     async displayFamilyGroup() {
         // Attempt to retrieve the data for the given person id
-        let data = await WikiTreeAPI.postToAPI({action: "getPerson", key: this.person, fields: this.profileFields});
+        let data = await WikiTreeAPI.postToAPI({action: "getPerson", key: this.person_id, fields: this.profileFields});
         // It's an error if nothing is returned
         if (data.length !== 1) {
-            $(this.selector).html(`Error retrieving information for person id ${this.person}`);
+            $(this.selector).html(`Error retrieving information for person id ${this.person_id}`);
             return;
         }
         // Extract the person data from the single element array
@@ -294,9 +324,13 @@ window.FamilyGroup = class FamilyGroup {
                     if (person.Spouses.hasOwnProperty(spousesKey)) {
                         const spouse = person.Spouses[spousesKey];
                         wv.append(`<h2>${person.RealName} and ${this.fullName(spouse)}</h2>`);
+                        let marr_place = this.grabField(spouse, 'marriage_location');
+                        if (marr_place.length > 1) {
+                            marr_place = `in ${marr_place}`;
+                        }
                         wv.append(`<h3>${person.RealName} married ${this.maidenName(spouse)}, 
-                        ${this.readableDate(spouse.marriage_date, spouse.data_status.marriage_date)} in
-                        ${spouse.marriage_location}</h3>`);
+                            ${this.readableDate(spouse.marriage_date, spouse.data_status.marriage_date)}
+                            ${marr_place}</h3>`);
                         // wv.append(`<p>${toString(spouse)}</p>`);
                         let html = this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
                         wv.append(html);
@@ -333,25 +367,5 @@ window.FamilyGroup = class FamilyGroup {
             html += `</ol>`;
             $('#children_list').append(html);
         }
-    }
-
-
-    setViewDescription(person) {
-        let html = `Here is a family group view for illustrating the marriage`;
-        if (person.Spouses && Object.keys(person.Spouses).length > 1) {
-            html += 's';
-        }
-        // html += ` [${Object.keys(person.Spouses).length}] `;
-        if (person.Children && Object.keys(person.Children).length > 0) {
-            html += ` and children`;
-        }
-        html += ` of ${this.linkedProfileName(person)},`;
-
-        let fatherName = this.extractParentLink(person, 'Father');
-        let motherName = this.extractParentLink(person, 'Mother');
-
-        html += ` the son of ${fatherName} and ${motherName}. 
-            See ${person.RealName}'s Tree & Tools page for more views.`;
-        $("#view-description").html(html);
     }
 };
