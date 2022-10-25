@@ -16,55 +16,24 @@
   left: 45%;
   top: 45%;
 }
+
 @-moz-keyframes spin {
   100% {
     -moz-transform: rotate(360deg);
   }
 }
+
 @-webkit-keyframes spin {
   100% {
     -webkit-transform: rotate(360deg);
   }
 }
+
 @keyframes spin {
   100% {
     -webkit-transform: rotate(360deg);
     transform: rotate(360deg);
   }
-}
-
-.collapsible {
-  background-color: #fff;
-  color: #444;
-  cursor: pointer;
-  padding: 18px;
-  width: 50%;
-  border: none;
-  text-align: left;
-  outline: none;
-  display: block;
-  margin: auto;
-}
-
-button.collapsible:after {
-  content: "\002B";
-  color: #25422d;
-  font-weight: bold;
-  float: right;
-  margin-left: 5px;
-}
-button.collapsible.active:after {
-  content: "\2212";
-  color: #25422d;
-  font-weight: bold;
-  float: right;
-  margin-left: 5px;
-}
-
-.active,
-.collapsible:hover {
-  background-color: #ccc;
-  color: #25422d;
 }
 
 .content {
