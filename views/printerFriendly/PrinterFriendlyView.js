@@ -53,16 +53,16 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         if (remainingGens === 0) return;
 
-        this.prepareTemplate(remainingGens - 1, `${dna}M`); // M = mother
         this.prepareTemplate(remainingGens - 1, `${dna}F`); // F = father
+        this.prepareTemplate(remainingGens - 1, `${dna}M`); // M = mother
     }
 
     assignDNAToPeople(personID, dna) {
         if (!this.people[personID]) return;
         this.people[personID]["dna"] = dna;
 
-        if (this.people[personID].Mother) this.assignDNAToPeople(this.people[personID].Mother, `${dna}M`);
         if (this.people[personID].Father) this.assignDNAToPeople(this.people[personID].Father, `${dna}F`);
+        if (this.people[personID].Mother) this.assignDNAToPeople(this.people[personID].Mother, `${dna}M`);
     }
 
     render(containerSelector) {
@@ -122,7 +122,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             <div style="grid-area: ${person.dna};" class="known-relative">
                 ${photo}
                 <div>
-                    <h2>${wtCompleteName(person, false)}</h2>
+                    <h2>${wtCompleteName(person, "at-birth", false)}</h2>
                     <div>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</div>
                     ${locations}
                 </div>

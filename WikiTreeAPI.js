@@ -95,28 +95,34 @@ window.wtDate = function (person, fieldName, formatString = "MMM DD, YYYY", with
 /**
  * Serializes WikiTree complete name
  * @param  {object}  person Person object received from WikiTree API
+ * @param  {string}  lastNameType Possible options: `at-birth` (default), `current`, `both`
  * @param  {boolean}  incNickname Includes nickname
- * @param  {boolean}  incLastNameAtBirth Includes lastname at birth
  * @param  {boolean}  incPrefix Includes prefix
  * @param  {boolean}  incSuffix Includes suffix
  * @return {string} Serialized name
  */
 window.wtCompleteName = function (
     person,
+    lastNameType = "at-birth",
     incNickname = true,
-    incLastNameAtBirth = false,
     incPrefix = false,
     incSuffix = false
 ) {
+    const lastName = Object({
+        "at-birth": person?.LastNameAtBirth ? person.LastNameAtBirth : person?.LastNameCurrent || null,
+        "current": person?.LastNameCurrent ? person.LastNameCurrent : person?.LastNameAtBirth || null,
+        "both":
+            person?.LastNameCurrent !== person.LastNameAtBirth
+                ? person.LastNameCurrent + (person?.LastNameAtBirth ? ` (at birth: ${person.LastNameAtBirth})` : null)
+                : person?.LastNameAtBirth || null,
+    })[lastNameType];
+
     const result = [
         incPrefix && person?.Prefix ? person.Prefix : null,
         person?.FirstName || person.RealName ? person.FirstName || person.RealName : null,
         person?.MiddleName ? person.MiddleName : null,
         incNickname && person?.Nicknames ? `<span class="nickname">„${person.Nicknames}"</span>` : null,
-        person?.LastNameCurrent ? person.LastNameCurrent : null,
-        incLastNameAtBirth && person?.LastNameAtBirth !== person?.LastNameCurrent
-            ? `(at birth: ${person.LastNameAtBirth})`
-            : null,
+        lastName,
         incSuffix && person?.Suffix ? person.Suffix : null,
     ];
 
