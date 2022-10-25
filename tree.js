@@ -97,7 +97,9 @@ window.ViewRegistry = class ViewRegistry {
         // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
         this.session.lm.events["onLoggedIn"] = (user) => {
-            document.querySelector(this.WT_ID_TEXT).value = user.name;
+            if (!this.session.getHashParams(location.hash).get("name")) {
+                document.querySelector(this.WT_ID_TEXT).value = user.name;
+            }
 
             orig_onLoggedIn_cb(user);
             document.querySelector(this.SHOW_BTN).click();
@@ -301,7 +303,7 @@ window.LoginManager = class LoginManager {
     }
 
     login() {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URLSearchParams(location.search);
         const authcode = searchParams.get("authcode") ? searchParams.get("authcode") : null;
 
         if (this.user.isLoggedIn()) {
@@ -355,8 +357,12 @@ window.SessionManager = class SessionManager {
         this.lm.login();
     }
 
+    getHashParams(hash) {
+        return new URLSearchParams(hash.slice(1));
+    }
+
     loadUrlHash(viewIDs, urlHash) {
-        const fields = new URLSearchParams(urlHash.substring(1));
+        const fields = this.getHashParams(urlHash);
         this.personName = fields.get("name") || this.personName;
 
         const viewID = fields.get("view");
