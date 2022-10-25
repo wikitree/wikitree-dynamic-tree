@@ -226,3 +226,6 @@ main {
 .centered {
   text-align: center;
 }
+.marginBottomZero {
+  margin-bottom: 0;
+}
