@@ -99,7 +99,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     createSettingsDIV(data) {
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="FanChartView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '<span style="color:red; align:left"><A onclick="' + data.viewClassName + '.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
             this.createULelements(data) +
             '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>';
         ("</div>");
@@ -117,7 +117,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         for (let tab in data.tabs) {
             console.log("createULelements - TAB:", tab, data.tabs[tab].name);
             let tabName = data.tabs[tab].name;
-            theUL += '<li id="' + tabName + '-tab">' + this.UpperCaseFirstLetter(tabName) + "</li>";
+            theUL += '<li id="' + tabName + '-tab">' + data.tabs[tab].label + "</li>";
             theDIVs += '<div id="' + tabName + '-panel"></div>';
         }
         theUL += "</ul>";
@@ -153,11 +153,13 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     }
 
     setActiveTab(tabName) {
-        // console.log("setActiveTab called: tabName is: " + tabName);
-
+        console.log("setActiveTab called: tabName is: " + tabName);
+        console.log("this:", this);
+        console.log("tabElements" , this.tabElements);
+        
         for (let tab in this.tabElements) {
             let tabElement = this.tabElements[tab];
-            // console.log(tabElement);
+            console.log(tabElement);
             if (!tabElement) {
                 console.log("setActiveTab: No tab element found for '" + tab + "'");
                 continue;
