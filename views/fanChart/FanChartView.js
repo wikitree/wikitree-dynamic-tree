@@ -252,32 +252,32 @@
                 ],
             },
 
-            // {
-            //     tab: "dates",
-            //     subsection: "FanChartDates",
-            //     category: "date",
-            //     subcategory: "options",
-            //     options: [
-            //         { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
-            //         { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
-            //         { optionName: "showLifeSpan", label: "Show LifeSpan", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "break1", type: "br" },
-            //         { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "break2", comment: "Date Format:", type: "br" },
-            //         {
-            //             optionName: "dateFormat",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "YYYY", text: "1964" },
-            //                 { value: "YYYYMMDD", text: "1964-01-16" },
-            //                 { value: "DDMMMYYYY", text: "16 Jan 1964" },
-            //                 { value: "MMMDDYYYY", text: "Jan 16, 1964" },
-            //             ],
-            //             defaultValue: "DDMMMYYYY",
-            //         },
-            //     ],
-            // },
+            {
+                tab: "dates",
+                subsection: "FanChartDates",
+                category: "date",
+                subcategory: "options",
+                options: [
+                    { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
+                    { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
+                    { optionName: "showLifeSpan", label: "Show LifeSpan", type: "checkbox", defaultValue: 0 },
+                    { optionName: "break1", type: "br" },
+                    // { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
+                    // { optionName: "break2", comment: "Date Format:", type: "br" },
+                    {
+                        optionName: "dateFormat",
+                        type: "radio",
+                        label: "",
+                        values: [
+                            { value: "YYYY", text: "1964" },
+                            { value: "YYYYMMDD", text: "1964-01-16" },
+                            { value: "DDMMMYYYY", text: "16 Jan 1964" },
+                            { value: "MMMDDYYYY", text: "Jan 16, 1964" },
+                        ],
+                        defaultValue: "DDMMMYYYY",
+                    },
+                ],
+            },
             // {
             //     tab: "places",
             //     subsection: "FanChartPlaces",
@@ -1375,15 +1375,6 @@
                 if (thePhotoDIV) {
                     thePhotoDIV.style.display = "none";
                 }
-            } else if (ancestorObject.ahnNum == 1) {
-                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
-                if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == true) {
-                    thePhotoDIV.style.display = "block";
-                } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {
-                    thePhotoDIV.style.display = "none";
-                    theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                    console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
-                }
             } else if (ancestorObject.ahnNum > 1) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
 
@@ -1402,6 +1393,22 @@
                     }
                 } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showAllPics"] == false) {
                     thePhotoDIV.style.display = "none";
+                }
+            }
+            if (ancestorObject.ahnNum == 1) {
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+                if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == true) {
+                     if (!photoUrl && (FanChartView.currentSettings["photo_options_useSilhouette"] == false)) {
+                         thePhotoDIV.style.display = "none";
+                         theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                     }  else {
+                        thePhotoDIV.style.display = "block";
+                     }
+                    
+                } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {
+                    thePhotoDIV.style.display = "none";
+                    theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                    console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
             }
 
