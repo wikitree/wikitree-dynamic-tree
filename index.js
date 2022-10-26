@@ -42,6 +42,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "surnames": new SurnamesView(),
             "webs": new WebsView(),
             "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
+            "calendar": new calendarView(),
         },
         new SessionManager(WikiTreeAPI, loginManager)
     );

@@ -244,11 +244,14 @@ WikiTreeAPI.Person = class Person {
 // });
 //
 WikiTreeAPI.getPerson = function (id, fields) {
-    return WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: fields.join(","), resolveRedirect: 1 }).then(
-        function (result) {
-            return new WikiTreeAPI.Person(result[0].person);
-        }
-    );
+    return WikiTreeAPI.postToAPI({
+        action: "getPerson",
+        key: id,
+        fields: fields.join(","),
+        resolveRedirect: 1,
+    }).then(function (result) {
+        return new WikiTreeAPI.Person(result[0].person);
+    });
 };
 // To get a set of Ancestors for a given id, we POST to the API's getAncestors action. When we get a result back,
 // we leave the result as an array of objects
@@ -330,6 +333,28 @@ WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
     return WikiTreeAPI.postToAPI(getRelativesParameters).then(function (result) {
         // console.log("RESULT from getRelatives:", result );
         return result[0].items;
+    });
+};
+
+// To get the Watchlist for the logged in user, we POST to the API's getWatchlist action. When we get a result back,
+// we leave the result as an array of objects
+// Note that postToAPI returns the Promise from jquerys .ajax() call.
+// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
+
+// So we can use this through our asynchronous actions with something like:
+// WikiTree.getWatchlist(limit, getPerson, getSpace, fields).then(function(result) {
+//    // the "result" here is that from our API call. The profile data is in result[0].watchlist, which will be an array of objects
+// });
+WikiTreeAPI.getWatchlist = function (limit, getPerson, getSpace, fields) {
+    return WikiTreeAPI.postToAPI({
+        action: "getWatchlist",
+        limit: limit,
+        getPerson: getPerson,
+        getSpace: getSpace,
+        fields: fields.join(","),
+        resolveRedirect: 1,
+    }).then(function (result) {
+        return result[0].watchlist;
     });
 };
 
