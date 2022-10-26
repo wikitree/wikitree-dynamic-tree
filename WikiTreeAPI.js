@@ -9,6 +9,130 @@
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
+const dateTokenCache = {};
+
+/**
+ * Serializes WikiTree fuzzy date using formatting string
+ * @param  {object}  person Person object received from WikiTree API
+ * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
+ * @param  {object}  options object containing foloowing options
+ *                      * {string} [formatString="MMM DD, YYYY"]
+ *                      * {boolean} [withCertainty=true]
+ * @return {string} Serialized date
+ */
+window.wtDate = function (person, fieldName, options = {}) {
+    const MONTHS = [
+        // just to keep it more compact and not too long (more than 120 characters)
+        ...["January", "February", "March", "April", "May", "June"],
+        ...["July", "August", "September", "October", "November", "December"],
+    ];
+
+    const CERTAINTY_MAP = { guess: "about", before: "before", after: "after" }; // '' & 'certain' will produce ''
+
+    const DEFAULT_OPTIONS = { formatString: "MMM DD, YYYY", withCertainty: true };
+    options = { ...DEFAULT_OPTIONS, ...options };
+
+    function tokenize(formatString) {
+        if (dateTokenCache[formatString]) return dateTokenCache[formatString];
+
+        let prev = null;
+        let tokens = [];
+
+        for (let letter of formatString) {
+            if (prev !== letter && ("DMY".includes(prev) || "DMY".includes(letter))) {
+                // prev and letter are different and one of them is one on D|M|Y
+                tokens[tokens.length] = letter;
+            } else if (
+                (!"DMY".includes(prev) && !"DMY".includes(letter)) || // both prev and letter are not one of D|M|Y
+                (prev === letter && "DMY".includes(letter)) || // prev and letter are same and one of D|M|Y
+                (!"DMY".includes(letter) && (prev !== letter || !"DMY".includes(prev)))
+            ) {
+                tokens[tokens.length - 1] += letter;
+            }
+            prev = letter;
+        }
+
+        dateTokenCache[formatString] = tokens;
+        return tokens;
+    }
+
+    tokens = tokenize(options.formatString);
+
+    let prop = person?.[fieldName];
+
+    if (!prop || prop === "0000-00-00") return "[unknown]";
+
+    let [day, month, year] = prop
+        .split("-")
+        .reverse()
+        .map((x) => parseInt(x));
+
+    if (month === 0) {
+        // month is unknown, rest doesn't makes sense
+        tokens = tokens.filter((token) => token.includes("Y"));
+    }
+
+    tokens = tokens
+        .map((token) => {
+            if (!"DMY".includes(token[0])) return token;
+
+            return Object({
+                D: day ? day : null,
+                DD: day ? String(day).padStart(2, "0") : null,
+                M: month ? month : null,
+                MM: month ? String(month).padStart(2, "0") : null,
+                MMM: month ? MONTHS[month - 1].slice(0, 3) : null,
+                MMMM: month ? MONTHS[month - 1] : null,
+                YYYY: prop[2] ? String(year).padStart(4, "0") : null,
+            })[token];
+        })
+        .filter((token) => token !== null);
+
+    let serialized = tokens.join("");
+    serialized = serialized.replaceAll(" ,", ","); // solves one of many possible issues when the day is unknown
+
+    certainty = options.withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
+
+    return `${certainty}${serialized}`;
+};
+
+/**
+ * Serializes WikiTree complete name
+ * @param  {object}  person Person object received from WikiTree API
+ * @param  {object}  options object containing foloowing options
+ *                      * {array[string]} fields - possible values: `FirstName`, `LastNameCurrent`, `LastNameAtBirth`,
+ *                                                                  `MiddleName`, `Nickname`, `Prefix`, `Suffix`
+ * @return {string} Serialized name
+ */
+window.wtCompleteName = function (person, options = {}) {
+    const DEFAULT_OPTIONS = { fields: ["FirstName", "LastNameCurrent", "LastNameAtBirth", "MiddleName"] };
+    options = { ...DEFAULT_OPTIONS, ...options };
+
+    const has = (field) => options.fields.includes(field);
+
+    if (has("LastNameAtBirth") && has("LastNameCurrent")) {
+        lastName =
+            person?.LastNameCurrent !== person.LastNameAtBirth
+                ? (person?.LastNameAtBirth ? `(${person.LastNameAtBirth}) ` : null) + person.LastNameCurrent
+                : person?.LastNameAtBirth || null;
+    } else if (has("LastNameAtBirth")) {
+        lastName = person?.LastNameAtBirth ? person.LastNameAtBirth : person?.LastNameCurrent || null;
+    } else if (has("LastNameCurrent")) {
+        lastName = person?.LastNameCurrent ? person.LastNameCurrent : person?.LastNameAtBirth || null;
+    }
+
+    const result = [
+        has("Prefix") && person?.Prefix ? person.Prefix : null,
+        has("FirstName") && (person?.FirstName || person.RealName) ? person.FirstName || person.RealName : null,
+        has("MiddleName") && person?.MiddleName ? person.MiddleName : null,
+        has("Nickname") && person?.Nicknames ? `<span class="nickname">„${person.Nicknames}"</span>` : null,
+        lastName,
+        has("Suffix") && person?.Suffix ? person.Suffix : null,
+    ];
+
+    return result.filter((part) => part !== null).join(" ");
+};
+
 // Our basic constructor for a Person. We expect the "person" data from the API returned result
 // (see getPerson below). The basic fields are just stored in the internal _data array.
 // We pull out the Parent and Child elements as their own Person objects.
