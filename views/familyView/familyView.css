@@ -1,67 +1,126 @@
 #family_group {
-    background-color: white;
-    width: 95%;
-    margin-left: auto;
-    margin-right: auto;
-    clear: both;
+  background-color: white;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  clear: both;
 }
 
-#family_group h2 {
-    text-indent: 5%;
+#family_group h2, #children_list h2 {
+  text-indent: 5%;
 }
 
-#family_group h3 {
-    font-size: 90%;
-    text-indent: 8%;
+#family_group h3, #children_list h3 {
+  font-size: 90%;
+  text-indent: 8%;
 }
 
 #children_list {
-    background-color: white;
-    width: 75%;
-    margin-left: auto;
-    margin-right: auto;
-    clear: both;
+  background-color: white;
+  width: 75%;
+  margin-left: auto;
+  margin-right: auto;
+  clear: both;
 }
 
 .fv_singleFamily {
-    width: 95%;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    clear: both;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  clear: both;
 }
 
 .fv_Family {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-    justify-content: center;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  justify-content: center;
 }
 
 .fv_Parents td {
-    width: 50%;
-    border: #aaaaaa 1px solid;
+  width: 50%;
+  border: #aaaaaa 1px solid;
 }
 
 .fv_Children td {
-    border-width: 0;
-    padding: 0;
-    border-spacing: 0;
+  border-width: 0;
+  padding: 0;
+  border-spacing: 0;
 }
 
 .fv_Children_Table {
-    width: 100%;
+  width: 100%;
 }
 
 .fv_Children_Table tr td {
-    border: #aaaaaa 1px solid;
+  border: #aaaaaa 1px solid;
 }
 
 .gender_Male {
-    background-color: #eef;
+  background-color: #eef;
 }
 
 .gender_Female {
-    background-color: #fee;
+  background-color: #fee;
+}
+
+@media print {
+  header {
+    display: none !important;
+  }
+
+  main {
+    font-size: 90%;
+  }
+
+  #family_group {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #family_group h2, #children_list h2 {
+    text-indent: 0;
+    font-size: 100%;
+    margin-bottom: 0;
+  }
+
+  #family_group h3, #children_list h3 {
+    text-indent: 0;
+    font-size: 90%;
+    margin-bottom: 0;
+  }
+
+  .fv_familyBlock, .fv_Bio {
+    page-break-inside: avoid;
+  }
+
+  .fv_singleFamily {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .fv_Parents, .fv_Children {
+    font-size: 80%;
+  }
+
+  #view-container {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    font-size: 80%;
+  }
+
+  .icon {
+    display: none;
+  }
+
+  a:link, a:visited, a {
+    color: black;
+    text-decoration: none;
+  }
 }

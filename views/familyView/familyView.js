@@ -3,7 +3,7 @@
  *
  * @type {Window.FamilyView}
  */
-window.FamilyView = class FamilyView extends View {
+window.FamilyView = class FamilyView extends window.View {
     /**
      * Provide information about the view to display in the menu system
      *
@@ -24,7 +24,7 @@ window.FamilyView = class FamilyView extends View {
      * @param person_id
      */
     init(container_selector, person_id) {
-        const view = new FamilyGroup(container_selector, person_id);
+        const view = new window.FamilyGroup(container_selector, person_id);
         view.displayFamilyGroup();
     }
 };
@@ -40,35 +40,35 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     get baseWikiURL() {
-        return 'https://www.wikitree.com';
+        return "https://www.wikitree.com";
     }
 
     get editFamilyURL() {
-        return '/index.php?title=Special:EditFamily';
+        return "/index.php?title=Special:EditFamily";
     }
 
     get urlTreeAndTools() {
-        return '/genealogy/';
+        return "/genealogy/";
     }
 
     get urlPrivacy() {
-        return '/wiki/Privacy';
+        return "/wiki/Privacy";
     }
 
     get urlTrustedList() {
-        return '/wiki/Trusted_List';
+        return "/wiki/Trusted_List";
     }
 
     get imgMaleShadow() {
-        return '/images/icons/male.gif.pagespeed.ce.sk2cBn-ts3.gif';
+        return "/images/icons/male.gif";
     }
 
     get imgFemaleShadow() {
-        return '/images/icons/female.gif.pagespeed.ce._HpxLyYvZO.gif';
+        return "/images/icons/female.gif";
     }
 
     get imgFamilyGroup() {
-        return '/images/icons/family-group.gif.pagespeed.ce.xRjS57QXMl.gif';
+        return "/images/icons/family-group.gif";
     }
 
     /**
@@ -80,13 +80,14 @@ window.FamilyGroup = class FamilyGroup {
     constructor(container_selector, person_id) {
         this.selector = container_selector;
         this.person_id = person_id;
-        this.profileFields = "Id,Name,Gender," +
+        this.profileFields =
+            "Id,Name,Gender," +
             "FirstName,LastNameAtBirth,LastNameCurrent,MiddleName," +
-            // "Derived.ShortName,Derived.BirthName,Derived.LongName," + // These don't work.
+            "Derived.ShortName,Derived.BirthName,Derived.LongName," +
             "RealName,Nicknames,Prefix,Suffix," +
-            "BirthDate,BirthLocation," +
-            "DeathDate,DeathLocation," +
-            "DataStatus,Privacy," +
+            "BirthDate,BirthDateDecade,BirthLocation," +
+            "DeathDate,DeathDateDecade,DeathLocation," +
+            "IsLiving,DataStatus,Privacy," +
             "Father,Mother,Photo,PhotoData," +
             "Parents,Children,Spouses,Siblings";
     }
@@ -98,8 +99,8 @@ window.FamilyGroup = class FamilyGroup {
      */
     sortByDate(list) {
         return list.sort((a, b) => {
-            const aYear = a.Date.split('-').join('');
-            const bYear = b.Date.split('-').join('');
+            const aYear = a.Date.split("-").join("");
+            const bYear = b.Date.split("-").join("");
 
             return aYear - bYear;
         });
@@ -115,7 +116,7 @@ window.FamilyGroup = class FamilyGroup {
         if (obj.hasOwnProperty(field_name) && obj[field_name]) {
             return obj[field_name];
         }
-        return '';
+        return "";
     }
 
     /**
@@ -126,18 +127,15 @@ window.FamilyGroup = class FamilyGroup {
      */
     fullName(person) {
         const nm = [
-            this.grabField(person, 'Prefix'),
-            this.grabField(person, 'FirstName'),
-            this.grabField(person, 'MiddleName')
+            this.grabField(person, "Prefix"),
+            this.grabField(person, "FirstName"),
+            this.grabField(person, "MiddleName"),
         ];
         if (person.LastNameCurrent !== person.LastNameAtBirth) {
-            nm.push(`(${this.grabField(person, 'LastNameAtBirth')})`);
+            nm.push(`(${this.grabField(person, "LastNameAtBirth")})`);
         }
-        const full = nm.concat([
-            this.grabField(person, 'LastNameCurrent'),
-            this.grabField(person, 'Suffix')
-        ]);
-        return full.join(' ').trim();
+        const full = nm.concat([this.grabField(person, "LastNameCurrent"), this.grabField(person, "Suffix")]);
+        return full.join(" ").trim();
     }
 
     /**
@@ -147,21 +145,20 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     shortName(person) {
-        const nm = [
-            this.grabField(person, 'FirstName'),
-            this.grabField(person, 'LastNameAtBirth'),
-        ];
-        return nm.join(' ').trim();
+        // const nm = [this.grabField(person, "FirstName"), this.grabField(person, "LastNameAtBirth")];
+        // return nm.join(" ").trim();
+        return person.ShortName;
     }
 
     /**
-     * Although 'maiden' name only really applies to women, it doesn't matter to the code
+     * Although birth name only really applies to women, it doesn't matter to the code
      *
      * @param person
      * @returns {string}
      */
-    maidenName(person) {
-        return `${person.FirstName} ${person.LastNameAtBirth}`;
+    birthName(person) {
+        // return `${person.FirstName} ${person.LastNameAtBirth}`;
+        return person.BirthName;
     }
 
     /**
@@ -209,7 +206,9 @@ window.FamilyGroup = class FamilyGroup {
         if (person[parentSide] && person[parentSide] !== 0) {
             return this.linkedProfileName(person.Parents[person[parentSide]]);
         } else {
-            return `<span class="BLANK"><a href="${this.baseWikiURL}${this.editFamilyURL}&amp;u=${person.Id}&amp;who=${parentSide.toLowerCase()}">
+            return `<span class="BLANK"><a href="${this.baseWikiURL}${this.editFamilyURL}&amp;u=${
+                person.Id
+            }&amp;who=${parentSide.toLowerCase()}">
                 [${parentSide.toLowerCase()}?]</a></span>`;
         }
     }
@@ -223,7 +222,7 @@ window.FamilyGroup = class FamilyGroup {
         if (person.Photo) {
             return `<img alt="Profile image for ${person.RealName}" src="${this.baseWikiURL}${person.PhotoData.url}"/><br/>`;
         } else {
-            if (person.Gender === 'Male') {
+            if (person.Gender === "Male") {
                 return `<img alt="No photo available for "${person.RealName}" src="${this.baseWikiURL}${this.imgMaleShadow}"/><br/>`;
             }
             return `<img alt="No photo available for "${person.RealName}" src="${this.baseWikiURL}${this.imgFemaleShadow}"/><br/>`;
@@ -238,23 +237,23 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     readableDate(aDate, qualifier) {
-        const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        if (aDate === '0000-00-00' || qualifier === 'blank') {
-            return '';
+        const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        if (!aDate || aDate === "0000-00-00" || qualifier === "blank") {
+            return "";
         }
-        const dateParts = aDate.split('-'); // y, m, d
-        let ans = '';
-        if (qualifier === 'before') {
-            ans += 'before ';
-        } else if (qualifier === 'after') {
-            ans += 'after ';
-        } else if (qualifier === 'guess') {
-            ans += 'about ';
+        const dateParts = aDate.split("-"); // y, m, d
+        let ans = "";
+        if (qualifier === "before") {
+            ans += "before ";
+        } else if (qualifier === "after") {
+            ans += "after ";
+        } else if (qualifier === "guess") {
+            ans += "about ";
         }
-        if (dateParts[2] !== '00') {
+        if (dateParts[2] !== "00") {
             ans += `${parseInt(dateParts[2])} `;
         }
-        if (dateParts[1] !== '00') {
+        if (dateParts[1] !== "00") {
             ans += `${months[parseInt(dateParts[1])]} `;
         }
         ans += dateParts[0];
@@ -269,13 +268,13 @@ window.FamilyGroup = class FamilyGroup {
      */
     makeLinkToSelf(person) {
         if (person.Id !== this.person_id) {
-            let html = ` <a href="#name=${person.Name}&view=familygroup">`;
+            let html = `<span class="icon"> <a href="#name=${person.Name}&view=familygroup">`;
             html += `<img src="${this.baseWikiURL}${this.imgFamilyGroup}" border="0" width="7" height="11" 
                     alt="family group sheet" title="Family Group Sheet">`;
-            html += `</a>`;
+            html += `</a></span>`;
             return html;
         }
-        return '';
+        return "";
     }
 
     /**
@@ -290,15 +289,29 @@ window.FamilyGroup = class FamilyGroup {
         if (showPic) {
             html += this.getProfilePicHTML(person);
         }
-        html += `${this.linkedProfileName(person)}<br/>`;
-        if (person.BirthDate !== '0000-00-00' && person.DataStatus.BirthDate !== 'blank') {
-            html += `Born: ${this.readableDate(person.BirthDate, person.DataStatus.BirthDate)} in ${person.BirthLocation}<br/>`;
+        html += `<strong>${this.linkedProfileName(person)}</strong><br/>`;
+        if (person.BirthDate && person.BirthDate !== "0000-00-00" && person.DataStatus.BirthDate !== "blank") {
+            let birth_place = this.grabField(person, "BirthLocation");
+            if (birth_place.length > 1) {
+                birth_place = ` in ${birth_place}`;
+            }
+            html += `Born: ${this.readableDate(person.BirthDate, person.DataStatus.BirthDate)}${birth_place}<br/>`;
+        } else if (person.BirthDateDecade) {
+            html += `Born: ${person.BirthDateDecade}<br/>`;
         }
-        if (person.DeathDate !== '0000-00-00' && person.DataStatus.DeathDate !== 'blank') {
-            html += `Died: ${this.readableDate(person.DeathDate, person.DataStatus.DeathDate)} in ${person.DeathLocation}<br/>`;
+        if (!person.IsLiving) {
+            if (person.DeathDate && person.DeathDate !== "0000-00-00" && person.DataStatus.DeathDate !== "blank") {
+                let death_place = this.grabField(person, "DeathLocation");
+                if (death_place.length > 1) {
+                    death_place = ` in ${death_place}`;
+                }
+                html += `Died: ${this.readableDate(person.DeathDate, person.DataStatus.DeathDate)}${death_place}<br/>`;
+            } else if (person.DeathDateDecade) {
+                html += `Died: ${person.DeathDateDecade}<br/>`;
+            }
         }
         html += `</td>`;
-        return html;
+        return `<div class="fv_Bio">${html}</div>`;
     }
 
     /**
@@ -353,11 +366,10 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     linkToTreeAndTools(person, linkText) {
-        let person_parts = person.Name.split('-');
+        let person_parts = person.Name.split("-");
         let url = `${this.baseWikiURL}${this.urlTreeAndTools}${person_parts[0]}-Family-Tree-${person_parts[1]}`;
         return `<a href="${url}">${linkText}</a>`;
     }
-
 
     /**
      * Set the text within the Description box to reflect the chosen person
@@ -367,7 +379,7 @@ window.FamilyGroup = class FamilyGroup {
     setViewDescription(person) {
         let html = `Here is a family group view for illustrating the marriage`;
         if (person.Spouses && Object.keys(person.Spouses).length > 1) {
-            html += 's';
+            html += "s";
         }
         // html += ` [${Object.keys(person.Spouses).length}] `;
         if (person.Children && Object.keys(person.Children).length > 0) {
@@ -375,12 +387,15 @@ window.FamilyGroup = class FamilyGroup {
         }
         html += ` of ${this.linkedProfileName(person)}${this.makeLinkToSelf(person)},`;
 
-        let fatherName = this.extractParentLink(person, 'Father');
-        let motherName = this.extractParentLink(person, 'Mother');
-        let childType = (person.Gender === 'Male') ? 'son' : 'daughter';
+        let fatherName = this.extractParentLink(person, "Father");
+        let motherName = this.extractParentLink(person, "Mother");
+        let childType = person.Gender === "Male" ? "son" : "daughter";
 
         html += ` the ${childType} of ${fatherName} and ${motherName}. 
-            See ${this.linkedShortName(person)}'s ${this.linkToTreeAndTools(person, 'Tree &amp; Tools page')} for more views.`;
+            See ${this.linkedShortName(person)}'s ${this.linkToTreeAndTools(
+            person,
+            "Tree &amp; Tools page"
+        )} for more views.`;
         $("#view-description").html(html);
     }
 
@@ -392,14 +407,14 @@ window.FamilyGroup = class FamilyGroup {
      */
     createChildListIntroductionLine(person) {
         // Select the traditional pronoun based upon declared gender
-        let pronoun = 'his';
-        if (person.Gender !== 'Male') {
-            pronoun = 'her';
+        let pronoun = "his";
+        if (person.Gender !== "Male") {
+            pronoun = "her";
         }
         // Account for single or multiple spouses
-        let relation = 'spouse is';
+        let relation = "spouse is";
         if (person.Spouses && Object.keys(person.Spouses).length > 1) {
-            relation = 'spouses are';
+            relation = "spouses are";
         }
         // Build the introduction line
         return `<h2>Children of ${person.RealName}</h2>
@@ -415,7 +430,11 @@ window.FamilyGroup = class FamilyGroup {
      */
     async displayFamilyGroup() {
         // Attempt to retrieve the data for the given person id
-        let data = await WikiTreeAPI.postToAPI({action: "getPerson", key: this.person_id, fields: this.profileFields});
+        let data = await window.WikiTreeAPI.postToAPI({
+            action: "getPerson",
+            key: this.person_id,
+            fields: this.profileFields,
+        });
         // It is an error if nothing is returned
         if (data.length !== 1) {
             $(this.selector).html(`Error retrieving information for person id ${this.person_id}`);
@@ -443,52 +462,61 @@ window.FamilyGroup = class FamilyGroup {
         // Update the view description with specifics for this set of relationships.
         this.setViewDescription(person);
 
-        const wv = $('#family_group');
+        const wv = $("#family_group");
 
         if (0) {
             this.showDEBUG(wv, person);
         }
 
         // Check which relationship is changing to work out which child begins with which
-        let spousal_relation = 'Mother';
+        let spousal_relation = "Mother";
         if (person.Gender === "Female") {
             spousal_relation = "Father";
         }
 
         // Sort any children now because they might be needed multiple times
         if (person.Children && Object.keys(person.Children).length > 0) {
-            person.childList = this.sortByDate(Object.values(person.Children).map(x => Object({
-                Id: x.Id,
-                Date: x.BirthDate
-            })));
+            person.childList = this.sortByDate(
+                Object.values(person.Children).map((x) =>
+                    Object({
+                        Id: x.Id,
+                        Date: x.BirthDate || "0000-00-00", // Protect against missing birth dates
+                    })
+                )
+            );
         } else {
             person.childList = [];
         }
 
-
         // We will work through each spouse and produce a family table for every couple… provided there are any
         // marriages at all
         if (person.Spouses && Object.keys(person.Spouses).length > 0) {
-            const spouseList = this.sortByDate(Object.values(person.Spouses).map(x => Object({
-                Id: x.Id,
-                Date: x.marriage_date
-            })));
+            const spouseList = this.sortByDate(
+                Object.values(person.Spouses).map((x) =>
+                    Object({
+                        Id: x.Id,
+                        Date: x.marriage_date || "0000-00-00", // Protect against missing marriage dates
+                    })
+                )
+            );
 
             for (const spouseEntry in spouseList) {
                 if (spouseList.hasOwnProperty(spouseEntry)) {
                     const spousesKey = spouseList[spouseEntry].Id;
                     if (person.Spouses.hasOwnProperty(spousesKey)) {
                         const spouse = person.Spouses[spousesKey];
-                        wv.append(`<h2>${person.RealName} and ${this.fullName(spouse)}</h2>`);
-                        let marr_place = this.grabField(spouse, 'marriage_location');
+                        let marr_place = this.grabField(spouse, "marriage_location");
                         if (marr_place.length > 1) {
                             marr_place = `in ${marr_place}`;
                         }
-                        wv.append(`<h3>${person.RealName} married ${this.maidenName(spouse)}, 
+                        let html = `<div class="fv_familyBlock">
+                            <h2>${person.RealName} and ${this.fullName(spouse)}</h2>
+                            <h3>${person.RealName} married ${this.birthName(spouse)}, 
                             ${this.readableDate(spouse.marriage_date, spouse.data_status.marriage_date)}
-                            ${marr_place}</h3>`);
+                            ${marr_place}</h3>`;
+                        html += this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
+                        html += "</div>";
 
-                        let html = this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
                         wv.append(html);
                     }
                 }
@@ -510,7 +538,7 @@ window.FamilyGroup = class FamilyGroup {
                 }
             }
             html += `</ol>`;
-            $('#children_list').append(html);
+            $("#children_list").append(html);
         }
     }
 
@@ -524,10 +552,12 @@ window.FamilyGroup = class FamilyGroup {
         // DEBUG routine for following section
         function mkStr(obj) {
             if (obj) {
-                const s = Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join('<br/> ');
+                const s = Object.entries(obj)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join("<br/> ");
                 return `<p style="font-family: 'Courier New',monospace">${s}</p>`;
             }
-            return '';
+            return "";
         }
 
         wv.append(`<p>Person</p>${mkStr(person)}`);
@@ -537,7 +567,7 @@ window.FamilyGroup = class FamilyGroup {
         wv.append(`<p>Children</p>${mkStr(person.Children)}`);
         wv.append(`<p>Siblings</p>${mkStr(person.Siblings)}`);
         if (person.Spouses && Object.keys(person.Spouses).length > 0) {
-            let spHTML = '';
+            let spHTML = "";
             let sp = 0;
             for (const spousesKey in person.Spouses) {
                 if (person.Spouses.hasOwnProperty(spousesKey)) {
