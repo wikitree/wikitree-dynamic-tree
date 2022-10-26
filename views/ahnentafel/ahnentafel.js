@@ -40,8 +40,6 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.generation = 1;
 
         // This is how deep to keep looking for more ancestors.
-        // TODO: We should quit searching for ancestors if all of the current step are "unknown".
-        // TODO: It might be nice to start with a small number here and have a "Get more" button that continues.
         // Note the original page (e.g. https://www.wikitree.com/treewidget/Adams-35/9) went to 7 generations.
         this.maxGeneration = 7;
 
@@ -55,6 +53,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         // as well as Mother and Father so we can go back more generations.
         this.profileFields =
             "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother";
+
+        // Store our ancestor profiles by ID, gathered in a group and then used to construct each generation.
+        this.ancestors = new Object();
 
         // Add event listeners to highlight connected ancestors when the "Father of X" type links are hovered.
         $(this.selector).on("mouseover", ".aLink", function (e) {
@@ -185,6 +186,23 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         // Now clear out our tree view and start filling it recursively with generations.
         $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
+
+        let ancestorData = await WikiTreeAPI.postToAPI({
+            action: "getAncestors",
+            key: p.Id,
+            fields: this.profileFields,
+            depth: this.maxGeneration,
+        });
+        if (!ancestorData || !ancestorData[0]["ancestors"] || ancestorData[0]["ancestors"].length <= 0) {
+            wtViewRegistry.showError(`Error: No ancestors found for ${p.Name}`);
+            return;
+        }
+
+        for (let i = 0; i < ancestorData[0]["ancestors"].length; i++) {
+            this.ancestors[ancestorData[0]["ancestors"][i]["Id"]] = ancestorData[0]["ancestors"][i];
+        }
+
+        // Display each generation recursively, starting with our initial profile/person.
         let people = new Array(p);
         this.displayGeneration(people);
     }
@@ -216,11 +234,19 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     // display keeps going with an "Unknown" relative displayed.
     async nextPerson(id) {
         if (id > 0) {
-            let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: this.profileFields });
-            if (data.length != 1) {
-                return this.blankPerson;
+            // We used to get each profile individually.
+            // let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: this.profileFields });
+            // if (data.length != 1) {
+            //     return this.blankPerson;
+            // } else {
+            //     return data[0].person;
+            // }
+
+            // Now, we gathered all of our ancestors in one swoop at init and stored them by id in this.ancestors.
+            if (this.ancestors[id] !== undefined) {
+                return this.ancestors[id];
             } else {
-                return data[0].person;
+                return this.blankPerson;
             }
         }
         return this.blankPerson;
@@ -316,7 +342,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if (this.generation > 1) {
             let childA = Math.floor(this.ahnentafelNumber / 2);
             html += ` ${this.genderAsParent(person.Gender)} of <a class="aLink" href="#${childA}">${childA}</a>.`;
-
+        }
+        if (this.generation < this.maxGeneration) {
             let fatherA = this.ahnentafelNumber * 2;
             let motherA = this.ahnentafelNumber * 2 + 1;
 

@@ -28,6 +28,9 @@
         Object.assign(this, this?.meta());
     });
 
+    const PRINTER_ICON = "&#x1F4BE;";
+    const SETTINGS_GEAR = "&#x2699;";
+
     var ColourArray = [
         "White",
         "Gold",
@@ -100,7 +103,27 @@
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     FanChartView.currentSettings = {};
 
-    FanChartView.mySettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
+
+    /** Object to hold the Ancestors as they are returned from the getAncestors API call    */
+    FanChartView.theAncestors = [];
+
+    FanChartView.prototype.meta = function () {
+        return {
+            title: "Fan Chart",
+            description: "Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.",
+            docs: "https://www.WikiTree.com/wiki/Dynamic_Tree",
+        };
+    };
+
+    FanChartView.prototype.init = function (selector, startId) {
+        // console.log("FanChartView.js - line:18", selector) ;
+        var container = document.querySelector(selector),
+            width = container.offsetWidth,
+            height = container.offsetHeight;
+
+        var self = this;
+    FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
+        viewClassName: "FanChartView",
         tabs: [
             // {
             //     name: "general",
@@ -116,20 +139,20 @@
                 subsections: [{ name: "FanChartNames", label: "NAMES format" }],
                 comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
             },
-            // {
-            //     name: "dates",
-            //     label: "Dates",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FanChartDates", label: "DATES of events     " }],
-            //     comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
-            // },
-            // {
-            //     name: "places",
-            //     label: "Places",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FanChartPlaces", label: "PLACES of events     " }],
-            //     comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
-            // },
+            {
+                name: "dates",
+                label: "Dates",
+                hideSelect: true,
+                subsections: [{ name: "FanChartDates", label: "DATES of events     " }],
+                comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
+            },
+            {
+                name: "places",
+                label: "Places",
+                hideSelect: true,
+                subsections: [{ name: "FanChartPlaces", label: "PLACES of events     " }],
+                comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
+            },
             {
                 name: "photos",
                 label: "Photos",
@@ -137,13 +160,13 @@
                 subsections: [{ name: "FanChartPhotos", label: "PHOTOS    " }],
                 comment: "These options determine if photos are displayed or not.",
             },
-            // {
-            //     name: "colours",
-            //     label: "Colours",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
-            //     comment: "These options apply to background colours in the Fan Chart cells.",
-            // },
+            {
+                name: "colours",
+                label: "Colours",
+                hideSelect: true,
+                subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
+                comment: "These options apply to background colours in the Fan Chart cells.",
+            },
             // {
             //     name: "highlights",
             //     label: "Highlights",
@@ -229,80 +252,80 @@
                 ],
             },
 
-            {
-                tab: "dates",
-                subsection: "FanChartDates",
-                category: "date",
-                subcategory: "options",
-                options: [
-                    { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
-                    { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
-                    { optionName: "showLifeSpan", label: "Show LifeSpan", type: "checkbox", defaultValue: 0 },
-                    { optionName: "break1", type: "br" },
-                    { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
-                    { optionName: "break2", comment: "Date Format:", type: "br" },
-                    {
-                        optionName: "dateFormat",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "YYYY", text: "1964" },
-                            { value: "YYYYMMDD", text: "1964-01-16" },
-                            { value: "DDMMMYYYY", text: "16 Jan 1964" },
-                            { value: "MMMDDYYYY", text: "Jan 16, 1964" },
-                        ],
-                        defaultValue: "DDMMMYYYY",
-                    },
-                ],
-            },
-            {
-                tab: "places",
-                subsection: "FanChartPlaces",
-                category: "place",
-                subcategory: "options",
-                options: [
-                    { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
-                    { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
-                    { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
-                    {
-                        optionName: "locationFormatBD",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "Full", text: "Full Location as entered" },
-                            { value: "br" },
-                            { value: "Country", text: "Country only" },
-                            { value: "Region", text: "Region only (Province/State)" },
-                            { value: "Town", text: "Town only" },
-                            { value: "br" },
-                            { value: "TownCountry", text: "TownCountry" },
-                            { value: "RegionCountry", text: "Region, Country" },
-                            { value: "TownRegion", text: "Town, Region" },
-                        ],
-                        defaultValue: "Full",
-                    },
-                    { optionName: "break1", type: "br" },
-                    { optionName: "showMarriage", label: "Show Marriage Loactions", type: "checkbox", defaultValue: 0 },
-                    { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
-                    {
-                        optionName: "locationFormatM",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "Full", text: "Full Location as entered" },
-                            { value: "br" },
-                            { value: "Country", text: "Country only" },
-                            { value: "Region", text: "Region only (Province/State)" },
-                            { value: "Town", text: "Town only" },
-                            { value: "br" },
-                            { value: "TownCountry", text: "Town, Country" },
-                            { value: "RegionCountry", text: "Region, Country" },
-                            { value: "TownRegion", text: "Town, Region" },
-                        ],
-                        defaultValue: "Full",
-                    },
-                ],
-            },
+            // {
+            //     tab: "dates",
+            //     subsection: "FanChartDates",
+            //     category: "date",
+            //     subcategory: "options",
+            //     options: [
+            //         { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
+            //         { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
+            //         { optionName: "showLifeSpan", label: "Show LifeSpan", type: "checkbox", defaultValue: 0 },
+            //         { optionName: "break1", type: "br" },
+            //         { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
+            //         { optionName: "break2", comment: "Date Format:", type: "br" },
+            //         {
+            //             optionName: "dateFormat",
+            //             type: "radio",
+            //             label: "",
+            //             values: [
+            //                 { value: "YYYY", text: "1964" },
+            //                 { value: "YYYYMMDD", text: "1964-01-16" },
+            //                 { value: "DDMMMYYYY", text: "16 Jan 1964" },
+            //                 { value: "MMMDDYYYY", text: "Jan 16, 1964" },
+            //             ],
+            //             defaultValue: "DDMMMYYYY",
+            //         },
+            //     ],
+            // },
+            // {
+            //     tab: "places",
+            //     subsection: "FanChartPlaces",
+            //     category: "place",
+            //     subcategory: "options",
+            //     options: [
+            //         { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
+            //         { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
+            //         { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
+            //         {
+            //             optionName: "locationFormatBD",
+            //             type: "radio",
+            //             label: "",
+            //             values: [
+            //                 { value: "Full", text: "Full Location as entered" },
+            //                 { value: "br" },
+            //                 { value: "Country", text: "Country only" },
+            //                 { value: "Region", text: "Region only (Province/State)" },
+            //                 { value: "Town", text: "Town only" },
+            //                 { value: "br" },
+            //                 { value: "TownCountry", text: "TownCountry" },
+            //                 { value: "RegionCountry", text: "Region, Country" },
+            //                 { value: "TownRegion", text: "Town, Region" },
+            //             ],
+            //             defaultValue: "Full",
+            //         },
+            //         { optionName: "break1", type: "br" },
+            //         { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
+            //         { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
+            //         {
+            //             optionName: "locationFormatM",
+            //             type: "radio",
+            //             label: "",
+            //             values: [
+            //                 { value: "Full", text: "Full Location as entered" },
+            //                 { value: "br" },
+            //                 { value: "Country", text: "Country only" },
+            //                 { value: "Region", text: "Region only (Province/State)" },
+            //                 { value: "Town", text: "Town only" },
+            //                 { value: "br" },
+            //                 { value: "TownCountry", text: "Town, Country" },
+            //                 { value: "RegionCountry", text: "Region, Country" },
+            //                 { value: "TownRegion", text: "Town, Region" },
+            //             ],
+            //             defaultValue: "Full",
+            //         },
+            //     ],
+            // },
             {
                 tab: "photos",
                 subsection: "FanChartPhotos",
@@ -337,47 +360,47 @@
                     { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
                 ],
             },
-            {
-                tab: "colours",
-                subsection: "FanChartColours",
-                category: "colour",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "colourBy",
-                        type: "select",
-                        label: "Background Colour cells",
-                        values: [
-                            { value: "None", text: "OFF - All White, all the time WHITE" },
-                            { value: "Gender", text: "by Gender" },
-                            { value: "Generation", text: "by Generation" },
-                            { value: "Grand", text: "by Grandparent" },
-                            { value: "GGrand", text: "by Great-Grandparent" },
-                            { value: "GGGrand", text: "by 2x Great Grandparent" },
-                            { value: "GGGGrand", text: "by 3x Great Grandparent" },
-                            { value: "Town", text: "by Place name" },
-                            { value: "Region", text: "by Region (Province/State)" },
-                            { value: "Country", text: "by Country" },
-                        ],
-                        defaultValue: "Generation",
-                    },
-                    {
-                        optionName: "palette",
-                        type: "select",
-                        label: "Colour Palette",
-                        values: [
-                            { value: "Greys", text: "Shades of Grey" },
-                            { value: "Reds", text: "Shades of Greens" },
-                            { value: "Blues", text: "Shades or Blues" },
-                            { value: "Pastels", text: "Pastel colours" },
-                            { value: "Rainbow", text: "Traditional Rainbow of colours" },
-                            { value: "Ancestry", text: "Ancestry type colours" },
-                            { value: "MyHeritage", text: "My Heritage type colours" },
-                        ],
-                        defaultValue: "Pastels",
-                    },
-                ],
-            },
+            // {
+            //     tab: "colours",
+            //     subsection: "FanChartColours",
+            //     category: "colour",
+            //     subcategory: "options",
+            //     options: [
+            //         {
+            //             optionName: "colourBy",
+            //             type: "select",
+            //             label: "Background Colour cells",
+            //             values: [
+            //                 { value: "None", text: "OFF - All White, all the time WHITE" },
+            //                 { value: "Gender", text: "by Gender" },
+            //                 { value: "Generation", text: "by Generation" },
+            //                 { value: "Grand", text: "by Grandparent" },
+            //                 { value: "GGrand", text: "by Great-Grandparent" },
+            //                 { value: "GGGrand", text: "by 2x Great Grandparent" },
+            //                 { value: "GGGGrand", text: "by 3x Great Grandparent" },
+            //                 { value: "Town", text: "by Place name" },
+            //                 { value: "Region", text: "by Region (Province/State)" },
+            //                 { value: "Country", text: "by Country" },
+            //             ],
+            //             defaultValue: "Generation",
+            //         },
+            //         {
+            //             optionName: "palette",
+            //             type: "select",
+            //             label: "Colour Palette",
+            //             values: [
+            //                 { value: "Greys", text: "Shades of Grey" },
+            //                 { value: "Reds", text: "Shades of Greens" },
+            //                 { value: "Blues", text: "Shades or Blues" },
+            //                 { value: "Pastels", text: "Pastel colours" },
+            //                 { value: "Rainbow", text: "Traditional Rainbow of colours" },
+            //                 { value: "Ancestry", text: "Ancestry type colours" },
+            //                 { value: "MyHeritage", text: "My Heritage type colours" },
+            //             ],
+            //             defaultValue: "Pastels",
+            //         },
+            //     ],
+            // },
             {
                 tab: "highlights",
                 subsection: "FanChartHighlights",
@@ -420,25 +443,6 @@
         ],
     });
 
-    /** Object to hold the Ancestors as they are returned from the getAncestors API call    */
-    FanChartView.theAncestors = [];
-
-    FanChartView.prototype.meta = function () {
-        return {
-            title: "Fan Chart",
-            description: "Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.",
-            docs: "https://www.WikiTree.com/wiki/Dynamic_Tree",
-        };
-    };
-
-    FanChartView.prototype.init = function (selector, startId) {
-        // console.log("FanChartView.js - line:18", selector) ;
-        var container = document.querySelector(selector),
-            width = container.offsetWidth,
-            height = container.offsetHeight;
-
-        var self = this;
-
         // Setup zoom and pan
         var zoom = d3.behavior
             .zoom()
@@ -463,8 +467,8 @@
             ' <A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();"> +1 </A> ' +
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
-            '<td width="30%" align="right"  style="padding-right:10px;"> &#x1F4BE; |' +
-            ' <A onclick="FanChartView.toggleSettings();"><font size=+2>&#x2699;</font></A></td>' +
+            '<td width="30%" align="right"  style="padding-right:10px;">' +
+            ' <A onclick="FanChartView.toggleSettings();"><font size=+2>' + SETTINGS_GEAR + '</font></A>&nbsp;&nbsp;</td>' +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
         var settingsHTML = "";
@@ -472,7 +476,7 @@
         // '<span style="color:red; align:left"><A onclick="FanChartView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' ;
         // '<H3 align=center>Fan Chart Settings</H3>' +
 
-        settingsHTML += FanChartView.mySettingsOptionsObject.createdSettingsDIV; // +
+        settingsHTML += FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV; // +
         // console.log("SETTINGS:",settingsHTML);
 
         // '<ul class="profile-tabs">' +
@@ -502,7 +506,7 @@
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
 
         function settingsChanged(e) {
-            if (FanChartView.mySettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
+            if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
                 console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 console.log("NEW settings are:", FanChartView.currentSettings);
                 FanChartView.myAncestorTree.draw();
@@ -624,10 +628,10 @@
         });
 
         self.load(startId);
-        console.log(FanChartView.mySettingsOptionsObject.createdSettingsDIV);
-        FanChartView.mySettingsOptionsObject.buildPage();
-        FanChartView.mySettingsOptionsObject.setActiveTab("names");
-        FanChartView.currentSettings = FanChartView.mySettingsOptionsObject.getDefaultOptions();
+        console.log(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
+        FanChartView.fanchartSettingsOptionsObject.buildPage();
+        FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
+        FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
     };
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
@@ -822,8 +826,8 @@
     };
 
     FanChartView.toggleSettings = function () {
-        console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.mySettingsOptionsObject);
-        console.log(FanChartView.mySettingsOptionsObject.getDefaultOptions());
+        console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
+        console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         console.log("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {

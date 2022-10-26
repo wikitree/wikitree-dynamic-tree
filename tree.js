@@ -97,7 +97,9 @@ window.ViewRegistry = class ViewRegistry {
         // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
         this.session.lm.events["onLoggedIn"] = (user) => {
-            document.querySelector(this.WT_ID_TEXT).value = user.name;
+            if (!this.session.getHashParams(location.hash).get("name")) {
+                document.querySelector(this.WT_ID_TEXT).value = user.name;
+            }
 
             orig_onLoggedIn_cb(user);
             document.querySelector(this.SHOW_BTN).click();
@@ -111,11 +113,17 @@ window.ViewRegistry = class ViewRegistry {
     }
 
     onHashChange(e) {
-        this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+        // We only want to update our session and view information if the new hash looks like it is supposed to.
+        // Otherwise, it's just a regular in-page hash link "#here" that we should let operate normally.
 
-        document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
-        document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
-        document.querySelector(this.SHOW_BTN).click();
+        let h = e.target.location.hash;
+        if (h.match(/^#name=.+(&view=.+)?/) || h.match(/^#view=.+(&name=.+)?/)) {
+            this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+
+            document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
+            document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
+            document.querySelector(this.SHOW_BTN).click();
+        }
     }
 
     // Build the <select> option list from the individual views in the registry.
@@ -301,7 +309,7 @@ window.LoginManager = class LoginManager {
     }
 
     login() {
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = new URLSearchParams(location.search);
         const authcode = searchParams.get("authcode") ? searchParams.get("authcode") : null;
 
         if (this.user.isLoggedIn()) {
@@ -319,8 +327,6 @@ window.LoginManager = class LoginManager {
             this.user.name = data.clientLogin.username;
             this.user.id = data.clientLogin.userid;
 
-            // changes browser url without additional redirect
-            history.replaceState("", "", location.href.split("?")[0]);
             this.saveCookies();
             this.login();
         } else {
@@ -355,8 +361,12 @@ window.SessionManager = class SessionManager {
         this.lm.login();
     }
 
+    getHashParams(hash) {
+        return new URLSearchParams(hash.slice(1));
+    }
+
     loadUrlHash(viewIDs, urlHash) {
-        const fields = new URLSearchParams(urlHash.substring(1));
+        const fields = this.getHashParams(urlHash);
         this.personName = fields.get("name") || this.personName;
 
         const viewID = fields.get("view");
