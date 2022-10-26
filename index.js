@@ -41,6 +41,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "ahnentafel": new AhnentafelView(),
             "surnames": new SurnamesView(),
             "webs": new WebsView(),
+            "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
         },
         new SessionManager(WikiTreeAPI, loginManager)
     );
