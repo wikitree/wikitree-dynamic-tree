@@ -5,10 +5,10 @@
 // A Class to hold a collection of PEOPLE (a collection of the Person objects)
 // **************************************
 /
- * The basic PeopleCollection is an associative array 
+ * The basic PeopleCollection is an associative array
  *       key: Id , value: Person object corresponding to that WikiTree ID #
- * 
- * 
+ *
+ *
  */
 
 window.PeopleCollection = window.PeopleCollection || {};
@@ -24,7 +24,7 @@ PeopleCollection.PeopleList = class PeopleList {
     // THEN ... we use the add method to add one person to it, using the WikiTree ID as the key
     add(newPerson) {
         if (newPerson && newPerson.Id) {
-            this[newPerson.Id] = new WikiTreeAPI.Person(newPerson);
+            this[newPerson.Id] = WikiTreeAPI.makePerson(newPerson);
         }
     }
 
