@@ -103,7 +103,6 @@
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     FanChartView.currentSettings = {};
 
-
     /** Object to hold the Ancestors as they are returned from the getAncestors API call    */
     FanChartView.theAncestors = [];
 
@@ -122,326 +121,375 @@
             height = container.offsetHeight;
 
         var self = this;
-    FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
-        viewClassName: "FanChartView",
-        tabs: [
-            // {
-            //     name: "general",
-            //     label: "General",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FanChartGeneral", label: "General settings" }],
-            //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
-            // },
-            {
-                name: "names",
-                label: "Names",
-                hideSelect: true,
-                subsections: [{ name: "FanChartNames", label: "NAMES format" }],
-                comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
-            },
-            {
-                name: "dates",
-                label: "Dates",
-                hideSelect: true,
-                subsections: [{ name: "FanChartDates", label: "DATES of events     " }],
-                comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
-            },
-            {
-                name: "places",
-                label: "Places",
-                hideSelect: true,
-                subsections: [{ name: "FanChartPlaces", label: "PLACES of events     " }],
-                comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
-            },
-            {
-                name: "photos",
-                label: "Photos",
-                hideSelect: true,
-                subsections: [{ name: "FanChartPhotos", label: "PHOTOS    " }],
-                comment: "These options determine if photos are displayed or not.",
-            },
-            {
-                name: "colours",
-                label: "Colours",
-                hideSelect: true,
-                subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
-                comment: "These options apply to background colours in the Fan Chart cells.",
-            },
-            // {
-            //     name: "highlights",
-            //     label: "Highlights",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
-            //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
-            // },
-        ],
-        optionsGroups: [
-            {
-                tab: "general",
-                subsection: "FanChartGeneral",
-                category: "general",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "font",
-                        type: "radio",
-                        label: "Font",
-                        values: [
-                            { value: "Arial", text: "Arial" },
-                            { value: "Courier", text: "Courier" },
-                            { value: "Times", text: "Times" },
-                            { value: "Fantasy", text: "Fantasy" },
-                            { value: "Script", text: "Script" },
-                        ],
-                        defaultValue: "Arial",
-                    },
-                    { optionName: "break0", type: "br" },
-                    {
-                        optionName: "showWikiID",
-                        label: "Show WikiTree ID for each person",
-                        type: "checkbox",
-                        defaultValue: 0,
-                    },
-                    {
-                        optionName: "showAhnNum",
-                        label: "Show Ahnentafel number in each cell",
-                        type: "checkbox",
-                        defaultValue: 0,
-                    },
-                    { optionName: "break1", type: "br" },
-                    {
-                        optionName: "colourizeRepeats",
-                        label: "Colourize Repeat Ancestors",
-                        type: "checkbox",
-                        defaultValue: true,
-                    },
-                ],
-            },
+        FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
+            viewClassName: "FanChartView",
+            tabs: [
+                // {
+                //     name: "general",
+                //     label: "General",
+                //     hideSelect: true,
+                //     subsections: [{ name: "FanChartGeneral", label: "General settings" }],
+                //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                // },
+                {
+                    name: "names",
+                    label: "Names",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartNames", label: "NAMES format" }],
+                    comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
+                },
+                {
+                    name: "dates",
+                    label: "Dates",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartDates", label: "DATES of events     " }],
+                    comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
+                },
+                {
+                    name: "places",
+                    label: "Places",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartPlaces", label: "PLACES of events     " }],
+                    comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
+                },
+                {
+                    name: "photos",
+                    label: "Photos",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartPhotos", label: "PHOTOS    " }],
+                    comment: "These options determine if photos are displayed or not.",
+                },
+                {
+                    name: "colours",
+                    label: "Colours",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
+                    comment: "These options apply to background colours in the Fan Chart cells.",
+                },
+                // {
+                //     name: "highlights",
+                //     label: "Highlights",
+                //     hideSelect: true,
+                //     subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
+                //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
+                // },
+            ],
+            optionsGroups: [
+                {
+                    tab: "general",
+                    subsection: "FanChartGeneral",
+                    category: "general",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "font",
+                            type: "radio",
+                            label: "Font",
+                            values: [
+                                { value: "Arial", text: "Arial" },
+                                { value: "Courier", text: "Courier" },
+                                { value: "Times", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Arial",
+                        },
+                        { optionName: "break0", type: "br" },
+                        {
+                            optionName: "showWikiID",
+                            label: "Show WikiTree ID for each person",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "showAhnNum",
+                            label: "Show Ahnentafel number in each cell",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "colourizeRepeats",
+                            label: "Colourize Repeat Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                    ],
+                },
 
-            {
-                tab: "names",
-                subsection: "FanChartNames",
-                category: "name",
-                subcategory: "options",
-                options: [
-                    { optionName: "prefix", label: "Show Prefix before full name", type: "checkbox", defaultValue: 0 },
-                    {
-                        optionName: "firstName",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "FirstNameAtBirth", text: "First Name at Birth" },
-                            { value: "UsualName", text: "Usual Name" },
-                        ],
-                        defaultValue: "FirstNameAtBirth",
-                    },
-                    { optionName: "middleName", label: "Show Middle Name", type: "checkbox", defaultValue: 0 },
-                    { optionName: "middleInitial", label: "Show Middle Initial", type: "checkbox", defaultValue: 0 },
-                    { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
-                    {
-                        optionName: "lastName",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "LastNameAtBirth", text: "Last Name at Birth" },
-                            { value: "CurrentLastName", text: "Current Last Name" },
-                        ],
-                        defaultValue: "LastNameAtBirth",
-                    },
-                    { optionName: "suffix", label: "Show Suffix after full name", type: "checkbox", defaultValue: 0 },
-                ],
-            },
+                {
+                    tab: "names",
+                    subsection: "FanChartNames",
+                    category: "name",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "prefix",
+                            label: "Show Prefix before full name",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "firstName",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "FirstNameAtBirth", text: "First Name at Birth" },
+                                { value: "UsualName", text: "Usual Name" },
+                            ],
+                            defaultValue: "FirstNameAtBirth",
+                        },
+                        { optionName: "middleName", label: "Show Middle Name", type: "checkbox", defaultValue: 0 },
+                        {
+                            optionName: "middleInitial",
+                            label: "Show Middle Initial",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
+                        {
+                            optionName: "lastName",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "LastNameAtBirth", text: "Last Name at Birth" },
+                                { value: "CurrentLastName", text: "Current Last Name" },
+                            ],
+                            defaultValue: "LastNameAtBirth",
+                        },
+                        {
+                            optionName: "suffix",
+                            label: "Show Suffix after full name",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                    ],
+                },
 
-            {
-                tab: "dates",
-                subsection: "FanChartDates",
-                category: "date",
-                subcategory: "options",
-                options: [
-                    { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
-                    { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
-                    { optionName: "showLifeSpan", label: "Show LifeSpan", type: "checkbox", defaultValue: 0 },
-                    { optionName: "break1", type: "br" },
-                    // { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
-                    // { optionName: "break2", comment: "Date Format:", type: "br" },
-                    {
-                        optionName: "dateFormat",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "YYYY", text: "1964" },
-                            { value: "YYYYMMDD", text: "1964-01-16" },
-                            { value: "DDMMMYYYY", text: "16 Jan 1964" },
-                            { value: "MMMDDYYYY", text: "Jan 16, 1964" },
-                        ],
-                        defaultValue: "DDMMMYYYY",
-                    },
-                ],
-            },
-            // {
-            //     tab: "places",
-            //     subsection: "FanChartPlaces",
-            //     category: "place",
-            //     subcategory: "options",
-            //     options: [
-            //         { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
-            //         { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
-            //         { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
-            //         {
-            //             optionName: "locationFormatBD",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "Full", text: "Full Location as entered" },
-            //                 { value: "br" },
-            //                 { value: "Country", text: "Country only" },
-            //                 { value: "Region", text: "Region only (Province/State)" },
-            //                 { value: "Town", text: "Town only" },
-            //                 { value: "br" },
-            //                 { value: "TownCountry", text: "TownCountry" },
-            //                 { value: "RegionCountry", text: "Region, Country" },
-            //                 { value: "TownRegion", text: "Town, Region" },
-            //             ],
-            //             defaultValue: "Full",
-            //         },
-            //         { optionName: "break1", type: "br" },
-            //         { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
-            //         {
-            //             optionName: "locationFormatM",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "Full", text: "Full Location as entered" },
-            //                 { value: "br" },
-            //                 { value: "Country", text: "Country only" },
-            //                 { value: "Region", text: "Region only (Province/State)" },
-            //                 { value: "Town", text: "Town only" },
-            //                 { value: "br" },
-            //                 { value: "TownCountry", text: "Town, Country" },
-            //                 { value: "RegionCountry", text: "Region, Country" },
-            //                 { value: "TownRegion", text: "Town, Region" },
-            //             ],
-            //             defaultValue: "Full",
-            //         },
-            //     ],
-            // },
-            {
-                tab: "photos",
-                subsection: "FanChartPhotos",
-                category: "photo",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "showCentralPic",
-                        label: "Show the Central Person Photo",
-                        type: "checkbox",
-                        defaultValue: true,
-                    },
-                    {
-                        optionName: "showAllPics",
-                        label: "Show Photos of Ancestors",
-                        type: "checkbox",
-                        defaultValue: true,
-                    },
-                    {
-                        optionName: "useSilhouette",
-                        label: "Use Silhouette when no photo available",
-                        type: "checkbox",
-                        defaultValue: true,
-                    },
-                    { optionName: "break1", type: "br" },
-                    {
-                        optionName: "showPicsToN",
-                        label: "Limit Photos to first N generations",
-                        type: "checkbox",
-                        defaultValue: true,
-                    },
-                    { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
-                ],
-            },
-            // {
-            //     tab: "colours",
-            //     subsection: "FanChartColours",
-            //     category: "colour",
-            //     subcategory: "options",
-            //     options: [
-            //         {
-            //             optionName: "colourBy",
-            //             type: "select",
-            //             label: "Background Colour cells",
-            //             values: [
-            //                 { value: "None", text: "OFF - All White, all the time WHITE" },
-            //                 { value: "Gender", text: "by Gender" },
-            //                 { value: "Generation", text: "by Generation" },
-            //                 { value: "Grand", text: "by Grandparent" },
-            //                 { value: "GGrand", text: "by Great-Grandparent" },
-            //                 { value: "GGGrand", text: "by 2x Great Grandparent" },
-            //                 { value: "GGGGrand", text: "by 3x Great Grandparent" },
-            //                 { value: "Town", text: "by Place name" },
-            //                 { value: "Region", text: "by Region (Province/State)" },
-            //                 { value: "Country", text: "by Country" },
-            //             ],
-            //             defaultValue: "Generation",
-            //         },
-            //         {
-            //             optionName: "palette",
-            //             type: "select",
-            //             label: "Colour Palette",
-            //             values: [
-            //                 { value: "Greys", text: "Shades of Grey" },
-            //                 { value: "Reds", text: "Shades of Greens" },
-            //                 { value: "Blues", text: "Shades or Blues" },
-            //                 { value: "Pastels", text: "Pastel colours" },
-            //                 { value: "Rainbow", text: "Traditional Rainbow of colours" },
-            //                 { value: "Ancestry", text: "Ancestry type colours" },
-            //                 { value: "MyHeritage", text: "My Heritage type colours" },
-            //             ],
-            //             defaultValue: "Pastels",
-            //         },
-            //     ],
-            // },
-            {
-                tab: "highlights",
-                subsection: "FanChartHighlights",
-                category: "highlight",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "showHighlights",
-                        label: "Highlight cells based on option chosen below",
-                        type: "checkbox",
-                        defaultValue: 0,
-                    },
-                    {
-                        optionName: "highlightBy",
-                        type: "select",
-                        label: "Highlight by",
-                        values: [
-                            { value: "YDNA", text: "Y-DNA" },
-                            { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
-                            { value: "XDNA", text: "X-chromosome inheritance" },
-                            { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
-                            { value: "DNAinheritance", text: "DNA inheritance" },
-                        ],
-                        defaultValue: "DNAinheritance",
-                    },
-                    { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                    {
-                        optionName: "howDNAlinks",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "Hide", text: "Hide Links" },
-                            { value: "Highlights", text: "Show Links for highlighted cells only" },
-                            { value: "ShowAll", text: "Show All Links" },
-                        ],
-                        defaultValue: "Highlights",
-                    },
-                ],
-            },
-        ],
-    });
+                {
+                    tab: "dates",
+                    subsection: "FanChartDates",
+                    category: "date",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "dateTypes",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "none", text: "No Dates" },
+                                { value: "br" },
+                                { value: "lifespan", text: "Show Lifespan only, in years" },
+                                { value: "br" },
+                                { value: "detailed", text: "Show Full Dates for life events" },
+                            ],
+                            defaultValue: "detailed",
+                        },
+                        { optionName: "break0", comment: "Full Dates details:", type: "br" },
+                        { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
+                        { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
+                        // {
+                        //     optionName: "showLifeSpan",
+                        //     label: "Show LifeSpan (replaces birth & death dates)",
+                        //     type: "checkbox",
+                        //     defaultValue: 0,
+                        // },
+                        // { optionName: "break1", type: "br" },
+                        // { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
+                        { optionName: "break2", comment: "Date Format:", type: "br" },
+                        {
+                            optionName: "dateFormat",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "YYYY", text: "1964" },
+                                { value: "YYYYMMDD", text: "1964-01-16" },
+                                { value: "DDMMMYYYY", text: "16 Jan 1964" },
+                                { value: "MMMDDYYYY", text: "Jan 16, 1964" },
+                            ],
+                            defaultValue: "DDMMMYYYY",
+                        },
+                    ],
+                },
+                {
+                    tab: "places",
+                    subsection: "FanChartPlaces",
+                    category: "place",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "locationTypes",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "none", text: "No Locations" },
+                                { value: "br" },
+                                { value: "detailed", text: "Show Locations for life events" },
+                            ],
+                            defaultValue: "detailed",
+                        },
+                        { optionName: "break0", comment: "Location details:", type: "br" },
+                        { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
+                        { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
+                        { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
+                        {
+                            optionName: "locationFormatBD",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "Full", text: "Full Location as entered" },
+                                { value: "br" },
+                                { value: "Country", text: "Country only" },
+                                { value: "Region", text: "Region only (Province/State)" },
+                                { value: "Town", text: "Town only" },
+                                { value: "br" },
+                                { value: "TownCountry", text: "Town, Country" },
+                                { value: "RegionCountry", text: "Region, Country" },
+                                { value: "TownRegion", text: "Town, Region" },
+                            ],
+                            defaultValue: "Full",
+                        },
+                        // { optionName: "break1", type: "br" },
+                        // { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
+                        // { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
+                        // {
+                        //     optionName: "locationFormatM",
+                        //     type: "radio",
+                        //     label: "",
+                        //     values: [
+                        //         { value: "Full", text: "Full Location as entered" },
+                        //         { value: "br" },
+                        //         { value: "Country", text: "Country only" },
+                        //         { value: "Region", text: "Region only (Province/State)" },
+                        //         { value: "Town", text: "Town only" },
+                        //         { value: "br" },
+                        //         { value: "TownCountry", text: "Town, Country" },
+                        //         { value: "RegionCountry", text: "Region, Country" },
+                        //         { value: "TownRegion", text: "Town, Region" },
+                        //     ],
+                        //     defaultValue: "Full",
+                        // },
+                    ],
+                },
+                {
+                    tab: "photos",
+                    subsection: "FanChartPhotos",
+                    category: "photo",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "showCentralPic",
+                            label: "Show the Central Person Photo",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "showAllPics",
+                            label: "Show Photos of Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "useSilhouette",
+                            label: "Use Silhouette when no photo available",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "showPicsToN",
+                            label: "Limit Photos to first N generations",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
+                    ],
+                },
+                {
+                    tab: "colours",
+                    subsection: "FanChartColours",
+                    category: "colour",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "colourBy",
+                            type: "select",
+                            label: "Background Colour cells",
+                            values: [
+                                { value: "None", text: "OFF - All White, all the time WHITE" },
+                                { value: "Gender", text: "by Gender" },
+                                { value: "Generation", text: "by Generation" },
+                                { value: "Grand", text: "by Grandparent" },
+                                { value: "GGrand", text: "by Great-Grandparent" },
+                                { value: "GGGrand", text: "by 2x Great Grandparent" },
+                                { value: "GGGGrand", text: "by 3x Great Grandparent" },
+                                // { value: "Town", text: "by Place name" },
+                                // { value: "Region", text: "by Region (Province/State)" },
+                                // { value: "Country", text: "by Country" },
+                                { value: "random", text: "totally randomly" },
+                            ],
+                            defaultValue: "Generation",
+                        },
+                        {
+                            optionName: "palette",
+                            type: "select",
+                            label: "Colour Palette",
+                            values: [
+                                { value: "Greys", text: "Shades of Grey" },
+                                { value: "Reds", text: "Shades of Reds" },
+                                { value: "Greens", text: "Shades of Greens" },
+                                { value: "Blues", text: "Shades or Blues" },
+                                { value: "Pastels", text: "Pastel colours" },
+                                { value: "Rainbow", text: "Traditional Rainbow of colours" },
+                                // { value: "Ancestry", text: "Ancestry type colours" },
+                                // { value: "MyHeritage", text: "My Heritage type colours" },
+                                { value: "random", text: "Psychadelic" },
+                            ],
+                            defaultValue: "Pastels",
+                        },
+                    ],
+                },
+                {
+                    tab: "highlights",
+                    subsection: "FanChartHighlights",
+                    category: "highlight",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "showHighlights",
+                            label: "Highlight cells based on option chosen below",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "highlightBy",
+                            type: "select",
+                            label: "Highlight by",
+                            values: [
+                                { value: "YDNA", text: "Y-DNA" },
+                                { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
+                                { value: "XDNA", text: "X-chromosome inheritance" },
+                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
+                                { value: "DNAinheritance", text: "DNA inheritance" },
+                            ],
+                            defaultValue: "DNAinheritance",
+                        },
+                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        {
+                            optionName: "howDNAlinks",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "Hide", text: "Hide Links" },
+                                { value: "Highlights", text: "Show Links for highlighted cells only" },
+                                { value: "ShowAll", text: "Show All Links" },
+                            ],
+                            defaultValue: "Highlights",
+                        },
+                    ],
+                },
+            ],
+        });
 
         // Setup zoom and pan
         var zoom = d3.behavior
@@ -468,7 +516,9 @@
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
-            ' <A onclick="FanChartView.toggleSettings();"><font size=+2>' + SETTINGS_GEAR + '</font></A>&nbsp;&nbsp;</td>' +
+            ' <A onclick="FanChartView.toggleSettings();"><font size=+2>' +
+            SETTINGS_GEAR +
+            "</font></A>&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
         var settingsHTML = "";
@@ -507,11 +557,11 @@
 
         function settingsChanged(e) {
             if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
-                console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+                // console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 console.log("NEW settings are:", FanChartView.currentSettings);
                 FanChartView.myAncestorTree.draw();
             } else {
-                console.log("NOTHING happened according to SETTINGS OBJ");
+                // console.log("NOTHING happened according to SETTINGS OBJ");
             }
         }
 
@@ -628,7 +678,7 @@
         });
 
         self.load(startId);
-        console.log(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
+        // console.log(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FanChartView.fanchartSettingsOptionsObject.buildPage();
         FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
@@ -1077,7 +1127,7 @@
      * Draw the person boxes.
      */
     Tree.prototype.drawNodes = function (nodes) {
-        console.log("Tree.prototpe.DRAW NODES", nodes);
+        // console.log("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
 
         // console.log("this.selector = ", this.selector);
@@ -1223,7 +1273,7 @@
                         photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
-                    return `<div class="top-info" id=wedgeInfoFor${
+                    return `<div class="top-info centered" id=wedgeInfoFor${
                         ancestorObject.ahnNum
                     } style="background-color: ${theClr} ; border:0; ">
                      <div class="vital-info">
@@ -1231,8 +1281,8 @@
 						  <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}>
 						    <b>${getSettingsName(person)}</b>						    
 						  </div>
-						  <div class="birth vital">${birthString(person)}</div>
-						  <div class="death vital">${deathString(person)}</div>
+						  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
+						  <div class="death vital centered" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>
                     `;
@@ -1281,10 +1331,32 @@
             let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
-
+            
+            
+            // LET'S START WITH COLOURIZING THE WEDGES - IF NEEDED
+            if (ancestorObject.ahnNum == 1) {
+                let thisPersonsWedge = document.getElementById("ctrCirc" );
+                if (thisPersonsWedge) {
+                    thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                }
+            } else {
+                let thisPersonsWedge = document.getElementById("wedge" + (2**thisGenNum) + "n" + thisPosNum);
+                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                if (thisPersonsWedge) {
+                    thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                } else {
+                    console.log("Can't find: ", "wedge" + (2**thisGenNum) + "n" + thisPosNum);
+                }
+                if (theWedgeBox) {
+                    theWedgeBox.style.background = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                }
+            }
+            
+            
+            // NEXT - LET'S DO SOME POSITIONING TO GET EVERYONE IN PLACE !
             let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
             let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
-
+            
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
                 // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
@@ -1351,6 +1423,8 @@
                     }
                 }
             }
+
+            // OK - now that the POSITION ISSUES have been dealt with - LET'S TALK FAMILY PHOTOS !
             let photoUrl = d.getPhotoUrl(75);
             if (
                 !photoUrl &&
@@ -1398,18 +1472,28 @@
             if (ancestorObject.ahnNum == 1) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
                 if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == true) {
-                     if (!photoUrl && (FanChartView.currentSettings["photo_options_useSilhouette"] == false)) {
-                         thePhotoDIV.style.display = "none";
-                         theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                     }  else {
+                    if (!photoUrl && FanChartView.currentSettings["photo_options_useSilhouette"] == false) {
+                        thePhotoDIV.style.display = "none";
+                        theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                    } else {
                         thePhotoDIV.style.display = "block";
-                     }
-                    
+                    }
                 } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {
                     thePhotoDIV.style.display = "none";
                     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
                     console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
+            }
+
+            // AND ... FINALLY, LET'S TALK DATES & PLACES:
+            // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
+            let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
+            if (theBirthDIV) {
+                theBirthDIV.innerHTML = getSettingsDateAndPlace(d, "B"); // remember that d = ancestorObject.person
+            }
+            let theDeathDIV = document.getElementById("deathDivFor" + ancestorObject.ahnNum);
+            if (theDeathDIV) {
+                theDeathDIV.innerHTML = getSettingsDateAndPlace(d, "D"); // remember that d = ancestorObject.person
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
@@ -1620,6 +1704,238 @@
     }
 
     /**
+     * Extract the LifeSpan BBBB - DDDD from a person
+     */
+    function getLifeSpan(person) {
+        let theLifeSpan = "";
+        let dateString = person._data.BirthDate;
+        if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10);
+            if (year) {
+                theLifeSpan += year;
+            } else {
+                theLifeSpan += "?";
+            }
+        } else {
+            theLifeSpan += "?";
+        }
+
+        theLifeSpan += " - ";
+
+        dateString = person._data.DeathDate;
+        if (dateString == "0000-00-00") {
+            // nothing to see here - person's still alive !  YAY!
+        } else if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10);
+            if (year) {
+                theLifeSpan += year;
+            } else {
+                theLifeSpan += "?";
+            }
+        } else {
+            theLifeSpan += "?";
+        }
+
+        return theLifeSpan;
+
+    }
+
+    /**
+     * Turn a wikitree Place into a location as per format string
+     */
+    function settingsStyleLocation(locString, formatString) {
+        // take the locString as input, and break it up into parts, separated by commas
+        // In an IDEAL world, the place name would be entered thusly:
+        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
+        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
+        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
+
+        if (formatString == "Full") {
+            // there's no need for doing any parsing --> just return the whole kit and caboodle
+            return locString;
+        }
+
+        var parts = locString.split(",");
+        if (parts.length == 1) {
+            // there's no way to reformat/parse a single item location
+            return locString;
+        }
+
+        let town = parts[0];
+        let country = parts[ parts.length - 1];
+        let region = "";
+        if (parts.length > 2) {
+            region = parts[parts.length - 2];
+        }
+
+        if (formatString == "Country") {
+            return country;
+
+        } else if (formatString == "Region") {
+            if (region  > "") {
+                return region;
+            } else {
+                return country;
+            }
+
+        } else if (formatString == "Town") {
+            return town;
+
+        } else if (formatString == "TownCountry") {
+            return town  + ", " + country;
+
+        } else if (formatString == "RegionCountry") {
+            if (region  > "") {
+                return region + ", " + country;
+            } else {
+                return town  + ", " + country;
+            }
+
+
+        } else if (formatString == "TownRegion") {
+            if (region  > "") {
+                return town + ", " + region;
+            } else {
+                return town  + ", " + country;
+            }
+
+
+        } 
+        return "";
+    }
+
+    /**
+     * Turn a wikitree formatted date into a date as per format string
+     */
+    function settingsStyleDate(dateString, formatString) {
+        // console.log("settingsStyleDate:", dateString, formatString);
+        if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10),
+                month = parseInt(parts[1], 10),
+                day = parseInt(parts[2], 10);
+            if (year) {
+                if (formatString == "YYYY") {
+                    return year;
+                }
+                if (month) {
+                    month2digits = month;
+                    if (month < 10) {
+                        month2digits = "0" + month;
+                    }
+                    if (day) {
+                        if (formatString == "YYYYMMDD") {
+                            day2digits = day;
+                            if (day < 10) {
+                                day2digits = "0" + day;
+                            }
+                            return `${year}-${month2digits}-${day2digits}`;
+                        } else if (formatString == "DDMMMYYYY") {
+                            return `${day} ${monthNames[month - 1]} ${year}`;
+                        } else if (formatString == "MMMDDYYYY") {
+                            return `${monthNames[month - 1]} ${day}, ${year}`;
+                        }
+                        return `${day} ${monthNames[month - 1]} ${year}`;
+                    } else {
+                        if (formatString == "YYYYMMDD") {
+                            return `${year}-${month2digits}`;
+                        } else if (formatString == "DDMMMYYYY") {
+                            return `${monthNames[month - 1]} ${year}`;
+                        } else if (formatString == "MMMDDYYYY") {
+                            return `${monthNames[month - 1]}, ${year}`;
+                        }
+                        return `${monthNames[month - 1]} ${year}`;
+                    }
+                } else {
+                    return year;
+                }
+            }
+        } else {
+            return dateString;
+        }
+        return "";
+    }
+
+    /**
+     * Return the date as required by the Settings options.
+     */
+    function getSettingsDateAndPlace(person, dateType) {
+        let datePlaceString = "";
+        let thisDate = "";
+        let thisPlace = "";
+        if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
+            datePlaceString = getLifeSpan(person) + "<br/>";
+        }
+
+        if (dateType == "B") {
+            if (FanChartView.currentSettings["date_options_showBirth"] == true) {
+                thisDate = settingsStyleDate(
+                    person._data.BirthDate,
+                    FanChartView.currentSettings["date_options_dateFormat"]
+                );
+                if (FanChartView.currentSettings["date_options_dateTypes"] != "detailed") {
+                    thisDate = "";
+                }
+
+                if (FanChartView.currentSettings["place_options_locationTypes"] == "detailed" && FanChartView.currentSettings["place_options_showBirth"] == true) { 
+                    thisPlace = settingsStyleLocation(
+                        person.getBirthLocation(),
+                        FanChartView.currentSettings["place_options_locationFormatBD"]
+                    );
+                } else {
+                    thisPlace = "";
+                }
+
+                if (thisDate > "" || thisPlace > "") {
+                    datePlaceString += "b. ";
+                }
+            }
+        } else if (dateType == "D") {
+            if (person._data.DeathDate == "0000-00-00") {
+                return "";
+            }
+            if (FanChartView.currentSettings["date_options_showDeath"] == true) {
+                thisDate = settingsStyleDate(
+                    person._data.DeathDate,
+                    FanChartView.currentSettings["date_options_dateFormat"]
+                );
+                if (FanChartView.currentSettings["date_options_dateTypes"] != "detailed") {
+                    thisDate = "";
+                }
+                if (
+                    FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                    FanChartView.currentSettings["place_options_showDeath"] == true
+                ) {
+                    thisPlace = settingsStyleLocation(
+                        person.getDeathLocation(),
+                        FanChartView.currentSettings["place_options_locationFormatBD"]
+                    );
+                } else {
+                    thisPlace = "";
+                }
+                if (thisDate > "" || thisPlace > "") {
+                    datePlaceString += "d. ";
+                }
+            }
+        }
+        if (thisDate > "" || thisPlace > "") {
+            if (thisDate > "") {
+                datePlaceString += thisDate;
+            }
+            if (thisDate > "" && thisPlace > "") {
+                datePlaceString += ", ";
+            }
+            if (thisPlace > "") {
+                datePlaceString += thisPlace;
+            }
+        }
+
+        return datePlaceString;
+    }
+
+    /**
      * Return the name as required by the Settings options.
      */
     function getSettingsName(person) {
@@ -1711,19 +2027,122 @@
     }
 
     function getAngleOfRotation(theElement) {
-        console.log("getAngleOfRotation of ", theElement.parentNode.parentNode.parentNode);
+        // console.log("getAngleOfRotation of ", theElement.parentNode.parentNode.parentNode);
         let theBigElement = theElement.parentNode.parentNode.parentNode;
         // let theTransform = theBigElement.getPropertyOf("transform");
-        console.log("t:", theBigElement["transform"]);
+        // console.log("t:", theBigElement["transform"]);
         // let theTransform = theBigElement.transform.baseVal;
-        console.log("theTransform:", theTransform);
+        // console.log("theTransform:", theTransform);
         for (let t in theTransform) {
             const transformObj = theTransform[t];
-            console.log("obj:", transformObj);
+            // console.log("obj:", transformObj);
         }
 
-        console.log("Count: " + theTransform.length);
+        // console.log("Count: " + theTransform.length);
 
         return 9;
+    }
+
+    function getBackgroundColourFor(gen, pos, ahnNum) {
+         PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+         GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+         RedsArray = [
+            "#FFA0A0",
+            "#FFB0B0",
+            "#FFC0C0",
+            "#FFD0D0",
+            "#FFE0E0",
+            "#FFF0F0",
+            "#FFC0C8",
+            "#FFD0D8",
+            "#FFE0E8",
+            "#FFF0F8",
+            "#FFC0C0",
+            "#FFD0D0",
+            "#FFE0E0",
+            "#FFF0F0",
+            "#FFC8C0",
+            "#FFD8D0",
+            "#FFE8E0",
+            "#FFF8F0",
+        ];
+         BluesArray = [
+            "#A0A0FF",
+            "#B0B0FF",
+            "#C0C0FF",
+            "#D0D0FF",
+            "#E0E0FF",
+            "#F0F0FF",
+            "#C0C0FF",
+            "#D0D0FF",
+            "#E0E0FF",
+            "#F0F0FF",
+            "#C8C0FF",
+            "#D8D0FF",
+            "#E8E0FF",
+            "#F8F0FF",
+            "#C0C8FF",
+            "#D0D8FF",
+            "#E0E8FF",
+            "#F0F8FF",
+        ];
+         GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+
+        let AllColoursArrays = [ColourArray ,  GreysArray, RedsArray, GreensArray, BluesArray, PastelsArray, RainbowArray];
+        let KeyColoursMatches = {"random":ColourArray ,  "Greys":GreysArray, "Reds":RedsArray, "Greens":GreensArray, "Blues":BluesArray, "Pastels":PastelsArray, "Rainbow":RainbowArray};
+
+        // start out with a random palette selected, so, if nothing else, at least there's something
+        let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
+
+        // GET the settings that determine what the colouring should look like (if at all)
+        let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
+        if (settingForColourBy == "None") {
+            return "White";
+        } 
+
+
+        let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
+        if (KeyColoursMatches[settingForPalette]) {
+            thisColourArray = KeyColoursMatches[settingForPalette] ;
+        }
+
+        if (ahnNum == 1) {
+            return thisColourArray[0];
+        }
+		
+		let numThisGen = 2 ** gen;
+		
+        if (settingForColourBy == "Gender") {
+            return thisColourArray[1 + ahnNum % 2];
+            
+            
+        } else if (settingForColourBy == "Generation") {
+            return thisColourArray[1 + (gen) % thisColourArray.length ];
+
+        } else if (settingForColourBy == "Grand") {		
+            return thisColourArray[1 + Math.floor(4*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "GGrand") {
+            return thisColourArray[1 + Math.floor(8*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "GGGrand") {
+            return thisColourArray[1 + Math.floor(16*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "GGGGrand") {
+            return thisColourArray[1 + Math.floor(32*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "Town") {
+
+        } else if (settingForColourBy == "Region") {
+
+        } else if (settingForColourBy == "Country") {
+
+        } else if (settingForColourBy == "random") {
+            return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
+        }
+
+
+        return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
 })();
