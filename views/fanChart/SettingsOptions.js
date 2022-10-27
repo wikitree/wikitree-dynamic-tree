@@ -115,7 +115,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         let theUL = "<ul class='profile-tabs'>";
         let theDIVs = "";
         for (let tab in data.tabs) {
-            console.log("createULelements - TAB:", tab, data.tabs[tab].name);
+            // console.log("createULelements - TAB:", tab, data.tabs[tab].name);
             let tabName = data.tabs[tab].name;
             theUL += '<li id="' + tabName + '-tab">' + data.tabs[tab].label + "</li>";
             theDIVs += '<div id="' + tabName + '-panel"></div>';
@@ -153,13 +153,13 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     }
 
     setActiveTab(tabName) {
-        console.log("setActiveTab called: tabName is: " + tabName);
-        console.log("this:", this);
-        console.log("tabElements" , this.tabElements);
+        // console.log("setActiveTab called: tabName is: " + tabName);
+        // console.log("this:", this);
+        // console.log("tabElements" , this.tabElements);
         
         for (let tab in this.tabElements) {
             let tabElement = this.tabElements[tab];
-            console.log(tabElement);
+            // console.log(tabElement);
             if (!tabElement) {
                 console.log("setActiveTab: No tab element found for '" + tab + "'");
                 continue;
@@ -244,10 +244,10 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
         // Link up the tab panels and buttons and create all the subsection elements
         for (let tab of this.optionsRegistry.tabs) {
-            console.log("buildPage: for tab of this.optionsRegistry : ", tab.name, tab);
+            // console.log("buildPage: for tab of this.optionsRegistry : ", tab.name, tab);
             let tabButtonElement = this.tabElements[tab.name].buttonElement;
             tabButtonElement.onclick = function (event) {
-                console.log("going to try to do activeTabChanged", this, self);
+                // console.log("going to try to do activeTabChanged", this, self);
                 self.activeTabChanged(tab.name);
             };
 
@@ -475,7 +475,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     labelElement.appendChild(optionElement);
                     optionDivElement.appendChild(labelElement);
                 } else if (option.type == "br") {
-                    console.log("TRYING to BR");
+                    // console.log("TRYING to BR");
                     optionElement = document.createElement("label");
                     optionDivElement.appendChild(optionElement);
                 }
