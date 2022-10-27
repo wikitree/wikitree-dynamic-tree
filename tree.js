@@ -207,6 +207,7 @@ window.ViewRegistry = class ViewRegistry {
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
         if (data[0]["person"]) {
+            WikiTreeAPI.clearCache();
             this.initView(view, data[0]["person"]);
 
             this.session.personID = data[0]["person"]["Id"];
