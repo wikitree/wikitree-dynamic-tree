@@ -1,14 +1,14 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
- * Fan Chart uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
+ * FanDoku game uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
  
 * There is a Button Bar TABLE at the top of the container, 
  * then the SVG graphic is below that.
  * 
- * The FIRST chunk of code in the SVG graphic are the <path> objects for the individual wedges of the Fan Chart,
+ * The FIRST chunk of code in the SVG graphic are the <path> objects for the individual wedges of the FanDoku game,
  * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
  * 
- * The SECOND chunk in the SVG graphic are the individual people in the Fan Chart, created by the Nodes and the d3 deep magic
+ * The SECOND chunk in the SVG graphic are the individual people in the FanDoku game, created by the Nodes and the d3 deep magic
  * they are each basically at the end of the day a <g class"person ancestor" transformed object with a translation from 0,0 and a rotation></g>
  * 
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FandokuView, then calls a redraw
@@ -81,12 +81,12 @@
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
 
-    // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
+    // STATIC VARIABLES --> USED to store variables used to customize the current display of the FanDoku game
 
     /** Static variable to hold unique ids for private persons **/
     FandokuView.nextPrivateId = -1;
 
-    /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
+    /** Static variable to hold the Maximum Angle for the FanDoku game (360 full circle / 240 partial / 180 semicircle)   **/
     FandokuView.maxAngle = 240;
     FandokuView.lastAngle = 240;
 
@@ -109,7 +109,7 @@
 
     FandokuView.prototype.meta = function () {
         return {
-            title: "Fan Chart",
+            title: "FanDoku game",
             description: "Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.",
             docs: "https://www.WikiTree.com/wiki/Dynamic_Tree",
         };
@@ -130,14 +130,14 @@
             //     label: "General",
             //     hideSelect: true,
             //     subsections: [{ name: "FanChartGeneral", label: "General settings" }],
-            //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+            //     comment: "These options apply to the FanDoku game overall, and don't fall in any other specific category.",
             // },
             {
                 name: "names",
                 label: "Names",
                 hideSelect: true,
                 subsections: [{ name: "FanChartNames", label: "NAMES format" }],
-                comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
+                comment: "These options apply to how the ancestor names will displayed in each FanDoku game cell.",
             },
             {
                 name: "dates",
@@ -165,7 +165,7 @@
                 label: "Colours",
                 hideSelect: true,
                 subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
-                comment: "These options apply to background colours in the Fan Chart cells.",
+                comment: "These options apply to background colours in the FanDoku game cells.",
             },
             // {
             //     name: "highlights",
@@ -469,12 +469,12 @@
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
             ' <A onclick="FandokuView.toggleSettings();"><font size=+2>' + SETTINGS_GEAR + '</font></A>&nbsp;&nbsp;</td>' +
-            '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
+            '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial FanDoku game is loading ...</DIV>';
 
         var settingsHTML = "";
         // '<div id=settingsDIV style="display:inline-block; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">'+
         // '<span style="color:red; align:left"><A onclick="FandokuView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' ;
-        // '<H3 align=center>Fan Chart Settings</H3>' +
+        // '<H3 align=center>FanDoku game Settings</H3>' +
 
         settingsHTML += FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV; // +
         // console.log("SETTINGS:",settingsHTML);
@@ -532,7 +532,7 @@
             .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
         // console.log("creating SVG object and setting up ancestor tree object")
-        // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
+        // Setup controllers for the ancestor tree which will be displayed as the FanDoku game
         self.ancestorTree = new AncestorTree(svg);
 
         // Listen to tree events --> NOT NEEDED ANYMORE without the PLUS SIGNS (holdover from original Dynamic Tree version)
@@ -556,7 +556,7 @@
             });
 
         /*
-            CREATE the FAN CHART Backdrop 
+            CREATE the FanDoku game Backdrop 
             * Made of mostly Wedges (starting with the outermost circle)
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
@@ -740,7 +740,7 @@
             });
         }
     }
-    // Redraw the Wedges if needed for the Fan Chart
+    // Redraw the Wedges if needed for the FanDoku game
     function redoWedgesForFanChart() {
         // console.log("TIme to RE-WEDGIFY !", this, FandokuView);
 
@@ -809,7 +809,7 @@
         }
     }
 
-    /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
+    /** FUNCTION used to force a redraw of the FanDoku game, used when called from Button Bar after a parameter has been changed */
 
     FandokuView.redraw = function () {
         // console.log("FandokuView.redraw");
@@ -1277,7 +1277,7 @@
 
             // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
             let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
-            // Calculate which position # (starting lower left and going clockwise around the fan chart) (0 is father's father's line, largest number is mother's mother's line)
+            // Calculate which position # (starting lower left and going clockwise around the FanDoku game) (0 is father's father's line, largest number is mother's mother's line)
             let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
@@ -1321,13 +1321,13 @@
                 180 +
                 (180 - FandokuView.maxAngle) / 2 +
                 (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + thisPosNum);
-            // Name Angle = the angle of rotation for the name card so that it is readable easily in the Fan Chart (intially, perpendicular to the spokes of the Fan Chart so that it appears horizontal-ish)
+            // Name Angle = the angle of rotation for the name card so that it is readable easily in the FanDoku game (intially, perpendicular to the spokes of the FanDoku game so that it appears horizontal-ish)
             let nameAngle = 90 + placementAngle;
             if (thisGenNum > 4) {
                 // HOWEVER ... once we have Too Many cooks in the kitchen, we need to be more efficient with our space, so need to switch to a more vertical-ish approach, stand the name card on its end (now parallel to the spokes)
                 nameAngle += 90;
 
-                // AND ... if we go beyond the midpoint in this particular ring, we need to rotate it another 180 degrees so that we don't have to read upside down.  All name cards should be readable, facing inwards to the centre of the Fan Chart
+                // AND ... if we go beyond the midpoint in this particular ring, we need to rotate it another 180 degrees so that we don't have to read upside down.  All name cards should be readable, facing inwards to the centre of the FanDoku game
                 if (thisPosNum >= numSpotsThisGen / 2) {
                     nameAngle += 180;
                 }
