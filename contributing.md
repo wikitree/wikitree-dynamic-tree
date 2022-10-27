@@ -121,6 +121,44 @@ Other workarounds include:
 -   A Chrome extension like [Moesif CORS](https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc)
 -   CORS Anywhere Proxy: [Public demo](https://cors-anywhere.herokuapp.com/corsdemo) / [Example usage](https://stackblitz.com/edit/wikitree-getperson2?file=index.ts)
 
+## Prettier
+
+The project uses [Prettier](https://prettier.io/) to format the code.
+
+The settings the project uses are stored in the [.prettierrc](/.prettierrc) file.
+
+### Installing Prettier
+
+The general installation instructions can be viewed at the [Prettier Docs](https://prettier.io/docs/en/install.html).
+
+#### Visual Studio Code
+
+To install Prettier in [Visual Studio Code](https://code.visualstudio.com/):
+
+- Go to `View > Extensions`
+- Search for "Prettier - Code formatter"
+- Select the "Install" button
+
+To set it up so it formats on save:
+
+- Go to `File > Preferences > Settings`
+- Search for "Default Formatter" and select "Prettier - Code formatter" in the dropdown
+- Search for "Format On Save" and make sure the checkbox is checked
+
+It will use the settings in the `.prettierrc` file in the repository.
+
+### Using Prettier
+
+If you've set it up so it formats on save, you don't have to do anything else.
+
+You can have prettier format a single file by using:
+
+```
+npx prettier --write your_file_name
+```
+
+If you haven't installed Prettier or are using the VS Code extension, you may be asked to install it when using the above command.
+
 ## Other potentially useful tools
 
 -   [WikiTree API](https://github.com/wikitree/wikitree-api) - documentation of available API functions
