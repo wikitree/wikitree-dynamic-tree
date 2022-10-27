@@ -57,8 +57,6 @@
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     FractalView.currentSettings = {};
 
-
-
     FractalView.prototype.meta = function () {
         return {
             title: "Fractal Tree",
@@ -74,326 +72,375 @@
             height = container.offsetHeight;
 
         var self = this;
-    FractalView.fractalSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
-        viewClassName: "FractalView",
-        tabs: [
-            // {
-            //     name: "general",
-            //     label: "General",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FractalGeneral", label: "General settings" }],
-            //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
-            // },
-            {
-                name: "names",
-                label: "Names",
-                hideSelect: true,
-                subsections: [{ name: "FractalNames", label: "NAMES format" }],
-                comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
-            },
-            {
-                name: "dates",
-                label: "Dates",
-                hideSelect: true,
-                subsections: [{ name: "FractalDates", label: "DATES of events     " }],
-                comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
-            },
-            {
-                name: "places",
-                label: "Places",
-                hideSelect: true,
-                subsections: [{ name: "FractalPlaces", label: "PLACES of events     " }],
-                comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
-            },
-            {
-                name: "photos",
-                label: "Photos",
-                hideSelect: true,
-                subsections: [{ name: "FractalPhotos", label: "PHOTOS    " }],
-                comment: "These options determine if photos are displayed or not.",
-            },
-            {
-                name: "colours",
-                label: "Colours",
-                hideSelect: true,
-                subsections: [{ name: "FractalColours", label: "COLOURS   " }],
-                comment: "These options apply to background colours in the Fan Chart cells.",
-            },
-            // {
-            //     name: "highlights",
-            //     label: "Highlights",
-            //     hideSelect: true,
-            //     subsections: [{ name: "FractalHighlights", label: "HIGHLIGHTING   " }],
-            //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
-            // },
-        ],
-        optionsGroups: [
-            {
-                tab: "general",
-                subsection: "FractalGeneral",
-                category: "general",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "font",
-                        type: "radio",
-                        label: "Font",
-                        values: [
-                            { value: "Arial", text: "Arial" },
-                            { value: "Courier", text: "Courier" },
-                            { value: "Times", text: "Times" },
-                            { value: "Fantasy", text: "Fantasy" },
-                            { value: "Script", text: "Script" },
-                        ],
-                        defaultValue: "Arial",
-                    },
-                    { optionName: "break0", type: "br" },
-                    {
-                        optionName: "showWikiID",
-                        label: "Show WikiTree ID for each person",
-                        type: "checkbox",
-                        defaultValue: 0,
-                    },
-                    {
-                        optionName: "showAhnNum",
-                        label: "Show Ahnentafel number in each cell",
-                        type: "checkbox",
-                        defaultValue: 0,
-                    },
-                    { optionName: "break1", type: "br" },
-                    {
-                        optionName: "colourizeRepeats",
-                        label: "Colourize Repeat Ancestors",
-                        type: "checkbox",
-                        defaultValue: true,
-                    },
-                ],
-            },
+        FractalView.fractalSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
+            viewClassName: "FractalView",
+            tabs: [
+                // {
+                //     name: "general",
+                //     label: "General",
+                //     hideSelect: true,
+                //     subsections: [{ name: "FractalGeneral", label: "General settings" }],
+                //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                // },
+                {
+                    name: "names",
+                    label: "Names",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalNames", label: "NAMES format" }],
+                    comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
+                },
+                {
+                    name: "dates",
+                    label: "Dates",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalDates", label: "DATES of events     " }],
+                    comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
+                },
+                {
+                    name: "places",
+                    label: "Places",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalPlaces", label: "PLACES of events     " }],
+                    comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
+                },
+                {
+                    name: "photos",
+                    label: "Photos",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalPhotos", label: "PHOTOS    " }],
+                    comment: "These options determine if photos are displayed or not.",
+                },
+                {
+                    name: "colours",
+                    label: "Colours",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalColours", label: "COLOURS   " }],
+                    comment: "These options apply to background colours in the Fan Chart cells.",
+                },
+                // {
+                //     name: "highlights",
+                //     label: "Highlights",
+                //     hideSelect: true,
+                //     subsections: [{ name: "FractalHighlights", label: "HIGHLIGHTING   " }],
+                //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
+                // },
+            ],
+            optionsGroups: [
+                {
+                    tab: "general",
+                    subsection: "FractalGeneral",
+                    category: "general",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "font",
+                            type: "radio",
+                            label: "Font",
+                            values: [
+                                { value: "Arial", text: "Arial" },
+                                { value: "Courier", text: "Courier" },
+                                { value: "Times", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Arial",
+                        },
+                        { optionName: "break0", type: "br" },
+                        {
+                            optionName: "showWikiID",
+                            label: "Show WikiTree ID for each person",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "showAhnNum",
+                            label: "Show Ahnentafel number in each cell",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "colourizeRepeats",
+                            label: "Colourize Repeat Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                    ],
+                },
 
-            // {
-            //     tab: "names",
-            //     subsection: "FractalNames",
-            //     category: "name",
-            //     subcategory: "options",
-            //     options: [
-            //         { optionName: "prefix", label: "Show Prefix before full name", type: "checkbox", defaultValue: 0 },
-            //         {
-            //             optionName: "firstName",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "FirstNameAtBirth", text: "First Name at Birth" },
-            //                 { value: "UsualName", text: "Usual Name" },
-            //             ],
-            //             defaultValue: "FirstNameAtBirth",
-            //         },
-            //         { optionName: "middleName", label: "Show Middle Name", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "middleInitial", label: "Show Middle Initial", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
-            //         {
-            //             optionName: "lastName",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "LastNameAtBirth", text: "Last Name at Birth" },
-            //                 { value: "CurrentLastName", text: "Current Last Name" },
-            //             ],
-            //             defaultValue: "LastNameAtBirth",
-            //         },
-            //         { optionName: "suffix", label: "Show Suffix after full name", type: "checkbox", defaultValue: 0 },
-            //     ],
-            // },
+                {
+                    tab: "names",
+                    subsection: "FractalNames",
+                    category: "name",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "prefix",
+                            label: "Show Prefix before full name",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "firstName",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "FirstNameAtBirth", text: "First Name at Birth" },
+                                { value: "UsualName", text: "Usual Name" },
+                            ],
+                            defaultValue: "FirstNameAtBirth",
+                        },
+                        { optionName: "middleName", label: "Show Middle Name", type: "checkbox", defaultValue: 0 },
+                        {
+                            optionName: "middleInitial",
+                            label: "Show Middle Initial",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
+                        {
+                            optionName: "lastName",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "LastNameAtBirth", text: "Last Name at Birth" },
+                                { value: "CurrentLastName", text: "Current Last Name" },
+                            ],
+                            defaultValue: "LastNameAtBirth",
+                        },
+                        {
+                            optionName: "suffix",
+                            label: "Show Suffix after full name",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                    ],
+                },
 
-            // {
-            //     tab: "dates",
-            //     subsection: "FractalDates",
-            //     category: "date",
-            //     subcategory: "options",
-            //     options: [
-            //         { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
-            //         { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
-            //         { optionName: "showLifeSpan", label: "Show LifeSpan", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "break1", type: "br" },
-            //         { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "break2", comment: "Date Format:", type: "br" },
-            //         {
-            //             optionName: "dateFormat",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "YYYY", text: "1964" },
-            //                 { value: "YYYYMMDD", text: "1964-01-16" },
-            //                 { value: "DDMMMYYYY", text: "16 Jan 1964" },
-            //                 { value: "MMMDDYYYY", text: "Jan 16, 1964" },
-            //             ],
-            //             defaultValue: "DDMMMYYYY",
-            //         },
-            //     ],
-            // },
-            // {
-            //     tab: "places",
-            //     subsection: "FractalPlaces",
-            //     category: "place",
-            //     subcategory: "options",
-            //     options: [
-            //         { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
-            //         { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
-            //         { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
-            //         {
-            //             optionName: "locationFormatBD",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "Full", text: "Full Location as entered" },
-            //                 { value: "br" },
-            //                 { value: "Country", text: "Country only" },
-            //                 { value: "Region", text: "Region only (Province/State)" },
-            //                 { value: "Town", text: "Town only" },
-            //                 { value: "br" },
-            //                 { value: "TownCountry", text: "TownCountry" },
-            //                 { value: "RegionCountry", text: "Region, Country" },
-            //                 { value: "TownRegion", text: "Town, Region" },
-            //             ],
-            //             defaultValue: "Full",
-            //         },
-            //         { optionName: "break1", type: "br" },
-            //         { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
-            //         { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
-            //         {
-            //             optionName: "locationFormatM",
-            //             type: "radio",
-            //             label: "",
-            //             values: [
-            //                 { value: "Full", text: "Full Location as entered" },
-            //                 { value: "br" },
-            //                 { value: "Country", text: "Country only" },
-            //                 { value: "Region", text: "Region only (Province/State)" },
-            //                 { value: "Town", text: "Town only" },
-            //                 { value: "br" },
-            //                 { value: "TownCountry", text: "Town, Country" },
-            //                 { value: "RegionCountry", text: "Region, Country" },
-            //                 { value: "TownRegion", text: "Town, Region" },
-            //             ],
-            //             defaultValue: "Full",
-            //         },
-            //     ],
-            // },
-            // {
-            //     tab: "photos",
-            //     subsection: "FractalPhotos",
-            //     category: "photo",
-            //     subcategory: "options",
-            //     options: [
-            //         {
-            //             optionName: "showCentralPic",
-            //             label: "Show the Central Person Photo",
-            //             type: "checkbox",
-            //             defaultValue: true,
-            //         },
-            //         {
-            //             optionName: "showAllPics",
-            //             label: "Show Photos of Ancestors",
-            //             type: "checkbox",
-            //             defaultValue: true,
-            //         },
-            //         {
-            //             optionName: "useSilhouette",
-            //             label: "Use Silhouette when no photo available",
-            //             type: "checkbox",
-            //             defaultValue: true,
-            //         },
-            //         { optionName: "break1", type: "br" },
-            //         {
-            //             optionName: "showPicsToN",
-            //             label: "Limit Photos to first N generations",
-            //             type: "checkbox",
-            //             defaultValue: true,
-            //         },
-            //         { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
-            //     ],
-            // },
-            // {
-            //     tab: "colours",
-            //     subsection: "FractalColours",
-            //     category: "colour",
-            //     subcategory: "options",
-            //     options: [
-            //         {
-            //             optionName: "colourBy",
-            //             type: "select",
-            //             label: "Background Colour cells",
-            //             values: [
-            //                 { value: "None", text: "OFF - All White, all the time WHITE" },
-            //                 { value: "Gender", text: "by Gender" },
-            //                 { value: "Generation", text: "by Generation" },
-            //                 { value: "Grand", text: "by Grandparent" },
-            //                 { value: "GGrand", text: "by Great-Grandparent" },
-            //                 { value: "GGGrand", text: "by 2x Great Grandparent" },
-            //                 { value: "GGGGrand", text: "by 3x Great Grandparent" },
-            //                 { value: "Town", text: "by Place name" },
-            //                 { value: "Region", text: "by Region (Province/State)" },
-            //                 { value: "Country", text: "by Country" },
-            //             ],
-            //             defaultValue: "Generation",
-            //         },
-            //         {
-            //             optionName: "palette",
-            //             type: "select",
-            //             label: "Colour Palette",
-            //             values: [
-            //                 { value: "Greys", text: "Shades of Grey" },
-            //                 { value: "Reds", text: "Shades of Greens" },
-            //                 { value: "Blues", text: "Shades or Blues" },
-            //                 { value: "Pastels", text: "Pastel colours" },
-            //                 { value: "Rainbow", text: "Traditional Rainbow of colours" },
-            //                 { value: "Ancestry", text: "Ancestry type colours" },
-            //                 { value: "MyHeritage", text: "My Heritage type colours" },
-            //             ],
-            //             defaultValue: "Pastels",
-            //         },
-            //     ],
-            // },
-            {
-                tab: "highlights",
-                subsection: "FractalHighlights",
-                category: "highlight",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "showHighlights",
-                        label: "Highlight cells based on option chosen below",
-                        type: "checkbox",
-                        defaultValue: 0,
-                    },
-                    {
-                        optionName: "highlightBy",
-                        type: "select",
-                        label: "Highlight by",
-                        values: [
-                            { value: "YDNA", text: "Y-DNA" },
-                            { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
-                            { value: "XDNA", text: "X-chromosome inheritance" },
-                            { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
-                            { value: "DNAinheritance", text: "DNA inheritance" },
-                        ],
-                        defaultValue: "DNAinheritance",
-                    },
-                    { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                    {
-                        optionName: "howDNAlinks",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "Hide", text: "Hide Links" },
-                            { value: "Highlights", text: "Show Links for highlighted cells only" },
-                            { value: "ShowAll", text: "Show All Links" },
-                        ],
-                        defaultValue: "Highlights",
-                    },
-                ],
-            },
-        ],
-    });
+                {
+                    tab: "dates",
+                    subsection: "FractalDates",
+                    category: "date",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "dateTypes",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "none", text: "No Dates" },
+                                { value: "br" },
+                                { value: "lifespan", text: "Show Lifespan only, in years" },
+                                { value: "br" },
+                                { value: "detailed", text: "Show Full Dates for life events" },
+                            ],
+                            defaultValue: "detailed",
+                        },
+                        { optionName: "break0", comment: "Full Dates details:", type: "br" },
+                        { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
+                        { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
+                        // {
+                        //     optionName: "showLifeSpan",
+                        //     label: "Show LifeSpan (replaces birth & death dates)",
+                        //     type: "checkbox",
+                        //     defaultValue: 0,
+                        // },
+                        // { optionName: "break1", type: "br" },
+                        // { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
+                        { optionName: "break2", comment: "Date Format:", type: "br" },
+                        {
+                            optionName: "dateFormat",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "YYYY", text: "1964" },
+                                { value: "YYYYMMDD", text: "1964-01-16" },
+                                { value: "DDMMMYYYY", text: "16 Jan 1964" },
+                                { value: "MMMDDYYYY", text: "Jan 16, 1964" },
+                            ],
+                            defaultValue: "DDMMMYYYY",
+                        },
+                    ],
+                },
+                {
+                    tab: "places",
+                    subsection: "FractalPlaces",
+                    category: "place",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "locationTypes",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "none", text: "No Locations" },
+                                { value: "br" },
+                                { value: "detailed", text: "Show Locations for life events" },
+                            ],
+                            defaultValue: "detailed",
+                        },
+                        { optionName: "break0", comment: "Location details:", type: "br" },
+                        { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
+                        { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
+                        { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
+                        {
+                            optionName: "locationFormatBD",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "Full", text: "Full Location as entered" },
+                                { value: "br" },
+                                { value: "Country", text: "Country only" },
+                                { value: "Region", text: "Region only (Province/State)" },
+                                { value: "Town", text: "Town only" },
+                                { value: "br" },
+                                { value: "TownCountry", text: "Town, Country" },
+                                { value: "RegionCountry", text: "Region, Country" },
+                                { value: "TownRegion", text: "Town, Region" },
+                            ],
+                            defaultValue: "Full",
+                        },
+                        // { optionName: "break1", type: "br" },
+                        // { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
+                        // { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
+                        // {
+                        //     optionName: "locationFormatM",
+                        //     type: "radio",
+                        //     label: "",
+                        //     values: [
+                        //         { value: "Full", text: "Full Location as entered" },
+                        //         { value: "br" },
+                        //         { value: "Country", text: "Country only" },
+                        //         { value: "Region", text: "Region only (Province/State)" },
+                        //         { value: "Town", text: "Town only" },
+                        //         { value: "br" },
+                        //         { value: "TownCountry", text: "Town, Country" },
+                        //         { value: "RegionCountry", text: "Region, Country" },
+                        //         { value: "TownRegion", text: "Town, Region" },
+                        //     ],
+                        //     defaultValue: "Full",
+                        // },
+                    ],
+                },
+                {
+                    tab: "photos",
+                    subsection: "FractalPhotos",
+                    category: "photo",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "showCentralPic",
+                            label: "Show the Central Person Photo",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "showAllPics",
+                            label: "Show Photos of Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "useSilhouette",
+                            label: "Use Silhouette when no photo available",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "showPicsToN",
+                            label: "Limit Photos to first N generations",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
+                    ],
+                },
+                {
+                    tab: "colours",
+                    subsection: "FractalColours",
+                    category: "colour",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "colourBy",
+                            type: "select",
+                            label: "Background Colour cells",
+                            values: [
+                                { value: "None", text: "OFF - All White, all the time WHITE" },
+                                { value: "Gender", text: "by Gender" },
+                                { value: "Generation", text: "by Generation" },
+                                { value: "Grand", text: "by Grandparent" },
+                                { value: "GGrand", text: "by Great-Grandparent" },
+                                { value: "GGGrand", text: "by 2x Great Grandparent" },
+                                { value: "GGGGrand", text: "by 3x Great Grandparent" },
+                                // { value: "Town", text: "by Place name" },
+                                // { value: "Region", text: "by Region (Province/State)" },
+                                // { value: "Country", text: "by Country" },
+                                { value: "random", text: "totally randomly" },
+                            ],
+                            defaultValue: "Generation",
+                        },
+                        {
+                            optionName: "palette",
+                            type: "select",
+                            label: "Colour Palette",
+                            values: [
+                                { value: "Greys", text: "Shades of Grey" },
+                                { value: "Reds", text: "Shades of Reds" },
+                                { value: "Greens", text: "Shades of Greens" },
+                                { value: "Blues", text: "Shades or Blues" },
+                                { value: "Pastels", text: "Pastel colours" },
+                                { value: "Rainbow", text: "Traditional Rainbow of colours" },
+                                // { value: "Ancestry", text: "Ancestry type colours" },
+                                // { value: "MyHeritage", text: "My Heritage type colours" },
+                                { value: "random", text: "Psychadelic" },
+                            ],
+                            defaultValue: "Pastels",
+                        },
+                    ],
+                },
+                {
+                    tab: "highlights",
+                    subsection: "FractalHighlights",
+                    category: "highlight",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "showHighlights",
+                            label: "Highlight cells based on option chosen below",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "highlightBy",
+                            type: "select",
+                            label: "Highlight by",
+                            values: [
+                                { value: "YDNA", text: "Y-DNA" },
+                                { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
+                                { value: "XDNA", text: "X-chromosome inheritance" },
+                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
+                                { value: "DNAinheritance", text: "DNA inheritance" },
+                            ],
+                            defaultValue: "DNAinheritance",
+                        },
+                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        {
+                            optionName: "howDNAlinks",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "Hide", text: "Hide Links" },
+                                { value: "Highlights", text: "Show Links for highlighted cells only" },
+                                { value: "ShowAll", text: "Show All Links" },
+                            ],
+                            defaultValue: "Highlights",
+                        },
+                    ],
+                },
+            ],
+        });
         // Setup zoom and pan
         var zoom = d3.behavior
             .zoom()
@@ -422,16 +469,31 @@
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right">' +
-            ' <A onclick="FractalView.toggleSettings();"><font size=+2>' + SETTINGS_GEAR + "</font></A>" +
+            ' <A onclick="FractalView.toggleSettings();"><font size=+2>' +
+            SETTINGS_GEAR +
+            "</font></A>" +
             "&nbsp;&nbsp;</td>" +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fractal Tree is loading ...</DIV>';
 
         var settingsHTML = "";
-        
+
         settingsHTML += FractalView.fractalSettingsOptionsObject.createdSettingsDIV; // +
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML + settingsHTML;
+
+        var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
+        saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
+
+        function settingsChanged(e) {
+            if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
+                console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+                console.log("NEW settings are:", FractalView.currentSettings);
+                FractalView.myAncestorTree.draw();
+            } else {
+                console.log("NOTHING happened according to SETTINGS OBJ");
+            }
+        }
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         var svg = d3
@@ -493,7 +555,7 @@
         FractalView.fractalSettingsOptionsObject.buildPage();
         FractalView.fractalSettingsOptionsObject.setActiveTab("names");
         FractalView.currentSettings = FractalView.fractalSettingsOptionsObject.getDefaultOptions();
-    };;
+    };
 
     FractalView.drawLines = function () {
         // console.log("DRAWING LINES stuff should go here");
@@ -502,11 +564,11 @@
             element.setAttribute("display", "block");
 
             let thisGenNum = Math.floor(Math.log2(index));
-            let X = 0;
+            let X = 0; // CENTRE PERSON's coordinates
             let Y = 0;
-            let Xj = 0;
+            let Xj = 0; // Pa's coordinates
             let Yj = 0;
-            let Xk = 0;
+            let Xk = 0; // Ma's coordinates
             let Yk = 0;
 
             let i = index;
@@ -557,6 +619,14 @@
                     // console.log(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
 
+                if (!FractalView.myAhnentafel.list[j]) {
+                    Xj = X;
+                    Yj = Y;
+                }
+                if (!FractalView.myAhnentafel.list[k]) {
+                    Xk = X;
+                    Yk = Y;
+                }
                 element.setAttribute("x1", Xj);
                 element.setAttribute("y1", Yj);
                 element.setAttribute("x2", Xk);
@@ -737,7 +807,6 @@
         redoWedgesForFractal();
         FractalView.myAncestorTree.draw();
     };
-
 
     FractalView.cancelSettings = function () {
         let theDIV = document.getElementById("settingsDIV");
@@ -1129,16 +1198,22 @@
                     }
                 }
 
-                return `<div class="top-info" id=wedgeInfoFor${
+                return `<div class="top-info centered" id=wedgeInfoFor${
                     ancestorObject.ahnNum
                 } style="background-color: white ; padding:5, border-color:black; border:2;">
                      <div class="vital-info">
-						<div class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
-						  <div class="name">
-						    <b>${person.getDisplayName()}</b>						    
+						<div class="image-box" id=photoDivFor${
+                            ancestorObject.ahnNum
+                        } style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
+						  <div class="name" id=nameDivFor${ancestorObject.ahnNum}>
+						    <b>${getSettingsName(person)}</b>						    
 						  </div>
-						  <div class="birth vital">${birthString(person)}</div>
-						  <div class="death vital">${deathString(person)}</div>
+						  <div class="birth vital" id=birthDivFor${
+                            ancestorObject.ahnNum
+                        }>${getSettingsDateAndPlace(person, "B")}</div>
+						  <div class="death vital" id=deathDivFor${
+                            ancestorObject.ahnNum
+                        }>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>
                     `;
@@ -1201,12 +1276,70 @@
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 theInfoBox.parentNode.parentNode.setAttribute("x", -150);
                 theInfoBox.parentNode.parentNode.setAttribute("width", 300);
+				
+				// COLOUR the div appropriately
+				let thisDivsColour = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+				theInfoBox.setAttribute(
+                    "style",
+                    "background-color: " + thisDivsColour
+					);
 
                 // SET the OUTER DIV to also be white, with a rounded radius and solid border
                 theInfoBox.parentNode.setAttribute(
                     "style",
-                    "background-color: white; padding:15px; border: solid green; border-radius: 15px;"
+                    "background-color: " + thisDivsColour + "; padding:15px; border: solid green; border-radius: 15px;"
                 );
+            }
+
+            // LET'S UPDATE THE NAME !
+            let thisDIVtoUpdate = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
+            if (thisDIVtoUpdate) {
+                thisDIVtoUpdate.textContent = getSettingsName(d); // REMEMBER that d = ancestorObject.person; 
+            }
+            // LET'S UPDATE THE BIRTH INFO !
+            thisDIVtoUpdate = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
+            if (thisDIVtoUpdate) {
+                thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "B");
+            }
+            // LET'S UPDATE THE DEATH INFO !
+            thisDIVtoUpdate = document.getElementById("deathDivFor" + ancestorObject.ahnNum);
+            if (thisDIVtoUpdate) {
+                thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "D");
+            }
+            // LET'S UPDATE THE PHOTO !
+            let photoUrl = d.getPhotoUrl(75); // will exist if there is a unique photo for this person, if not - then we can show silhouette if option says that's ok            
+            thisDIVtoUpdate = document.getElementById("photoDivFor" + ancestorObject.ahnNum);
+
+            if (thisDIVtoUpdate) {
+                // FIRST ... let's deal with the CENTRAL PERP
+                if (ancestorObject.ahnNum == 1) {
+                    if ( FractalView.currentSettings["photo_options_showCentralPic"] == true) {
+                        if (!photoUrl && FractalView.currentSettings["photo_options_useSilhouette"] == false) {
+                            thisDIVtoUpdate.style.display = 'none';
+                        } else {
+                            thisDIVtoUpdate.style.display = 'block';
+                        }
+                    } else {
+                        thisDIVtoUpdate.style.display = "none";
+                    }
+                } else {
+                    // NOW DEAL with ALL THE REST 
+                    if (FractalView.currentSettings["photo_options_showAllPics"] == true) {
+                        if (!photoUrl && FractalView.currentSettings["photo_options_useSilhouette"] == false) {
+                            thisDIVtoUpdate.style.display = "none";
+                        } else {
+                            if (FractalView.currentSettings["photo_options_showPicsToN"] == true &&
+                                thisGenNum >= FractalView.currentSettings["photo_options_showPicsToValue"]) {
+                                    thisDIVtoUpdate.style.display = "none";
+                                } else {
+                                    thisDIVtoUpdate.style.display = "block";
+                                }
+
+                        }
+                    } else {
+                        thisDIVtoUpdate.style.display = "none";
+                    }
+                }
             }
 
             let X = 0;
@@ -1432,6 +1565,295 @@
     }
 
     /**
+     * Extract the LifeSpan BBBB - DDDD from a person
+     */
+    function getLifeSpan(person) {
+        let theLifeSpan = "";
+        let dateString = person._data.BirthDate;
+        if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10);
+            if (year) {
+                theLifeSpan += year;
+            } else {
+                theLifeSpan += "?";
+            }
+        } else {
+            theLifeSpan += "?";
+        }
+
+        theLifeSpan += " - ";
+
+        dateString = person._data.DeathDate;
+        if (dateString == "0000-00-00") {
+            // nothing to see here - person's still alive !  YAY!
+        } else if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10);
+            if (year) {
+                theLifeSpan += year;
+            } else {
+                theLifeSpan += "?";
+            }
+        } else {
+            theLifeSpan += "?";
+        }
+
+        return theLifeSpan;
+    }
+
+    /**
+     * Turn a wikitree Place into a location as per format string
+     */
+    function settingsStyleLocation(locString, formatString) {
+        // take the locString as input, and break it up into parts, separated by commas
+        // In an IDEAL world, the place name would be entered thusly:
+        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
+        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
+        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
+
+        if (!locString || locString == "") {
+            // if we get a dud location as input - return an emptry string
+            return "";
+        }
+        if (formatString == "Full") {
+            // there's no need for doing any parsing --> just return the whole kit and caboodle
+            return locString;
+        }
+
+        var parts = locString.split(",");
+        if (parts.length == 1) {
+            // there's no way to reformat/parse a single item location
+            return locString;
+        }
+
+        let town = parts[0];
+        let country = parts[parts.length - 1];
+        let region = "";
+        if (parts.length > 2) {
+            region = parts[parts.length - 2];
+        }
+
+        if (formatString == "Country") {
+            return country;
+        } else if (formatString == "Region") {
+            if (region > "") {
+                return region;
+            } else {
+                return country;
+            }
+        } else if (formatString == "Town") {
+            return town;
+        } else if (formatString == "TownCountry") {
+            return town + ", " + country;
+        } else if (formatString == "RegionCountry") {
+            if (region > "") {
+                return region + ", " + country;
+            } else {
+                return town + ", " + country;
+            }
+        } else if (formatString == "TownRegion") {
+            if (region > "") {
+                return town + ", " + region;
+            } else {
+                return town + ", " + country;
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Turn a wikitree formatted date into a date as per format string
+     */
+    function settingsStyleDate(dateString, formatString) {
+        // console.log("settingsStyleDate:", dateString, formatString);
+        if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10),
+                month = parseInt(parts[1], 10),
+                day = parseInt(parts[2], 10);
+            if (year) {
+                if (formatString == "YYYY") {
+                    return year;
+                }
+                if (month) {
+                    month2digits = month;
+                    if (month < 10) {
+                        month2digits = "0" + month;
+                    }
+                    if (day) {
+                        if (formatString == "YYYYMMDD") {
+                            day2digits = day;
+                            if (day < 10) {
+                                day2digits = "0" + day;
+                            }
+                            return `${year}-${month2digits}-${day2digits}`;
+                        } else if (formatString == "DDMMMYYYY") {
+                            return `${day} ${monthNames[month - 1]} ${year}`;
+                        } else if (formatString == "MMMDDYYYY") {
+                            return `${monthNames[month - 1]} ${day}, ${year}`;
+                        }
+                        return `${day} ${monthNames[month - 1]} ${year}`;
+                    } else {
+                        if (formatString == "YYYYMMDD") {
+                            return `${year}-${month2digits}`;
+                        } else if (formatString == "DDMMMYYYY") {
+                            return `${monthNames[month - 1]} ${year}`;
+                        } else if (formatString == "MMMDDYYYY") {
+                            return `${monthNames[month - 1]}, ${year}`;
+                        }
+                        return `${monthNames[month - 1]} ${year}`;
+                    }
+                } else {
+                    return year;
+                }
+            }
+        } else {
+            return dateString;
+        }
+        return "";
+    }
+
+    /**
+     * Return the date as required by the Settings options.
+     */
+    function getSettingsDateAndPlace(person, dateType) {
+        let datePlaceString = "";
+        let thisDate = "";
+        let thisPlace = "";
+        if (FractalView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
+            datePlaceString = getLifeSpan(person) + "<br/>";
+        }
+
+        if (dateType == "B") {
+            if (FractalView.currentSettings["date_options_showBirth"] == true) {
+                thisDate = settingsStyleDate(
+                    person._data.BirthDate,
+                    FractalView.currentSettings["date_options_dateFormat"]
+                );
+                if (FractalView.currentSettings["date_options_dateTypes"] != "detailed") {
+                    thisDate = "";
+                }
+
+                if (
+                    FractalView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                    FractalView.currentSettings["place_options_showBirth"] == true
+                ) {
+                    thisPlace = settingsStyleLocation(
+                        person.getBirthLocation(),
+                        FractalView.currentSettings["place_options_locationFormatBD"]
+                    );
+                } else {
+                    thisPlace = "";
+                }
+
+                if (thisDate > "" || thisPlace > "") {
+                    datePlaceString += "b. ";
+                }
+            }
+        } else if (dateType == "D") {
+            if (person._data.DeathDate == "0000-00-00") {
+                return "";
+            }
+            if (FractalView.currentSettings["date_options_showDeath"] == true) {
+                thisDate = settingsStyleDate(
+                    person._data.DeathDate,
+                    FractalView.currentSettings["date_options_dateFormat"]
+                );
+                if (FractalView.currentSettings["date_options_dateTypes"] != "detailed") {
+                    thisDate = "";
+                }
+                if (
+                    FractalView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                    FractalView.currentSettings["place_options_showDeath"] == true
+                ) {
+                    thisPlace = settingsStyleLocation(
+                        person.getDeathLocation(),
+                        FractalView.currentSettings["place_options_locationFormatBD"]
+                    );
+                } else {
+                    thisPlace = "";
+                }
+                if (thisDate > "" || thisPlace > "") {
+                    datePlaceString += "d. ";
+                }
+            }
+        }
+        if (thisDate > "" || thisPlace > "") {
+            if (thisDate > "") {
+                datePlaceString += thisDate;
+            }
+            if (thisDate > "" && thisPlace > "") {
+                datePlaceString += ", ";
+            }
+            if (thisPlace > "") {
+                datePlaceString += thisPlace;
+            }
+        }
+        // console.log("SENDING getSettingsDate: ", datePlaceString);
+        return datePlaceString;
+    }
+
+    /**
+     * Return the name as required by the Settings options.
+     */
+    function getSettingsName(person) {
+        const maxLength = 50;
+
+        let theName = "";
+
+        if (FractalView.currentSettings["name_options_firstName"] == "FirstNameAtBirth") {
+            theName = person._data.FirstName;
+        } else {
+            theName = person._data.RealName;
+        }
+
+        if (FractalView.currentSettings["name_options_middleName"] == true) {
+            if (person._data.MiddleName > "") {
+                theName += " " + person._data.MiddleName;
+            }
+        } else if (FractalView.currentSettings["name_options_middleInitial"] == true) {
+            if (person._data.MiddleInitial > "") {
+                theName += " " + person._data.MiddleInitial;
+            }
+        }
+
+        if (FractalView.currentSettings["name_options_nickName"] == true) {
+            if (person._data.Nicknames > "") {
+                theName += ' "' + person._data.Nicknames + '"';
+            }
+        }
+
+        if (FractalView.currentSettings["name_options_lastName"] == "LastNameAtBirth") {
+            theName += " " + person._data.LastNameAtBirth;
+        } else {
+            theName += " " + person._data.LastNameCurrent;
+        }
+
+        // console.log("SENDING getSettingsName: " , theName);
+        return theName;
+
+        // const birthName = person.getDisplayName();
+        // const middleInitialName = `${person._data.FirstName} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
+        // const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
+        // const fullMealDeallName = `${person._data.Prefix} ${person._data.FirstName} ${person._data.MiddleName} ${person._data.LastNameCurrent} ${person._data.Suffix} `;
+
+        // console.log("FULL: " , fullMealDeallName);
+
+        // return fullMealDeallName;
+
+        // if (birthName.length < maxLength) {
+        //     return birthName;
+        // } else if (middleInitialName.length < maxLength) {
+        //     return middleInitialName;
+        // } else if (noMiddleInitialName.length < maxLength) {
+        //     return noMiddleInitialName;
+        // } else {
+        //     return `${person._data.FirstName.substring(0, 1)}. ${person._data.LastNameAtBirth}`;
+        // }
+    }
+
+    /**
      * Shorten the name if it will be too long to display in full.
      */
     function getShortName(person) {
@@ -1463,4 +1885,156 @@
             return aBirthYear - bBirthYear;
         });
     }
+	
+	function getBackgroundColourFor(gen, pos, ahnNum) {
+         PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+         GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+         RedsArray = [
+            "#FFA0A0",
+            "#FFB0B0",
+            "#FFC0C0",
+            "#FFD0D0",
+            "#FFE0E0",
+            "#FFF0F0",
+            "#FFC0C8",
+            "#FFD0D8",
+            "#FFE0E8",
+            "#FFF0F8",
+            "#FFC0C0",
+            "#FFD0D0",
+            "#FFE0E0",
+            "#FFF0F0",
+            "#FFC8C0",
+            "#FFD8D0",
+            "#FFE8E0",
+            "#FFF8F0",
+        ];
+         BluesArray = [
+            "#A0A0FF",
+            "#B0B0FF",
+            "#C0C0FF",
+            "#D0D0FF",
+            "#E0E0FF",
+            "#F0F0FF",
+            "#C0C0FF",
+            "#D0D0FF",
+            "#E0E0FF",
+            "#F0F0FF",
+            "#C8C0FF",
+            "#D8D0FF",
+            "#E8E0FF",
+            "#F8F0FF",
+            "#C0C8FF",
+            "#D0D8FF",
+            "#E0E8FF",
+            "#F0F8FF",
+        ];
+         GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+    var ColourArray = [
+        "White",
+        "Gold",
+        "HotPink",
+        "LightCyan",
+        "Yellow",
+        "AntiqueWhite",
+        "MediumSpringGreen",
+        "Orange",
+        "DeepSkyBlue",
+        "PaleGoldenRod",
+        "Lime",
+        "Moccasin",
+        "PowderBlue",
+        "DarkGreen",
+        "Maroon",
+        "Navy",
+        "Brown",
+        "Indigo",
+        "RoyalBlue",
+        "FireBrick",
+        "Blue",
+        "SlateGrey",
+        "DarkMagenta",
+        "Red",
+        "DarkOrange",
+        "DarkGoldenRod",
+        "Green",
+        "MediumVioletRed",
+        "SteelBlue",
+        "Grey",
+        "MediumPurple",
+        "OliveDrab",
+        "Purple",
+        "DarkSlateBlue",
+        "SaddleBrown",
+        "Pink",
+        "Khaki",
+        "LemonChiffon",
+        "LightCyan",
+        "HotPink",
+        "Gold",
+        "Yellow",
+        "AntiqueWhite",
+        "MediumSpringGreen",
+        "Orange",
+    ];
+        let AllColoursArrays = [ColourArray ,  GreysArray, RedsArray, GreensArray, BluesArray, PastelsArray, RainbowArray];
+        let KeyColoursMatches = {"random":ColourArray ,  "Greys":GreysArray, "Reds":RedsArray, "Greens":GreensArray, "Blues":BluesArray, "Pastels":PastelsArray, "Rainbow":RainbowArray};
+
+        // start out with a random palette selected, so, if nothing else, at least there's something
+        let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
+
+        // GET the settings that determine what the colouring should look like (if at all)
+        let settingForColourBy = FractalView.currentSettings["colour_options_colourBy"];
+        if (settingForColourBy == "None") {
+            return "White";
+        } 
+
+
+        let settingForPalette = FractalView.currentSettings["colour_options_palette"];
+        if (KeyColoursMatches[settingForPalette]) {
+            thisColourArray = KeyColoursMatches[settingForPalette] ;
+        }
+        // console.log("COLOUR Settings are:" , settingForColourBy , settingForPalette);
+
+        if (ahnNum == 1) {
+            return thisColourArray[0];
+        }
+		
+		let numThisGen = 2 ** gen;
+		
+        if (settingForColourBy == "Gender") {
+            return thisColourArray[1 + ahnNum % 2];
+            
+            
+        } else if (settingForColourBy == "Generation") {
+            return thisColourArray[1 + (gen) % thisColourArray.length ];
+
+        } else if (settingForColourBy == "Grand") {		
+            return thisColourArray[1 + Math.floor(4*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "GGrand") {
+            return thisColourArray[1 + Math.floor(8*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "GGGrand") {
+            return thisColourArray[1 + Math.floor(16*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "GGGGrand") {
+            return thisColourArray[1 + Math.floor(32*pos/numThisGen) % thisColourArray.length ];
+			
+        } else if (settingForColourBy == "Town") {
+
+        } else if (settingForColourBy == "Region") {
+
+        } else if (settingForColourBy == "Country") {
+
+        } else if (settingForColourBy == "random") {
+            return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
+        }
+
+
+        return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
+		}
+	
+	
 })();

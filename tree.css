@@ -225,6 +225,7 @@ main {
 
 .centered {
   text-align: center;
+  justify-content: center;
 }
 .marginBottomZero {
   margin-bottom: 0;
