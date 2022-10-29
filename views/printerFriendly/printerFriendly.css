@@ -3,6 +3,7 @@
   grid-gap: 1px;
   margin: 1px;
   justify-content: center;
+  min-width: 279mm; /* Letter paper format, smallest we will allow - A4 is 297mm */
 }
 
 #profiles * {
@@ -49,7 +50,8 @@
   line-height: 1em;
 }
 
-.known-relative .locations div:nth-child(2) {
-  line-height: 0.5em;
-  vertival-align: middle;
+@media print {
+  #profiles {
+    min-width: initial;
+  }
 }

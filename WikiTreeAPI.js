@@ -60,7 +60,16 @@ window.wtDate = function (person, fieldName, options = {}) {
 
     let prop = person?.[fieldName];
 
-    if (!prop || prop === "0000-00-00") return "[unknown]";
+    if (!prop || prop === "0000-00-00") {
+        switch (fieldName) {
+            case "BirthDate":
+                return person?.["BirthDateDecade"];
+            case "DeathDate":
+                return person?.["DeathDateDecade"];
+            default:
+                return "[unknown]";
+        }
+    }
 
     let [day, month, year] = prop
         .split("-")
@@ -83,7 +92,7 @@ window.wtDate = function (person, fieldName, options = {}) {
                 MM: month ? String(month).padStart(2, "0") : null,
                 MMM: month ? MONTHS[month - 1].slice(0, 3) : null,
                 MMMM: month ? MONTHS[month - 1] : null,
-                YYYY: prop[2] ? String(year).padStart(4, "0") : null,
+                YYYY: year ? String(year).padStart(4, "0") : null,
             })[token];
         })
         .filter((token) => token !== null);
