@@ -172,7 +172,7 @@ window.FamilyGroup = class FamilyGroup {
         if (person.Id === 0) {
             return linkText;
         }
-        return `<a href='${this.baseWikiURL}/${person.Name}' title>${linkText}</a>`;
+        return `<a href='${this.baseWikiURL}/wiki/${person.Name}' title>${linkText}</a>`;
     }
 
     /**
