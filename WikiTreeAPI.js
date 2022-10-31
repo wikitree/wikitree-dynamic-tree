@@ -377,18 +377,6 @@ WikiTreeAPI.getWatchlist = function (limit, getPerson, getSpace, fields) {
 // This is just a wrapper for the JavaScript fetch() call, sending along necessary options for the WikiTree API.
 WikiTreeAPI.postToAPI = async function (postData) {
     const API_URL = "https://api.wikitree.com/api.php";
-    var ajax = $.ajax({
-        // The WikiTree API endpoint
-        url: API_URL,
-
-        // We tell the browser to send any cookie credentials we might have (in case we authenticated).
-        xhrFields: { withCredentials: true },
-
-        // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
-        type: "POST",
-        dataType: "json",
-        data: postData,
-    });
 
     let formData = new FormData();
     for (var key in postData) {
