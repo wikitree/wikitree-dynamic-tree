@@ -15,7 +15,22 @@ window.calendarView = class calendarView extends View {
             key: person_id,
             fields: "Name",
         }).then(function (data) {
-            var AllMonths = {
+            const MONTHS = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+
+            const AllMonths = {
                 Jan: [],
                 Feb: [],
                 Mar: [],
@@ -37,35 +52,15 @@ window.calendarView = class calendarView extends View {
             $(selector).append(`
                 <div class="watchCalendar">
                     <div class="fourteen columns center">
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Jan">January</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Feb">February</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Mar">March</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Apr">April</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-May">May</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Jun">June</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Jul">July</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Aug">August</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Sep">September</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Oct">October</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Nov">November</span>&nbsp;
-                        &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Dec">December</span>&nbsp;
-                    </div><br>
+                    ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}</span>`).join("")}
+                    </div>
                     <div class="loader">
                         <image width="200px" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
                     </div>
                     <div class="calendar">
-                        <div id="Jan" class="content"><h2>January</h2></div>
-                        <div id="Feb" class="content"><h2>February</h2></div>
-                        <div id="Mar" class="content"><h2>March</h2></div>
-                        <div id="Apr" class="content"><h2>April</h2></div>
-                        <div id="May" class="content"><h2>May</h2></div>
-                        <div id="Jun" class="content"><h2>June</h2></div>
-                        <div id="Jul" class="content"><h2>July</h2></div>
-                        <div id="Aug" class="content"><h2>August</h2></div>
-                        <div id="Sep" class="content"><h2>September</h2></div>
-                        <div id="Oct" class="content"><h2>October</h2></div>
-                        <div id="Nov" class="content"><h2>November</h2></div>
-                        <div id="Dec" class="content"><h2>December</h2></div>
+                    ${MONTHS.map(
+                        (month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`
+                    ).join("")}
                     </div>
                 </div>
             `);
@@ -114,11 +109,10 @@ window.calendarView = class calendarView extends View {
                         $(".calendar").css("display", "block");
                         $(".calendarMenu").css("display", "block");
                         // Open the Current Month
-                        $(`#${months[new Date().getMonth()]}`)
-                            .addClass("active box rounded orange")
-                            .css("display", "block");
+                        $(`#Oct`).addClass("box rounded orange").css("display", "block");
                     }
                 }
+
                 // Now we can sort our content for the calendar, by day and then by year.
                 for (var i = 0; i < 12; i++) {
                     var array = Object.keys(AllMonths)[i];
@@ -130,8 +124,9 @@ window.calendarView = class calendarView extends View {
                         }
                     });
                 }
+
                 // Then we insert the content into the correct month
-                // This could be simplified...
+                // Mapping does not appear to be working here...
                 for (var i = 0; i < x.length; i++) {
                     try {
                         $(`#Jan`).append(`
@@ -259,156 +254,36 @@ window.calendarView = class calendarView extends View {
                 }
             }
             // And here is just a bunch of random helpers.
-            // This could use some cleanup and simplification.
-            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             function getMonth(date) {
                 if (date.split("-")[0] != "0000" && date.split("-")[1] != "00" && date.split("-")[2] != "00") {
-                    return months[date.split("-")[1] - 1];
+                    return MONTHS[date.split("-")[1] - 1];
                 } else {
                     return undefined;
                 }
             }
 
             $("span[id^='month-']").click(function (e) {
-                $(".calendar").children().removeClass("active box rounded orange").css("display", "none").hide();
+                $(".calendar").children().removeClass("box rounded orange").css("display", "none").hide();
                 $(`#${e.target.id.replace("month-", "")}`)
-                    .addClass("active box rounded orange")
+                    .addClass("box rounded orange")
                     .css("display", "block");
             });
 
             function pushEvents(person, date, text, link, spouse) {
-                if (getMonth(date) == "Jan" && getMonth(date) != undefined) {
-                    AllMonths.Jan.push({
+                for (const monthName of MONTHS) {
+                    const [year, month, day] = date.split("-").map((item) => parseInt(item));
+                    if (month === 0 || monthName != MONTHS[month - 1]) continue;
+                    AllMonths[monthName.slice(0, 3)].push({
                         id: person.Name,
                         name: person.ShortName,
                         text: text,
                         date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
+                        year: year,
+                        month: month,
+                        day: day,
                         marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
                     });
-                } else if (getMonth(date) == "Feb" && getMonth(date) != undefined) {
-                    AllMonths.Feb.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Mar" && getMonth(date) != undefined) {
-                    AllMonths.Mar.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Apr" && getMonth(date) != undefined) {
-                    AllMonths.Apr.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "May" && getMonth(date) != undefined) {
-                    AllMonths.May.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Jun" && getMonth(date) != undefined) {
-                    AllMonths.Jun.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Jul" && getMonth(date) != undefined) {
-                    AllMonths.Jul.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Aug" && getMonth(date) != undefined) {
-                    AllMonths.Aug.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Sep" && getMonth(date) != undefined) {
-                    AllMonths.Sep.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Oct" && getMonth(date) != undefined) {
-                    AllMonths.Oct.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Nov" && getMonth(date) != undefined) {
-                    AllMonths.Nov.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                } else if (getMonth(date) == "Dec" && getMonth(date) != undefined) {
-                    AllMonths.Dec.push({
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: date.split("-")[0],
-                        month: date.split("-")[1],
-                        day: date.split("-")[2],
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
+                    break;
                 }
             }
         });
