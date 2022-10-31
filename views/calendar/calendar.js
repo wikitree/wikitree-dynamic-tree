@@ -51,7 +51,7 @@ window.calendarView = class calendarView extends View {
                         &nbsp;<span style="text-decoration:underline;cursor:pointer;" id="month-Dec">December</span>&nbsp;
                     </div><br>
                     <div class="loader">
-                        <image width="200px" src="views/calendar/wtloadericon.png" />
+                        <image width="200px" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
                     </div>
                     <div class="calendar">
                         <div id="Jan" class="content"><h2>January</h2></div>
