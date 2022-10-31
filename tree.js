@@ -88,6 +88,7 @@ window.ViewRegistry = class ViewRegistry {
     WT_ID_LINK = " #wt-id-link";
     VIEW_LOADER = "#view-loader";
     WT_STATUS = "#wt-status";
+    INFO_PANEL = "#info-panel";
 
     // index.html starts with a script that creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
     constructor(views, session_manager) {
@@ -156,7 +157,13 @@ window.ViewRegistry = class ViewRegistry {
 
         document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
 
-        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
+        // If we have both a starting Profile ID and a selected View ID, draw the desired view.
+        // If not, alert the user that they need to do something to begin.
+        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) {
+            submitBtn.click();
+        } else {
+            this.showWarning('Enter a WikiTree ID and select a View, then click "Go" to begin.');
+        }
     }
 
     // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View.
@@ -234,6 +241,8 @@ window.ViewRegistry = class ViewRegistry {
         viewDescription.innerHTML = view.description;
         name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
+        wtViewRegistry.showInfoPanel();
+
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
 
         const wtID = document.querySelector(this.WT_ID_TEXT).value;
@@ -241,6 +250,15 @@ window.ViewRegistry = class ViewRegistry {
         let url = window.location.href.split("?")[0].split("#")[0];
         url = `${url}#name=${wtID}&view=${viewSelect}`;
         history.replaceState("", "", url);
+    }
+
+    hideInfoPanel() {
+        let infoPanel = document.querySelector(this.INFO_PANEL);
+        infoPanel.classList.add("hidden");
+    }
+    showInfoPanel() {
+        let infoPanel = document.querySelector(this.INFO_PANEL);
+        infoPanel.classList.remove("hidden");
     }
 
     clearStatus() {

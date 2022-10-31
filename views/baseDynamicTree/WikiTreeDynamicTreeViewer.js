@@ -92,8 +92,23 @@
      */
     WikiTreeDynamicTreeViewer.prototype.load = function (id) {
         var self = this;
+        if (!id) {
+            wtViewRegistry.showError("A starting profile is required.");
+            return;
+        }
         self._load(id).then(function (person) {
-            self.drawTree(person);
+            if (person._data.Name) {
+                self.drawTree(person);
+            } else {
+                let err = `The starting profile data could not be retrieved.`;
+                if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
+                    err += ` You may need to be added to the starting profile's Trusted List.`;
+                } else {
+                    err += ` Try logging into the API.`;
+                }
+                wtViewRegistry.showError(err);
+                wtViewRegistry.hideInfoPanel();
+            }
         });
     };
 
@@ -610,13 +625,13 @@
         // Use birth name if it is not too long (note that it includes Suffix if present)
         const birthName = person.getDisplayName();
         if (birthName.length < maxLength) {
-			return birthName;
+            return birthName;
         }
 
         // birth name is too long, so try successive shorter versions, but first determine a few fields with which
         // to construct shorter versions
         const lastNameAtBirth = person._data.LastNameAtBirth;
-        const hasSuffix = person._data.Suffix && person._data.Suffix.length > 0
+        const hasSuffix = person._data.Suffix && person._data.Suffix.length > 0;
         let lastNameAtBirthWithSuffix = lastNameAtBirth;
         let nameToSplit = birthName;
         if (person._data.Suffix) {
@@ -625,27 +640,30 @@
             // Remove the suffix from birthName so we can split it into the other names
             let idx = birthName.lastIndexOf(person._data.Suffix);
             if (idx > 0) {
-                nameToSplit = nameToSplit.substring(0, idx-1);
+                nameToSplit = nameToSplit.substring(0, idx - 1);
             }
         }
         // Remove lastNameAtBirth from nameToSplit so we can split the result into the other names
-        nameToSplit = nameToSplit.replace(lastNameAtBirth, '');
-        let names = nameToSplit.split(' ');
+        nameToSplit = nameToSplit.replace(lastNameAtBirth, "");
+        let names = nameToSplit.split(" ");
 
         // However, if the above resulted in only one name and we have a FirstName field, use the latter to
         // obtain the other names on the assumption that it might contain all the names (as for profiles that
         // use 'no middle name' and have all the names in FirstName).
         if (person._data.FirstName && names.length <= 1) {
-			names = person._data.FirstName.split(' ');
-		}
+            names = person._data.FirstName.split(" ");
+        }
         const firstName = names[0];
 
         // Obtain the middle name initials. We don't trust the field MiddleInitial since it does not always contain all initials
         // (it seems to assume there is only one middle name).
-		let middleInitials = '';
+        let middleInitials = "";
         if (names.length > 1) {
-            middleInitials = names.slice(1).map(item => item.substring(0, 1).toUpperCase()).join(' ');
-        } else if (person._data.MiddleInitial != '.') {
+            middleInitials = names
+                .slice(1)
+                .map((item) => item.substring(0, 1).toUpperCase())
+                .join(" ");
+        } else if (person._data.MiddleInitial != ".") {
             middleInitials = person._data.MiddleInitial;
         }
 
@@ -667,7 +685,7 @@
         let firstInitial = firstName.substring(0, 1);
         let allInitials = firstInitial;
         if (middleInitials.length > 0) {
-            allInitials = `${firstInitial} ${middleInitials}`
+            allInitials = `${firstInitial} ${middleInitials}`;
         }
 
         if (hasSuffix) {
@@ -685,16 +703,16 @@
         }
 
         // Try <first name> <middle initials> <last name>
-		nameToReturn = `${firstName} ${middleInitials} ${lastNameAtBirth}`;
-		if (nameToReturn.length < maxLength) {
-			return nameToReturn;
-		}
+        nameToReturn = `${firstName} ${middleInitials} ${lastNameAtBirth}`;
+        if (nameToReturn.length < maxLength) {
+            return nameToReturn;
+        }
 
-         // Try <first name> <last name>
-         nameToReturn = `${firstName} ${lastNameAtBirth}`;
-         if (nameToReturn.length < maxLength) {
-			return nameToReturn;
-		}
+        // Try <first name> <last name>
+        nameToReturn = `${firstName} ${lastNameAtBirth}`;
+        if (nameToReturn.length < maxLength) {
+            return nameToReturn;
+        }
 
         // Try <all initials> <last name>
         nameToReturn = `${allInitials} ${lastNameAtBirth}`;
@@ -704,7 +722,7 @@
 
         // Use <first initial> <last name>
         return `${firstInitial} ${lastNameAtBirth}`;
-}
+    }
 
     /**
      * Sort by the birth year from earliest to latest.

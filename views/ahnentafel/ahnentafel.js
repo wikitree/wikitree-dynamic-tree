@@ -162,17 +162,29 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
         if (data.length != 1) {
-            $(this.selector).html(`There was an error starting with ${this.startId}.`);
+            wtViewRegistry.showError(`There was an error starting with ${this.startId}.`);
             return;
         }
 
         // Yay, we have a valid starting person.
         // If the profile is private and the viewing user is not on the Trusted List, we still might not be able to continue.
         let p = data[0].person;
+        if (!p?.Name) {
+            let err = `The starting profile data could not be retrieved.`;
+            if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
+                err += ` You may need to be added to the starting profile's Trusted List.`;
+            } else {
+                err += ` Try logging into the API.`;
+            }
+            wtViewRegistry.showError(err);
+            wtViewRegistry.hideInfoPanel();
+            return;
+        }
         if (p.Privacy < 50 && !p.Gender) {
-            $(this.selector).html(
+            wtViewRegistry.showError(
                 `<p>Sorry, this profile is <a href="/wiki/Privacy">Private</a> and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
             );
+            wtViewRegistry.hideInfoPanel();
             return;
         }
 
