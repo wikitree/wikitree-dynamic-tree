@@ -126,16 +126,9 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     fullName(person) {
-        const nm = [
-            this.grabField(person, "Prefix"),
-            this.grabField(person, "FirstName"),
-            this.grabField(person, "MiddleName"),
-        ];
-        if (person.LastNameCurrent !== person.LastNameAtBirth) {
-            nm.push(`(${this.grabField(person, "LastNameAtBirth")})`);
-        }
-        const full = nm.concat([this.grabField(person, "LastNameCurrent"), this.grabField(person, "Suffix")]);
-        return full.join(" ").trim();
+        return window.wtCompleteName(person, {
+            fields: ["Prefix", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent"],
+        });
     }
 
     /**
@@ -145,8 +138,6 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     shortName(person) {
-        // const nm = [this.grabField(person, "FirstName"), this.grabField(person, "LastNameAtBirth")];
-        // return nm.join(" ").trim();
         return person.ShortName;
     }
 
@@ -157,7 +148,6 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     birthName(person) {
-        // return `${person.FirstName} ${person.LastNameAtBirth}`;
         return person.BirthName;
     }
 
@@ -230,37 +220,6 @@ window.FamilyGroup = class FamilyGroup {
     }
 
     /**
-     * Create a readable date for the given data and qualifier
-     *
-     * @param aDate
-     * @param qualifier
-     * @returns {string}
-     */
-    readableDate(aDate, qualifier) {
-        const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        if (!aDate || aDate === "0000-00-00" || qualifier === "blank") {
-            return "";
-        }
-        const dateParts = aDate.split("-"); // y, m, d
-        let ans = "";
-        if (qualifier === "before") {
-            ans += "before ";
-        } else if (qualifier === "after") {
-            ans += "after ";
-        } else if (qualifier === "guess") {
-            ans += "about ";
-        }
-        if (dateParts[2] !== "00") {
-            ans += `${parseInt(dateParts[2])} `;
-        }
-        if (dateParts[1] !== "00") {
-            ans += `${months[parseInt(dateParts[1])]} `;
-        }
-        ans += dateParts[0];
-        return ans;
-    }
-
-    /**
      * Create a link back to this page to switch to the given person—ignore if it is the same person already displayed
      *
      * @param person
@@ -295,7 +254,8 @@ window.FamilyGroup = class FamilyGroup {
             if (birth_place.length > 1) {
                 birth_place = ` in ${birth_place}`;
             }
-            html += `Born: ${this.readableDate(person.BirthDate, person.DataStatus.BirthDate)}${birth_place}<br/>`;
+            const birthDate = window.wtDate(person, "BirthDate", { formatString: "D MMM YYYY" });
+            html += `Born: ${birthDate}${birth_place}<br/>`;
         } else if (person.BirthDateDecade) {
             html += `Born: ${person.BirthDateDecade}<br/>`;
         }
@@ -305,7 +265,8 @@ window.FamilyGroup = class FamilyGroup {
                 if (death_place.length > 1) {
                     death_place = ` in ${death_place}`;
                 }
-                html += `Died: ${this.readableDate(person.DeathDate, person.DataStatus.DeathDate)}${death_place}<br/>`;
+                const deathDate = window.wtDate(person, "DeathDate", { formatString: "D MMM YYYY" });
+                html += `Died: ${deathDate}${death_place}<br/>`;
             } else if (person.DeathDateDecade) {
                 html += `Died: ${person.DeathDateDecade}<br/>`;
             }
@@ -512,7 +473,7 @@ window.FamilyGroup = class FamilyGroup {
                         let html = `<div class="fv_familyBlock">
                             <h2>${person.RealName} and ${this.fullName(spouse)}</h2>
                             <h3>${person.RealName} married ${this.birthName(spouse)}, 
-                            ${this.readableDate(spouse.marriage_date, spouse.data_status.marriage_date)}
+                            ${window.wtDate(spouse, "marriage_date", { formatString: "D MM YYYY" })}
                             ${marr_place}</h3>`;
                         html += this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
                         html += "</div>";

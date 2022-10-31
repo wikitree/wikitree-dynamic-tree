@@ -14,7 +14,8 @@ const dateTokenCache = {};
 /**
  * Serializes WikiTree fuzzy date using formatting string
  * @param  {object}  person Person object received from WikiTree API
- * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
+ * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`,
+ *                      `marriage_date` (if 'person' is a 'Spouse')
  * @param  {object}  options object containing foloowing options
  *                      * {string} [formatString="MMM DD, YYYY"]
  *                      * {boolean} [withCertainty=true]
