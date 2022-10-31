@@ -15,6 +15,140 @@ const localTesting = false;
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
+const dateTokenCache = {};
+
+/**
+ * Serializes WikiTree fuzzy date using formatting string
+ * @param  {object}  person Person object received from WikiTree API
+ * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`,
+ *                      `marriage_date` (if 'person' is a 'Spouse')
+ * @param  {object}  options object containing foloowing options
+ *                      * {string} [formatString="MMM DD, YYYY"]
+ *                      * {boolean} [withCertainty=true]
+ * @return {string} Serialized date
+ */
+window.wtDate = function (person, fieldName, options = {}) {
+    const MONTHS = [
+        // just to keep it more compact and not too long (more than 120 characters)
+        ...["January", "February", "March", "April", "May", "June"],
+        ...["July", "August", "September", "October", "November", "December"],
+    ];
+
+    const CERTAINTY_MAP = { guess: "about", before: "before", after: "after" }; // '' & 'certain' will produce ''
+
+    const DEFAULT_OPTIONS = { formatString: "MMM DD, YYYY", withCertainty: true };
+    options = { ...DEFAULT_OPTIONS, ...options };
+
+    function tokenize(formatString) {
+        if (dateTokenCache[formatString]) return dateTokenCache[formatString];
+
+        let prev = null;
+        let tokens = [];
+
+        for (let letter of formatString) {
+            if (prev !== letter && ("DMY".includes(prev) || "DMY".includes(letter))) {
+                // prev and letter are different and one of them is one on D|M|Y
+                tokens[tokens.length] = letter;
+            } else if (
+                (!"DMY".includes(prev) && !"DMY".includes(letter)) || // both prev and letter are not one of D|M|Y
+                (prev === letter && "DMY".includes(letter)) || // prev and letter are same and one of D|M|Y
+                (!"DMY".includes(letter) && (prev !== letter || !"DMY".includes(prev)))
+            ) {
+                tokens[tokens.length - 1] += letter;
+            }
+            prev = letter;
+        }
+
+        dateTokenCache[formatString] = tokens;
+        return tokens;
+    }
+
+    tokens = tokenize(options.formatString);
+
+    let prop = person?.[fieldName];
+
+    if (!prop || prop === "0000-00-00") {
+        switch (fieldName) {
+            case "BirthDate":
+                return person?.["BirthDateDecade"];
+            case "DeathDate":
+                return person?.["DeathDateDecade"];
+            default:
+                return "[unknown]";
+        }
+    }
+
+    let [day, month, year] = prop
+        .split("-")
+        .reverse()
+        .map((x) => parseInt(x));
+
+    if (month === 0) {
+        // month is unknown, rest doesn't makes sense
+        tokens = tokens.filter((token) => token.includes("Y"));
+    }
+
+    tokens = tokens
+        .map((token) => {
+            if (!"DMY".includes(token[0])) return token;
+
+            return Object({
+                D: day ? day : null,
+                DD: day ? String(day).padStart(2, "0") : null,
+                M: month ? month : null,
+                MM: month ? String(month).padStart(2, "0") : null,
+                MMM: month ? MONTHS[month - 1].slice(0, 3) : null,
+                MMMM: month ? MONTHS[month - 1] : null,
+                YYYY: year ? String(year).padStart(4, "0") : null,
+            })[token];
+        })
+        .filter((token) => token !== null);
+
+    let serialized = tokens.join("");
+    serialized = serialized.replaceAll(" ,", ","); // solves one of many possible issues when the day is unknown
+
+    certainty = options.withCertainty ? `${CERTAINTY_MAP?.[person?.DataStatus[fieldName]] || ""} ` : "";
+
+    return `${certainty}${serialized}`;
+};
+
+/**
+ * Serializes WikiTree complete name
+ * @param  {object}  person Person object received from WikiTree API
+ * @param  {object}  options object containing foloowing options
+ *                      * {array[string]} fields - possible values: `FirstName`, `LastNameCurrent`, `LastNameAtBirth`,
+ *                                                                  `MiddleName`, `Nickname`, `Prefix`, `Suffix`
+ * @return {string} Serialized name
+ */
+window.wtCompleteName = function (person, options = {}) {
+    const DEFAULT_OPTIONS = { fields: ["FirstName", "LastNameCurrent", "LastNameAtBirth", "MiddleName"] };
+    options = { ...DEFAULT_OPTIONS, ...options };
+
+    const has = (field) => options.fields.includes(field);
+
+    if (has("LastNameAtBirth") && has("LastNameCurrent")) {
+        lastName =
+            person?.LastNameCurrent !== person.LastNameAtBirth
+                ? (person?.LastNameAtBirth ? `(${person.LastNameAtBirth}) ` : null) + person.LastNameCurrent
+                : person?.LastNameAtBirth || null;
+    } else if (has("LastNameAtBirth")) {
+        lastName = person?.LastNameAtBirth ? person.LastNameAtBirth : person?.LastNameCurrent || null;
+    } else if (has("LastNameCurrent")) {
+        lastName = person?.LastNameCurrent ? person.LastNameCurrent : person?.LastNameAtBirth || null;
+    }
+
+    const result = [
+        has("Prefix") && person?.Prefix ? person.Prefix : null,
+        has("FirstName") && (person?.FirstName || person.RealName) ? person.FirstName || person.RealName : null,
+        has("MiddleName") && person?.MiddleName ? person.MiddleName : null,
+        has("Nickname") && person?.Nicknames ? `<span class="nickname">„${person.Nicknames}"</span>` : null,
+        lastName,
+        has("Suffix") && person?.Suffix ? person.Suffix : null,
+    ];
+
+    return result.filter((part) => part !== null).join(" ");
+};
+
 // Our basic constructor for a Person. We expect the "person" data from the API returned result
 // (see getPerson below). The basic fields are just stored in the internal _data array.
 // We pull out the Parent and Child elements as their own Person objects.
@@ -126,11 +260,14 @@ WikiTreeAPI.Person = class Person {
 // });
 //
 WikiTreeAPI.getPerson = function (id, fields) {
-    return WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: fields.join(","), resolveRedirect: 1 }).then(
-        function (result) {
-            return new WikiTreeAPI.Person(result[0].person);
-        }
-    );
+    return WikiTreeAPI.postToAPI({
+        action: "getPerson",
+        key: id,
+        fields: fields.join(","),
+        resolveRedirect: 1,
+    }).then(function (result) {
+        return new WikiTreeAPI.Person(result[0].person);
+    });
 };
 // To get a set of Ancestors for a given id, we POST to the API's getAncestors action. When we get a result back,
 // we leave the result as an array of objects
@@ -215,9 +352,43 @@ WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
     });
 };
 
+// To get the Watchlist for the logged in user, we POST to the API's getWatchlist action. When we get a result back,
+// we leave the result as an array of objects
+// Note that postToAPI returns the Promise from jquerys .ajax() call.
+// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
+
+// So we can use this through our asynchronous actions with something like:
+// WikiTree.getWatchlist(limit, getPerson, getSpace, fields).then(function(result) {
+//    // the "result" here is that from our API call. The profile data is in result[0].watchlist, which will be an array of objects
+// });
+WikiTreeAPI.getWatchlist = function (limit, getPerson, getSpace, fields) {
+    return WikiTreeAPI.postToAPI({
+        action: "getWatchlist",
+        limit: limit,
+        getPerson: getPerson,
+        getSpace: getSpace,
+        fields: fields.join(","),
+        resolveRedirect: 1,
+    }).then(function (result) {
+        return result[0].watchlist;
+    });
+};
+
 // This is just a wrapper for the JavaScript fetch() call, sending along necessary options for the WikiTree API.
 WikiTreeAPI.postToAPI = async function (postData) {
     const API_URL = "https://api.wikitree.com/api.php";
+    var ajax = $.ajax({
+        // The WikiTree API endpoint
+        url: API_URL,
+
+        // We tell the browser to send any cookie credentials we might have (in case we authenticated).
+        xhrFields: { withCredentials: true },
+
+        // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
+        type: "POST",
+        dataType: "json",
+        data: postData,
+    });
 
     let formData = new FormData();
     for (var key in postData) {

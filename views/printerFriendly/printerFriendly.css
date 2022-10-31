@@ -1,0 +1,57 @@
+#profiles {
+  display: grid;
+  grid-gap: 1px;
+  margin: 1px;
+  justify-content: center;
+  min-width: 279mm; /* Letter paper format, smallest we will allow - A4 is 297mm */
+}
+
+#profiles * {
+  font-size: 0.95em;
+}
+
+#profiles > div {
+  outline: 1px solid #000;
+  display: flex;
+  align-items: stretch;
+  padding: 0.2em 0.5em;
+  text-align: center;
+  justify-items: stretch;
+}
+
+.unknown-relative {
+  flex-direction: column;
+  justify-content: center;
+}
+
+.unknown-relative > p {
+  font-size: 0.8em;
+  opacity: 0.5;
+  margin: 0;
+}
+
+.known-relative {
+  flex-direction: column;
+  justify-content: center;
+}
+
+.known-relative > div > * {
+  margin: 0.1em 0;
+}
+
+.known-relative > .photo {
+  max-height: 100px;
+  object-fit: contain;
+  margin: 0.2em 0;
+}
+
+.known-relative h2 {
+  font-size: 1em;
+  line-height: 1em;
+}
+
+@media print {
+  #profiles {
+    min-width: initial;
+  }
+}
