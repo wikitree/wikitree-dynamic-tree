@@ -667,6 +667,7 @@
             middleInitials = person._data.MiddleInitial;
         }
 
+        let nameToReturn = "";
         if (hasSuffix) {
             // Try <first name> <middle initials> <last name> <suffix>
             nameToReturn = `${firstName} ${middleInitials} ${lastNameAtBirthWithSuffix}`;

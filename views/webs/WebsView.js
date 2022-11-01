@@ -1,16 +1,16 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * Ancestor Webs uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
- 
-* There is a Button Bar TABLE at the top of the container, 
+
+* There is a Button Bar TABLE at the top of the container,
  * then the SVG graphic is below that.
- * 
+ *
  * The FIRST chunk of code in the SVG graphic are the <line> objects for the connectors of the Ancestor Webs,
  * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
- * 
+ *
  * The SECOND chunk in the SVG graphic are the individual people in the Ancestor Webs, created by the Nodes and the d3 deep magic
  * they are each basically at the end of the day a <g class"person ancestor" transformed object with a translation from 0,0 ></g>
- * 
+ *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the WebsView, then calls a redraw
  */
 (function () {
@@ -128,7 +128,6 @@
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     WebsView.currentSettings = {};
 
-    
     WebsView.prototype.meta = function () {
         return {
             title: "Ancestor Webs",
@@ -145,147 +144,153 @@
 
         var self = this;
 
+        WebsView.websSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
+            viewClassName: "WebsView",
+            tabs: [
+                // {
+                //     name: "general",
+                //     label: "General",
+                //     hideSelect: true,
+                //     subsections: [{ name: "WebsGeneral", label: "General settings" }],
+                //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                // },
+                {
+                    name: "names",
+                    label: "Initials / Names",
+                    hideSelect: true,
+                    subsections: [{ name: "WebsNames", label: "NAMES format" }],
+                    // comment: "These options apply to how the names will be displayed in each chart.",
+                },
+                // {
+                //     name: "dates",
+                //     label: "Dates",
+                //     hideSelect: true,
+                //     subsections: [{ name: "WebsDates", label: "DATES of events     " }],
+                //     comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
+                // },
+                // {
+                //     name: "places",
+                //     label: "Places",
+                //     hideSelect: true,
+                //     subsections: [{ name: "WebsPlaces", label: "PLACES of events     " }],
+                //     comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
+                // },
+                {
+                    name: "paths",
+                    label: "Multi-Paths",
+                    hideSelect: true,
+                    subsections: [{ name: "WebsPaths", label: "Multi-Path" }],
+                    comment: "These options determine how the multi-paths to a SINGLE ancestor are displayed.",
+                },
+            ],
+            optionsGroups: [
+                // {
+                //     tab: "general",
+                //     subsection: "WebsGeneral",
+                //     category: "general",
+                //     subcategory: "options",
+                //     options: [
+                //         {
+                //             optionName: "font",
+                //             type: "radio",
+                //             label: "Font",
+                //             values: [
+                //                 { value: "Arial", text: "Arial" },
+                //                 { value: "Courier", text: "Courier" },
+                //                 { value: "Times", text: "Times" },
+                //                 { value: "Fantasy", text: "Fantasy" },
+                //                 { value: "Script", text: "Script" },
+                //             ],
+                //             defaultValue: "Arial",
+                //         },
+                //     ],
+                // },
 
-    WebsView.websSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
-        viewClassName: "WebsView",
-        tabs: [
-            // {
-            //     name: "general",
-            //     label: "General",
-            //     hideSelect: true,
-            //     subsections: [{ name: "WebsGeneral", label: "General settings" }],
-            //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
-            // },
-            {
-                name: "names",
-                label: "Initials / Names",
-                hideSelect: true,
-                subsections: [{ name: "WebsNames", label: "NAMES format" }],
-                // comment: "These options apply to how the names will be displayed in each chart.",
-            },
-            // {
-            //     name: "dates",
-            //     label: "Dates",
-            //     hideSelect: true,
-            //     subsections: [{ name: "WebsDates", label: "DATES of events     " }],
-            //     comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
-            // },
-            // {
-            //     name: "places",
-            //     label: "Places",
-            //     hideSelect: true,
-            //     subsections: [{ name: "WebsPlaces", label: "PLACES of events     " }],
-            //     comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
-            // },
-            {
-                name: "paths",
-                label: "Multi-Paths",
-                hideSelect: true,
-                subsections: [{ name: "WebsPaths", label: "Multi-Path" }],
-                comment: "These options determine how the multi-paths to a SINGLE ancestor are displayed.",
-            },
-        ],
-        optionsGroups: [
-            // {
-            //     tab: "general",
-            //     subsection: "WebsGeneral",
-            //     category: "general",
-            //     subcategory: "options",
-            //     options: [
-            //         {
-            //             optionName: "font",
-            //             type: "radio",
-            //             label: "Font",
-            //             values: [
-            //                 { value: "Arial", text: "Arial" },
-            //                 { value: "Courier", text: "Courier" },
-            //                 { value: "Times", text: "Times" },
-            //                 { value: "Fantasy", text: "Fantasy" },
-            //                 { value: "Script", text: "Script" },
-            //             ],
-            //             defaultValue: "Arial",
-            //         },
-            //     ],
-            // },
+                {
+                    tab: "names",
+                    subsection: "WebsNames",
+                    category: "name",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "sect1",
+                            comment: "Multi-Ancestor Views: [Full/Unique/Repeat/Common]",
+                            type: "br",
+                        },
 
-            {
-                tab: "names",
-                subsection: "WebsNames",
-                category: "name",
-                subcategory: "options",
-                options: [
-                    { optionName: "sect1", comment: "Multi-Ancestor Views: [Full/Unique/Repeat/Common]", type: "br" },
+                        {
+                            optionName: "multiNameFormat",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "F", text: "First Initial only" },
+                                { value: "br" },
+                                { value: "FL", text: "First Initial + LNAB Initial" },
+                                { value: "br" },
+                                { value: "FML", text: "First Initial(s) + Middle Initial(s) + LNAB Initial" },
+                                { value: "br" },
+                                {
+                                    value: "FLname",
+                                    text: "Short Name (First Name + LNAB, first initial if needed)",
+                                },
+                                { value: "br" },
+                                { value: "FnameLname", text: "Full Name (First Name + LNAB)" },
+                            ],
+                            defaultValue: "FL",
+                        },
 
-                    {
-                        optionName: "multiNameFormat",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "F", text: "First Initial only" },
-                            { value: "br" },
-                            { value: "FL", text: "First Initial + LNAB Initial" },
-                            { value: "br" },
-                            { value: "FML", text: "First Initial(s) + Middle Initial(s) + LNAB Initial" },
-                            { value: "br" },
-                            { value: "FLname", text: "Short Name (First Name + LNAB, fniceirst initial if needed)" },
-                            { value: "br" },
-                            { value: "FnameLname", text: "Full Name (First Name + LNAB)" },
-                        ],
-                        defaultValue: "FL",
-                    },
+                        { optionName: "sect2", comment: "Single Ancestor Views:", type: "br" },
 
-                    { optionName: "sect2", comment: "Single Ancestor Views:", type: "br" },
+                        {
+                            optionName: "indiNameFormat",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "F", text: "First Initial only" },
+                                { value: "br" },
+                                { value: "FL", text: "First Initial + LNAB Initial" },
+                                { value: "br" },
+                                { value: "FML", text: "First Initial(s) + Middle Initial(s) + LNAB Initial" },
+                                { value: "br" },
+                                { value: "FLname", text: "Short Name (First Name + LNAB, first initial if needed)" },
+                                { value: "br" },
+                                { value: "FnameLname", text: "Full Name (First Name + LNAB)" },
+                            ],
+                            defaultValue: "FLname",
+                        },
+                    ],
+                },
 
-                    {
-                        optionName: "indiNameFormat",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "F", text: "First Initial only" },
-                            { value: "br" },
-                            { value: "FL", text: "First Initial + LNAB Initial" },
-                            { value: "br" },
-                            { value: "FML", text: "First Initial(s) + Middle Initial(s) + LNAB Initial" },
-                            { value: "br" },
-                            { value: "FLname", text: "Short Name (First Name + LNAB, first initial if needed)" },
-                            { value: "br" },
-                            { value: "FnameLname", text: "Full Name (First Name + LNAB)" },
-                        ],
-                        defaultValue: "FLname",
-                    },
-                ],
-            },
+                {
+                    tab: "paths",
+                    subsection: "WebsPaths",
+                    category: "path",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "multiPathFormat",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "jagged", text: "use jagged path, excerpt from Full Pedigree Tree route" },
+                                { value: "br" },
+                                { value: "smooth", text: "use smooth linear vertical path" },
+                                { value: "br" },
+                            ],
+                            defaultValue: "smooth",
+                        },
 
-            {
-                tab: "paths",
-                subsection: "WebsPaths",
-                category: "path",
-                subcategory: "options",
-                options: [
-                    {
-                        optionName: "multiPathFormat",
-                        type: "radio",
-                        label: "",
-                        values: [
-                            { value: "jagged", text: "use jagged path, excerpt from Full Pedigree Tree route" },
-                            { value: "br" },
-                            { value: "smooth", text: "use smooth linear vertical path" },
-                            { value: "br" },
-                        ],
-                        defaultValue: "smooth",
-                    },
-
-                    // {
-                    //     optionName: "showCouple",
-                    //     label: "Show the Ancestral Couple at the top, if descendant of both",
-                    //     type: "checkbox",
-                    //     defaultValue: false,
-                    // },
-                ],
-            },
-            //
-        ],
-    });
+                        // {
+                        //     optionName: "showCouple",
+                        //     label: "Show the Ancestral Couple at the top, if descendant of both",
+                        //     type: "checkbox",
+                        //     defaultValue: false,
+                        // },
+                    ],
+                },
+                //
+            ],
+        });
 
         // Setup zoom and pan
         var zoom = d3.behavior
@@ -335,13 +340,11 @@
             '<DIV id=SummaryMessageArea style="text-align:center;"></DIV>';
 
         var settingsHTML = "";
-        
+
         settingsHTML += WebsView.websSettingsOptionsObject.createdSettingsDIV; // +
 
-        
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML + settingsHTML;
-
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -356,24 +359,22 @@
             }
         }
 
-
-    WebsView.cancelSettings = function () {
-        let theDIV = document.getElementById("settingsDIV");
-        theDIV.style.display = "none";
-    };
-
-    WebsView.toggleSettings = function () {
-        console.log("TIME to TOGGLE the SETTINGS NOW !!!", WebsView.websSettingsOptionsObject);
-        console.log(WebsView.websSettingsOptionsObject.getDefaultOptions());
-        let theDIV = document.getElementById("settingsDIV");
-        console.log("SETTINGS ARE:", theDIV.style.display);
-        if (theDIV.style.display == "none") {
-            theDIV.style.display = "block";
-        } else {
+        WebsView.cancelSettings = function () {
+            let theDIV = document.getElementById("settingsDIV");
             theDIV.style.display = "none";
-        }
-    };
+        };
 
+        WebsView.toggleSettings = function () {
+            console.log("TIME to TOGGLE the SETTINGS NOW !!!", WebsView.websSettingsOptionsObject);
+            console.log(WebsView.websSettingsOptionsObject.getDefaultOptions());
+            let theDIV = document.getElementById("settingsDIV");
+            console.log("SETTINGS ARE:", theDIV.style.display);
+            if (theDIV.style.display == "none") {
+                theDIV.style.display = "block";
+            } else {
+                theDIV.style.display = "none";
+            }
+        };
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         var svg = d3
@@ -412,9 +413,9 @@
             });
 
         /*
-            CREATE the Ancestor Webs Backdrop 
+            CREATE the Ancestor Webs Backdrop
             * Made of Lines connecting two ancestors together
-            
+
         */
 
         for (let index = 0; index < 2 ** WebsView.maxNumGens; index++) {
@@ -445,7 +446,7 @@
         WebsView.websSettingsOptionsObject.buildPage();
         WebsView.websSettingsOptionsObject.setActiveTab("names");
         WebsView.currentSettings = WebsView.websSettingsOptionsObject.getDefaultOptions();
-    };;
+    };
 
     function findMatchingNodeByAhnNum(ahnNum, theNodes) {
         for (let index = 0; index < theNodes.length; index++) {
@@ -618,13 +619,19 @@
 
     WebsView.comingSoon = function (num) {
         if (num == 1) {
-            showTemporaryMessageBelowButtonBar("WHEN this feature is implemented,<BR>it will allow you to ADD additional starting WikiTree IDs<BR>with which to find and compare common ancestors.");
+            showTemporaryMessageBelowButtonBar(
+                "WHEN this feature is implemented,<BR>it will allow you to ADD additional starting WikiTree IDs<BR>with which to find and compare common ancestors."
+            );
         } else if (num == 2) {
-            showTemporaryMessageBelowButtonBar("WHEN this feature is implemented,<BR>it will show a Web of all the Ancestors<BR>that are COMMON to the people entered.");
+            showTemporaryMessageBelowButtonBar(
+                "WHEN this feature is implemented,<BR>it will show a Web of all the Ancestors<BR>that are COMMON to the people entered."
+            );
         } else if (num == 3) {
-            showTemporaryMessageBelowButtonBar("WHEN this feature is implemented,<BR>it will show the Multi-Path web from a specific Ancestor to each of the people descendant.");
+            showTemporaryMessageBelowButtonBar(
+                "WHEN this feature is implemented,<BR>it will show the Multi-Path web from a specific Ancestor to each of the people descendant."
+            );
         }
-    }
+    };
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
         // console.log(theMessage);
@@ -1141,7 +1148,9 @@
                 // DEFAULT STYLE used to be style="background-color: ${borderColor} ;"
 
                 let thisFontSize = 14;
-                if (ancestorObject.ahnNum == 1) { thisFontSize = 18; }
+                if (ancestorObject.ahnNum == 1) {
+                    thisFontSize = 18;
+                }
 
                 return `
                 <div  id=wedgeBoxFor${
@@ -1256,7 +1265,7 @@
                     let ltrsNeeded = thisNameNow.length;
                     theInfoBox.parentNode.parentNode.setAttribute("x", -8 * ltrsNeeded);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 16 * ltrsNeeded);
-                     
+
                     if (WebsView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
                         // document.getElementById("nameDivFor" + ancestorObject.ahnNum).innerHTML = getNameAsPerSettings(ancestorObject.person)/*  + " " + getLastInitial(ancestorObject.person) */;
                         let theClr = "Yellow";
@@ -1537,19 +1546,19 @@
                     } else if (element > 2) {
                         // OKAY - first thing we have to do is to figure out how many discrete newX values we have, (numDvalues)
                         let discreteXs = [];
-                        let indexOfDiscretes = []
+                        let indexOfDiscretes = [];
 
                         for (let miniIndex = 0; miniIndex < IndexPerGen[key].length; miniIndex++) {
                             const thisSubElement = IndexPerGen[key][miniIndex];
-                            let whereThisFound = discreteXs.indexOf( newOrder[thisSubElement][4]["newX"] ) ;
-                            if (whereThisFound == -1 ) {
-                                discreteXs.push(newOrder[thisSubElement][4]["newX"] );
-                                indexOfDiscretes.push( [miniIndex]);
+                            let whereThisFound = discreteXs.indexOf(newOrder[thisSubElement][4]["newX"]);
+                            if (whereThisFound == -1) {
+                                discreteXs.push(newOrder[thisSubElement][4]["newX"]);
+                                indexOfDiscretes.push([miniIndex]);
                             } else {
                                 indexOfDiscretes[whereThisFound].push(miniIndex);
                             }
                         }
-                        console.log("There are ",discreteXs.length," discrete X-values out of ", element, " entries");
+                        console.log("There are ", discreteXs.length, " discrete X-values out of ", element, " entries");
 
                         // THEN we need to sort them left to right by Ahnentafel # .... or .. at least we SHOULD do that...
                         // --> insert code here to do that to make sure ..... but ... going to skip this step for now and see what happens ... how bad could it be ???
@@ -1557,13 +1566,13 @@
                         // AND FINALLY ... then assign newX = maxWidth * (pos# - (1 +numDvalues)/2 ) * (2/ numDvalues) ; where pos# = 1 .. numDvalues
                         for (let iDiscrete = 0; iDiscrete < discreteXs.length; iDiscrete++) {
                             const thisDiscreteX = discreteXs[iDiscrete];
-                            const thisNewX = maxWidth * (1 + iDiscrete  - (1 + discreteXs.length)/2 ) * (2/  discreteXs.length);
+                            const thisNewX =
+                                maxWidth * (1 + iDiscrete - (1 + discreteXs.length) / 2) * (2 / discreteXs.length);
                             for (let jDiscrete = 0; jDiscrete < indexOfDiscretes[iDiscrete].length; jDiscrete++) {
                                 const anOriginalIndexNum = indexOfDiscretes[iDiscrete][jDiscrete];
-                             
-                                newOrder[anOriginalIndexNum][4]["newX"] = thisNewX;    
+
+                                newOrder[anOriginalIndexNum][4]["newX"] = thisNewX;
                             }
-                            
                         }
                         /**
                          * 0 - 2/2 ; 1 - 2/2 = -1/2 , 0/2
@@ -1579,7 +1588,6 @@
                          * 1 , 2 , 3 , 4 == 1 - 2.5 // 2 - 2.5 // 3 - 2.5 // 4 - 2.5  ALL * 2/4
                          */
 
-
                         // THEN ... when all THAT is said and done, we still have to cycle through them all, and check for an instance of the AncestorAtTheTop !
                         for (let index = 0; index < IndexPerGen[key].length; index++) {
                             const thisSubElement = IndexPerGen[key][index];
@@ -1587,13 +1595,11 @@
                                 newOrder[thisSubElement][4]["newX"] = 0;
                             }
                         }
-                        
-
                     }
                 }
             }
-        } 
-        
+        }
+
         console.log(nodes);
     }
 
@@ -1810,37 +1816,42 @@
     }
 
     /**
-     * Shorten the name if it will be too long to display in full.
+     * Construct <first name> <last name> (first initial if needed)
      */
-    function getShortName(person) {
+    function getFLname(person) {
         const maxLength = 20;
 
+        // MiddleInitial is sometimes just ".", so we ignore it for now. We can fix/add it when
+        // we factor name construction out into the person object
         const birthName = person.getDisplayName();
-        const middleInitialName = `${person._data.FirstName} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
-        const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
+        //const middleInitialName = `${person.getFirstName()} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
+        const noMiddleInitialName = `${getFirstName(person)} ${person._data.LastNameAtBirth}`;
 
         if (birthName.length < maxLength) {
             return birthName;
-        } else if (middleInitialName.length < maxLength) {
-            return middleInitialName;
+            // } else if (middleInitialName.length < maxLength) {
+            //     return middleInitialName;
         } else if (noMiddleInitialName.length < maxLength) {
             return noMiddleInitialName;
         } else {
-            return `${person._data.FirstName.substring(0, 1)}. ${person._data.LastNameAtBirth}`;
+            return `${getFirstInitial(person)}. ${person._data.LastNameAtBirth}`;
         }
     }
     /**
      * Get the first initial of the first name only
      */
     function getFirstInitial(person) {
-        return `${person._data.FirstName.substring(0, 1)}`;
-    }    
-    /**
+        return getFirstName(person).substring(0, 1);
+    }
     /**
      * Get the first initial of the Last Name at Birth
      */
     function getLastInitial(person) {
-        return `${person._data.LastNameAtBirth.substring(0, 1)}`;
+        if (person._data.LastNameAtBirth) {
+            return `${person._data.LastNameAtBirth.substring(0, 1)}`;
+        } else {
+            return "?";
+        }
     }
 
     /**
@@ -1848,9 +1859,7 @@
      */
     function getAllInitials(person) {
         let allInits = "";
-        if (person._data.FirstName) {
-            allInits += getInitials(person._data.FirstName);
-        }
+        allInits += getInitials(getFirstName(person));
         if (person._data.MiddleName) {
             allInits += getInitials(person._data.MiddleName);
         }
@@ -1869,49 +1878,59 @@
         return inits;
     }
     /**
-     * Get the full first name only
+     * @returns The first name of the profile, or "?" if none could be found
      */
     function getFirstName(person) {
-        return `${person._data.FirstName}`;
+        // A non-trusted private profile does not have a FirstName or BirthName field, so we better check
+        if (person._data.FirstName) {
+            return person._data.FirstName;
+        } else if (person._data.BirthNamePrivate) {
+            return person._data.BirthNamePrivate.split(" ")[0];
+        } else {
+            return "?";
+        }
     }
     /**
      * Get the full first name + LNAB
      */
     function getFirstLNAB(person) {
-        return `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
+        return `${getFirstName(person)} ${person._data.LastNameAtBirth}`;
     }
-    
 
-    
     /**
      * Get the appropriate Name or set of Initials, based on the TYPE of viewMode AND the current Settings
      */
     function getNameAsPerSettings(person) {
         let thisNameSetting = "";
         let thisName = "";
-        if (WebsView.viewMode == "Full" || WebsView.viewMode == "Unique" || WebsView.viewMode == "Repeats" || WebsView.viewMode == "Common" ) {
+        if (
+            WebsView.viewMode == "Full" ||
+            WebsView.viewMode == "Unique" ||
+            WebsView.viewMode == "Repeats" ||
+            WebsView.viewMode == "Common"
+        ) {
             thisNameSetting = WebsView.currentSettings["name_options_multiNameFormat"];
-        } else  {
+        } else {
             thisNameSetting = WebsView.currentSettings["name_options_indiNameFormat"];
         }
 
         if (thisNameSetting == "F" || thisNameSetting == "FL" || thisNameSetting == "FML") {
             thisName = getFirstInitial(person);
         }
-        if (  thisNameSetting == "FL"  ) {
+        if (thisNameSetting == "FL") {
             thisName += getLastInitial(person);
         }
-        
-        if (  thisNameSetting == "FML"  ) {
+
+        if (thisNameSetting == "FML") {
             thisName = getAllInitials(person);
         }
         if (thisNameSetting == "FLname") {
-            thisName = getShortName(person);
+            thisName = getFLname(person);
         }
         if (thisNameSetting == "FnameLname") {
             thisName = getFirstLNAB(person);
         }
-    
+
         return thisName;
     }
 
@@ -1929,6 +1948,6 @@
 
     // Shortcut function to quickly retrieve the primary person's first name
     function primaryPersonFirstName() {
-        return thePeopleList[WebsView.myAhnentafel.list[1]]._data.FirstName;
+        return getFirstName(thePeopleList[WebsView.myAhnentafel.list[1]]);
     }
 })();
