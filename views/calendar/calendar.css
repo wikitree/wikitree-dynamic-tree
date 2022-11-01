@@ -1,10 +1,10 @@
-.ancCalendar {
-  overflow: hidden;
-}
-
 .calendar {
   display: none;
   height: 100%;
+}
+
+.loaderIMG {
+  width: 200px;
 }
 
 .loader {
@@ -56,4 +56,5 @@ span[id^="month-"] {
 
 div.fourteen.columns.center {
   margin-bottom: 10px;
+  overflow-wrap: break-word;
 }

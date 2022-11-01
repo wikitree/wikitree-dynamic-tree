@@ -47,20 +47,20 @@ window.calendarView = class calendarView extends View {
 
             /* The default view for the Calendar is a vertical display of events from the logged in
              * user's watchlist. This is based on the original Special:Anniversaries view.
+             * To add a new view later, we need to destroy the current view $(".watchCalendar").remove();
              */
-            $(".ancCalendar").remove();
             $(selector).append(`
                 <div class="watchCalendar">
                     <div class="fourteen columns center">
-                    ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}</span>`).join("")}
+                        ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}&#8203</span>`).join("")}
                     </div>
                     <div class="loader">
-                        <image width="200px" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
+                        <image class="loaderIMG" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
                     </div>
                     <div class="calendar">
-                    ${MONTHS.map(
-                        (month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`
-                    ).join("")}
+                        ${MONTHS.map(
+                            (month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`
+                        ).join("")}
                     </div>
                 </div>
             `);
@@ -100,8 +100,6 @@ window.calendarView = class calendarView extends View {
                                 );
                             }
                         }
-                        //if (getMonth(x[i].Spouses[i].marriage_date) != undefined) {
-                        //spanushEvents(x[i], x[i].Spouses.marriage_date, "  married ", );
                     }
                     if (i == x.length - 1) {
                         // Hide Loader when finished iterating through profile
@@ -109,7 +107,9 @@ window.calendarView = class calendarView extends View {
                         $(".calendar").css("display", "block");
                         $(".calendarMenu").css("display", "block");
                         // Open the Current Month
-                        $(`#Oct`).addClass("box rounded orange").css("display", "block");
+                        $(`#${getMonth(new Date().toISOString().split("T")[0]).slice(0, 3)}`)
+                            .addClass("box rounded orange")
+                            .css("display", "block");
                     }
                 }
 
@@ -126,134 +126,37 @@ window.calendarView = class calendarView extends View {
                 }
 
                 // Then we insert the content into the correct month
-                // Mapping does not appear to be working here...
-                for (var i = 0; i < x.length; i++) {
-                    try {
-                        $(`#Jan`).append(`
-                        <span>${AllMonths.Jan[i].day} ${getMonth(AllMonths.Jan[i].date)}
-                        ${AllMonths.Jan[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Jan[i].id}">
-                        ${AllMonths.Jan[i].name}</a> ${AllMonths.Jan[i].text} ${
-                            AllMonths.Jan[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Jan[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Feb`).append(`
-                        <span>${AllMonths.Feb[i].day} ${getMonth(AllMonths.Feb[i].date)}
-                        ${AllMonths.Feb[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Feb[i].id}">
-                        ${AllMonths.Feb[i].name}</a> ${AllMonths.Feb[i].text} ${
-                            AllMonths.Feb[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Feb[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Mar`).append(`
-                        <span>${AllMonths.Mar[i].day} ${getMonth(AllMonths.Mar[i].date)}
-                        ${AllMonths.Mar[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Mar[i].id}">
-                        ${AllMonths.Mar[i].name}</a> ${AllMonths.Mar[i].text} ${
-                            AllMonths.Mar[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Mar[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Apr`).append(`
-                        <span>${AllMonths.Apr[i].day} ${getMonth(AllMonths.Apr[i].date)}
-                        ${AllMonths.Apr[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Apr[i].id}">
-                        ${AllMonths.Apr[i].name}</a> ${AllMonths.Apr[i].text} ${
-                            AllMonths.Apr[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Apr[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#May`).append(`
-                        <span>${AllMonths.May[i].day} ${getMonth(AllMonths.May[i].date)}
-                        ${AllMonths.May[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.May[i].id}">
-                        ${AllMonths.May[i].name}</a> ${AllMonths.May[i].text} ${
-                            AllMonths.May[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.May[i].id
-                        }/6">share tree image</a>]
-
-                        </span><br>
-                    `);
-                        $(`#Jun`).append(`
-                        <span>${AllMonths.Jun[i].day} ${getMonth(AllMonths.Jun[i].date)}
-                        ${AllMonths.Jun[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Jun[i].id}">
-                        ${AllMonths.Jun[i].name}</a> ${AllMonths.Jun[i].text} ${
-                            AllMonths.Jun[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Jun[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Jul`).append(`
-                        <span>${AllMonths.Jul[i].day} ${getMonth(AllMonths.Jul[i].date)}
-                        ${AllMonths.Jul[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Jul[i].id}">
-                        ${AllMonths.Jul[i].name}</a> ${AllMonths.Jul[i].text} ${
-                            AllMonths.Jul[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Jul[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Aug`).append(`
-                        <span>${AllMonths.Aug[i].day} ${getMonth(AllMonths.Aug[i].date)}
-                        ${AllMonths.Aug[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Aug[i].id}">
-                        ${AllMonths.Aug[i].name}</a> ${AllMonths.Aug[i].text} ${
-                            AllMonths.Aug[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Aug[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Sep`).append(`
-                        <span>${AllMonths.Sep[i].day} ${getMonth(AllMonths.Sep[i].date)}
-                        ${AllMonths.Sep[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Sep[i].id}">
-                        ${AllMonths.Sep[i].name}</a> ${AllMonths.Sep[i].text} ${
-                            AllMonths.Sep[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Sep[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Oct`).append(`
-                            <span>${AllMonths.Oct[i].day} ${getMonth(AllMonths.Oct[i].date)}
-                            ${AllMonths.Oct[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Oct[i].id}">
-                            ${AllMonths.Oct[i].name}</a> ${AllMonths.Oct[i].text} ${
-                            AllMonths.Oct[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Oct[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                            `);
-                        $(`#Nov`).append(`
-                        <span>${AllMonths.Nov[i].day} ${getMonth(AllMonths.Nov[i].date)}
-                        ${AllMonths.Nov[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Nov[i].id}">
-                        ${AllMonths.Nov[i].name}</a> ${AllMonths.Nov[i].text} ${
-                            AllMonths.Nov[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Nov[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                        $(`#Dec`).append(`
-                        <span>${AllMonths.Dec[i].day} ${getMonth(AllMonths.Dec[i].date)}
-                        ${AllMonths.Dec[i].year} <a href="https://www.wikitree.com/wiki/${AllMonths.Dec[i].id}">
-                        ${AllMonths.Dec[i].name}</a> ${AllMonths.Dec[i].text} ${
-                            AllMonths.Dec[i].marriage
-                        } [<span class="small"><a href="https://www.wikitree.com/treewidget/${
-                            AllMonths.Dec[i].id
-                        }/6">share tree image</a>]
-                        </span><br>
-                    `);
-                    } catch {}
+                for (const monthName of MONTHS) {
+                    // loop over all months
+                    const shortName = monthName.slice(0, 3);
+                    let events = AllMonths[shortName];
+                    $(`#${shortName}`).append(
+                        events
+                            .map(
+                                (event) => `
+                                    <div>
+                                        ${event.day} ${getMonth(event.date)} ${event.year}
+                                        <a href="https://www.wikitree.com/wiki/${event.id}">${event.name}</a>
+                                        ${event.text} ${event.marriage} 
+                                        [<span class="small"><a href="https://www.wikitree.com/treewidget/${
+                                            event.id
+                                        }/6">share tree image</a>
+                                        </span>]
+                                    </div>`
+                            )
+                            .join("")
+                    );
                 }
             }
-            // And here is just a bunch of random helpers.
+            // Set our view handler
+            $("span[id^='month-']").click(function (e) {
+                $(".calendar").children().removeClass("box rounded orange").css("display", "none").hide();
+                $(`#${e.target.id.replace("month-", "")}`)
+                    .addClass("box rounded orange")
+                    .css("display", "block");
+            });
+
+            // And here is our helpers.
             function getMonth(date) {
                 if (date.split("-")[0] != "0000" && date.split("-")[1] != "00" && date.split("-")[2] != "00") {
                     return MONTHS[date.split("-")[1] - 1];
@@ -261,13 +164,6 @@ window.calendarView = class calendarView extends View {
                     return undefined;
                 }
             }
-
-            $("span[id^='month-']").click(function (e) {
-                $(".calendar").children().removeClass("box rounded orange").css("display", "none").hide();
-                $(`#${e.target.id.replace("month-", "")}`)
-                    .addClass("box rounded orange")
-                    .css("display", "block");
-            });
 
             function pushEvents(person, date, text, link, spouse) {
                 for (const monthName of MONTHS) {
