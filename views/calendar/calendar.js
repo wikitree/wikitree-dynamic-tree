@@ -166,10 +166,9 @@ window.calendarView = class calendarView extends View {
             }
 
             function pushEvents(person, date, text, link, spouse) {
-                for (const monthName of MONTHS) {
-                    const [year, month, day] = date.split("-").map((item) => parseInt(item));
-                    if (month === 0 || monthName != MONTHS[month - 1]) continue;
-                    AllMonths[monthName.slice(0, 3)].push({
+                    const [year, month, day] = date.split("-").map((item) => parseInt(item));                    
+                    if (year == 0 || month === 0 || day === 0) return; // we don't know full date -> we don't want this                    
+                    AllMonths[MONTHS[month-1].slice(0, 3)].push({ 
                         id: person.Name,
                         name: person.ShortName,
                         text: text,
