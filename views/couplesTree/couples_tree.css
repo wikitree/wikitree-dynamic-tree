@@ -1,0 +1,69 @@
+#view-container {
+  --content-padding: 0;
+}
+
+h4 {
+  font-size: 14px;
+}
+
+.couple .box {
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 5px;
+  text-align: center;
+  padding: 5px;
+  background-color: #fff;
+}
+
+.children-list ol {
+  margin: 0;
+}
+
+.person .cname {
+  font-size: 14px;
+}
+
+.drop-button {
+  font-size: 14px;
+  margin: 0;
+  text-transform: none;
+  padding: 1px 6px;
+  color: black;
+}
+
+.drop-button:hover {
+  cursor: pointer;
+  color: #fc7171;
+}
+
+.altSpouse {
+  font-size: 14px;
+}
+
+.alt-spouse-list-wrapper h4 {
+  margin: 12px;
+}
+
+.spouse-list ol,
+.children-list ol {
+  border: none;
+  margin: 6px;
+  padding-top: 0px;
+  padding-left: 20px;
+  --content-padding: 0;
+}
+
+.children-list ol {
+  background-color: #f0f0ef;
+}
+
+.minus {
+  fill: #fff;
+  cursor: pointer;
+  stroke: #333;
+  stroke-width: 1px;
+}
+
+.minus:hover {
+  stroke: #fcbb71;
+}
