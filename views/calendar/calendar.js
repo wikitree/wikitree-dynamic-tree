@@ -166,20 +166,18 @@ window.calendarView = class calendarView extends View {
             }
 
             function pushEvents(person, date, text, link, spouse) {
-                    const [year, month, day] = date.split("-").map((item) => parseInt(item));                    
-                    if (year == 0 || month === 0 || day === 0) return; // we don't know full date -> we don't want this                    
-                    AllMonths[MONTHS[month-1].slice(0, 3)].push({ 
-                        id: person.Name,
-                        name: person.ShortName,
-                        text: text,
-                        date: date,
-                        year: year,
-                        month: month,
-                        day: day,
-                        marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
-                    });
-                    break;
-                }
+                const [year, month, day] = date.split("-").map((item) => parseInt(item));
+                if (year == 0 || month === 0 || day === 0) return; // we don't know full date -> we don't want this
+                AllMonths[MONTHS[month - 1].slice(0, 3)].push({
+                    id: person.Name,
+                    name: person.ShortName,
+                    text: text,
+                    date: date,
+                    year: year,
+                    month: month,
+                    day: day,
+                    marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
+                });
             }
         });
     }
