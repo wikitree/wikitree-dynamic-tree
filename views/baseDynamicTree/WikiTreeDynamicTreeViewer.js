@@ -631,7 +631,7 @@
         // birth name is too long, so try successive shorter versions, but first determine a few fields with which
         // to construct shorter versions
         const lastNameAtBirth = person._data.LastNameAtBirth;
-        const hasSuffix = person._data.Suffix && person._data.Suffix.length > 0;
+        const hasSuffix = person.hasSuffix();
         let lastNameAtBirthWithSuffix = lastNameAtBirth;
         let nameToSplit = birthName;
         if (person._data.Suffix) {

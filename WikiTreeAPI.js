@@ -11,6 +11,7 @@
 //     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
 //     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
 const localTesting = false;
+const logit = localTesting || false; // changing false to true allows one to turn on logging even if not local testing
 
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
@@ -162,8 +163,7 @@ WikiTreeAPI.Person = class Person {
     constructor(data) {
         this._data = data;
         let name = this.getDisplayName();
-        condLog(`New person data: for ${this.getId()}: ${name} (${getRichness(data)})`, data);
-
+        condLog(`<--New person data: for ${this.getId()}: ${name} (${getRichness(data)})`, data);
         if (data.Parents) {
             condLog(`Setting parents for ${this.getId()}: ${name}...`);
             for (var p in data.Parents) {
@@ -179,6 +179,8 @@ WikiTreeAPI.Person = class Person {
                 this._data.Children[c] = new WikiTreeAPI.makePerson(data.Children[c]);
             }
         }
+        this._data.noMoreSpouses = data.DataStatus ? data.DataStatus.Spouse == "blank" : false;
+        condLog(`>--New person done: for ${this.getId()}: ${name} (${getRichness(data)})`);
     }
 
     // Basic "getters" for the data elements.
@@ -242,6 +244,60 @@ WikiTreeAPI.Person = class Person {
     getRichness() {
         return getRichness(this._data);
     }
+    isFullyEnriched() {
+        return getRichness(this._data) == MAX_RICHNESS;
+    }
+    getSpouses() {
+        return this._data.Spouses;
+    }
+    getSpouse(id) {
+        if (id) {
+            if (this._data.Spouses) {
+                return this._data.Spouses[id];
+            }
+            return undefined;
+        }
+        if (this.hasSpouse()) {
+            return this._data.Spouses[this._data.FirstSpouseId];
+        }
+        if (this.hasNoSpouse() || this.isDiedYoung()) {
+            return NoSpouse;
+        }
+        return undefined;
+    }
+    hasAParent() {
+        return this.getFatherId() || this.getMotherId();
+    }
+    // Note that !hasSpouse() is not the same as hasNoSpouse(). The former just means that the current
+    // profile does not have any spouse field(s) loaded while the latter means the profile definitely
+    // has no spouse.
+    hasSpouse() {
+        return this._data.Spouses && this._data.FirstSpouseId;
+    }
+    hasNoSpouse() {
+        return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0;
+    }
+    hasSuffix() {
+        return this._data.Suffix && this._data.Suffix.length > 0;
+    }
+    isMale() {
+        return this.getGender() == "Male";
+    }
+    isFemale() {
+        return this.getGender() == "Female";
+    }
+    isDiedYoung() {
+        return this._data.isDiedYoung || this.calculateDiedYoung();
+    }
+    calculateDiedYoung() {
+        if (this._data.BirthDate && this._data.DeathDate) {
+            const age = this._data.DeathDate.split("-")[0] - this._data.BirthDate.split("-")[0];
+            this._data.isDiedYoung = age >= 0 && age <= 10;
+        } else {
+            this._data.isDiedYoung = false;
+        }
+        return this._data.isDiedYoung;
+    }
 
     // We use a few "setters". For the parents, we want to update the Parents Person objects as well as the ids
     // themselves.
@@ -272,30 +328,82 @@ WikiTreeAPI.Person = class Person {
         this._data.Children = children;
     }
     setSpouses(data) {
-        // this._data.FirstSpouseId = undefined
+        this._data.FirstSpouseId = undefined;
         if (data.Spouses) {
             condLog(
                 `setSpouses for ${this.getId()}: ${this.getDisplayName()}: ${summaryOfPeople(data.Spouses)}`,
                 data.Spouses
             );
             let list = [];
+
+            // The primary profile retrieved via an API call does not have marriage date and -place fields.
+            // That data is only present in each of the Spouses sub-records retrieved with the primary profile.
+            // However, such a spouse record has no Parents or Children records. If we then later retrieve the
+            // spouse record again via API in order to obtain their Parents or Children records, that new record
+            // no longer has the marriage data. Therefore, here we copy the marriage data (if any) from the Spouses
+            // records to a new MarriageDates field at the Person._data level. We also collect and sort the
+            // marriage dates in order to determine who was the first wife.
+            this._data.MarriageDates = {};
             for (let s in data.Spouses) {
-                list.push(WikiTreeAPI.makePerson(data.Spouses[s]));
+                let spouseData = data.Spouses[s];
+                let mDate = spouseData.marriage_date || "0000-00-00";
+                this._data.MarriageDates[s] = {
+                    marriage_date: mDate,
+                    marriage_end_date: spouseData.marriage_end_date || "0000-00-00",
+                    marriage_location: spouseData.marriage_location || "0000-00-00",
+                };
+                //list.push(WikiTreeAPI.makePerson(spouseData));
+                data.Spouses[s] = WikiTreeAPI.makePerson(spouseData);
+                list.push({ id: s, marriage_date: mDate });
             }
-            sortByMarriageDate(list);
             if (list.length > 0) {
-                // this._data.FirstSpouseId = list[0].getId();
-                for (let spouse of list) {
-                    this._data.Spouses[spouse.getId()] = spouse;
-                }
+                sortByMarriageYear(list);
+                this._data.FirstSpouseId = list[0].id;
             }
         }
+    }
+    copySpouses(person) {
+        this._data.FirstSpouseId = person._data.FirstSpouseId;
+        this._data.Spouses = person._data.Spouses;
+        this._data.MarriageDates = person._data.MarriageDates;
+    }
+    refreshFrom(newPerson) {
+        if (isSameOrHigherRichness(this._data, newPerson._data)) {
+            console.error(
+                `Suspect Person.refreshFrom called on ${this.toString()} for less enriched ${newPerson.toString()}`
+            );
+        }
+        let mother = newPerson.getMother();
+        let father = newPerson.getFather();
+
+        if (mother) {
+            this.setMother(mother);
+        }
+        if (father) {
+            this.setFather(father);
+        }
+        if (newPerson.hasSpouse()) {
+            this.copySpouses(newPerson);
+        }
+        this.setChildren(newPerson.getChildren());
     }
 
     toString() {
         return `${this.getId()}: ${this.getDisplayName()} (${this.getRichness()})`;
     }
 }; // End Person class definition
+
+class NullPerson extends WikiTreeAPI.Person {
+    constructor() {
+        super({ Id: "0000", Children: [], DataStatus: { Spouse: "blank" } });
+        this.isNoSpouse = true;
+    }
+    toString() {
+        return "No Spouse";
+    }
+}
+
+const NoSpouse = new NullPerson();
 
 const peopleCache = new Map();
 WikiTreeAPI.clearCache = function () {
@@ -315,7 +423,7 @@ WikiTreeAPI.clearCache = function () {
  * @returns a Person object
  */
 WikiTreeAPI.getPerson = async function (id, fields) {
-    let cachedPerson = peopleCache.get(id);
+    const cachedPerson = peopleCache.get(id);
     if (cachedPerson && isRequestCoveredByPerson(fields, cachedPerson)) {
         condLog(`getPerson from cache ${cachedPerson.toString()}`);
         return new Promise((resolve, reject) => {
@@ -339,14 +447,14 @@ WikiTreeAPI.getPerson = async function (id, fields) {
  * @returns a Person object. It will also have been cached for re-use
  */
 WikiTreeAPI.makePerson = function (data) {
-    let id = data.Id;
-    let cachedPerson = peopleCache.get(id);
+    const id = data.Id;
+    const cachedPerson = peopleCache.get(id);
     if (cachedPerson && isSameOrHigherRichness(cachedPerson._data, data)) {
         condLog(`makePerson from cache ${cachedPerson.toString()}`);
         return cachedPerson;
     }
 
-    let newPerson = new WikiTreeAPI.Person(data);
+    const newPerson = new WikiTreeAPI.Person(data);
     condLog(`makePerson caching ${newPerson.toString()}`);
     peopleCache.set(id, newPerson);
     return newPerson;
@@ -366,15 +474,14 @@ WikiTreeAPI.makePerson = function (data) {
  * @param {*} fields An array of field names to retrieve for the given person
  * @returns a Promise
  */
-WikiTreeAPI.getPersonViaAPI = function (id, fields) {
-    return WikiTreeAPI.postToAPI({
+WikiTreeAPI.getPersonViaAPI = async function (id, fields) {
+    const result = await WikiTreeAPI.postToAPI({
         action: "getPerson",
         key: id,
         fields: fields.join(","),
         resolveRedirect: 1,
-    }).then(function (result) {
-        return new WikiTreeAPI.Person(result[0].person);
     });
+    return new WikiTreeAPI.Person(result[0].person);
 };
 
 /**
@@ -398,17 +505,15 @@ WikiTreeAPI.getPersonViaAPI = function (id, fields) {
  * @param {*} fields
  * @returns
  */
-WikiTreeAPI.getAncestors = function (id, depth, fields) {
-    return WikiTreeAPI.postToAPI({
+WikiTreeAPI.getAncestors = async function (id, depth, fields) {
+    const result = await WikiTreeAPI.postToAPI({
         action: "getAncestors",
         key: id,
         depth: depth,
         fields: fields.join(","),
         resolveRedirect: 1,
-    }).then(function (result) {
-        // console.log( result[0].ancestors );
-        return result[0].ancestors;
     });
+    return result[0].ancestors;
 };
 
 /**
@@ -448,7 +553,7 @@ WikiTreeAPI.getAncestors = function (id, depth, fields) {
  *                    - getSpouses	If true, the spouses are returned
  * @returns a Promise for the JSON in the returned API response
  */
-WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
+WikiTreeAPI.getRelatives = async function (IDs, fields, options = {}) {
     let getRelativesParameters = {
         action: "getRelatives",
         keys: IDs.join(","),
@@ -465,10 +570,28 @@ WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
     }
     // console.log("getRelativesParameters: ", getRelativesParameters);
 
-    return WikiTreeAPI.postToAPI(getRelativesParameters).then(function (result) {
-        // console.log("RESULT from getRelatives:", result );
-        return result[0].items;
+    const result = await WikiTreeAPI.postToAPI(getRelativesParameters);
+    return result[0].items;
+};
+
+WikiTreeAPI.getSpouseAndChildrenNames = async function (id) {
+    let cachedPerson = peopleCache.get(id);
+    if (cachedPerson && cachedPerson.getChildren() && cachedPerson.getSpouses()) {
+        condLog(`getSpouseAndChildrenNames from cache ${cachedPerson.toString()}`);
+        return new Promise((resolve, reject) => {
+            resolve(cachedPerson);
+        });
+    }
+
+    const result = await WikiTreeAPI.postToAPI({
+        action: "getRelatives",
+        keys: id,
+        fields: "Id,Name,FirstName,LastName,Derived.BirthName,Derived.BirthNamePrivate,LastNameAtBirth,MiddleInitial,BirthDate,DeathDate",
+        getChildren: 1,
+        getSpouses: 1,
     });
+    // We do not cache the new person constructed here because it only contains name fields
+    return new WikiTreeAPI.Person(result[0].items[0].person);
 };
 
 /**
@@ -508,7 +631,8 @@ WikiTreeAPI.getWatchlist = function (limit, getPerson, getSpace, fields) {
  * @returns
  */
 WikiTreeAPI.postToAPI = async function (postData) {
-    var API_URL = "https://api.wikitree.com/api.php";
+    condLog(`>>>>> postToAPI ${postData.action} ${postData.key || postData.keys}`);
+    const API_URL = "https://api.wikitree.com/api.php";
 
     let formData = new FormData();
     for (var key in postData) {
@@ -597,18 +721,19 @@ WikiTreeAPI.cookie = function (key, value, options) {
 };
 
 /**
- * Sort a list of Person objects by their marriage date.
- * A person with no marriage date is placed at the end.
+ * Sort a list of objects containing 'marriage_date' by the year of the latter.
+ * An with no marriage date is placed at the end.
  */
-function sortByMarriageDate(list) {
+function sortByMarriageYear(list) {
     list.sort((a, b) => {
-        const aYear = a._data.marriage_date ? a._data.marriage_date.split("-")[0] : 9999;
-        const bYear = b._data.marriage_date ? b._data.marriage_date.split("-")[0] : 9999;
+        const aYear = a.marriage_date ? a.marriage_date.split("-")[0] : 9999;
+        const bYear = b.marriage_date ? b.marriage_date.split("-")[0] : 9999;
 
-        return aYear - bYear;
+        return (aYear == 0 ? 9999 : aYear) - (bYear == 0 ? 9999 : bYear);
     });
 }
 
+const MAX_RICHNESS = 0b111;
 function getRichness(data) {
     let r = 0;
     if (data.Parents) {
@@ -637,6 +762,12 @@ function getRequestRichness(fields) {
     return r;
 }
 
+/**
+ *
+ * @param {*} a
+ * @param {*} b
+ * @returns true iff person data a has the same or higher richness of person data b
+ */
 function isSameOrHigherRichness(a, b) {
     let bRichness = getRichness(b);
     return (getRichness(a) & bRichness) == bRichness;
@@ -665,7 +796,6 @@ function summaryOfPeople(people) {
     return result;
 }
 
-const logit = true;
 function condLog(...args) {
     if (logit) {
         console.log.apply(null, args);
