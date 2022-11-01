@@ -389,8 +389,8 @@ WikiTreeAPI.postToAPI = async function (postData) {
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams(formData)
-    }
+        body: new URLSearchParams(formData),
+    };
     const response = await fetch(API_URL, options);
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}: ${response.statusText}`);
