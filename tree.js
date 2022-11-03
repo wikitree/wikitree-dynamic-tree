@@ -67,6 +67,8 @@ window.View = class View {
         };
     }
 
+    // If the view fails to initialize, return an error. The ViewRegistry will then display
+    // that error and hide the "info panel" that's supposed to get filled in with view information.
     init(container_selector, person_id) {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
@@ -88,6 +90,7 @@ window.ViewRegistry = class ViewRegistry {
     WT_ID_LINK = " #wt-id-link";
     VIEW_LOADER = "#view-loader";
     WT_STATUS = "#wt-status";
+    INFO_PANEL = "#info-panel";
 
     // index.html starts with a script that creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
     constructor(views, session_manager) {
@@ -156,7 +159,13 @@ window.ViewRegistry = class ViewRegistry {
 
         document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
 
-        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) submitBtn.click();
+        // If we have both a starting Profile ID and a selected View ID, draw the desired view.
+        // If not, alert the user that they need to do something to begin.
+        if (document.querySelector(this.WT_ID_TEXT).value && viewSelect.value) {
+            submitBtn.click();
+        } else {
+            this.showWarning('Enter a WikiTree ID and select a View, then click "Go" to begin.');
+        }
     }
 
     // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View.
@@ -195,7 +204,7 @@ window.ViewRegistry = class ViewRegistry {
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
     onPersonDataReceived(view, data) {
         const wtID = document.querySelector(this.WT_ID_TEXT).value;
-        const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
+        const infoPanel = document.querySelector(this.INFO_PANEL);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
@@ -209,10 +218,15 @@ window.ViewRegistry = class ViewRegistry {
 
             this.clearStatus();
 
-            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
-            parentContainer.classList.remove("hidden");
+            let err = view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+            if (err) {
+                this.showError(err);
+                infoPanel.classList.add("hidden");
+            } else {
+                infoPanel.classList.remove("hidden");
+            }
         } else {
-            parentContainer.classList.add("hidden");
+            infoPanel.classList.add("hidden");
             if (wtID) {
                 this.showError(`Person not found for WikiTree ID ${wtID}.`);
             } else {
@@ -234,6 +248,8 @@ window.ViewRegistry = class ViewRegistry {
         viewDescription.innerHTML = view.description;
         name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
+        wtViewRegistry.showInfoPanel();
+
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
 
         const wtID = document.querySelector(this.WT_ID_TEXT).value;
@@ -241,6 +257,15 @@ window.ViewRegistry = class ViewRegistry {
         let url = window.location.href.split("?")[0].split("#")[0];
         url = `${url}#name=${wtID}&view=${viewSelect}`;
         history.replaceState("", "", url);
+    }
+
+    hideInfoPanel() {
+        let infoPanel = document.querySelector(this.INFO_PANEL);
+        infoPanel.classList.add("hidden");
+    }
+    showInfoPanel() {
+        let infoPanel = document.querySelector(this.INFO_PANEL);
+        infoPanel.classList.remove("hidden");
     }
 
     clearStatus() {

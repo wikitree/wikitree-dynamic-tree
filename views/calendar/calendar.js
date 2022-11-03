@@ -10,6 +10,19 @@ window.calendarView = class calendarView extends View {
         };
     }
     init(selector, person_id) {
+        // Family Anniversaries/Calendar works through profiles from the user's Watchlist.
+        // We can't retrieve a watchlist unless the user is logged in.
+        if (!wtViewRegistry?.session.lm.user.isLoggedIn()) {
+            return `You must be logged into the API to view your family anniversaries.`;
+        }
+
+        // Once the user is logged in, we can only display this View for the user's own profile.
+        // You can't view anniversaries/watchlist for another user.
+        if (person_id != wtViewRegistry.session.lm.user.id) {
+            document.location = `#name=${wtViewRegistry.session.lm.user.name}&view=calendar`;
+            return;
+        }
+
         WikiTreeAPI.postToAPI({
             action: "getPerson",
             key: person_id,
