@@ -51,21 +51,33 @@ window.Surnames = class Surnames {
     // This is the start of our view generation. We grab the starting profile by ID.
     // If that is valid, then we update the info in the View description and kick off the recursive gathering and display of ancestors.
     async displaySurnames() {
-        $(this.selector).html("Working....");
+        wtViewRegistry.showNotice(`Gathering surnames from ancestors to ${this.maxGeneration} generations...`);
 
         let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
         if (data.length != 1) {
-            $(this.selector).html(`There was an error starting with ${this.startId}.`);
+            wtViewRegistry.showError(`There was an error starting with ${this.startId}.`);
             return;
         }
 
         // Yay, we have a valid starting person.
         // If the profile is private and the viewing user is not on the Trusted List, we still might not be able to continue.
         let p = data[0].person;
+        if (!p?.Name) {
+            let err = `The starting profile data could not be retrieved.`;
+            if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
+                err += ` You may need to be added to the starting profile's Trusted List.`;
+            } else {
+                err += ` Try logging into the API.`;
+            }
+            wtViewRegistry.showError(err);
+            wtViewRegistry.hideInfoPanel();
+            return;
+        }
         if (p.Privacy < 50 && !p.Gender) {
-            $(this.selector).html(
+            wtViewRegistry.showError(
                 `<p>Sorry, this profile is <a href="/wiki/Privacy">Private</a> and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
             );
+            wtViewRegistry.hideInfoPanel();
             return;
         }
 

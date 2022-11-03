@@ -1,7 +1,8 @@
 window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     WT_DOMAIN = "https://www.wikitree.com";
     PERSON_FIELDS = [
-        ...["Id", "Name", "Father", "Mother", "Gender", "Photo", "DataStatus", "BirthDate", "DeathDate"],
+        ...["Id", "Name", "Father", "Mother", "Gender", "Photo"],
+        ...["IsLiving", "DataStatus", "BirthDate", "BirthDateDecade", "DeathDate", "DeathDateDecade"],
         ...["Prefix", "FirstName", "RealName", "MiddleName", "Nicknames", "LastNameAtBirth", "LastNameCurrent"],
         ...["BirthLocation", "DeathLocation"],
     ];
@@ -105,18 +106,19 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         let locations = "";
 
-        if (person.dna.length < 5) {
-            locations = [person?.BirthLocation ? person.BirthLocation : "[unknown]"];
-
-            locations = `<div class="locations">${locations.map((location) => "<div>" + location + "</div>")}</div>`;
+        if (person.dna.length < 5 && person?.BirthLocation) {
+            locations = `<div class="locations">${person.BirthLocation}</div>`;
         }
+
+        const born = `${person?.IsLiving ? "Born " : ""}${wtDate(person, "BirthDate")}`;
+        const died = person?.IsLiving ? "" : ` - ${wtDate(person, "DeathDate")}`;
 
         return `
             <div style="grid-area: ${person.dna};" class="known-relative">
                 ${photo}
                 <div>
                     <h2>${wtCompleteName(person)}</h2>
-                    <div>${wtDate(person, "BirthDate")} - ${wtDate(person, "DeathDate")}</div>
+                    <div>${born}${died}</div>
                     ${locations}
                 </div>
             </div>`;

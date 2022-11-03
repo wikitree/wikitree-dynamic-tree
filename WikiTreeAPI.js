@@ -6,6 +6,12 @@
  *
  */
 
+// Set localTesting to true if you run this from your desktop. This would require that you have installed a browser
+// extension to fiddle with CORS permissions, like one of these for Chrome:
+//     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
+//     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
+const localTesting = false;
+
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
@@ -14,7 +20,8 @@ const dateTokenCache = {};
 /**
  * Serializes WikiTree fuzzy date using formatting string
  * @param  {object}  person Person object received from WikiTree API
- * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`
+ * @param  {string}  fieldName Name of the fuzzy date to be serialized, possible values: `BirthDate`, `DeathDate`,
+ *                      `marriage_date` (if 'person' is a 'Spouse')
  * @param  {object}  options object containing foloowing options
  *                      * {string} [formatString="MMM DD, YYYY"]
  *                      * {boolean} [withCertainty=true]
@@ -60,7 +67,16 @@ window.wtDate = function (person, fieldName, options = {}) {
 
     let prop = person?.[fieldName];
 
-    if (!prop || prop === "0000-00-00") return "[unknown]";
+    if (!prop || prop === "0000-00-00") {
+        switch (fieldName) {
+            case "BirthDate":
+                return person?.["BirthDateDecade"];
+            case "DeathDate":
+                return person?.["DeathDateDecade"];
+            default:
+                return "[unknown]";
+        }
+    }
 
     let [day, month, year] = prop
         .split("-")
@@ -83,7 +99,7 @@ window.wtDate = function (person, fieldName, options = {}) {
                 MM: month ? String(month).padStart(2, "0") : null,
                 MMM: month ? MONTHS[month - 1].slice(0, 3) : null,
                 MMMM: month ? MONTHS[month - 1] : null,
-                YYYY: prop[2] ? String(year).padStart(4, "0") : null,
+                YYYY: year ? String(year).padStart(4, "0") : null,
             })[token];
         })
         .filter((token) => token !== null);
@@ -236,7 +252,7 @@ WikiTreeAPI.Person = class Person {
 
 // To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
 // we convert the returned JSON data into a Person object.
-// Note that postToAPI returns the Promise from jquerys .ajax() call.
+// Note that postToAPI returns the Promise from JavaScript's fetch() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 // So we can use this through our asynchronous actions with something like:
 // WikiTree.getPerson.then(function(result) {
@@ -255,7 +271,7 @@ WikiTreeAPI.getPerson = function (id, fields) {
 };
 // To get a set of Ancestors for a given id, we POST to the API's getAncestors action. When we get a result back,
 // we leave the result as an array of objects
-// Note that postToAPI returns the Promise from jquerys .ajax() call.
+// Note that postToAPI returns the Promise from JavaScript's fetch() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 
 // So we can use this through our asynchronous actions with something like:
@@ -282,7 +298,7 @@ WikiTreeAPI.getAncestors = function (id, depth, fields) {
 
 // To get a set of Relatives for a given id or a SET of ids, we POST to the API's getRelatives action. When we get a result back,
 // we leave the result as an array of objects
-// Note that postToAPI returns the Promise from jquerys .ajax() call.
+// Note that postToAPI returns the Promise from JavaScript's fetch() call.
 // That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 
 // PARAMETERS:
@@ -358,24 +374,28 @@ WikiTreeAPI.getWatchlist = function (limit, getPerson, getSpace, fields) {
     });
 };
 
-// This is just a wrapper for the Ajax call, sending along necessary options for the WikiTree API.
-WikiTreeAPI.postToAPI = function (postData) {
-    var API_URL = "https://api.wikitree.com/api.php";
+// This is just a wrapper for the JavaScript fetch() call, sending along necessary options for the WikiTree API.
+WikiTreeAPI.postToAPI = async function (postData) {
+    const API_URL = "https://api.wikitree.com/api.php";
 
-    var ajax = $.ajax({
-        // The WikiTree API endpoint
-        url: API_URL,
-
-        // We tell the browser to send any cookie credentials we might have (in case we authenticated).
-        xhrFields: { withCredentials: true },
-
-        // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
-        type: "POST",
-        dataType: "json",
-        data: postData,
-    });
-
-    return ajax;
+    let formData = new FormData();
+    for (var key in postData) {
+        formData.append(key, postData[key]);
+    }
+    // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
+    let options = {
+        method: "POST",
+        credentials: localTesting ? "omit" : "include",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(formData),
+    };
+    const response = await fetch(API_URL, options);
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}: ${response.statusText}`);
+    }
+    return await response.json();
 };
 
 // Utility function to get/set cookie data.
