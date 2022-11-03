@@ -13,7 +13,9 @@ window.calendarView = class calendarView extends View {
         // Family Anniversaries/Calendar works through profiles from the user's Watchlist.
         // We can't retrieve a watchlist unless the user is logged in.
         if (!wtViewRegistry?.session.lm.user.isLoggedIn()) {
-            return `You must be logged into the API to view your family anniversaries.`;
+            wtViewRegistry.showError(`You must be logged into the API to view your family anniversaries.`);
+            wtViewRegistry.hideInfoPanel();
+            return;
         }
 
         // Once the user is logged in, we can only display this View for the user's own profile.
@@ -62,22 +64,25 @@ window.calendarView = class calendarView extends View {
              * user's watchlist. This is based on the original Special:Anniversaries view.
              * To add a new view later, we need to destroy the current view $(".watchCalendar").remove();
              */
-            $(selector).append(`
-                <div class="watchCalendar">
-                    <div class="fourteen columns center">
-                        ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}&#8203</span>`).join("")}
+            if ($(selector).find(".watchCalendar").length == 0) {
+                $(selector).append(`
+                    <div class="watchCalendar">
+                        <div class="fourteen columns center">
+                            ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}&#8203</span>`).join(
+                                ""
+                            )}
+                        </div>
+                        <div class="loader">
+                            <image class="loaderIMG" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
+                        </div>
+                        <div class="calendar">
+                            ${MONTHS.map(
+                                (month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`
+                            ).join("")}
+                        </div>
                     </div>
-                    <div class="loader">
-                        <image class="loaderIMG" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
-                    </div>
-                    <div class="calendar">
-                        ${MONTHS.map(
-                            (month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`
-                        ).join("")}
-                    </div>
-                </div>
-            `);
-
+                `);
+            }
             WikiTreeAPI.getWatchlist(5000, 1, 0, [
                 "Derived.ShortName",
                 "BirthDate",

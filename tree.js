@@ -218,13 +218,7 @@ window.ViewRegistry = class ViewRegistry {
 
             this.clearStatus();
 
-            let err = view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
-            if (err) {
-                this.showError(err);
-                infoPanel.classList.add("hidden");
-            } else {
-                infoPanel.classList.remove("hidden");
-            }
+            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
         } else {
             infoPanel.classList.add("hidden");
             if (wtID) {
