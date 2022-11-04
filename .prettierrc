@@ -1,12 +1,15 @@
 {
   "tabWidth": 4,
   "useTabs": false,
-  "trailingComma": "es5",
   "semi": true,
+  "singleQuote": false,
+  "quoteProps": "consistent",
+  "trailingComma": "es5",
   "bracketSameLine": true,
+  "bracketSpacing": true,
+  "arrowParens": "always", 
   "singleAttributePerLine": false,
   "printWidth": 120,
-  "quoteProps": "consistent",
   "overrides": [
     {
       "files": ["**/*.html","**/*.css"],

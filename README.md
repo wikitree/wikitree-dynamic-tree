@@ -44,7 +44,7 @@ Style elements for the scaffolding and the dynamic-tree nodes.
 
 ## New Views
 
-The tree viewer can be extended with additional views. See [documentation](contributing.md).
+The tree viewer can be extended with additional views.  See [documentation](docs/contributing.md).
 
 ## Example
 
