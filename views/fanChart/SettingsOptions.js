@@ -402,11 +402,18 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let radioNum = 0;
                     for (let value of option.values) {
                         if (value.value == "br") {
+                            // console.log("Found BR in options values", value);
                             // IN CASE there is a LONG list of radio button options
                             // or a visual breaking them down into more similar chunks is needed
                             // a bogus value of "br" is put in the original initObject to force a line break
                             let breakElement = document.createElement("br");
                             labelElement.appendChild(breakElement);
+                            if (value.label && value.label > "") {
+                                let labelTextNode = document.createTextNode(" " + value.label);
+                                labelElement.appendChild(labelTextNode);
+                                let breakElement2 = document.createElement("br");
+                                labelElement.appendChild(breakElement2);
+                            }
                         } else {
                             let radioOptionElement = document.createElement("input");
                             radioOptionElement.value = value.value;
@@ -462,7 +469,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     labelElement.appendChild(labelTextNode);
                     labelElement.appendChild(optionElement);
                     optionDivElement.appendChild(labelElement);
-                } else if (option.type == "color") {
+                } else if (option.type == "color" || option.type == "colour") {
                     optionElement = document.createElement("input");
                     optionElement.type = "color";
                     optionElement.className = "optionNumber";
@@ -475,8 +482,12 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     labelElement.appendChild(optionElement);
                     optionDivElement.appendChild(labelElement);
                 } else if (option.type == "br") {
-                    // console.log("TRYING to BR");
+                    // console.log("TRYING to BR", option);
                     optionElement = document.createElement("label");
+                    if (option.label && option.label > "") {
+                        let labelTextNode = document.createTextNode(" " + option.label);
+                        optionElement.appendChild(labelTextNode);
+                    }
                     optionDivElement.appendChild(optionElement);
                 }
 

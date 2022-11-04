@@ -38,7 +38,8 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
         if (this.primaryPerson) {
             // this.PrimaryID = newPerson._data.Id
             this.list = [0, this.primaryPerson._data.Id]; // initialize the Array
-            this.listByPerson[this.primaryPerson._data.Id] = 1; // initialize the Array
+            this.listByPerson = new Array(); // initialize the Array
+            this.listByPerson[this.primaryPerson._data.Id] = 1; // add the primary person to the list
 
             if (this.primaryPerson._data.Father && this.primaryPerson._data.Father > 0) {
                 this.addToAhnenTafel(this.primaryPerson._data.Father, 2);
