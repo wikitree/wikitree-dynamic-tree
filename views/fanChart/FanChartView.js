@@ -1628,7 +1628,7 @@
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
 						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
-                            <span class="tree-links"><a href="#name=${person.getName()}&view=fandoku"><img style="width:45px; height:33px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" /></a></span>
+                            
                             </div>
                             <div class="birth vital">${birthString(person)}</div>
                             <div class="death vital">${deathString(person)}</div>
