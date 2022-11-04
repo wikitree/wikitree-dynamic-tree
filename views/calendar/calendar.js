@@ -13,9 +13,7 @@ window.calendarView = class calendarView extends View {
         // Family Anniversaries/Calendar works through profiles from the user's Watchlist.
         // We can't retrieve a watchlist unless the user is logged in.
         if (!wtViewRegistry?.session.lm.user.isLoggedIn()) {
-            wtViewRegistry.showError(`You must be logged into the API to view your family anniversaries.`);
-            wtViewRegistry.hideInfoPanel();
-            return;
+            throw new ViewError(`You must be logged into the API to view your family anniversaries.`);
         }
 
         // Once the user is logged in, we can only display this View for the user's own profile.

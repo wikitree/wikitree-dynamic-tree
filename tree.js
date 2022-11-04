@@ -74,6 +74,13 @@ window.View = class View {
     }
 };
 
+window.ViewError = class ViewError extends Error {
+    constructor(message) {
+        super(message); // Call parent Error class for construction
+        this.name = "ViewError"; // Change name to our own, instead of "Error"
+    }
+};
+
 /*
  * The ViewRegistry holds the configuration for our collection of different views, builds the <select> field to change between them,
  * and launches the selected view when the "Go" button is clicked.
@@ -218,7 +225,14 @@ window.ViewRegistry = class ViewRegistry {
 
             this.clearStatus();
 
-            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+            try {
+                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+            } catch (err) {
+                // If we have an unhandleable error from a view, display the error message and hide away
+                // the "info panel", since it's probably incomplete/broken.
+                this.showError(err.message);
+                this.hideInfoPanel();
+            }
         } else {
             infoPanel.classList.add("hidden");
             if (wtID) {
