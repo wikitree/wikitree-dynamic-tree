@@ -1,10 +1,10 @@
-.ancCalendar {
-  overflow: hidden;
-}
-
 .calendar {
   display: none;
   height: 100%;
+}
+
+.loaderIMG {
+  width: 200px;
 }
 
 .loader {
@@ -43,4 +43,18 @@
   background-color: #f1f1f1;
   width: 47%;
   margin: auto;
+}
+
+span[id^="month-"] {
+  padding: 0 5px;
+  font-size: 1.3em;
+  color: #060;
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+div.fourteen.columns.center {
+  margin-bottom: 10px;
+  overflow-wrap: break-word;
 }
