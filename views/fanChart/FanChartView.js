@@ -97,6 +97,8 @@
     FanChartView.maxNumGens = 10;
     FanChartView.workingMaxNumGens = 6;
 
+    FanChartView.showFandokuLink = "No";
+
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FanChartView.myAhnentafel = new AhnenTafel.Ahnentafel();
 
@@ -116,6 +118,10 @@
 
     FanChartView.prototype.init = function (selector, startId) {
         // console.log("FanChartView.js - line:18", selector) ;
+        let theCheckIn =  FanChartView.getCheckIn();
+        // console.log("theCheckIN:", theCheckIn);
+        FanChartView.showFandokuLink = theCheckIn;
+
         var container = document.querySelector(selector),
             width = container.offsetWidth,
             height = container.offsetHeight;
@@ -682,6 +688,9 @@
         FanChartView.fanchartSettingsOptionsObject.buildPage();
         FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
+        // console.log(theCheckIn);
+        FanChartView.showFandokuLink = theCheckIn;
+        
     };
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
@@ -876,8 +885,8 @@
     };
 
     FanChartView.toggleSettings = function () {
-        console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
-        console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
+        // console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
+        // console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         console.log("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
@@ -945,8 +954,8 @@
                 "Privacy",
             ]).then(function (result) {
                 FanChartView.theAncestors = result;
-                console.log("theAncestors:", FanChartView.theAncestors);
-                console.log("person with which to drawTree:", person);
+                // console.log("theAncestors:", FanChartView.theAncestors);
+                // console.log("person with which to drawTree:", person);
                 for (let index = 0; index < FanChartView.theAncestors.length; index++) {
                     const element = FanChartView.theAncestors[index];
                     thePeopleList.add(FanChartView.theAncestors[index]);
@@ -1092,7 +1101,7 @@
      * Draw/redraw the tree
      */
     Tree.prototype.draw = function () {
-        console.log("Tree.prototype.draw");
+        // console.log("Tree.prototype.draw");
         if (this.root) {
             // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
             var nodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
@@ -1186,11 +1195,15 @@
 
                 let theClr = "none";
                 if (FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
+                    console.log(
+                        "new repeat ancestor:",
+                        FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
+                    );
                     if (repeatAncestorTracker[ancestorObject.person._data.Id]) {
                         theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                     } else {
                         numRepeatAncestors++;
-                        theClr = ColourArray[numRepeatAncestors];
+                        theClr = ColourArray[numRepeatAncestors % ColourArray.length];
                         repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
                     }
                 }
@@ -1225,7 +1238,38 @@
                         <div class="name"  id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(person)}</B></div>
                         </div>
                     `;
-                } else if (thisGenNum >= 4) {
+                } else if (thisGenNum > 4) {
+                    let photoUrl = person.getPhotoUrl(75),
+                        treeUrl = window.location.pathname + "?id=" + person.getName();
+
+                    // Use generic gender photos if there is not profile photo available
+                    //console.log(
+                    //     "FanChartView.currentSettings[photo_options_useSilhouette] : ",
+                    //     FanChartView.currentSettings["photo_options_useSilhouette"]
+                    // );
+                    if (!photoUrl) {
+                        if (person.getGender() === "Male") {
+                            photoUrl = "images/icons/male.gif";
+                        } else {
+                            photoUrl = "images/icons/female.gif";
+                        }
+                    }
+                    let photoDiv = "";
+                    if (photoUrl) {
+                        photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                    }
+                    return `${photoDiv}
+                    <div  id=wedgeBoxFor${
+                        ancestorObject.ahnNum
+                    } class="box" style="background-color: ${theClr} ; border:0;  display:inline-block;"> 
+                    
+                    <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
+                        person
+                    )}</B></div>
+                    <div class="lifespan">${lifespan(person)}</div>
+                    </div>
+                    `;
+                 } else if (thisGenNum == 4) {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -1255,7 +1299,7 @@
                     )}</B></div>
                     <div class="lifespan">${lifespan(person)}</div>
                     </div>
-                    `;
+                    `;    
                 } else {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
@@ -1436,7 +1480,7 @@
             ) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
                 if (thePhotoDIV) {
-                    thePhotoDIV.style.display = "block";
+                    thePhotoDIV.style.display = "inline-block";
                 }
             } else if (
                 (!photoUrl &&
@@ -1456,11 +1500,11 @@
                     // Check to see if there are restrictions
                     if (FanChartView.currentSettings["photo_options_showPicsToN"] == false) {
                         // show All Pics - no restrictions
-                        thePhotoDIV.style.display = "block";
+                        thePhotoDIV.style.display = "inline-block";
                     } else {
                         // ONLY show Pics up to a certain Generation #
                         if (thisGenNum < FanChartView.currentSettings["photo_options_showPicsToValue"]) {
-                            thePhotoDIV.style.display = "block";
+                            thePhotoDIV.style.display = "inline-block";
                         } else {
                             thePhotoDIV.style.display = "none";
                         }
@@ -1469,6 +1513,20 @@
                     thePhotoDIV.style.display = "none";
                 }
             }
+
+            let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+            if(thePhotoDIV.style.display == "inline-block") {
+                if (thisGenNum == 6) {
+                    let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                    thePhotoDIV.style.height = "66px";
+                    theWedgeBox.style["vertical-align"] = "top";
+                } else if (thisGenNum == 5) {
+                    let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                    thePhotoDIV.style.height = "88px";
+                    theWedgeBox.style["vertical-align"] = "top";
+                }
+            }
+
             if (ancestorObject.ahnNum == 1) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
                 if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == true) {
@@ -1476,12 +1534,12 @@
                         thePhotoDIV.style.display = "none";
                         theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
                     } else {
-                        thePhotoDIV.style.display = "block";
+                        thePhotoDIV.style.display = "inline-block";
                     }
                 } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {
                     thePhotoDIV.style.display = "none";
                     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                    console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
+                    // console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
             }
 
@@ -1531,6 +1589,17 @@
             }
         }
 
+        let fandokuLink = "";
+
+        if (person._data.Id == FanChartView.myAhnentafel.list[1]) {
+            // console.log("FOUND THE PRIMARY PERP!");
+            if (FanChartView.showFandokuLink == "YES"){
+                fandokuLink = `<span class="tree-links"><button onclick=location.assign("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/#name=${person.getName()}&view=fandoku"); style="padding:2px;">Play FanDoku</button></span>`;
+            }
+        } else {
+            // console.log("Popup a poopy peep");
+        }
+
         var popup = this.svg
             .append("g")
             .attr("class", "popup")
@@ -1559,9 +1628,11 @@
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
 						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
-						  </div>
-						  <div class="birth vital">${birthString(person)}</div>
-						  <div class="death vital">${deathString(person)}</div>
+                            <span class="tree-links"><a href="#name=${person.getName()}&view=fandoku"><img style="width:45px; height:33px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" /></a></span>
+                            </div>
+                            <div class="birth vital">${birthString(person)}</div>
+                            <div class="death vital">${deathString(person)}</div>
+                            ${fandokuLink}
 						</div>
 					</div>
 
@@ -1569,7 +1640,7 @@
 			`);
 
         d3.select("#view-container").on("click", function () {
-            console.log("d3.select treeViewerContainer onclick - REMOVE POPUP");
+            // console.log("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
     };
@@ -1583,7 +1654,7 @@
      * select on it, like we do with nodes and links.
      */
     Tree.prototype.removePopups = function () {
-        console.log("Tree.prototype - REMOVE POPUPS (plural) function");
+        // console.log("Tree.prototype - REMOVE POPUPS (plural) function");
         d3.selectAll(".popup").remove();
     };
 
@@ -1598,10 +1669,13 @@
         FanChartView.lastNumGens = 5;
         FanChartView.numGensRetrieved = 5;
         FanChartView.maxNumGens = 10;
+        numRepeatAncestors = 0;
+        repeatAncestorTracker = new Object();
+
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
-            console.log("Defining the CHILDREN for ", person._data.Name);
+            // console.log("Defining the CHILDREN for ", person._data.Name);
             var children = [],
                 mother = person.getMother(),
                 father = person.getFather();
@@ -2044,10 +2118,10 @@
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
-         PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
-         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-         GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
-         RedsArray = [
+        PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+        RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
             "#FFC0C0",
@@ -2067,7 +2141,7 @@
             "#FFE8E0",
             "#FFF8F0",
         ];
-         BluesArray = [
+        BluesArray = [
             "#A0A0FF",
             "#B0B0FF",
             "#C0C0FF",
@@ -2087,10 +2161,26 @@
             "#E0E8FF",
             "#F0F8FF",
         ];
-         GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+        GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
 
-        let AllColoursArrays = [ColourArray ,  GreysArray, RedsArray, GreensArray, BluesArray, PastelsArray, RainbowArray];
-        let KeyColoursMatches = {"random":ColourArray ,  "Greys":GreysArray, "Reds":RedsArray, "Greens":GreensArray, "Blues":BluesArray, "Pastels":PastelsArray, "Rainbow":RainbowArray};
+        let AllColoursArrays = [
+            ColourArray,
+            GreysArray,
+            RedsArray,
+            GreensArray,
+            BluesArray,
+            PastelsArray,
+            RainbowArray,
+        ];
+        let KeyColoursMatches = {
+            random: ColourArray,
+            Greys: GreysArray,
+            Reds: RedsArray,
+            Greens: GreensArray,
+            Blues: BluesArray,
+            Pastels: PastelsArray,
+            Rainbow: RainbowArray,
+        };
 
         // start out with a random palette selected, so, if nothing else, at least there's something
         let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
@@ -2099,50 +2189,51 @@
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         if (settingForColourBy == "None") {
             return "White";
-        } 
-
+        }
 
         let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
         if (KeyColoursMatches[settingForPalette]) {
-            thisColourArray = KeyColoursMatches[settingForPalette] ;
+            thisColourArray = KeyColoursMatches[settingForPalette];
         }
 
         if (ahnNum == 1) {
             return thisColourArray[0];
         }
-		
-		let numThisGen = 2 ** gen;
-		
+
+        let numThisGen = 2 ** gen;
+
         if (settingForColourBy == "Gender") {
-            return thisColourArray[1 + ahnNum % 2];
-            
-            
+            return thisColourArray[1 + (ahnNum % 2)];
         } else if (settingForColourBy == "Generation") {
-            return thisColourArray[1 + (gen) % thisColourArray.length ];
-
-        } else if (settingForColourBy == "Grand") {		
-            return thisColourArray[1 + Math.floor(4*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (gen % thisColourArray.length)];
+        } else if (settingForColourBy == "Grand") {
+            return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGrand") {
-            return thisColourArray[1 + Math.floor(8*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (Math.floor((8 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGGrand") {
-            return thisColourArray[1 + Math.floor(16*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (Math.floor((16 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGGGrand") {
-            return thisColourArray[1 + Math.floor(32*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "Town") {
-
         } else if (settingForColourBy == "Region") {
-
         } else if (settingForColourBy == "Country") {
-
         } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
         }
 
-
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
-})();
+
+    FanChartView.getCheckIn = function () {
+        var API_URL = "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ok.php";
+        fetch(API_URL)
+            .then((response) => response.text())
+            .then((data) => {
+                // console.log("GOT THE DATA:", data);
+                FanChartView.showFandokuLink = data;
+                return data;
+            });
+    }
+
+   
+    })();
