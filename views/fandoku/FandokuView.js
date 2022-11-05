@@ -81,6 +81,24 @@
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
 
+    var fandokuDing = new Audio("views/fandoku/ding-idea-40142.mp3");
+    if (!fandokuDing.canPlayType("audio/mpeg")) {
+        fandokuDing.setAttribute("src", "views/fandoku/ding-idea-40142.ogg");
+    }
+    fandokuDing.loop = false;
+
+    var fandokuClap = new Audio("views/fandoku/small-applause-6695.mp3");
+    if (!fandokuClap.canPlayType("audio/mpeg")) {
+        fandokuClap.setAttribute("src", "views/fandoku/small-applause-6695.ogg");
+    }
+    fandokuClap.loop = false;
+
+    var fandokuCheer = new Audio("views/fandoku/crowdyayapplause25ppllong-6948.mp3");
+    if (!fandokuCheer.canPlayType("audio/mpeg")) {
+        fandokuCheer.setAttribute("src", "views/fandoku/crowdyayapplause25ppllong-6948.ogg");
+    }
+    fandokuCheer.loop = false;
+
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the FanDoku game
 
     /** Static variable to hold unique ids for private persons **/
@@ -94,11 +112,17 @@
     FandokuView.selectedNameNum = -1;
 
     /** Static variables to hold the state of the Number of Generations to be displayed, currently and previously  **/
-    FandokuView.numGens2Display = 5;
-    FandokuView.lastNumGens = 5;
-    FandokuView.numGensRetrieved = 5;
-    FandokuView.maxNumGens = 5;
-    FandokuView.workingMaxNumGens = 6;
+    FandokuView.numGens2Display = 4;
+    FandokuView.lastNumGens = 4;
+    FandokuView.numGensRetrieved = 4;
+    FandokuView.maxNumGens = 4;
+    FandokuView.workingMaxNumGens = 5;
+
+    FandokuView.numSecondsElapsed = 0;
+    FandokuView.numAncestorsPlaced = 0;
+    FandokuView.numMisses = 0;
+    FandokuView.totalNumAncestors = 0;
+    FandokuView.gameStatus = "Pre";
 
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FandokuView.myAhnentafel = new AhnenTafel.Ahnentafel();
@@ -108,6 +132,10 @@
 
     /** Object to hold the Ancestors as they are returned from the getAncestors API call    */
     FandokuView.theAncestors = [];
+    FandokuView.foundAncestors = [];
+    FandokuView.newOrder = [];
+    FandokuView.genMForder = [];
+    FandokuView.ahnNumCellNumArray = [];
 
     FandokuView.prototype.meta = function () {
         return {
@@ -117,8 +145,62 @@
         };
     };
 
+    FandokuView.encouragingArray = [
+        "Correct",
+        "Correctamundo",
+        "Fantastic",
+        "Good",
+        "Good stuff",
+        "Got it!",
+        "Great",
+        "Great work",
+        "Nailed it",
+        "Nice",
+        "Nice work",
+        "Right!",
+        "Right on",
+        "Super",
+        "Super dooper!",
+        "That's right",
+        "Way to go",
+        "Wonderful",
+        "Yay",
+        "Yep",
+        "Yes",
+        "You got it",
+        "Yup",
+    ];
+
+    function checkTabPress(e) {
+        "use strict";
+        // pick passed event or global event object if passed one is empty
+        e = e || event;
+        // var activeElement;
+        if (e.keyCode == 9 && FandokuView.gameStatus == "Live") {
+            console.log("A TAB KEY has  been pressed", FandokuView.newOrder);
+            let lookingFor = FandokuView.newOrder[FandokuView.selectedNameNum - 2] + 1;
+            if (lookingFor >= FandokuView.newOrder.length + 2) {
+                lookingFor = 2;
+            }
+            for (let index = 0; index < FandokuView.newOrder.length; index++) {
+                if (FandokuView.newOrder[index] == lookingFor) {
+                    // let nextIndex = (index + 1) % FandokuView.newOrder.length;
+                    let nextNum = index + 2;
+                    toggleFloatingName("floatingName" + nextNum, nextNum);
+                    return;
+                }
+            }
+        } else {
+            console.log("nada : ", e.keyCode);
+        }
+    }
+
     FandokuView.prototype.init = function (selector, startId) {
         // console.log("FandokuView.js - line:18", selector) ;
+
+        var body = document.querySelector("body");
+        body.addEventListener("keyup", checkTabPress);
+
         var container = document.querySelector(selector),
             width = container.offsetWidth,
             height = container.offsetHeight;
@@ -127,367 +209,130 @@
         FandokuView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FandokuView",
             tabs: [
-                // {
-                //     name: "general",
-                //     label: "General",
-                //     hideSelect: true,
-                //     subsections: [{ name: "FanChartGeneral", label: "General settings" }],
-                //     comment: "These options apply to the FanDoku game overall, and don't fall in any other specific category.",
-                // },
                 {
-                    name: "names",
-                    label: "Names",
+                    name: "rules",
+                    label: "Rules",
                     hideSelect: true,
-                    subsections: [{ name: "FanChartNames", label: "NAMES format" }],
-                    comment: "These options apply to how the ancestor names will displayed in each FanDoku game cell.",
+                    subsections: [{ name: "Rules", label: "Rules" }],
                 },
                 {
-                    name: "dates",
-                    label: "Dates",
+                    name: "options",
+                    label: "Options",
                     hideSelect: true,
-                    subsections: [{ name: "FanChartDates", label: "DATES of events     " }],
-                    comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
+                    subsections: [{ name: "Options", label: "FanDoku settings" }],
+                    comment: "These options apply to the feedback within the FanDoku game.",
                 },
-                {
-                    name: "places",
-                    label: "Places",
-                    hideSelect: true,
-                    subsections: [{ name: "FanChartPlaces", label: "PLACES of events     " }],
-                    comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
-                },
-                {
-                    name: "photos",
-                    label: "Photos",
-                    hideSelect: true,
-                    subsections: [{ name: "FanChartPhotos", label: "PHOTOS    " }],
-                    comment: "These options determine if photos are displayed or not.",
-                },
-                {
-                    name: "colours",
-                    label: "Colours",
-                    hideSelect: true,
-                    subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
-                    comment: "These options apply to background colours in the FanDoku game cells.",
-                },
-                // {
-                //     name: "highlights",
-                //     label: "Highlights",
-                //     hideSelect: true,
-                //     subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
-                //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
-                // },
             ],
             optionsGroups: [
                 {
-                    tab: "general",
-                    subsection: "FanChartGeneral",
-                    category: "general",
+                    tab: "rules",
+                    subsection: "Rules",
+                    category: "rules",
                     subcategory: "options",
                     options: [
+                        { optionName: "h0", type: "br", label: "GOAL:" },
                         {
-                            optionName: "font",
+                            optionName: "p0",
+                            type: "br",
+                            label: "The goal of FanDoku is to place all of the ancestors in their proper spot in the Fan Chart.",
+                        },
+                        { optionName: "h1", type: "br" },
+                        { optionName: "h1", type: "br", label: "HOW TO PLAY:" },
+                        {
+                            optionName: "p2",
+                            type: "br",
+                            label: "Click on an Ancestor, then click the appropriate cell in the FanChart.",
+                        },
+                        {
+                            optionName: "p2b",
+                            type: "br",
+                            label: "You can use the TAB key to cycle through Ancestor names.",
+                        },
+                        {
+                            optionName: "p2b",
+                            type: "br",
+                            label: "You WIN when you've filled all the slots with all the names!",
+                        },
+                        // { optionName: "p2b", type: "br",  },
+                        // { optionName: "p2b", type: "br", label:"You can customize the game using the settings below, then press PLAY GAME." },
+                        { optionName: "p2b", type: "br" },
+                        {
+                            optionName: "gameType",
                             type: "radio",
-                            label: "Font",
+                            label: "GAME TYPE",
                             values: [
-                                { value: "Arial", text: "Arial" },
-                                { value: "Courier", text: "Courier" },
-                                { value: "Times", text: "Times" },
-                                { value: "Fantasy", text: "Fantasy" },
-                                { value: "Script", text: "Script" },
+                                { value: "br" },
+                                {
+                                    value: "FanChart",
+                                    text: "Traditional Fan Chart",
+                                },
+                                { value: "br", label: "(ancestors always in Father/Mother order)" },
+                                { value: "br" },
+                                {
+                                    value: "FanDoku",
+                                    text: "FanDoku style",
+                                },
+                                { value: "br", label: "(random parent order, but consistent within generation)" },
                             ],
-                            defaultValue: "Arial",
+                            defaultValue: "FanChart",
+                        },
+                        { optionName: "break0", type: "br" },
+                        { optionName: "break0", type: "br", label: "HINTS:" },
+                        {
+                            optionName: "genderHinting",
+                            label: "Show Gender colours in cells",
+                            type: "checkbox",
+                            defaultValue: 0,
                         },
                         { optionName: "break0", type: "br" },
                         {
-                            optionName: "showWikiID",
-                            label: "Show WikiTree ID for each person",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        {
-                            optionName: "showAhnNum",
-                            label: "Show Ahnentafel number in each cell",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        { optionName: "break1", type: "br" },
-                        {
-                            optionName: "colourizeRepeats",
-                            label: "Colourize Repeat Ancestors",
-                            type: "checkbox",
-                            defaultValue: true,
+                            optionName: "numHints",
+                            type: "radio",
+                            label: "Number of Pre-filled Ancestors",
+                            values: [
+                                { value: "br" },
+                                { value: "0", text: "0" },
+                                { value: "1", text: "1" },
+                                { value: "2", text: "2" },
+                                // { value: "3", text: "3" },
+                                // { value: "4", text: "4" },
+                            ],
+                            defaultValue: "1",
                         },
                     ],
                 },
+                {
+                    tab: "options",
+                    subsection: "Options",
+                    category: "options",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "playDings",
+                            label: "Play Ding after each person correct",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "playApplause",
+                            label: "Play Applause after each generation completed",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "playCheers",
+                            label: "Play Cheers after puzzle finished",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
 
-                {
-                    tab: "names",
-                    subsection: "FanChartNames",
-                    category: "name",
-                    subcategory: "options",
-                    options: [
-                        {
-                            optionName: "prefix",
-                            label: "Show Prefix before full name",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        {
-                            optionName: "firstName",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "FirstNameAtBirth", text: "First Name at Birth" },
-                                { value: "UsualName", text: "Usual Name" },
-                            ],
-                            defaultValue: "FirstNameAtBirth",
-                        },
-                        { optionName: "middleName", label: "Show Middle Name", type: "checkbox", defaultValue: 0 },
-                        {
-                            optionName: "middleInitial",
-                            label: "Show Middle Initial",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
-                        {
-                            optionName: "lastName",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "LastNameAtBirth", text: "Last Name at Birth" },
-                                { value: "CurrentLastName", text: "Current Last Name" },
-                            ],
-                            defaultValue: "LastNameAtBirth",
-                        },
-                        {
-                            optionName: "suffix",
-                            label: "Show Suffix after full name",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                    ],
-                },
-
-                {
-                    tab: "dates",
-                    subsection: "FanChartDates",
-                    category: "date",
-                    subcategory: "options",
-                    options: [
-                        {
-                            optionName: "dateTypes",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "none", text: "No Dates" },
-                                { value: "br" },
-                                { value: "lifespan", text: "Show Lifespan only, in years" },
-                                { value: "br" },
-                                { value: "detailed", text: "Show Full Dates for life events" },
-                            ],
-                            defaultValue: "detailed",
-                        },
-                        { optionName: "break0", comment: "Full Dates details:", type: "br" },
-                        { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
-                        { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
-                        // {
-                        //     optionName: "showLifeSpan",
-                        //     label: "Show LifeSpan (replaces birth & death dates)",
-                        //     type: "checkbox",
-                        //     defaultValue: 0,
-                        // },
-                        // { optionName: "break1", type: "br" },
-                        // { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
-                        { optionName: "break2", comment: "Date Format:", type: "br" },
-                        {
-                            optionName: "dateFormat",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "YYYY", text: "1964" },
-                                { value: "YYYYMMDD", text: "1964-01-16" },
-                                { value: "DDMMMYYYY", text: "16 Jan 1964" },
-                                { value: "MMMDDYYYY", text: "Jan 16, 1964" },
-                            ],
-                            defaultValue: "DDMMMYYYY",
-                        },
-                    ],
-                },
-                {
-                    tab: "places",
-                    subsection: "FanChartPlaces",
-                    category: "place",
-                    subcategory: "options",
-                    options: [
-                        {
-                            optionName: "locationTypes",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "none", text: "No Locations" },
-                                { value: "br" },
-                                { value: "detailed", text: "Show Locations for life events" },
-                            ],
-                            defaultValue: "detailed",
-                        },
-                        { optionName: "break0", comment: "Location details:", type: "br" },
-                        { optionName: "showBirth", label: "Show Birth Location", type: "checkbox", defaultValue: true },
-                        { optionName: "showDeath", label: "Show Death Location", type: "checkbox", defaultValue: true },
-                        { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
-                        {
-                            optionName: "locationFormatBD",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "Full", text: "Full Location as entered" },
-                                { value: "br" },
-                                { value: "Country", text: "Country only" },
-                                { value: "Region", text: "Region only (Province/State)" },
-                                { value: "Town", text: "Town only" },
-                                { value: "br" },
-                                { value: "TownCountry", text: "Town, Country" },
-                                { value: "RegionCountry", text: "Region, Country" },
-                                { value: "TownRegion", text: "Town, Region" },
-                            ],
-                            defaultValue: "Full",
-                        },
-                        // { optionName: "break1", type: "br" },
-                        // { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
-                        // { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
-                        // {
-                        //     optionName: "locationFormatM",
-                        //     type: "radio",
-                        //     label: "",
-                        //     values: [
-                        //         { value: "Full", text: "Full Location as entered" },
-                        //         { value: "br" },
-                        //         { value: "Country", text: "Country only" },
-                        //         { value: "Region", text: "Region only (Province/State)" },
-                        //         { value: "Town", text: "Town only" },
-                        //         { value: "br" },
-                        //         { value: "TownCountry", text: "Town, Country" },
-                        //         { value: "RegionCountry", text: "Region, Country" },
-                        //         { value: "TownRegion", text: "Town, Region" },
-                        //     ],
-                        //     defaultValue: "Full",
-                        // },
-                    ],
-                },
-                {
-                    tab: "photos",
-                    subsection: "FanChartPhotos",
-                    category: "photo",
-                    subcategory: "options",
-                    options: [
-                        {
-                            optionName: "showCentralPic",
-                            label: "Show the Central Person Photo",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
-                        {
-                            optionName: "showAllPics",
-                            label: "Show Photos of Ancestors",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
-                        {
-                            optionName: "useSilhouette",
-                            label: "Use Silhouette when no photo available",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
                         { optionName: "break1", type: "br" },
+
                         {
-                            optionName: "showPicsToN",
-                            label: "Limit Photos to first N generations",
+                            optionName: "doFeedback",
+                            label: "Give positive feedback words of encouragement",
                             type: "checkbox",
                             defaultValue: true,
-                        },
-                        { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
-                    ],
-                },
-                {
-                    tab: "colours",
-                    subsection: "FanChartColours",
-                    category: "colour",
-                    subcategory: "options",
-                    options: [
-                        {
-                            optionName: "colourBy",
-                            type: "select",
-                            label: "Background Colour cells",
-                            values: [
-                                { value: "None", text: "OFF - All White, all the time WHITE" },
-                                { value: "Gender", text: "by Gender" },
-                                { value: "Generation", text: "by Generation" },
-                                { value: "Grand", text: "by Grandparent" },
-                                { value: "GGrand", text: "by Great-Grandparent" },
-                                { value: "GGGrand", text: "by 2x Great Grandparent" },
-                                { value: "GGGGrand", text: "by 3x Great Grandparent" },
-                                // { value: "Town", text: "by Place name" },
-                                // { value: "Region", text: "by Region (Province/State)" },
-                                // { value: "Country", text: "by Country" },
-                                { value: "random", text: "totally randomly" },
-                            ],
-                            defaultValue: "Generation",
-                        },
-                        {
-                            optionName: "palette",
-                            type: "select",
-                            label: "Colour Palette",
-                            values: [
-                                { value: "Greys", text: "Shades of Grey" },
-                                { value: "Reds", text: "Shades of Reds" },
-                                { value: "Greens", text: "Shades of Greens" },
-                                { value: "Blues", text: "Shades or Blues" },
-                                { value: "Pastels", text: "Pastel colours" },
-                                { value: "Rainbow", text: "Traditional Rainbow of colours" },
-                                // { value: "Ancestry", text: "Ancestry type colours" },
-                                // { value: "MyHeritage", text: "My Heritage type colours" },
-                                { value: "random", text: "Psychadelic" },
-                            ],
-                            defaultValue: "Pastels",
-                        },
-                    ],
-                },
-                {
-                    tab: "highlights",
-                    subsection: "FanChartHighlights",
-                    category: "highlight",
-                    subcategory: "options",
-                    options: [
-                        {
-                            optionName: "showHighlights",
-                            label: "Highlight cells based on option chosen below",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        {
-                            optionName: "highlightBy",
-                            type: "select",
-                            label: "Highlight by",
-                            values: [
-                                { value: "YDNA", text: "Y-DNA" },
-                                { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
-                                { value: "XDNA", text: "X-chromosome inheritance" },
-                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
-                                { value: "DNAinheritance", text: "DNA inheritance" },
-                            ],
-                            defaultValue: "DNAinheritance",
-                        },
-                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                        {
-                            optionName: "howDNAlinks",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "Hide", text: "Hide Links" },
-                                { value: "Highlights", text: "Show Links for highlighted cells only" },
-                                { value: "ShowAll", text: "Show All Links" },
-                            ],
-                            defaultValue: "Highlights",
                         },
                     ],
                 },
@@ -508,22 +353,34 @@
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
-            '<td width="30%" style="padding-left:10px;">'+
-            // '<A onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
-            //' <A onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 180; FandokuView.startGame();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
+            '<td width="30%" style="padding-left:10px;">' +
+            "<button id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
+            
+            "<span id=preGameFans>" +
+            '<A onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
+            ' <A onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
+            ' <A onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
+            "</span>" +
+            "<span id=gameTimer style='display:none'>0:00</span>" +
+            "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="center">' +
+            "<span id=preGameGens>" +
             ' <A onclick="FandokuView.numGens2Display -=1; FandokuView.redraw();"> -1 </A> ' +
             "[ <span id=numGensInBBar>4</span> generations ]" +
             ' <A onclick="FandokuView.numGens2Display +=1; FandokuView.redraw();"> +1 </A> ' +
+            "</span>" +
+            "<span id=gameStats  style='display:none'>0 / 31</span>" +
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
+            "<button id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
+            "<button id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
             ' <A onclick="FandokuView.toggleSettings();"><font size=+2>' +
             SETTINGS_GEAR +
             "</font></A>&nbsp;&nbsp;</td>" +
-            '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial FanDoku game is loading ...</DIV>';
+            '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial FanDoku game is loading ...</DIV>' +
+            '<DIV id=FeedbackArea style="text-align:center; background-color:papayawhip;">Feedback and Directions and Encouragement will go here</DIV>';
 
         var settingsHTML = "";
         // '<div id=settingsDIV style="display:inline-block; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">'+
@@ -558,15 +415,17 @@
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
+        saveSettingsChangesButton.textContent = "START GAME";
 
         function settingsChanged(e) {
-            if (FandokuView.fanchartSettingsOptionsObject.hasSettingsChanged(FandokuView.currentSettings)) {
-                // console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                console.log("NEW settings are:", FandokuView.currentSettings);
-                FandokuView.myAncestorTree.draw();
-            } else {
-                // console.log("NOTHING happened according to SETTINGS OBJ");
-            }
+            // if (FandokuView.fanchartSettingsOptionsObject.hasSettingsChanged(FandokuView.currentSettings)) {
+            //     // console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+            //     console.log("NEW settings are:", FandokuView.currentSettings);
+            //     FandokuView.myAncestorTree.draw();
+            // } else {
+            //     // console.log("NOTHING happened according to SETTINGS OBJ");
+            // }
+            FandokuView.startGame();
         }
 
         // NEXT STEPS : Assign thisVal to actual currentSetting object
@@ -615,32 +474,30 @@
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
 
-            //<div class="name centered" onclick="FandokuView.pickMe(14)" 
-            // id="nameFloatingFor14" 
-            // style="background-color: yellow ; border: blue 2px; padding:5px; display:inline-block;">
-            //             <b>Donat Cloutier</b>						    
-            //         </div>
+        //<div class="name centered" onclick="FandokuView.pickMe(14)"
+        // id="nameFloatingFor14"
+        // style="background-color: yellow ; border: blue 2px; padding:5px; display:inline-block;">
+        //             <b>Donat Cloutier</b>
+        //         </div>
 
-             
-        // FIRST OFF - Let's add FLOATING NAMES around the Chart     
-        for (let index = 2; index < 32 ; index++) {
-          
+        // FIRST OFF - Let's add FLOATING NAMES around the Chart
+        for (let index = 2; index < 32; index++) {
             svg.append("g")
-            .attr({
+                .attr({
                     id: "floatingNameHolder" + index,
                 })
                 .append("foreignObject")
                 .attr({
-                    
+                    "id": "floatingNameObject" + index,
                     "class": "centered",
                     "width": "400px",
                     "height": "60px", // the foreignObject won't display in Firefox if it is 0 height
                     "x": -1400,
-                    "y": -1200 + 70*index,
+                    "y": -1200 + 70 * index,
                     "font-size": "32px",
-                    "style" : "border: gray 5px double; background-color:white;",                
+                    "style": "border: gray 5px double; background-color:white;",
                 })
-                
+
                 .style("overflow", "visible") // so the name will wrap
                 .append("xhtml:div")
                 .attr({
@@ -652,8 +509,7 @@
                     console.log("NAME CLICK - ", this.id, ahnNum);
                     toggleFloatingName(this.id, ahnNum);
                 });
-                
-        }       
+        }
 
         for (let genIndex = FandokuView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
@@ -680,42 +536,80 @@
                             )
                         )
                         .on("click", function () {
-                            console.log("CLICK CLICK - ", this.id);
+                            console.log("CLICKITY CLICK - ", this.id);
                             let thisCode = this.id.substring(5);
                             let parts = thisCode.split("n");
-                            let ahnNum = 1*parts[0] - 0 + 1*parts[1];
-                            console.log(thisCode, ahnNum);
-                            recolourWedge(this.id, parts[0], parts[1], ahnNum);
+                            let ahnNum = 1 * parts[0] - 0 + 1 * parts[1];
+                            let gen = Math.floor(Math.log2(parts[0]));
+                            console.log(thisCode, ahnNum, gen);
+                            if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                                let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
+                                console.log("REAL ahnNum : ", realAhnNum);
+                                ahnNum = realAhnNum;
+                            }
+                            recolourWedge(this.id, gen /* parts[0] */, parts[1], ahnNum);
+                            repositionWedge(ahnNum, gen, parts);
+                            
                         });
                 } else {
                     // Use a WEDGE for ancestors further out
-                    svg.append("path").attr(
-                        SVGfunctions.getSVGforWedge(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            270 * (genIndex - 0.5),
-                            (180 - FandokuView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FandokuView.maxAngle) / 2 ** genIndex,
-                            (180 - FandokuView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FandokuView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
+                    svg.append("path")
+                        .attr(
+                            SVGfunctions.getSVGforWedge(
+                                0,
+                                0,
+                                270 * (genIndex + 0.5),
+                                270 * (genIndex - 0.5),
+                                (180 - FandokuView.maxAngle) / 2 +
+                                    90 +
+                                    90 +
+                                    (index * FandokuView.maxAngle) / 2 ** genIndex,
+                                (180 - FandokuView.maxAngle) / 2 +
+                                    90 +
+                                    90 +
+                                    ((index + 1) * FandokuView.maxAngle) / 2 ** genIndex,
+                                "wedge" + 2 ** genIndex + "n" + index,
+                                "black",
+                                2,
+                                "white"
+                            )
                         )
-                    ).on("click", function () {
-                         console.log("CLICK CLICK - ", this.id);
-                         let thisCode = this.id.substring(5);
-                         let parts = thisCode.split("n");
-                         let ahnNum = 1 * parts[0] - 0 + 1 * parts[1];
-                         console.log(thisCode, ahnNum);
-                         recolourWedge(this.id, parts[0], parts[1], ahnNum);
-                    });
+                        .on("click", function () {
+                            console.log("CLICK CLICK - ", this.id);
+                            let thisCode = this.id.substring(5);
+                            let parts = thisCode.split("n");
+                            let ahnNum = 1 * parts[0] - 0 + 1 * parts[1];
+                            let gen = Math.floor(Math.log2(parts[0]));
+                            console.log(thisCode, ahnNum, gen);
+                            if (FandokuView.currentSettings['rules_options_gameType'] == 'FanDoku') {
+                                let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
+                                console.log("REAL ahnNum : ", realAhnNum);
+                                ahnNum = realAhnNum;
+                            }
+                            recolourWedge(this.id, gen /* parts[0] */, parts[1], ahnNum);
+                            repositionWedge(ahnNum, gen, parts);
+                            // let thisWedge = document.getElementById("wedgeInfoFor" + ahnNum);
+                            // console.log("CLICK:", thisWedge.parentNode.parentNode.parentNode);
+                            // let thisGparentNode =   thisWedge.parentNode.parentNode.parentNode;
+                            // let numSpotsThisGen = parts[0];
+                            // let pos = 1*parts[1];
+
+                            // let thisRadius = 270;
+                            // let placementAngle =
+                            //     180 +
+                            //     (180 - FandokuView.maxAngle) / 2 +
+                            //     (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + pos);
+                            // let nameAngle = 90 + placementAngle;
+                            // let newX = gen * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
+                            // let newY = gen * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
+
+                            // let theTransform =  "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
+                            // console.log(thisGparentNode.getAttribute("transform") , theTransform);
+                            // thisGparentNode.setAttribute("transform" , theTransform);
+
+
+
+                        });
                 }
             }
         }
@@ -740,10 +634,46 @@
         self.load(startId);
         // console.log(FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FandokuView.fanchartSettingsOptionsObject.buildPage();
-        FandokuView.fanchartSettingsOptionsObject.setActiveTab("names");
+        FandokuView.fanchartSettingsOptionsObject.setActiveTab("rules");
         FandokuView.currentSettings = FandokuView.fanchartSettingsOptionsObject.getDefaultOptions();
+        FandokuView.showSettings();
+        // IDs for PARTS of the BUTTON BAR to HIDE / SHOW
+        // startGameButton;
+        // preGameFans;
+        // gameTimer;
+        // preGameGens;
+        // numGensInBBar;
+        // gameStats;
+        // endGameButton;
     };
 
+    function repositionWedge(ahnNum, gen, parts){
+        console.log("repositionWedge : ", ahnNum, gen, parts);
+        let thisWedge = document.getElementById("wedgeInfoFor" + ahnNum);
+        if (!thisWedge) {
+            console.log("WARNING: No Wedge found for ",ahnNum, "at", "wedgeInfoFor"+ahnNum);
+            return;
+        }
+        console.log("CLICK:", thisWedge.parentNode.parentNode.parentNode);
+        let thisGparentNode = thisWedge.parentNode.parentNode.parentNode;
+        let numSpotsThisGen = parts[0];
+        let pos = 1 * parts[1];
+
+        let thisRadius = 270;
+        let placementAngle =
+            180 +
+            (180 - FandokuView.maxAngle) / 2 +
+            (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + pos);
+        let nameAngle = 90 + placementAngle;
+        let newX = gen * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
+        let newY = gen * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
+
+        let theTransform =
+            "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
+        console.log(thisGparentNode.getAttribute("transform"), theTransform);
+        thisGparentNode.setAttribute("transform", theTransform);
+    }
+                        
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
         // console.log(theMessage);
@@ -761,12 +691,28 @@
     function clearMessageBelowButtonBar() {
         document.getElementById("WarningMessageBelowButtonBar").innerHTML = "";
     }
+
+    function clearFeedbackArea() {
+        document.getElementById("FeedbackArea").innerHTML = "";
+    }
+
+    function updateFeedbackArea(theMessage) {
+        if (theMessage == "+") {
+            let randomIndex = Math.floor(Math.random() * FandokuView.encouragingArray.length);
+            theMessage = FandokuView.encouragingArray[randomIndex];
+        }
+        document.getElementById("FeedbackArea").innerHTML = theMessage;
+    }
+
     // Make sure that the Button Bar displays the proper number of generations - and - adjust the max / min if needed because of over-zealous clicking
     function recalcAndDisplayNumGens() {
         if (FandokuView.numGens2Display < 3) {
             FandokuView.numGens2Display = 3;
-            showTemporaryMessageBelowButtonBar("3 is the minimum number of generations you can display.");
+            showTemporaryMessageBelowButtonBar(
+                "3 is the minimum number of generations you can use for this FanDoku game.."
+            );
         } else if (FandokuView.numGens2Display > FandokuView.workingMaxNumGens) {
+            console.log("NUMS:", FandokuView.numGens2Display, FandokuView.workingMaxNumGens, FandokuView.maxNumGens);
             FandokuView.numGens2Display = FandokuView.workingMaxNumGens;
             if (FandokuView.workingMaxNumGens < FandokuView.maxNumGens) {
                 flashWarningMessageBelowButtonBar(
@@ -774,7 +720,7 @@
                 );
             } else {
                 showTemporaryMessageBelowButtonBar(
-                    FandokuView.maxNumGens + " is the maximum number of generations you can display."
+                    FandokuView.maxNumGens + " is the maximum number of generations you can use for this FanDoku game.."
                 );
             }
         }
@@ -840,10 +786,7 @@
                         thePeopleList.add(FandokuView.theAncestors[index].person);
                     }
                     FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-                    FandokuView.workingMaxNumGens = Math.min(
-                        FandokuView.maxNumGens,
-                        FandokuView.numGensRetrieved + 1
-                    );
+                    FandokuView.workingMaxNumGens = Math.min(FandokuView.maxNumGens, FandokuView.numGensRetrieved + 41);
 
                     clearMessageBelowButtonBar();
                 }
@@ -854,10 +797,10 @@
     function redoWedgesForFanChart() {
         // console.log("TIme to RE-WEDGIFY !", this, FandokuView);
 
-        if (
-            FandokuView.lastAngle != FandokuView.maxAngle ||
-            FandokuView.lastNumGens != FandokuView.numGens2Display
-        ) {
+        // FandokuView.maxAngle = 240; // ADDED THIS FOR FANDOKU !!!
+        // FandokuView.lastAngle = 180; // ADDED THIS FOR FANDOKU !!!
+
+        if (FandokuView.lastAngle != FandokuView.maxAngle || FandokuView.lastNumGens != FandokuView.numGens2Display) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
             for (let genIndex = FandokuView.numGens2Display - 1; genIndex >= 0; genIndex--) {
                 for (let index = 0; index < 2 ** genIndex; index++) {
@@ -867,10 +810,7 @@
                             0,
                             0,
                             270 * (genIndex + 0.5),
-                            (180 - FandokuView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FandokuView.maxAngle) / 2 ** genIndex,
+                            (180 - FandokuView.maxAngle) / 2 + 90 + 90 + (index * FandokuView.maxAngle) / 2 ** genIndex,
                             (180 - FandokuView.maxAngle) / 2 +
                                 90 +
                                 90 +
@@ -886,10 +826,7 @@
                             0,
                             270 * (genIndex + 0.5),
                             270 * (genIndex - 0.5),
-                            (180 - FandokuView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FandokuView.maxAngle) / 2 ** genIndex,
+                            (180 - FandokuView.maxAngle) / 2 + 90 + 90 + (index * FandokuView.maxAngle) / 2 ** genIndex,
                             (180 - FandokuView.maxAngle) / 2 +
                                 90 +
                                 90 +
@@ -920,6 +857,7 @@
     }
 
     function toggleFloatingName(id, ahnNum) {
+        console.log("toggleFloatingName", id, ahnNum);
         for (let index = 2; index < 32; index++) {
             let thisID = "floatingName" + index;
             let thisNameDIV = document.getElementById(thisID);
@@ -936,23 +874,45 @@
                 } else {
                     thisNameDIV.style.background = "white";
                 }
-
-            }                  
+            }
         }
     }
 
     function recolourWedge(id, gen, pos, ahnNum) {
+        console.log("recolourWedge:",id, gen, pos, ahnNum);
+        console.log("recolourWedge B4 version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
         let thisPersonsWedge = document.getElementById(id);
         let theWedgeBox = document.getElementById("wedgeBoxFor" + ahnNum);
         let theWedgeInfo = document.getElementById("wedgeInfoFor" + ahnNum);
-        if (FandokuView.selectedNameNum == ahnNum) {
+
+        let isAmatch = (FandokuView.selectedNameNum == ahnNum);
+        if (!isAmatch) {
+            let selectedPersonFullName = getFullName( thePeopleList[ FandokuView.myAhnentafel.list[FandokuView.selectedNameNum] ]) ;
+            let ahnNumFullName = getFullName(thePeopleList[FandokuView.myAhnentafel.list[ahnNum]]); ;
+            isAmatch = (selectedPersonFullName == ahnNumFullName) ;
+        }
+
+        if (isAmatch) {
+            let theClr = getBackgroundColourFor(gen, pos, ahnNum);
+            console.log("re wedge clr:", gen, pos, ahnNum, theClr);
+            if (
+                FandokuView.currentSettings["rules_options_genderHinting"] == true &&
+                FandokuView.gameStatus == "Live"
+            ) {
+                if (ahnNum % 2 == 0) {
+                    theClr = "azure";
+                } else {
+                    theClr = "seashell";
+                }
+            }
+
             if (thisPersonsWedge) {
-                thisPersonsWedge.style.fill =  getBackgroundColourFor(gen, pos, ahnNum);
+                thisPersonsWedge.style.fill = theClr
             } else {
                 console.log("Can't find: ", id);
             }
             if (theWedgeBox) {
-                theWedgeBox.style.background = getBackgroundColourFor(gen,pos,ahnNum);
+                theWedgeBox.style.background = theClr;
             }
             if (theWedgeInfo) {
                 theWedgeInfo.style.display = "block";
@@ -960,22 +920,445 @@
             let thisID = "floatingNameHolder" + ahnNum;
             let thisNameDIV = document.getElementById(thisID);
             thisNameDIV.style.display = "none";
+
+            if (FandokuView.gameStatus == "Live") {
+                updateAncestorsPlaced(true);
+                fandokuDing.pause();
+                fandokuClap.pause();
+                fandokuDing.currentTime = 0;
+                if (FandokuView.currentSettings["options_options_playDings"] == true) {
+                    fandokuDing.play();
+                }
+                FandokuView.foundAncestors[ahnNum] = true;
+                let foundFalse = false;
+                console.log("ahnNum:", ahnNum, gen, pos, "FandokuView.foundAncestors", FandokuView.foundAncestors);
+                for (let index = 2**gen; index < 2 ** (gen+1) && foundFalse == false; index++) {
+                    if (FandokuView.foundAncestors[index] == false) {
+                        foundFalse = true;
+                    }
+                }
+                if (foundFalse == false) {
+                    // must have completed this generation after all ! Yay!
+                    fandokuDing.pause();
+                    if (FandokuView.currentSettings["options_options_playApplause"] == true) {
+                        fandokuClap.play();
+                    }
+                    let specificGen = "parents";
+                    if (gen == 4) {
+                        specificGen = "grandparents";
+                    } else if (gen == 8) {
+                        specificGen = "great grandparents";
+                    } else if (gen == 16) {
+                        specificGen = "great great grandparents";
+                    } else if (gen == 32) {
+                        specificGen = "3x great grandparents";
+                    }
+                    console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 852);
+                    if (FandokuView.gameStatus == "Live") {
+                        updateFeedbackArea("Congratulations - you just cleared the " + specificGen + " generation");
+                    }
+                } else {
+                    console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 855);
+                    if (FandokuView.currentSettings["options_options_doFeedback"] == true) {
+                        updateFeedbackArea("+");
+                    }
+                }
+            }
+            console.log("recolourWedge AFT version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
         } else {
+            if (FandokuView.gameStatus == "Live") {
+                updateAncestorsPlaced(false);
+            }
             console.log("SORRY BUDDY - please try again");
         }
-
-         
     }
+
+    function hideWedge(ahnNum) {
+        let theWedgeBox = document.getElementById("wedgeBoxFor" + ahnNum);
+        let theWedgeInfo = document.getElementById("wedgeInfoFor" + ahnNum);
+        let gen = Math.floor(Math.log2(ahnNum));
+        let id = "wedge" + 2 ** gen + "n" + (ahnNum - 2 ** gen);
+        let thisPersonsWedge = document.getElementById(id);
+
+        if (theWedgeInfo) {
+            theWedgeInfo.style.display = "none";
+        }
+        if (theWedgeBox) {
+            theWedgeBox.style.background = "white";
+        }
+        if (thisPersonsWedge) {
+            thisPersonsWedge.style.fill = "white";
+        }
+
+        let thisID = "floatingNameHolder" + ahnNum;
+        let thisObj = "floatingNameObject" + ahnNum;
+        let thisNameOnlyObj = document.getElementById("floatingName" + ahnNum);
+        thisNameOnlyObj.innerHTML = "<B>Random Ancestor # " + ahnNum + "</B>";
+
+        let thisNameDIV = document.getElementById(thisID);
+        thisNameDIV.style.display = "block";
+        let thisNameOBJ = document.getElementById(thisObj);
+        let newR = 270 * (1.25 + FandokuView.numGens2Display);
+        let newTheta = (ahnNum - 1) / (2 ** FandokuView.numGens2Display - 1); // basically your amount in radians!
+        let newX = newR * Math.cos((1 + newTheta) * Math.PI) - 270;
+        let newY = newR * Math.sin((1 + newTheta) * Math.PI) + 100;
+
+        if (FandokuView.numGens2Display == 4 && ahnNum == 9) {
+            newX = -250;
+            newY += 120;
+        } else if (FandokuView.numGens2Display == 4 && ahnNum == 8) {
+            newX = -250;
+            newY -= 60;
+        } else if (FandokuView.numGens2Display == 5 && ahnNum > 12 && ahnNum <= 20) {
+            newY = 0 - newR + 90 * (1 - (ahnNum % 3));
+        }
+        // let newX = thisGenNum * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
+        // let newX = thisGenNum * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
+        // let newY = thisGenNum * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
+
+        thisNameOBJ.setAttribute("x", newX);
+        thisNameOBJ.setAttribute("y", newY);
+    }
+
     /** FUNCTION used to force a redraw of the FanDoku game, used when called from Button Bar after a parameter has been changed */
 
-     FandokuView.startGame = function () {
-         console.log("FandokuView.startGame");
-         // console.log("Now theAncestors = ", FandokuView.theAncestors);
-         // thePeopleList.listAll();
+    FandokuView.endGame = function () {
+        console.log("FandokuView.endGame");
+        clearInterval(FandokuView.gameTimerInterval);
+        FandokuView.gameStatus = "Post";
+        let ahnNum = 1;
+        for (let gen = 1; gen < FandokuView.numGens2Display; gen++) {
+            let base = 2 ** gen;
+            for (let pos = 0; pos < base; pos++) {
+                ahnNum = base + pos;
+                FandokuView.selectedNameNum = ahnNum;
+                recolourWedge("wedge" + base + "n" + pos, gen, pos, ahnNum);
+                let parts = [base, pos];
+                if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                    let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
+                    console.log("REAL ahnNum : ", realAhnNum);
+                    ahnNum = realAhnNum;
+                }
+                repositionWedge(ahnNum, gen,  parts) // NEEDS TWEAKING HERE !
+            }
+        }
+        // console.log("Now theAncestors = ", FandokuView.theAncestors);
+        // thePeopleList.listAll();
         //  recalcAndDisplayNumGens();
         //  redoWedgesForFanChart();
         //  FandokuView.myAncestorTree.draw();
-     };
+        document.getElementById("endGameButton").style.display = "none";
+        document.getElementById("resetGameButton").style.display = "inline-block";
+        if (FandokuView.totalNumAncestors != FandokuView.numAncestorsPlaced) {
+            console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 938);
+            let theGameName = "Fan Chart";
+            if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                theGameName = "FanDoku";
+            }
+            updateFeedbackArea(
+                "You ended the game before the " + theGameName + " was completely assembled.<BR>Hope you try again soon!<BR><BR>GAME OVER"
+            );
+        }
+    };
+
+    FandokuView.resetGame = function () {
+        document.getElementById("resetGameButton").style.display = "none";
+
+        // IDs for PARTS of the BUTTON BAR to HIDE / SHOW
+        document.getElementById("startGameButton").style.display = "inline-block";
+        document.getElementById("preGameFans").style.display = "inline-block";
+        document.getElementById("gameTimer").style.display = "none";
+        // startGameButton;
+        // preGameFans;
+        // gameTimer;
+        // preGameGens;
+        document.getElementById("preGameGens").style.display = "inline-block";
+        // numGensInBBar;
+        // gameStats;
+        document.getElementById("gameStats").style.display = "none";
+        // endGameButton;
+        document.getElementById("endGameButton").style.display = "none";
+
+        FandokuView.showSettings();
+        document.getElementById("saveSettingsChanges").style.display = "inline-block";
+        FandokuView.setupGame();
+    };
+
+    FandokuView.setupGame = function () {
+        console.log("FandokuView.setupGame");
+        console.log(fandokuDing);
+        FandokuView.gameStatus = "Pre";
+        // fandokuDing.play();
+        // HIDE ALL the NAMES (especially ones for generations we're not using)
+        for (let ahnNum = 2; ahnNum < 32; ahnNum++) {
+            let thisID = "floatingNameHolder" + ahnNum;
+            let thisNameDIV = document.getElementById(thisID);
+            if (thisNameDIV) {
+                thisNameDIV.style.display = "none";
+            }
+        }
+        //HIDE the Peeps! & Track their locations
+        let HolderCoords = [];
+        for (let ahnNum = 2; ahnNum < 2 ** FandokuView.numGens2Display; ahnNum++) {
+            hideWedge(ahnNum);
+            let thisNameObj = document.getElementById("floatingNameObject" + ahnNum);
+            // console.log(thisNameObj);
+            // console.log("x",thisNameObj.x, "attr",thisNameObj.getAttribute("x"));
+            HolderCoords.push([Math.random(), thisNameObj.getAttribute("x"), thisNameObj.getAttribute("y"), ahnNum]);
+        }
+        console.log(HolderCoords);
+        HolderCoords.sort();
+        FandokuView.newOrder = [];
+
+        for (let ahnNum = 2; ahnNum < 2 ** FandokuView.numGens2Display; ahnNum++) {
+            let thisNameObj = document.getElementById("floatingNameObject" + ahnNum);
+            thisNameObj.setAttribute("x", HolderCoords[ahnNum - 2][1]);
+            thisNameObj.setAttribute("y", HolderCoords[ahnNum - 2][2]);
+            FandokuView.newOrder.push(HolderCoords[ahnNum - 2][3]);
+        }
+
+        updateFeedbackArea("Choose game type, then click START GAME");
+        // console.log("Now theAncestors = ", FandokuView.theAncestors);
+        // thePeopleList.listAll();
+        //  recalcAndDisplayNumGens();
+        //  redoWedgesForFanChart();
+        //  FandokuView.myAncestorTree.draw();
+    };
+
+    
+    function updateAhnCellArray(ahnNumChild, posNumChild, parentGenNum) {
+        // FandokuView.ahnNumCellNumArray = [0, 1];
+        let paAhnNum = 2 * ahnNumChild;
+        let maAhnNum = 2 * ahnNumChild + 1;
+        let paPosNum = 2 * posNumChild + 0.5 - 0.5 * FandokuView.genMForder[ parentGenNum ];
+        let maPosNum = 2 * posNumChild + 0.5 + 0.5 * FandokuView.genMForder[ parentGenNum ];
+        FandokuView.ahnNumCellNumArray[ paAhnNum ]  = paPosNum;
+        FandokuView.ahnNumCellNumArray[ maAhnNum ]  = maPosNum;
+        if (parentGenNum < FandokuView.numGens2Display) {
+            updateAhnCellArray(paAhnNum, paPosNum, parentGenNum + 1);
+            updateAhnCellArray(maAhnNum, maPosNum, parentGenNum + 1);
+        }
+    }
+    
+
+    FandokuView.startGame = function () {
+        console.log("FandokuView.startGame");
+        updateFeedbackArea(
+            "Click on Ancestor name for yellow highlight, then click on matching cell inside Fan Chart."
+        );
+        let settingsHaveChanged = FandokuView.fanchartSettingsOptionsObject.hasSettingsChanged(
+            FandokuView.currentSettings
+        );
+        console.log(FandokuView.myAhnentafel);
+        console.log("Settings Changed:", settingsHaveChanged, FandokuView.currentSettings);
+
+        // SETUP the genMForder array  based on whether we're doing a FAN CHART or a FANDOKU type of game
+        // 1 is normal order Father then Mother (going clockwise), -1 is Mother / Father order for that generation
+        FandokuView.genMForder = [1, 1];
+        FandokuView.ahnNumCellNumArray = [0, 1];
+
+        let oppoOrderGen = Math.max(
+            2,
+            Math.min(FandokuView.numGens2Display, Math.ceil(Math.random() * FandokuView.numGens2Display))
+        );
+        for (let genNum = 2; genNum <= FandokuView.numGens2Display; genNum++) {
+            if (FandokuView.currentSettings["rules_options_gameType"] == "FanChart") {
+                FandokuView.genMForder[genNum] = 1;
+            } else {
+                if (genNum == oppoOrderGen || Math.random() < 0.5) {
+                    FandokuView.genMForder[genNum] = -1;
+                } else {
+                    FandokuView.genMForder[genNum] = 1;
+                }
+            }
+        }
+
+        console.log("mfORDER : ", FandokuView.genMForder);
+        FandokuView.ahnNumCellNumArray = [0, 1];
+        updateAhnCellArray(1, 1, 2); // ahnNumChild , posNumChild , parentGenNum
+        console.log("mf ahnCellArray: ", FandokuView.ahnNumCellNumArray);
+
+        // DO THE GENDER HINTING (bkgd colour of blue or pink) - IF CHECKED
+        if (FandokuView.currentSettings["rules_options_genderHinting"] == true) {
+            // console.log("GENDER PAINTING BEGIN!");
+            for (let genNum = 1; genNum < FandokuView.numGens2Display; genNum++) {
+                for (let posNum = 0; posNum < 2 ** genNum; posNum++) {
+                    let thisWedge = document.getElementById("wedge" + 2 ** genNum + "n" + posNum);
+                    if (thisWedge) {
+                        let thisClr = "azure"; // a light blue - lighter than "lightskyblue";
+                        let thisAdjustedPosNum = FandokuView.ahnNumCellNumArray[ 2 ** genNum + posNum];
+                        if (thisAdjustedPosNum % 2 == 1) {
+                            thisClr = "seashell"; // a light pink
+                        }
+                        thisWedge.style.fill = thisClr;
+                    }
+                }
+            }
+        }
+
+        FandokuView.totalNumAncestors = 0;
+        FandokuView.numAncestorsPlaced = -1;
+        FandokuView.numMisses = 0;
+        FandokuView.gameStatus = "Live";
+        // FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+
+        //NAME the Peeps!
+        FandokuView.foundAncestors = [];
+        for (let ahnNum = 2; ahnNum < 2 ** FandokuView.numGens2Display; ahnNum++) {
+            let thisNameObj = document.getElementById("floatingName" + ahnNum);
+            console.log("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
+            let thePeep = thePeopleList[FandokuView.myAhnentafel.list[ahnNum]];
+            if (thePeep) {
+                thisNameObj.innerHTML = "<B>" + getFullName(thePeep) + "</B>";
+                FandokuView.totalNumAncestors++;
+                FandokuView.foundAncestors[ahnNum] = false;
+            } else {
+                thisNameObj.style.display = "none";
+                let thisID = "floatingNameHolder" + ahnNum;
+                let thisNameDIV = document.getElementById(thisID);
+                if (thisNameDIV) {
+                    thisNameDIV.style.display = "none";
+                }
+                FandokuView.foundAncestors[ahnNum] = true; // this ancestor doesn't exist - so - let's pretend they're already found, so it doesn't throw a wrench in the "complete generation"  calculation
+            }
+        }
+
+        updateAncestorsPlaced(true);
+        
+        // IDs for PARTS of the BUTTON BAR to HIDE / SHOW
+        document.getElementById("startGameButton").style.display = "none";
+        document.getElementById("preGameFans").style.display = "none";
+        document.getElementById("gameTimer").style.display = "inline-block";
+        
+        document.getElementById("preGameGens").style.display = "none";
+        
+        document.getElementById("gameStats").style.display = "inline-block";
+        
+        document.getElementById("endGameButton").style.display = "inline-block";
+
+        FandokuView.cancelSettings();
+        document.getElementById("saveSettingsChanges").style.display = "none";
+
+        FandokuView.numSecondsElapsed = 0;
+        updateGameTime();
+        FandokuView.numAncestorsPlaced = 0;
+        FandokuView.gameTimerInterval = setInterval(() => {
+            updateGameTime();
+        }, 1000);
+
+        // HIGHLIGHT a  NAME to start things off
+        let nextNum = FandokuView.newOrder[0]; // ahnenTafel # for Name to be initially HIGHLIGHTED
+        toggleFloatingName("floatingName" + nextNum, nextNum);
+
+        // CHECK TO SEE if WE NEED TO REVEAL A FEW PRE-FILLED ANCESTORS (hints)
+        if (FandokuView.currentSettings["rules_options_numHints"] > 0) {
+            let showNum = nextNum; // ahnenTafel # for person in outer ring to be given out as an initial hint
+            let base = 2 ** (FandokuView.numGens2Display - 1); 
+            let pos = 0;
+            for (let ii = 0; showNum == nextNum; ii++) {
+                showNum =
+                    base +
+                    Math.floor(Math.random() * base );
+            }
+            pos = showNum - base;
+            let id = "wedge" + base + "n" + pos;
+            FandokuView.selectedNameNum = showNum;
+            let parts = [base, pos];
+            let realAhnNum = showNum;
+            if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
+                console.log("REAL ahnNum : ", realAhnNum);
+                // ahnNum = realAhnNum;
+                parts[1] = realAhnNum - base;
+                id = "wedge" + base + "n" + parts[1];
+            }
+            recolourWedge(id, FandokuView.numGens2Display - 1, parts[1], showNum);
+            repositionWedge(showNum, FandokuView.numGens2Display - 1, parts); 
+            
+            if (FandokuView.currentSettings["rules_options_numHints"] > 1 && FandokuView.numGens2Display > 3) {
+                let showNum2 = showNum; // ahnenTafel # for person in penultimate ring to be given out as an initial hint
+                let base = 2 ** (FandokuView.numGens2Display - 2);
+                let pos = 0;
+                for (
+                    let ii = 0;
+                    showNum2 == showNum || showNum2 == nextNum || showNum2 == Math.floor(showNum / 2);
+                    ii++
+                ) {
+                    showNum2 = base + Math.floor(Math.random() * base);
+                }
+                pos = showNum2 - base;
+                let id = "wedge" + base + "n" + pos;
+                FandokuView.selectedNameNum = showNum2;
+                let parts = [base, pos];
+                let realAhnNum = showNum2;
+                if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                    realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum2);
+                    console.log("REAL ahnNum : ", realAhnNum);
+                    // ahnNum = realAhnNum;
+                    parts[1] = realAhnNum - base;
+                    id = "wedge" + base + "n" + parts[1];
+                }
+                recolourWedge(id, FandokuView.numGens2Display - 2, parts[1], showNum2);
+                repositionWedge(showNum2, FandokuView.numGens2Display - 2, parts); 
+            }
+        }
+
+        FandokuView.selectedNameNum = nextNum;
+    };
+
+    function updateGameTime() {
+        FandokuView.numSecondsElapsed++;
+        let numMins = Math.floor(FandokuView.numSecondsElapsed / 60);
+        let numSecs = FandokuView.numSecondsElapsed - 60 * numMins;
+        let displayTimeMinSecs = "Time: " + numMins + ":" + (numSecs < 10 ? "0" : "") + numSecs;
+        let gameTimerDIV = document.getElementById("gameTimer");
+        if (gameTimerDIV) {
+            gameTimerDIV.textContent = displayTimeMinSecs;
+        } else {
+            console.log("STOPPING the GAME TIMER now");
+            clearInterval(FandokuView.gameTimerInterval);
+        }
+
+    }
+
+    function updateAncestorsPlaced(didPlace) {
+        if (didPlace == true) {
+            FandokuView.numAncestorsPlaced++;
+        } else {
+            FandokuView.numMisses++;
+        }
+
+        let displayScore = "Placed: " + FandokuView.numAncestorsPlaced + "/" + FandokuView.totalNumAncestors;
+        displayScore += "            " + "Missed: " + FandokuView.numMisses;
+
+        document.getElementById("gameStats").textContent = displayScore;
+
+        if (didPlace == true && FandokuView.numAncestorsPlaced == FandokuView.totalNumAncestors) {
+            fandokuDing.pause();
+            fandokuClap.pause();
+            if (FandokuView.currentSettings["options_options_playCheers"] == true) {
+                fandokuCheer.play();
+            }
+            FandokuView.endGame();
+            console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 1097);
+            let theGameName = "Fan Chart";
+            if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                theGameName = "FanDoku game";
+            }
+            let finalScore = "<B></B>CONGRATULATIONS!  You just FINISHED the " + theGameName + " !!! Woohoo!!!</b>";
+            let numMins = Math.floor(FandokuView.numSecondsElapsed / 60);
+            let numSecs = FandokuView.numSecondsElapsed - 60 * numMins;
+            let displayTimeMinSecs = numMins + ":" + (numSecs < 10 ? "0" : "") + numSecs;
+            finalScore +=
+                "<BR><BR>GAME OVER<BR><B>YOU WON!!!</B><BR><BR>Time<BR>" +
+                displayTimeMinSecs +
+                "<BR><BR>Ancestors Placed<BR>" +
+                FandokuView.numAncestorsPlaced +
+                "<BR><BR>Misses<BR>" +
+                FandokuView.numMisses;
+            updateFeedbackArea(finalScore);
+        }
+    }
 
     FandokuView.redraw = function () {
         // console.log("FandokuView.redraw");
@@ -984,11 +1367,16 @@
         recalcAndDisplayNumGens();
         redoWedgesForFanChart();
         FandokuView.myAncestorTree.draw();
+        FandokuView.setupGame();
     };
 
     FandokuView.cancelSettings = function () {
         let theDIV = document.getElementById("settingsDIV");
         theDIV.style.display = "none";
+    };
+    FandokuView.showSettings = function () {
+        let theDIV = document.getElementById("settingsDIV");
+        theDIV.style.display = "block";
     };
 
     FandokuView.toggleSettings = function () {
@@ -1009,6 +1397,7 @@
     FandokuView.prototype.load = function (id) {
         // console.log("FandokuView.prototype.load");
         var self = this;
+        // FandokuView.maxAngle = 240;
         self._load(id).then(function (person) {
             // console.log("FandokuView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
@@ -1070,6 +1459,7 @@
                 FandokuView.myAhnentafel.update(person);
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
+                FandokuView.setupGame();
             });
         });
     };
@@ -1264,7 +1654,11 @@
         var nodeEnter = node
             .enter()
             .append("g")
-            .attr("class", "person " + this.selector);
+            .attr({
+                class : "person " + this.selector  
+                // id : "personG" + ancestorObject.ahnNum
+            });
+            
 
         // console.log("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
 
@@ -1281,7 +1675,7 @@
                 width: boxWidth,
                 height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
                 x: -boxWidth / 2,
-                y: -boxHeight / 2,
+                y: (-3 * boxHeight) / 4,
             })
             .style("overflow", "visible") // so the name will wrap
             .append("xhtml:div")
@@ -1313,35 +1707,7 @@
 
                 // console.log(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
 
-                if (thisGenNum >= 9) {
-                    return `
-                        <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
-                        } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
-                        <div class="name"    id=nameDivFor${
-                            ancestorObject.ahnNum
-                        } style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
-                        </div>
-                    `;
-                } else if (thisGenNum >= 8) {
-                    return `
-                        <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
-                        } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
-                        <div class="name"   id=nameDivFor${
-                            ancestorObject.ahnNum
-                        }  style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
-                        </div>
-                    `;
-                } else if (thisGenNum >= 7) {
-                    return `
-                        <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
-                        } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
-                        <div class="name"  id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(person)}</B></div>
-                        </div>
-                    `;
-                } else if (thisGenNum >= 4) {
+                if (thisGenNum >= 14) {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -1449,7 +1815,12 @@
             // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
             let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
             // Calculate which position # (starting lower left and going clockwise around the FanDoku game) (0 is father's father's line, largest number is mother's mother's line)
-            let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
+            let oldPosNum = ancestorObject.ahnNum - 2 ** thisGenNum; // ORIGINAL CALCULATION - when everything was PURE FANCHART
+            let thisPosNum = FandokuView.ahnNumCellNumArray[ ancestorObject.ahnNum] - 2 ** thisGenNum; // REVISED CALCULATION - using Array to translate pure Ahnentafel #s to Position Numbers, in case of FanDoku mode !
+            console.log("ahnNum, Array:",  ancestorObject.ahnNum, FandokuView.ahnNumCellNumArray);
+            console.log("value of ahnNum in Array:",  FandokuView.ahnNumCellNumArray[ancestorObject.ahnNum] );
+            console.log("PosNums:", oldPosNum, thisPosNum);
+            thisPosNum = oldPosNum;
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
 
@@ -1463,7 +1834,7 @@
                 let thisPersonsWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                 if (thisPersonsWedge) {
-                    thisPersonsWedge.style.fill = "white";// getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                    thisPersonsWedge.style.fill = "white"; // getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                 } else {
                     console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
@@ -1484,16 +1855,21 @@
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
                 // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
-                theNameDIV.innerHTML = "<B>" + getSettingsName(d) + "</B>";
-                theInfoBox.parentNode.parentNode.setAttribute("y", -60);
+                theNameDIV.innerHTML = "<B>" + getFullName(d) + "</B>";
+                theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
                     // console.log("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
                     theInfoBox.parentNode.parentNode.setAttribute("y", -120);
                     theInfoBox.parentNode.parentNode.setAttribute("x", -125);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 250);
-                } else if (ancestorObject.ahnNum > 7 && FandokuView.maxAngle == 180) {
-                    theInfoBox.parentNode.parentNode.setAttribute("x", -140);
-                    theInfoBox.parentNode.parentNode.setAttribute("width", 280);
+                } else if (ancestorObject.ahnNum > 15) {
+                    theInfoBox.parentNode.parentNode.setAttribute("x", -100);
+                    theInfoBox.parentNode.parentNode.setAttribute("width", 200);
+                    theInfoBox.parentNode.parentNode.setAttribute("y", -120);
+                } else if (ancestorObject.ahnNum > 7) {
+                    theInfoBox.parentNode.parentNode.setAttribute("x", -170);
+                    theInfoBox.parentNode.parentNode.setAttribute("width", 340);
+                    theInfoBox.parentNode.parentNode.setAttribute("y", -110);
                 } else if (thisGenNum == 1 && FandokuView.maxAngle == 180) {
                     theInfoBox.parentNode.parentNode.setAttribute("x", -160);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 320);
@@ -1512,11 +1888,13 @@
                 }
             }
 
+            // =================================================
+            // FANDOKU MODE CALCULATION HERE FOR POS NUM REVISED
+            // =================================================
+
             // Placement Angle = the angle at which the person's name card should be placed. (in degrees, where 0 = facing due east, thus the starting point being 180, due west, with modifications)
             let placementAngle =
-                180 +
-                (180 - FandokuView.maxAngle) / 2 +
-                (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + thisPosNum);
+                180 + (180 - FandokuView.maxAngle) / 2 + (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + thisPosNum);
             // Name Angle = the angle of rotation for the name card so that it is readable easily in the FanDoku game (intially, perpendicular to the spokes of the FanDoku game so that it appears horizontal-ish)
             let nameAngle = 90 + placementAngle;
             if (thisGenNum > 4) {
@@ -1551,18 +1929,18 @@
             // OK - now that the POSITION ISSUES have been dealt with - LET'S TALK FAMILY PHOTOS !
             let photoUrl = d.getPhotoUrl(75);
             if (
-                !photoUrl &&
+                !photoUrl /*  &&
                 FandokuView.currentSettings["photo_options_useSilhouette"] == true &&
                 FandokuView.currentSettings["photo_options_showAllPics"] == true &&
                 (FandokuView.currentSettings["photo_options_showPicsToN"] == false ||
                     (FandokuView.currentSettings["photo_options_showPicsToN"] == true &&
-                        thisGenNum < FandokuView.currentSettings["photo_options_showPicsToValue"]))
+                        thisGenNum < FandokuView.currentSettings["photo_options_showPicsToValue"]) ) */
             ) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
                 if (thePhotoDIV) {
                     thePhotoDIV.style.display = "block";
                 }
-            } else if (
+                /*  } else if (
                 (!photoUrl &&
                     (FandokuView.currentSettings["photo_options_useSilhouette"] == false ||
                         FandokuView.currentSettings["photo_options_showAllPics"] == false)) ||
@@ -1572,40 +1950,40 @@
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
                 if (thePhotoDIV) {
                     thePhotoDIV.style.display = "none";
-                }
+                } */
             } else if (ancestorObject.ahnNum > 1) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
 
-                if (thePhotoDIV && FandokuView.currentSettings["photo_options_showAllPics"] == true) {
+                if (thePhotoDIV /* && FandokuView.currentSettings["photo_options_showAllPics"] == true */) {
                     // Check to see if there are restrictions
-                    if (FandokuView.currentSettings["photo_options_showPicsToN"] == false) {
-                        // show All Pics - no restrictions
-                        thePhotoDIV.style.display = "block";
-                    } else {
-                        // ONLY show Pics up to a certain Generation #
-                        if (thisGenNum < FandokuView.currentSettings["photo_options_showPicsToValue"]) {
-                            thePhotoDIV.style.display = "block";
-                        } else {
-                            thePhotoDIV.style.display = "none";
-                        }
-                    }
-                } else if (thePhotoDIV && FandokuView.currentSettings["photo_options_showAllPics"] == false) {
-                    thePhotoDIV.style.display = "none";
+                    // if (FandokuView.currentSettings["photo_options_showPicsToN"] == false) {
+                    //     // show All Pics - no restrictions
+                    thePhotoDIV.style.display = "block";
+                    // } else {
+                    //     // ONLY show Pics up to a certain Generation #
+                    //     if (thisGenNum < FandokuView.currentSettings["photo_options_showPicsToValue"]) {
+                    //         thePhotoDIV.style.display = "block";
+                    //     } else {
+                    //         thePhotoDIV.style.display = "none";
+                    //     }
+                    // }
+                    // } else if (thePhotoDIV && FandokuView.currentSettings["photo_options_showAllPics"] == false) {
+                    //     thePhotoDIV.style.display = "none";
                 }
             }
             if (ancestorObject.ahnNum == 1) {
                 let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
-                if (thePhotoDIV && FandokuView.currentSettings["photo_options_showCentralPic"] == true) {
-                    if (!photoUrl && FandokuView.currentSettings["photo_options_useSilhouette"] == false) {
-                        thePhotoDIV.style.display = "none";
-                        theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                    } else {
-                        thePhotoDIV.style.display = "block";
-                    }
-                } else if (thePhotoDIV && FandokuView.currentSettings["photo_options_showCentralPic"] == false) {
-                    thePhotoDIV.style.display = "none";
-                    theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                    console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
+                if (thePhotoDIV /*  && FandokuView.currentSettings["photo_options_showCentralPic"] == true */) {
+                    // if (!photoUrl && FandokuView.currentSettings["photo_options_useSilhouette"] == false) {
+                    //     thePhotoDIV.style.display = "none";
+                    //     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                    // } else {
+                    thePhotoDIV.style.display = "block";
+                    // }
+                    // } else if (thePhotoDIV && FandokuView.currentSettings["photo_options_showCentralPic"] == false) {
+                    //     thePhotoDIV.style.display = "none";
+                    //     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                    //     console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
             }
 
@@ -1682,7 +2060,8 @@
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}&view=fanchart"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:45px; height:33px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" /></a></span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>
@@ -1720,8 +2099,8 @@
         // RESET  the # of Gens parameters
         FandokuView.numGens2Display = 4;
         FandokuView.lastNumGens = 4;
-        FandokuView.numGensRetrieved = 5;
-        FandokuView.maxNumGens = 6;
+        FandokuView.numGensRetrieved = 4;
+        FandokuView.maxNumGens = 5;
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
@@ -1980,63 +2359,65 @@
         let datePlaceString = "";
         let thisDate = "";
         let thisPlace = "";
-        if (FandokuView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
-            datePlaceString = getLifeSpan(person) + "<br/>";
-        }
+        // if (FandokuView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
+        //     datePlaceString = getLifeSpan(person) + "<br/>";
+        // }
 
         if (dateType == "B") {
-            if (FandokuView.currentSettings["date_options_showBirth"] == true) {
-                thisDate = settingsStyleDate(
-                    person._data.BirthDate,
-                    FandokuView.currentSettings["date_options_dateFormat"]
-                );
-                if (FandokuView.currentSettings["date_options_dateTypes"] != "detailed") {
-                    thisDate = "";
-                }
-
-                if (
-                    FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
-                    FandokuView.currentSettings["place_options_showBirth"] == true
-                ) {
-                    thisPlace = settingsStyleLocation(
-                        person.getBirthLocation(),
-                        FandokuView.currentSettings["place_options_locationFormatBD"]
-                    );
-                } else {
-                    thisPlace = "";
-                }
-
-                if (thisDate > "" || thisPlace > "") {
-                    datePlaceString += "b. ";
-                }
+            // if (FandokuView.currentSettings["date_options_showBirth"] == true) {
+            thisDate = settingsStyleDate(
+                person._data.BirthDate,
+                "DDMMMYYYY" // FandokuView.currentSettings["date_options_dateFormat"]
+            );
+            if (FandokuView.currentSettings["date_options_dateTypes"] != "detailed") {
+                thisDate = "";
             }
+
+            // if (
+            //     FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
+            //     FandokuView.currentSettings["place_options_showBirth"] == true
+            // ) {
+            thisPlace = settingsStyleLocation(
+                person.getBirthLocation(),
+                "Full"
+                // FandokuView.currentSettings["place_options_locationFormatBD"]
+            );
+            // } else {
+            //     thisPlace = "";
+            // }
+
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "b. ";
+            }
+            // }
         } else if (dateType == "D") {
             if (person._data.DeathDate == "0000-00-00") {
                 return "";
             }
-            if (FandokuView.currentSettings["date_options_showDeath"] == true) {
-                thisDate = settingsStyleDate(
-                    person._data.DeathDate,
-                    FandokuView.currentSettings["date_options_dateFormat"]
-                );
-                if (FandokuView.currentSettings["date_options_dateTypes"] != "detailed") {
-                    thisDate = "";
-                }
-                if (
-                    FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
-                    FandokuView.currentSettings["place_options_showDeath"] == true
-                ) {
-                    thisPlace = settingsStyleLocation(
-                        person.getDeathLocation(),
-                        FandokuView.currentSettings["place_options_locationFormatBD"]
-                    );
-                } else {
-                    thisPlace = "";
-                }
-                if (thisDate > "" || thisPlace > "") {
-                    datePlaceString += "d. ";
-                }
+            // if (FandokuView.currentSettings["date_options_showDeath"] == true) {
+            thisDate = settingsStyleDate(
+                person._data.DeathDate,
+                "DDMMMYYYY" // FandokuView.currentSettings["date_options_dateFormat"]
+            );
+            // if (FandokuView.currentSettings["date_options_dateTypes"] != "detailed") {
+            //     thisDate = "";
+            // }
+            // if (
+            //     FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
+            //     FandokuView.currentSettings["place_options_showDeath"] == true
+            // ) {
+            thisPlace = settingsStyleLocation(
+                person.getDeathLocation(),
+                "Full"
+                // FandokuView.currentSettings["place_options_locationFormatBD"]
+            );
+            // } else {
+            //     thisPlace = "";
+            // }
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "d. ";
             }
+            // }
         }
         if (thisDate > "" || thisPlace > "") {
             if (thisDate > "") {
@@ -2130,6 +2511,35 @@
         } else {
             return `${person._data.FirstName.substring(0, 1)}. ${person._data.LastNameAtBirth}`;
         }
+    }
+
+    /**
+     * Full First Name + LNAB
+     */
+    function getFullName(person) {
+
+        let FullName = "";
+        if (person._data.FirstName) {
+            FullName += person._data.FirstName;
+        // } else if (person._data.BirthNamePrivate) {
+        //     FullName += person._data.BirthNamePrivate;
+        } else if (person._data.RealName) {
+            FullName += person._data.RealName;
+        }
+
+        FullName += " ";
+
+        if (person._data.MiddleName) {
+            FullName += person._data.MiddleName + " ";
+        } else if (person._data.MiddleInitial && person._data.MiddleInitial > "" && person._data.MiddleInitial != ".") {
+            FullName += person._data.MiddleInitial + " ";
+        }
+
+        if (person._data.LastNameAtBirth) {
+            FullName += person._data.LastNameAtBirth;
+        }
+            
+        return FullName;
     }
 
     /**
@@ -2229,11 +2639,17 @@
         // start out with a random palette selected, so, if nothing else, at least there's something
         let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
 
+        // HARD CODED FOR FANDOKU
+        thisColourArray = PastelsArray;
+
         // GET the settings that determine what the colouring should look like (if at all)
         let settingForColourBy = FandokuView.currentSettings["colour_options_colourBy"];
         if (settingForColourBy == "None") {
             return "White";
         }
+
+        // HARD CODED FOR FANDOKU
+        settingForColourBy = "Generation";
 
         let settingForPalette = FandokuView.currentSettings["colour_options_palette"];
         if (KeyColoursMatches[settingForPalette]) {
@@ -2268,8 +2684,10 @@
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
 
-    FandokuView.pickMe = function(num) {
+    FandokuView.pickMe = function (num) {
         console.log("PICK ME, PICK ME !!!!", num);
-    }
+    };
 
+    // SOUND EFFECTS
+    // Sound Effect from <a href="https://pixabay.com/sound-effects/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=40142">Pixabay</a>
 })();
