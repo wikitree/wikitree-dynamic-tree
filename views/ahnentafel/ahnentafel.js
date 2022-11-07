@@ -275,7 +275,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 html += "<b>";
                 html += `${person.FirstName} ${person.MiddleName} `;
                 if (person.Nicknames) {
-                    html += `${person.NickNames} `;
+                    html += `"${person.Nicknames}" `;
                 }
                 if (person.LastNameCurrent != person.LastNameAtBirth) {
                     html += ` (${person.LastNameAtBirth}) `;
@@ -290,7 +290,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 html += `<a href="https://www.wikitree.com/wiki/${person.Name}">`;
                 html += `${person.FirstName} ${person.MiddleName} `;
                 if (person.Nicknames) {
-                    html += `${person.NickNames} `;
+                    html += `"${person.Nicknames}" `;
                 }
                 if (person.LastNameCurrent != person.LastNameAtBirth) {
                     html += ` (${person.LastNameAtBirth}) `;
