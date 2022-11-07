@@ -1376,7 +1376,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 const aYear = a.mDate ? a.mDate.split("-")[0] : 9999;
                 const bYear = b.mDate ? b.mDate.split("-")[0] : 9999;
 
-                return a(aYear == 0 ? 9999 : aYear) - (bYear == 0 ? 9999 : bYear);
+                return (aYear == 0 ? 9999 : aYear) - (bYear == 0 ? 9999 : bYear);
             });
         }
         sortByYear(list);
