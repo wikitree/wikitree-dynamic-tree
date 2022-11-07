@@ -37,7 +37,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
             "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
             "timeline": new TimelineView(),
             "fanchart": new FanChartView(),
-            // "fandoku": new FandokuView(),
+            "fandoku": new FandokuView(),
             "fractal": new FractalView(),
             "ahnentafel": new AhnentafelView(),
             "surnames": new SurnamesView(),
