@@ -6,7 +6,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         return {
             title: "Couples Dynamic Tree",
             description:
-                "Click on the tree and use track pad or your mouse wheel to zoom. Click and drag to pan around.",
+                "Use the track pad or mouse wheel to zoom the tree. Click and drag to pan around. Click on a person to see more detail. " +
+                "Click on &#x21e9; to see children or other spouses (&#x21e7 to restore). " +
+                "Click on &#x2907;, if present, to change to that spouse of the central couple. " +
+                'Click on <img src="https://www.wikitree.com/images/icons/pedigree.gif" /> to make that person the focus of the tree.',
             docs: "",
         };
     }
@@ -33,6 +36,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     const DESCENDANTS = -1;
     const DOWN_ARROW = "\u21e9";
     const UP_ARROW = "\u21e7";
+    const RIGHT_ARROW = "\u2907";
 
     const REQUIRED_FIELDS = [
         "Id",
@@ -65,8 +69,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * tree. A Couple may also consist of only a single Person if they do not have a (known) spouse.
      */
     class Couple {
-        constructor(id, a, b, focus) {
-            this.id = id;
+        constructor(id, { a, b, focus, isRoot = false } = {}) {
+            this.isRoot = isRoot;
             if (b === undefined) {
                 if (a === undefined) {
                     throw new Error("Attempting to create an empty couple");
@@ -100,7 +104,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 this.b = b;
                 this.focus = this.focus;
             }
+            this.id = this.makeId(id);
             condLog(`new Couple: id=${this.getId()}, focus=${this.focus}, ${this.toString()}`, this.a, this.b);
+        }
+
+        makeId(id) {
+            return `${id}:${this.a?.getId() || ""}:${this.b?.getId() || ""}`;
         }
 
         getId() {
@@ -194,6 +203,27 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 }
             }
             return this;
+        }
+
+        changePartner(personId, newPartner) {
+            if (this.isRoot) {
+                if ([this.a?.getId(), this.b?.getId()].includes(+personId)) {
+                    if (this.a && this.a.getId() == personId) {
+                        this.b = newPartner;
+                    } else {
+                        this.a = newPartner;
+                    }
+                    // Strip off everything from the first : in the id and use the result as the prefix
+                    // for the new root id
+                    this.id = this.makeId(this.id.slice(0, this.id.indexOf(":")));
+                } else {
+                    console.error(
+                        `Could not find profile id ${personId} in couple ${this.toString()} in order to change their partner`
+                    );
+                }
+            } else {
+                console.error(`Attempting to change partner of non-root couple ${this.toString()}`);
+            }
         }
 
         refreshPerson(newPerson) {
@@ -309,6 +339,15 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 return self.removeDescendants(couple);
             });
 
+            // Register callback for root partner change
+            self.ancestorTree.setRootPartnerChangeCallback(function (personId, newPartnerId) {
+                return self.changeRootPartner(personId, newPartnerId);
+            });
+
+            self.descendantTree.setRootPartnerChangeCallback(function (personId, newPartnerId) {
+                return self.changeRootPartner(personId, newPartnerId);
+            });
+
             // Setup pattern
             svg.append("defs")
                 .append("pattern")
@@ -335,8 +374,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             let self = this;
             self.richLoad(id).then(function (person) {
                 condLog(`=======RICH_LOADed ${person.toString()}`, person);
-                let aRoot = new Couple("A", person);
-                let dRoot = new Couple("D", person);
+                let aRoot = new Couple("A", { a: person, isRoot: true });
+                let dRoot = new Couple("D", { a: person, isRoot: true });
                 self.drawTree(aRoot, dRoot);
             });
         }
@@ -539,6 +578,20 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
         }
 
+        async changeRootPartner(personId, newPartnerID) {
+            let self = this;
+            let root = self.ancestorTree.root;
+            if ([root.a?.getId(), root.b?.getId()].includes(+personId)) {
+                condLog(`Changing partner for ${personId} to ${newPartnerID}`);
+
+                // Make sure we have all the new profile data before we build and draw the new tree
+                let newPartner = await self.richLoad(newPartnerID);
+                self.ancestorTree.changeRootPartner(personId, newPartner);
+                self.descendantTree.changeRootPartner(personId, newPartner);
+                this.drawTree();
+            }
+        }
+
         /**
          * Main WikiTree API call
          */
@@ -592,6 +645,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 return $.Deferred().resolve().promise();
             };
 
+            this._rootPartnerChangeCallback = function () {
+                return $.Deferred().resolve().promise();
+            };
+
             this.tree = d3.layout
                 .tree()
                 .nodeSize([nodeHeight, nodeWidth])
@@ -640,6 +697,19 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         contract(fn) {
             this._contract = fn;
             return this;
+        }
+        setRootPartnerChangeCallback(fn) {
+            this._rootPartnerChangeCallback = fn;
+            return this;
+        }
+        async changeRootPartner(personId, newPartnerID) {
+            let couple = this.root;
+            condLog(
+                `Changing partner for ${personId} to ${newPartnerID} in ${this.getSelector()} tree root ${couple.toString()}`,
+                couple
+            );
+            this.svg.selectAll("g.couple." + this.selector + ".root").remove();
+            return couple.changePartner(personId, newPartnerID);
         }
         /**
          * Draw/redraw the tree
@@ -718,11 +788,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 return couple.getId();
             });
 
-            // Add new nodes
+            // Add new nodes. We flag the root nodes so we can easily find and remove them if we change
+            // a partner in the root node (the only node where we're allowed to do so)
             let nodeEnter = node
                 .enter()
                 .append("g")
-                .attr("class", "couple " + this.selector);
+                .attr("class", function (couple) {
+                    return "couple " + self.selector + (couple.isRoot ? " root" : "");
+                });
 
             // Draw the person boxes
             nodeEnter
@@ -771,6 +844,15 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 self.personPopup(person, d3.mouse(self.svg.node()), d3.mouse(this));
             });
 
+            // Set up behaviour of the "change partner" button of the root node
+            // We do it here so we can get to both the ancestor and descendant tree roots
+            this.svg.selectAll(".select-spouse-button").on("click", function (event) {
+                d3.event.stopPropagation();
+                let personId = this.getAttribute("partner-id");
+                let newPartnerId = this.getAttribute("spouse-id");
+                self._rootPartnerChangeCallback(personId, newPartnerId);
+            });
+
             // Position
             node.attr("transform", function (d) {
                 return "translate(" + self.direction * d.y + "," + d.x + ")";
@@ -780,10 +862,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         drawCouple(couple) {
             let div = document.createElement("xhtml:div");
             if (!couple.a || !couple.a.isNoSpouse) {
-                div.appendChild(this.drawPerson(couple.a, couple.b, L, couple.focus == L));
+                div.appendChild(this.drawPerson(couple.a, couple.b, L, couple.focus == L, couple.isRoot));
             }
             if (!couple.b || !couple.b.isNoSpouse) {
-                div.appendChild(this.drawPerson(couple.b, couple.a, R, couple.focus == R));
+                div.appendChild(this.drawPerson(couple.b, couple.a, R, couple.focus == R, couple.isRoot));
             }
             if (this.direction == ANCESTORS) {
                 div.appendChild(this.drawChildrenList(couple));
@@ -793,11 +875,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         /**
          * Draw a person box.
          */
-        drawPerson(person, spouse, side, inFocus) {
+        drawPerson(person, spouse, side, inFocus, isRoot = false) {
             let borderColorCode = "102, 204, 102";
             let name = "?";
             let lifeSpan = "? - ?";
-            let personId = undefined;
             if (person) {
                 if (person.isMale()) {
                     borderColorCode = "102, 102, 204";
@@ -807,7 +888,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 }
                 name = getShortName(person);
                 lifeSpan = lifespan(person);
-                personId = person.getId();
             }
             let div = document.createElement("div");
             div.className = `person box ${side == R ? "R" : "L"}`;
@@ -816,60 +896,71 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 div.style.backgroundImage = `linear-gradient(to top right, rgba(${borderColorCode},.2), rgba(${borderColorCode},0), rgba(${borderColorCode},0))`;
             }
             // Add spouse list behind a button
-            let [button, spouseList] = getSpouseSelection(spouse, personId);
+            let [button, spouseList] = getSpouseSelection(spouse, isRoot);
             if (button) {
                 button.style.borderColor = `rgba(${borderColorCode},.2)`;
                 spouseList.style.borderColor = `rgba(${borderColorCode},.5)`;
                 let nameWrapper = document.createElement("div");
                 nameWrapper.className = "cname";
                 nameWrapper.appendChild(button);
-                nameWrapper.appendChild(document.createTextNode(" " + name));
+                nameWrapper.appendChild(document.createTextNode(name));
                 div.appendChild(nameWrapper);
-                div.appendChild(divWith("lifespan", lifeSpan));
+                div.appendChild(aDivWith("lifespan", lifeSpan));
                 div.appendChild(spouseList);
             } else {
-                div.appendChild(divWith("cname", name));
-                div.appendChild(divWith("lifespan", lifeSpan));
+                div.appendChild(aDivWith("cname", name));
+                div.appendChild(aDivWith("lifespan", lifeSpan));
             }
             return div;
         }
 
         drawChildrenList(couple) {
-            let listDiv = document.createElement("div");
+            const listDiv = document.createElement("div");
             listDiv.className = "children-list";
             listDiv.style.display = "none";
 
-            let children = couple.getJointChildren();
-            let childrenList = document.createElement("ol");
+            const children = couple.getJointChildren();
+            const childrenList = document.createElement("ol");
             for (let child of children) {
                 let item = document.createElement("li");
                 item.appendChild(
-                    divWithNewTreeLink("aChild", aProfileLink(getShortName(child), child.getName()), child.getName())
+                    aDivWith(
+                        "aChild",
+                        aProfileLink(getShortName(child), child.getName()),
+                        document.createTextNode(" "),
+                        aTreeLink(child.getName())
+                    )
                 );
                 childrenList.appendChild(item);
             }
             listDiv.appendChild(childrenList);
 
-            let wrapper = document.createElement("div");
+            const wrapper = document.createElement("div");
             wrapper.className = "children-list-wrapper";
 
-            let button = document.createElement("button");
+            const button = document.createElement("button");
             button.className = "drop-button";
             button.style.backgroundColor = "transparent";
             button.style.borderColor = "rgba(0, 0, 0, .2)";
-            // button.style.textAlign = "left";
-            let down = document.createTextNode(`${DOWN_ARROW} Children`);
-            let up = document.createTextNode(`${UP_ARROW} Children`);
+            const down = document.createTextNode(`${DOWN_ARROW} Children [${children.length}]`);
+            const up = document.createTextNode(`${UP_ARROW} Children [${children.length}]`);
             button.appendChild(down);
             button.onclick = (event) => {
                 if (listDiv.style.display == "none") {
-                    // let x = d3.selectAll(".children-list");
-                    // x.sort(function (a, b) {
-                    // d3.selectAll(".children-list").sort(function (a, b) {
-                    //     // select the parent and sort the path's
-                    //     if (a != listDiv) return -1; // a is not the hovered element, send "a" to the back
-                    //     else return 1; // a is the hovered element, bring "a" to the front
-                    // });
+                    // Ensure we bring the children list to the front.
+                    // i.e. from the children list wrapper up to the view container, walk up the DOM tree,
+                    // moving each node encountered to be the last child of its parent, which will ensure
+                    // it gets rendered last and hence be on top of everything else.
+                    // This code might be a bit brittle(?) - is there a better way?
+                    d3.select(wrapper).each(function () {
+                        let childNode = this;
+                        let parentNode = childNode.parentNode;
+                        do {
+                            parentNode.appendChild(childNode);
+                            childNode = parentNode;
+                            parentNode = parentNode.parentNode;
+                        } while (parentNode && parentNode.id !== "view-container");
+                    });
                     listDiv.style.display = "block";
                     button.replaceChild(up, down);
                 } else {
@@ -1060,14 +1151,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     let father = couple.a.getFather();
                     let mother = couple.a.getMother();
                     if (father || mother) {
-                        children.push(new Couple(couple.getId() + "a", father, mother));
+                        children.push(new Couple(couple.getId() + ".a", { a: father, b: mother }));
                     }
                 }
                 if (couple.b) {
                     let father = couple.b.getFather();
                     let mother = couple.b.getMother();
                     if (father || mother) {
-                        children.push(new Couple(couple.getId() + "b", father, mother));
+                        children.push(new Couple(couple.getId() + ".b", { a: father, b: mother }));
                     }
                 }
                 condLog(`Returning AncestorTree children for ${couple.toString()}`, children);
@@ -1089,7 +1180,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 let list = [];
 
                 for (let i in children) {
-                    list.push(new Couple(`${couple.getId()}.${i}`, children[i]));
+                    list.push(new Couple(`${couple.getId()}.${i}`, { a: children[i] }));
                 }
 
                 condLog(`Returning DescendantTree children for ${couple.toString()}`, list);
@@ -1152,7 +1243,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             death = person.getDeathDate().substr(0, 4);
         }
 
-        let lifespan = localTesting ? `${person.getId()}: ` : "";
+        let lifespan = localTesting ? `${person.getId()}:` : "";
         if (birth && birth != "0000") {
             lifespan += birth;
         }
@@ -1351,7 +1442,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         });
     }
 
-    function getSpouseSelection(person, selectedSpouseId) {
+    function getSpouseSelection(person, isRoot = false) {
         if (!person) return [];
 
         // Collect a list of the names and lifespans of all the spouses of the given person
@@ -1361,6 +1452,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             for (let s in spouses) {
                 let spouse = spouses[s];
                 list.push({
+                    id: spouse.getId(),
                     name: getShortName(spouse),
                     lifespan: lifespan(spouse),
                     wtId: spouse.getName(),
@@ -1395,25 +1487,49 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         spouseList.style.textAlign = "left";
         for (let spouse of list) {
             let item = document.createElement("li");
-            item.appendChild(divWith("altSpouse", undefined, aProfileLink(spouse.name, spouse.wtId)));
-            item.appendChild(
-                divWithNewTreeLink(
-                    "lifespan",
-                    document.createTextNode(spouse.lifespan),
-                    spouse.wtId,
-                    (treeLinkIsAfter = false)
-                )
+            item.appendChild(aDivWith("altSpouse", aProfileLink(spouse.name, spouse.wtId)));
+            let div = aDivWith(
+                "lifespan",
+                aTreeLink(spouse.wtId),
+                document.createTextNode(" "),
+                document.createTextNode(spouse.lifespan)
             );
+            if (isRoot) {
+                // Create a "change partner" button
+                const button = document.createElement("button");
+                button.className = "select-spouse-button";
+                button.textContent = RIGHT_ARROW;
+                button.style.backgroundColor = "transparent";
+                button.setAttribute("partner-id", person.getId());
+                button.setAttribute("spouse-id", spouse.id);
+                // Note; the button's click behaviour is added in Tree.drawNodes()
+                div.prepend(button);
+            }
+            item.appendChild(div);
             spouseList.appendChild(item);
         }
         listDiv.appendChild(spouseList);
 
-        let button = document.createElement("button");
+        // Create a "show other spouses" button
+        const button = document.createElement("button");
         button.className = "drop-button";
         button.textContent = DOWN_ARROW;
         button.style.backgroundColor = "transparent";
         button.onclick = (event) => {
             if (wrapper.style.display == "none") {
+                // Ensure we bring the spouses list to the front
+                // This is hacky code and should be improved ... if you know how
+                d3.select(wrapper).each(function () {
+                    let childNode = this.parentNode.parentNode; // should be the xhtml:div node
+                    if (childNode) {
+                        let parentNode = childNode.parentNode;
+                        do {
+                            parentNode.appendChild(childNode);
+                            childNode = parentNode;
+                            parentNode = parentNode.parentNode;
+                        } while (parentNode && parentNode.id !== "view-container");
+                    }
+                });
                 wrapper.style.display = "block";
                 button.textContent = UP_ARROW;
             } else {
@@ -1426,15 +1542,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         return [button, wrapper];
     }
 
-    function divWith(itsClass, itsText, aChild) {
-        let div = document.createElement("div");
-        div.className = itsClass;
-        if (itsText) {
-            div.textContent = itsText;
-        }
-        if (aChild) {
-            div.appendChild(aChild);
-        }
+    function aDivWith(itsClass, ...elements) {
+        div = document.createElement("div");
+        if (itsClass) div.className = itsClass;
+        div.append(...elements);
         return div;
     }
 
@@ -1451,29 +1562,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         return profileLink;
     }
 
-    function divWithNewTreeLink(itsClass, content, personId, treeLinkIsAfter = true) {
+    function aTreeLink(wtId) {
         // Icon and link to dynamic tree
         let img = document.createElement("img");
         img.src = "https://www.wikitree.com/images/icons/pedigree.gif";
         let treeLink = document.createElement("a");
-        treeLink.href = `#name=${personId}`;
+        treeLink.href = `#name=${wtId}`;
         treeLink.appendChild(img);
-
-        // Put it all together
-        let div = document.createElement("div");
-        div.className = itsClass;
-        span = document.createElement("span");
-        if (treeLinkIsAfter) {
-            span.appendChild(content);
-            span.appendChild(document.createTextNode(" "));
-            span.appendChild(treeLink);
-        } else {
-            span.appendChild(treeLink);
-            span.appendChild(document.createTextNode(" "));
-            span.appendChild(content);
-        }
-        div.appendChild(span);
-
-        return div;
+        return treeLink;
     }
 })();
