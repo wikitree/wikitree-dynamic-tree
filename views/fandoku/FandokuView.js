@@ -115,7 +115,7 @@
     FandokuView.numGens2Display = 4;
     FandokuView.lastNumGens = 4;
     FandokuView.numGensRetrieved = 4;
-    FandokuView.maxNumGens = 4;
+    FandokuView.maxNumGens = 7;
     FandokuView.workingMaxNumGens = 5;
 
     FandokuView.numSecondsElapsed = 0;
@@ -481,7 +481,7 @@
         //         </div>
 
         // FIRST OFF - Let's add FLOATING NAMES around the Chart
-        for (let index = 2; index < 32; index++) {
+        for (let index = 2; index < 2**FandokuView.maxNumGens; index++) {
             svg.append("g")
                 .attr({
                     id: "floatingNameHolder" + index,
@@ -993,7 +993,7 @@
         let thisID = "floatingNameHolder" + ahnNum;
         let thisObj = "floatingNameObject" + ahnNum;
         let thisNameOnlyObj = document.getElementById("floatingName" + ahnNum);
-        thisNameOnlyObj.innerHTML = "<B>Random Ancestor # " + ahnNum + "</B>";
+        thisNameOnlyObj.innerHTML = "<B>Random Ancestor" + "</B>";
 
         let thisNameDIV = document.getElementById(thisID);
         thisNameDIV.style.display = "block";
@@ -2100,7 +2100,7 @@
         FandokuView.numGens2Display = 4;
         FandokuView.lastNumGens = 4;
         FandokuView.numGensRetrieved = 4;
-        FandokuView.maxNumGens = 5;
+        FandokuView.maxNumGens = 7;
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
