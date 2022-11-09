@@ -858,7 +858,7 @@
 
     function toggleFloatingName(id, ahnNum) {
         console.log("toggleFloatingName", id, ahnNum);
-        for (let index = 2; index < 32; index++) {
+        for (let index = 2; index < 2** FandokuView.maxNumGens; index++) {
             let thisID = "floatingName" + index;
             let thisNameDIV = document.getElementById(thisID);
             if (thisNameDIV) {
@@ -952,6 +952,10 @@
                         specificGen = "great great grandparents";
                     } else if (gen == 32) {
                         specificGen = "3x great grandparents";
+                    } else if (gen == 64) {
+                        specificGen = "4x great grandparents";
+                    } else if (gen == 128) {
+                        specificGen = "5x great grandparents";
                     }
                     console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 852);
                     if (FandokuView.gameStatus == "Live") {
@@ -997,9 +1001,16 @@
 
         let thisNameDIV = document.getElementById(thisID);
         thisNameDIV.style.display = "block";
+        let dThetaNudge = 0;
+        if (FandokuView.numGens2Display == 6) {
+            dThetaNudge = 0.25;
+        } else if (FandokuView.numGens2Display == 7){
+            dThetaNudge = 0.45;
+        }
+
         let thisNameOBJ = document.getElementById(thisObj);
         let newR = 270 * (1.25 + FandokuView.numGens2Display);
-        let newTheta = (ahnNum - 1) / (2 ** FandokuView.numGens2Display - 1); // basically your amount in radians!
+        let newTheta = (1 + dThetaNudge) * (ahnNum - 1) / (2 ** FandokuView.numGens2Display - 1) - dThetaNudge/2; // basically your amount in radians!
         let newX = newR * Math.cos((1 + newTheta) * Math.PI) - 270;
         let newY = newR * Math.sin((1 + newTheta) * Math.PI) + 100;
 
@@ -1011,6 +1022,10 @@
             newY -= 60;
         } else if (FandokuView.numGens2Display == 5 && ahnNum > 12 && ahnNum <= 20) {
             newY = 0 - newR + 90 * (1 - (ahnNum % 3));
+        } else if (FandokuView.numGens2Display == 6 && ahnNum > 24 && ahnNum <= 40) {
+            newY = 0 - newR + 90 * (3 - (ahnNum % 5));
+        } else if (FandokuView.numGens2Display == 7 && ahnNum > 38 && ahnNum <= 90) {
+            newY = 0 - newR + 90 * (4 - (ahnNum % 7));
         }
         // let newX = thisGenNum * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
         // let newX = thisGenNum * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
@@ -1090,7 +1105,7 @@
         FandokuView.gameStatus = "Pre";
         // fandokuDing.play();
         // HIDE ALL the NAMES (especially ones for generations we're not using)
-        for (let ahnNum = 2; ahnNum < 32; ahnNum++) {
+        for (let ahnNum = 2; ahnNum < 2**FandokuView.maxNumGens; ahnNum++) {
             let thisID = "floatingNameHolder" + ahnNum;
             let thisNameDIV = document.getElementById(thisID);
             if (thisNameDIV) {
@@ -1202,8 +1217,18 @@
         FandokuView.gameStatus = "Live";
         // FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
 
+        // CHECK for gen 6 or gen 7, and if so - then change maxAngle appropriately (min 240, min 360)
+        if (FandokuView.numGens2Display == 6) {
+            FandokuView.maxAngle = Math.max(240, FandokuView.maxAngle);
+            FandokuView.redraw();
+        } else if (FandokuView.numGens2Display == 7) {
+            FandokuView.maxAngle = 360;
+            FandokuView.redraw();
+        }
+
         //NAME the Peeps!
         FandokuView.foundAncestors = [];
+
         for (let ahnNum = 2; ahnNum < 2 ** FandokuView.numGens2Display; ahnNum++) {
             let thisNameObj = document.getElementById("floatingName" + ahnNum);
             console.log("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
