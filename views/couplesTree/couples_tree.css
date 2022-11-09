@@ -23,14 +23,23 @@ h4 {
   font-size: 14px;
 }
 
+.select-spouse-button{
+  font-size: 14px;
+  margin: 0;
+  text-transform: none;
+  padding: 1px 2px;
+  color: green;
+}
+
 .drop-button {
   font-size: 14px;
   margin: 0;
   text-transform: none;
-  padding: 1px 6px;
+  padding: 1px 2px;
   color: black;
 }
 
+.select-spouse-button:hover,
 .drop-button:hover {
   cursor: pointer;
   color: #fc7171;
