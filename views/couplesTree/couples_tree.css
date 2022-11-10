@@ -19,16 +19,63 @@ h4 {
   margin: 0;
 }
 
+.box[data-gender="male"],
+.popup-box[data-gender="male"] {
+  border-color: rgba(102, 102, 204, 0.5);
+}
+
+.descendant .box[data-gender="male"][data-infocus="true"],
+.ancestor.root .box[data-gender="male"][data-infocus="true"] {
+  border-color: rgba(102, 102, 204, 0.5);
+  background-image: linear-gradient(
+    to top right,
+    rgba(102, 102, 204, 0.2),
+    rgba(102, 102, 204, 0),
+    rgba(102, 102, 204, 0)
+  );
+}
+
+.box[data-gender="female"],
+.popup-box[data-gender="female"] {
+  border-color: rgba(204, 102, 102, 0.5);
+}
+
+.descendant .box[data-gender="female"][data-infocus="true"],
+.ancestor.root .box[data-gender="female"][data-infocus="true"] {
+  border-color: rgba(204, 102, 102, 0.5);
+  background-image: linear-gradient(
+    to top right,
+    rgba(204, 102, 102, 0.2),
+    rgba(204, 102, 102, 0),
+    rgba(204, 102, 102, 0)
+  );
+}
+
+.box,
+.popup-box {
+  border-color: rgba(102, 204, 102, 0.5);
+}
+
+.descendant .box[data-infocus="true"] {
+  border-color: rgba(102, 204, 102, 0.5);
+  background-image: linear-gradient(
+    to top right,
+    rgba(102, 204, 102, 0.2),
+    rgba(102, 204, 102, 0),
+    rgba(102, 204, 102, 0)
+  );
+}
+
 .person .cname {
   font-size: 14px;
 }
 
-.select-spouse-button{
-  font-size: 14px;
-  margin: 0;
-  text-transform: none;
-  padding: 1px 2px;
-  color: green;
+.button-words {
+  color: black;
+}
+
+.button-words:hover {
+  color: #fc7171;
 }
 
 .drop-button {
@@ -36,7 +83,18 @@ h4 {
   margin: 0;
   text-transform: none;
   padding: 1px 2px;
-  color: black;
+  color: green;
+  background-color: transparent;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.select-spouse-button {
+  font-size: 14px;
+  margin: 0;
+  text-transform: none;
+  padding: 1px 2px;
+  color: green;
+  background-color: transparent;
 }
 
 .select-spouse-button:hover,
@@ -59,6 +117,7 @@ h4 {
   margin: 6px;
   padding-top: 0px;
   padding-left: 20px;
+  text-align: left;
   --content-padding: 0;
 }
 
