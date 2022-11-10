@@ -862,10 +862,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         drawCouple(couple) {
             let div = document.createElement("xhtml:div");
             if (!couple.a || !couple.a.isNoSpouse) {
-                div.appendChild(this.drawPerson(couple.a, couple.b, L, couple.focus == L, couple.isRoot));
+                div.appendChild(this.drawPerson(couple, L));
             }
             if (!couple.b || !couple.b.isNoSpouse) {
-                div.appendChild(this.drawPerson(couple.b, couple.a, R, couple.focus == R, couple.isRoot));
+                div.appendChild(this.drawPerson(couple, R));
             }
             if (this.direction == ANCESTORS) {
                 div.appendChild(this.drawChildrenList(couple));
@@ -875,31 +875,27 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         /**
          * Draw a person box.
          */
-        drawPerson(person, spouse, side, inFocus, isRoot = false) {
-            let borderColorCode = "102, 204, 102";
+        drawPerson(couple, side) {
+            const person = side == R ? couple.b : couple.a;
+            const spouse = side == R ? couple.a : couple.b;
+            const inFocus = couple.focus == side;
+            const gender = (person?.getGender() || "other").toLowerCase();
             let name = "?";
             let lifeSpan = "? - ?";
+
             if (person) {
-                if (person.isMale()) {
-                    borderColorCode = "102, 102, 204";
-                }
-                if (person.isFemale()) {
-                    borderColorCode = "204, 102, 102";
-                }
                 name = getShortName(person);
                 lifeSpan = lifespan(person);
             }
             let div = document.createElement("div");
             div.className = `person box ${side == R ? "R" : "L"}`;
-            div.style.borderColor = `rgba(${borderColorCode},.5)`;
-            if (inFocus && this.direction == DESCENDANTS) {
-                div.style.backgroundImage = `linear-gradient(to top right, rgba(${borderColorCode},.2), rgba(${borderColorCode},0), rgba(${borderColorCode},0))`;
-            }
+            div.setAttribute("data-gender", gender);
+            div.setAttribute("data-infocus", inFocus);
+
             // Add spouse list behind a button
-            let [button, spouseList] = getSpouseSelection(spouse, isRoot);
+            let [button, spouseList] = getSpouseSelection(spouse, couple.isRoot);
             if (button) {
-                button.style.borderColor = `rgba(${borderColorCode},.2)`;
-                spouseList.style.borderColor = `rgba(${borderColorCode},.5)`;
+                spouseList.setAttribute("data-gender", gender);
                 let nameWrapper = document.createElement("div");
                 nameWrapper.className = "cname";
                 nameWrapper.appendChild(button);
@@ -940,11 +936,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             const button = document.createElement("button");
             button.className = "drop-button";
-            button.style.backgroundColor = "transparent";
-            button.style.borderColor = "rgba(0, 0, 0, .2)";
-            const down = document.createTextNode(`${DOWN_ARROW} Children [${children.length}]`);
             const up = document.createTextNode(`${UP_ARROW} Children [${children.length}]`);
-            button.appendChild(down);
+            const down = aSpanWith(
+                undefined,
+                document.createTextNode(`${DOWN_ARROW}`),
+                aSpanWith("button-words", document.createTextNode(` Children [${children.length}]`))
+            );
+            button.append(down);
             button.onclick = (event) => {
                 if (listDiv.style.display == "none") {
                     // Ensure we bring the children list to the front.
@@ -996,10 +994,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     let loader = self.svg
                         .append("image")
                         .attr({
-                            //'xlink:href': 'https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif',
-                            height: 16,
-                            width: 16,
-                            // transform: plus.attr('transform')
+                            "height": 16,
+                            "width": 16,
+                            "transform": plus.attr("transform"),
+                            "xlink:href": "https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif",
                         })
                         .attr("transform", function () {
                             let y = self.direction * (couple.y + halfBoxWidth + 12);
@@ -1033,10 +1031,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     let loader = self.svg
                         .append("image")
                         .attr({
-                            //'xlink:href': 'https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif',
                             height: 16,
                             width: 16,
-                            // transform: minus.attr('transform')
+                            // transform: minus.attr('transform'),
+                            // 'xlink:href': 'https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif',
                         })
                         .attr("transform", function () {
                             let y = self.direction * (couple.y + halfBoxWidth + 12);
@@ -1073,25 +1071,18 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             // Use generic gender photos if there is no profile photo available
             if (!photoUrl) {
-                if (person.getGender() === "Male") {
-                    photoUrl = "images/icons/male.gif";
-                } else {
+                if (person.isFemale()) {
                     photoUrl = "images/icons/female.gif";
+                } else {
+                    photoUrl = "images/icons/male.gif";
                 }
             }
+            const gender = (person?.getGender() || "other").toLowerCase();
 
             let popup = this.svg
                 .append("g")
                 .attr("class", "popup")
                 .attr("transform", "translate(" + event[0] + "," + event[1] + ")");
-
-            let borderColor = "rgba(102, 204, 102, .5)";
-            if (person.getGender() == "Male") {
-                borderColor = "rgba(102, 102, 204, .5)";
-            }
-            if (person.getGender() == "Female") {
-                borderColor = "rgba(204, 102, 102, .5)";
-            }
 
             popup
                 .append("foreignObject")
@@ -1101,7 +1092,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 })
                 .style("overflow", "visible")
                 .append("xhtml:div").html(`
-				<div class="popup-box" style="border-color: ${borderColor}">
+				<div class="popup-box" data-gender="${gender}">
 					<div class="top-info">
 						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
 						<div class="vital-info">
@@ -1484,7 +1475,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         listDiv.className = "spouse-list";
 
         let spouseList = document.createElement("ol");
-        spouseList.style.textAlign = "left";
         for (let spouse of list) {
             let item = document.createElement("li");
             item.appendChild(aDivWith("altSpouse", aProfileLink(spouse.name, spouse.wtId)));
@@ -1499,7 +1489,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 const button = document.createElement("button");
                 button.className = "select-spouse-button";
                 button.textContent = RIGHT_ARROW;
-                button.style.backgroundColor = "transparent";
                 button.setAttribute("partner-id", person.getId());
                 button.setAttribute("spouse-id", spouse.id);
                 // Note; the button's click behaviour is added in Tree.drawNodes()
@@ -1514,7 +1503,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         const button = document.createElement("button");
         button.className = "drop-button";
         button.textContent = DOWN_ARROW;
-        button.style.backgroundColor = "transparent";
         button.onclick = (event) => {
             if (wrapper.style.display == "none") {
                 // Ensure we bring the spouses list to the front
@@ -1544,6 +1532,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
     function aDivWith(itsClass, ...elements) {
         div = document.createElement("div");
+        if (itsClass) div.className = itsClass;
+        div.append(...elements);
+        return div;
+    }
+
+    function aSpanWith(itsClass, ...elements) {
+        div = document.createElement("span");
         if (itsClass) div.className = itsClass;
         div.append(...elements);
         return div;
