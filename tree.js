@@ -144,11 +144,19 @@ window.ViewRegistry = class ViewRegistry {
         const options = Object.keys(this.views)
             .sort(function (a, b) {
                 // We want the base/core option to always be at the top of the drop-down
+                // We also want "Other Apps" to go to the bottom.
                 if (a == "wt-dynamic-tree") {
                     return -1;
                 }
                 if (b == "wt-dynamic-tree") {
                     return 1;
+                }
+
+                if (a == "other-apps") {
+                    return 1;
+                }
+                if (b == "other-apps") {
+                    return -1;
                 }
 
                 // Sort the rest alphabetically by title

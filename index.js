@@ -35,6 +35,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
     wtViewRegistry = new ViewRegistry(
         {
             "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+            "other-apps": new OtherAppsView(),
             "timeline": new TimelineView(),
             "fanchart": new FanChartView(),
             "fandoku": new FandokuView(),
