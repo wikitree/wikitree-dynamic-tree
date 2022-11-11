@@ -28,8 +28,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     }
 
     async loadView(containerSelector, personID) {
-        console.log("personID: ", personID);
-        await this.wtAPI.getAncestors(personID, this.generationsCount - 1, this.PERSON_FIELDS);
+        let data = await this.wtAPI.getAncestors(personID, this.generationsCount - 1, this.PERSON_FIELDS);
         this.people = Object.assign({}, ...data.map((x) => ({ [x.Id.toString()]: x })));
 
         this.prepareTemplate(this.generationsCount, "O"); // O = origin
