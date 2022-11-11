@@ -249,12 +249,19 @@ window.ViewRegistry = class ViewRegistry {
         const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
         const name = document.querySelector(this.NAME_PLACEHOLDER);
 
-        wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
-        wtLink.innerHTML = person.Name;
-
-        viewTitle.innerHTML = view.title;
-        viewDescription.innerHTML = view.description;
-        name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
+        if (wtLink) {
+            wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
+            wtLink.innerHTML = person.Name;
+        }
+        if (viewTitle) {
+            viewTitle.innerHTML = view.title;
+        }
+        if (viewDescription) {
+            viewDescription.innerHTML = view.description;
+        }
+        if (name) {
+            name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
+        }
 
         wtViewRegistry.showInfoPanel();
 
@@ -301,6 +308,10 @@ window.ViewRegistry = class ViewRegistry {
         wtStatus.innerHTML = msg;
         wtStatus.classList.add("green");
         wtStatus.classList.remove("hidden");
+    }
+    setDescription(html) {
+        const wtDescription = document.querySelector(this.VIEW_DESCRIPTION);
+        wtDescription.innerHTML = html;
     }
 };
 

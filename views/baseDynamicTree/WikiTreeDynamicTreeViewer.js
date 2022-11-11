@@ -21,7 +21,7 @@
     WikiTreeDynamicTreeViewer.prototype.meta = function () {
         return {
             title: "Dynamic Tree",
-            description: "Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.",
+            description: `This is a simple branched display of the family tree. Click on a box to see details. Click on a "+" to extend the tree. Click and drag outside the boxes to pan around.`,
             docs: "https://www.WikiTree.com/wiki/Dynamic_Tree",
         };
     };
