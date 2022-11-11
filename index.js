@@ -23,7 +23,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
           <form action="https://api.wikitree.com/api.php" method="POST">
               <input type="hidden" name="action" value="clientLogin">
               <input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
-              <input type="submit" class="small" value="Login at WikiTree API" 
+              <input type="submit" class="small" value="Apps Login" 
                 title="Please login to the WikiTree API to use the Tree Viewer on non-public profiles.">
           </form>
           `;
