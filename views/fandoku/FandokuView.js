@@ -1361,7 +1361,7 @@
                 FandokuView.foundAncestors[ahnNum] = true; // this ancestor doesn't exist - so - let's pretend they're already found, so it doesn't throw a wrench in the "complete generation"  calculation
             }
         }
-
+        FandokuView.gameStatus = "Live";
         updateAncestorsPlaced(true);
 
         // IDs for PARTS of the BUTTON BAR to HIDE / SHOW
