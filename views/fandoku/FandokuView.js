@@ -81,21 +81,21 @@
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
 
-    var fandokuDing = new Audio("views/fandoku/ding-idea-40142.mp3");
+    var fandokuDing = new Audio("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ding-idea-40142.mp3");
     if (!fandokuDing.canPlayType("audio/mpeg")) {
-        fandokuDing.setAttribute("src", "views/fandoku/ding-idea-40142.ogg");
+        fandokuDing.setAttribute("src", "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ding-idea-40142.ogg");
     }
     fandokuDing.loop = false;
 
-    var fandokuClap = new Audio("views/fandoku/small-applause-6695.mp3");
+    var fandokuClap = new Audio("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/small-applause-6695.mp3");
     if (!fandokuClap.canPlayType("audio/mpeg")) {
-        fandokuClap.setAttribute("src", "views/fandoku/small-applause-6695.ogg");
+        fandokuClap.setAttribute("src", "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/small-applause-6695.ogg");
     }
     fandokuClap.loop = false;
 
-    var fandokuCheer = new Audio("views/fandoku/crowdyayapplause25ppllong-6948.mp3");
+    var fandokuCheer = new Audio("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/crowdyayapplause25ppllong-6948.mp3");
     if (!fandokuCheer.canPlayType("audio/mpeg")) {
-        fandokuCheer.setAttribute("src", "views/fandoku/crowdyayapplause25ppllong-6948.ogg");
+        fandokuCheer.setAttribute("src", "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/crowdyayapplause25ppllong-6948.ogg");
     }
     fandokuCheer.loop = false;
 
@@ -1346,7 +1346,7 @@
             if (thePeep) {
                 theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
                 if (FandokuView.currentSettings["rules_options_showLifeSpan"] == true) {
-                    theNameDIVhtml += "<br/>(" + getLifeSpan(d) + ")";
+                    theNameDIVhtml += "<br/>(" + getLifeSpan(thePeep) + ")";
                 }
                 thisNameObj.innerHTML = theNameDIVhtml;
                 FandokuView.totalNumAncestors++;
