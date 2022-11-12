@@ -1402,6 +1402,7 @@
             FandokuView.selectedNameNum = showNum;
             let parts = [base, pos];
             let realAhnNum = showNum;
+            
             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                 realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
                 console.log("REAL ahnNum : ", realAhnNum);
@@ -1409,6 +1410,30 @@
                 parts[1] = realAhnNum - base;
                 id = "wedge" + base + "n" + parts[1];
             }
+            let thisShowNumWedge = document.getElementById("wedgeInfoFor" + showNum);
+            let numTries = 0;
+            while (!thisShowNumWedge && numTries < 100) {
+                console.log("DANGER DANGER WILL ROBINSON - this WEDGE does not exist !!!!");
+                
+                    showNum = base + Math.floor(Math.random() * base);
+                
+                pos = showNum - base;
+                 id = "wedge" + base + "n" + pos;
+                FandokuView.selectedNameNum = showNum;
+                 parts = [base, pos];
+                 realAhnNum = showNum;
+
+                if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
+                    realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
+                    console.log("REAL ahnNum : ", realAhnNum);
+                    // ahnNum = realAhnNum;
+                    parts[1] = realAhnNum - base;
+                    id = "wedge" + base + "n" + parts[1];
+                }
+                thisShowNumWedge = document.getElementById("wedgeInfoFor" + showNum);
+                numTries++;
+            }
+
             recolourWedge(id, FandokuView.numGens2Display - 1, parts[1], showNum);
             repositionWedge(showNum, FandokuView.numGens2Display - 1, parts);
 
