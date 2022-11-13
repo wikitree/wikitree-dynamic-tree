@@ -111,6 +111,10 @@
     /** Keep track of WHICH name has been selected (number == ahnenTafel number for highlighted ancestor) */
     FandokuView.selectedNameNum = -1;
 
+    /** Keep track of WHICH cell has been selected (number == ahnenTafel number for cell in Fan Chart) */
+    FandokuView.selectedFanCell = -1;
+    FandokuView.selectedFanColour = '';
+
     /** Static variables to hold the state of the Number of Generations to be displayed, currently and previously  **/
     FandokuView.numGens2Display = 4;
     FandokuView.lastNumGens = 4;
@@ -222,48 +226,47 @@
         } else if (e.keyCode >= 73 && e.keyCode <= 76 && FandokuView.gameStatus == "Live") {
             console.log("You have clicked on I J K L and want to highlight a cell of the Fan Chart!  Go for it !");
 
-            let dDirect = 1; // if key code == 76 (L)
+            let dDirect = 1; // if key code == 76 (L) --> go RIGHT
             if (e.keyCode == 74) {
-                dDirect = -1; // key code == 74 (J)
+                dDirect = -1; // key code == 74 (J) --> go LEFT
+            } else if (e.keyCode == 73) {
+                dDirect = 2; // key code == 73 (I) --> go UP
+            } else if (e.keyCode == 75) {
+                dDirect = 1 / 2; // key code == 75 (K) --> go DOWN
             }
 
-            console.log("A TAB KEY has  been pressed", FandokuView.newOrder);
-            let lookingFor = FandokuView.newOrder[FandokuView.selectedNameNum - 2] + dDirect;
-            if (lookingFor >= FandokuView.newOrder.length + 2 || FandokuView.selectedNameNum == -1) {
-                lookingFor = 2;
-            } else if (lookingFor < 2) {
-                lookingFor = FandokuView.newOrder.length + 1;
-            }
-            console.log("lookingFor", lookingFor, "FandokuView.selectedNameNum:", FandokuView.selectedNameNum);
-
-            for (let tryNum = 0; tryNum <= FandokuView.newOrder.length; tryNum++) {
-                // put this loop within a loop, so if we don’t find a match that is displayed (‘block’)
-                // we can continue on to find the next one available … until one is, and it can be highlighted.
-                // unless there are none left to highlight
-
-                for (let index = 0; index < FandokuView.newOrder.length; index++) {
-                    if (FandokuView.newOrder[index] == lookingFor) {
-                        // let nextIndex = (index + 1) % FandokuView.newOrder.length;
-                        let nextNum = index + 2;
-                        console.log(
-                            "floatingName" + nextNum,
-                            document.getElementById("floatingNameHolder" + nextNum).style.display
-                        );
-                        if (document.getElementById("floatingNameHolder" + nextNum).style.display == "block") {
-                            toggleFloatingName("floatingName" + nextNum, nextNum);
-                            return;
-                        }
-                    }
+            if (FandokuView.selectedFanCell < 2) {
+                FandokuView.selectedFanCell = 2;
+            } else {
+                let thisGenNum = Math.floor(Math.log2(FandokuView.selectedFanCell));
+                let thisPosNum = FandokuView.selectedFanCell - 2 ** thisGenNum;
+                let thisWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
+                if (thisWedge && FandokuView.selectedFanColour > "") {
+                    thisWedge.style.fill = FandokuView.selectedFanColour;
                 }
-                // OK - if we get here, that means the one we found previously must be already selected, and in the fan chart, so it’s display style is ‘none’
-                // We therefore have to pick the next one in the list
-                lookingFor += dDirect;
-                if (lookingFor >= FandokuView.newOrder.length + 2) {
-                    lookingFor = 2;
-                } else if (lookingFor < 2) {
-                    lookingFor = FandokuView.newOrder.length + 1;
-                }
+
             }
+
+            if (e.keyCode % 2 == 0) {
+                // if e.keyCode is EVEN, then going LEFT or RIGHT,
+                FandokuView.selectedFanCell += dDirect; // advance / retreat
+            } else {
+                // ELSE ... going UP / DOWN - which means doubling or halving
+                FandokuView.selectedFanCell *= dDirect; // advance / retreat
+            }
+            FandokuView.selectedFanCell = Math.min( Math.max(2, Math.floor(FandokuView.selectedFanCell) ), 2 ** FandokuView.numGens2Display - 1); 
+
+            console.log("YOU SHOULD now be LIGHTING UP CELL # ", FandokuView.selectedFanCell);
+            let thisGenNum = Math.floor(Math.log2( FandokuView.selectedFanCell)); 
+            let thisPosNum = FandokuView.selectedFanCell - 2**thisGenNum;
+            let thisWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
+            if (thisWedge){
+                FandokuView.selectedFanColour = thisWedge.style.fill;
+                console.log("COLOUR was:", thisWedge.style.fill);
+                thisWedge.style.fill = "lime";
+            }
+
+
         } else if (e.keyCode == 13 && FandokuView.gameStatus == "Live") {
             console.log("ENTER has been hit - let's see if there is a YELLOW and a GREEN that match up !");
         } else {
@@ -740,21 +743,25 @@
             console.log("WARNING: No Wedge found for ", ahnNum, "at", "wedgeInfoFor" + ahnNum);
             return;
         }
-        console.log("CLICK:", thisWedge.parentNode.parentNode.parentNode);
-        let thisGparentNode = thisWedge.parentNode.parentNode.parentNode;
-        let numSpotsThisGen = parts[0];
-        let pos = 1 * parts[1];
+        if (FandokuView.gameStatus == "Live") {
+            console.log("CLICK:", thisWedge.parentNode.parentNode.parentNode);
+            let thisGparentNode = thisWedge.parentNode.parentNode.parentNode;
+            let numSpotsThisGen = parts[0];
+            let pos = 1 * parts[1];
 
-        let thisRadius = 270;
-        let placementAngle =
-            180 + (180 - FandokuView.maxAngle) / 2 + (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + pos);
-        let nameAngle = 90 + placementAngle;
-        let newX = gen * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
-        let newY = gen * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
+            let thisRadius = 270;
+            let placementAngle =
+                180 + (180 - FandokuView.maxAngle) / 2 + (FandokuView.maxAngle / numSpotsThisGen) * (0.5 + pos);
+            let nameAngle = 90 + placementAngle;
+            let newX = gen * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
+            let newY = gen * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
 
-        let theTransform = "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
-        console.log(thisGparentNode.getAttribute("transform"), theTransform);
-        thisGparentNode.setAttribute("transform", theTransform);
+            let theTransform = "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
+            console.log(thisGparentNode.getAttribute("transform"), theTransform);
+            thisGparentNode.setAttribute("transform", theTransform);
+        } else {
+            console.log("MIGHT have been a match - but the game is NOT LIVE !!!");
+        }
     }
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
@@ -973,13 +980,13 @@
         let theWedgeBox = document.getElementById("wedgeBoxFor" + ahnNum);
         let theWedgeInfo = document.getElementById("wedgeInfoFor" + ahnNum);
 
-        let isAmatch = FandokuView.selectedNameNum == ahnNum;
+        let isAmatch = (FandokuView.selectedNameNum == ahnNum);
         if (!isAmatch) {
-            let selectedPersonFullName = getFullName(
+            let selectedPersonFullName = getSettingsName(
                 thePeopleList[FandokuView.myAhnentafel.list[FandokuView.selectedNameNum]]
             );
-            let ahnNumFullName = getFullName(thePeopleList[FandokuView.myAhnentafel.list[ahnNum]]);
-            isAmatch = selectedPersonFullName == ahnNumFullName;
+            let ahnNumFullName = getSettingsName(thePeopleList[FandokuView.myAhnentafel.list[ahnNum]]);
+            isAmatch = (selectedPersonFullName == ahnNumFullName);
         }
 
         if (isAmatch) {
@@ -996,22 +1003,22 @@
                 }
             }
 
-            if (thisPersonsWedge) {
-                thisPersonsWedge.style.fill = theClr;
-            } else {
-                console.log("Can't find: ", id);
-            }
-            if (theWedgeBox) {
-                theWedgeBox.style.background = theClr;
-            }
-            if (theWedgeInfo) {
-                theWedgeInfo.style.display = "block";
-            }
-            let thisID = "floatingNameHolder" + ahnNum;
-            let thisNameDIV = document.getElementById(thisID);
-            thisNameDIV.style.display = "none";
-
             if (FandokuView.gameStatus == "Live") {
+                if (thisPersonsWedge) {
+                    thisPersonsWedge.style.fill = theClr;
+                } else {
+                    console.log("Can't find: ", id);
+                }
+                let thisID = "floatingNameHolder" + ahnNum;
+                let thisNameDIV = document.getElementById(thisID);
+            
+                if (theWedgeBox) {
+                    theWedgeBox.style.background = theClr;
+                }
+                if (theWedgeInfo) {
+                    theWedgeInfo.style.display = "block";
+                }
+                thisNameDIV.style.display = "none";
                 updateAncestorsPlaced(true);
                 fandokuDing.pause();
                 fandokuClap.pause();
@@ -1057,8 +1064,10 @@
                         updateFeedbackArea("+");
                     }
                 }
+                console.log("recolourWedge AFT version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
+            } else {
+                console.log("WOULD have been a match if the game had been LIVE !");
             }
-            console.log("recolourWedge AFT version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
         } else {
             if (FandokuView.gameStatus == "Live") {
                 if (
@@ -1281,6 +1290,7 @@
         // 1 is normal order Father then Mother (going clockwise), -1 is Mother / Father order for that generation
         FandokuView.genMForder = [1, 1];
         FandokuView.ahnNumCellNumArray = [0, 1];
+        FandokuView.selectedFanCell = 2;
 
         let oppoOrderGen = Math.max(
             2,
