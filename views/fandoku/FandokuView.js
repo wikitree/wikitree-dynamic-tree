@@ -1303,6 +1303,15 @@
         updateAhnCellArray(1, 1, 2); // ahnNumChild , posNumChild , parentGenNum
         console.log("mf ahnCellArray: ", FandokuView.ahnNumCellNumArray);
 
+        // CHECK for gen 6 or gen 7, and if so - then change maxAngle appropriately (min 240, min 360)
+        if (FandokuView.numGens2Display == 6) {
+            FandokuView.maxAngle = Math.max(240, FandokuView.maxAngle);
+            FandokuView.redraw();
+        } else if (FandokuView.numGens2Display == 7) {
+            FandokuView.maxAngle = 360;
+            FandokuView.redraw();
+        }
+
         // DO THE GENDER HINTING (bkgd colour of blue or pink) - IF CHECKED
         if (FandokuView.currentSettings["rules_options_genderHinting"] == true) {
             // console.log("GENDER PAINTING BEGIN!");
@@ -1321,20 +1330,25 @@
             }
         }
 
+        // NOW - ONE LAST GO THROUGH AGAIN, to GRAY OUT any cells that do NOT contain any ancestors at all
+        for (let genNum = 1; genNum < FandokuView.numGens2Display; genNum++) {
+            for (let posNum = 0; posNum < 2 ** genNum; posNum++) {
+                let thisWedge = document.getElementById("wedge" + 2 ** genNum + "n" + posNum);
+                let thisAdjustedPosNum = FandokuView.ahnNumCellNumArray[2 ** genNum + posNum];
+
+                if (thisWedge && FandokuView.myAhnentafel.list[thisAdjustedPosNum] == undefined) {
+                    console.log("num:", thisAdjustedPosNum, FandokuView.myAhnentafel.list[thisAdjustedPosNum]);
+                    let thisClr = "#F0F0F0"; // a light blue - lighter than "lightskyblue";
+                    thisWedge.style.fill = thisClr;
+                }
+            }
+        }
+
         FandokuView.totalNumAncestors = 0;
         FandokuView.numAncestorsPlaced = -1;
         FandokuView.numMisses = 0;
         FandokuView.gameStatus = "Live";
         // FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-
-        // CHECK for gen 6 or gen 7, and if so - then change maxAngle appropriately (min 240, min 360)
-        if (FandokuView.numGens2Display == 6) {
-            FandokuView.maxAngle = Math.max(240, FandokuView.maxAngle);
-            FandokuView.redraw();
-        } else if (FandokuView.numGens2Display == 7) {
-            FandokuView.maxAngle = 360;
-            FandokuView.redraw();
-        }
 
         //NAME the Peeps!
         FandokuView.foundAncestors = [];
@@ -1402,7 +1416,7 @@
             FandokuView.selectedNameNum = showNum;
             let parts = [base, pos];
             let realAhnNum = showNum;
-            
+
             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                 realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
                 console.log("REAL ahnNum : ", realAhnNum);
@@ -1414,14 +1428,14 @@
             let numTries = 0;
             while (!thisShowNumWedge && numTries < 100) {
                 console.log("DANGER DANGER WILL ROBINSON - this WEDGE does not exist !!!!");
-                
-                    showNum = base + Math.floor(Math.random() * base);
-                
+
+                showNum = base + Math.floor(Math.random() * base);
+
                 pos = showNum - base;
-                 id = "wedge" + base + "n" + pos;
+                id = "wedge" + base + "n" + pos;
                 FandokuView.selectedNameNum = showNum;
-                 parts = [base, pos];
-                 realAhnNum = showNum;
+                parts = [base, pos];
+                realAhnNum = showNum;
 
                 if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                     realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
@@ -1433,6 +1447,8 @@
                 thisShowNumWedge = document.getElementById("wedgeInfoFor" + showNum);
                 numTries++;
             }
+            // TO DO STILL:
+            // ADD CODE HERE TO CHOOSE A DIFFERENT RANDOM PERSON IF STILL !thisShowNumWedge --> for those instances where the outer ring has NO ancestors in it
 
             recolourWedge(id, FandokuView.numGens2Display - 1, parts[1], showNum);
             repositionWedge(showNum, FandokuView.numGens2Display - 1, parts);
