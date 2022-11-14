@@ -175,6 +175,10 @@
         "Yup",
     ];
 
+    FandokuView.discouragingArray = [
+        "Sorry", "Nope", "Not quite", "Try again", "Oops", "Wrong", "Not", "Nyet", "Nicht", "Nein","Zut alors","Yikes","Hmmm","Almost","No","No-no","Oh oh", "Next?","Eek","Whoa","Non"
+    ];
+    
     function checkTabPress(e) {
         "use strict";
         // pick passed event or global event object if passed one is empty
@@ -192,26 +196,26 @@
             let dDirect = 1; // if key code == 88 (X) or 68 (D)
             if (e.keyCode == 90 || e.keyCode == 65) {
                 dDirect = -1; // key code == 90 (Z) or 65 (A)
-            } else if (e.keyCode == 87 || e.keyCode == 83) { // 87 == W ; 83 == S
-                if (FandokuView.newOrder[FandokuView.selectedNameNum - 2] > FandokuView.newOrder.length/2) {
+            } else if (e.keyCode == 87 || e.keyCode == 83) {
+                // 87 == W ; 83 == S
+                if (FandokuView.newOrder[FandokuView.selectedNameNum - 2] > FandokuView.newOrder.length / 2) {
                     // we are currently in the second half, so W (up) will take us BACK and S (down) will take us FORWARD
-                    if (e.keyCode == 87) { //W
+                    if (e.keyCode == 87) {
+                        //W
                         dDirect = -1;
                     } else {
-                        dDirect = 1;  //S
+                        dDirect = 1; //S
                     }
                 } else {
                     // we are currently in the first half, so W (up) will take us FORWARD and S (down) will take us BACK
-                    if (e.keyCode == 83) { // S
+                    if (e.keyCode == 83) {
+                        // S
                         dDirect = -1;
                     } else {
                         dDirect = 1; // W
                     }
                 }
-
             }
-
-
 
             console.log("A TAB KEY has  been pressed", FandokuView.newOrder);
             let lookingFor = FandokuView.newOrder[FandokuView.selectedNameNum - 2] + dDirect;
@@ -307,7 +311,7 @@
             let thisWedgeID = "wedge" + 2 ** thisGenNum + "n" + thisPosNum;
             let thisWedge = document.getElementById(thisWedgeID);
             let ahnNum = FandokuView.selectedFanCell;
-            if (thisWedge.style.fill == "lime") {   
+            if (thisWedge.style.fill == "lime") {
                 recolourWedge(thisWedgeID, thisGenNum, thisPosNum, ahnNum);
                 let parts = [2 ** thisGenNum, thisPosNum];
                 if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
@@ -320,7 +324,7 @@
         } else {
             console.log("nada : ", e.keyCode);
         }
-    }
+    };
 
     FandokuView.prototype.init = function (selector, startId) {
         // console.log("FandokuView.js - line:18", selector) ;
@@ -844,10 +848,23 @@
         document.getElementById("FeedbackArea").innerHTML = "";
     }
 
+    function doQuickFlashRed() {
+        let randomIndex = Math.floor(Math.random() * FandokuView.discouragingArray.length);
+        doQuickFlashRed(FandokuView.discouragingArray[randomIndex]);
+    }
+
+
     function updateFeedbackArea(theMessage) {
         if (theMessage == "+") {
             let randomIndex = Math.floor(Math.random() * FandokuView.encouragingArray.length);
             theMessage = FandokuView.encouragingArray[randomIndex];
+        } else if (theMessage == "-") {       
+            if (FandokuView.numMisses % 2 == 0) {
+                theMessage = "Sorry, not a match.  Please try again.";
+            }     else  {
+                theMessage = "Please try again, that is not a match.";
+            }     
+
         }
         document.getElementById("FeedbackArea").innerHTML = theMessage;
     }
@@ -1574,6 +1591,7 @@
                 FandokuView.numAncestorsPlaced++;
             } else {
                 FandokuView.numMisses++;
+                updateFeedbackArea("-");
             }
         }
 
