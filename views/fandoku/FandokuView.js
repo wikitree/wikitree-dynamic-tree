@@ -176,7 +176,7 @@
     ];
 
     FandokuView.discouragingArray = [
-        "Sorry", "Nope", "Not quite", "Try again", "Oops", "Wrong", "Not", "Nyet", "Nicht", "Nein","Zut alors","Yikes","Hmmm","Almost","No","No-no","Oh oh", "Next?","Eek","Whoa","Non"
+        "Sorry", "Nope", "Not quite", "Try again", "Oops", "Wrong", "Not", "Nyet", "Nicht", "Nein","Zut alors","Yikes","Hmmm","Almost","No","No-no","Oh oh", "Next?","Eek","Whoa","Non", "Sorry", "Woops","Next time","Close","Close-ish","Another?","Pardon?","Disculpe?","Lo siento"
     ];
     
     function checkTabPress(e) {
@@ -348,7 +348,7 @@
                 },
                 {
                     name: "options",
-                    label: "Options",
+                    label: "Feedback Options",
                     hideSelect: true,
                     subsections: [{ name: "Options", label: "FanDoku settings" }],
                     comment: "These options apply to the feedback within the FanDoku game.",
@@ -487,6 +487,12 @@
                         {
                             optionName: "doFeedback",
                             label: "Give positive feedback words of encouragement",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "doRedFlash",
+                            label: "Show red flash & sorry message after a miss",
                             type: "checkbox",
                             defaultValue: true,
                         },
@@ -782,6 +788,32 @@
             "stroke-width": "2",
         });
 
+        // FINALLY ... let's add ONE MORE text object - for the NOPE text
+        svg.append("g")
+            .attr({
+                id: "nopeText",
+            })
+            .append("foreignObject")
+            .attr({
+                "id": "nopeTextObject",
+                "class": "centered",
+                "width" : "140px",
+                "height": "60px", // the foreignObject won't display in Firefox if it is 0 height
+                "x": 300,
+                "y": 300,
+                "font-size": "32px",
+                "font-color" : "yellow",
+                "style": "background-color:red; display:none;",
+            })
+
+            .style("overflow", "visible") // so the name will wrap
+            .append("xhtml:div")
+            .attr({
+                id: "nopeTextInner",
+            })
+            .html("<B style='color:yellow;'>NOPE!!!</B>");
+
+
         self.load(startId);
         // console.log(FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FandokuView.fanchartSettingsOptionsObject.buildPage();
@@ -848,9 +880,45 @@
         document.getElementById("FeedbackArea").innerHTML = "";
     }
 
-    function doQuickFlashRed() {
+    function doQuickFlashRed(theWedge) {
+        // FIRST ... check to see if the option to DO the RED FLASH is enabled
+        if (FandokuView.currentSettings['options_options_doRedFlash'] == false) {
+            // if NOT, then get the heck out of Dodge!
+            return;
+        }
+        console.log("DOquick Flash RED !!!");
         let randomIndex = Math.floor(Math.random() * FandokuView.discouragingArray.length);
-        doQuickFlashRed(FandokuView.discouragingArray[randomIndex]);
+        
+        let origClr = theWedge.style.fill;
+        theWedge.style.fill = 'red';
+        console.log(theWedge);
+        console.log(theWedge.getAttribute("d"));
+        let theDstring = theWedge.getAttribute("d");
+        let theDarray = theDstring.split(" ");
+        let midX = (1*theDarray[1] - 0 + 1*theDarray[9])/2 - 70;
+        let midY = (1*theDarray[2] - 0 + 1*theDarray[10])/2 - 30;
+        let theR = Math.sqrt(midX * midX + midY * midY);
+        let theDR = (theR - 100) / theR;
+        let newX = theDR * midX;
+        let newY = theDR * midY;
+        console.log("theDarray:", theDarray);
+        console.log("midX, midY, theR, theDR , newX, newY:", midX, midY, theR, theDR, newX, newY);
+        console.log(document.getElementById("nopeTextObject"));
+        document.getElementById("nopeTextObject").style.display = "block";
+        document.getElementById("nopeTextInner").innerHTML =
+            '<b style="color:yellow;">' + FandokuView.discouragingArray[randomIndex] + "</b>";
+
+        document
+            .getElementById("nopeTextObject")
+            .setAttribute("x", newX);
+        document
+            .getElementById("nopeTextObject")
+            .setAttribute("y", newY) ;
+        setTimeout ( function () {
+            theWedge.style.fill = origClr;
+            document.getElementById("nopeTextObject").style.display = "none";
+        }, 1000);
+
     }
 
 
@@ -1152,7 +1220,8 @@
                     document.getElementById("floatingNameHolder" + FandokuView.selectedNameNum).style.display == "block"
                 ) {
                     updateAncestorsPlaced(false);
-
+                    doQuickFlashRed(thisPersonsWedge);
+                    
                     console.log(
                         "SORRY BUDDY - please try again",
                         FandokuView.selectedNameNum,
