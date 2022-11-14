@@ -11,9 +11,9 @@ window.OtherAppsView = class OtherAppsView extends View {
         //document.location = "https://www.wikitree.com/wiki/Help:Apps";
         this.loadDescription(personID);
     }
-    
+
     async loadDescription(personID) {
-        let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: personID, fields: 'Id,Name' });
+        let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: personID, fields: "Id,Name" });
         if (data.length != 1) {
             wtViewRegistry.showError(`There was an error starting with ${personID}.`);
             wtViewRegistry.hideInfoPanel();
@@ -28,6 +28,10 @@ window.OtherAppsView = class OtherAppsView extends View {
             return;
         }
 
-        wtViewRegistry.setDescription(`Check out other tools created by independent developers in the WikiTree Community: <a href="https://www.wikitree.com/treewidget/${data[0].person.Name}/77">Tree Widget #77</a>`);
+        let url = `https://www.wikitree.com/treewidget/${data[0].person.Name}/77`;
+        wtViewRegistry.setDescription(
+            `Check out other tools created by independent developers in the WikiTree Community: <a href="${url}">Tree Widget #77</a>`
+        );
+        window.open(url, "_blank");
     }
 };
