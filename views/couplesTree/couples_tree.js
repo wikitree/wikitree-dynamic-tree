@@ -2,21 +2,27 @@
  * We use the D3.js library to render the graph.
  */
 window.CouplesTreeView = class CouplesTreeView extends View {
+    constructor() {
+        super();
+        if (!window.peopleCache) {
+            window.peopleCache = new PeopleCache();
+        }
+    }
     meta() {
         return {
             title: "Couples Dynamic Tree",
             description:
-                "Use the track pad or mouse wheel to zoom the tree. Click and drag to pan around. Click on a person to see more detail. " +
-                "Click on &#x21e9; to see children or other spouses (&#x21e7 to restore). " +
-                "Click on &#x2907;, if present, to change to that spouse of the central couple. " +
-                'Click on <img src="https://www.wikitree.com/images/icons/pedigree.gif" /> to make that person the focus of the tree.',
+                "&#x21e9; - see children or other spouses (&#x21e7 to restore); " +
+                "&#x2907; - select this spouse for this couple (can only be done for central couple and blood-line descendants); " +
+                '<img src="https://www.wikitree.com/images/icons/pedigree.gif" /> - make this person the focus of the tree; ' +
+                "+/- : expand/prune the tree. " +
+                "Click on a person to see more detail. Use track pad or mouse wheel to zoom the tree. Click and drag to pan around.",
             docs: "",
         };
     }
 
     init(container_selector, person_id) {
-        let view = new CouplesTreeViewer(container_selector, person_id);
-        view.loadAndDraw(person_id);
+        new CouplesTreeViewer(container_selector).loadAndDraw(person_id);
     }
 };
 
@@ -38,26 +44,31 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     const UP_ARROW = "\u21e7";
     const RIGHT_ARROW = "\u2907";
 
-    const REQUIRED_FIELDS = [
+    const NAME_FIELDS = [
         "Id",
+        "Name",
+        "FirstName",
+        "LastNameCurrent",
+        "LastNameAtBirth",
+        "Suffix",
         "Derived.BirthName",
         "Derived.BirthNamePrivate",
-        "FirstName",
         "MiddleInitial",
-        "LastNameAtBirth",
         "BirthDate",
-        "BirthLocation",
         "DeathDate",
+    ];
+
+    const REQUIRED_FIELDS = [
+        ...NAME_FIELDS,
+        "BirthLocation",
         "DeathLocation",
         "Mother",
         "Father",
         "DataStatus",
         "Parents",
         "Spouses",
-        "Suffix",
         "Children",
         "Photo",
-        "Name",
         "Gender",
     ];
 
@@ -69,7 +80,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * tree. A Couple may also consist of only a single Person if they do not have a (known) spouse.
      */
     class Couple {
-        constructor(id, { a, b, focus, isRoot = false } = {}) {
+        constructor(idPrefix, { a, b, focus, isRoot = false } = {}) {
+            this.idPrefix = idPrefix;
             this.isRoot = isRoot;
             if (b === undefined) {
                 if (a === undefined) {
@@ -104,16 +116,22 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 this.b = b;
                 this.focus = this.focus;
             }
-            this.id = this.makeId(id);
-            condLog(`new Couple: id=${this.getId()}, focus=${this.focus}, ${this.toString()}`, this.a, this.b);
+            condLog(`new Couple: ${this.toString()}, focus=${this.focus}`, this.a, this.b);
         }
 
-        makeId(id) {
-            return `${id}:${this.a?.getId() || ""}:${this.b?.getId() || ""}`;
-        }
-
+        /**
+         * We append the profile id of the 2 partners in the couple, to the couple's idPrefix to form its ID.
+         * The way we currently use idPrefixes results in the following ids:
+         *   for ancestor couples:
+         *     root: A-<aId>-<bId>
+         *     arbitrary: A_a_a_b-<aId-<bId> (the father's father's mother's parents)
+         *   for decendants couples
+         *     root: D-<aId>-<bId>
+         *     arbitrary: D_2_0_1-<aId-<bId> (the 3rd child's first child's 2nd child and partner)
+         * @returns The ID of the current couple
+         */
         getId() {
-            return this.id;
+            return `${this.idPrefix}-${this.a?.getId() || ""}-${this.b?.getId() || ""}`;
         }
 
         getInFocus() {
@@ -178,51 +196,38 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             return !this.children && ((this.a && !this.a.getChildren()) || (this.b && !this.b.getChildren()));
         }
 
-        setA(person) {
-            this.a = person;
-            return this;
-        }
-
-        setB(person) {
-            this.b = person;
-            return this;
-        }
-
-        setSpouse(person) {
-            if (person.isMale()) {
-                if (!this.a || this.b) {
-                    this.a = person;
-                } else {
-                    this.b = person;
-                }
-            } else {
-                if (!this.b || this.a) {
-                    this.b = person;
-                } else {
-                    this.a = person;
-                }
-            }
-            return this;
-        }
-
+        /**
+         * Change the partner of personId to newPartner
+         * @param {*} personId the id of the couple member whose partner should change
+         * @param {*} newPartner the new partner
+         */
         changePartner(personId, newPartner) {
-            if (this.isRoot) {
-                if ([this.a?.getId(), this.b?.getId()].includes(+personId)) {
-                    if (this.a && this.a.getId() == personId) {
+            if (![this.a?.getId(), this.b?.getId()].includes(+personId)) {
+                console.error(
+                    `Could not find profile id ${personId} in couple ${this.toString()} in order to change their partner`
+                );
+            } else {
+                if (this.a && this.a.getId() == personId) {
+                    // Change b
+                    if (this.a.setCurrentSpouse(newPartner.getId())) {
                         this.b = newPartner;
                     } else {
-                        this.a = newPartner;
+                        console.error(
+                            `${this.a.toString()} does not have ${newPartner.getId()} as a spouse. ` +
+                                `Cannot change partner of couple ${this.toString()}`
+                        );
                     }
-                    // Strip off everything from the first : in the id and use the result as the prefix
-                    // for the new root id
-                    this.id = this.makeId(this.id.slice(0, this.id.indexOf(":")));
                 } else {
-                    console.error(
-                        `Could not find profile id ${personId} in couple ${this.toString()} in order to change their partner`
-                    );
+                    // Change a
+                    if (this.b.setCurrentSpouse(newPartner.getId())) {
+                        this.a = newPartner;
+                    } else {
+                        console.error(
+                            `${this.b.toString()} does not have ${newPartner.getId()} as a spouse. ` +
+                                `Cannot change partner of couple ${this.toString()}`
+                        );
+                    }
                 }
-            } else {
-                console.error(`Attempting to change partner of non-root couple ${this.toString()}`);
             }
         }
 
@@ -283,7 +288,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         toString() {
-            return `${this.a ? this.a.toString() : "none"} and ${this.b ? this.b.toString() : "none"}`;
+            return `${this.getId()}:[${this.a ? this.a.toString() : "none"}][${this.b ? this.b.toString() : "none"}]`;
         }
     }
 
@@ -291,7 +296,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * CouplesTreeViewer
      */
     let CouplesTreeViewer = (window.CouplesTreeViewer = class CouplesTreeViewer {
-        constructor(selector, startId) {
+        constructor(selector) {
+            // this.peopleCache = new PeopleCache();
+            // WikiTreeAPI.enableCache(this.peopleCache);
+
             let container = document.querySelector(selector),
                 width = container.offsetWidth,
                 height = container.offsetHeight;
@@ -323,29 +331,29 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             self.descendantTree = new DescendantTree(svg);
 
             // Listen to tree events
-            self.ancestorTree.expand(function (couple) {
+            self.ancestorTree.setExpandCallback(function (couple) {
                 return self.loadMore(couple);
             });
 
-            self.descendantTree.expand(function (couple) {
+            self.descendantTree.setExpandCallback(function (couple) {
                 return self.loadMore(couple);
             });
 
-            self.ancestorTree.contract(function (couple) {
+            self.ancestorTree.setContractCallback(function (couple) {
                 return self.removeAncestors(couple);
             });
 
-            self.descendantTree.contract(function (couple) {
+            self.descendantTree.setContractCallback(function (couple) {
                 return self.removeDescendants(couple);
             });
 
             // Register callback for root partner change
-            self.ancestorTree.setRootPartnerChangeCallback(function (personId, newPartnerId) {
-                return self.changeRootPartner(personId, newPartnerId);
+            self.ancestorTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
+                return self.changePartner(coupleId, personId, newPartnerId);
             });
 
-            self.descendantTree.setRootPartnerChangeCallback(function (personId, newPartnerId) {
-                return self.changeRootPartner(personId, newPartnerId);
+            self.descendantTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
+                return self.changePartner(coupleId, personId, newPartnerId);
             });
 
             // Setup pattern
@@ -362,8 +370,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     height: 20,
                     //'xlink:href': 'ringLoader.svg'
                 });
-
-            //self.loadAndDraw(startId);
         }
 
         /**
@@ -400,19 +406,23 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         async richLoad(id) {
             condLog(`=======RICH_LOAD ${id}`);
             const person = await this.getWithChildren(id);
-            condLog(`=======RICH_LOAD _loaded ${person.toString()}`);
+            condLog(`=======RICH_LOAD completed await getWithChildren ${person.toString()}`);
             return await this.loadRelated(person);
         }
 
         async loadRelated(person) {
+            let self = this;
             let loadPromises = [];
             condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`);
 
-            condLog(`loadRelated: getPromisesforNamesOfSiblingsAndStepParents of ${person.toString()}`);
-            loadPromises = getPromisesforNamesOfSiblingsAndStepParents(person, loadPromises);
+            // Collect promises for the names of step-parents, i.e. the names of the other spouses (if any)
+            // of the father and mother of this person
+            condLog(`loadRelated: getPromisesforNamesOfStepParentsAndChildren of ${person.toString()}`);
+            loadPromises = getPromisesforNamesOfStepParentsAndChildren(person, loadPromises);
 
-            if (person._data.Spouses) {
-                let spouses = person._data.Spouses;
+            // Add promises for loading all spouses with the names of all of their children and spouses
+            const spouses = person.getSpouses();
+            if (spouses) {
                 condLog(`loadRelated Spouses`, spouses);
                 for (let i in spouses) {
                     condLog(`loadRelated: get load promise for ${spouses[i].toString()}`);
@@ -421,29 +431,33 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             } else {
                 condLog(`loadRelated called on Person ${person.toString()} without Spouses[]`, person);
             }
-            if (person._data.Children) {
-                let children = person._data.Children;
+            // Add promises to load all the children (but without their children). This is so that we can get
+            // the names of all their spouses
+            const children = person.getChildren();
+            if (children) {
                 condLog(`loadRelated Children`, children);
                 for (let i in children) {
                     condLog(`loadRelated: get loadWithoutChildren promise for ${children[i].toString()}`);
-                    loadPromises.push(getWithoutChildren(children[i].getId()));
+                    loadPromises.push(this.getWithoutChildren(children[i].getId()));
                 }
             } else {
                 condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person);
             }
+
+            // Now wait for all the above promises to complete and process the results
             condLog(`=======loadRelated awaiting promise fulfillment for ${person.toString()}`);
             let results = await Promise.all(loadPromises);
             condLog(`=======loadRelated promises fulfilled for ${person.toString()}`);
             for (let newPerson of results) {
                 let id = newPerson.getId();
-                if (person._data.Spouses && person._data.Spouses[id]) {
+                if (spouses && spouses[id]) {
                     condLog(`loadRelated: Setting as spouse ${newPerson.toString()}`);
                     person._data.Spouses[id] = newPerson;
-                } else if (person._data.Children && person._data.Children[id]) {
+                } else if (children && children[id]) {
                     condLog(`loadRelated: Setting as child ${newPerson.toString()}`);
                     person._data.Children[id] = newPerson;
                 } else if (person._data.Parents && person._data.Parents[id]) {
-                    condLog(`loadRelated: Updating due to getSpouseAndChildrenNames on parent ${newPerson.toString()}`);
+                    condLog(`loadRelated: Updating due to getNamesOfRelatives on parent ${newPerson.toString()}`);
                     updateNames(person._data.Parents[id], newPerson);
                 } else {
                     console.error(
@@ -453,66 +467,112 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 }
             }
 
-            // Now that we have loaded all the spouses, make sure we have all sibling and parent names of each
-            // spouse as well
+            // Now that we have loaded all the current person's spouses, make sure we have all parent (including
+            // step-parents) and sibling names of each of these spouses as well, in order to create spouse and
+            // children drop-downs for the parents.
+            // For the same reason we also need the names of the other spouses of each child's spouse.
             loadPromises = [];
-            if (person._data.Spouses) {
-                condLog("=======loadRelated get promises for spouses");
-                let spouses = person._data.Spouses;
+            if (spouses) {
+                condLog("=======loadRelated get promises for spouses of spouses");
                 for (let i in spouses) {
                     condLog(
-                        `loadRelated: getPromisesforNamesOfSiblingsAndStepParents for spouse ${spouses[i].toString()}`
+                        `loadRelated: getPromisesforNamesOfStepParentsAndChildren for spouse ${spouses[i].toString()}`
                     );
-                    loadPromises = getPromisesforNamesOfSiblingsAndStepParents(spouses[i], loadPromises);
+                    loadPromises = getPromisesforNamesOfStepParentsAndChildren(spouses[i], loadPromises);
                 }
-                condLog(`=======loadRelated awaiting spouse-related promise fulfillment for ${person.toString()}`);
-                results = await Promise.all(loadPromises);
-                for (let newPerson of results) {
-                    condLog(
-                        `loadRelated: Updating due to getNamesOfSiblingsAndStepParents on spouse's parent: ${newPerson.toString()}`
-                    );
-                    let id = newPerson.getId();
-                    for (let s in spouses) {
-                        let spouse = spouses[s];
-                        if (spouse._data.Parents && spouse._data.Parents[id]) {
-                            updateNames(spouse._data.Parents[id], newPerson);
-                            // check other results
-                            break;
+            }
+            if (children) {
+                condLog("=======loadRelated get promises for spouses of children");
+                for (let i in children) {
+                    condLog(`loadRelated: getPromisesforNamesOfSpouses for spouse ${children[i].toString()}`);
+                    loadPromises = getPromisesforNamesOfSpouses(children[i], loadPromises);
+                }
+            }
+
+            condLog(`=======loadRelated awaiting spouses promise fulfillment for ${person.toString()}`);
+            results = await Promise.all(loadPromises);
+            condLog(`=======loadRelated spouse promises fulfilled for ${person.toString()}`);
+            processResults: for (let newPerson of results) {
+                let newPersonId = newPerson.getId();
+                if (spouses) {
+                    // Check if the new profile is one of the spouses' parents
+                    for (let i in spouses) {
+                        let spouseParents = spouses[i]._data.Parents || [];
+                        if (spouseParents[newPersonId]) {
+                            condLog(
+                                `loadRelated: Setting as spouse's parent. spouse: ${
+                                    spouses[i]
+                                }, parent: ${newPerson.toString()}`
+                            );
+                            updateNames(spouseParents[newPersonId], newPerson);
+                            continue processResults;
                         }
                     }
                 }
-                condLog(`${person.toString()}: Siblings and parents of their spouses have been loaded`, person);
+                if (children) {
+                    // Check if the new profile is one of the children's spouses
+                    for (let i in children) {
+                        let childSpouses = children[i].getSpouses() || [];
+                        if (childSpouses[newPersonId]) {
+                            condLog(
+                                `loadRelated: Setting as child's spouse. child: ${
+                                    children[i]
+                                }, spouse: ${newPerson.toString()}`
+                            );
+                            updateNames(childSpouses[newPersonId], newPerson);
+                            continue processResults;
+                        }
+                    }
+                }
             }
+
             return person;
 
-            // Obtain promises for the loading of the names of the children of both of the parents of the given person
-            // as well as the names of all their spouses
-            function getPromisesforNamesOfSiblingsAndStepParents(person, promises) {
-                if (person._data.Parents) {
-                    let parents = person._data.Parents;
-                    for (let p in parents) {
-                        let parent = parents[p];
-                        if (!parent.getChildren() || !parent.getSpouses()) {
-                            condLog(`getSpouseAndChildrenNames of ${parent.toString()}`);
-                            promises.push(WikiTreeAPI.getSpouseAndChildrenNames(parent.getId()));
-                        }
+            // Obtain promises for the loading of the names of all the spouses and their children of the
+            // parents of the given person
+            function getPromisesforNamesOfStepParentsAndChildren(person, promises) {
+                let parents = person._data.Parents || [];
+                for (let p in parents) {
+                    let parent = parents[p];
+                    if (!parent.getSpouses()) {
+                        condLog(`get names of spouses for ${parent.toString()}`);
+                        promises.push(getNamesOfRelatives(parent.getId(), ["Spouses", "Children"]));
                     }
                 }
                 return promises;
             }
 
-            function updateNames(parent, newPerson) {
-                condLog(`Setting children of parent ${newPerson.toString()}`, newPerson);
-                if (parent.getChildren()) {
-                    console.error(`Unexpected update of Children for ${parent.toString()}`, parent, newPerson);
-                } else if (newPerson.getChildren()) {
-                    parent.setChildren(newPerson.getChildren());
+            function getPromisesforNamesOfSpouses(person, promises) {
+                let spouses = person._data.Spouses || [];
+                for (let s in spouses) {
+                    let spouse = spouses[s];
+                    if (!spouse.getSpouses()) {
+                        condLog(`get names of spouses for ${spouse.toString()}`);
+                        promises.push(getNamesOfRelatives(spouse.getId(), ["Spouses"]));
+                    }
                 }
-                condLog(`Setting spouses of parent ${newPerson.toString()}`, newPerson);
-                if (parent.getSpouses()) {
-                    console.error(`Unexpected update of Spouses for ${parent.toString()}`, parent, newPerson);
+                return promises;
+            }
+
+            function updateNames(person, newPerson) {
+                condLog(`updateNames for ${person.toString()} from ${newPerson.toString()}`);
+                if (person.getChildren()) {
+                    console.error(`Unexpected update of Children for ${person.toString()}`, person, newPerson);
+                } else if (newPerson.getChildren()) {
+                    condLog(`Setting children of ${person.toString()}`, newPerson);
+                    person.setChildren(newPerson.getChildren());
+                }
+                if (person.getSpouses()) {
+                    console.error(`Unexpected update of Spouses for ${person.toString()}`, person, newPerson);
                 } else if (newPerson.getSpouses()) {
-                    parent.copySpouses(newPerson);
+                    condLog(`Setting spouses of ${person.toString()}`, newPerson);
+                    person.copySpouses(newPerson);
+                }
+                if (person.getSiblings()) {
+                    console.error(`Unexpected update of Siblings for ${person.toString()}`, person, newPerson);
+                } else if (newPerson.getSiblings()) {
+                    condLog(`Setting siblings of ${person.toString()}`, newPerson);
+                    person.setSiblings(newPerson.getSiblings());
                 }
             }
         }
@@ -542,7 +602,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                         let newSpouses = newPerson.getSpouses();
                         if (oldSpouseId && (!newSpouses || !newSpouses[oldSpouseId])) {
                             // the couple partner has not been updated, so we better do that
-                            condLog(`Rich loading spouse ${oldSpouse.toString()}`);
+                            condLog(`loadMore: Rich loading spouse ${oldSpouse.toString()}`);
                             return self.richLoad(oldSpouseId).then(function (newSpouse) {
                                 condLog(
                                     `=======RICH_LOADed (in loadMore) refreshed spouse ${newPerson.toString()}`,
@@ -563,7 +623,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         removeAncestors(couple) {
-            let self = this;
+            const self = this;
             condLog(`Removing Ancestors for ${couple.toString()}`, couple);
             return couple.removeAncestors().then(function () {
                 self.drawTree();
@@ -571,30 +631,75 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         removeDescendants(couple) {
-            let self = this;
+            const self = this;
             condLog(`Removing Descendants for ${couple.toString()}`, couple);
             return couple.removeDescendants().then(function () {
                 self.drawTree();
             });
         }
 
-        async changeRootPartner(personId, newPartnerID) {
-            let self = this;
-            let root = self.ancestorTree.root;
-            if ([root.a?.getId(), root.b?.getId()].includes(+personId)) {
-                condLog(`Changing partner for ${personId} to ${newPartnerID}`);
+        /**
+         * This is the function that gets called (via a callback in the tree) when the change partner button
+         * is clicked.
+         * @param {*} coupleId The id of couple node for which a partner needs to be changed
+         * @param {*} personId The profile id of whose partner needs to be changes
+         * @param {*} newPartnerID The profile id of the new partner
+         */
+        async changePartner(coupleId, personId, newPartnerID) {
+            condLog(`======changePartner for ${personId} in couple node ${coupleId} to ${newPartnerID}`);
 
-                // Make sure we have all the new profile data before we build and draw the new tree
-                let newPartner = await self.richLoad(newPartnerID);
-                self.ancestorTree.changeRootPartner(personId, newPartner);
-                self.descendantTree.changeRootPartner(personId, newPartner);
-                this.drawTree();
+            // First make sure we have all the data for the new partner profile
+            const newPartner = await this.richLoad(newPartnerID);
+            let foundRoot = false;
+
+            const changeIt = function (couple) {
+                if ([couple.a?.getId(), couple.b?.getId()].includes(+personId)) {
+                    const subTree = couple.idPrefix.startsWith("A") ? "ancestor" : "descendant";
+                    condLog(
+                        `Changing partner for ${personId} in ${subTree} couple ${couple.toString()} to ${newPartnerID}`
+                    );
+                    foundRoot = foundRoot || couple.isRoot;
+                    couple.changePartner(personId, newPartner);
+                    condLog(`Couple changed to: ${couple.toString()}`);
+                } else {
+                    console.error(
+                        `Retrieved wrong couple ${couple.toString()}. It does not contain profile ${personId}`
+                    );
+                }
+            };
+            const flipRootId = function (id) {
+                // A vicious hack!
+                const prefix = id.slice(0, 1);
+                if (prefix == "A") {
+                    return `D${id.slice(1)}`;
+                } else {
+                    return `A${id.slice(1)}`;
+                }
+            };
+
+            // Find the couple node to change, remove it it froom the page and then change it
+            const couples = d3.select(`#${coupleId}`);
+            const r = couples.remove();
+            r.each(function (couple) {
+                changeIt(couple);
+            });
+
+            // If we changed a root node, we also have to change the other tree's root node
+            if (foundRoot) {
+                d3.select(`#${flipRootId(coupleId)}`)
+                    .remove()
+                    .each(function (couple) {
+                        changeIt(couple);
+                    });
             }
+            // Redraw the tree
+            this.drawTree();
         }
 
         /**
-         * Main WikiTree API call
+         * Main WikiTree API calls
          */
+
         async getWithChildren(id) {
             return await WikiTreeAPI.getPerson(id, REQUIRED_FIELDS);
         }
@@ -645,7 +750,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 return $.Deferred().resolve().promise();
             };
 
-            this._rootPartnerChangeCallback = function () {
+            this._partnerChangeCallback = function () {
                 return $.Deferred().resolve().promise();
             };
 
@@ -687,29 +792,20 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          * should return a promise. When it's resolved, the state
          * will be updated.
          */
-        expand(fn) {
+        setExpandCallback(fn) {
             this._expand = fn;
             return this;
         }
         /**
          * Same as above, but for contracting the tree (i.e. removing a branch)
          */
-        contract(fn) {
+        setContractCallback(fn) {
             this._contract = fn;
             return this;
         }
-        setRootPartnerChangeCallback(fn) {
-            this._rootPartnerChangeCallback = fn;
+        setPartnerChangeCallback(fn) {
+            this._partnerChangeCallback = fn;
             return this;
-        }
-        async changeRootPartner(personId, newPartnerID) {
-            let couple = this.root;
-            condLog(
-                `Changing partner for ${personId} to ${newPartnerID} in ${this.getSelector()} tree root ${couple.toString()}`,
-                couple
-            );
-            this.svg.selectAll("g.couple." + this.selector + ".root").remove();
-            return couple.changePartner(personId, newPartnerID);
         }
         /**
          * Draw/redraw the tree
@@ -793,8 +889,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             let nodeEnter = node
                 .enter()
                 .append("g")
-                .attr("class", function (couple) {
-                    return "couple " + self.selector + (couple.isRoot ? " root" : "");
+                .attr({
+                    class: function (couple) {
+                        return "couple " + self.selector + (couple.isRoot ? " root" : "");
+                    },
+                    id: function (couple) {
+                        return couple.getId();
+                    },
                 });
 
             // Draw the person boxes
@@ -829,7 +930,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             self.drawMinus(contractable.data(), this.selector);
 
             // Remove old nodes
-            node.exit().remove();
+            const e = node.exit();
+            e.remove();
 
             this.svg.selectAll(".box").on("click", function (event) {
                 d3.event.stopPropagation();
@@ -844,13 +946,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 self.personPopup(person, d3.mouse(self.svg.node()), d3.mouse(this));
             });
 
-            // Set up behaviour of the "change partner" button of the root node
-            // We do it here so we can get to both the ancestor and descendant tree roots
+            // Set up behaviour of the "change partner" buttons in the descendant tree and the
+            // ancestor tree root (the only places where it is allowed).
             this.svg.selectAll(".select-spouse-button").on("click", function (event) {
                 d3.event.stopPropagation();
-                let personId = this.getAttribute("partner-id");
-                let newPartnerId = this.getAttribute("spouse-id");
-                self._rootPartnerChangeCallback(personId, newPartnerId);
+                const coupleId = this.getAttribute("couple-id");
+                const personId = this.getAttribute("person-id");
+                const newPartnerId = this.getAttribute("spouse-id");
+                self._partnerChangeCallback(coupleId, personId, newPartnerId);
             });
 
             // Position
@@ -893,7 +996,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             div.setAttribute("data-infocus", inFocus);
 
             // Add spouse list behind a button
-            let [button, spouseList] = getSpouseSelection(spouse, couple.isRoot);
+            let mayChangeSpouse = couple.isRoot || (this.direction == DESCENDANTS && !inFocus);
+            let [button, spouseList] = getSpouseSelection(couple, person, spouse, mayChangeSpouse);
             if (button) {
                 spouseList.setAttribute("data-gender", gender);
                 let nameWrapper = document.createElement("div");
@@ -1073,8 +1177,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             if (!photoUrl) {
                 if (person.isFemale()) {
                     photoUrl = "images/icons/female.gif";
-                } else {
+                } else if (person.isMale()) {
                     photoUrl = "images/icons/male.gif";
+                } else {
+                    photoUrl = "images/icons/no-gender.gif";
                 }
             }
             const gender = (person?.getGender() || "other").toLowerCase();
@@ -1142,14 +1248,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     let father = couple.a.getFather();
                     let mother = couple.a.getMother();
                     if (father || mother) {
-                        children.push(new Couple(couple.getId() + ".a", { a: father, b: mother }));
+                        children.push(new Couple(couple.idPrefix + "_a", { a: father, b: mother }));
                     }
                 }
                 if (couple.b) {
                     let father = couple.b.getFather();
                     let mother = couple.b.getMother();
                     if (father || mother) {
-                        children.push(new Couple(couple.getId() + ".b", { a: father, b: mother }));
+                        children.push(new Couple(couple.idPrefix + "_b", { a: father, b: mother }));
                     }
                 }
                 condLog(`Returning AncestorTree children for ${couple.toString()}`, children);
@@ -1171,7 +1277,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 let list = [];
 
                 for (let i in children) {
-                    list.push(new Couple(`${couple.getId()}.${i}`, { a: children[i] }));
+                    list.push(new Couple(`${couple.idPrefix}_${i}`, { a: children[i] }));
                 }
 
                 condLog(`Returning DescendantTree children for ${couple.toString()}`, list);
@@ -1414,87 +1520,103 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         return nameToReturn.substring(0, maxLength - 3) + "...";
     }
 
-    async function getWithoutChildren(id) {
-        return WikiTreeAPI.getPerson(id, REQUIRED_FIELDS_NO_CHILDREN);
+    function dateObject(dateStr) {
+        let parts = (dateStr || "9999-12-31").split("-");
+        // Unknown year goes last
+        if (parts[0] && parts[0] == 0) parts[0] = 9999;
+        if (parts[1] && parts[1] > 0) parts[1] -= 1;
+        if (parts.length == 1) {
+            parts[1] = 0;
+        }
+        return new Date(...parts);
     }
 
     /**
-     * Sort a list of people by their birth year from earliest to latest.
+     * Sort a list of people by their birth date from earliest to latest.
      * People with no birth year is put last.
      */
     function sortByBirthDate(list) {
         return list.sort((a, b) => {
-            const aBirthDate = a.getBirthDate();
-            const bBirthDate = b.getBirthDate();
-            const aBirthYear = aBirthDate ? aBirthDate.split("-")[0] : 9999;
-            const bBirthYear = bBirthDate ? bBirthDate.split("-")[0] : 9999;
+            const aBirthDate = dateObject(a.getBirthDate());
+            const bBirthDate = dateObject(b.getBirthDate());
 
-            return aBirthYear - bBirthYear;
+            return aBirthDate - bBirthDate;
         });
     }
 
-    function getSpouseSelection(person, isRoot = false) {
-        if (!person) return [];
+    /**
+     * Determine the list of all spouses of the partner (partner) of currentSpouse in couple.
+     * @param {*} couple The couple containing the partner and currentSpouse
+     * @param {*} partnerId The id of the current partner of currentSpouse
+     * @param {*} currentSpouse The current spouse of the other partner in couple,
+     * @param {*} mayChangeSpouse true iff we are allowed to add a 'change partner button'
+     * @returns [botton, spouseList] where button is a 'show other spouses button and will be
+     *          undefined if there is only one spouse
+     */
+    function getSpouseSelection(couple, partner, currentSpouse, mayChangeSpouse) {
+        if (!currentSpouse) return [];
 
         // Collect a list of the names and lifespans of all the spouses of the given person
-        let spouses = person.getSpouses();
+        let spouses = currentSpouse.getSpouses();
         let list = [];
         if (spouses) {
             for (let s in spouses) {
                 let spouse = spouses[s];
+                let mDate = currentSpouse._data.MarriageDates[spouse.getId()].marriage_date;
                 list.push({
                     id: spouse.getId(),
                     name: getShortName(spouse),
                     lifespan: lifespan(spouse),
                     wtId: spouse.getName(),
-                    mDate: person._data.MarriageDates[spouse.getId()].marriage_date,
+                    mDate: mDate,
+                    msDate: dateObject(mDate),
                 });
             }
         }
         if (list.length <= 1) return [];
 
-        function sortByYear(list) {
-            list.sort((a, b) => {
-                // Unknown year goes last
-                const aYear = a.mDate ? a.mDate.split("-")[0] : 9999;
-                const bYear = b.mDate ? b.mDate.split("-")[0] : 9999;
-
-                return (aYear == 0 ? 9999 : aYear) - (bYear == 0 ? 9999 : bYear);
+        // Sort the list of spouses
+        ((spl) => {
+            spl.sort((a, b) => {
+                return a.msDate - b.msDate;
             });
-        }
-        sortByYear(list);
+        })(list);
 
         let wrapper = document.createElement("div");
         wrapper.className = "box alt-spouse-list-wrapper";
         wrapper.style.display = "none";
         let heading = document.createElement("h4");
-        heading.textContent = `Spouses for ${getShortName(person)}`;
+        heading.textContent = `Spouses for ${getShortName(currentSpouse)}`;
         wrapper.appendChild(heading);
 
         let listDiv = document.createElement("div");
         listDiv.className = "spouse-list";
 
         let spouseList = document.createElement("ol");
-        for (let spouse of list) {
+        for (let spouseData of list) {
             let item = document.createElement("li");
-            item.appendChild(aDivWith("altSpouse", aProfileLink(spouse.name, spouse.wtId)));
-            let div = aDivWith(
+            item.appendChild(aDivWith("altSpouse", aProfileLink(spouseData.name, spouseData.wtId)));
+            let lifespanDiv = aDivWith(
                 "lifespan",
-                aTreeLink(spouse.wtId),
+                document.createTextNode(spouseData.lifespan),
                 document.createTextNode(" "),
-                document.createTextNode(spouse.lifespan)
+                aTreeLink(spouseData.wtId)
             );
-            if (isRoot) {
+            const x = currentSpouse.getId();
+            const y = spouseData.id;
+            if (mayChangeSpouse && partner.getId() != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
                 button.className = "select-spouse-button";
                 button.textContent = RIGHT_ARROW;
-                button.setAttribute("partner-id", person.getId());
-                button.setAttribute("spouse-id", spouse.id);
+                button.setAttribute("couple-id", couple.getId());
+                button.setAttribute("person-id", currentSpouse.getId());
+                button.setAttribute("spouse-id", spouseData.id);
                 // Note; the button's click behaviour is added in Tree.drawNodes()
-                div.prepend(button);
+                lifespanDiv.prepend(button);
             }
-            item.appendChild(div);
+            item.appendChild(lifespanDiv);
+            item.appendChild(aDivWith("marriage-date", document.createTextNode(`x ${spouseData.mDate}`)));
             spouseList.appendChild(item);
         }
         listDiv.appendChild(spouseList);
@@ -1565,5 +1687,38 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         treeLink.href = `#name=${wtId}`;
         treeLink.appendChild(img);
         return treeLink;
+    }
+
+    async function getNamesOfRelatives(id, namesOf) {
+        let cachedPerson = window.peopleCache.getWithFields(id, namesOf);
+        if (cachedPerson && cachedPerson.getChildren() && cachedPerson.getSpouses()) {
+            condLog(`getNamesOfRelatives from cache ${cachedPerson.toString()}`);
+            return new Promise((resolve, reject) => {
+                resolve(cachedPerson);
+            });
+        }
+
+        let readFromCache = true;
+        const options = {};
+        if (namesOf.includes("Parents")) {
+            readFromCache &&= cachedPerson && cachedPerson.getChildren();
+            options.getParents = 1;
+        }
+        if (namesOf.includes("Spouses")) {
+            readFromCache &&= cachedPerson && cachedPerson.getSpouses();
+            options.getSpouses = 1;
+        }
+        if (namesOf.includes("Siblings")) {
+            readFromCache;
+            options.getSiblings = 1;
+        }
+        if (namesOf.includes("Children")) {
+            readFromCache &&= cachedPerson && cachedPerson.getChildren();
+            options.getChildren = 1;
+        }
+
+        const result = await WikiTreeAPI.getRelatives([id], NAME_FIELDS, options);
+        // We do not cache the new person constructed here because it only contains name fields
+        return new WikiTreeAPI.Person(result[0].person);
     }
 })();
