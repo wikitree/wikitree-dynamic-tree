@@ -97,7 +97,7 @@
     FanChartView.maxNumGens = 10;
     FanChartView.workingMaxNumGens = 6;
 
-    FanChartView.showFandokuLink = "No";
+    // FanChartView.showFandokuLink = "No";
 
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FanChartView.myAhnentafel = new AhnenTafel.Ahnentafel();
@@ -107,6 +107,9 @@
 
     /** Object to hold the Ancestors as they are returned from the getAncestors API call    */
     FanChartView.theAncestors = [];
+
+    // List to hold the AhnenTafel #s of all Ancestors that are X-Chromosome ancestors (or potential x-chromosome ancestors) of the primary person.
+    FanChartView.XAncestorList = [];
 
     FanChartView.prototype.meta = function () {
         return {
@@ -118,9 +121,9 @@
 
     FanChartView.prototype.init = function (selector, startId) {
         // console.log("FanChartView.js - line:18", selector) ;
-        let theCheckIn =  FanChartView.getCheckIn();
-        // console.log("theCheckIN:", theCheckIn);
-        FanChartView.showFandokuLink = theCheckIn;
+        // let theCheckIn =  FanChartView.getCheckIn();
+        // // console.log("theCheckIN:", theCheckIn);
+        // FanChartView.showFandokuLink = theCheckIn;
 
         var container = document.querySelector(selector),
             width = container.offsetWidth,
@@ -172,13 +175,13 @@
                     subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
                     comment: "These options apply to background colours in the Fan Chart cells.",
                 },
-                // {
-                //     name: "highlights",
-                //     label: "Highlights",
-                //     hideSelect: true,
-                //     subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
-                //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
-                // },
+                {
+                    name: "highlights",
+                    label: "Highlights",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
+                    comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
+                },
             ],
             optionsGroups: [
                 {
@@ -475,23 +478,23 @@
                                 { value: "YDNA", text: "Y-DNA" },
                                 { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
                                 { value: "XDNA", text: "X-chromosome inheritance" },
-                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "DNAinheritance", text: "DNA inheritance" },
+                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                             ],
                             defaultValue: "DNAinheritance",
                         },
-                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                        {
-                            optionName: "howDNAlinks",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "Hide", text: "Hide Links" },
-                                { value: "Highlights", text: "Show Links for highlighted cells only" },
-                                { value: "ShowAll", text: "Show All Links" },
-                            ],
-                            defaultValue: "Highlights",
-                        },
+                        // { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        // {
+                        //     optionName: "howDNAlinks",
+                        //     type: "radio",
+                        //     label: "",
+                        //     values: [
+                        //         { value: "Hide", text: "Hide Links" },
+                        //         { value: "Highlights", text: "Show Links for highlighted cells only" },
+                        //         { value: "ShowAll", text: "Show All Links" },
+                        //     ],
+                        //     defaultValue: "Highlights",
+                        // },
                     ],
                 },
             ],
@@ -689,7 +692,7 @@
         FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
         // console.log(theCheckIn);
-        FanChartView.showFandokuLink = theCheckIn;
+        // FanChartView.showFandokuLink = theCheckIn;
         
     };
 
@@ -777,6 +780,7 @@
                     "Name",
                     "Gender",
                     "Privacy",
+                    "DataStatus",
                 ],
                 { getParents: true }
             ).then(function (result) {
@@ -907,6 +911,7 @@
             person._data.AhnNum = 1;
             thePeopleList.add(person);
             thePeopleList.listAll();
+            
 
             if (person.children && person.children.length > 0) {
                 for (let index = 0; index < person.children.length; index++) {
@@ -952,6 +957,7 @@
                 "Name",
                 "Gender",
                 "Privacy",
+                "DataStatus",
             ]).then(function (result) {
                 FanChartView.theAncestors = result;
                 // console.log("theAncestors:", FanChartView.theAncestors);
@@ -963,6 +969,7 @@
                 FanChartView.myAhnentafel.update(person);
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
+                populateXAncestorList(1);
             });
         });
     };
@@ -1023,6 +1030,8 @@
             "Name",
             "Gender",
             "Privacy",
+            "DataStatus",
+            
         ]);
         // console.log("_load PersonObj:",thePersonObject);
         return thePersonObject;
@@ -1593,9 +1602,9 @@
 
         if (person._data.Id == FanChartView.myAhnentafel.list[1]) {
             // console.log("FOUND THE PRIMARY PERP!");
-            if (FanChartView.showFandokuLink == "YES"){
+            // if (FanChartView.showFandokuLink == "YES"){
                 fandokuLink = `<span class="tree-links"><button onclick=location.assign("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/#name=${person.getName()}&view=fandoku"); style="padding:2px;">Play FanDoku</button></span>`;
-            }
+            // }
         } else {
             // console.log("Popup a poopy peep");
         }
@@ -2116,9 +2125,95 @@
 
         return 9;
     }
+    function doHighlightFor(gen, pos, ahnNum) {
+        if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+            if (pos == 0) {
+                if (ahnNum > 1) {
+                    return true;
+                } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    return true;
+                }
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+            if (pos == 2 ** gen - 1) {
+                return true;
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+            if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
+                return true;
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+            if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
+                // HIGHLIGHT by X-chromosome inheritance
+                return true;
+            } else if (pos == 2 ** gen - 1) {
+                // OR by mtDNA inheritance
+                return true;
+            } else if (pos == 0) {
+                // OR by Y-DNA inheritance
+                if (ahnNum > 1) {
+                    return true;
+                } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    return true;
+                }
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+            if (ahnNum == 1) {
+                console.log(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
+                return true;
+            } else {
+                let childAhnNum = Math.floor(ahnNum / 2);
+                if (ahnNum % 2 == 0) {
+                    // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+                    if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
+                        return true;
+                    }
+                } else {
+                    // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+                    if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
+                        return true;
+                    }
+                }
+            }
 
+        }
+
+        return false;
+    }
+    function populateXAncestorList(ahnNum) {
+        if (ahnNum == 1) {
+            FanChartView.XAncestorList = [1];
+            if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                populateXAncestorList(2); // a woman inherits an X-chromosome from her father
+                populateXAncestorList(3); // and her mother
+            } else {
+                populateXAncestorList(3); // whereas a man inherits an X-chromosome only from his mother
+            }
+        } else {
+            FanChartView.XAncestorList.push( ahnNum ) ;
+            if (ahnNum < 2** FanChartView.maxNumGens) {
+                if (ahnNum % 2 == 1) {
+                    populateXAncestorList(2 * ahnNum); // a woman inherits an X-chromosome from her father
+                    populateXAncestorList(2 * ahnNum + 1); // and her mother
+                } else {
+                    populateXAncestorList(2 * ahnNum + 1); // whereas a man inherits an X-chromosome only from his mother
+                }
+            }
+        }
+    }
+    
     function getBackgroundColourFor(gen, pos, ahnNum) {
-        PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+        PastelsArray = [
+            "#ECFFEF",
+            "#CCEFEC",
+            "#CCFFCC",
+            "#FFFFCC",
+            "#FFE5CC",
+            "#FFCCCC",
+            "#FFCCE5",
+            "#FFCCFF",
+            "#E5CCFF",
+        ];
         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
         GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
         RedsArray = [
@@ -2196,6 +2291,14 @@
             thisColourArray = KeyColoursMatches[settingForPalette];
         }
 
+        let overRideByHighlight = false; // 
+        if (FanChartView.currentSettings['highlight_options_showHighlights'] == true) {
+            overRideByHighlight = doHighlightFor(gen,pos, ahnNum);
+        }
+        if (overRideByHighlight == true) {
+            return "yellow";
+        }
+
         if (ahnNum == 1) {
             return thisColourArray[0];
         }
@@ -2224,16 +2327,17 @@
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
 
-    FanChartView.getCheckIn = function () {
-        var API_URL = "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ok.php";
-        fetch(API_URL)
-            .then((response) => response.text())
-            .then((data) => {
-                // console.log("GOT THE DATA:", data);
-                FanChartView.showFandokuLink = data;
-                return data;
-            });
-    }
+    // Used this function to conditionally turn on / off the FanDoku link - but - now we want it on all the time
+    // FanChartView.getCheckIn = function () {
+    //     var API_URL = "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ok.php";
+    //     fetch(API_URL)
+    //         .then((response) => response.text())
+    //         .then((data) => {
+    //             // console.log("GOT THE DATA:", data);
+    //             FanChartView.showFandokuLink = data;
+    //             return data;
+    //         });
+    // }
 
    
     })();
