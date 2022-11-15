@@ -10,7 +10,7 @@
 // extension to fiddle with CORS permissions, like one of these for Chrome:
 //     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
 //     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
-const localTesting = false;
+const localTesting = true;
 const logit = localTesting || false; // changing false to true allows one to turn on logging even if not local testing
 
 // Put our functions into a "WikiTreeAPI" namespace.
@@ -174,6 +174,13 @@ WikiTreeAPI.Person = class Person {
 
         this.setSpouses(data);
 
+        if (data.Siblings) {
+            condLog(`Setting Siblings for ${this.getId()}: ${name}`);
+            for (var c in data.Siblings) {
+                this._data.Siblings[c] = new WikiTreeAPI.makePerson(data.Siblings[c]);
+            }
+        }
+
         if (data.Children) {
             condLog(`Setting children for ${this.getId()}: ${name}`);
             for (var c in data.Children) {
@@ -248,6 +255,9 @@ WikiTreeAPI.Person = class Person {
     isFullyEnriched() {
         return getRichness(this._data) == MAX_RICHNESS;
     }
+    getSiblings() {
+        return this._data.Siblings;
+    }
     getSpouses() {
         return this._data.Spouses;
     }
@@ -259,7 +269,7 @@ WikiTreeAPI.Person = class Person {
             return undefined;
         }
         if (this.hasSpouse()) {
-            return this._data.Spouses[this._data.FirstSpouseId];
+            return this._data.Spouses[this._data.CurrentSpouseId];
         }
         if (this.hasNoSpouse() || this.isDiedYoung()) {
             return NoSpouse;
@@ -273,7 +283,7 @@ WikiTreeAPI.Person = class Person {
     // profile does not have any spouse field(s) loaded while the latter means the profile definitely
     // has no spouse.
     hasSpouse() {
-        return this._data.Spouses && this._data.FirstSpouseId;
+        return this._data.Spouses && this._data.CurrentSpouseId;
     }
     hasNoSpouse() {
         return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0;
@@ -328,8 +338,11 @@ WikiTreeAPI.Person = class Person {
     setChildren(children) {
         this._data.Children = children;
     }
+    setSiblings(siblings) {
+        this._data.Siblings = siblings;
+    }
     setSpouses(data) {
-        this._data.FirstSpouseId = undefined;
+        this._data.CurrentSpouseId = undefined;
         if (data.Spouses) {
             condLog(
                 `setSpouses for ${this.getId()}: ${this.getDisplayName()}: ${summaryOfPeople(data.Spouses)}`,
@@ -353,18 +366,25 @@ WikiTreeAPI.Person = class Person {
                     marriage_end_date: spouseData.marriage_end_date || "0000-00-00",
                     marriage_location: spouseData.marriage_location || "0000-00-00",
                 };
-                //list.push(WikiTreeAPI.makePerson(spouseData));
                 data.Spouses[s] = WikiTreeAPI.makePerson(spouseData);
                 list.push({ id: s, marriage_date: mDate });
             }
             if (list.length > 0) {
                 sortByMarriageYear(list);
-                this._data.FirstSpouseId = list[0].id;
+                this._data.CurrentSpouseId = list[0].id;
             }
         }
     }
+    setCurrentSpouse(id) {
+        if (this.hasSpouse() && this.getSpouses()[id]) {
+            this._data.CurrentSpouseId = id;
+            return true;
+        } else {
+            return false;
+        }
+    }
     copySpouses(person) {
-        this._data.FirstSpouseId = person._data.FirstSpouseId;
+        this._data.CurrentSpouseId = person._data.CurrentSpouseId;
         this._data.Spouses = person._data.Spouses;
         this._data.MarriageDates = person._data.MarriageDates;
     }
@@ -374,8 +394,8 @@ WikiTreeAPI.Person = class Person {
                 `Suspect Person.refreshFrom called on ${this.toString()} for less enriched ${newPerson.toString()}`
             );
         }
-        let mother = newPerson.getMother();
-        let father = newPerson.getFather();
+        const mother = newPerson.getMother();
+        const father = newPerson.getFather();
 
         if (mother) {
             this.setMother(mother);
@@ -386,11 +406,15 @@ WikiTreeAPI.Person = class Person {
         if (newPerson.hasSpouse()) {
             this.copySpouses(newPerson);
         }
+        const siblings = newPerson.getSiblings();
+        if (siblings) {
+            this.setSiblings(siblings);
+        }
         this.setChildren(newPerson.getChildren());
     }
 
     toString() {
-        return `${this.getId()}: ${this.getDisplayName()} (${this.getRichness()})`;
+        return `${this.getId()} ${this.getDisplayName()} (${this.getRichness()})`;
     }
 }; // End Person class definition
 
@@ -406,58 +430,61 @@ class NullPerson extends WikiTreeAPI.Person {
 
 const NoSpouse = new NullPerson();
 
-const peopleCache = new Map();
 WikiTreeAPI.clearCache = function () {
-    peopleCache.clear();
-    condLog("PEOPLE CACHE CLEARED");
+    if (window.peopleCache) {
+        window.peopleCache.clear();
+        condLog("PEOPLE CACHE CLEARED");
+    }
 };
 
 /**
  * Return a promise for a person object with the given id.
- * If an enriched person (see Person.getRichness()) with the given id already exists in our cache
- * and it has at least the requested richness level, the cached value is returned.
+ * If a person meeting the requirements already exists in our cache (if enabled)
+ * the cached value is returned.
  * Otherwise a new API call is made and the promise will store the result (if successful)
- * in the cache before it is returned.
+ * in the cache (if enabled) before it is returned.
  *
  * @param {*} id The WikiTree ID of the person to retrieve
  * @param {*} fields An array of field names to retrieve for the given person
  * @returns a Person object
  */
 WikiTreeAPI.getPerson = async function (id, fields) {
-    const cachedPerson = peopleCache.get(id);
-    if (cachedPerson && isRequestCoveredByPerson(fields, cachedPerson)) {
-        condLog(`getPerson from cache ${cachedPerson.toString()}`);
-        return new Promise((resolve, reject) => {
-            resolve(cachedPerson);
-        });
+    if (window.peopleCache) {
+        const cachedPerson = window.peopleCache.getWithFields(id, fields);
+        if (cachedPerson) {
+            return new Promise((resolve, reject) => {
+                resolve(cachedPerson);
+            });
+        }
     }
-
     const newPerson = await WikiTreeAPI.getPersonViaAPI(id, fields);
-    condLog(`getPerson caching ${newPerson.toString()}`);
-    peopleCache.set(id, newPerson);
+    if (window.peopleCache) {
+        window.peopleCache.add(newPerson);
+    }
     return newPerson;
 };
 
 /**
  * Construct a person object from the given data object rerieved via an API call.
- * However, if an enriched person with the given id already exists in our cache
- * and it has at least the same level of richness than the new data, the cached
- * value is returned instead.
+ * However, if the cache is enabled and a person with the given id already exists,
+ * meeting the requirements defined by the cache, the cached person is returned.
  *
  * @param {*} data A JSON object for a person retrieved via the API
- * @returns a Person object. It will also have been cached for re-use
+ * @returns a Person object. It will also have been cached for re-use if the cache
+ * is enabled.
  */
 WikiTreeAPI.makePerson = function (data) {
-    const id = data.Id;
-    const cachedPerson = peopleCache.get(id);
-    if (cachedPerson && isSameOrHigherRichness(cachedPerson._data, data)) {
-        condLog(`makePerson from cache ${cachedPerson.toString()}`);
-        return cachedPerson;
+    if (window.peopleCache) {
+        const cachedPerson = window.peopleCache.getWithData(data);
+        if (cachedPerson) {
+            return cachedPerson;
+        }
     }
 
     const newPerson = new WikiTreeAPI.Person(data);
-    condLog(`makePerson caching ${newPerson.toString()}`);
-    peopleCache.set(id, newPerson);
+    if (window.peopleCache) {
+        window.peopleCache.add(newPerson);
+    }
     return newPerson;
 };
 
@@ -527,12 +554,14 @@ WikiTreeAPI.getAncestors = async function (id, depth, fields) {
  *
  * So we can use this through our asynchronous actions with something like:
  *
- *   WikiTree.getRelatives(nextIDsToLoad, ["Id", "Name", "LastNameAtBirth"], { getParents: true }).then(function (peopleList) {
- *       // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
- *       for (let index = 0; index < peopleList.length; index++) {
- *           thePeopleList.add(peopleList[index].person);
+ *   WikiTree.getRelatives(nextIDsToLoad, ["Id", "Name", "LastNameAtBirth"], { getParents: true }).then(
+ *       function (peopleList) {
+ *           // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
+ *           for (let index = 0; index < peopleList.length; index++) {
+ *               thePeopleList.add(peopleList[index].person);
+ *           }
  *       }
- *   });
+ *   );
  *
  * NOTE:  the "peopleList" here that is the input to the .then function is the JSON from our API call, namely
  * result[0].items, which will be an array of objects.
@@ -574,26 +603,6 @@ WikiTreeAPI.getRelatives = async function (IDs, fields, options = {}) {
     return result[0].items;
 };
 
-WikiTreeAPI.getSpouseAndChildrenNames = async function (id) {
-    let cachedPerson = peopleCache.get(id);
-    if (cachedPerson && cachedPerson.getChildren() && cachedPerson.getSpouses()) {
-        condLog(`getSpouseAndChildrenNames from cache ${cachedPerson.toString()}`);
-        return new Promise((resolve, reject) => {
-            resolve(cachedPerson);
-        });
-    }
-
-    const result = await WikiTreeAPI.postToAPI({
-        action: "getRelatives",
-        keys: id,
-        fields: "Id,Name,FirstName,LastName,Derived.BirthName,Derived.BirthNamePrivate,LastNameAtBirth,MiddleInitial,BirthDate,DeathDate",
-        getChildren: 1,
-        getSpouses: 1,
-    });
-    // We do not cache the new person constructed here because it only contains name fields
-    return new WikiTreeAPI.Person(result[0].items[0].person);
-};
-
 /**
  * To get the Watchlist for the logged in user, we POST to the API's getWatchlist action. When we get a result back,
  * we leave the result as an array of objects
@@ -625,13 +634,13 @@ WikiTreeAPI.getWatchlist = async function (limit, getPerson, getSpace, fields) {
 };
 
 /**
- * This is just a wrapper for the Ajax call, sending along necessary options for the WikiTree API.
+ * This is just a wrapper for JavaScript's fetch() call, sending along necessary options for the WikiTree API.
  *
  * @param {*} postData
  * @returns
  */
 WikiTreeAPI.postToAPI = async function (postData) {
-    condLog(`>>>>> postToAPI ${postData.action} ${postData.key || postData.keys}`);
+    condLog(`>>>>> postToAPI ${postData.action} ${postData.key || postData.keys}`, postData);
     const API_URL = "https://api.wikitree.com/api.php";
 
     let formData = new FormData();
@@ -733,30 +742,19 @@ function sortByMarriageYear(list) {
     });
 }
 
-const MAX_RICHNESS = 0b111;
+const MAX_RICHNESS = 0b1111;
 function getRichness(data) {
     let r = 0;
     if (data.Parents) {
-        r = r | 0b100;
+        r = r | 0b1000;
     }
     if (data.Spouses) {
+        r = r | 0b0100;
+    }
+    if (data.Siblings) {
         r = r | 0b010;
     }
     if (data.Children) {
-        r = r | 0b001;
-    }
-    return r;
-}
-
-function getRequestRichness(fields) {
-    let r = 0;
-    if (fields.includes("Parents")) {
-        r = r | 0b100;
-    }
-    if (fields.includes("Spouses")) {
-        r = r | 0b010;
-    }
-    if (fields.includes("Children")) {
         r = r | 0b001;
     }
     return r;
@@ -771,11 +769,6 @@ function getRequestRichness(fields) {
 function isSameOrHigherRichness(a, b) {
     const bRichness = getRichness(b);
     return (getRichness(a) & bRichness) == bRichness;
-}
-
-function isRequestCoveredByPerson(reqFields, person) {
-    const reqRichness = getRequestRichness(reqFields);
-    return (getRichness(person._data) & reqRichness) == reqRichness;
 }
 
 // ===================================================================
