@@ -67,8 +67,17 @@ window.View = class View {
         };
     }
 
+    // If the view fails to initialize, return an error. The ViewRegistry will then display
+    // that error and hide the "info panel" that's supposed to get filled in with view information.
     init(container_selector, person_id) {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
+    }
+};
+
+window.ViewError = class ViewError extends Error {
+    constructor(message) {
+        super(message); // Call parent Error class for construction
+        this.name = "ViewError"; // Change name to our own, instead of "Error"
     }
 };
 
@@ -202,7 +211,7 @@ window.ViewRegistry = class ViewRegistry {
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
     onPersonDataReceived(view, data) {
         const wtID = document.querySelector(this.WT_ID_TEXT).value;
-        const parentContainer = document.querySelector(this.NAME_PLACEHOLDER).closest("div");
+        const infoPanel = document.querySelector(this.INFO_PANEL);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
@@ -216,10 +225,16 @@ window.ViewRegistry = class ViewRegistry {
 
             this.clearStatus();
 
-            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
-            parentContainer.classList.remove("hidden");
+            try {
+                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+            } catch (err) {
+                // If we have an unhandleable error from a view, display the error message and hide away
+                // the "info panel", since it's probably incomplete/broken.
+                this.showError(err.message);
+                this.hideInfoPanel();
+            }
         } else {
-            parentContainer.classList.add("hidden");
+            infoPanel.classList.add("hidden");
             if (wtID) {
                 this.showError(`Person not found for WikiTree ID ${wtID}.`);
             } else {
