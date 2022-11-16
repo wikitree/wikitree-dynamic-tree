@@ -2,12 +2,11 @@
  * We use the D3.js library to render the graph.
  */
 window.CouplesTreeView = class CouplesTreeView extends View {
+    #peopleCache = new PeopleCache();
     constructor() {
         super();
-        if (!window.peopleCache) {
-            window.peopleCache = new PeopleCache();
-        }
     }
+
     meta() {
         return {
             title: "Couples Dynamic Tree",
@@ -22,7 +21,28 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     }
 
     init(container_selector, person_id) {
-        new CouplesTreeViewer(container_selector).loadAndDraw(person_id);
+        let self = this;
+        /**
+         * Register a new makePerson function with the Person class.
+         * The idea is to construct a person object from the given data object rerieved via an API call,
+         * except, if a person with the given id already exists in our cache,
+         * meeting the requirements defined by the cache, the cached person is returned.
+         *
+         * @param {*} data A JSON object for a person retrieved via the API
+         * @returns a Person object. It will also have been cached for re-use if the cache
+         * is enabled.
+         */
+        Person.setMakePerson(function (data) {
+            const cachedPerson = self.#peopleCache.getWithData(data);
+            if (cachedPerson) {
+                return cachedPerson;
+            }
+            const newPerson = new Person(data);
+            self.#peopleCache.add(newPerson);
+            return newPerson;
+        });
+        Person.setLogging(localTesting);
+        new CouplesTreeViewer(container_selector, this.#peopleCache).loadAndDraw(person_id);
     }
 };
 
@@ -296,15 +316,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * CouplesTreeViewer
      */
     let CouplesTreeViewer = (window.CouplesTreeViewer = class CouplesTreeViewer {
-        constructor(selector) {
-            // this.peopleCache = new PeopleCache();
-            // WikiTreeAPI.enableCache(this.peopleCache);
+        constructor(selector, peopleCache) {
+            this.peopleCache = peopleCache;
 
             let container = document.querySelector(selector),
                 width = container.offsetWidth,
                 height = container.offsetHeight;
-
-            let self = this;
 
             // Setup zoom and pan
             let zoom = d3.behavior
@@ -327,32 +344,34 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
 
             // Setup controllers for the ancestor and descendant trees
-            self.ancestorTree = new AncestorTree(svg);
-            self.descendantTree = new DescendantTree(svg);
+            this.ancestorTree = new AncestorTree(svg);
+            this.descendantTree = new DescendantTree(svg);
+
+            let self = this;
 
             // Listen to tree events
-            self.ancestorTree.setExpandCallback(function (couple) {
+            this.ancestorTree.setExpandCallback(function (couple) {
                 return self.loadMore(couple);
             });
 
-            self.descendantTree.setExpandCallback(function (couple) {
+            this.descendantTree.setExpandCallback(function (couple) {
                 return self.loadMore(couple);
             });
 
-            self.ancestorTree.setContractCallback(function (couple) {
+            this.ancestorTree.setContractCallback(function (couple) {
                 return self.removeAncestors(couple);
             });
 
-            self.descendantTree.setContractCallback(function (couple) {
+            this.descendantTree.setContractCallback(function (couple) {
                 return self.removeDescendants(couple);
             });
 
             // Register callback for root partner change
-            self.ancestorTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
+            this.ancestorTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
                 return self.changePartner(coupleId, personId, newPartnerId);
             });
 
-            self.descendantTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
+            this.descendantTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
                 return self.changePartner(coupleId, personId, newPartnerId);
             });
 
@@ -536,7 +555,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     let parent = parents[p];
                     if (!parent.getSpouses()) {
                         condLog(`get names of spouses for ${parent.toString()}`);
-                        promises.push(getNamesOfRelatives(parent.getId(), ["Spouses", "Children"]));
+                        promises.push(self.getNamesOfRelatives(parent.getId(), ["Spouses", "Children"]));
                     }
                 }
                 return promises;
@@ -548,7 +567,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     let spouse = spouses[s];
                     if (!spouse.getSpouses()) {
                         condLog(`get names of spouses for ${spouse.toString()}`);
-                        promises.push(getNamesOfRelatives(spouse.getId(), ["Spouses"]));
+                        promises.push(self.getNamesOfRelatives(spouse.getId(), ["Spouses"]));
                     }
                 }
                 return promises;
@@ -701,11 +720,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          */
 
         async getWithChildren(id) {
-            return await WikiTreeAPI.getPerson(id, REQUIRED_FIELDS);
+            return await this.getPerson(id, REQUIRED_FIELDS);
         }
 
         async getWithoutChildren(id) {
-            return await WikiTreeAPI.getPerson(id, REQUIRED_FIELDS_NO_CHILDREN);
+            return await this.getPerson(id, REQUIRED_FIELDS_NO_CHILDREN);
         }
 
         /**
@@ -724,6 +743,88 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog("draw descendantTree:", this.descendantTree);
             this.descendantTree.draw();
             condLog("drawTree done", this.ancestorTree, this.descendantTree);
+        }
+
+        /**
+         * Return a promise for a person object with the given id.
+         * If a person meeting the requirements already exists in our cache (if enabled)
+         * the cached value is returned.
+         * Otherwise a new API call is made and the promise will store the result (if successful)
+         * in the cache (if enabled) before it is returned.
+         *
+         * @param {*} id The WikiTree ID of the person to retrieve
+         * @param {*} fields An array of field names to retrieve for the given person
+         * @returns a Person object
+         */
+        async getPerson(id, fields) {
+            const cachedPerson = this.peopleCache.getWithFields(id, fields);
+            if (cachedPerson) {
+                return new Promise((resolve, reject) => {
+                    resolve(cachedPerson);
+                });
+            }
+            const newPerson = await this.getPersonViaAPI(id, fields);
+            this.peopleCache.add(newPerson);
+            return newPerson;
+        }
+
+        /**
+         * To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
+         * we convert the returned JSON data into a Person object.
+         * Note that postToAPI returns the Promise from Javascript's fetch() call.
+         * This function returns a Promise (as result of the await), which gets resolved after the await.
+         * So we can use this through asynchronous actions with something like:
+         *   getPersonViaAPI.then(function(result) {
+         *      // the "result" here is a new Person object.
+         *   });
+         * or
+         *   newPerson = await getPersonViaAPI(id, fields);
+         *
+         * @param {*} id The WikiTree ID of the person to retrieve
+         * @param {*} fields An array of field names to retrieve for the given person
+         * @returns a Promise
+         */
+        async getPersonViaAPI(id, fields) {
+            const result = await WikiTreeAPI.postToAPI({
+                action: "getPerson",
+                key: id,
+                fields: fields.join(","),
+                resolveRedirect: 1,
+            });
+            return new WikiTreeAPI.Person(result[0].person);
+        }
+
+        async getNamesOfRelatives(id, namesOf) {
+            let cachedPerson = this.peopleCache.getWithFields(id, namesOf);
+            if (cachedPerson && cachedPerson.getChildren() && cachedPerson.getSpouses()) {
+                condLog(`getNamesOfRelatives from cache ${cachedPerson.toString()}`);
+                return new Promise((resolve, reject) => {
+                    resolve(cachedPerson);
+                });
+            }
+
+            let readFromCache = true;
+            const options = {};
+            if (namesOf.includes("Parents")) {
+                readFromCache &&= cachedPerson && cachedPerson.getChildren();
+                options.getParents = 1;
+            }
+            if (namesOf.includes("Spouses")) {
+                readFromCache &&= cachedPerson && cachedPerson.getSpouses();
+                options.getSpouses = 1;
+            }
+            if (namesOf.includes("Siblings")) {
+                readFromCache;
+                options.getSiblings = 1;
+            }
+            if (namesOf.includes("Children")) {
+                readFromCache &&= cachedPerson && cachedPerson.getChildren();
+                options.getChildren = 1;
+            }
+
+            const result = await WikiTreeAPI.getRelatives([id], NAME_FIELDS, options);
+            // We do not cache the new person constructed here because it only contains name fields
+            return new WikiTreeAPI.Person(result[0].person);
         }
     });
 
@@ -1687,38 +1788,5 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         treeLink.href = `#name=${wtId}`;
         treeLink.appendChild(img);
         return treeLink;
-    }
-
-    async function getNamesOfRelatives(id, namesOf) {
-        let cachedPerson = window.peopleCache.getWithFields(id, namesOf);
-        if (cachedPerson && cachedPerson.getChildren() && cachedPerson.getSpouses()) {
-            condLog(`getNamesOfRelatives from cache ${cachedPerson.toString()}`);
-            return new Promise((resolve, reject) => {
-                resolve(cachedPerson);
-            });
-        }
-
-        let readFromCache = true;
-        const options = {};
-        if (namesOf.includes("Parents")) {
-            readFromCache &&= cachedPerson && cachedPerson.getChildren();
-            options.getParents = 1;
-        }
-        if (namesOf.includes("Spouses")) {
-            readFromCache &&= cachedPerson && cachedPerson.getSpouses();
-            options.getSpouses = 1;
-        }
-        if (namesOf.includes("Siblings")) {
-            readFromCache;
-            options.getSiblings = 1;
-        }
-        if (namesOf.includes("Children")) {
-            readFromCache &&= cachedPerson && cachedPerson.getChildren();
-            options.getChildren = 1;
-        }
-
-        const result = await WikiTreeAPI.getRelatives([id], NAME_FIELDS, options);
-        // We do not cache the new person constructed here because it only contains name fields
-        return new WikiTreeAPI.Person(result[0].person);
     }
 })();
