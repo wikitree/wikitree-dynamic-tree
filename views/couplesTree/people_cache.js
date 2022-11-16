@@ -1,7 +1,10 @@
+/**
+ * A cache for People objects.
+ */
 class PeopleCache {
     constructor() {
         this.peopleCache = new Map();
-        condLog("NEW PEOPLE CACHE CREATED")
+        condLog("NEW PEOPLE CACHE CREATED");
     }
 
     clear() {
@@ -19,7 +22,8 @@ class PeopleCache {
     }
 
     /**
-     *
+     * We use the fields provided to determine the 'richness' of a profile with those fields. If such a profile
+     * with the given id is present in the cache, it is returned, otherwise undefined is returned.
      * @param {*} id Profile id
      * @param {*} fields array of field names to retrieve
      * @returns A Person if present in the cache, otherwise undefined
@@ -34,8 +38,8 @@ class PeopleCache {
     }
 
     /**
-     * If an enriched person with the given id exists in the cache and it has at least
-     * the same level of richness than the new data, the cached Person is returned, otherwise
+     * If an enriched person with the given id (i.e. data.id) exists in the cache and it has at least
+     * the same level of richness than the given data, the cached Person is returned, otherwise
      * undefined is returned
      * @param {*} data
      * @returns
@@ -50,24 +54,7 @@ class PeopleCache {
     }
 
     isRequestCoveredByPerson(reqFields, person) {
-        const reqRichness = this.getRequestRichness(reqFields);
-        return (getRichness(person._data) & reqRichness) == reqRichness;
-    }
-
-    getRequestRichness(fields) {
-        let r = 0;
-        if (fields.includes("Parents")) {
-            r = r | 0b1000;
-        }
-        if (fields.includes("Spouses")) {
-            r = r | 0b0100;
-        }
-        if (fields.includes("Siblings")) {
-            r = r | 0b0010;
-        }
-        if (fields.includes("Children")) {
-            r = r | 0b001;
-        }
-        return r;
+        const reqRichness = Richness.fromFields(reqFields);
+        return person.getRichness() & (reqRichness == reqRichness);
     }
 }

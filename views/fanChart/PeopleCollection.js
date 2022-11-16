@@ -24,7 +24,7 @@ PeopleCollection.PeopleList = class PeopleList {
     // THEN ... we use the add method to add one person to it, using the WikiTree ID as the key
     add(newPerson) {
         if (newPerson && newPerson.Id) {
-            this[newPerson.Id] = WikiTreeAPI.makePerson(newPerson);
+            this[newPerson.Id] = new WikiTreeAPI.Person(newPerson);
         }
     }
 
