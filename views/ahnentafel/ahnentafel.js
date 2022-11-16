@@ -271,6 +271,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if (person.Id == 0) {
             html += `[${this.unknownName()} Unknown]`;
         } else {
+            if (!person.MiddleName) { person.MiddleName = ""; }
             if (this.generation == 1) {
                 html += "<b>";
                 html += `${person.FirstName} ${person.MiddleName} `;

@@ -54,6 +54,9 @@
     /** Object to hold the Ancestors as they are returned from the getAncestors API call    */
     FractalView.theAncestors = [];
 
+    // List to hold the AhnenTafel #s of all Ancestors that are X-Chromosome ancestors (or potential x-chromosome ancestors) of the primary person.
+    FractalView.XAncestorList = [];
+
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     FractalView.currentSettings = {};
 
@@ -117,13 +120,14 @@
                     subsections: [{ name: "FractalColours", label: "COLOURS   " }],
                     comment: "These options apply to background colours in the Fan Chart cells.",
                 },
-                // {
-                //     name: "highlights",
-                //     label: "Highlights",
-                //     hideSelect: true,
-                //     subsections: [{ name: "FractalHighlights", label: "HIGHLIGHTING   " }],
-                //     comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
-                // },
+                {
+                    name: "highlights",
+                    label: "Highlights",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalHighlights", label: "HIGHLIGHTING   " }],
+                    comment:
+                        "These options determine which, if any, cells should be highlighted (in order to stand out). ",
+                },
             ],
             optionsGroups: [
                 {
@@ -420,23 +424,23 @@
                                 { value: "YDNA", text: "Y-DNA" },
                                 { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
                                 { value: "XDNA", text: "X-chromosome inheritance" },
-                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "DNAinheritance", text: "DNA inheritance" },
+                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                             ],
                             defaultValue: "DNAinheritance",
                         },
-                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                        {
-                            optionName: "howDNAlinks",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "Hide", text: "Hide Links" },
-                                { value: "Highlights", text: "Show Links for highlighted cells only" },
-                                { value: "ShowAll", text: "Show All Links" },
-                            ],
-                            defaultValue: "Highlights",
-                        },
+                        // { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        // {
+                        //     optionName: "howDNAlinks",
+                        //     type: "radio",
+                        //     label: "",
+                        //     values: [
+                        //         { value: "Hide", text: "Hide Links" },
+                        //         { value: "Highlights", text: "Show Links for highlighted cells only" },
+                        //         { value: "ShowAll", text: "Show All Links" },
+                        //     ],
+                        //     defaultValue: "Highlights",
+                        // },
                     ],
                 },
             ],
@@ -720,6 +724,7 @@
                     "Name",
                     "Gender",
                     "Privacy",
+                    "DataStatus"
                 ],
                 { getParents: true }
             ).then(function (result) {
@@ -735,6 +740,7 @@
                     FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
 
                     clearMessageBelowButtonBar();
+                    
                 }
             });
         }
@@ -876,6 +882,7 @@
                 "Name",
                 "Gender",
                 "Privacy",
+                "DataStatus",
             ]).then(function (result) {
                 FractalView.theAncestors = result;
                 console.log("theAncestors:", FractalView.theAncestors);
@@ -887,6 +894,7 @@
                 FractalView.myAhnentafel.update(person);
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
+                populateXAncestorList(1);
             });
         });
     };
@@ -942,6 +950,7 @@
             "Name",
             "Gender",
             "Privacy",
+            "DataStatus",
         ]);
         // console.log("_load PersonObj:",thePersonObject);
         return thePersonObject;
@@ -1208,12 +1217,8 @@
 						  <div class="name" id=nameDivFor${ancestorObject.ahnNum}>
 						    <b>${getSettingsName(person)}</b>						    
 						  </div>
-						  <div class="birth vital" id=birthDivFor${
-                            ancestorObject.ahnNum
-                        }>${getSettingsDateAndPlace(person, "B")}</div>
-						  <div class="death vital" id=deathDivFor${
-                            ancestorObject.ahnNum
-                        }>${getSettingsDateAndPlace(person, "D")}</div>
+						  <div class="birth vital" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
+						  <div class="death vital" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>
                     `;
@@ -1276,13 +1281,10 @@
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 theInfoBox.parentNode.parentNode.setAttribute("x", -150);
                 theInfoBox.parentNode.parentNode.setAttribute("width", 300);
-				
-				// COLOUR the div appropriately
-				let thisDivsColour = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
-				theInfoBox.setAttribute(
-                    "style",
-                    "background-color: " + thisDivsColour
-					);
+
+                // COLOUR the div appropriately
+                let thisDivsColour = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                theInfoBox.setAttribute("style", "background-color: " + thisDivsColour);
 
                 // SET the OUTER DIV to also be white, with a rounded radius and solid border
                 theInfoBox.parentNode.setAttribute(
@@ -1294,7 +1296,7 @@
             // LET'S UPDATE THE NAME !
             let thisDIVtoUpdate = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
             if (thisDIVtoUpdate) {
-                thisDIVtoUpdate.textContent = getSettingsName(d); // REMEMBER that d = ancestorObject.person; 
+                thisDIVtoUpdate.textContent = getSettingsName(d); // REMEMBER that d = ancestorObject.person;
             }
             // LET'S UPDATE THE BIRTH INFO !
             thisDIVtoUpdate = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
@@ -1307,34 +1309,35 @@
                 thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "D");
             }
             // LET'S UPDATE THE PHOTO !
-            let photoUrl = d.getPhotoUrl(75); // will exist if there is a unique photo for this person, if not - then we can show silhouette if option says that's ok            
+            let photoUrl = d.getPhotoUrl(75); // will exist if there is a unique photo for this person, if not - then we can show silhouette if option says that's ok
             thisDIVtoUpdate = document.getElementById("photoDivFor" + ancestorObject.ahnNum);
 
             if (thisDIVtoUpdate) {
                 // FIRST ... let's deal with the CENTRAL PERP
                 if (ancestorObject.ahnNum == 1) {
-                    if ( FractalView.currentSettings["photo_options_showCentralPic"] == true) {
+                    if (FractalView.currentSettings["photo_options_showCentralPic"] == true) {
                         if (!photoUrl && FractalView.currentSettings["photo_options_useSilhouette"] == false) {
-                            thisDIVtoUpdate.style.display = 'none';
+                            thisDIVtoUpdate.style.display = "none";
                         } else {
-                            thisDIVtoUpdate.style.display = 'block';
+                            thisDIVtoUpdate.style.display = "block";
                         }
                     } else {
                         thisDIVtoUpdate.style.display = "none";
                     }
                 } else {
-                    // NOW DEAL with ALL THE REST 
+                    // NOW DEAL with ALL THE REST
                     if (FractalView.currentSettings["photo_options_showAllPics"] == true) {
                         if (!photoUrl && FractalView.currentSettings["photo_options_useSilhouette"] == false) {
                             thisDIVtoUpdate.style.display = "none";
                         } else {
-                            if (FractalView.currentSettings["photo_options_showPicsToN"] == true &&
-                                thisGenNum >= FractalView.currentSettings["photo_options_showPicsToValue"]) {
-                                    thisDIVtoUpdate.style.display = "none";
-                                } else {
-                                    thisDIVtoUpdate.style.display = "block";
-                                }
-
+                            if (
+                                FractalView.currentSettings["photo_options_showPicsToN"] == true &&
+                                thisGenNum >= FractalView.currentSettings["photo_options_showPicsToValue"]
+                            ) {
+                                thisDIVtoUpdate.style.display = "none";
+                            } else {
+                                thisDIVtoUpdate.style.display = "block";
+                            }
                         }
                     } else {
                         thisDIVtoUpdate.style.display = "none";
@@ -1885,12 +1888,98 @@
             return aBirthYear - bBirthYear;
         });
     }
-	
-	function getBackgroundColourFor(gen, pos, ahnNum) {
-         PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
-         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-         GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
-         RedsArray = [
+
+    function doHighlightFor(gen, pos, ahnNum) {
+        if (FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+            if (pos == 0) {
+                if (ahnNum > 1) {
+                    return true;
+                } else if (ahnNum == 1 && thePeopleList[FractalView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    return true;
+                }
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+            if (pos == 2 ** gen - 1) {
+                return true;
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+            if (FractalView.XAncestorList.indexOf(ahnNum) > -1) {
+                return true;
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+            if (FractalView.XAncestorList.indexOf(ahnNum) > -1) {
+                // HIGHLIGHT by X-chromosome inheritance
+                return true;
+            } else if (pos == 2 ** gen - 1) {
+                // OR by mtDNA inheritance
+                return true;
+            } else if (pos == 0) {
+                // OR by Y-DNA inheritance
+                if (ahnNum > 1) {
+                    return true;
+                } else if (ahnNum == 1 && thePeopleList[FractalView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    return true;
+                }
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+            if (ahnNum == 1) {
+                console.log(thePeopleList[FractalView.myAhnentafel.list[1]]._data);
+                return true;
+            } else {
+                let childAhnNum = Math.floor(ahnNum / 2);
+                if (ahnNum % 2 == 0) {
+                    // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+                    if (thePeopleList[FractalView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
+                        return true;
+                    }
+                } else {
+                    // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+                    if (thePeopleList[FractalView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+    function populateXAncestorList(ahnNum) {
+        if (ahnNum == 1) {
+            FractalView.XAncestorList = [1];
+            if (thePeopleList[FractalView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                populateXAncestorList(2); // a woman inherits an X-chromosome from her father
+                populateXAncestorList(3); // and her mother
+            } else {
+                populateXAncestorList(3); // whereas a man inherits an X-chromosome only from his mother
+            }
+        } else {
+            FractalView.XAncestorList.push(ahnNum);
+            if (ahnNum < 2 ** FractalView.maxNumGens) {
+                if (ahnNum % 2 == 1) {
+                    populateXAncestorList(2 * ahnNum); // a woman inherits an X-chromosome from her father
+                    populateXAncestorList(2 * ahnNum + 1); // and her mother
+                } else {
+                    populateXAncestorList(2 * ahnNum + 1); // whereas a man inherits an X-chromosome only from his mother
+                }
+            }
+        }
+    }
+    
+    function getBackgroundColourFor(gen, pos, ahnNum) {
+        PastelsArray = [
+            "#ECFFEF",
+            "#CCEFEC",
+            "#CCFFCC",
+            "#FFFFCC",
+            "#FFE5CC",
+            "#FFCCCC",
+            "#FFCCE5",
+            "#FFCCFF",
+            "#E5CCFF",
+        ];
+        RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
             "#FFC0C0",
@@ -1910,7 +1999,7 @@
             "#FFE8E0",
             "#FFF8F0",
         ];
-         BluesArray = [
+        BluesArray = [
             "#A0A0FF",
             "#B0B0FF",
             "#C0C0FF",
@@ -1930,56 +2019,72 @@
             "#E0E8FF",
             "#F0F8FF",
         ];
-         GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
-    var ColourArray = [
-        "White",
-        "Gold",
-        "HotPink",
-        "LightCyan",
-        "Yellow",
-        "AntiqueWhite",
-        "MediumSpringGreen",
-        "Orange",
-        "DeepSkyBlue",
-        "PaleGoldenRod",
-        "Lime",
-        "Moccasin",
-        "PowderBlue",
-        "DarkGreen",
-        "Maroon",
-        "Navy",
-        "Brown",
-        "Indigo",
-        "RoyalBlue",
-        "FireBrick",
-        "Blue",
-        "SlateGrey",
-        "DarkMagenta",
-        "Red",
-        "DarkOrange",
-        "DarkGoldenRod",
-        "Green",
-        "MediumVioletRed",
-        "SteelBlue",
-        "Grey",
-        "MediumPurple",
-        "OliveDrab",
-        "Purple",
-        "DarkSlateBlue",
-        "SaddleBrown",
-        "Pink",
-        "Khaki",
-        "LemonChiffon",
-        "LightCyan",
-        "HotPink",
-        "Gold",
-        "Yellow",
-        "AntiqueWhite",
-        "MediumSpringGreen",
-        "Orange",
-    ];
-        let AllColoursArrays = [ColourArray ,  GreysArray, RedsArray, GreensArray, BluesArray, PastelsArray, RainbowArray];
-        let KeyColoursMatches = {"random":ColourArray ,  "Greys":GreysArray, "Reds":RedsArray, "Greens":GreensArray, "Blues":BluesArray, "Pastels":PastelsArray, "Rainbow":RainbowArray};
+        GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+        var ColourArray = [
+            "White",
+            "Gold",
+            "HotPink",
+            "LightCyan",
+            "Yellow",
+            "AntiqueWhite",
+            "MediumSpringGreen",
+            "Orange",
+            "DeepSkyBlue",
+            "PaleGoldenRod",
+            "Lime",
+            "Moccasin",
+            "PowderBlue",
+            "DarkGreen",
+            "Maroon",
+            "Navy",
+            "Brown",
+            "Indigo",
+            "RoyalBlue",
+            "FireBrick",
+            "Blue",
+            "SlateGrey",
+            "DarkMagenta",
+            "Red",
+            "DarkOrange",
+            "DarkGoldenRod",
+            "Green",
+            "MediumVioletRed",
+            "SteelBlue",
+            "Grey",
+            "MediumPurple",
+            "OliveDrab",
+            "Purple",
+            "DarkSlateBlue",
+            "SaddleBrown",
+            "Pink",
+            "Khaki",
+            "LemonChiffon",
+            "LightCyan",
+            "HotPink",
+            "Gold",
+            "Yellow",
+            "AntiqueWhite",
+            "MediumSpringGreen",
+            "Orange",
+        ];
+        let AllColoursArrays = [
+            ColourArray,
+            GreysArray,
+            RedsArray,
+            GreensArray,
+            BluesArray,
+            PastelsArray,
+            RainbowArray,
+        ];
+        let KeyColoursMatches = {
+            random: ColourArray,
+            Greys: GreysArray,
+            Reds: RedsArray,
+            Greens: GreensArray,
+            Blues: BluesArray,
+            Pastels: PastelsArray,
+            Rainbow: RainbowArray,
+        };
 
         // start out with a random palette selected, so, if nothing else, at least there's something
         let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
@@ -1988,53 +2093,47 @@
         let settingForColourBy = FractalView.currentSettings["colour_options_colourBy"];
         if (settingForColourBy == "None") {
             return "White";
-        } 
-
+        }
 
         let settingForPalette = FractalView.currentSettings["colour_options_palette"];
         if (KeyColoursMatches[settingForPalette]) {
-            thisColourArray = KeyColoursMatches[settingForPalette] ;
+            thisColourArray = KeyColoursMatches[settingForPalette];
         }
         // console.log("COLOUR Settings are:" , settingForColourBy , settingForPalette);
+
+        let overRideByHighlight = false; //
+        if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+            overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
+        }
+        if (overRideByHighlight == true) {
+            return "yellow";
+        }
 
         if (ahnNum == 1) {
             return thisColourArray[0];
         }
-		
-		let numThisGen = 2 ** gen;
-		
+
+        let numThisGen = 2 ** gen;
+
         if (settingForColourBy == "Gender") {
-            return thisColourArray[1 + ahnNum % 2];
-            
-            
+            return thisColourArray[1 + (ahnNum % 2)];
         } else if (settingForColourBy == "Generation") {
-            return thisColourArray[1 + (gen) % thisColourArray.length ];
-
-        } else if (settingForColourBy == "Grand") {		
-            return thisColourArray[1 + Math.floor(4*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (gen % thisColourArray.length)];
+        } else if (settingForColourBy == "Grand") {
+            return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGrand") {
-            return thisColourArray[1 + Math.floor(8*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (Math.floor((8 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGGrand") {
-            return thisColourArray[1 + Math.floor(16*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (Math.floor((16 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGGGrand") {
-            return thisColourArray[1 + Math.floor(32*pos/numThisGen) % thisColourArray.length ];
-			
+            return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "Town") {
-
         } else if (settingForColourBy == "Region") {
-
         } else if (settingForColourBy == "Country") {
-
         } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
         }
 
-
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
-		}
-	
-	
+    }
 })();
