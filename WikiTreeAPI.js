@@ -152,13 +152,6 @@ window.wtCompleteName = function (person, options = {}) {
 
 WikiTreeAPI.Person = Person.getPersonClass(localTesting);
 
-WikiTreeAPI.clearCache = function () {
-    if (window.peopleCache) {
-        window.peopleCache.clear();
-        condLog("PEOPLE CACHE CLEARED");
-    }
-};
-
 /**
  * Return a promise for a person object with the given id.
  * An API call is made and the promise will store the result (if successful)
