@@ -9,7 +9,7 @@
  * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
  * 
  * The SECOND chunk in the SVG graphic are the individual people in the Fan Chart, created by the Nodes and the d3 deep magic
- * they are each basically at the end of the day a <g class"person ancestor" transformed object with a translation from 0,0 and a rotation></g>
+ * they are each basically at the end of the day a <g class"person ancestor" highlight_options_showHighlights
  * 
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FanChartView, then calls a redraw
  */
@@ -180,7 +180,8 @@
                     label: "Highlights",
                     hideSelect: true,
                     subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
-                    comment: "These options determine which, if any, cells should be highlighted (in order to stand out). ",
+                    comment:
+                        "These options determine which, if any, cells should be highlighted (in order to stand out). ",
                 },
             ],
             optionsGroups: [
@@ -483,18 +484,18 @@
                             ],
                             defaultValue: "DNAinheritance",
                         },
-                        // { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                        // {
-                        //     optionName: "howDNAlinks",
-                        //     type: "radio",
-                        //     label: "",
-                        //     values: [
-                        //         { value: "Hide", text: "Hide Links" },
-                        //         { value: "Highlights", text: "Show Links for highlighted cells only" },
-                        //         { value: "ShowAll", text: "Show All Links" },
-                        //     ],
-                        //     defaultValue: "Highlights",
-                        // },
+                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        {
+                            optionName: "howDNAlinks",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "Hide", text: "Hide Links" },
+                                { value: "Highlights", text: "Show Links for highlighted cells only" },
+                                { value: "ShowAll", text: "Show All Links" },
+                            ],
+                            defaultValue: "Highlights",
+                        },
                     ],
                 },
             ],
@@ -686,6 +687,151 @@
             "stroke-width": "2",
         });
 
+        // BEFORE we go further ... let's add the DNA objects we might need later
+        for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
+            for (let index = 0; index < 2 ** genIndex; index++) {
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-x-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-x-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        "style": "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-x-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
+
+                 svg.append("g")
+                     .attr({
+                         id: "imgDNA-y-" + genIndex + "i" + index,
+                     })
+                     .append("foreignObject")
+                     .attr({
+                         id: "imgDNA-y-" + genIndex + "i" + index + "inner",
+                         class: "centered",
+                         width: "20px",
+                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                         x: 25 * index,
+                         y: 30 * genIndex,
+                         //
+                         "style": "display:none;",
+                     })
+
+                     .style("overflow", "visible") // so the name will wrap
+                     .append("xhtml:div")
+                     .attr({
+                         id: "imgDNA-y-" + genIndex + "i" + index + "img",
+                     })
+                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");   
+                     
+                 svg.append("g")
+                     .attr({
+                         id: "imgDNA-mt-" + genIndex + "i" + index,
+                     })
+                     .append("foreignObject")
+                     .attr({
+                         id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
+                         class: "centered",
+                         width: "20px",
+                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                         x: 25 * index,
+                         y: 30 * genIndex,
+                         //
+                         "style": "display:none;",
+                     })
+
+                     .style("overflow", "visible") // so the name will wrap
+                     .append("xhtml:div")
+                     .attr({
+                         id: "imgDNA-mt-" + genIndex + "i" + index + "img",
+                     })
+                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
+
+                 svg.append("g")
+                     .attr({
+                         id: "imgDNA-Ds-" + genIndex + "i" + index,
+                     })
+                     .append("foreignObject")
+                     .attr({
+                         id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
+                         class: "centered",
+                         width: "20px",
+                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                         x: 25 * index,
+                         y: 30 * genIndex,
+                         //
+                         "style": "display:none;",
+                     })
+
+                     .style("overflow", "visible") // so the name will wrap
+                     .append("xhtml:div")
+                     .attr({
+                         id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
+                     })
+                     .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
+
+                svg.append("g")
+                     .attr({
+                         id: "imgDNA-As-" + genIndex + "i" + index,
+                     })
+                     .append("foreignObject")
+                     .attr({
+                         id: "imgDNA-As-" + genIndex + "i" + index + "inner",
+                         class: "centered",
+                         width: "20px",
+                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                         x: 25 * index,
+                         y: 30 * genIndex,
+                         //
+                         "style": "display:none;",
+                     })
+
+                     .style("overflow", "visible") // so the name will wrap
+                     .append("xhtml:div")
+                     .attr({
+                         id: "imgDNA-As-" + genIndex + "i" + index + "img",
+                     })
+                     .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
+
+                svg.append("g")
+                     .attr({
+                         id: "imgDNA-Confirmed-" + genIndex + "i" + index,
+                     })
+                     .append("foreignObject")
+                     .attr({
+                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
+                         class: "centered",
+                         width: "20px",
+                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                         x: 25 * index,
+                         y: 30 * genIndex,
+                         //
+                         "style": "display:none;",
+                     })
+
+                     .style("overflow", "visible") // so the name will wrap
+                     .append("xhtml:div")
+                     .attr({
+                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
+                     })
+                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
+            }
+        }
+
+
         self.load(startId);
         // console.log(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FanChartView.fanchartSettingsOptionsObject.buildPage();
@@ -693,7 +839,6 @@
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
         // console.log(theCheckIn);
         // FanChartView.showFandokuLink = theCheckIn;
-        
     };
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
@@ -865,6 +1010,28 @@
             for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
                 for (let index = 0; index < 2 ** genIndex; index++) {
                     d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attr({ display: "none" });
+                    let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
+                    let dnaImgY = document.getElementById("imgDNA-y-" + genIndex + "i" + index + "inner");
+                    let dnaImgMT = document.getElementById("imgDNA-mt-" + genIndex + "i" + index + "inner");
+                    let dnaImgDs = document.getElementById("imgDNA-Ds-" + genIndex + "i" + index + "inner");
+                    let dnaImgAs = document.getElementById("imgDNA-As-" + genIndex + "i" + index + "inner");
+                    
+                    // START out by HIDING them all !
+                    if (dnaImgX) {
+                        dnaImgX.style.display = "none";
+                    }
+                    if (dnaImgY) {
+                        dnaImgY.style.display = "none";
+                    }
+                    if (dnaImgMT) {
+                        dnaImgMT.style.display = "none";
+                    }
+                    if (dnaImgAs) {
+                        dnaImgAs.style.display = "none";
+                    }
+                    if (dnaImgDs) {
+                        dnaImgDs.style.display = "none";
+                    }
                 }
             }
             FanChartView.lastAngle = FanChartView.maxAngle;
@@ -1119,6 +1286,7 @@
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
             this.drawNodes(nodes);
+            updateDNAlinks(nodes);
         } else {
             throw new Error("Missing root");
         }
@@ -1325,8 +1493,10 @@
                     if (photoUrl) {
                         photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
-
-                    return `<div class="top-info centered" id=wedgeInfoFor${
+                    if (theClr == "none") {
+                        theClr = "#00000000";
+                    }
+                    return `<div class="box centered" id=wedgeInfoFor${
                         ancestorObject.ahnNum
                     } style="background-color: ${theClr} ; border:0; ">
                      <div class="vital-info">
@@ -1384,37 +1554,39 @@
             let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
-            
-            
+
             // LET'S START WITH COLOURIZING THE WEDGES - IF NEEDED
             if (ancestorObject.ahnNum == 1) {
-                let thisPersonsWedge = document.getElementById("ctrCirc" );
+                let thisPersonsWedge = document.getElementById("ctrCirc");
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                 }
             } else {
-                let thisPersonsWedge = document.getElementById("wedge" + (2**thisGenNum) + "n" + thisPosNum);
+                let thisPersonsWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                 } else {
-                    console.log("Can't find: ", "wedge" + (2**thisGenNum) + "n" + thisPosNum);
+                    console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
                 if (theWedgeBox) {
-                    theWedgeBox.style.background = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                    theWedgeBox.style.background = getBackgroundColourFor(
+                        thisGenNum,
+                        thisPosNum,
+                        ancestorObject.ahnNum
+                    );
                 }
             }
-            
-            
+
             // NEXT - LET'S DO SOME POSITIONING TO GET EVERYONE IN PLACE !
             let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
             let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
-            
+
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
                 // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
                 theNameDIV.innerHTML = "<B>" + getSettingsName(d) + "</B>";
-                theInfoBox.parentNode.parentNode.setAttribute("y", -60);
+                theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
                     // console.log("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
                     theInfoBox.parentNode.parentNode.setAttribute("y", -120);
@@ -1524,7 +1696,7 @@
             }
 
             let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
-            if(thePhotoDIV.style.display == "inline-block") {
+            if (thePhotoDIV && thePhotoDIV.style.display == "inline-block") {
                 if (thisGenNum == 6) {
                     let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                     thePhotoDIV.style.height = "66px";
@@ -1550,6 +1722,8 @@
                     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
                     // console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
+            } else if (thePhotoDIV && thePhotoDIV.style.display == "none" && theInfoBox) {
+                theInfoBox.parentNode.parentNode.setAttribute("y", -60);
             }
 
             // AND ... FINALLY, LET'S TALK DATES & PLACES:
@@ -1566,19 +1740,320 @@
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
             let newX = thisGenNum * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
             let newY = thisGenNum * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
-            // console.log(
-            //     "Place",
-            //     d._data.Name,
-            //     "ahnNum:" + ancestorObject.ahnNum,
-            //     "Gen:" + thisGenNum,
-            //     "Pos:" + thisPosNum,
-            //     FanChartView.maxAngle
-            // );
+
+            // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
+            showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle);
 
             // FINALLY ... we return the transformation statement back - the translation based on our Trig calculations, and the rotation based on the nameAngle
             return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
     };
+
+    function safeName( inp ) {
+        return inp.replace(/ /g, "_");
+    }
+
+    function updateDNAlinks( nodes ) {
+        //{ ahnNum: i, person: thePeopleList[this.list[i]] }
+        for (let index = 0; index < nodes.length; index++) {
+            const element = nodes[index];
+            let i = element.ahnNum;
+            let peep = element.person;
+            let peepNameID = safeName(peep._data.Name);
+            console.log("Peep:", peepNameID);
+            
+        }
+    }
+
+    function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle){
+        // console.log("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
+
+        // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
+        let dnaImgX = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgXDiv = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgY = document.getElementById("imgDNA-y-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgYDiv = document.getElementById("imgDNA-y-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgMT = document.getElementById("imgDNA-mt-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgMTDiv = document.getElementById("imgDNA-mt-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgDs = document.getElementById("imgDNA-Ds-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgDsDiv = document.getElementById("imgDNA-Ds-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgAs = document.getElementById("imgDNA-As-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgAsDiv = document.getElementById("imgDNA-As-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgConfirmed = document.getElementById("imgDNA-Confirmed-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgConfirmedDiv = document.getElementById("imgDNA-Confirmed-" + thisGenNum + "i" + thisPosNum + "img");
+
+        let dFraction = (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1,thisGenNum) * thisRadius);
+        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho2 = dOrtho;
+        let newR = thisRadius;
+
+        // START out by HIDING them all !
+        if (dnaImgX) { dnaImgX.style.display = "none"; }
+        if (dnaImgY) { dnaImgY.style.display = "none"; }
+        if (dnaImgMT) { dnaImgMT.style.display = "none"; }
+        if (dnaImgAs) { dnaImgAs.style.display = "none"; }
+        if (dnaImgDs) { dnaImgDs.style.display = "none"; }
+        if (dnaImgConfirmed) { dnaImgConfirmed.style.display = "none"; }
+
+        let ahnNum = 2**thisGenNum + thisPosNum;
+        let gen = thisGenNum;
+        let pos = thisPosNum;
+        let ext = "";
+        let showAllAs = false;
+        let showAllDs = false;
+
+        if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
+        if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+            ext = "Y";
+            dOrtho = 0;
+            if (pos == 0) {
+                if (ahnNum > 1) {
+                    if (dnaImgY) { dnaImgY.style.display = "block"; }
+                    if (dnaImgDs) {
+                        dnaImgDs.style.display = "block";
+                    }
+                    if (dnaImgAs) {
+                        dnaImgAs.style.display = "block";
+                    }
+                } else if (
+                    ahnNum == 1 &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                ) {
+                    if (dnaImgY) { dnaImgY.style.display = "block"; }
+                    if (dnaImgDs) { dnaImgDs.style.display = "block"; }
+                    if (dnaImgAs) { dnaImgAs.style.display = "block"; }
+                }
+            }
+            if (pos % 2 == 0) {
+                showAllAs = true;
+                showAllDs = true;
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+            ext = "mt";
+            dOrtho = 0;
+            if (pos == 2 ** gen - 1) {
+                if (dnaImgMT) {
+                    dnaImgMT.style.display = "block";
+                    if (dnaImgDs) {
+                        dnaImgDs.style.display = "block";
+                    }
+                    if (dnaImgAs) {
+                        dnaImgAs.style.display = "block";
+                    }
+                }
+            }
+            showAllAs = true;
+            if (pos % 2 == 1) {
+                showAllDs = true;
+            }
+
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+            ext = "X";
+            dOrtho = 0;
+            if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
+               if (dnaImgX) {
+                   dnaImgX.style.display = "block";
+                   if (dnaImgDs) {
+                       dnaImgDs.style.display = "block";
+                   }
+                   if (dnaImgAs) {
+                       dnaImgAs.style.display = "block";
+                   }
+               }
+            }
+            
+            showAllAs = true;
+            showAllDs = true;
+    
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+            if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
+                // HIGHLIGHT by X-chromosome inheritance
+                if (dnaImgX) {
+                    dnaImgX.style.display = "block";
+                }
+            }
+            if (pos == 2 ** gen - 1) {
+                // AND/OR by mtDNA inheritance
+                if (dnaImgMT) {
+                    dnaImgMT.style.display = "block";
+                }
+            } 
+            if (pos == 0) {
+                // AND/OR by Y-DNA inheritance
+                if (ahnNum > 1) {
+                    if (dnaImgY) { dnaImgY.style.display = "block"; }
+                } else if (
+                    ahnNum == 1 &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                ) {
+                    if (dnaImgY) { dnaImgY.style.display = "block"; }
+                }
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+            if (ahnNum == 1) {
+                console.log(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
+                if (dnaImgConfirmed) { dnaImgConfirmed.style.display = "block"; }
+            } else {
+                let childAhnNum = Math.floor(ahnNum / 2);
+                if (ahnNum % 2 == 0) {
+                    // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30
+                    ) {
+                        if (dnaImgConfirmed) { dnaImgConfirmed.style.display = "block"; }
+                    }
+                } else {
+                    // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30
+                    ) {
+                        if (dnaImgConfirmed) { dnaImgConfirmed.style.display = "block"; }
+                    }
+                }
+            }
+        }
+        }
+        
+        if (dnaImgX) {
+            dnaImgX.setAttribute("x", newX * dFraction);
+            dnaImgX.setAttribute("y", newY * dFraction);
+            dnaImgXDiv.style.rotate = nameAngle + "deg";
+            if (thisGenNum == 0) {
+                dnaImgX.setAttribute("y", 100);
+            }
+            if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgX.style.display = "none";
+            } else if (
+                FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA" &&
+                FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true
+            ) {
+                dnaImgX.style.display = "block";
+            }
+        }
+        if (dnaImgY) {
+            dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
+            dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
+            dnaImgYDiv.style.rotate = nameAngle + "deg";
+            if (thisGenNum == 0) {
+                dnaImgY.setAttribute("y", 100);
+                dnaImgY.setAttribute("x", 0 -  35 * dOrtho/0.13);
+                console.log("@GenNum == 0 ; dOrtho = ", dOrtho);
+            }
+            if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgY.style.display = "none";
+            } else if (
+                FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" && showAllAs == true
+            ) {
+                dnaImgY.style.display = "block";
+            }
+            
+        }if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+            dnaImgY.style.display = "none";
+        } else if (
+            FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+            FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+            showAllAs == true
+        ) {
+            dnaImgY.style.display = "block";
+        }
+        if (dnaImgMT) {
+            dnaImgMT.setAttribute("x", newX * dFraction - dOrtho * newY);
+            dnaImgMT.setAttribute("y", newY * dFraction + dOrtho * newX);
+            dnaImgMTDiv.style.rotate = nameAngle + "deg";
+            if (thisGenNum == 0) {
+                dnaImgMT.setAttribute("y", 100);
+                dnaImgMT.setAttribute("x", (35 * dOrtho) / 0.13);
+            }
+            if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgMT.style.display = "none";
+            } else if (
+                FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA" &&
+                FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true
+            ) {
+                dnaImgMT.style.display = "block";
+            }
+        }
+        
+        if (dnaImgDs) {
+            let theLink = "<A target=_blank href=\"" +  "https://www.wikitree.com/treewidget/" + safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) + "/890#" + ext + "\">" + 
+            "<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>" +
+            "</A>";
+            // console.log(theLink);
+            dnaImgDs.setAttribute("x", newX * dFraction - dOrtho2 * newY);
+            dnaImgDs.setAttribute("y", newY * dFraction + dOrtho2 * newX);
+            dnaImgDsDiv.innerHTML = theLink;
+            dnaImgDsDiv.style.rotate = nameAngle + "deg";
+            if (thisGenNum == 0) {
+                dnaImgDs.setAttribute("y", 100);
+                dnaImgDs.setAttribute("x", 35);
+            }
+            if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgDs.style.display = "none";
+            } else if (
+                ext > "" && 
+                FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" && showAllDs == true
+            ) {
+                dnaImgDs.style.display = "block";
+            }
+        }
+        
+        if (dnaImgAs) {
+            let theLink =
+                '<A target=_blank href="' +
+                "https://www.wikitree.com/treewidget/" +
+                safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
+                "/89#" +
+                ext +
+                '">' +
+                "<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>" +
+                "</A>";
+            dnaImgAs.setAttribute("x", newX * dFraction + dOrtho2 * newY);
+            dnaImgAs.setAttribute("y", newY * dFraction - dOrtho2 * newX);
+            dnaImgAsDiv.innerHTML = theLink;
+            dnaImgAsDiv.style.rotate = nameAngle - 90 + "deg";
+            if (thisGenNum == 0) {
+                dnaImgAs.setAttribute("y", 100);
+                dnaImgAs.setAttribute("x", -35);
+            }
+            if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgAs.style.display = "none";
+            } else if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" && showAllAs == true) {
+                dnaImgAs.style.display = "block";
+            }
+        }
+        
+        if (dnaImgConfirmed) {
+            let theLink =
+                '<A target=_blank href="' +
+                "https://www.wikitree.com/treewidget/" +
+                safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
+                "/899" +
+                '">' +
+                "<img height=30px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>" +
+                
+                "</A>";
+            dnaImgConfirmed.setAttribute("x", newX * (gen > 5 ? (newR + 10)/newR : dFraction) + dOrtho * newY);
+            dnaImgConfirmed.setAttribute("y", newY * (gen > 5 ? (newR + 10)/newR : dFraction) - dOrtho * newX);
+            dnaImgConfirmedDiv.innerHTML = theLink;
+            dnaImgConfirmedDiv.style.rotate = nameAngle + "deg";
+            if (thisGenNum == 0) {
+                dnaImgConfirmed.setAttribute("y", 100);
+                dnaImgConfirmed.setAttribute("x", 0 - 37.5);
+            }
+            
+            if (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgConfirmed.style.display = "none";
+            } else if (
+                FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed" &&
+                FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll"
+            ) {
+                dnaImgConfirmed.style.display = "block";
+            }
+        }
+    }
 
     /**
      * Show a popup for the person.
