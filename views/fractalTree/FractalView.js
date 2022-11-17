@@ -47,6 +47,7 @@
     FractalView.maxNumGens = 10;
     FractalView.workingMaxNumGens = 4;
     FractalView.maxDiamPerGen = []; // used to store the diameter of the spokes for the Fractal Tree
+    FractalView.currentScaleFactor = 1;
 
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FractalView.myAhnentafel = new AhnenTafel.Ahnentafel();
@@ -429,18 +430,18 @@
                             ],
                             defaultValue: "DNAinheritance",
                         },
-                        // { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
-                        // {
-                        //     optionName: "howDNAlinks",
-                        //     type: "radio",
-                        //     label: "",
-                        //     values: [
-                        //         { value: "Hide", text: "Hide Links" },
-                        //         { value: "Highlights", text: "Show Links for highlighted cells only" },
-                        //         { value: "ShowAll", text: "Show All Links" },
-                        //     ],
-                        //     defaultValue: "Highlights",
-                        // },
+                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        {
+                            optionName: "howDNAlinks",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "Hide", text: "Hide Links" },
+                                { value: "Highlights", text: "Show Links for highlighted cells only" },
+                                { value: "ShowAll", text: "Show All Links" },
+                            ],
+                            defaultValue: "Highlights",
+                        },
                     ],
                 },
             ],
@@ -451,6 +452,8 @@
             .scaleExtent([0.1, 1])
             .on("zoom", function () {
                 svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+                console.log("Current Scale factor is: ", d3.event.scale);
+                FractalView.currentScaleFactor = d3.event.scale;
             })
             // Offset so that first pan and zoom does not jump back to the origin
             // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
@@ -552,6 +555,176 @@
                 y2: 0,
                 style: "stroke: black; stroke-width: 2;",
             });
+            svg.append("line").attr({
+                id: "line1ForPerson" + index,
+                display: "none",
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                style: "stroke: blue; stroke-width: 2;",
+            });
+            svg.append("line").attr({
+                id: "line2ForPerson" + index,
+                display: "none",
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                style: "stroke: red; stroke-width: 2;",
+            });
+            svg.append("line").attr({
+                id: "line3ForPerson" + index,
+                display: "none",
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                style: "stroke: green; stroke-width: 4;",
+            });
+        }
+
+        // BEFORE we go further ... let's add the DNA objects we might need later
+        for (let genIndex = FractalView.maxNumGens - 1; genIndex >= 0; genIndex--) {
+            for (let index = 0; index < 2 ** genIndex; index++) {
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-x-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-x-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-x-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-y-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-y-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-y-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-mt-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-mt-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-Ds-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-As-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-As-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-As-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-Confirmed-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
+            }
         }
 
         self.load(startId);
@@ -562,10 +735,11 @@
     };
 
     FractalView.drawLines = function () {
-        // console.log("DRAWING LINES stuff should go here");
+        console.log("DRAWING LINES stuff should go here");
         for (let index = 0; index < 2 ** (FractalView.numGens2Display - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
             element.setAttribute("display", "block");
+            element.style.display = "block";
 
             let thisGenNum = Math.floor(Math.log2(index));
             let X = 0; // CENTRE PERSON's coordinates
@@ -641,7 +815,24 @@
             const element = document.getElementById("lineForPerson" + index);
             if (element) {
                 element.setAttribute("display", "none");
+                element.style.display = "none";
             }
+            const element1 = document.getElementById("line1ForPerson" + index);
+            if (element1) {
+                element1.setAttribute("display", "none");
+                element1.style.display = "none";
+            }
+            const element2 = document.getElementById("line2ForPerson" + index);
+            if (element2) {
+                element2.setAttribute("display", "none");
+                element2.style.display = "none";
+            }
+            const element3 = document.getElementById("line3ForPerson" + index);
+            if (element3) {
+                element3.setAttribute("display", "none");
+                element3.style.display = "none";
+            }
+            
         }
     };
 
@@ -1369,6 +1560,12 @@
             let newY = Y;
             // console.log("Place",d._data.Name,"ahnNum:" + ancestorObject.ahnNum,"Gen:"+thisGenNum,"Pos:" + thisPosNum, FractalView.maxAngle);
 
+            // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
+            setTimeout ( function () {
+                showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, 0); // nameAngle = 0 ... taken from FanChart ... leaving here JUST IN CASE we turn the boxes on their side
+            } , 200);
+
+
             // FINALLY ... we return the transformation statement back - the translation based on our  calculations
             return "translate(" + newX + "," + newY + ")";
 
@@ -1887,6 +2084,383 @@
 
             return aBirthYear - bBirthYear;
         });
+    }
+
+
+    function safeName(inp) {
+        return inp.replace(/ /g, "_");
+    }
+
+    function updateDNAlinks(nodes) {
+        //{ ahnNum: i, person: thePeopleList[this.list[i]] }
+        for (let index = 0; index < nodes.length; index++) {
+            const element = nodes[index];
+            let i = element.ahnNum;
+            let peep = element.person;
+            let peepNameID = safeName(peep._data.Name);
+            console.log("Peep:", peepNameID);
+        }
+    }
+
+    function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
+        // console.log("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
+        
+
+        
+        // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
+        let dnaImgX = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgXDiv = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgY = document.getElementById("imgDNA-y-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgYDiv = document.getElementById("imgDNA-y-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgMT = document.getElementById("imgDNA-mt-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgMTDiv = document.getElementById("imgDNA-mt-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgDs = document.getElementById("imgDNA-Ds-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgDsDiv = document.getElementById("imgDNA-Ds-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgAs = document.getElementById("imgDNA-As-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgAsDiv = document.getElementById("imgDNA-As-" + thisGenNum + "i" + thisPosNum + "img");
+        let dnaImgConfirmed = document.getElementById("imgDNA-Confirmed-" + thisGenNum + "i" + thisPosNum + "inner");
+        let dnaImgConfirmedDiv = document.getElementById("imgDNA-Confirmed-" + thisGenNum + "i" + thisPosNum + "img");
+
+        let dFraction =
+            (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho2 = dOrtho;
+        let newR = thisRadius;
+
+        // START out by HIDING them all !
+        if (dnaImgX) {
+            dnaImgX.style.display = "none";
+        }
+        if (dnaImgY) {
+            dnaImgY.style.display = "none";
+        }
+        if (dnaImgMT) {
+            dnaImgMT.style.display = "none";
+        }
+        if (dnaImgAs) {
+            dnaImgAs.style.display = "none";
+        }
+        if (dnaImgDs) {
+            dnaImgDs.style.display = "none";
+        }
+        if (dnaImgConfirmed) {
+            dnaImgConfirmed.style.display = "none";
+        }
+
+        let ahnNum = 2 ** thisGenNum + thisPosNum;
+        let gen = thisGenNum;
+        let pos = thisPosNum;
+        let ext = "";
+        let showAllAs = false;
+        let showAllDs = false;
+        let thisY = 100;
+
+        let elem = document.getElementById("wedgeInfoFor" + ahnNum).parentNode;
+        console.log(elem.parentNode);
+    
+        if (elem) {
+            let rect = elem.getBoundingClientRect();
+            let elemParent = elem.parentNode;
+            let rectParent = elemParent.getBoundingClientRect();
+            thisY = newY - 0  + 1*(rect.height ) - 0 + 1*elemParent.getAttribute("y") + 10 ;
+            thisY = newY - 0  + 1*elemParent.getAttribute("y") +  (1*rect.height + 2)/FractalView.currentScaleFactor ;
+            console.log("SVG d3:", d3 );
+            console.log("SVG scale:", d3.scale, FractalView.currentScaleFactor );
+            console.log("SVG behave:", d3.behavior);
+            console.log(
+                `ahnNum: ${ahnNum} , newY: ${newY} , height: ${rect.height} , heightElem: ${elem.getAttribute("height")} , heightParent: ${
+                    rectParent.height
+                } , ParentY: ${elemParent.getAttribute("y")} , thisY: ${thisY} ,`
+            );
+            console.log(rect);
+            console.log(rectParent);
+            const line1 = document.getElementById("line1ForPerson" + ahnNum);
+            const line2 = document.getElementById("line2ForPerson" + ahnNum);
+            if (line1) {
+                // line1.style.display = "inline-block";
+                line1.setAttribute("x1", newX - 200);
+                line1.setAttribute("x2", newX + 200);
+                line1.setAttribute("y1", thisY );
+                line1.setAttribute("y2", thisY );
+                console.log(line1);
+                // line2.style.display = "inline-block";
+                line2.setAttribute("x1", newX - 200);
+                line2.setAttribute("x2", newX + 200);
+                line2.setAttribute("y1", newY - 0  + 1*elemParent.getAttribute("y")  );
+                line2.setAttribute("y2", newY - 0  + 1*elemParent.getAttribute("y")  );
+                console.log(line2);
+            }
+        }
+
+        if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+            if (FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+                ext = "Y";
+                dOrtho = 0;
+                if (pos == 0) {
+                    if (ahnNum > 1) {
+                        if (dnaImgY) {
+                            dnaImgY.style.display = "block";
+                        }
+                        if (dnaImgDs) {
+                            dnaImgDs.style.display = "block";
+                        }
+                        if (dnaImgAs) {
+                            dnaImgAs.style.display = "block";
+                        }
+                    } else if (ahnNum == 1 && thePeopleList[FractalView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                        if (dnaImgY) {
+                            dnaImgY.style.display = "block";
+                        }
+                        if (dnaImgDs) {
+                            dnaImgDs.style.display = "block";
+                        }
+                        if (dnaImgAs) {
+                            dnaImgAs.style.display = "block";
+                        }
+                    }
+                }
+                if (pos % 2 == 0) {
+                    showAllAs = true;
+                    showAllDs = true;
+                }
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+                ext = "mt";
+                dOrtho = 0;
+                if (pos == 2 ** gen - 1) {
+                    if (dnaImgMT) {
+                        dnaImgMT.style.display = "block";
+                        if (dnaImgDs) {
+                            dnaImgDs.style.display = "block";
+                        }
+                        if (dnaImgAs) {
+                            dnaImgAs.style.display = "block";
+                        }
+                    }
+                }
+                showAllAs = true;
+                if (pos % 2 == 1) {
+                    showAllDs = true;
+                }
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+                ext = "X";
+                dOrtho = 0;
+                if (FractalView.XAncestorList.indexOf(ahnNum) > -1) {
+                    if (dnaImgX) {
+                        dnaImgX.style.display = "block";
+                        if (dnaImgDs) {
+                            dnaImgDs.style.display = "block";
+                        }
+                        if (dnaImgAs) {
+                            dnaImgAs.style.display = "block";
+                        }
+                    }
+                }
+
+                showAllAs = true;
+                showAllDs = true;
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+                if (FractalView.XAncestorList.indexOf(ahnNum) > -1) {
+                    // HIGHLIGHT by X-chromosome inheritance
+                    if (dnaImgX) {
+                        dnaImgX.style.display = "block";
+                    }
+                }
+                if (pos == 2 ** gen - 1) {
+                    // AND/OR by mtDNA inheritance
+                    if (dnaImgMT) {
+                        dnaImgMT.style.display = "block";
+                    }
+                }
+                if (pos == 0) {
+                    // AND/OR by Y-DNA inheritance
+                    if (ahnNum > 1) {
+                        if (dnaImgY) {
+                            dnaImgY.style.display = "block";
+                        }
+                    } else if (ahnNum == 1 && thePeopleList[FractalView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                        if (dnaImgY) {
+                            dnaImgY.style.display = "block";
+                        }
+                    }
+                }
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+                if (ahnNum == 1) {
+                    console.log(thePeopleList[FractalView.myAhnentafel.list[1]]._data);
+                    if (dnaImgConfirmed) {
+                        dnaImgConfirmed.style.display = "block";
+                    }
+                } else {
+                    let childAhnNum = Math.floor(ahnNum / 2);
+                    if (ahnNum % 2 == 0) {
+                        // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+                        if (thePeopleList[FractalView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
+                            if (dnaImgConfirmed) {
+                                dnaImgConfirmed.style.display = "block";
+                            }
+                        }
+                    } else {
+                        // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+                        if (thePeopleList[FractalView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
+                            if (dnaImgConfirmed) {
+                                dnaImgConfirmed.style.display = "block";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (dnaImgX) {
+            // dnaImgX.setAttribute("x", newX * dFraction);
+            // dnaImgX.setAttribute("y", newY * dFraction);
+            // dnaImgXDiv.style.rotate = nameAngle + "deg";
+            // if (thisGenNum == 0) {
+                dnaImgX.setAttribute("x", newX);
+                dnaImgX.setAttribute("y",  thisY);
+            // }
+            if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgX.style.display = "none";
+            } else if (
+                FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA" &&
+                FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true
+            ) {
+                dnaImgX.style.display = "block";
+            }
+        }
+        if (dnaImgY) {
+            // dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
+            // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
+            // dnaImgYDiv.style.rotate = nameAngle + "deg";
+            // if (thisGenNum == 0) {
+                dnaImgY.setAttribute("y", /* newY +  */thisY);
+                dnaImgY.setAttribute("x", newX - (35 * dOrtho) / 0.13);
+            //     console.log("@GenNum == 0 ; dOrtho = ", dOrtho);
+            // }
+            if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgY.style.display = "none";
+            } else if (
+                FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true
+            ) {
+                dnaImgY.style.display = "block";
+            }
+        }
+        if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+            dnaImgY.style.display = "none";
+        } else if (
+            FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+            FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+            showAllAs == true
+        ) {
+            dnaImgY.style.display = "block";
+        }
+        if (dnaImgMT) {
+            // dnaImgMT.setAttribute("x", newX * dFraction - dOrtho * newY);
+            // dnaImgMT.setAttribute("y", newY * dFraction + dOrtho * newX);
+            // dnaImgMTDiv.style.rotate = nameAngle + "deg";
+            // if (thisGenNum == 0) {
+                dnaImgMT.setAttribute("y", /* newY +  */thisY);
+                dnaImgMT.setAttribute("x", newX + (35 * dOrtho) / 0.13);
+            // }
+            if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgMT.style.display = "none";
+            } else if (
+                FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA" &&
+                FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true
+            ) {
+                dnaImgMT.style.display = "block";
+            }
+        }
+
+        if (dnaImgDs) {
+            let theLink =
+                '<A target=_blank href="' +
+                "https://www.wikitree.com/treewidget/" +
+                safeName(thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.Name) +
+                "/890#" +
+                ext +
+                '">' +
+                "<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>" +
+                "</A>";
+            // console.log(theLink);
+            dnaImgDsDiv.innerHTML = theLink;
+            // dnaImgDs.setAttribute("x", newX * dFraction - dOrtho2 * newY);
+            // dnaImgDs.setAttribute("y", newY * dFraction + dOrtho2 * newX);
+            // dnaImgDsDiv.style.rotate = nameAngle + "deg";
+            // if (thisGenNum == 0) {
+                dnaImgDs.setAttribute("y", /* newY +  */thisY);
+                dnaImgDs.setAttribute("x", newX + 35);
+            // }
+            if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgDs.style.display = "none";
+            } else if (
+                ext > "" &&
+                FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllDs == true
+            ) {
+                dnaImgDs.style.display = "block";
+            }
+        }
+
+        if (dnaImgAs) {
+            let theLink =
+                '<A target=_blank href="' +
+                "https://www.wikitree.com/treewidget/" +
+                safeName(thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.Name) +
+                "/89#" +
+                ext +
+                '">' +
+                "<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>" +
+                "</A>";
+            dnaImgAsDiv.innerHTML = theLink;
+            // dnaImgAs.setAttribute("x", newX * dFraction + dOrtho2 * newY);
+            // dnaImgAs.setAttribute("y", newY * dFraction - dOrtho2 * newX);
+            // dnaImgAsDiv.style.rotate = nameAngle - 90 + "deg";
+            // if (thisGenNum == 0) {
+                dnaImgAs.setAttribute("y", /* newY +  */thisY);
+                dnaImgAs.setAttribute("x", newX  -35);
+            // }
+            if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgAs.style.display = "none";
+            } else if (
+                ext > "" &&
+                FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true
+            ) {
+                dnaImgAs.style.display = "block";
+            }
+        }
+
+        if (dnaImgConfirmed) {
+            let theLink =
+                '<A target=_blank href="' +
+                "https://www.wikitree.com/treewidget/" +
+                safeName(thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.Name) +
+                "/899" +
+                '">' +
+                "<img height=30px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>" +
+                "</A>";
+            dnaImgConfirmedDiv.innerHTML = theLink;
+            // dnaImgConfirmed.setAttribute("x", newX * (gen > 5 ? (newR + 10) / newR : dFraction) + dOrtho * newY);
+            // dnaImgConfirmed.setAttribute("y", newY * (gen > 5 ? (newR + 10) / newR : dFraction) - dOrtho * newX);
+            // dnaImgConfirmedDiv.style.rotate = nameAngle + "deg";
+            // if (thisGenNum == 0) {
+                dnaImgConfirmed.setAttribute("y", /* newY +  */thisY);
+                dnaImgConfirmed.setAttribute("x", newX - 37.5);
+            // }
+
+            if (FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
+                dnaImgConfirmed.style.display = "none";
+            } else if (
+                FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed" &&
+                FractalView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll"
+            ) {
+                dnaImgConfirmed.style.display = "block";
+            }
+        }
     }
 
     function doHighlightFor(gen, pos, ahnNum) {
