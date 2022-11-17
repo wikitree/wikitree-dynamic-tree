@@ -34,9 +34,9 @@ class Person {
         this._data = data;
         this.isNoSpouse = false;
         let name = this.getDisplayName();
-        Person.condLog(`<--New person data: for ${this.getId()}: ${name} (${Richness.fromData(data)})`, data);
+        Person.condLog(`<--New person data: for ${this.getId()} ${name} (${Richness.fromData(data)})`, data);
         if (data.Parents) {
-            Person.condLog(`Setting parents for ${this.getId()}: ${name}...`);
+            Person.condLog(`Setting parents for ${this.getId()} ${name}...`);
             for (var p in data.Parents) {
                 this._data.Parents[p] = Person.#makePerson(data.Parents[p]);
             }
@@ -45,20 +45,20 @@ class Person {
         this.setSpouses(data);
 
         if (data.Siblings) {
-            Person.condLog(`Setting Siblings for ${this.getId()}: ${name}`);
+            Person.condLog(`Setting Siblings for ${this.getId()} ${name}...`);
             for (var c in data.Siblings) {
                 this._data.Siblings[c] = Person.#makePerson(data.Siblings[c]);
             }
         }
 
         if (data.Children) {
-            Person.condLog(`Setting children for ${this.getId()}: ${name}`);
+            Person.condLog(`Setting children for ${this.getId()} ${name}...`);
             for (var c in data.Children) {
                 this._data.Children[c] = Person.#makePerson(data.Children[c]);
             }
         }
         this._data.noMoreSpouses = data.DataStatus ? data.DataStatus.Spouse == "blank" : false;
-        Person.condLog(`>--New person done: for ${this.getId()}: ${name} (${this.getRichness()})`);
+        Person.condLog(`>--New person done: for ${this.getId()} ${name} (${this.getRichness()})`);
     }
 
     // Basic "getters" for the data elements.
@@ -139,7 +139,7 @@ class Person {
             return undefined;
         }
         if (this.hasSpouse()) {
-            return this._data.Spouses[this._data.CurrentSpouseId];
+            return this._data.Spouses[this._data.PreferredSpouseId];
         }
         if (this.hasNoSpouse() || this.isDiedYoung()) {
             return NoSpouse;
@@ -153,7 +153,7 @@ class Person {
     // profile does not have any spouse field(s) loaded while the latter means the profile definitely
     // has no spouse.
     hasSpouse() {
-        return this._data.Spouses && this._data.CurrentSpouseId;
+        return this._data.Spouses && this._data.PreferredSpouseId;
     }
     hasNoSpouse() {
         return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0;
@@ -212,7 +212,7 @@ class Person {
         this._data.Siblings = siblings;
     }
     setSpouses(data) {
-        this._data.CurrentSpouseId = undefined;
+        this._data.PreferredSpouseId = undefined;
         if (data.Spouses) {
             Person.condLog(
                 `setSpouses for ${this.getId()}: ${this.getDisplayName()}: ${summaryOfPeople(data.Spouses)}`,
@@ -241,28 +241,40 @@ class Person {
             }
             if (list.length > 0) {
                 sortByMarriageYear(list);
-                this._data.CurrentSpouseId = list[0].id;
+                this._data.PreferredSpouseId = list[0].id;
             }
         }
     }
-    setCurrentSpouse(id) {
+    setPreferredSpouse(id) {
         if (this.hasSpouse() && this.getSpouses()[id]) {
-            this._data.CurrentSpouseId = id;
+            this._data.PreferredSpouseId = id;
+            // also change the preferred spouse of the preferred spouse if possible
+            const thisId = this.getId();
+            const spouse = this.getSpouse();
+            if (spouse._data.preferredSpouse != thisId && spouse._data.Spouses && spouse._data.Spouses[thisId]) {
+                spouse._data.preferredSpouse = thisId;
+            }
             return true;
         } else {
             return false;
         }
     }
     copySpouses(person) {
-        this._data.CurrentSpouseId = person._data.CurrentSpouseId;
+        this._data.PreferredSpouseId = person._data.PreferredSpouseId;
         this._data.Spouses = person._data.Spouses;
         this._data.MarriageDates = person._data.MarriageDates;
     }
+    /**
+     * Refresh the parents, spouses, children and/or sibling data of this person from newPerson
+     * @param {*} newPerson
+     */
     refreshFrom(newPerson) {
         if (isSameOrHigherRichness(this._data, newPerson._data)) {
             console.error(
                 `Suspect Person.refreshFrom called on ${this.toString()} for less enriched ${newPerson.toString()}`
             );
+        } else {
+            Person.condLog(`Refresh ${this.toString()} from ${newPerson.toString()}`);
         }
         const mother = newPerson.getMother();
         if (mother) {
@@ -305,16 +317,16 @@ class Richness {
     static fromData(data) {
         let r = 0;
         if (data.Siblings) {
-            r = r | 0b100;
+            r = r | 0b1000;
         }
         if (data.Parents) {
-            r = r | 0b100;
+            r = r | 0b0100;
         }
         if (data.Spouses) {
-            r = r | 0b010;
+            r = r | 0b0010;
         }
         if (data.Children) {
-            r = r | 0b001;
+            r = r | 0b0001;
         }
         return r;
     }

@@ -55,6 +55,6 @@ class PeopleCache {
 
     isRequestCoveredByPerson(reqFields, person) {
         const reqRichness = Richness.fromFields(reqFields);
-        return person.getRichness() & (reqRichness == reqRichness);
+        return (person.getRichness() & reqRichness) == reqRichness;
     }
 }
