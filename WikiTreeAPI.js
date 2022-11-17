@@ -10,7 +10,7 @@
 // extension to fiddle with CORS permissions, like one of these for Chrome:
 //     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
 //     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
-const localTesting = false;
+const localTesting = true;
 const logit = localTesting || false; // changing false to true allows one to turn on logging even if not local testing
 
 // Put our functions into a "WikiTreeAPI" namespace.
