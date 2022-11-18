@@ -452,8 +452,8 @@
             .scaleExtent([0.1, 1])
             .on("zoom", function () {
                 svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
-                console.log("Current Scale factor is: ", d3.event.scale);
                 FractalView.currentScaleFactor = d3.event.scale;
+                // console.log("Current Scale factor is: ", d3.event.scale);
             })
             // Offset so that first pan and zoom does not jump back to the origin
             // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
