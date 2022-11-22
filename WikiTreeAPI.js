@@ -10,7 +10,7 @@
 // extension to fiddle with CORS permissions, like one of these for Chrome:
 //     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
 //     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
-const localTesting = true;
+const localTesting = false;
 const logit = localTesting || false; // changing false to true allows one to turn on logging even if not local testing
 
 // Put our functions into a "WikiTreeAPI" namespace.
@@ -150,7 +150,103 @@ window.wtCompleteName = function (person, options = {}) {
     return result.filter((part) => part !== null).join(" ");
 };
 
-WikiTreeAPI.Person = Person.getPersonClass(localTesting);
+WikiTreeAPI.Person = class Person {
+    constructor(data) {
+        this._data = data;
+
+        if (data.Parents) {
+            for (var p in data.Parents) {
+                this._data.Parents[p] = new WikiTreeAPI.Person(data.Parents[p]);
+            }
+        }
+        if (data.Children) {
+            for (var c in data.Children) {
+                this._data.Children[c] = new WikiTreeAPI.Person(data.Children[c]);
+            }
+        }
+    }
+
+    // Basic "getters" for the data elements.
+    getId() {
+        return this._data.Id;
+    }
+    getName() {
+        return this._data.Name;
+    }
+    getGender() {
+        return this._data.Gender;
+    }
+    getBirthDate() {
+        return this._data.BirthDate;
+    }
+    getBirthLocation() {
+        return this._data.BirthLocation;
+    }
+    getDeathDate() {
+        return this._data.DeathDate;
+    }
+    getDeathLocation() {
+        return this._data.DeathLocation;
+    }
+    getChildren() {
+        return this._data.Children;
+    }
+    getFatherId() {
+        return this._data.Father;
+    }
+    getMotherId() {
+        return this._data.Mother;
+    }
+    getDisplayName() {
+        return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate;
+    }
+    getPhotoUrl() {
+        if (this._data.PhotoData && this._data.PhotoData["url"]) {
+            return this._data.PhotoData["url"];
+        }
+    }
+
+    // Getters for Mother and Father return the Person objects, if there is one.
+    // The getMotherId and getFatherId functions above return the actual .Mother and .Father data elements (ids).
+    getMother() {
+        if (this._data.Mother && this._data.Parents) {
+            return this._data.Parents[this._data.Mother];
+        }
+    }
+    getFather() {
+        if (this._data.Father && this._data.Parents) {
+            return this._data.Parents[this._data.Father];
+        }
+    }
+
+    // We use a few "setters". For the parents, we want to update the Parents Person objects as well as the ids themselves.
+    // For TreeViewer we only set the parents and children, so we don't need setters for all the _data elements.
+    setMother(person) {
+        var id = person.getId();
+        var oldId = this._data.Mother;
+        this._data.Mother = id;
+        if (!this._data.Parents) {
+            this._data.Parents = {};
+        } else if (oldId) {
+            delete this._data.Parents[oldId];
+        }
+        this._data.Parents[id] = person;
+    }
+    setFather(person) {
+        var id = person.getId();
+        var oldId = this._data.Father;
+        this._data.Father = id;
+        if (!this._data.Parents) {
+            this._data.Parents = {};
+        } else if (oldId) {
+            delete this._data.Parents[oldId];
+        }
+        this._data.Parents[id] = person;
+    }
+    setChildren(children) {
+        this._data.Children = children;
+    }
+}; // End Person class definition
 
 /**
  * Return a promise for a person object with the given id.
