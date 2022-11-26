@@ -1,7 +1,6 @@
-//import { PeopleCache } from "./people_cache.js";
-
 class Richness {
     static MAX_RICHNESS = 0b1111;
+    static FULLY_ENRICHED = 0b0111; // Currently we don't use/consider siblings in our richness measurements
     static fromData(data) {
         let r = 0;
         if (data.Siblings) {
@@ -236,7 +235,7 @@ class CachedPerson {
         return Richness.fromData(this._data);
     }
     isFullyEnriched() {
-        return this.getRichness() == Richness.MAX_RICHNESS;
+        return this.getRichness() == Richness.FULLY_ENRICHED;
     }
     getSpouseIds() {
         return this._data.Spouses;
