@@ -11,11 +11,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         return {
             title: "Couples Dynamic Tree",
             description:
-                "&#x21e9; - see children or other spouses (&#x21e7 to restore); " +
-                "&#x2907; - select this spouse for this couple (can only be done for central couple and blood-line descendants); " +
-                '<img src="https://www.wikitree.com/images/icons/pedigree.gif" /> - make this person the focus of the tree; ' +
-                "+/- : expand/prune the tree. " +
-                "Click on a person to see more detail. Use track pad or mouse wheel to zoom the tree. Click and drag to pan around.",
+                'See <a href="https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree" target="_blank">Couples Tree Help</a> for help. ' +
+                "Click and drag to pan around. Use track pad or mouse wheel to zoom the tree. Click on a person to see more detail. about the person",
             docs: "",
         };
     }
@@ -49,34 +46,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     const DOWN_ARROW = "\u21e9";
     const UP_ARROW = "\u21e7";
     const RIGHT_ARROW = "\u2907";
-
-    const NO_RELATIVES_FIELDS = [
-        "Id",
-        "Name",
-        "FirstName",
-        "LastNameCurrent",
-        "LastNameAtBirth",
-        "Suffix",
-        "Derived.BirthName",
-        "Derived.BirthNamePrivate",
-        "MiddleInitial",
-        "BirthDate",
-        "DeathDate",
-        "BirthLocation",
-        "DeathLocation",
-        "Gender",
-        "Mother",
-        "Father",
-        "DataStatus",
-        "Photo",
-    ];
-
-    const WITH_RELATIVES_FIELDS = [...NO_RELATIVES_FIELDS, "Parents", "Spouses", "Children"];
-
-    const RELATIVE_FIELDS_BUT_NO_CHILDREN = WITH_RELATIVES_FIELDS.filter((item) => item != "Children");
-
-    // We don't use/consider siblings in our richness measurements
-    const FULLY_ENRICHED = 0b0111;
 
     /**
      * A Couple consists of two Persons that are either married, or are the parents of a child.
@@ -412,14 +381,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          *
          * These calls are only made if we have not rerieved the relevant data in the past.
          */
-        async richLoad(id) {
+        async richLoad(id, partnerId) {
             condLog(`=======RICH_LOAD ${id}`);
             const person = await this.getFullPerson(id);
             condLog(`=======RICH_LOAD completed await getWithChildren ${person.toString()}`);
-            return await this.loadRelated(person);
+            return await this.loadRelated(person, partnerId);
         }
 
-        async loadRelated(person) {
+        async loadRelated(person, partnerId) {
             const self = this;
             let loadPromises = [];
             condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`);
@@ -429,13 +398,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog(`loadRelated: getPromisesForParents of ${person.toString()}`);
             loadPromises = getPromisesForParents(person, loadPromises);
 
-            // Add promises for loading of current spouse with the names of all of their children and spouses
-            const spouseId = person._data.PreferredSpouseId;
+            // Add promises for loading of current partner with the names of all of their children and spouses
+            const spouseId = partnerId || person._data.PreferredSpouseId;
             if (spouseId) {
                 condLog(`loadRelated: get load promise for spouse ${spouseId}`);
                 loadPromises.push(this.getFullPerson(spouseId));
             } else {
-                condLog(`loadRelated called on Person ${person.toString()} without current spouses`, person);
+                condLog(`loadRelated called on Person ${person.toString()} without preferred spouse`, person);
             }
             // Add promises to load all the children. This is so that we can get
             // the names of all their spouses
@@ -457,6 +426,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog(`=======loadRelated awaiting promise fulfillment for ${person.toString()}`);
             let results = await Promise.all(loadPromises);
             condLog(`=======loadRelated promises fulfilled for ${person.toString()}`);
+
+            // Get the person object for the partner
             let selectedSpouse = undefined;
             for (const newPerson of results) {
                 const id = newPerson.getId();
@@ -514,8 +485,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog(`loadMore for ${couple.toString()}`, couple);
             const oldPerson = couple.getInFocus();
             const oldSpouse = couple.getNotInFocus();
-            if (oldPerson && oldPerson.getRichness() != FULLY_ENRICHED) {
-                await self.richLoad(oldPerson.getId());
+            if (oldPerson && !oldPerson.isFullyEnriched()) {
+                await self.richLoad(oldPerson.getId(), oldSpouse?.getId());
                 condLog(`loadMore done for ${couple.toString()}`, couple);
                 couple.expanded = true;
                 self.drawTree();
@@ -556,10 +527,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog(`======changePartner for ${personId} in couple node ${coupleId} to ${newPartnerID}`);
 
             // First make sure we have all the data for the new partner profile
-            const newPartner = await this.richLoad(newPartnerID);
+            const newPartner = await this.richLoad(newPartnerID, personId);
             let foundRoot = false;
 
-            // Find the couple node to change, remove it it from the page and then change it
+            // Find the couple node to change, remove it from the page and then change it
             const couples = d3
                 .select(`#${coupleId}`)
                 .remove()
@@ -763,7 +734,24 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          */
         elbow(d) {
             const dir = this.direction;
-            const offsetDir = dir < 0 ? 0 : d.target.x - d.source.x > 0 ? 1 : -1;
+            // offsetDir determines the direction of the offset of the startpoint of the elbow (i.e. the connector
+            // from one node to the next): 0 - no offset, -1 - up, 1 - down
+            let offsetDir;
+            if (dir < 0) {
+                offsetDir = 0;
+            } else {
+                const dx = d.target.x - d.source.x;
+                if (dx < 0) {
+                    offsetDir = -1;
+                } else if (dx > 0) {
+                    offsetDir = 1;
+                } else if (d.target.idPrefix.endsWith("b")) {
+                    offsetDir = 1;
+                } else {
+                    offsetDir = -1;
+                }
+            }
+
             const sourceX = d.source.x + offsetDir * halfBoxHeight,
                 sourceY = dir * (d.source.y + halfBoxWidth),
                 targetX = d.target.x,
