@@ -10,7 +10,7 @@
  */
 
 var wtViewRegistry;
-
+const enableNameTestView = true;
 window.addEventListener("DOMContentLoaded", (event) => {
     const loginManager = new LoginManager(
         WikiTreeAPI,
@@ -23,7 +23,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
           <form action="https://api.wikitree.com/api.php" method="POST">
               <input type="hidden" name="action" value="clientLogin">
               <input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
-              <input type="submit" class="small" value="Login at WikiTree API" 
+              <input type="submit" class="small" value="Login at WikiTree API"
                 title="Please login to the WikiTree API to use the Tree Viewer on non-public profiles.">
           </form>
           `;
@@ -32,21 +32,22 @@ window.addEventListener("DOMContentLoaded", (event) => {
     );
 
     // To add a new View, add a unique keyword with a value of the new View().
-    wtViewRegistry = new ViewRegistry(
-        {
-            "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
-            "timeline": new TimelineView(),
-            "fanchart": new FanChartView(),
-            "fandoku": new FandokuView(),
-            "fractal": new FractalView(),
-            "ahnentafel": new AhnentafelView(),
-            "surnames": new SurnamesView(),
-            "webs": new WebsView(),
-            "familygroup": new FamilyView(),
-            "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
-            "calendar": new calendarView(),
-        },
-        new SessionManager(WikiTreeAPI, loginManager)
-    );
+    const views = {
+        "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+        "timeline": new TimelineView(),
+        "fanchart": new FanChartView(),
+        "fandoku": new FandokuView(),
+        "fractal": new FractalView(),
+        "ahnentafel": new AhnentafelView(),
+        "surnames": new SurnamesView(),
+        "webs": new WebsView(),
+        "familygroup": new FamilyView(),
+        "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
+        "calendar": new calendarView(),
+    };
+    if (enableNameTestView) {
+        views["nameTest"] = new NameTestView();
+    }
+    wtViewRegistry = new ViewRegistry(views, new SessionManager(WikiTreeAPI, loginManager));
     wtViewRegistry.render();
 });
