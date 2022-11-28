@@ -10,7 +10,7 @@
  */
 
 var wtViewRegistry;
-const enableNameTestView = true;
+const enableNameTestView = false;
 window.addEventListener("DOMContentLoaded", (event) => {
     const loginManager = new LoginManager(
         WikiTreeAPI,
