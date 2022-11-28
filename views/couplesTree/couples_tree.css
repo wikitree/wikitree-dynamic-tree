@@ -15,10 +15,6 @@ h4 {
   background-color: #fff;
 }
 
-.children-list ol {
-  margin: 0;
-}
-
 .box[data-gender="male"],
 .popup-box[data-gender="male"] {
   border-color: rgba(102, 102, 204, 0.5);
@@ -29,8 +25,8 @@ h4 {
   border-color: rgba(102, 102, 204, 0.5);
   background-image: linear-gradient(
     to top right,
-    rgba(102, 102, 204, 0.2),
-    rgba(102, 102, 204, 0),
+    rgba(102, 102, 204, 0.3),
+    rgba(102, 102, 204, 0.05),
     rgba(102, 102, 204, 0)
   );
 }
@@ -45,8 +41,8 @@ h4 {
   border-color: rgba(204, 102, 102, 0.5);
   background-image: linear-gradient(
     to top right,
-    rgba(204, 102, 102, 0.2),
-    rgba(204, 102, 102, 0),
+    rgba(204, 102, 102, 0.3),
+    rgba(204, 102, 102, 0.05),
     rgba(204, 102, 102, 0)
   );
 }
@@ -78,9 +74,9 @@ h4 {
   color: black;
 }
 
-.button-words:hover {
+/* .button-words:hover {
   color: #fc7171;
-}
+} */
 
 .drop-button {
   font-size: 14px;
@@ -104,7 +100,7 @@ h4 {
 .select-spouse-button:hover,
 .drop-button:hover {
   cursor: pointer;
-  color: #fc7171;
+  /* color: #fc7171; */
 }
 
 .altSpouse {
@@ -125,8 +121,19 @@ h4 {
   --content-padding: 0;
 }
 
+.children-list-wrapper h4 {
+  margin: 12px;
+  background: #f9f9f9;
+}
+
 .children-list ol {
-  background-color: #f0f0ef;
+  margin: 0;
+}
+
+.children-list {
+  border-radius: 5px;
+  border: solid rgba(102, 204, 102, 0.5);
+  background: #f9f9f9;
 }
 
 .minus {
