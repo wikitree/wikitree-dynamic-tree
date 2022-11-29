@@ -63,10 +63,11 @@ window.NameTest = class NameTest {
             return;
         }
         const profileData = data[0].person;
+        const name = new PersonName(profileData);
         $(this.selector).html(`<div id="nameTestResults"></div>`);
         let names = new Array(
-            this.doTest(profileData, ["PedigreeName"]),
-            this.doTest(profileData, [
+            this.doTest(name, ["PedigreeName"]),
+            this.doTest(name, [
                 "PedigreeName",
                 "Prefix",
                 "FirstName",
@@ -79,8 +80,8 @@ window.NameTest = class NameTest {
                 "Suffix",
                 "LastNameOther",
             ]),
-            this.doTest(profileData, ["FullName"]),
-            this.doTest(profileData, [
+            this.doTest(name, ["FullName"]),
+            this.doTest(name, [
                 "FullName",
                 "PedigreeName",
                 "Prefix",
@@ -94,32 +95,31 @@ window.NameTest = class NameTest {
                 "Suffix",
                 "LastNameOther",
             ]),
-            this.doTest(profileData, ["LastName"]),
-            this.doTest(profileData, ["LastNameCurrent"]),
-            this.doTest(profileData, ["LastNameAtBirth"]),
-            this.doTest(profileData, ["LastNameOther"]),
-            this.doTest(profileData, ["FirstName"]),
-            this.doTest(profileData, ["FirstNames"]),
-            this.doTest(profileData, ["FullFirstName"]),
-            this.doTest(profileData, ["PreferredName"]),
-            this.doTest(profileData, ["FirstInitial"]),
-            this.doTest(profileData, ["MiddleName"]),
-            this.doTest(profileData, ["MiddleNames"]),
-            this.doTest(profileData, ["MiddleInitials"]),
-            this.doTest(profileData, ["Nicknames"]),
-            this.doTest(profileData, ["Prefix"]),
-            this.doTest(profileData, ["Suffix"]),
-            this.doTest(profileData, ["FirstNames", "LastNameAtBirth", "LastNameOther"]),
-            this.doTest(profileData, ["MiddleNames", "PreferredName", "LastNameOther"]),
-            this.doTest(profileData, ["FirstInitial", "MiddleInitials", "LastNameAtBirth"]),
-            this.doTest(profileData, ["PreferredName", "LastNameCurrent"]),
-            this.doTest(profileData, ["SomeUnknownPart"])
+            this.doTest(name, ["LastName"]),
+            this.doTest(name, ["LastNameCurrent"]),
+            this.doTest(name, ["LastNameAtBirth"]),
+            this.doTest(name, ["LastNameOther"]),
+            this.doTest(name, ["FirstName"]),
+            this.doTest(name, ["FirstNames"]),
+            this.doTest(name, ["FullFirstName"]),
+            this.doTest(name, ["PreferredName"]),
+            this.doTest(name, ["FirstInitial"]),
+            this.doTest(name, ["MiddleName"]),
+            this.doTest(name, ["MiddleNames"]),
+            this.doTest(name, ["MiddleInitials"]),
+            this.doTest(name, ["Nicknames"]),
+            this.doTest(name, ["Prefix"]),
+            this.doTest(name, ["Suffix"]),
+            this.doTest(name, ["FirstNames", "LastNameAtBirth", "LastNameOther"]),
+            this.doTest(name, ["MiddleNames", "PreferredName", "LastNameOther"]),
+            this.doTest(name, ["FirstInitial", "MiddleInitials", "LastNameAtBirth"]),
+            this.doTest(name, ["PreferredName", "LastNameCurrent"]),
+            this.doTest(name, ["SomeUnknownPart"])
         );
         this.displayResults(profileData, names);
     }
 
-    doTest(profileData, wanted) {
-        const name = new PersonName(profileData);
+    doTest(name, wanted) {
         return {
             request: wanted,
             name: name.withParts(wanted),
