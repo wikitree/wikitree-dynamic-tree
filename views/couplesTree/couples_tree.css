@@ -7,6 +7,7 @@ h4 {
 }
 
 .couple .box {
+  cursor: pointer;
   border-style: solid;
   border-width: 2px;
   border-radius: 5px;
@@ -22,6 +23,7 @@ h4 {
 
 .descendant .box[data-gender="male"][data-infocus="true"],
 .ancestor.root .box[data-gender="male"][data-infocus="true"] {
+  cursor: pointer;
   border-color: rgba(102, 102, 204, 0.5);
   background-image: linear-gradient(
     to top right,
