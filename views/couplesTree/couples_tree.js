@@ -886,11 +886,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const spouse = side == R ? couple.a : couple.b;
             const inFocus = couple.focus == side;
             const gender = (person?.getGender() || "other").toLowerCase();
-            let name = "?";
+            let shortName = "?";
             let lifeSpan = "? - ?";
+            let displayName = null;
 
             if (person) {
-                name = getShortName(person);
+                shortName = getShortName(person);
+                displayName = person.getDisplayName();
                 lifeSpan = lifespan(person);
             }
             const div = document.createElement("div");
@@ -898,7 +900,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             div.setAttribute("data-gender", gender);
             div.setAttribute("data-infocus", inFocus);
             if (person) {
-                div.setAttribute("title", `Click to show more detail on ${name}`);
+                div.setAttribute("title", `Click to show more detail on ${displayName}`);
             }
 
             // Add spouse list behind a button
@@ -909,12 +911,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 const nameWrapper = document.createElement("div");
                 nameWrapper.className = "cname";
                 nameWrapper.appendChild(button);
-                nameWrapper.appendChild(document.createTextNode(name));
+                nameWrapper.appendChild(document.createTextNode(shortName));
                 div.appendChild(nameWrapper);
                 div.appendChild(aDivWith("lifespan", lifeSpan));
                 div.appendChild(spouseList);
             } else {
-                div.appendChild(aDivWith("cname", name));
+                div.appendChild(aDivWith("cname", shortName));
                 div.appendChild(aDivWith("lifespan", lifeSpan));
             }
             return div;
@@ -1481,7 +1483,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      */
     function getSpouseSelection(couple, partner, currentSpouse, mayChangeSpouse) {
         if (!currentSpouse) return [];
-        const currentSpouseName = getShortName(currentSpouse);
+        const currentSpouseFullName = currentSpouse.getDisplayName();
 
         // Collect a list of the names and lifespans of all the spouses of the given person
         const spouses = currentSpouse.getSpouses();
@@ -1513,7 +1515,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         wrapper.className = "box alt-spouse-list-wrapper";
         wrapper.style.display = "none";
         const heading = document.createElement("h4");
-        heading.textContent = `Spouses for ${currentSpouseName}`;
+        heading.textContent = `Spouses for ${getShortName(currentSpouse)}`;
         wrapper.appendChild(heading);
 
         const listDiv = document.createElement("div");
@@ -1552,7 +1554,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         const button = document.createElement("button");
         button.className = "drop-button";
         button.textContent = DOWN_ARROW;
-        button.setAttribute("title", `Show other spouses of ${currentSpouseName}`);
+        button.setAttribute("title", `Show other spouses of ${currentSpouseFullName}`);
         button.onclick = (event) => {
             if (wrapper.style.display == "none") {
                 // Ensure we bring the spouses list to the front
@@ -1570,11 +1572,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 });
                 wrapper.style.display = "block";
                 button.textContent = UP_ARROW;
-                button.setAttribute("title", `Hide other spouses of ${currentSpouseName}`);
+                button.setAttribute("title", `Hide other spouses of ${currentSpouseFullName}`);
             } else {
                 wrapper.style.display = "none";
                 button.textContent = DOWN_ARROW;
-                button.setAttribute("title", `Show other spouses of ${currentSpouseName}`);
+                button.setAttribute("title", `Show other spouses of ${currentSpouseFullName}`);
             }
             event.stopPropagation();
         };
