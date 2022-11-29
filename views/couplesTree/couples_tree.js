@@ -897,6 +897,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             div.className = `person box ${side == R ? "R" : "L"}`;
             div.setAttribute("data-gender", gender);
             div.setAttribute("data-infocus", inFocus);
+            if (person) {
+                div.setAttribute("title", `Click to show more detail on ${name}`);
+            }
 
             // Add spouse list behind a button
             const mayChangeSpouse = couple.isRoot || (this.direction == DESCENDANTS && !inFocus);
@@ -925,12 +928,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const childrenList = document.createElement("ol");
             for (const child of children) {
                 const item = document.createElement("li");
+                const childName = getShortName(child);
                 item.appendChild(
                     aDivWith(
                         "aChild",
-                        aProfileLink(getShortName(child), child.getName()),
+                        aProfileLink(childName, child.getName()),
                         document.createTextNode(" "),
-                        aTreeLink(child.getName())
+                        aTreeLink(childName, child.getName())
                     )
                 );
                 childrenList.appendChild(item);
@@ -942,6 +946,19 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             const button = document.createElement("button");
             button.className = "drop-button";
+
+            const aName = couple.a && !couple.a.isNoSpouse ? getShortName(couple.a) : null;
+            const bName = couple.b && !couple.b.isNoSpouse ? getShortName(couple.b) : null;
+            let combinedName = aName;
+            if (bName) {
+                if (aName) {
+                    combinedName += ` and ${bName}`;
+                } else {
+                    combinedName = bName;
+                }
+            }
+            button.setAttribute("title", `Show the children of ${combinedName}`);
+
             const up = document.createTextNode(`${UP_ARROW} Children [${children.length}]`);
             const down = aSpanWith(
                 undefined,
@@ -967,9 +984,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     });
                     listDiv.style.display = "block";
                     button.replaceChild(up, down);
+                    button.setAttribute("title", `Hide the children of ${combinedName}`);
                 } else {
                     listDiv.style.display = "none";
                     button.replaceChild(down, up);
+                    button.setAttribute("title", `Show the children of ${combinedName}`);
                 }
             };
             wrapper.appendChild(button);
@@ -1086,6 +1105,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 }
             }
             const gender = (person?.getGender() || "other").toLowerCase();
+            const displayName = person.getDisplayName();
 
             const popup = this.svg
                 .append("g")
@@ -1105,10 +1125,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
 						<div class="vital-info">
 						  <div class="name">
-						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
+						    <a href="https://www.wikitree.com/wiki/${person.getName()}" title="Open the profile of ${displayName} on a new page" target="_blank">${displayName}</a>
 						    <span class="tree-links">
-                                <a href="#name=${person.getName()}"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a>
-                                <a href="#name=${person.getName()}&view=fanchart"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a>
+                                <a href="#name=${person.getName()}" title="Make ${person.getDisplayName()} the centre of the tree"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a>
+                                <a href="#name=${person.getName()}&view=fanchart"  title="Open a fan chart for ${displayName} on a new page" target="_blank"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a>
                             </span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
@@ -1195,7 +1215,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     function drawPlus(selector) {
         return function () {
             const group = d3.select(document.createElementNS(d3.ns.prefix.svg, "g")).attr("class", "plus " + selector);
-
             group.append("circle").attr({
                 cx: 0,
                 cy: 0,
@@ -1203,6 +1222,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
 
             group.append("path").attr("d", "M0,5v-10M5,0h-10");
+            group
+                .append("title")
+                .text(`Add more ${selector}s to the ${selector == "ancestor" ? "right" : "left"} at this point`);
 
             return group.node();
         };
@@ -1222,6 +1244,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
 
             group.append("path").attr("d", "M5,0h-10");
+            group
+                .append("title")
+                .text(`Hide the ${selector}s to the ${selector == "ancestor" ? "right" : "left"} of this point`);
 
             return group.node();
         };
@@ -1456,6 +1481,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      */
     function getSpouseSelection(couple, partner, currentSpouse, mayChangeSpouse) {
         if (!currentSpouse) return [];
+        const currentSpouseName = getShortName(currentSpouse);
 
         // Collect a list of the names and lifespans of all the spouses of the given person
         const spouses = currentSpouse.getSpouses();
@@ -1487,7 +1513,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         wrapper.className = "box alt-spouse-list-wrapper";
         wrapper.style.display = "none";
         const heading = document.createElement("h4");
-        heading.textContent = `Spouses for ${getShortName(currentSpouse)}`;
+        heading.textContent = `Spouses for ${currentSpouseName}`;
         wrapper.appendChild(heading);
 
         const listDiv = document.createElement("div");
@@ -1501,7 +1527,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 "lifespan",
                 document.createTextNode(spouseData.lifespan),
                 document.createTextNode(" "),
-                aTreeLink(spouseData.wtId)
+                aTreeLink(spouseData.name, spouseData.wtId)
             );
             const x = currentSpouse.getId();
             const y = spouseData.id;
@@ -1526,6 +1552,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         const button = document.createElement("button");
         button.className = "drop-button";
         button.textContent = DOWN_ARROW;
+        button.setAttribute("title", `Show other spouses of ${currentSpouseName}`);
         button.onclick = (event) => {
             if (wrapper.style.display == "none") {
                 // Ensure we bring the spouses list to the front
@@ -1543,9 +1570,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 });
                 wrapper.style.display = "block";
                 button.textContent = UP_ARROW;
+                button.setAttribute("title", `Hide other spouses of ${currentSpouseName}`);
             } else {
                 wrapper.style.display = "none";
                 button.textContent = DOWN_ARROW;
+                button.setAttribute("title", `Show other spouses of ${currentSpouseName}`);
             }
             event.stopPropagation();
         };
@@ -1577,16 +1606,18 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         profileLink.appendChild(document.createTextNode(itsText));
         profileLink.href = `https://www.wikitree.com/wiki/${personId}`;
         profileLink.target = "_blank";
+        profileLink.setAttribute("title", `Open the profile of ${itsText} on a new page`);
         return profileLink;
     }
 
-    function aTreeLink(wtId) {
+    function aTreeLink(shortName, wtId) {
         // Icon and link to dynamic tree
         const img = document.createElement("img");
         img.src = "https://www.wikitree.com/images/icons/pedigree.gif";
         const treeLink = document.createElement("a");
         treeLink.href = `#name=${wtId}`;
         treeLink.appendChild(img);
+        treeLink.setAttribute("title", `Make ${shortName} the centre of the tree`);
         return treeLink;
     }
 })();
