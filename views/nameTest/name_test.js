@@ -32,7 +32,11 @@ window.NameTestView = class NameTestView extends View {
                 "<li>Nicknames(*) - the Nicknames API field</br>" +
                 "<li>Prefix(*) - the Prefix API field</br>" +
                 "<li>Suffix(*) - the Suffix API field</br></ul>" +
-                "<p>This page shows the result of calling the two functions with the given name parts parameter for the person specified above. ",
+                "<p>A third function is:<br>" +
+                "&nbsp;&nbsp;&nbsp;&nbsp;<b>.withFormat(template)</b> that returns a string constructed according to <i>template</i>, " +
+                'where <i>template</i> is a string with placeholders, e.g.: "He is [FullName], better known as [PreferredName], but also as [Nicknames]."<br>' +
+                "<p>This page shows the result of calling the above functions with the indicated name parts parameter for the person specified above. " +
+                "as well as a few calls to <b>.withFormat</b>",
             docs: "",
         };
     }
@@ -65,9 +69,9 @@ window.NameTest = class NameTest {
         const profileData = data[0].person;
         const name = new PersonName(profileData);
         $(this.selector).html(`<div id="nameTestResults"></div>`);
-        let names = new Array(
-            this.doTest(name, ["PedigreeName"]),
-            this.doTest(name, [
+        const partsTestResults = new Array(
+            this.doPartsTest(name, ["PedigreeName"]),
+            this.doPartsTest(name, [
                 "PedigreeName",
                 "Prefix",
                 "FirstName",
@@ -80,8 +84,8 @@ window.NameTest = class NameTest {
                 "Suffix",
                 "LastNameOther",
             ]),
-            this.doTest(name, ["FullName"]),
-            this.doTest(name, [
+            this.doPartsTest(name, ["FullName"]),
+            this.doPartsTest(name, [
                 "FullName",
                 "PedigreeName",
                 "Prefix",
@@ -95,57 +99,93 @@ window.NameTest = class NameTest {
                 "Suffix",
                 "LastNameOther",
             ]),
-            this.doTest(name, ["LastName"]),
-            this.doTest(name, ["LastNameCurrent"]),
-            this.doTest(name, ["LastNameAtBirth"]),
-            this.doTest(name, ["LastNameOther"]),
-            this.doTest(name, ["FirstName"]),
-            this.doTest(name, ["FirstNames"]),
-            this.doTest(name, ["FullFirstName"]),
-            this.doTest(name, ["PreferredName"]),
-            this.doTest(name, ["FirstInitial"]),
-            this.doTest(name, ["MiddleName"]),
-            this.doTest(name, ["MiddleNames"]),
-            this.doTest(name, ["MiddleInitials"]),
-            this.doTest(name, ["Nicknames"]),
-            this.doTest(name, ["Prefix"]),
-            this.doTest(name, ["Suffix"]),
-            this.doTest(name, ["FirstNames", "LastNameAtBirth", "LastNameOther"]),
-            this.doTest(name, ["MiddleNames", "PreferredName", "LastNameOther"]),
-            this.doTest(name, ["FirstInitial", "MiddleInitials", "LastNameAtBirth"]),
-            this.doTest(name, ["PreferredName", "LastNameCurrent"]),
-            this.doTest(name, ["SomeUnknownPart"])
+            this.doPartsTest(name, ["LastName"]),
+            this.doPartsTest(name, ["LastNameCurrent"]),
+            this.doPartsTest(name, ["LastNameAtBirth"]),
+            this.doPartsTest(name, ["LastNameOther"]),
+            this.doPartsTest(name, ["FirstName"]),
+            this.doPartsTest(name, ["FirstNames"]),
+            this.doPartsTest(name, ["FullFirstName"]),
+            this.doPartsTest(name, ["PreferredName"]),
+            this.doPartsTest(name, ["FirstInitial"]),
+            this.doPartsTest(name, ["MiddleName"]),
+            this.doPartsTest(name, ["MiddleNames"]),
+            this.doPartsTest(name, ["MiddleInitials"]),
+            this.doPartsTest(name, ["Nicknames"]),
+            this.doPartsTest(name, ["Prefix"]),
+            this.doPartsTest(name, ["Suffix"]),
+            this.doPartsTest(name, ["FirstNames", "LastNameAtBirth", "LastNameOther"]),
+            this.doPartsTest(name, ["MiddleNames", "PreferredName", "LastNameOther"]),
+            this.doPartsTest(name, ["FirstInitial", "MiddleInitials", "LastNameAtBirth"]),
+            this.doPartsTest(name, ["PreferredName", "LastNameCurrent"]),
+            this.doPartsTest(name, ["SomeUnknownPart"])
         );
-        this.displayResults(profileData, names);
+        this.displayPartsResults(profileData, partsTestResults);
+
+        const formatTestResults = new Array(
+            this.doFormatTest(name, "They are [FullName], better known as [PreferredName], but also as [Nicknames]."),
+            this.doFormatTest(
+                name,
+                "This is an invalid [Placeholder], but this is fine: [FirstInitial] [MiddleInitials]"
+            ),
+            this.doFormatTest(name, "Prefix='[Prefix]', [LastName], [FirstName] ([MiddleNames]) Suffux=[[Suffix]]")
+        );
+        this.displayFormatResults(formatTestResults);
     }
 
-    doTest(name, wanted) {
+    doPartsTest(name, wanted) {
         return {
             request: wanted,
-            name: name.withParts(wanted),
-            parts: name.getParts(wanted),
+            withParts: name.withParts(wanted),
+            getParts: name.getParts(wanted),
         };
     }
 
-    displayResults(profileData, nameTests) {
+    doFormatTest(name, template) {
+        return {
+            template: template,
+            name: name.withFormat(template),
+        };
+    }
+
+    displayPartsResults(profileData, partsTestResults) {
         $("#nameTestResults").append("<h3>Profile data:</h3>\n");
         $("#nameTestResults").append(`<pre>${JSON.stringify(profileData, undefined, 4)}</pre>`);
         $("#nameTestResults").append("<h3>Test Results</h3>");
+        $("#nameTestResults").append("<h4>.withParts</b> and .getParts</h4>");
         let html = "<ol>";
-        for (const i in nameTests) {
-            html += this.displayResult(nameTests[i]);
+        for (const i in partsTestResults) {
+            html += this.displayPartsResult(partsTestResults[i]);
         }
         html += "</ol>";
         $("#nameTestResults").append(html);
     }
 
-    displayResult(nameTest) {
+    displayPartsResult(partsTestResult) {
         return (
-            `<li class="testResult"><b>wantedParts</b>: ${nameTest.request}<br>\n` +
-            `<b>withParts:</b> ${nameTest.name}<br>\n` +
+            `<li class="testResult"><b>wantedParts</b>: ${partsTestResult.request}<br>\n` +
+            `<b>withParts:</b> ${partsTestResult.withParts}<br>\n` +
             `<b>getParts</b>: ${
-                typeof nameTest.parts === "string" ? nameTest.parts : JSON.stringify([...nameTest.parts.entries()])
-            }</p></li>`
+                typeof partsTestResult.getParts === "string"
+                    ? partsTestResult.getParts
+                    : JSON.stringify([...partsTestResult.getParts.entries()])
+            }</li>`
+        );
+    }
+
+    displayFormatResults(formatTestResults) {
+        $("#nameTestResults").append("<h4>.withFormat</h4>");
+        let html = "<ol>";
+        for (const i in formatTestResults) {
+            html += this.displayFormatResult(formatTestResults[i]);
+        }
+        html += "</ol>";
+        $("#nameTestResults").append(html);
+    }
+    displayFormatResult(formatTestResult) {
+        return (
+            `<li class="testResult"><b>Template</b>: ${formatTestResult.template}<br>\n` +
+            `<b>Result:</b> ${formatTestResult.name}<br></li>\n`
         );
     }
 };

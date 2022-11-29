@@ -254,6 +254,31 @@ class PersonName {
     }
 
     /**
+     * Form a name based on a template string with placeholders.
+     * @param {*} template A string with placeholders, specifying the name parts to use,
+     *     e.g. "He is [FullName], better known as [PreferredName], but also as [Nicknames]."
+     */
+    withFormat(template) {
+        const partsWanted = new Set();
+        for (const part of PersonName.#fieldMap.keys()) {
+            if (template.includes(`[${part}]`)) {
+                partsWanted.add(part);
+            }
+        }
+        const invalidParts = PersonName.#getInvalidParts(partsWanted);
+        for (const part of invalidParts) {
+            partsWanted.delete(part);
+        }
+        const parts = this.getParts(partsWanted);
+
+        let result = template;
+        for (const [part, value] of parts.entries()) {
+            result = result.replaceAll(`[${part}]`, value);
+        }
+        return result;
+    }
+
+    /**
      * Obtain the given name parts for this person.
      * @param {*} wantedParts see withParts
      * @returns a Map of partName => String for every requested part.
