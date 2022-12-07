@@ -10,7 +10,6 @@
  */
 
 var wtViewRegistry;
-const enableNameTestView = false;
 window.addEventListener("DOMContentLoaded", (event) => {
     const loginManager = new LoginManager(
         WikiTreeAPI,
@@ -44,10 +43,16 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
         "calendar": new calendarView(),
+        "nameTest": new NameTestView(),
     };
-    if (enableNameTestView) {
-        views["nameTest"] = new NameTestView();
+
+    for (let key in views) {
+        let meta = views[key]?.meta();
+        if (meta?.disabled) {
+            delete views[key];
+        }
     }
+
     wtViewRegistry = new ViewRegistry(views, new SessionManager(WikiTreeAPI, loginManager));
     wtViewRegistry.render();
 });

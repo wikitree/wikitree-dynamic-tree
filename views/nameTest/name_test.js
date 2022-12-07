@@ -38,6 +38,7 @@ window.NameTestView = class NameTestView extends View {
                 "<p>This page shows the result of calling the above functions with the indicated name parts parameter for the person specified above. " +
                 "as well as a few calls to <b>.withFormat</b>",
             docs: "",
+            disabled: 1,
         };
     }
 
