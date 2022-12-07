@@ -10,7 +10,6 @@
  */
 
 var wtViewRegistry;
-
 window.addEventListener("DOMContentLoaded", (event) => {
     const loginManager = new LoginManager(
         WikiTreeAPI,
@@ -32,22 +31,28 @@ window.addEventListener("DOMContentLoaded", (event) => {
     );
 
     // To add a new View, add a unique keyword with a value of the new View().
-    wtViewRegistry = new ViewRegistry(
-        {
-            "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
-            "other-apps": new OtherAppsView(),
-            "timeline": new TimelineView(),
-            "fanchart": new FanChartView(),
-            "fandoku": new FandokuView(),
-            "fractal": new FractalView(),
-            "ahnentafel": new AhnentafelView(),
-            "surnames": new SurnamesView(),
-            "webs": new WebsView(),
-            "familygroup": new FamilyView(),
-            "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
-            "calendar": new calendarView(),
-        },
-        new SessionManager(WikiTreeAPI, loginManager)
-    );
+    const views = {
+        "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+        "timeline": new TimelineView(),
+        "fanchart": new FanChartView(),
+        "fandoku": new FandokuView(),
+        "fractal": new FractalView(),
+        "ahnentafel": new AhnentafelView(),
+        "surnames": new SurnamesView(),
+        "webs": new WebsView(),
+        "familygroup": new FamilyView(),
+        "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
+        "calendar": new calendarView(),
+        "nameTest": new NameTestView(),
+    };
+
+    for (let key in views) {
+        let meta = views[key]?.meta();
+        if (meta?.disabled) {
+            delete views[key];
+        }
+    }
+
+    wtViewRegistry = new ViewRegistry(views, new SessionManager(WikiTreeAPI, loginManager));
     wtViewRegistry.render();
 });
