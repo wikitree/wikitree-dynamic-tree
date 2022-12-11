@@ -1473,19 +1473,21 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     }
 
     /**
-     * Determine the list of all spouses of the partner (partner) of currentSpouse in couple.
+     * For the given couple, conisting of person and currentSpouse, determine the list of all
+     * spouses of currentSpouse. This list will therefore contain person as well as the possible
+     * other spouses of their spouse currentSpouse.
      * @param {*} couple The couple containing the partner and currentSpouse
-     * @param {*} partnerId The id of the current partner of currentSpouse
-     * @param {*} currentSpouse The current spouse of the other partner in couple,
-     * @param {*} mayChangeSpouse true iff we are allowed to add a 'change partner button'
-     * @returns [botton, spouseList] where button is a 'show other spouses button and will be
+     * @param {*} person The current partner of currentSpouse in couple
+     * @param {*} currentSpouse The current spouse of person in couple
+     * @param {*} mayChangeSpouse true iff we are allowed to add a 'change partner' button
+     * @returns [botton, spouseList] where button is a 'show other spouses' button and will be
      *          undefined if there is only one spouse
      */
-    function getSpouseSelection(couple, partner, currentSpouse, mayChangeSpouse) {
+    function getSpouseSelection(couple, person, currentSpouse, mayChangeSpouse) {
         if (!currentSpouse) return [];
         const currentSpouseFullName = currentSpouse.getDisplayName();
 
-        // Collect a list of the names and lifespans of all the spouses of the given person
+        // Collect a list of the names and lifespans of all the spouses of currentSpouse
         const spouses = currentSpouse.getSpouses();
         const list = [];
         if (spouses) {
@@ -1531,9 +1533,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 document.createTextNode(" "),
                 aTreeLink(spouseData.name, spouseData.wtId)
             );
-            const x = currentSpouse.getId();
-            const y = spouseData.id;
-            if (mayChangeSpouse && partner.getId() != spouseData.id) {
+            if (mayChangeSpouse && person.getId() != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
                 button.className = "select-spouse-button";
@@ -1541,6 +1541,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 button.setAttribute("couple-id", couple.getId());
                 button.setAttribute("person-id", currentSpouse.getId());
                 button.setAttribute("spouse-id", spouseData.id);
+                button.setAttribute("title", `Change ${currentSpouseFullName}'s spouse to ${spouseData.name}`);
                 // Note; the button's click behaviour is added in Tree.drawNodes()
                 lifespanDiv.prepend(button);
             }
