@@ -91,7 +91,7 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
 
         alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
 
-1. link your new script file in `<head>` section of the `index.html` and register your new view in `ViewRegistry` in index.js, e.g.
+1. link your new script file in `<head>` section of the `index.html` and register your new view in `ViewRegistry`, e.g.
 
     ```js
     new ViewRegistry(
@@ -139,15 +139,15 @@ The general installation instructions can be viewed at the [Prettier Docs](https
 
 To install Prettier in [Visual Studio Code](https://code.visualstudio.com/):
 
--   Go to `View > Extensions`
--   Search for "Prettier - Code formatter"
--   Select the "Install" button
+- Go to `View > Extensions`
+- Search for "Prettier - Code formatter"
+- Select the "Install" button
 
 To set it up so it formats on save:
 
--   Go to `File > Preferences > Settings`
--   Search for "Default Formatter" and select "Prettier - Code formatter" in the dropdown
--   Search for "Format On Save" and make sure the checkbox is checked
+- Go to `File > Preferences > Settings`
+- Search for "Default Formatter" and select "Prettier - Code formatter" in the dropdown
+- Search for "Format On Save" and make sure the checkbox is checked
 
 It will use the settings in the `.prettierrc` file in the repository.
 

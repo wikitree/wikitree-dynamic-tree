@@ -45,7 +45,7 @@
  *
  *        <script src="views/new_view/NewView.js"></script>
  *
- *     b) create new entry ("new-view-id": <NewViewObject>) in first parameter of ViewRegistry constructor (in index.js), e.g.:
+ *     b) create new entry ("new-view-id": <NewViewObject>) in first parameter of ViewRegistry constructor (also in index.html), e.g.:
  *
  *        "new-view-id": new NewViewObject(),
  *
