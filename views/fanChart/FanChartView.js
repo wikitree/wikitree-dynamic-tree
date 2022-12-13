@@ -20,6 +20,8 @@
         boxHeight = 50,
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
+        font4Name = "SansSerif";
+        font4Info = "SansSerif";
 
     /**
      * Constructor
@@ -133,13 +135,14 @@
         FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FanChartView",
             tabs: [
-                // {
-                //     name: "general",
-                //     label: "General",
-                //     hideSelect: true,
-                //     subsections: [{ name: "FanChartGeneral", label: "General settings" }],
-                //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
-                // },
+                {
+                    name: "general",
+                    label: "General",
+                    hideSelect: true,
+                    subsections: [{ name: "FanChartGeneral", label: "General settings" }],
+                    comment:
+                        "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                },
                 {
                     name: "names",
                     label: "Names",
@@ -192,38 +195,51 @@
                     subcategory: "options",
                     options: [
                         {
-                            optionName: "font",
+                            optionName: "font4Names",
                             type: "radio",
-                            label: "Font",
+                            label: "Font for Names",
                             values: [
-                                { value: "Arial", text: "Arial" },
-                                { value: "Courier", text: "Courier" },
-                                { value: "Times", text: "Times" },
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
                                 { value: "Fantasy", text: "Fantasy" },
                                 { value: "Script", text: "Script" },
                             ],
-                            defaultValue: "Arial",
+                            defaultValue: "SansSerif",
+                        },
+                        {
+                            optionName: "font4Info",
+                            type: "radio",
+                            label: "Font for Info",
+                            values: [
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "SansSerif",
                         },
                         { optionName: "break0", type: "br" },
-                        {
-                            optionName: "showWikiID",
-                            label: "Show WikiTree ID for each person",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        {
-                            optionName: "showAhnNum",
-                            label: "Show Ahnentafel number in each cell",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        { optionName: "break1", type: "br" },
-                        {
-                            optionName: "colourizeRepeats",
-                            label: "Colourize Repeat Ancestors",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
+                        // {
+                        //     optionName: "showWikiID",
+                        //     label: "Show WikiTree ID for each person",
+                        //     type: "checkbox",
+                        //     defaultValue: 0,
+                        // },
+                        // {
+                        //     optionName: "showAhnNum",
+                        //     label: "Show Ahnentafel number in each cell",
+                        //     type: "checkbox",
+                        //     defaultValue: 0,
+                        // },
+                        // { optionName: "break1", type: "br" },
+                        // {
+                        //     optionName: "colourizeRepeats",
+                        //     label: "Colourize Repeat Ancestors",
+                        //     type: "checkbox",
+                        //     defaultValue: true,
+                        // },
                     ],
                 },
 
@@ -690,7 +706,6 @@
         // BEFORE we go further ... let's add the DNA objects we might need later
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
-
                 svg.append("g")
                     .attr({
                         id: "imgDNA-x-" + genIndex + "i" + index,
@@ -704,7 +719,7 @@
                         x: 25 * index,
                         y: 30 * genIndex,
                         //
-                        "style": "display:none;",
+                        style: "display:none;",
                     })
 
                     .style("overflow", "visible") // so the name will wrap
@@ -714,123 +729,122 @@
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
 
-                 svg.append("g")
-                     .attr({
-                         id: "imgDNA-y-" + genIndex + "i" + index,
-                     })
-                     .append("foreignObject")
-                     .attr({
-                         id: "imgDNA-y-" + genIndex + "i" + index + "inner",
-                         class: "centered",
-                         width: "20px",
-                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                         x: 25 * index,
-                         y: 30 * genIndex,
-                         //
-                         "style": "display:none;",
-                     })
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-y-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-y-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
 
-                     .style("overflow", "visible") // so the name will wrap
-                     .append("xhtml:div")
-                     .attr({
-                         id: "imgDNA-y-" + genIndex + "i" + index + "img",
-                     })
-                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");   
-                     
-                 svg.append("g")
-                     .attr({
-                         id: "imgDNA-mt-" + genIndex + "i" + index,
-                     })
-                     .append("foreignObject")
-                     .attr({
-                         id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
-                         class: "centered",
-                         width: "20px",
-                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                         x: 25 * index,
-                         y: 30 * genIndex,
-                         //
-                         "style": "display:none;",
-                     })
-
-                     .style("overflow", "visible") // so the name will wrap
-                     .append("xhtml:div")
-                     .attr({
-                         id: "imgDNA-mt-" + genIndex + "i" + index + "img",
-                     })
-                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
-
-                 svg.append("g")
-                     .attr({
-                         id: "imgDNA-Ds-" + genIndex + "i" + index,
-                     })
-                     .append("foreignObject")
-                     .attr({
-                         id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
-                         class: "centered",
-                         width: "20px",
-                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                         x: 25 * index,
-                         y: 30 * genIndex,
-                         //
-                         "style": "display:none;",
-                     })
-
-                     .style("overflow", "visible") // so the name will wrap
-                     .append("xhtml:div")
-                     .attr({
-                         id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
-                     })
-                     .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-y-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");
 
                 svg.append("g")
-                     .attr({
-                         id: "imgDNA-As-" + genIndex + "i" + index,
-                     })
-                     .append("foreignObject")
-                     .attr({
-                         id: "imgDNA-As-" + genIndex + "i" + index + "inner",
-                         class: "centered",
-                         width: "20px",
-                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                         x: 25 * index,
-                         y: 30 * genIndex,
-                         //
-                         "style": "display:none;",
-                     })
+                    .attr({
+                        id: "imgDNA-mt-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
 
-                     .style("overflow", "visible") // so the name will wrap
-                     .append("xhtml:div")
-                     .attr({
-                         id: "imgDNA-As-" + genIndex + "i" + index + "img",
-                     })
-                     .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-mt-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
 
                 svg.append("g")
-                     .attr({
-                         id: "imgDNA-Confirmed-" + genIndex + "i" + index,
-                     })
-                     .append("foreignObject")
-                     .attr({
-                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
-                         class: "centered",
-                         width: "20px",
-                         height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                         x: 25 * index,
-                         y: 30 * genIndex,
-                         //
-                         "style": "display:none;",
-                     })
+                    .attr({
+                        id: "imgDNA-Ds-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
 
-                     .style("overflow", "visible") // so the name will wrap
-                     .append("xhtml:div")
-                     .attr({
-                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
-                     })
-                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-As-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-As-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-As-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
+
+                svg.append("g")
+                    .attr({
+                        id: "imgDNA-Confirmed-" + genIndex + "i" + index,
+                    })
+                    .append("foreignObject")
+                    .attr({
+                        id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
+                        class: "centered",
+                        width: "20px",
+                        height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                        x: 25 * index,
+                        y: 30 * genIndex,
+                        //
+                        style: "display:none;",
+                    })
+
+                    .style("overflow", "visible") // so the name will wrap
+                    .append("xhtml:div")
+                    .attr({
+                        id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
+                    })
+                    .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
             }
         }
-
 
         self.load(startId);
         // console.log(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
@@ -1015,7 +1029,7 @@
                     let dnaImgMT = document.getElementById("imgDNA-mt-" + genIndex + "i" + index + "inner");
                     let dnaImgDs = document.getElementById("imgDNA-Ds-" + genIndex + "i" + index + "inner");
                     let dnaImgAs = document.getElementById("imgDNA-As-" + genIndex + "i" + index + "inner");
-                    
+
                     // START out by HIDING them all !
                     if (dnaImgX) {
                         dnaImgX.style.display = "none";
@@ -1039,10 +1053,99 @@
         }
     }
 
-    /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
 
+    function updateFontsIfNeeded() {
+        if (FanChartView.currentSettings["general_options_font4Names"] == font4Name && FanChartView.currentSettings["general_options_font4Info"] == font4Info) {
+            console.log("NOTHING to see HERE in UPDATE FONT land");
+        } else {
+            console.log("Update Fonts:", FanChartView.currentSettings["general_options_font4Names"], font4Name , FanChartView.currentSettings["general_options_font4Info"] ,font4Info);
+            console.log(FanChartView.currentSettings);
+
+            font4Name = FanChartView.currentSettings["general_options_font4Names"];
+            font4Info = FanChartView.currentSettings["general_options_font4Info"];
+
+            let nameElements = document.getElementsByClassName("name");
+            for (let e = 0; e < nameElements.length; e++) {
+                const element = nameElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Name);
+                
+            }
+            let infoElements = document.getElementsByClassName("vital");
+            for (let e = 0; e < infoElements.length; e++) {
+                const element = infoElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Info);
+                
+            }
+
+        }
+
+    }
+    // function getStyleRule(ruleClass, property, cssFile) {
+    //     for (var s = 0; s < document.styleSheets.length; s++) {
+    //         var sheet = document.styleSheets[s];
+    //         if (sheet.href.endsWith(cssFile)) {
+    //             var rules = sheet.cssRules ? sheet.cssRules : sheet.rules;
+    //             if (rules == null) return null;
+    //             for (var i = 0; i < rules.length; i++) {
+    //                 if (rules[i].selectorText == ruleClass) {
+    //                     // console.log("r:", rules[i].style[property] );
+    //                     return rules[i].style[property];
+    //                     //or rules[i].style["border"]="2px solid red";
+    //                     //or rules[i].style["boxShadow"]="4px 4px 4px -2px rgba(0,0,0,0.5)";
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return null;
+    // }
+
+    // function listStyleRules(ruleClass, property, cssFile) {
+    //     for (var s = 0; s < document.styleSheets.length; s++) {
+    //         var sheet = document.styleSheets[s];
+    //         console.log("SS" + s, sheet);
+    //         if (sheet) {
+    //         //     if ( !sheet.cssRules) {
+    //         //         // nothing to see here
+                    
+    //         //     } else {
+
+    //         //         var rules = sheet.cssRules ? sheet.cssRules : sheet.rules;
+    //         //         if (rules == null) {
+    //         //             // nothing to see here
+    //         //         } else {
+    //         //             // go through the rules
+    //         //             for (var i = 0; i < rules.length; i++) {
+    //         //                 console.log("ss" + s, "r" + i, rules[i].selectorText, rules[i].style);
+    //         //                 // if (rules[i].selectorText == ruleClass) {
+    //         //                     // console.log("r:", rules[i].style[property] );
+    //         //                     // return rules[i].style[property];
+    //         //                     //or rules[i].style["border"]="2px solid red";
+    //         //                     //or rules[i].style["boxShadow"]="4px 4px 4px -2px rgba(0,0,0,0.5)";
+    //         //                     // }
+    //         //                 // }
+    //         //             }
+    //         //         }
+    //         //     }
+    //         }
+    //     }
+    //     return null;
+    // }
+
+    /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
     FanChartView.redraw = function () {
-        // console.log("FanChartView.redraw");
+        console.log("FanChartView.redraw");
+        // listStyleRules();
+        // console.log(document.styleSheets[0].cssRules);
         // console.log("Now theAncestors = ", FanChartView.theAncestors);
         // thePeopleList.listAll();
         recalcAndDisplayNumGens();
@@ -1078,7 +1181,6 @@
             person._data.AhnNum = 1;
             thePeopleList.add(person);
             thePeopleList.listAll();
-            
 
             if (person.children && person.children.length > 0) {
                 for (let index = 0; index < person.children.length; index++) {
@@ -1198,7 +1300,6 @@
             "Gender",
             "Privacy",
             "DataStatus",
-            
         ]);
         // console.log("_load PersonObj:",thePersonObject);
         return thePersonObject;
@@ -1287,6 +1388,7 @@
             // this.drawLinks(links);
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
+            updateFontsIfNeeded();
         } else {
             throw new Error("Missing root");
         }
@@ -1392,9 +1494,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
-                        <div class="name"    id=nameDivFor${
-                            ancestorObject.ahnNum
-                        } style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
+                        <div class="name font${font4Name}"    id=nameDivFor${
+                        ancestorObject.ahnNum
+                    } style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
                 } else if (thisGenNum >= 8) {
@@ -1402,9 +1504,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
-                        <div class="name"   id=nameDivFor${
-                            ancestorObject.ahnNum
-                        }  style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
+                        <div class="name font${font4Name}"   id=nameDivFor${
+                        ancestorObject.ahnNum
+                    }  style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
                 } else if (thisGenNum >= 7) {
@@ -1412,7 +1514,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
-                        <div class="name"  id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(person)}</B></div>
+                        <div class="name font${font4Name}"  id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
+                        person
+                    )}</B></div>
                         </div>
                     `;
                 } else if (thisGenNum > 4) {
@@ -1440,13 +1544,13 @@
                         ancestorObject.ahnNum
                     } class="box" style="background-color: ${theClr} ; border:0;  display:inline-block;"> 
                     
-                    <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
-                        person
-                    )}</B></div>
-                    <div class="lifespan">${lifespan(person)}</div>
+                    <div class="name centered font${font4Name}" id=nameDivFor${
+                        ancestorObject.ahnNum
+                    }><B>${getSettingsName(person)}</B></div>
+                    <div class="lifespan vital font${font4Info}">${lifespan(person)}</div>
                     </div>
                     `;
-                 } else if (thisGenNum == 4) {
+                } else if (thisGenNum == 4) {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -1471,12 +1575,12 @@
                         ancestorObject.ahnNum
                     } class="box" style="background-color: ${theClr} ; border:0; "> 
                     ${photoDiv}
-                    <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
-                        person
-                    )}</B></div>
-                    <div class="lifespan">${lifespan(person)}</div>
+                    <div class="name centered font${font4Name}" id=nameDivFor${
+                        ancestorObject.ahnNum
+                    }><B>${getSettingsName(person)}</B></div>
+                    <div class="lifespan vital font${font4Info}">${lifespan(person)}</div>
                     </div>
-                    `;    
+                    `;
                 } else {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
@@ -1501,11 +1605,11 @@
                     } style="background-color: ${theClr} ; border:0; ">
                      <div class="vital-info">
 						${photoDiv}
-						  <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}>
+						  <div class="name centered font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
 						    <b>${getSettingsName(person)}</b>						    
 						  </div>
-						  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
-						  <div class="death vital centered" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
+						  <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
+						  <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>
                     `;
@@ -1749,7 +1853,6 @@
         });
     };
 
-
     /**
      * Show a popup for the person.
      */
@@ -1773,7 +1876,7 @@
         if (person._data.Id == FanChartView.myAhnentafel.list[1]) {
             // console.log("FOUND THE PRIMARY PERP!");
             // if (FanChartView.showFandokuLink == "YES"){
-                fandokuLink = `<span class="tree-links"><button onclick=location.assign("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/#name=${person.getName()}&view=fandoku"); style="padding:2px;">Play FanDoku</button></span>`;
+            fandokuLink = `<span class="tree-links"><button onclick=location.assign("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/#name=${person.getName()}&view=fandoku"); style="padding:2px;">Play FanDoku</button></span>`;
             // }
         } else {
             // console.log("Popup a poopy peep");
@@ -1850,7 +1953,6 @@
         FanChartView.maxNumGens = 10;
         numRepeatAncestors = 0;
         repeatAncestorTracker = new Object();
-
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
@@ -1992,7 +2094,6 @@
         }
 
         return theLifeSpan;
-
     }
 
     /**
@@ -2017,7 +2118,7 @@
         }
 
         let town = parts[0];
-        let country = parts[ parts.length - 1];
+        let country = parts[parts.length - 1];
         let region = "";
         if (parts.length > 2) {
             region = parts[parts.length - 2];
@@ -2025,37 +2126,29 @@
 
         if (formatString == "Country") {
             return country;
-
         } else if (formatString == "Region") {
-            if (region  > "") {
+            if (region > "") {
                 return region;
             } else {
                 return country;
             }
-
         } else if (formatString == "Town") {
             return town;
-
         } else if (formatString == "TownCountry") {
-            return town  + ", " + country;
-
+            return town + ", " + country;
         } else if (formatString == "RegionCountry") {
-            if (region  > "") {
+            if (region > "") {
                 return region + ", " + country;
             } else {
-                return town  + ", " + country;
+                return town + ", " + country;
             }
-
-
         } else if (formatString == "TownRegion") {
-            if (region  > "") {
+            if (region > "") {
                 return town + ", " + region;
             } else {
-                return town  + ", " + country;
+                return town + ", " + country;
             }
-
-
-        } 
+        }
         return "";
     }
 
@@ -2132,7 +2225,10 @@
                     thisDate = "";
                 }
 
-                if (FanChartView.currentSettings["place_options_locationTypes"] == "detailed" && FanChartView.currentSettings["place_options_showBirth"] == true) { 
+                if (
+                    FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                    FanChartView.currentSettings["place_options_showBirth"] == true
+                ) {
                     thisPlace = settingsStyleLocation(
                         person.getBirthLocation(),
                         FanChartView.currentSettings["place_options_locationFormatBD"]
@@ -2296,7 +2392,6 @@
         return 9;
     }
 
-
     function safeName(inp) {
         return inp.replace(/ /g, "_");
     }
@@ -2308,7 +2403,7 @@
             let i = element.ahnNum;
             let peep = element.person;
             let peepNameID = safeName(peep._data.Name);
-            console.log("Peep:", peepNameID);
+            // console.log("Peep:", peepNameID);
         }
     }
 
@@ -2631,7 +2726,7 @@
             }
         }
     }
-    
+
     function doHighlightFor(gen, pos, ahnNum) {
         if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
             if (pos == 0) {
@@ -2682,7 +2777,6 @@
                     }
                 }
             }
-
         }
 
         return false;
@@ -2697,8 +2791,8 @@
                 populateXAncestorList(3); // whereas a man inherits an X-chromosome only from his mother
             }
         } else {
-            FanChartView.XAncestorList.push( ahnNum ) ;
-            if (ahnNum < 2** FanChartView.maxNumGens) {
+            FanChartView.XAncestorList.push(ahnNum);
+            if (ahnNum < 2 ** FanChartView.maxNumGens) {
                 if (ahnNum % 2 == 1) {
                     populateXAncestorList(2 * ahnNum); // a woman inherits an X-chromosome from her father
                     populateXAncestorList(2 * ahnNum + 1); // and her mother
@@ -2708,7 +2802,7 @@
             }
         }
     }
-    
+
     function getBackgroundColourFor(gen, pos, ahnNum) {
         PastelsArray = [
             "#ECFFEF",
@@ -2798,9 +2892,9 @@
             thisColourArray = KeyColoursMatches[settingForPalette];
         }
 
-        let overRideByHighlight = false; // 
-        if (FanChartView.currentSettings['highlight_options_showHighlights'] == true) {
-            overRideByHighlight = doHighlightFor(gen,pos, ahnNum);
+        let overRideByHighlight = false; //
+        if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
+            overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
         }
         if (overRideByHighlight == true) {
             return "yellow";
@@ -2845,6 +2939,4 @@
     //             return data;
     //         });
     // }
-
-   
-    })();
+})();

@@ -231,6 +231,29 @@ main {
   margin-bottom: 0;
 }
 
+.fontSerif {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.fontSansSerif {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.fontScript {
+  font-family: cursive;
+}
+
+.fontFantasy {
+  font-family: fantasy;
+}
+
+.fontMono {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.fontBold {
+  font-weight: bold;
+}
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
@@ -243,6 +266,9 @@ main {
     display: none;
   }
 
+  #btnBarDIV {
+    display: none;
+  }
   #view-container {
     border: none;
     min-height: initial;
