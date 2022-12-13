@@ -5,10 +5,10 @@
 // A Class to hold a collection of PEOPLE (a collection of the Person objects)
 // **************************************
 /
- * The basic PeopleCollection is an associative array 
+ * The basic PeopleCollection is an associative array
  *       key: Id , value: Person object corresponding to that WikiTree ID #
- * 
- * 
+ *
+ *
  */
 
 window.PeopleCollection = window.PeopleCollection || {};
