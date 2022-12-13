@@ -79,13 +79,13 @@
         FractalView.fractalSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FractalView",
             tabs: [
-                // {
-                //     name: "general",
-                //     label: "General",
-                //     hideSelect: true,
-                //     subsections: [{ name: "FractalGeneral", label: "General settings" }],
-                //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
-                // },
+                {
+                    name: "general",
+                    label: "General",
+                    hideSelect: true,
+                    subsections: [{ name: "FractalGeneral", label: "General settings" }],
+                    comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                },
                 {
                     name: "names",
                     label: "Names",
@@ -138,38 +138,51 @@
                     subcategory: "options",
                     options: [
                         {
-                            optionName: "font",
+                            optionName: "font4Names",
                             type: "radio",
-                            label: "Font",
+                            label: "Font for Names",
                             values: [
-                                { value: "Arial", text: "Arial" },
-                                { value: "Courier", text: "Courier" },
-                                { value: "Times", text: "Times" },
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
                                 { value: "Fantasy", text: "Fantasy" },
                                 { value: "Script", text: "Script" },
                             ],
-                            defaultValue: "Arial",
+                            defaultValue: "SansSerif",
+                        },
+                        {
+                            optionName: "font4Info",
+                            type: "radio",
+                            label: "Font for Info",
+                            values: [
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "SansSerif",
                         },
                         { optionName: "break0", type: "br" },
-                        {
-                            optionName: "showWikiID",
-                            label: "Show WikiTree ID for each person",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        {
-                            optionName: "showAhnNum",
-                            label: "Show Ahnentafel number in each cell",
-                            type: "checkbox",
-                            defaultValue: 0,
-                        },
-                        { optionName: "break1", type: "br" },
-                        {
-                            optionName: "colourizeRepeats",
-                            label: "Colourize Repeat Ancestors",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
+                        // {
+                        //     optionName: "showWikiID",
+                        //     label: "Show WikiTree ID for each person",
+                        //     type: "checkbox",
+                        //     defaultValue: 0,
+                        // },
+                        // {
+                        //     optionName: "showAhnNum",
+                        //     label: "Show Ahnentafel number in each cell",
+                        //     type: "checkbox",
+                        //     defaultValue: 0,
+                        // },
+                        // { optionName: "break1", type: "br" },
+                        // {
+                        //     optionName: "colourizeRepeats",
+                        //     label: "Colourize Repeat Ancestors",
+                        //     type: "checkbox",
+                        //     defaultValue: true,
+                        // },
                     ],
                 },
 
@@ -497,6 +510,7 @@
                 console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 console.log("NEW settings are:", FractalView.currentSettings);
                 FractalView.myAncestorTree.draw();
+                updateFontsIfNeeded();
             } else {
                 console.log("NOTHING happened according to SETTINGS OBJ");
             }
@@ -1405,11 +1419,11 @@
 						<div class="image-box" id=photoDivFor${
                             ancestorObject.ahnNum
                         } style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
-						  <div class="name" id=nameDivFor${ancestorObject.ahnNum}>
-						    <b>${getSettingsName(person)}</b>						    
+						  <div class="name fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
+						    ${getSettingsName(person)}
 						  </div>
-						  <div class="birth vital" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
-						  <div class="death vital" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
+						  <div class="birth vital font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
+						  <div class="death vital font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>
                     `;
@@ -2091,6 +2105,47 @@
         return inp.replace(/ /g, "_");
     }
 
+    function updateFontsIfNeeded() {
+    if (
+        FractalView.currentSettings["general_options_font4Names"] == font4Name &&
+        FractalView.currentSettings["general_options_font4Info"] == font4Info
+    ) {
+        console.log("NOTHING to see HERE in UPDATE FONT land");
+    } else {
+        console.log(
+            "Update Fonts:",
+            FractalView.currentSettings["general_options_font4Names"],
+            font4Name,
+            FractalView.currentSettings["general_options_font4Info"],
+            font4Info
+        );
+        console.log(FractalView.currentSettings);
+
+        font4Name = FractalView.currentSettings["general_options_font4Names"];
+        font4Info = FractalView.currentSettings["general_options_font4Info"];
+
+        let nameElements = document.getElementsByClassName("name");
+        for (let e = 0; e < nameElements.length; e++) {
+            const element = nameElements[e];
+            element.classList.remove("fontSerif");
+            element.classList.remove("fontSansSerif");
+            element.classList.remove("fontMono");
+            element.classList.remove("fontFantasy");
+            element.classList.remove("fontScript");
+            element.classList.add("font" + font4Name);
+        }
+        let infoElements = document.getElementsByClassName("vital");
+        for (let e = 0; e < infoElements.length; e++) {
+            const element = infoElements[e];
+            element.classList.remove("fontSerif");
+            element.classList.remove("fontSansSerif");
+            element.classList.remove("fontMono");
+            element.classList.remove("fontFantasy");
+            element.classList.remove("fontScript");
+            element.classList.add("font" + font4Info);
+        }
+    }
+}    
     function updateDNAlinks(nodes) {
         //{ ahnNum: i, person: thePeopleList[this.list[i]] }
         for (let index = 0; index < nodes.length; index++) {
