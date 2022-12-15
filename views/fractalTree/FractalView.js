@@ -61,6 +61,57 @@
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     FractalView.currentSettings = {};
 
+    var numRepeatAncestors = 0;
+    var repeatAncestorTracker = new Object();
+    var ColourArray = [
+           "White",
+
+           "Gold",
+           "HotPink",
+           "LightCyan",
+           "Yellow",
+           "AntiqueWhite",
+           "MediumSpringGreen",
+           "Orange",
+           "DeepSkyBlue",
+           "PaleGoldenRod",
+           "Lime",
+           "Moccasin",
+           "PowderBlue",
+           "DarkGreen",
+           "Maroon",
+           "Navy",
+           "Brown",
+           "Indigo",
+           "RoyalBlue",
+           "FireBrick",
+           "Blue",
+           "SlateGrey",
+           "DarkMagenta",
+           "Red",
+           "DarkOrange",
+           "DarkGoldenRod",
+           "Green",
+           "MediumVioletRed",
+           "SteelBlue",
+           "Grey",
+           "MediumPurple",
+           "OliveDrab",
+           "Purple",
+           "DarkSlateBlue",
+           "SaddleBrown",
+           "Pink",
+           "Khaki",
+           "LemonChiffon",
+           "LightCyan",
+           "HotPink",
+           "Gold",
+           "Yellow",
+           "AntiqueWhite",
+           "MediumSpringGreen",
+           "Orange",
+       ];
+
     FractalView.prototype.meta = function () {
         return {
             title: "Fractal Tree",
@@ -176,13 +227,13 @@
                         //     type: "checkbox",
                         //     defaultValue: 0,
                         // },
-                        // { optionName: "break1", type: "br" },
-                        // {
-                        //     optionName: "colourizeRepeats",
-                        //     label: "Colourize Repeat Ancestors",
-                        //     type: "checkbox",
-                        //     defaultValue: true,
-                        // },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "colourizeRepeats",
+                            label: "Colourize Repeat Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
                     ],
                 },
 
@@ -1356,6 +1407,26 @@
                     // borderColor = "rgba(204, 102, 102, .5)";
                 }
 
+                let theClr = 'white';
+                // SETUP the repeatAncestorTracker
+                if (FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
+                    console.log(
+                        "new repeat ancestor:",
+                        FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
+                    );
+                    if (repeatAncestorTracker[ancestorObject.person._data.Id]) {
+                        theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                    } else {
+                        numRepeatAncestors++;
+                        theClr = ColourArray[numRepeatAncestors % ColourArray.length];
+                        repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
+                    }
+                }
+
+                if (FractalView.currentSettings["general_options_colourizeRepeats"] == false) {
+                    theClr = "white";
+                }
+
                 // DEFAULT STYLE used to be style="background-color: ${borderColor} ;"
 
                 // if (thisGenNum >= 9) {
@@ -1414,7 +1485,7 @@
 
                 return `<div class="top-info centered" id=wedgeInfoFor${
                     ancestorObject.ahnNum
-                } style="background-color: white ; padding:5, border-color:black; border:2;">
+                } style="background-color: ${theClr} ; padding:5, border-color:black; border:2;">
                      <div class="vital-info">
 						<div class="image-box" id=photoDivFor${
                             ancestorObject.ahnNum
@@ -1422,8 +1493,14 @@
 						  <div class="name fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
 						    ${getSettingsName(person)}
 						  </div>
-						  <div class="birth vital font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
-						  <div class="death vital font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
+						  <div class="birth vital font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
+                    person,
+                    "B"
+                )}</div>
+						  <div class="death vital font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
+                    person,
+                    "D"
+                )}</div>
 						</div>
 					</div>
                     `;
@@ -1489,6 +1566,13 @@
 
                 // COLOUR the div appropriately
                 let thisDivsColour = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                // CHECK to see if this is a Repeat Ancestor AND if ColourizeRepeats option is turned on
+                 if (
+                    FractalView.currentSettings["general_options_colourizeRepeats"] == true &&
+                    repeatAncestorTracker[ancestorObject.person._data.Id]
+                ) {
+                    thisDivsColour = repeatAncestorTracker[ancestorObject.person._data.Id];
+                }
                 theInfoBox.setAttribute("style", "background-color: " + thisDivsColour);
 
                 // SET the OUTER DIV to also be white, with a rounded radius and solid border
@@ -2605,9 +2689,23 @@
             "#FFCCE5",
             "#FFCCFF",
             "#E5CCFF",
+            "#C5ECCF",
+            "#D5CCEF",
         ];
         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        GreysArray = [
+            "#B8B8B8",
+            "#D8D8D8",
+            "#C0C0C0",
+            "#E0E0E0",
+            "#C8C8C8",
+            "#E8E8E8",
+            "#D0D0D0",
+            "#F0F0F0",
+            "#A8A8A8",
+            "#C4C4C4",
+            "#E4E4E4",
+        ];
         RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
@@ -2649,53 +2747,7 @@
             "#F0F8FF",
         ];
         GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
-        var ColourArray = [
-            "White",
-            "Gold",
-            "HotPink",
-            "LightCyan",
-            "Yellow",
-            "AntiqueWhite",
-            "MediumSpringGreen",
-            "Orange",
-            "DeepSkyBlue",
-            "PaleGoldenRod",
-            "Lime",
-            "Moccasin",
-            "PowderBlue",
-            "DarkGreen",
-            "Maroon",
-            "Navy",
-            "Brown",
-            "Indigo",
-            "RoyalBlue",
-            "FireBrick",
-            "Blue",
-            "SlateGrey",
-            "DarkMagenta",
-            "Red",
-            "DarkOrange",
-            "DarkGoldenRod",
-            "Green",
-            "MediumVioletRed",
-            "SteelBlue",
-            "Grey",
-            "MediumPurple",
-            "OliveDrab",
-            "Purple",
-            "DarkSlateBlue",
-            "SaddleBrown",
-            "Pink",
-            "Khaki",
-            "LemonChiffon",
-            "LightCyan",
-            "HotPink",
-            "Gold",
-            "Yellow",
-            "AntiqueWhite",
-            "MediumSpringGreen",
-            "Orange",
-        ];
+
         let AllColoursArrays = [
             ColourArray,
             GreysArray,
@@ -2728,7 +2780,6 @@
         if (KeyColoursMatches[settingForPalette]) {
             thisColourArray = KeyColoursMatches[settingForPalette];
         }
-        // console.log("COLOUR Settings are:" , settingForColourBy , settingForPalette);
 
         let overRideByHighlight = false; //
         if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
@@ -2765,4 +2816,5 @@
 
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
+
 })();

@@ -233,13 +233,13 @@
                         //     type: "checkbox",
                         //     defaultValue: 0,
                         // },
-                        // { optionName: "break1", type: "br" },
-                        // {
-                        //     optionName: "colourizeRepeats",
-                        //     label: "Colourize Repeat Ancestors",
-                        //     type: "checkbox",
-                        //     defaultValue: true,
-                        // },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "colourizeRepeats",
+                            label: "Colourize Repeat Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
                     ],
                 },
 
@@ -1473,7 +1473,11 @@
                 // DEFAULT STYLE used to be style="background-color: ${borderColor} ;"
 
                 let theClr = "none";
-                if (FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
+
+                // SETUP the repeatAncestorTracker
+                if (
+                    FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1
+                ) {
                     console.log(
                         "new repeat ancestor:",
                         FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
@@ -1485,6 +1489,10 @@
                         theClr = ColourArray[numRepeatAncestors % ColourArray.length];
                         repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
                     }
+                }
+                // BUT ... if we have colourizeRepeats turned off - ignore theClr ...
+                if (FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
+                    theClr = "none";
                 }
 
                 // console.log(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
@@ -1674,11 +1682,29 @@
                     console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
                 if (theWedgeBox) {
-                    theWedgeBox.style.background = getBackgroundColourFor(
-                        thisGenNum,
-                        thisPosNum,
-                        ancestorObject.ahnNum
-                    );
+
+                    if (
+                        FanChartView.currentSettings["general_options_colourizeRepeats"] == true &&
+                        repeatAncestorTracker[ancestorObject.person._data.Id]
+                    ) {
+                        theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theWedgeBox.style.background = theClr;
+                        console.log(
+                            "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                            theClr
+                        );
+                    } else {
+                        theWedgeBox.style.background = getBackgroundColourFor(
+                            thisGenNum,
+                            thisPosNum,
+                            ancestorObject.ahnNum
+                        );
+                        console.log(
+                            "in Transform -> NO COLOUR for ancestor ",
+                            ancestorObject.ahnNum,
+                            theWedgeBox.style.background
+                        );
+                    }
                 }
             }
 
@@ -2814,9 +2840,23 @@
             "#FFCCE5",
             "#FFCCFF",
             "#E5CCFF",
+            "#C5ECCF",
+            "#D5CCEF",
         ];
         RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        GreysArray = [
+            "#B8B8B8",
+            "#D8D8D8",
+            "#C0C0C0",
+            "#E0E0E0",
+            "#C8C8C8",
+            "#E8E8E8",
+            "#D0D0D0",
+            "#F0F0F0",
+            "#A8A8A8",
+            "#C4C4C4",        
+            "#E4E4E4",
+        ];
         RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
@@ -2886,7 +2926,7 @@
         if (settingForColourBy == "None") {
             return "White";
         }
-
+ 
         let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
         if (KeyColoursMatches[settingForPalette]) {
             thisColourArray = KeyColoursMatches[settingForPalette];
