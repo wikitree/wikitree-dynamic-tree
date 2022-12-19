@@ -254,6 +254,22 @@ main {
 .fontBold {
   font-weight: bold;
 }
+
+.photoInfoContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.photoInfoContainerEnd {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+}
+
+.flexGrow1 {
+  flex-grow: 1;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {

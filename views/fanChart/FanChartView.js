@@ -1461,6 +1461,11 @@
                 let person = ancestorObject.person; //thePeopleList[ person.id ];
                 // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
                 let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
+                // Calculate which position # (starting lower left and going clockwise around the fan chart) (0 is father's father's line, largest number is mother's mother's line)
+                let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
+                // Calculate how many positions there are in this current Ring of Relatives
+                let numSpotsThisGen = 2 ** thisGenNum;
+
 
                 let borderColor = "rgba(102, 204, 102, .5)";
                 if (person.getGender() == "Male") {
@@ -1475,9 +1480,7 @@
                 let theClr = "none";
 
                 // SETUP the repeatAncestorTracker
-                if (
-                    FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1
-                ) {
+                if (FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
                     console.log(
                         "new repeat ancestor:",
                         FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
@@ -1495,6 +1498,8 @@
                     theClr = "none";
                 }
 
+                // theClr = "orange";
+
                 // console.log(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
 
                 if (thisGenNum >= 9) {
@@ -1507,7 +1512,7 @@
                     } style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
                         </div>
                     `;
-                } else if (thisGenNum >= 8) {
+                } else if (thisGenNum == 8) {
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
@@ -1515,19 +1520,28 @@
                         <div class="name font${font4Name}"   id=nameDivFor${
                         ancestorObject.ahnNum
                     }  style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
+                    <div class="birth vital centered font${font4Info}" id=birthDivFor${
+                        ancestorObject.ahnNum
+                    }></div>
                         </div>
                     `;
-                } else if (thisGenNum >= 7) {
+                } else if (thisGenNum == 7) {
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
                         <div class="name font${font4Name}"  id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
                         person
-                    )}</B></div>
+                    )}</B></div>                    
+                    <div class="birth vital centered font${font4Info}" id=birthDivFor${
+                        ancestorObject.ahnNum
+                    }>${lifespanFull(person)}</div>
+                    <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>                        
                         </div>
                     `;
-                } else if (thisGenNum > 4) {
+                } else if (thisGenNum == 6) {
+                    
+                    // genNum 6 --> Full dates only + first location field (before ,)
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -1547,17 +1561,72 @@
                     if (photoUrl) {
                         photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
-                    return `${photoDiv}
-                    <div  id=wedgeBoxFor${
-                        ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0;  display:inline-block;"> 
-                    
-                    <div class="name centered font${font4Name}" id=nameDivFor${
-                        ancestorObject.ahnNum
-                    }><B>${getSettingsName(person)}</B></div>
-                    <div class="lifespan vital font${font4Info}">${lifespan(person)}</div>
+
+                    let containerClass = "photoInfoContainer";
+                    if (thisPosNum >= numSpotsThisGen/2) {
+                        containerClass += "End";
+                    }
+                    return `
+                        <div  id=wedgeBoxFor${
+                            ancestorObject.ahnNum
+                        } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   "> 
+                        <div class="item">${photoDiv}</div>
+                        <div class="item flexGrow1">
+                            <div class="name centered font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
+                                <B>${getSettingsName(person)}</B>
+                            </div>                           
+                        <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${lifespanFull(person)}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>                        
+                    </div>
                     </div>
                     `;
+                } else if (thisGenNum == 5) {
+                    // genNum 5 ==> Full details (last ring that can hold it, with tweaks needed for 180º)
+                    
+                    let photoUrl = person.getPhotoUrl(75),
+                        treeUrl = window.location.pathname + "?id=" + person.getName();
+
+                    // Use generic gender photos if there is not profile photo available
+                    //console.log(
+                    //     "FanChartView.currentSettings[photo_options_useSilhouette] : ",
+                    //     FanChartView.currentSettings["photo_options_useSilhouette"]
+                    // );
+                    if (!photoUrl) {
+                        if (person.getGender() === "Male") {
+                            photoUrl = "images/icons/male.gif";
+                        } else {
+                            photoUrl = "images/icons/female.gif";
+                        }
+                    }
+                    let photoDiv = "";
+                    if (photoUrl) {
+                        photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                    }
+
+                    let containerClass = "photoInfoContainer";
+                    if (thisPosNum >= numSpotsThisGen/2) {
+                        containerClass += "End";
+                    }
+                    return `
+                        <div  id=wedgeBoxFor${
+                            ancestorObject.ahnNum
+                        } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   "> 
+                        <div class="item">${photoDiv}</div>
+                        <div class="item flexGrow1">
+                            <div class="name centered font${font4Name}" id=nameDivFor${
+                        ancestorObject.ahnNum
+                    }><B>${getSettingsName(person)}</B></div>
+                        <div class="birth vital centered font${font4Info}" id=birthDivFor${
+                        ancestorObject.ahnNum
+                    }>${getSettingsDateAndPlace(person, "B", thisGenNum)}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>
+                        ${getSettingsDateAndPlace(person,"D", thisGenNum)}</div>
+                    </div>
+                    </div>
+                    `;
+                    
+                
+                    
                 } else if (thisGenNum == 4) {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
@@ -1586,7 +1655,13 @@
                     <div class="name centered font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
                     }><B>${getSettingsName(person)}</B></div>
-                    <div class="lifespan vital font${font4Info}">${lifespan(person)}</div>
+                        <div class="birth vital centered font${font4Info}" id=birthDivFor${
+                        ancestorObject.ahnNum
+                    }>${getSettingsDateAndPlace(person, "B")}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
+                        person,
+                        "D"
+                    )}</div>
                     </div>
                     `;
                 } else {
@@ -1616,8 +1691,14 @@
 						  <div class="name centered font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
 						    <b>${getSettingsName(person)}</b>						    
 						  </div>
-						  <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
-						  <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
+						  <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
+                        person,
+                        "B"
+                    )}</div>
+						  <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
+                        person,
+                        "D"
+                    )}</div>
 						</div>
 					</div>
                     `;
@@ -1689,22 +1770,24 @@
                     ) {
                         theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.background = theClr;
-                        console.log(
-                            "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
-                            theClr
-                        );
+                        // console.log(
+                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                        //     theClr
+                        // );
                     } else {
                         theWedgeBox.style.background = getBackgroundColourFor(
                             thisGenNum,
                             thisPosNum,
                             ancestorObject.ahnNum
                         );
-                        console.log(
-                            "in Transform -> NO COLOUR for ancestor ",
-                            ancestorObject.ahnNum,
-                            theWedgeBox.style.background
-                        );
+                        // console.log(
+                        //     "in Transform -> NO COLOUR for ancestor ",
+                        //     ancestorObject.ahnNum,
+                        //     theWedgeBox.style.background
+                        // );
                     }
+
+                    //  theWedgeBox.style.background = 'orange'; // TEMPORARY ONLY WHILE DOING SOME PLACEMENT RECON
                 }
             }
 
@@ -1722,9 +1805,20 @@
                     theInfoBox.parentNode.parentNode.setAttribute("y", -120);
                     theInfoBox.parentNode.parentNode.setAttribute("x", -125);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 250);
-                } else if (ancestorObject.ahnNum > 7 && FanChartView.maxAngle == 180) {
-                    theInfoBox.parentNode.parentNode.setAttribute("x", -140);
-                    theInfoBox.parentNode.parentNode.setAttribute("width", 280);
+                } else if (ancestorObject.ahnNum > 7) {
+                    // console.log(FanChartView.maxAngle,"º - G3 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
+                    
+                    if (FanChartView.maxAngle == 180) {
+                        theInfoBox.parentNode.parentNode.setAttribute("x", -140);
+                        theInfoBox.parentNode.parentNode.setAttribute("width", 280);
+                    } else if (FanChartView.maxAngle == 240) {
+                        theInfoBox.parentNode.parentNode.setAttribute("x", -160);
+                        theInfoBox.parentNode.parentNode.setAttribute("width", 320);
+                    } else if (FanChartView.maxAngle == 360) {
+                        theInfoBox.parentNode.parentNode.setAttribute("x", -180);
+                        theInfoBox.parentNode.parentNode.setAttribute("width", 360);
+                    }
+
                 } else if (thisGenNum == 1 && FanChartView.maxAngle == 180) {
                     theInfoBox.parentNode.parentNode.setAttribute("x", -160);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 320);
@@ -1735,10 +1829,17 @@
                 theInfoBox.parentNode.parentNode.setAttribute("x", -133);
 
                 if (thisGenNum == 4) {
-                    theInfoBox.parentNode.parentNode.setAttribute("y", -80);
+                    theInfoBox.parentNode.parentNode.setAttribute("y", -100);
+                    // console.log(FanChartView.maxAngle, "º - G4 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
                     if (FanChartView.maxAngle == 180) {
-                        theInfoBox.parentNode.parentNode.setAttribute("x", -70);
-                        theInfoBox.parentNode.parentNode.setAttribute("width", 140);
+                        theInfoBox.parentNode.parentNode.setAttribute("x", -85);
+                        theInfoBox.parentNode.parentNode.setAttribute("width", 170);
+                    } else if (FanChartView.maxAngle == 240) {
+                        theInfoBox.parentNode.parentNode.setAttribute("x", -120);
+                        theInfoBox.parentNode.parentNode.setAttribute("width", 240);
+                    } else if (FanChartView.maxAngle == 360) {
+                        theInfoBox.parentNode.parentNode.setAttribute("x", -170);
+                        theInfoBox.parentNode.parentNode.setAttribute("width", 340);
                     }
                 }
             }
@@ -1766,9 +1867,18 @@
                 }
 
                 // IF we are in the outer rims, then we need to adjust / tweak the angle since it uses the baseline of the text as its frame of reference
-                if (thisGenNum > 6) {
-                    let fontRadii = { 7: 9, 8: 13, 9: 15 };
+                if (thisGenNum >= 6) {
+                    let fontRadii = {6:25,  7: 9, 8: 14, 9: 17 };
                     let fontRadius = fontRadii[thisGenNum];
+                     if (thisGenNum == 6 && FanChartView.maxAngle == 360) {
+                         fontRadius = 0;
+                     } else if (thisGenNum == 7 && FanChartView.maxAngle == 240) {
+                         fontRadius = 0;
+                     } else if (thisGenNum == 7 && FanChartView.maxAngle == 360) {
+                         fontRadius = -10;
+                     } else if (thisGenNum == 8 && FanChartView.maxAngle == 360) {
+                         fontRadius = 0;
+                     }
                     let tweakAngle = (Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180) / Math.PI;
                     // console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
@@ -1827,14 +1937,37 @@
 
             let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
             if (thePhotoDIV && thePhotoDIV.style.display == "inline-block") {
+                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                if (theWedgeBox) {
+                    theWedgeBox.style["vertical-align"] = "top";
+                }
                 if (thisGenNum == 6) {
-                    let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
-                    thePhotoDIV.style.height = "66px";
-                    theWedgeBox.style["vertical-align"] = "top";
+                     if (FanChartView.maxAngle == 180) {
+                         thePhotoDIV.style.height = "50px";
+                     } else {
+                         thePhotoDIV.style.height = "60px";
+                     }
                 } else if (thisGenNum == 5) {
-                    let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
-                    thePhotoDIV.style.height = "88px";
-                    theWedgeBox.style["vertical-align"] = "top";
+                    // let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                    // theWedgeBox.style["vertical-align"] = "top";
+                    thePhotoDIV.style.height = "65px";
+                } else if (thisGenNum == 4) {
+                    if (FanChartView.maxAngle == 180) {
+                        thePhotoDIV.style.height = "70px";
+                    } else {
+                        thePhotoDIV.style.height = "80px";
+                    }
+
+                } else if (thisGenNum == 3) {
+                     if (FanChartView.maxAngle == 180) {
+                         thePhotoDIV.style.height = "80px";
+                     } else {
+                         thePhotoDIV.style.height = "85px";
+                     }
+
+                } else if (thisGenNum == 2) {
+                    thePhotoDIV.style.height = "95px";
+
                 }
             }
 
@@ -1860,11 +1993,11 @@
             // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
             let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
             if (theBirthDIV) {
-                theBirthDIV.innerHTML = getSettingsDateAndPlace(d, "B"); // remember that d = ancestorObject.person
+                theBirthDIV.innerHTML = getSettingsDateAndPlace(d, "B", thisGenNum); // remember that d = ancestorObject.person
             }
             let theDeathDIV = document.getElementById("deathDivFor" + ancestorObject.ahnNum);
             if (theDeathDIV) {
-                theDeathDIV.innerHTML = getSettingsDateAndPlace(d, "D"); // remember that d = ancestorObject.person
+                theDeathDIV.innerHTML = getSettingsDateAndPlace(d, "D", thisGenNum); // remember that d = ancestorObject.person
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
@@ -2031,6 +2164,7 @@
         return lifespan;
     }
 
+
     /**
      * Generate text that display when and where the person was born
      */
@@ -2084,42 +2218,115 @@
         }
     }
 
-    /**
-     * Extract the LifeSpan BBBB - DDDD from a person
-     */
-    function getLifeSpan(person) {
-        let theLifeSpan = "";
-        let dateString = person._data.BirthDate;
+    function getCleanDateString(dateString, type="YYYY") {
+        let theCleanDateString = "";
         if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
             var parts = dateString.split("-"),
                 year = parseInt(parts[0], 10);
-            if (year) {
-                theLifeSpan += year;
+            if (year && type == "YYYY") {
+                theCleanDateString += year;
+            } else if (type == "Full") {
+                theCleanDateString += settingsStyleDate(dateString, FanChartView.currentSettings["date_options_dateFormat"]);
             } else {
-                theLifeSpan += "?";
+                theCleanDateString += "?";
             }
         } else {
-            theLifeSpan += "?";
+            theCleanDateString += "?";
         }
+        return theCleanDateString;
+    }
+    /**
+     * Extract the LifeSpan BBBB - DDDD from a person
+     */
+    function getLifeSpan(person, type="YYYY") {
+        let theLifeSpan = "";
+        let theBirth = "";
+        let theDeath = "";
+        let dateString = person._data.BirthDate;
+        theBirth = getCleanDateString(dateString, type);
+        // if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+        //     var parts = dateString.split("-"),
+        //         year = parseInt(parts[0], 10);
+        //     if (year && type == "YYYY") {
+        //         theBirth += year;
+        //     } else if (type == "Full") {
+        //         theBirth += settingsStyleDate(dateString, FanChartView.currentSettings["date_options_dateFormat"]);
+        //     } else {
+        //         theBirth += "?";
+        //     }
+        // } else {
+        //     theBirth += "?";
+        // }
 
         theLifeSpan += " - ";
 
         dateString = person._data.DeathDate;
-        if (dateString == "0000-00-00") {
-            // nothing to see here - person's still alive !  YAY!
-        } else if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
-            var parts = dateString.split("-"),
-                year = parseInt(parts[0], 10);
-            if (year) {
-                theLifeSpan += year;
-            } else {
-                theLifeSpan += "?";
-            }
-        } else {
-            theLifeSpan += "?";
-        }
+        theDeath = getCleanDateString(dateString, type);
+        // if (dateString == "0000-00-00") {
+        //     // nothing to see here - person's still alive !  YAY!
+        // } else if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+        //     var parts = dateString.split("-"),
+        //         year = parseInt(parts[0], 10);
+        //     if (year && type=="YYYY") {
+        //         theDeath += year;
+                
+        //     } else if (type == "Full") {
+        //         theDeath += settingsStyleDate(dateString, FanChartView.currentSettings["date_options_dateFormat"]);
+        //     } else {
+        //         theDeath += "?";
+        //     }
+        // } else {
+        //     theDeath += "?";
+        // }
 
+        if (theBirth > "" && theBirth != "?" && theDeath > "" && theDeath != "?") {
+            theLifeSpan = theBirth + " - " + theDeath;
+        } else if (theBirth > "" && theBirth != "?" ) {
+            theLifeSpan = "b. " + theBirth;
+        } else if (theDeath > "" && theDeath != "?" ) {
+            theLifeSpan = "d. " + theDeath;
+        } else {
+            theLifeSpan = "?";
+        }
+            
         return theLifeSpan;
+    }
+
+        /**
+     * Generate a string representing this person's lifespan 0000 - 0000
+     */
+    function lifespanFull(person) {
+        var lifespan = "";
+            
+
+        if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
+            lifespan = "";
+        } else if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
+            lifespan = getLifeSpan(person, "YYYY") + "<br/>";
+        } else {
+            // let type="Full";
+            if (
+                FanChartView.currentSettings["date_options_showBirth"] &&
+                FanChartView.currentSettings["date_options_showDeath"]
+            ) {
+                lifespan = getLifeSpan(person, "Full") + "<br/>";
+            } else if (FanChartView.currentSettings["date_options_showBirth"] ) {
+                let dateString = person._data.BirthDate;
+                lifespan = getCleanDateString(dateString, "Full");
+                if (lifespan > "" && lifespan != "?") {
+                    lifespan = "b. " + lifespan;
+                }
+            } else if (FanChartView.currentSettings["date_options_showDeath"] ) {
+                let dateString = person._data.DeathDate;
+                lifespan = getCleanDateString(dateString, "Full");
+                if (lifespan > "" && lifespan != "?") {
+                    lifespan = "d. " + lifespan;
+                }
+            }
+        }    
+         
+
+        return lifespan;
     }
 
     /**
@@ -2233,7 +2440,402 @@
     /**
      * Return the date as required by the Settings options.
      */
-    function getSettingsDateAndPlace(person, dateType) {
+    function getSettingsDateAndPlace(person, dateType, genNum = 0) {
+        let datePlaceString = "";
+        let thisDate = "";
+        let thisPlaceSimple = "";   
+        let thisPlaceMulti = "";   
+        let thisLifespan = "";     
+
+        let numLinesArrayObj = {
+            180: [6, 6, 6, 6, 5, 3, 2, 1, 1, 1],
+            240: [6, 6, 6, 6, 6, 5, 3, 2, 1, 1, 1],
+            360: [6, 6, 6, 6, 6, 6, 5, 3, 2, 1, 1, 1]
+        };
+        let numLinesMax = numLinesArrayObj[FanChartView.maxAngle][genNum];
+
+        if (numLinesMax == 1) {
+            return "";
+        }
+
+        let hasDeathDate = false; 
+        if (person._data.DeathDate) {
+            if (person._data.DeathDate == "0000-00-00") {
+                hasDeathDate = false;
+            } else {
+                hasDeathDate = true;
+            }
+        }
+
+        let hasDeathPlace = false;
+         if (person._data.DeathLocation) {
+             if (person._data.DeathLocation == "") {
+                 hasDeathPlace = false;
+             } else {
+                 hasDeathPlace = true;
+             }
+         }
+
+        let hasBirthDate = false; 
+        if (person._data.BirthDate) {
+            if (person._data.BirthDate == "0000-00-00") {
+                hasBirthDate = false;
+            } else {
+                hasBirthDate = true;
+            }
+        }
+
+        let hasBirthPlace = false;
+         if (person._data.BirthLocation) {
+             if (person._data.BirthLocation == "") {
+                 hasBirthPlace = false;
+             } else {
+                 hasBirthPlace = true;
+             }
+         }
+
+        if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
+            thisLifespan = getLifeSpan(person);            
+        } else {
+            thisLifespan = lifespanFull(person);
+        }
+        if (numLinesMax == 2 && thisLifespan > "" && dateType == "B") {
+            return thisLifespan;
+        }
+
+        if (dateType == "B") {
+            if (FanChartView.currentSettings["date_options_showBirth"] == true) {
+                thisDate = settingsStyleDate(
+                    person._data.BirthDate,
+                    FanChartView.currentSettings["date_options_dateFormat"]
+                );
+                if (FanChartView.currentSettings["date_options_dateTypes"] != "detailed") {
+                    thisDate = "";
+                }
+            }
+
+            if (
+                FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                FanChartView.currentSettings["place_options_showBirth"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    person.getBirthLocation(),
+                    FanChartView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }
+  
+            
+        } else if (dateType == "D") {
+            if (person._data.DeathDate == "0000-00-00") {
+                thisDate = "";
+            }
+            if (FanChartView.currentSettings["date_options_showDeath"] == true) {
+                thisDate = settingsStyleDate(
+                    person._data.DeathDate,
+                    FanChartView.currentSettings["date_options_dateFormat"]
+                );
+                if (FanChartView.currentSettings["date_options_dateTypes"] != "detailed") {
+                    thisDate = "";
+                }
+            }
+            if (
+                FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                FanChartView.currentSettings["place_options_showDeath"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    person.getDeathLocation(),
+                    FanChartView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }        
+        
+        }
+
+        if (thisPlace > "") {
+            thisPlaceMulti = thisPlace;
+
+            if (thisPlace.indexOf(",") > -1) {
+                // we're looking at a compound location, and an actual date, so let's break it up and put the location on its own line.
+                thisPlaceSimple = thisPlace.substring(0, thisPlace.indexOf(","));
+            } else {
+                thisPlaceSimple = thisPlace;
+            }
+        }
+
+
+        if (thisDate > "" || thisPlace > "") {
+            if (thisDate > "") {
+                datePlaceString += thisDate;
+            }
+            // if (thisDate > "" && thisPlace > "") {
+            //     datePlaceString += ", ";  // now handled inside ifs above
+            // }
+            if (thisPlace > "" && genNum < 5) {
+                datePlaceString += thisPlace;
+            } else if (thisPlace > "" && genNum == 5) {
+                if (FanChartView.maxAngle == 180) {
+                    // nothing to add here - we're too cramped to add a place to the date
+                } else if (FanChartView.maxAngle == 360) {
+                    // use the full meal deal, as per the settings
+                    datePlaceString += thisPlace;
+                } else if (thisPlace.indexOf(",") > 2) {
+                    datePlaceString += thisPlace.substring(0, thisPlace.indexOf(",", 2));
+                } else {
+                    datePlaceString += thisPlace;
+                }
+            
+            }
+
+        }
+
+        if (numLinesMax == 2 && dateType == "B") {
+            // LifeSpan or Single Date only
+            if (thisLifespan > "") {
+                return thisLifespan;
+            } else if (thisPlaceSimple > "") {
+                return "b. " + thisPlaceSimple;
+            } else if (hasDeathPlace == true) {
+                if (
+                    FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                    FanChartView.currentSettings["place_options_showDeath"] == true
+                ) {
+                    thisPlace = settingsStyleLocation(
+                        person.getDeathLocation(),
+                        FanChartView.currentSettings["place_options_locationFormatBD"]
+                    );
+                    if (thisPlace > "") {
+                        if (thisPlace.indexOf(",") > -1) {
+                            return  "d. " + thisPlace.substring(0, thisPlace.indexOf(","));
+                        } else {
+                            return  "d. " + thisPlace;
+                        }
+                    }
+                }
+                return "";
+            }
+
+        } else if (numLinesMax == 3) {
+            // 2 Dates, or 1 Date + 1 Simple Loc , or 2 Simple Locs
+            let numLocSpotsAvailable = 0;
+
+            if(FanChartView.currentSettings["date_options_dateTypes"] == "none") {
+                numLocSpotsAvailable = 2;
+                if (thisPlaceSimple > "") {
+                    return dateType.toLowerCase() + ". " + thisPlaceSimple;
+                } else {
+                    return "";
+                }
+
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
+                numLocSpotsAvailable = 1;
+                if (thisLifespan > ""){
+                    datePlaceString = thisLifespan + "<br/>";
+                } else {
+                    datePlaceString = "";
+                }
+
+                if (thisPlaceSimple > "") {
+                    datePlaceString +=  "b. " + thisPlaceSimple;
+                } else if (hasDeathPlace == true) {
+                    if (
+                        FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                        FanChartView.currentSettings["place_options_showDeath"] == true
+                    ) {
+                        thisPlace = settingsStyleLocation(
+                            person.getDeathLocation(),
+                            FanChartView.currentSettings["place_options_locationFormatBD"]
+                        );
+                        if (thisPlace > ""){
+                            if (thisPlace.indexOf(",") > -1){
+                                datePlaceString += "d. " + thisPlace.substring(0, thisPlace.indexOf(","));
+                            } else {
+                                datePlaceString += "d. " + thisPlace ;
+                            }
+                        }
+                    }
+
+                }
+                return datePlaceString;
+
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed" && dateType == "B") {
+                hasBirthDate = hasBirthDate && FanChartView.currentSettings["date_options_showBirth"];
+                hasDeathDate = ( hasDeathDate && FanChartView.currentSettings["date_options_showDeath"]) ;
+                numLocSpotsAvailable = 0;
+                datePlaceString = "";
+                console.log(
+                    "DatePlaceString: numLocsSPots = 3 / Detailed BIRTH : ",
+                    "thisDate:" + thisDate,
+                    "hasDeathDate:" + hasDeathDate,
+                    "thisPlaceSimple:" + thisPlaceSimple,
+                    "thisPlaceSimple:" + thisPlaceSimple,
+                        "locationTypes:" + FanChartView.currentSettings["place_options_locationTypes"],
+                        "showDeath:" + FanChartView.currentSettings["place_options_showDeath"],
+                        person._data.FirstName
+                );
+                if (
+                    FanChartView.currentSettings["date_options_showBirth"] == false &&
+                    hasDeathDate == true &&     
+                    hasDeathPlace == true
+                ) {
+                    return "";
+                } else if (thisDate > "" && hasDeathDate) {
+                    return "b. " + thisDate;
+                } else if (thisDate > "" && hasDeathDate == false) {
+                    return "b. " + thisDate + "<br/>" + thisPlaceSimple;
+                } else if (
+                    thisDate > "" &&
+                    (FanChartView.currentSettings["place_options_locationTypes"] == "none" ||
+                        FanChartView.currentSettings["place_options_showDeath"] == false)
+                ) {
+                    return "b. " + thisDate + "<br/>" + thisPlaceSimple;
+                } else if (thisDate == "" && thisPlaceSimple > "") {
+                    return "b. " + thisPlaceSimple;
+                } else {
+                    return "";
+                }
+
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed" && dateType == "D") {
+                hasBirthDate = hasBirthDate && FanChartView.currentSettings["date_options_showBirth"];
+                hasDeathDate = hasDeathDate && FanChartView.currentSettings["date_options_showDeath"];
+                numLocSpotsAvailable = 0;
+                datePlaceString = "";
+                if (FanChartView.currentSettings["date_options_showDeath"] == false) {
+                    return "";
+                } else if (thisDate > "" && FanChartView.currentSettings["date_options_showBirth"] == false) {
+                    return "d. " + thisDate + "<br/>" + thisPlaceSimple;
+                } else if (thisDate > "" && hasBirthDate) {
+                    return "d. " + thisDate;
+                } else if (thisDate > "" && hasBirthDate == false && hasBirthPlace == false) {
+                    return "d. " + thisDate + "<br/>" + thisPlaceSimple;
+                } else if (thisDate > "") {
+                    return "d. " + thisDate;
+                } else if (thisDate == "" && thisPlaceSimple > "") {
+                    return "d. " + thisPlaceSimple;
+                } else {
+                    return "";
+                }
+
+
+            }
+
+        } else if (numLinesMax == 5) {
+            // 2 Dates + 2 Simple Locs, or 1 Date + 1 Multi Loc
+            datePlaceString = "";
+            if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan")  {
+                if (dateType == "B" && thisLifespan > "") {
+                    datePlaceString = thisLifespan + "<br/>";
+                }
+                if (!hasBirthDate && !hasDeathDate) {
+                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                } else if ( thisPlaceSimple > "" ) {
+                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                }
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed" ) {
+                if (thisDate > ""){
+                    datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceSimple;
+                } else if (thisPlaceSimple > "") {
+                    datePlaceString = dateType.toLowerCase() + ". " + thisPlaceSimple;
+                }
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none" ) {
+                 if (thisPlaceMulti > "") {
+                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                 }
+            }
+            return datePlaceString;
+        } else if (numLinesMax == 6) {
+            // Full Meal Deal
+            datePlaceString = "";
+             if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
+                 if (dateType == "B" && thisLifespan > "") {
+                     datePlaceString = thisLifespan + "<br/>";
+                 }
+                 if (thisPlaceMulti > "") {
+                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                 }
+             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed") {
+                 if (thisDate > "") {
+                     datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceMulti;
+                 } else if (thisPlaceMulti > "") {
+                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                 }
+             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
+                 if (thisPlaceMulti > "") {
+                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                 }
+             }
+             return datePlaceString;
+        } else {
+            return "";
+        }
+
+
+
+        // if (genNum == 6) {
+        //     if (FanChartView.maxAngle == 180) {
+        //         if (dateType == "D") {
+        //             datePlaceString = "";
+        //         } else if (dateType == "B") {
+        //             datePlaceString = lifespanFull(person);
+        //         }
+        //         // nothing to add here - we're too cramped to add a place to the date
+        //     } else if (FanChartView.maxAngle == 360) {
+        //         if (thisPlace.indexOf(",") > 2) {
+        //             datePlaceString += thisPlace.substring(0, thisPlace.indexOf(",", 2));
+        //         } else {
+        //             datePlaceString += thisPlace;
+        //         }
+        //     }
+        // } else if (genNum == 7) {
+        //     if (FanChartView.maxAngle == 180) {
+        //         datePlaceString = "";
+        //         // nothing to add here - we're too cramped to add a place to the date
+        //     } else if (FanChartView.maxAngle == 240) {
+        //         if (dateType == "D") {
+        //             datePlaceString = "";
+        //         } else if (dateType == "B") {
+        //             datePlaceString = lifespanFull(person);
+        //         }
+        //     } else if (FanChartView.maxAngle == 360) {
+        //         // datePlaceString = lifespanFull(person);
+        //     }
+        // } else if (genNum == 8) {
+        //     if (FanChartView.maxAngle < 360) {
+        //         datePlaceString = "";
+                
+        //         // nothing to add here - we're too cramped to add a place to the date
+        //     } else  {
+        //         datePlaceString = lifespanFull(person);
+                
+        //     }
+        // }
+
+        console.log("WARNING WARNING WILL ROBINSON ... RETURN DATE PLACE STRING HAS GONE PAST!");
+
+        // remove leading commas (when it's locations only)
+        let origString = datePlaceString;
+        datePlaceString = datePlaceString.replace("b. ,", "b. ").replace("d. ,", "d. ").replace("b. <br/>", "b. ").replace("d. <br/>", "d. ");
+        if (origString != datePlaceString) {
+            // console.log("REPLACED ", origString," with ", datePlaceString);
+        }
+        // check for empty b. or d. entries
+        if (
+            datePlaceString == "b. " ||
+            datePlaceString == "b." ||
+            datePlaceString == "b. <br/>" ||
+            datePlaceString == "d. " ||
+            datePlaceString == "d." 
+            
+        ) {
+            datePlaceString = "";
+        } else if (datePlaceString.indexOf("<br/>b.") > 1 && (datePlaceString.length - datePlaceString.indexOf("<br/>b.")) < 10) {
+            datePlaceString = datePlaceString.replace("<br/>b.","");
+        }
+            return datePlaceString;
+    }
+    function getSettingsDateAndPlaceWorking(person, dateType, genNum = 0) {
         let datePlaceString = "";
         let thisDate = "";
         let thisPlace = "";
@@ -2250,21 +2852,28 @@
                 if (FanChartView.currentSettings["date_options_dateTypes"] != "detailed") {
                     thisDate = "";
                 }
+            }
 
-                if (
-                    FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
-                    FanChartView.currentSettings["place_options_showBirth"] == true
-                ) {
-                    thisPlace = settingsStyleLocation(
-                        person.getBirthLocation(),
-                        FanChartView.currentSettings["place_options_locationFormatBD"]
-                    );
+            if (
+                FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                FanChartView.currentSettings["place_options_showBirth"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    person.getBirthLocation(),
+                    FanChartView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }
+
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "b. ";
+
+                if (thisPlace.indexOf(",") > -1) {
+                    // we're looking at a compound location, and an actual date, so let's break it up and put the location on its own line.
+                    thisPlace = "<br/>" + thisPlace;
                 } else {
-                    thisPlace = "";
-                }
-
-                if (thisDate > "" || thisPlace > "") {
-                    datePlaceString += "b. ";
+                    thisPlace = ", " + thisPlace;
                 }
             }
         } else if (dateType == "D") {
@@ -2279,19 +2888,25 @@
                 if (FanChartView.currentSettings["date_options_dateTypes"] != "detailed") {
                     thisDate = "";
                 }
-                if (
-                    FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
-                    FanChartView.currentSettings["place_options_showDeath"] == true
-                ) {
-                    thisPlace = settingsStyleLocation(
-                        person.getDeathLocation(),
-                        FanChartView.currentSettings["place_options_locationFormatBD"]
-                    );
+            }
+            if (
+                FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                FanChartView.currentSettings["place_options_showDeath"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    person.getDeathLocation(),
+                    FanChartView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "d. ";
+                if (thisPlace.indexOf(",") > -1) {
+                    // we're looking at a compound location, and an actual date, so let's break it up and put the location on its own line.
+                    thisPlace = "<br/>" + thisPlace;
                 } else {
-                    thisPlace = "";
-                }
-                if (thisDate > "" || thisPlace > "") {
-                    datePlaceString += "d. ";
+                    thisPlace = ", " + thisPlace;
                 }
             }
         }
@@ -2299,14 +2914,88 @@
             if (thisDate > "") {
                 datePlaceString += thisDate;
             }
-            if (thisDate > "" && thisPlace > "") {
-                datePlaceString += ", ";
-            }
-            if (thisPlace > "") {
+            // if (thisDate > "" && thisPlace > "") {
+            //     datePlaceString += ", ";  // now handled inside ifs above
+            // }
+            if (thisPlace > "" && genNum < 5) {
                 datePlaceString += thisPlace;
+            } else if (thisPlace > "" && genNum == 5) {
+                if (FanChartView.maxAngle == 180) {
+                    // nothing to add here - we're too cramped to add a place to the date
+                } else if (FanChartView.maxAngle == 360) {
+                    // use the full meal deal, as per the settings
+                    datePlaceString += thisPlace;
+                } else if (thisPlace.indexOf(",") > 2) {
+                    datePlaceString += thisPlace.substring(0, thisPlace.indexOf(",", 2));
+                } else {
+                    datePlaceString += thisPlace;
+                }
             }
         }
 
+        if (genNum == 6) {
+            if (FanChartView.maxAngle == 180) {
+                if (dateType == "D") {
+                    datePlaceString = "";
+                } else if (dateType == "B") {
+                    datePlaceString = lifespanFull(person);
+                }
+                // nothing to add here - we're too cramped to add a place to the date
+            } else if (FanChartView.maxAngle == 360) {
+                if (thisPlace.indexOf(",") > 2) {
+                    datePlaceString += thisPlace.substring(0, thisPlace.indexOf(",", 2));
+                } else {
+                    datePlaceString += thisPlace;
+                }
+            }
+        } else if (genNum == 7) {
+            if (FanChartView.maxAngle == 180) {
+                datePlaceString = "";
+                // nothing to add here - we're too cramped to add a place to the date
+            } else if (FanChartView.maxAngle == 240) {
+                if (dateType == "D") {
+                    datePlaceString = "";
+                } else if (dateType == "B") {
+                    datePlaceString = lifespanFull(person);
+                }
+            } else if (FanChartView.maxAngle == 360) {
+                // datePlaceString = lifespanFull(person);
+            }
+        } else if (genNum == 8) {
+            if (FanChartView.maxAngle < 360) {
+                datePlaceString = "";
+
+                // nothing to add here - we're too cramped to add a place to the date
+            } else {
+                datePlaceString = lifespanFull(person);
+            }
+        }
+
+        // remove leading commas (when it's locations only)
+        let origString = datePlaceString;
+        datePlaceString = datePlaceString
+            .replace("b. ,", "b. ")
+            .replace("d. ,", "d. ")
+            .replace("b. <br/>", "b. ")
+            .replace("d. <br/>", "d. ");
+        if (origString != datePlaceString) {
+            // console.log("REPLACED ", origString," with ", datePlaceString);
+        }
+        // check for empty b. or d. entries
+        if (
+            datePlaceString == "b. " ||
+            datePlaceString == "b." ||
+            datePlaceString == "b. <br/>" ||
+            datePlaceString == "d. " ||
+            datePlaceString == "d."
+        ) {
+            datePlaceString = "";
+        } else if (
+            datePlaceString.indexOf("<br/>b.") > 1 &&
+            datePlaceString.length - datePlaceString.indexOf("<br/>b.") < 10
+        ) {
+            datePlaceString = datePlaceString.replace("<br/>b.", "");
+        }
         return datePlaceString;
     }
 
