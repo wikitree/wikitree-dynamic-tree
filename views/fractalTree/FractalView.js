@@ -135,7 +135,8 @@
                     label: "General",
                     hideSelect: true,
                     subsections: [{ name: "FractalGeneral", label: "General settings" }],
-                    comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                    comment:
+                        "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
                 },
                 {
                     name: "names",
@@ -455,12 +456,16 @@
                             type: "select",
                             label: "Colour Palette",
                             values: [
-                                { value: "Greys", text: "Shades of Grey" },
-                                { value: "Reds", text: "Shades of Reds" },
-                                { value: "Greens", text: "Shades of Greens" },
-                                { value: "Blues", text: "Shades or Blues" },
                                 { value: "Pastels", text: "Pastel colours" },
-                                { value: "Rainbow", text: "Traditional Rainbow of colours" },
+                                { value: "Greys", text: "Shades of Grey" },
+                                { value: "Reds", text: "Shades of Red" },
+                                { value: "Greens", text: "Shades of Green" },
+                                { value: "Blues", text: "Shades or Blue" },
+                                { value: "AltGreys", text: "Alternating Greys" },
+                                { value: "AltReds", text: "Alternating Reds" },
+                                { value: "AltBlues", text: "Alternating Blues" },
+                                { value: "AltGreens", text: "Alternating Greens" },
+                                { value: "Rainbow", text: "Rainbow colours" },
                                 // { value: "Ancestry", text: "Ancestry type colours" },
                                 // { value: "MyHeritage", text: "My Heritage type colours" },
                                 { value: "random", text: "Psychadelic" },
@@ -2678,7 +2683,7 @@
         }
     }
     
-    function getBackgroundColourFor(gen, pos, ahnNum) {
+    function getBackgroundColourForB4(gen, pos, ahnNum) {
         PastelsArray = [
             "#ECFFEF",
             "#CCEFEC",
@@ -2816,5 +2821,504 @@
 
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
+
+    function getBackgroundColourFor(gen, pos, ahnNum) {
+            PastelsArray = [
+                "#ECFFEF",
+                "#CCEFEC",
+                "#CCFFCC",
+                "#FFFFCC",
+                "#FFE5CC",
+                "#FFCCCC",
+                "#FFCCE5",
+                "#FFCCFF",
+                "#E5CCFF",
+                "#D5CCEF",
+                "#E6E6FA",
+                "#FFB6C1",
+                "#F5DEB3",
+                "#FFFACD",
+                "#C5ECCF",
+                "#F0FFF0",
+                "#FDF5E6",
+                "#FFE4E1",
+            ];
+            RainbowArray = [
+                "#FFFACD",
+                "Red",
+                "Orange",
+                "Yellow",
+                "SpringGreen",
+                "SkyBlue",
+                "Orchid",
+                "Violet",
+                "DeepPink",
+                "Pink",
+                "MistyRose",
+                "OrangeRed",
+                "Gold",
+                "GreenYellow",
+                "Cyan",
+                "Plum",
+                "Magenta",
+                "#F83BB7",
+                "#FF45A3",
+                "PaleVioletRed",
+                "Pink",
+            ]; // replaced some colours
+            RainbowArrayLong = [
+                "#FFFACD",
+                "Red",
+                "OrangeRed",
+                "Orange",
+                "Gold",
+                "Yellow",
+                "GreenYellow",
+                "SpringGreen",
+                "Cyan",
+                "SkyBlue",
+                "#B898E0",
+                "Orchid",
+                "Magenta",
+                "Violet",
+                "#F83BB7",
+                "DeepPink",
+                "#FF45A3",
+                "HotPink",
+                "#FF45A3",
+                "DeepPink",
+                "Violet",
+                "Magenta",
+                "Orchid",
+                "#B898E0",
+                "SkyBlue",
+                "Cyan",
+                "SpringGreen",
+                "GreenYellow",
+                "Yellow",
+                "Gold",
+                "Orange",
+                "OrangeRed",
+                "Red",
+            ]; // replaced some colours
+            Rainbow8 = [
+                "Red",
+                "Orange",
+                "Yellow",
+                "SpringGreen",
+                "SkyBlue",
+                "Orchid",
+                "Violet",
+                "DeepPink",
+                "HotPink",
+                "MistyRose",
+            ];
+            RainbowTweens = ["OrangeRed", "Gold", "GreenYellow", "Cyan", "Plum", "Magenta", "PaleVioletRed", "Pink"];
+
+            GreysArrayOrig = [
+                "#ACACAC",
+                "#B0B0B0",
+                "#B4B4B4",
+                "#B8B8B8",
+                "#BCBCBC",
+                "#C0C0C0",
+                "#C4C4C4",
+                "#C8C8C8",
+                "#CCCCCC",
+                "#D0D0D0",
+                "#D4D4D4",
+                "#D8D8D8",
+                "#DCDCDC",
+                "#E0E0E0",
+                "#E4E4E4",
+                "#E8E8E8",
+                "#ECECEC",
+                "#F0F0F0",
+            ];
+            AltGreysArray = [
+                "#F0F0F0",
+                "#C5C5C5",
+                "#EAEAEA",
+                "#C0C0C0",
+                "#E5E5E5",
+                "#BABABA",
+                "#E0E0E0",
+                "#B5B5B5",
+                "#DADADA",
+                "#B0B0B0",
+                "#D5D5D5",
+                "#AAAAAA",
+                "#D0D0D0",
+                "#A5A5A5",
+                "#CACACA",
+                "#A0A0A0",
+                "#C5C5C5",
+                "#9A9A9A",
+                "#C5C5C5",
+                "#A0A0A0",
+                "#CACACA",
+                "#A5A5A5",
+                "#D0D0D0",
+                "#AAAAAA",
+                "#D5D5D5",
+                "#B0B0B0",
+                "#DADADA",
+                "#B5B5B5",
+                "#E0E0E0",
+                "#BABABA",
+                "#E5E5E5",
+                "#C0C0C0",
+                "#EAEAEA",
+                "#C5C5C5",
+                "#F0F0F0",
+            ];
+            GreysArray = [
+                "#F0F0F0",
+                "#EAEAEA",
+                "#E5E5E5",
+                "#E0E0E0",
+                "#DADADA",
+                "#D5D5D5",
+                "#D0D0D0",
+                "#CACACA",
+                "#C5C5C5",
+                "#C0C0C0",
+                "#BABABA",
+                "#B5B5B5",
+                "#B0B0B0",
+                "#AAAAAA",
+                "#A5A5A5",
+                "#A0A0A0",
+                "#9A9A9A",
+                "#A0A0A0",
+                "#A5A5A5",
+                "#AAAAAA",
+                "#B0B0B0",
+                "#B5B5B5",
+                "#BABABA",
+                "#C0C0C0",
+                "#C5C5C5",
+                "#CACACA",
+                "#D0D0D0",
+                "#D5D5D5",
+                "#DADADA",
+                "#E0E0E0",
+                "#E5E5E5",
+                "#EAEAEA",
+                "#F0F0F0",
+            ];
+            RedsArray = [
+                "#FFF8F0",
+                "#FFF0F8",
+                "#FFF4F4",
+                "#FFF0F0",
+                "#FFE8E0",
+                "#FFE0E8",
+                "#FFE4E4",
+                "#FFE0E0",
+                "#FFD8D0",
+                "#FFD0D8",
+                "#FFD4D4",
+                "#FFD0D0",
+                "#FFC8C0",
+                "#FFC0C8",
+                "#FFC4C4",
+                "#FFC0C0",
+                "#FFB0B0",
+                "#FFA0A0",
+                "#FFB0B0",
+                "#FFC0C0",
+                "#FFC4C4",
+                "#FFC0C8",
+                "#FFC8C0",
+                "#FFD0D0",
+                "#FFD4D4",
+                "#FFD0D8",
+                "#FFD8D0",
+                "#FFE0E0",
+                "#FFE4E4",
+                "#FFE0E8",
+                "#FFE8E0",
+                "#FFF0F0",
+                "#FFF4F4",
+                "#FFF0F8",
+                "#FFF8F0",
+            ];
+            BluesArray = [
+                "#F8F0FF",
+                "#F0F8FF",
+                "#F4F4FF",
+                "#F0F0FF",
+                "#E8E0FF",
+                "#E0E8FF",
+                "#E4E4FF",
+                "#E0E0FF",
+                "#D8D0FF",
+                "#D0D8FF",
+                "#D4D4FF",
+                "#D0D0FF",
+                "#C8C0FF",
+                "#C0C8FF",
+                "#C4C4FF",
+                "#C0C0FF",
+                "#B0B0FF",
+                "#A0A0FF",
+
+                "#B0B0FF",
+                "#C0C0FF",
+                "#C4C4FF",
+                "#C0C8FF",
+                "#C8C0FF",
+                "#D0D0FF",
+                "#D4D4FF",
+                "#D0D8FF",
+                "#D8D0FF",
+                "#E0E0FF",
+                "#E4E4FF",
+                "#E0E8FF",
+                "#E8E0FF",
+                "#F0F0FF",
+                "#F4F4FF",
+                "#F0F8FF",
+                "#F8F0FF",
+            ];
+            GreensArray = [
+                "#F8FFF0",
+                "#F0FFF8",
+                "#F4FFF4",
+                "#F0FFF0",
+                "#E8FFE0",
+                "#E0FFE8",
+                "#E4FFE4",
+                "#E0FFE0",
+                "#D8FFD0",
+                "#D0FFD8",
+                "#D4FFD4",
+                "#D0FFD0",
+                "#C8FFC0",
+                "#C0FFC8",
+                "#C4FFC4",
+                "#C0FFC0",
+                "#B0FFB0",
+                "#A0FFA0",
+
+                "#B0FFB0",
+                "#C0FFC0",
+                "#C4FFC4",
+                "#C0FFC8",
+                "#C8FFC0",
+                "#D0FFD0",
+                "#D4FFD4",
+                "#D0FFD8",
+                "#D8FFD0",
+                "#E0FFE0",
+                "#E4FFE4",
+                "#E0FFE8",
+                "#E8FFE0",
+                "#F0FFF0",
+                "#F4FFF4",
+                "#F0FFF8",
+                "#F8FFF0",
+            ];
+            let AltRedsArray = [
+                "#FFF8F0",
+                "#FFD8D0",
+                "#FFF0F8",
+                "#FFD0D8",
+                "#FFF4F4",
+                "#FFD4D4",
+                "#FFF0F0",
+                "#FFD0D0",
+                "#FFE8E0",
+                "#FFC8C0",
+                "#FFE0E8",
+                "#FFC0C8",
+                "#FFE4E4",
+                "#FFC4C4",
+                "#FFE0E0",
+                "#FFC0C0",
+                "#FFEAEA",
+                "#FFA0A0",
+
+                "#FFEAEA",
+                "#FFC0C0",
+                "#FFE0E0",
+                "#FFC4C4",
+                "#FFE4E4",
+                "#FFC0C8",
+                "#FFE0E8",
+                "#FFC8C0",
+                "#FFE8E0",
+                "#FFD0D0",
+                "#FFF0F0",
+                "#FFD4D4",
+                "#FFF4F4",
+                "#FFD0D8",
+                "#FFF0F8",
+                "#FFD8D0",
+                "#F0F8FF",
+            ];
+            let AltGreensArray = [
+                "#F8FFF0",
+                "#D8FFD0",
+                "#F0FFF8",
+                "#D0FFD8",
+                "#F4FFF4",
+                "#D4FFD4",
+                "#F0FFF0",
+                "#D0FFD0",
+                "#E8FFE0",
+                "#C8FFC0",
+                "#E0FFE8",
+                "#C0FFC8",
+                "#E4FFE4",
+                "#C4FFC4",
+                "#E0FFE0",
+                "#C0FFC0",
+                "#EAFFEA",
+                "#A0FFA0",
+
+                "#EAFFEA",
+                "#C0FFC0",
+                "#E0FFE0",
+                "#C4FFC4",
+                "#E4FFE4",
+                "#C0FFC8",
+                "#E0FFE8",
+                "#C8FFC0",
+                "#E8FFE0",
+                "#D0FFD0",
+                "#F0FFF0",
+                "#D4FFD4",
+                "#F4FFF4",
+                "#D0FFD8",
+                "#F0FFF8",
+                "#D8FFD0",
+                "#F8F0FF",
+            ];
+            let AltBluesArray = [
+                "#F8F0FF",
+                "#D8D0FF",
+                "#F0F8FF",
+                "#D0D8FF",
+                "#F4F4FF",
+                "#D4D4FF",
+                "#F0F0FF",
+                "#D0D0FF",
+                "#E8E0FF",
+                "#C8C0FF",
+                "#E0E8FF",
+                "#C0C8FF",
+                "#E4E4FF",
+                "#C4C4FF",
+                "#E0E0FF",
+                "#C0C0FF",
+                "#EAEAFF",
+                "#A0A0FF",
+
+                "#EAEAFF",
+                "#C0C0FF",
+                "#E0E0FF",
+                "#C4C4FF",
+                "#E4E4FF",
+                "#C0C8FF",
+                "#E0E8FF",
+                "#C8C0FF",
+                "#E8E0FF",
+                "#D0D0FF",
+                "#F0F0FF",
+                "#D4D4FF",
+                "#F4F4FF",
+                "#D0D8FF",
+                "#F0F8FF",
+                "#D8D0FF",
+                "#F8FFFF",
+            ];
+            let AllColoursArrays = [
+                ColourArray,
+                GreysArray,
+                RedsArray,
+                GreensArray,
+                BluesArray,
+                PastelsArray,
+                RainbowArray,
+                AltGreysArray,
+                AltGreensArray,
+            ];
+            let KeyColoursMatches = {
+                random: ColourArray,
+                Greys: GreysArray,
+                Reds: RedsArray,
+                Greens: GreensArray,
+                Blues: BluesArray,
+                AltGreys: AltGreysArray,
+                AltGreens: AltGreensArray,
+                AltReds: AltRedsArray,
+                AltBlues: AltBluesArray,
+                Pastels: PastelsArray,
+                Rainbow: RainbowArray,
+            };
+
+            // start out with a random palette selected, so, if nothing else, at least there's something
+            let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
+
+            // GET the settings that determine what the colouring should look like (if at all)
+            let settingForColourBy = FractalView.currentSettings["colour_options_colourBy"];
+            if (settingForColourBy == "None") {
+                return "White";
+            }
+
+            let settingForPalette = FractalView.currentSettings["colour_options_palette"];
+            if (KeyColoursMatches[settingForPalette]) {
+                thisColourArray = KeyColoursMatches[settingForPalette];
+            }
+
+            let overRideByHighlight = false; //
+            if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+                overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
+            }
+            if (overRideByHighlight == true) {
+                return "yellow";
+            }
+
+            if (ahnNum == 1) {
+                return thisColourArray[0];
+            }
+
+            let numThisGen = 2 ** gen;
+
+            if (settingForColourBy == "Gender") {
+                return thisColourArray[1 + (ahnNum % 2)];
+            } else if (settingForColourBy == "Generation") {
+                if (settingForPalette == "Rainbow") {
+                    for (var i = 0; i < FractalView.numGens2Display; i++) {
+                        thisColourArray[FractalView.numGens2Display - i] = Rainbow8[i];
+                    }
+                }
+                return thisColourArray[1 + (gen % thisColourArray.length)];
+            } else if (settingForColourBy == "Grand") {
+                return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
+            } else if (settingForColourBy == "GGrand") {
+                return thisColourArray[1 + (Math.floor((8 * pos) / numThisGen) % thisColourArray.length)];
+            } else if (settingForColourBy == "GGGrand") {
+                if (settingForPalette == "Rainbow") {
+                    thisColourArray = RainbowArrayLong;
+                }
+                return thisColourArray[1 + (Math.floor((16 * pos) / numThisGen) % thisColourArray.length)];
+            } else if (settingForColourBy == "GGGGrand") {
+                if (settingForPalette == "Rainbow") {
+                    thisColourArray = RainbowArrayLong;
+                }
+                return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
+            } else if (settingForColourBy == "Town") {
+            } else if (settingForColourBy == "Region") {
+            } else if (settingForColourBy == "Country") {
+            } else if (settingForColourBy == "random") {
+                return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
+            }
+
+            return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
+        }
+
 
 })();
