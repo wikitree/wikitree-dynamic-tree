@@ -1,10 +1,15 @@
 /*
  * We use the D3.js library to render the graph.
  */
+
+import { PeopleCache } from "./people_cache.js";
+import { CacheLoader } from "./cache_loader.js";
+import { CachedPerson } from "./cached_person.js";
+
 window.CouplesTreeView = class CouplesTreeView extends View {
     constructor() {
         super();
-        CachedPerson.init(new PeopleCache(new CacheLoader()), localTesting);
+        CachedPerson.init(new PeopleCache(new CacheLoader()));
     }
 
     meta() {
@@ -1089,7 +1094,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 return;
             }
 
-            if (localTesting) {
+            if (addTestInfo) {
                 condLog(`${person.toString()}`, person);
             }
 
@@ -1270,7 +1275,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             death = person.getDeathDate().substr(0, 4);
         }
 
-        let lifespan = localTesting ? `${person.getId()}:` : "";
+        let lifespan = addTestInfo ? `${person.getId()}:` : "";
         if (birth && birth != "0000") {
             lifespan += birth;
         }
@@ -1387,6 +1392,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             middleInitials = person._data.MiddleInitial;
         }
 
+        let nameToReturn;
         if (hasSuffix) {
             // Try <first name> <middle initials> <last name> <suffix>
             nameToReturn = `${firstName} ${middleInitials} ${lastNameAtBirthWithSuffix}`;
@@ -1586,14 +1592,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     }
 
     function aDivWith(itsClass, ...elements) {
-        div = document.createElement("div");
+        const div = document.createElement("div");
         if (itsClass) div.className = itsClass;
         div.append(...elements);
         return div;
     }
 
     function aSpanWith(itsClass, ...elements) {
-        div = document.createElement("span");
+        const div = document.createElement("span");
         if (itsClass) div.className = itsClass;
         div.append(...elements);
         return div;

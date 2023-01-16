@@ -6,13 +6,6 @@
  *
  */
 
-// Set localTesting to true if you run this from your desktop. This would require that you have installed a browser
-// extension to fiddle with CORS permissions, like one of these for Chrome:
-//     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
-//     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
-const localTesting = false;
-const logit = localTesting || false; // changing false to true allows one to turn on logging even if not local testing
-
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
@@ -403,7 +396,7 @@ WikiTreeAPI.postToAPI = async function (postData) {
     // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
     let options = {
         method: "POST",
-        credentials: localTesting ? "omit" : "include",
+        credentials: "include",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
         },
@@ -481,9 +474,3 @@ WikiTreeAPI.cookie = function (key, value, options) {
     }
     return result;
 };
-
-function condLog(...args) {
-    if (logit) {
-        console.log.apply(null, args);
-    }
-}

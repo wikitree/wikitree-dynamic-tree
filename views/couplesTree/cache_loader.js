@@ -1,4 +1,6 @@
-class CacheLoader {
+import { CachedPerson } from "./cached_person.js";
+
+export class CacheLoader {
     static DEFAULT_PRIMARY_FIELDS = [
         "Id",
         "Name",

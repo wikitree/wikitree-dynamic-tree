@@ -35,13 +35,11 @@ class Richness {
     }
 }
 
-class CachedPerson {
-    static #logging = false;
+export class CachedPerson {
     static #peopleCache;
 
-    static init(peopleCache, logging) {
+    static init(peopleCache) {
         CachedPerson.#peopleCache = peopleCache;
-        CachedPerson.#logging = logging;
     }
 
     static get(id) {
@@ -56,12 +54,6 @@ class CachedPerson {
         return CachedPerson.#peopleCache.getWithData(data);
     }
 
-    static condLog(...args) {
-        if (CachedPerson.#logging) {
-            console.log.apply(null, args);
-        }
-    }
-
     static getCache() {
         return CachedPerson.#peopleCache;
     }
@@ -70,7 +62,7 @@ class CachedPerson {
         this.isNoSpouse = false;
         this._data = {};
         let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
-        CachedPerson.condLog(`<--New person data: for ${data.Id} ${name} (${Richness.fromData(data)}))`, data);
+        condLog(`<--New person data: for ${data.Id} ${name} (${Richness.fromData(data)}))`, data);
 
         let x = Object.entries(data);
         for (const [key, value] of x) {
@@ -94,7 +86,7 @@ class CachedPerson {
         }
 
         this._data.noMoreSpouses = data.DataStatus ? data.DataStatus.Spouse == "blank" : false;
-        CachedPerson.condLog(`>--New person done: for ${this.getId()} ${name} (${this.getRichness()})`, this);
+        condLog(`>--New person done: for ${this.getId()} ${name} (${this.getRichness()})`, this);
 
         function createAndCachePeople(mapOfPeopleData) {
             for (const pData of Object.values(mapOfPeopleData)) {
@@ -403,7 +395,7 @@ class NotLoadedPerson extends CachedPerson {
  * @param {*} b
  * @returns true iff person data a has the same or higher richness of person data b
  */
-function isSameOrHigherRichness(a, b) {
+export function isSameOrHigherRichness(a, b) {
     const bRichness = Richness.fromData(b);
     return (Richness.fromData(a) & bRichness) == bRichness;
 }

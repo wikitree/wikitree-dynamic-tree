@@ -49,16 +49,27 @@
 
     <script src="views/nameTest/name_test.js"></script>
 
-    <script src="views/couplesTree/cached_person.js"></script>
-    <script src="views/couplesTree/cache_loader.js"></script>
-    <script src="views/couplesTree/people_cache.js"></script>
-    <script src="views/couplesTree/couples_tree.js"></script>
+    <script type="module" src="views/couplesTree/cached_person.js"></script>
+    <script type="module" src="views/couplesTree/cache_loader.js"></script>
+    <script type="module" src="views/couplesTree/people_cache.js"></script>
+    <script type="module" src="views/couplesTree/couples_tree.js"></script>
     <link rel="stylesheet" href="views/couplesTree/couples_tree.css" />
 
     <link rel="stylesheet" href="tree.css" />
   </head>
 
   <body>
+    <script>
+      // A var statement creates a global variable. This is here because of modules (in inelegent solution, I know
+      // - the globals, not modules).
+      var addTestInfo = false; // cause additional information to be displayed in the couples view
+      var logit = addTestInfo || false; // changing false to true allows one to turn on logging even if no test info
+      function condLog(...args) {
+        if (logit) {
+          console.log.apply(null, args);
+        }
+      }
+    </script>
     <!-- The View Registry, for adding new views, is in index.js. -->
     <script src="index.js"></script>
     <header>

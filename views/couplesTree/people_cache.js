@@ -1,7 +1,10 @@
 /**
  * A cache for People objects.
  */
-class PeopleCache {
+
+import { CachedPerson, isSameOrHigherRichness } from "./cached_person.js";
+
+export class PeopleCache {
     #cache;
     #loader;
     constructor(loader) {
