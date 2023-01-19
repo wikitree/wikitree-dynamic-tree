@@ -35,6 +35,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 };
 
 (function () {
+    // if addTestInfo is true, a person's (integer) id is displayed in their person box (to assist with reading
+    // the debug logs) and, if debug logging is on (see index.html), the Person object is logged to the console
+    // whenever one clicks in a person box (i.e. when the person pop-up is generated).
+    const addTestInfo = debugLoggingOn && true;
+
     const originOffsetX = 500,
         originOffsetY = 300,
         boxWidth = 200,

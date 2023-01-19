@@ -423,3 +423,9 @@ window.SessionManager = class SessionManager {
         this.wtAPI.cookie(this.C_PERSON_NAME, this.personName, { path: "/" });
     }
 };
+
+function condLog(...args) {
+    if (debugLoggingOn) {
+        console.log.apply(null, args);
+    }
+}
