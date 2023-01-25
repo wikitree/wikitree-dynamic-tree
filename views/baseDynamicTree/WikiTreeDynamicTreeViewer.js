@@ -106,7 +106,7 @@
                 if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
                     err += ` You may need to be added to the starting profile's Trusted List.`;
                 } else {
-                    err += ` Try logging into the API.`;
+                    err += ` Try the Apps login.`;
                 }
                 wtViewRegistry.showError(err);
                 wtViewRegistry.hideInfoPanel();

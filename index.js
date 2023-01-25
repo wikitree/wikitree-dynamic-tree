@@ -15,7 +15,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         WikiTreeAPI,
         (events = {
             onLoggedIn: (user) => {
-                document.querySelector("#wt-api-login").innerHTML = `Logged into API: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
+                document.querySelector("#wt-api-login").innerHTML = `Logged into Apps: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
             },
             onUnlogged: () => {
                 document.querySelector("#wt-api-login").innerHTML = `
@@ -23,7 +23,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
               <input type="hidden" name="action" value="clientLogin">
               <input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
               <input type="submit" class="small" value="Apps Login"
-                title="Please login to the WikiTree API to use the Tree Viewer on non-public profiles.">
+                title="Please login to the WikiTree Apps to use the Tree Viewer on non-public profiles.">
           </form>
           `;
             },
