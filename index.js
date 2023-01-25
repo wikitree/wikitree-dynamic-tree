@@ -15,7 +15,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         WikiTreeAPI,
         (events = {
             onLoggedIn: (user) => {
-                document.querySelector("#wt-api-login").innerHTML = `Logged into API: ${user.name}`;
+                document.querySelector("#wt-api-login").innerHTML = `Logged into API: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
             },
             onUnlogged: () => {
                 document.querySelector("#wt-api-login").innerHTML = `
@@ -29,6 +29,10 @@ window.addEventListener("DOMContentLoaded", (event) => {
             },
         })
     );
+    $('body').on('click', '.apiLogout', function(e) {
+        e.preventDefault();
+        loginManager.logout();
+    });
 
     // To add a new View, add a unique keyword with a value of the new View().
     const views = {
