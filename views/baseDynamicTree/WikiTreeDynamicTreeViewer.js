@@ -98,6 +98,8 @@
         }
         self._load(id).then(function (person) {
             if (person._data.Name) {
+                wtViewRegistry.setInfoPanel(`Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.`);
+                wtViewRegistry.showInfoPanel();
                 self.drawTree(person);
             } else {
                 let err = `The starting profile data could not be retrieved.`;

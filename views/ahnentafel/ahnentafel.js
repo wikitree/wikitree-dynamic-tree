@@ -196,6 +196,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         $("#toolsLink").attr("href", `https://www.wikitree.com/genealogy/${p.LastNameAtBirth}-Family-Tree-${count}`);
         $("#toolsLink").html(`${p.RealName}'s Tree &amp; Tools page`);
 
+        // Display our "info" panel with a description of this view.
+        wtViewRegistry.showInfoPanel();
+
         // Now clear out our tree view and start filling it recursively with generations.
         $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
 
