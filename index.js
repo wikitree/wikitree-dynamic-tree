@@ -15,20 +15,24 @@ window.addEventListener("DOMContentLoaded", (event) => {
         WikiTreeAPI,
         (events = {
             onLoggedIn: (user) => {
-                document.querySelector("#wt-api-login").innerHTML = `Logged into API: ${user.name}`;
+                document.querySelector("#wt-api-login").innerHTML = `Logged into Apps: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
             },
             onUnlogged: () => {
                 document.querySelector("#wt-api-login").innerHTML = `
           <form action="https://api.wikitree.com/api.php" method="POST">
               <input type="hidden" name="action" value="clientLogin">
               <input type="hidden" id="returnURL" name="returnURL" value="${window.location.href}">
-              <input type="submit" class="small" value="Login at WikiTree API"
-                title="Please login to the WikiTree API to use the Tree Viewer on non-public profiles.">
+              <input type="submit" class="small" value="Apps Login"
+                title="Please login to the WikiTree Apps to use the Tree Viewer on non-public profiles.">
           </form>
           `;
             },
         })
     );
+    $('body').on('click', '.apiLogout', function(e) {
+        e.preventDefault();
+        loginManager.logout();
+    });
 
     // To add a new View, add a unique keyword with a value of the new View().
     const views = {

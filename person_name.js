@@ -344,32 +344,54 @@ class PersonName {
         return surname;
     }
 
+    /**
+     * The best results will be obtained if the following set of fields are requested in the API call
+     * when obtaining the profile data (personData). These are the requested fields, not all these fields
+     * will necessarily be in the data returned from the API, but that should be OK.
+     *   Id, Name, FirstName, LastNameCurrent, LastNameAtBirth, LastNameOther, Suffix, Prefix, Derived.BirthName,
+     *   Derived.BirthNamePrivate, MiddleName, MiddleInitial, RealName, Nicknames
+     * @param {*} personData The JSON data obtained for a profile via the WikiTree API
+     */
     constructor(personData) {
-        // Construct the set of internal components from which the name will be put together
+        // Construct the set of internal components from which the name will be put together.
 
         // last name (surname)
         this.lastNameAtBirth = personData.LastNameAtBirth;
         this.lastNameCurrent = personData.LastNameCurrent;
         this.lastName = this.lastNameCurrent ? this.lastNameCurrent : this.lastNameAtBirth || null;
 
-        // We go through this rigmarole rather than using the name fields directly in order cater for the case of
-        // private profiles that return minimal fields.  The below results in something decent for them and still
-        // gives the expected results for pubic profiles
+        // We prefer to go through this rigmarole rather than using the name fields directly in order to cater for
+        // the case of private profiles that return minimal fields.  The below results in something decent for them
+        // and still gives the expected results for pubic profiles
+        let nameToSplit;
         this.birthName = personData.BirthName || personData.BirthNamePrivate;
-        const hasSuffix = personData.Suffix && personData.Suffix.length > 0;
-        let nameToSplit = this.birthName;
-        if (hasSuffix) {
-            // Remove the suffix from birthName so we can split it into the other names
-            const idx = this.birthName.lastIndexOf(personData.Suffix);
+        if (this.birthName) {
+            const hasSuffix = personData.Suffix && personData.Suffix.length > 0;
+            nameToSplit = this.birthName;
+            if (hasSuffix) {
+                // Remove the suffix from birthName so we can split it into the other names
+                const idx = this.birthName.lastIndexOf(personData.Suffix);
+                if (idx > 0) {
+                    nameToSplit = nameToSplit.substring(0, idx - 1);
+                }
+            }
+            // Remove lastNameAtBirth from nameToSplit so we can split the result into the other names
+            const idx = this.birthName.lastIndexOf(this.lastNameAtBirth);
             if (idx > 0) {
                 nameToSplit = nameToSplit.substring(0, idx - 1);
             }
+        } else {
+            console.log(
+                "Fields BirthName and/or BirthNamePrivate are not present in the profile data " +
+                    "(i.e. Derived.BirthName and/or Derived.BirthNamePrivate were not requested via the API) " +
+                    `therefore name construction for ${personData.Name || personData.id} might be less than optimal`
+            );
+            nameToSplit = (personData.FirstName || "") + " " + (personData.MiddleName || "");
+            if (nameToSplit == " ") {
+                nameToSplit = personData.preferredName || personData.RealName || "";
+            }
         }
-        // Remove lastNameAtBirth from nameToSplit so we can split the result into the other names
-        const idx = this.birthName.lastIndexOf(this.lastNameAtBirth);
-        if (idx > 0) {
-            nameToSplit = nameToSplit.substring(0, idx - 1);
-        }
+
         const firstNamesParts = nameToSplit.split(" ");
 
         this.firstName = firstNamesParts[0];

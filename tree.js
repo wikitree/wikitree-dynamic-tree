@@ -143,19 +143,12 @@ window.ViewRegistry = class ViewRegistry {
         let views = this.views;
         const options = Object.keys(this.views)
             .sort(function (a, b) {
-                // We want the base/core option to always be at the top of the drop-down
-                if (a == "wt-dynamic-tree") {
-                    return -1;
-                }
-                if (b == "wt-dynamic-tree") {
-                    return 1;
-                }
-
-                // Sort the rest alphabetically by title
+                // Sort the app options alphabetically by title
                 return views[a].title.localeCompare(views[b].title);
             })
             .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
-            .join("");
+            .join("")
+            + `<option value="otherapps">Other Apps</option>`;
 
         const submitBtn = document.querySelector(this.SHOW_BTN);
         submitBtn.addEventListener("click", (e) => this.onSubmit(e));
@@ -184,6 +177,16 @@ window.ViewRegistry = class ViewRegistry {
 
         const wtID = document.querySelector(this.WT_ID_TEXT).value;
         const viewID = document.querySelector(this.VIEW_SELECT).value;
+
+        // Special case of "other apps" where we send the user out of the dynamic tree apps page to a page at WikiTree.
+        if (viewID == 'otherapps') {
+            if (wtID) {
+                window.open(`https://www.wikitree.com/treewidget/${wtID}/77`);
+            } else {
+                $(this.WT_ID_TEXT).focus();
+            }
+            return;
+        }
 
         const view = this.views[viewID];
         view.id = viewID;
@@ -244,19 +247,22 @@ window.ViewRegistry = class ViewRegistry {
     }
 
     initView(view, person) {
-        const wtLink = document.querySelector(this.WT_ID_LINK);
-        const viewTitle = document.querySelector(this.VIEW_TITLE);
-        const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
-        const name = document.querySelector(this.NAME_PLACEHOLDER);
+        // const wtLink = document.querySelector(this.WT_ID_LINK);
+        // const viewTitle = document.querySelector(this.VIEW_TITLE);
+        // const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
+        // const name = document.querySelector(this.NAME_PLACEHOLDER);
 
-        wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
-        wtLink.innerHTML = person.Name;
+        // wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
+        // wtLink.innerHTML = person.Name;
 
-        viewTitle.innerHTML = view.title;
-        viewDescription.innerHTML = view.description;
-        name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
+        // viewTitle.innerHTML = view.title;
+        // viewDescription.innerHTML = view.description;
+        // name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
 
-        wtViewRegistry.showInfoPanel();
+        // Let the individual views do this if desired. Start things off hidden (in case the previous view revealed it).
+        //wtViewRegistry.showInfoPanel();
+        wtViewRegistry.hideInfoPanel();
+        wtViewRegistry.setInfoPanel("");
 
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
 
@@ -274,6 +280,10 @@ window.ViewRegistry = class ViewRegistry {
     showInfoPanel() {
         let infoPanel = document.querySelector(this.INFO_PANEL);
         infoPanel.classList.remove("hidden");
+    }
+    setInfoPanel(html) {
+        let infoPanel = document.querySelector(this.INFO_PANEL);
+        infoPanel.innerHTML = html;
     }
 
     clearStatus() {
@@ -353,6 +363,12 @@ window.LoginManager = class LoginManager {
         } else {
             this.events?.onUnlogged();
         }
+    }
+
+    logout() {
+        this.wtAPI.cookie(this.C_WT_USERNAME, '', { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
+        this.wtAPI.cookie(this.C_WT_USER_ID, '', { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
+        this.wtAPI.postToAPI({ action: "clientLogin", doLogout: 1 }).then((data) => { console.log('back from dologout'); window.location.reload(); });
     }
 
     onAuth(data) {
