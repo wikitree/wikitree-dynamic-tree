@@ -32,6 +32,10 @@
 
     const PRINTER_ICON = "&#x1F4BE;";
     const SETTINGS_GEAR = "&#x2699;";
+    const LEGEND_CLIPBOARD = "&#x1F4CB;";
+
+    var uniqueLocationsArray = [];
+    var theSortedLocationsArray = [];
 
     var ColourArray = [
         "White",
@@ -81,7 +85,136 @@
         "Orange",
     ];
 
-    var FullColoursArray = [[1,"AliceBlue","#F0F8FF"], [1,"AntiqueWhite","#FAEBD7"], [1,"Aquamarine","#7FFFD4"], /*[1,"Azure","#F0FFFF"],*/ [1,"Beige","#F5F5DC"], /*[1,"Bisque","#FFE4C4"], [1,"BlanchedAlmond","#FFEBCD"], */[1,"BurlyWood","#DEB887"], [1,"CadetBlue","#5F9EA0"],/* [1,"Chartreuse","#7FFF00"], [1,"Coral","#FF7F50"], */[1,"CornflowerBlue","#6495ED"], [1,"Cornsilk","#FFF8DC"], [1,"Cyan","#00FFFF"], [1,"DarkCyan","#008B8B"], [1,"DarkGoldenRod","#B8860B"], [1,"DarkGray","#A9A9A9"], [1,"DarkKhaki","#BDB76B"], [1,"DarkOrange","#FF8C00"], [1,"DarkSalmon","#E9967A"], [1,"DarkSeaGreen","#8FBC8F"], [1,"DarkTurquoise","#00CED1"], [1,"DeepPink","#FF1493"], [1,"DeepSkyBlue","#00BFFF"], [1,"DodgerBlue","#1E90FF"], [1,"FloralWhite","#FFFAF0"], [1,"Gainsboro","#DCDCDC"], [1,"GhostWhite","#F8F8FF"], [1,"Gold","#FFD700"], [1,"GoldenRod","#DAA520"], [1,"GreenYellow","#ADFF2F"], [1,"HoneyDew","#F0FFF0"], [1,"HotPink","#FF69B4"], /*[1,"Ivory","#FFFFF0"],*/ [1,"Khaki","#F0E68C"], [1,"Lavender","#E6E6FA"], [1,"LavenderBlush","#FFF0F5"], [1,"LawnGreen","#7CFC00"], [1,"LemonChiffon","#FFFACD"], [1,"LightBlue","#ADD8E6"], [1,"LightCoral","#F08080"], /*[1,"LightCyan","#E0FFFF"],*/ [1,"LightGoldenRodYellow","#FAFAD2"], [1,"LightGray","#D3D3D3"], [1,"LightGreen","#90EE90"], [1,"LightPink","#FFB6C1"], [1,"LightSalmon","#FFA07A"], [1,"LightSeaGreen","#20B2AA"], [1,"LightSkyBlue","#87CEFA"], [1,"LightSlateGray","#778899"], [1,"LightSteelBlue","#B0C4DE"], [1,"LightYellow","#FFFFE0"], [1,"Lime","#00FF00"], [1,"LimeGreen","#32CD32"], [1,"Linen","#FAF0E6"], [1,"Magenta","#FF00FF"], [1,"MediumAquaMarine","#66CDAA"], [1,"MediumSpringGreen","#00FA9A"], [1,"MediumTurquoise","#48D1CC"], /*[1,"MintCream","#F5FFFA"],*/ [1,"MistyRose","#FFE4E1"], /*[1,"Moccasin","#FFE4B5"], */[1,"NavajoWhite","#FFDEAD"], [1,"OldLace","#FDF5E6"], [1,"Orange","#FFA500"], [1,"Orchid","#DA70D6"], [1,"PaleGoldenRod","#EEE8AA"], [1,"PaleGreen","#98FB98"], [1,"PaleTurquoise","#AFEEEE"], [1,"PaleVioletRed","#DB7093"], /*[1,"PapayaWhip","#FFEFD5"],*/ [1,"PeachPuff","#FFDAB9"], [1,"Pink","#FFC0CB"], [1,"Plum","#DDA0DD"], [1,"PowderBlue","#B0E0E6"], [1,"RosyBrown","#BC8F8F"], [1,"Salmon","#FA8072"], [1,"SandyBrown","#F4A460"], [1,"SeaShell","#FFF5EE"], [1,"Silver","#C0C0C0"], /*[1,"SkyBlue","#87CEEB"],*/ /*[1,"Snow","#FFFAFA"],*/ [1,"SpringGreen","#00FF7F"], [1,"Tan","#D2B48C"], [1,"Thistle","#D8BFD8"], [1,"Tomato","#FF6347"], [1,"Turquoise","#40E0D0"], [1,"Violet","#EE82EE"], [1,"Wheat","#F5DEB3"], /*[1,"White","#FFFFFF"],*/ /*[1,"WhiteSmoke","#F5F5F5"],*/ /*[1,"Yellow","#FFFF00"],*/ [1,"YellowGreen","#9ACD32"], /*[0,"Black","#000000"], */[0,"Blue","#0000FF"], [0,"BlueViolet","#8A2BE2"], [0,"Brown","#A52A2A"], [0,"Chocolate","#D2691E"], [0,"Crimson","#DC143C"], /*[0,"DarkBlue","#00008B"],*/  [0,"DarkGreen","#006400"], [0,"DarkMagenta","#8B008B"], [0,"DarkOliveGreen","#556B2F"], /*[0,"DarkOrchid","#9932CC"],*/ [0,"DarkRed","#8B0000"], [0,"DarkSlateBlue","#483D8B"], [0,"DarkSlateGray","#2F4F4F"], [0,"DarkViolet","#9400D3"], [0,"DimGray","#696969"], [0,"FireBrick","#B22222"], [0,"ForestGreen","#228B22"], [0,"Gray","#808080"], [0,"Green","#008000"], [0,"IndianRed","#CD5C5C"], [0,"Indigo","#4B0082"],  [0,"Maroon","#800000"], [0,"MediumBlue","#0000CD"], [0,"MediumOrchid","#BA55D3"], [0,"MediumPurple","#9370DB"], [0,"MediumSeaGreen","#3CB371"], [0,"MediumSlateBlue","#7B68EE"], [0,"MediumVioletRed","#C71585"], [0,"MidnightBlue","#191970"], [0,"Navy","#000080"], [0,"Olive","#808000"], [0,"OliveDrab","#6B8E23"], [0,"OrangeRed","#FF4500"], [0,"Peru","#CD853F"], [0,"Purple","#800080"], [0,"RebeccaPurple","#663399"], [0,"Red","#FF0000"], [0,"RoyalBlue","#4169E1"], [0,"SaddleBrown","#8B4513"], [0,"SeaGreen","#2E8B57"], [0,"Sienna","#A0522D"], [0,"SlateBlue","#6A5ACD"], [0,"SlateGray","#708090"], [0,"SteelBlue","#4682B4"], [0,"Teal","#008080"]];
+    var FullColoursArray = [
+        [1, "AliceBlue", "#F0F8FF"],
+        [1, "AntiqueWhite", "#FAEBD7"],
+        [1, "Aquamarine", "#7FFFD4"],
+        /*[1,"Azure","#F0FFFF"],*/ [1, "Beige", "#F5F5DC"],
+        /*[1,"Bisque","#FFE4C4"], [1,"BlanchedAlmond","#FFEBCD"], */ [1, "BurlyWood", "#DEB887"],
+        [1, "CadetBlue", "#5F9EA0"],
+        /* [1,"Chartreuse","#7FFF00"], [1,"Coral","#FF7F50"], */ [1, "CornflowerBlue", "#6495ED"],
+        [1, "Cornsilk", "#FFF8DC"],
+        [1, "Cyan", "#00FFFF"],
+        [1, "DarkCyan", "#008B8B"],
+        [1, "DarkGoldenRod", "#B8860B"],
+        [1, "DarkGray", "#A9A9A9"],
+        [1, "DarkKhaki", "#BDB76B"],
+        [1, "DarkOrange", "#FF8C00"],
+        [1, "DarkSalmon", "#E9967A"],
+        [1, "DarkSeaGreen", "#8FBC8F"],
+        [1, "DarkTurquoise", "#00CED1"],
+        [1, "DeepPink", "#FF1493"],
+        [1, "DeepSkyBlue", "#00BFFF"],
+        [1, "DodgerBlue", "#1E90FF"],
+        [1, "FloralWhite", "#FFFAF0"],
+        [1, "Gainsboro", "#DCDCDC"],
+        [1, "GhostWhite", "#F8F8FF"],
+        [1, "Gold", "#FFD700"],
+        [1, "GoldenRod", "#DAA520"],
+        [1, "GreenYellow", "#ADFF2F"],
+        [1, "HoneyDew", "#F0FFF0"],
+        [1, "HotPink", "#FF69B4"],
+        /*[1,"Ivory","#FFFFF0"],*/ [1, "Khaki", "#F0E68C"],
+        [1, "Lavender", "#E6E6FA"],
+        [1, "LavenderBlush", "#FFF0F5"],
+        [1, "LawnGreen", "#7CFC00"],
+        [1, "LemonChiffon", "#FFFACD"],
+        [1, "LightBlue", "#ADD8E6"],
+        [1, "LightCoral", "#F08080"],
+        [1, "LightCyan", "#E0FFFF"],
+        [1, "LightGoldenRodYellow", "#FAFAD2"],
+        [1, "LightGray", "#D3D3D3"],
+        [1, "LightGreen", "#90EE90"],
+        [1, "LightPink", "#FFB6C1"],
+        [1, "LightSalmon", "#FFA07A"],
+        [1, "LightSeaGreen", "#20B2AA"],
+        [1, "LightSkyBlue", "#87CEFA"],
+        [1, "LightSlateGray", "#778899"],
+        [1, "LightSteelBlue", "#B0C4DE"],
+        [1, "LightYellow", "#FFFFE0"],
+        [1, "Lime", "#00FF00"],
+        [1, "LimeGreen", "#32CD32"],
+        [1, "Linen", "#FAF0E6"],
+        [1, "Magenta", "#FF00FF"],
+        [1, "MediumAquaMarine", "#66CDAA"],
+        [1, "MediumSpringGreen", "#00FA9A"],
+        [1, "MediumTurquoise", "#48D1CC"],
+        /*[1,"MintCream","#F5FFFA"],*/ [1, "MistyRose", "#FFE4E1"],
+        [1, "Moccasin", "#FFE4B5"],
+        [1, "NavajoWhite", "#FFDEAD"],
+        [1, "OldLace", "#FDF5E6"],
+        [1, "Orange", "#FFA500"],
+        [1, "Orchid", "#DA70D6"],
+        [1, "PaleGoldenRod", "#EEE8AA"],
+        [1, "PaleGreen", "#98FB98"],
+        [1, "PaleTurquoise", "#AFEEEE"],
+        [1, "PaleVioletRed", "#DB7093"],
+        /*[1,"PapayaWhip","#FFEFD5"],*/ [1, "PeachPuff", "#FFDAB9"],
+        [1, "Pink", "#FFC0CB"],
+        [1, "Plum", "#DDA0DD"],
+        [1, "PowderBlue", "#B0E0E6"],
+        [1, "RosyBrown", "#BC8F8F"],
+        [1, "Salmon", "#FA8072"],
+        [1, "SandyBrown", "#F4A460"],
+        [1, "SeaShell", "#FFF5EE"],
+        [1, "Silver", "#C0C0C0"],
+        [1, "SkyBlue", "#87CEEB"],
+        /*[1,"Snow","#FFFAFA"],*/ [1, "SpringGreen", "#00FF7F"],
+        [1, "Tan", "#D2B48C"],
+        [1, "Thistle", "#D8BFD8"],
+        [1, "Tomato", "#FF6347"],
+        [1, "Turquoise", "#40E0D0"],
+        [1, "Violet", "#EE82EE"],
+        [1, "Wheat", "#F5DEB3"],
+        [1, "White", "#FFFFFF"],
+        /*[1,"WhiteSmoke","#F5F5F5"],*/ [1, "Yellow", "#FFFF00"],
+        [1, "YellowGreen", "#9ACD32"],
+        /*[0,"Black","#000000"], */ [0, "Blue", "#0000FF"],
+        [0, "BlueViolet", "#8A2BE2"],
+        [0, "Brown", "#A52A2A"],
+        [0, "Chocolate", "#D2691E"],
+        [0, "Crimson", "#DC143C"],
+        /*[0,"DarkBlue","#00008B"],*/ [0, "DarkGreen", "#006400"],
+        [0, "DarkMagenta", "#8B008B"],
+        [0, "DarkOliveGreen", "#556B2F"],
+        /*[0,"DarkOrchid","#9932CC"],*/ [0, "DarkRed", "#8B0000"],
+        [0, "DarkSlateBlue", "#483D8B"],
+        [0, "DarkSlateGray", "#2F4F4F"],
+        [0, "DarkViolet", "#9400D3"],
+        [0, "DimGray", "#696969"],
+        [0, "FireBrick", "#B22222"],
+        [0, "ForestGreen", "#228B22"],
+        [0, "Gray", "#808080"],
+        [0, "Grey", "#808080"],
+        [0, "Green", "#008000"],
+        [0, "IndianRed", "#CD5C5C"],
+        [0, "Indigo", "#4B0082"],
+        [0, "Maroon", "#800000"],
+        [0, "MediumBlue", "#0000CD"],
+        [0, "MediumOrchid", "#BA55D3"],
+        [0, "MediumPurple", "#9370DB"],
+        [0, "MediumSeaGreen", "#3CB371"],
+        [0, "MediumSlateBlue", "#7B68EE"],
+        [0, "MediumVioletRed", "#C71585"],
+        [0, "MidnightBlue", "#191970"],
+        [0, "Navy", "#000080"],
+        [0, "Olive", "#808000"],
+        [0, "OliveDrab", "#6B8E23"],
+        [0, "OrangeRed", "#FF4500"],
+        [0, "Peru", "#CD853F"],
+        [0, "Purple", "#800080"],
+        [0, "RebeccaPurple", "#663399"],
+        [0, "Red", "#FF0000"],
+        [0, "RoyalBlue", "#4169E1"],
+        [0, "SaddleBrown", "#8B4513"],
+        [0, "SeaGreen", "#2E8B57"],
+        [0, "Sienna", "#A0522D"],
+        [0, "SlateBlue", "#6A5ACD"],
+        [0, "SlateGray", "#708090"],
+        [0, "SlateGrey", "#708090"],
+        [0, "SteelBlue", "#4682B4"],
+        [0, "Teal", "#008080"],
+    ];
     var LightColoursArray = [[1,"AliceBlue","#F0F8FF"], [1,"AntiqueWhite","#FAEBD7"], [1,"Aquamarine","#7FFFD4"], /*[1,"Azure","#F0FFFF"],*/ [1,"Beige","#F5F5DC"], /*[1,"Bisque","#FFE4C4"], [1,"BlanchedAlmond","#FFEBCD"], */[1,"BurlyWood","#DEB887"], [1,"CadetBlue","#5F9EA0"],/* [1,"Chartreuse","#7FFF00"], [1,"Coral","#FF7F50"], */[1,"CornflowerBlue","#6495ED"], [1,"Cornsilk","#FFF8DC"], [1,"Cyan","#00FFFF"], [1,"DarkCyan","#008B8B"], [1,"DarkGoldenRod","#B8860B"], [1,"DarkGray","#A9A9A9"], [1,"DarkKhaki","#BDB76B"], [1,"DarkOrange","#FF8C00"], [1,"DarkSalmon","#E9967A"], [1,"DarkSeaGreen","#8FBC8F"], [1,"DarkTurquoise","#00CED1"], [1,"DeepPink","#FF1493"], [1,"DeepSkyBlue","#00BFFF"], [1,"DodgerBlue","#1E90FF"], [1,"FloralWhite","#FFFAF0"], [1,"Gainsboro","#DCDCDC"], [1,"GhostWhite","#F8F8FF"], [1,"Gold","#FFD700"], [1,"GoldenRod","#DAA520"], [1,"GreenYellow","#ADFF2F"], [1,"HoneyDew","#F0FFF0"], [1,"HotPink","#FF69B4"], /*[1,"Ivory","#FFFFF0"],*/ [1,"Khaki","#F0E68C"], [1,"Lavender","#E6E6FA"], [1,"LavenderBlush","#FFF0F5"], [1,"LawnGreen","#7CFC00"], [1,"LemonChiffon","#FFFACD"], [1,"LightBlue","#ADD8E6"], [1,"LightCoral","#F08080"], /*[1,"LightCyan","#E0FFFF"],*/ [1,"LightGoldenRodYellow","#FAFAD2"], [1,"LightGray","#D3D3D3"], [1,"LightGreen","#90EE90"], [1,"LightPink","#FFB6C1"], [1,"LightSalmon","#FFA07A"], [1,"LightSeaGreen","#20B2AA"], [1,"LightSkyBlue","#87CEFA"], [1,"LightSlateGray","#778899"], [1,"LightSteelBlue","#B0C4DE"], [1,"LightYellow","#FFFFE0"], [1,"Lime","#00FF00"], [1,"LimeGreen","#32CD32"], [1,"Linen","#FAF0E6"], [1,"Magenta","#FF00FF"], [1,"MediumAquaMarine","#66CDAA"], [1,"MediumSpringGreen","#00FA9A"], [1,"MediumTurquoise","#48D1CC"], /*[1,"MintCream","#F5FFFA"],*/ [1,"MistyRose","#FFE4E1"], /*[1,"Moccasin","#FFE4B5"], */[1,"NavajoWhite","#FFDEAD"], [1,"OldLace","#FDF5E6"], [1,"Orange","#FFA500"], [1,"Orchid","#DA70D6"], [1,"PaleGoldenRod","#EEE8AA"], [1,"PaleGreen","#98FB98"], [1,"PaleTurquoise","#AFEEEE"], [1,"PaleVioletRed","#DB7093"], /*[1,"PapayaWhip","#FFEFD5"],*/ [1,"PeachPuff","#FFDAB9"], [1,"Pink","#FFC0CB"], [1,"Plum","#DDA0DD"], [1,"PowderBlue","#B0E0E6"], [1,"RosyBrown","#BC8F8F"], [1,"Salmon","#FA8072"], [1,"SandyBrown","#F4A460"], [1,"SeaShell","#FFF5EE"], [1,"Silver","#C0C0C0"], /*[1,"SkyBlue","#87CEEB"],*/ /*[1,"Snow","#FFFAFA"],*/ [1,"SpringGreen","#00FF7F"], [1,"Tan","#D2B48C"], [1,"Thistle","#D8BFD8"], [1,"Tomato","#FF6347"], [1,"Turquoise","#40E0D0"], [1,"Violet","#EE82EE"], [1,"Wheat","#F5DEB3"], /*[1,"White","#FFFFFF"],*/ /*[1,"WhiteSmoke","#F5F5F5"],*/ /*[1,"Yellow","#FFFF00"],*/ [1,"YellowGreen","#9ACD32"] ];
 
     var numRepeatAncestors = 0;
@@ -180,7 +313,7 @@
                     label: "Colours",
                     hideSelect: true,
                     subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
-                    comment: "These options apply to background colours in the Fan Chart cells.",
+                    comment: "These options apply to the colours in the Fan Chart cells.",
                 },
                 {
                     name: "highlights",
@@ -444,21 +577,54 @@
                         {
                             optionName: "colourBy",
                             type: "select",
-                            label: "Background Colour cells",
+                            label: "Background Colour cells by",
                             values: [
                                 { value: "None", text: "OFF - All White, all the time WHITE" },
-                                { value: "Gender", text: "by Gender" },
-                                { value: "Generation", text: "by Generation" },
-                                { value: "Grand", text: "by Grandparent" },
-                                { value: "GGrand", text: "by Great-Grandparent" },
-                                { value: "GGGrand", text: "by 2x Great Grandparent" },
-                                { value: "GGGGrand", text: "by 3x Great Grandparent" },
-                                // { value: "Town", text: "by Place name" },
-                                // { value: "Region", text: "by Region (Province/State)" },
-                                // { value: "Country", text: "by Country" },
-                                { value: "random", text: "totally randomly" },
+                                { value: "Gender", text: "Gender" },
+                                { value: "Generation", text: "Generation" },
+                                { value: "Grand", text: "Grandparent" },
+                                { value: "GGrand", text: "Great-Grandparent" },
+                                { value: "GGGrand", text: "2x Great Grandparent" },
+                                { value: "GGGGrand", text: "3x Great Grandparent" },
+                                { value: "Family", text: "Family Stats" },
+                                { value: "Location", text: "Location" },
+                                // { value: "Town", text: "Place name" },
+                                // { value: "Region", text: "Region (Province/State)" },
+                                // { value: "Country", text: "Country" },
+                                { value: "random", text: "random chaos" },
                             ],
                             defaultValue: "Generation",
+                        },
+                        {
+                            optionName: "specifyByFamily",
+                            type: "select",
+                            label: "Specifically by",
+                            values: [
+                                { value: "age", text: "age" },
+                                // { value: "numChildren", text: "number of children" },
+                                // { value: "numSiblings", text: "number of all siblings" },
+                                // { value: "numFullSiblings", text: "number of full siblings only" },
+                                // { value: "numSpouses", text: "number of spouses" },
+                            ],
+                            defaultValue: "age",
+                        },
+                        {
+                            optionName: "specifyByLocation",
+                            type: "select",
+                            label: "Specifically by",
+                            values: [
+                                { value: "BirthCountry", text: "Birth Country" },
+                                { value: "BirthRegion", text: "Birth Region, Country" },
+                                { value: "BirthTown", text: "Birth Town (only)" },
+                                { value: "BirthTownFull", text: "Birth Town (full Town,Region,Country)" },
+                                { value: "DeathCountry", text: "Country of Death" },
+                                { value: "DeathRegion", text: "Region of Death " },
+                                { value: "DeathTown", text: "Town of Death (short)" },
+                                { value: "DeathTownFull", text: "Town of Death (full)" },
+                                { value: "BirthDeathCountry", text: "Birth & Death Country" },
+                                { value: "DeathBirthCountry", text: "Death & Birth Country" },
+                            ],
+                            defaultValue: "BirthCountry",
                         },
                         {
                             optionName: "palette",
@@ -480,6 +646,18 @@
                                 { value: "random", text: "Psychadelic" },
                             ],
                             defaultValue: "Pastels",
+                        },
+                        { optionName: "break", comment: "Text in cells:", type: "br" },
+                        {
+                            optionName: "textColour",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "black", text: "Always Black" },
+                                { value: "B&W", text: "Black or White" },
+                                { value: "alt", text: "Alternating Colours" },
+                            ],
+                            defaultValue: "black",
                         },
                     ],
                 },
@@ -503,8 +681,10 @@
                                 { value: "YDNA", text: "Y-DNA" },
                                 { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
                                 { value: "XDNA", text: "X-chromosome inheritance" },
-                                { value: "DNAinheritance", text: "DNA inheritance" },
+                                { value: "DNAinheritance", text: "X/Y/mt DNA inheritance" },
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
+                                { value: "-", text: "-" },
+                                { value: "review", text: "Profiles needing review" },
                             ],
                             defaultValue: "DNAinheritance",
                         },
@@ -528,21 +708,23 @@
         // Setup zoom and pan
         var zoom = d3.behavior
             .zoom()
-            .scaleExtent([0.1, 1])
+            .scaleExtent([0.1, 2.5])
             .on("zoom", function () {
-                svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+                svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + 0.45 * d3.event.scale + ")");
+                console.log("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")", "width:", width, "height:", height);
             })
             // Offset so that first pan and zoom does not jump back to the origin
             // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
-            .translate([width / 2, height / 2]);
-
+            .translate([width / 2, 560 /* height / 2 */]);
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%" style="padding-left:10px;"><A onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
             ' <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
             ' <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
-            '<td width="5%">&nbsp;</td>' +
+            '<td width="5%">&nbsp;' +
+            '<span id=legendASCII style="display:none;"><A onclick="FanChartView.toggleLegend();"><font size=+2>' + LEGEND_CLIPBOARD + "</font></A></span>" +
+            '</td>' +
             '<td width="30%" align="center">' +
             ' <A onclick="FanChartView.numGens2Display -=1; FanChartView.redraw();"> -1 </A> ' +
             "[ <span id=numGensInBBar>5</span> generations ]" +
@@ -556,11 +738,13 @@
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
         var settingsHTML = "";
-        // '<div id=settingsDIV style="display:inline-block; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">'+
-        // '<span style="color:red; align:left"><A onclick="FanChartView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' ;
-        // '<H3 align=center>Fan Chart Settings</H3>' +
-
         settingsHTML += FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV; // +
+
+        var legendHTML =
+            '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
+            '<span style="color:red; align:left"><A onclick="FanChartView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>"; ;
+
         // console.log("SETTINGS:",settingsHTML);
 
         // '<ul class="profile-tabs">' +
@@ -584,7 +768,7 @@
         // '</div>';
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + settingsHTML;
+        container.innerHTML = btnBarHTML + legendHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -604,6 +788,7 @@
         // NEXT STEPS : Return a True/False based on whether any changes were actually made --> THEN - call reDraw routine if needed
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
+        
         var svg = d3
             .select(container)
             .append("svg")
@@ -613,11 +798,14 @@
             .append("g")
             // Left padding of tree; TODO: find a better way
             // .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
-            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+            // .attr("transform", "scale(" + 0.5 + ")")
+            .attr("transform", "translate(" + width / 2 + "," + 560 + ") scale(" + 0.45 + ") ");
+            // .attr("transform", "translate(" + width / 2 + "," + height / 2 + ") scale(" + 0.45 + ") ");
 
         // console.log("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
         self.ancestorTree = new AncestorTree(svg);
+        console.log("2. d3.scale = ", d3.scale);
 
         // Listen to tree events --> NOT NEEDED ANYMORE without the PLUS SIGNS (holdover from original Dynamic Tree version)
         // self.ancestorTree.expand(function (person) {
@@ -859,10 +1047,95 @@
         FanChartView.fanchartSettingsOptionsObject.buildPage();
         FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
+
+        // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let bkgdClrSelector = document.getElementById("colour_options_colourBy");
+        // console.log("bkgdClrSelector", bkgdClrSelector);
+        bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+        specLocSelector.style.display = "none";
+        specFamSelector.style.display = "none";
+        specLocSelectorLabel.style.display = "none";
+        specFamSelectorLabel.style.display = "none";
+        specLocSelectorBR.style.display = "none";
+        specFamSelectorBR.style.display = "none";
+
         // console.log(theCheckIn);
         // FanChartView.showFandokuLink = theCheckIn;
     };
 
+    function showRefreshInLegend() {
+        let refreshLegendDIV = document.getElementById("refreshLegend");
+        refreshLegendDIV.style.display = "block";
+    }
+
+    FanChartView.refreshTheLegend = function() {
+        console.log("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
+        let refreshLegendDIV = document.getElementById("refreshLegend");
+        refreshLegendDIV.style.display = "none";
+        updateLegendIfNeeded();
+        FanChartView.redraw();
+        
+    }
+
+    // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+    FanChartView.optionElementJustChanged = function() {
+        console.log("optionElementJustChanged !!!!!");
+        let bkgdClrSelector = document.getElementById("colour_options_colourBy");
+        let clrPaletteSelector = document.getElementById("colour_options_palette");
+        let clrPaletteSelectorLabel = document.getElementById("colour_options_palette_label");
+        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+        let legendASCIIspan = document.getElementById("legendASCII");
+
+        console.log("VALUE:", bkgdClrSelector.value);
+        if (bkgdClrSelector.value == "Family") {
+            specFamSelector.style.display = "inline-block";
+            legendASCIIspan.style.display = "inline-block";
+            specLocSelector.style.display = "none";
+            specFamSelectorLabel.style.display = "inline-block";
+            specLocSelectorLabel.style.display = "none";
+            specFamSelectorBR.style.display = "inline-block";
+            specLocSelectorBR.style.display = "none";
+            clrPaletteSelector.style.display = "inline-block";
+            clrPaletteSelectorLabel.style.display = "inline-block";
+        } else if (bkgdClrSelector.value == "Location") {
+            specLocSelector.style.display = "inline-block";
+            legendASCIIspan.style.display = "inline-block";
+            specFamSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "inline-block";
+            specFamSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "inline-block";
+            specFamSelectorBR.style.display = "none";
+            clrPaletteSelector.style.display = "none";
+            clrPaletteSelectorLabel.style.display = "none";
+        } else {
+            specLocSelector.style.display = "none";
+            specFamSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "none";
+            specFamSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "none";
+            specFamSelectorBR.style.display = "none";
+            legendASCIIspan.style.display = "none";
+            clrPaletteSelector.style.display = "inline-block";
+            clrPaletteSelectorLabel.style.display = "inline-block";
+
+            let theDIV = document.getElementById("legendDIV");
+            theDIV.style.display = "none";
+        }
+
+    }
+
+ 
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
         // console.log(theMessage);
@@ -928,6 +1201,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
+                    
                     "Nicknames",
                     "Prefix",
                     "Suffix",
@@ -1061,6 +1335,298 @@
         }
     }
 
+    var thisTextColourArray = {};
+    function updateLegendIfNeeded() { console.log("DOING updateLegendIfNeeded");
+        let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
+        let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
+        let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
+        let legendDIV = document.getElementById('legendDIV');
+        let innerLegendDIV = document.getElementById('innerLegend');
+        
+        let fontList = [
+            "Black",
+            "DarkGreen",
+            "DarkRed",
+            "DarkBlue",
+            "Brown",
+            "White",
+            "Yellow",
+            "Lime",
+            "Pink",
+            "Cyan",
+        ];
+        let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];
+        
+        thisTextColourArray = {};
+        let thisColourArray = getColourArray();
+
+        if (settingForColourBy == "Family") {
+            // console.log("TextClrSetting = ", txtClrSetting);
+            
+            let innerCode = "";
+            let clrSwatchArray = [];
+            for (let index = 0; index < 12; index++) {
+                let theTextFontClr = "Black";
+                let luminance = calcLuminance(thisColourArray[index]);
+                if (txtClrSetting == "B&W") {
+                    theTextFontClr = luminance > 0.179 ? "Black" : "White";
+                } else if (txtClrSetting == "alt") {
+                    theTextFontClr =
+                        fontList[(luminance > 0.179 ? 0 : 5) + (index % 5) ] ; // Math.max(0, Math.min(4, Math.round(5 * Math.random())))];
+                } else {
+                    theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
+                }
+                console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                thisTextColourArray[thisColourArray[index].toUpperCase() ] = theTextFontClr;
+
+                clrSwatchArray.push(
+                       "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                           thisColourArray[index] +
+                           ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" + theTextFontClr + "'>A</text></svg>"
+                   );
+            }
+                
+            if (settingForSpecifyByFamily == "age") {
+                clrSwatchUNK =  "<svg width=20 height=20><rect width=20 height=20 style='fill:" + "white" + ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                clrSwatchLIVING =  "<svg width=20 height=20><rect width=20 height=20 style='fill:" + "lime" + ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                innerCode =   clrSwatchUNK + " age unknown <br/>"+ clrSwatchLIVING + " still living";
+                for (let index = 0; index < 10; index++) {
+                    innerCode += "<br/>"+ clrSwatchArray[index + 1] + " " + (index*10) + " - " + (index*10 + 9);                    
+                }
+                innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
+
+            }
+            console.log("thisTextColourArray", thisTextColourArray);
+            innerLegendDIV.innerHTML = innerCode;
+            legendDIV.style.display = "block";
+        } else if (settingForColourBy == "Location") {
+            // thisTextColourArray = {};
+            // let thisColourArray = getColourArray();
+            let innerCode = "";
+            // LET's FIRST setup the ARRAY of UNIQUE LOCATIONS
+            uniqueLocationsArray = [];
+            for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
+                const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ index ]];
+                if (thisPerp) {
+                    if (settingForSpecifyByLocation == "BirthDeathCountry" || settingForSpecifyByLocation == "DeathBirthCountry") {
+                        let thisLoc = thisPerp._data["BirthCountry"];
+                        if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
+                            uniqueLocationsArray.push(thisLoc);
+                        }
+                        thisLoc = thisPerp._data["DeathCountry"];
+                        if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
+                            uniqueLocationsArray.push(thisLoc);
+                        }
+
+                    
+                    } else {
+                        let thisLoc = thisPerp._data[settingForSpecifyByLocation];
+                        if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
+                            uniqueLocationsArray.push(thisLoc);
+                        }
+                    }
+                }
+            }
+            let revLocArray = reverseCommaArray(uniqueLocationsArray, true);
+            console.log(revLocArray);
+            revLocArray.sort();
+            uniqueLocationsArray = reverseCommaArray(revLocArray, false);		
+			
+
+            clrSwatchUNK =
+                "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                "white" +
+                ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+
+            //     let rgbArray = hslToRgb(255, 1, 0.5);
+            // console.log("hslToRgb:", rgbArray );
+            // console.log("RGB = ", fractionToHexChar(rgbArray[0]) );
+            // console.log("RGB = ", fractionToHexChar(rgbArray[1]) );
+            // console.log("RGB = ", fractionToHexChar(rgbArray[2]) );
+            
+
+            innerCode += "<br/>" + clrSwatchUNK + " unknown";                        
+            
+            for (let index = 0; index < uniqueLocationsArray.length; index++) {
+                let hue = Math.round((360 * index) / uniqueLocationsArray.length);
+                let sat = 1 - (index % 2) * -0.15;
+                let lit = 0.5 + ((index % 7) - 3) * 0.05;
+                let thisClr = hslToRGBhex(hue, sat, lit);
+                let theTextFontClr = "Black";
+                console.log("Compare CLRS: ", thisClr, " vs ", thisColourArray[index]);
+                let luminance = calcLuminance(thisColourArray[index]);
+                if (txtClrSetting == "B&W") {
+                    theTextFontClr = luminance > 0.179 ? "Black" : "White";
+                    if (lit < 0.4) {
+                        theTextFontClr = "White";
+                    } else if (lit >= 0.6) {
+                        theTextFontClr = "Black";
+                    }
+                    if (hue < 20 || (hue > 200 && hue < 300)|| hue > 340) {
+                        theTextFontClr = "White"; 
+                    } else if (hue > 60 && hue < 170) {
+                        theTextFontClr = "Black";
+                    }
+                } else if (txtClrSetting == "alt") {
+                    let darkLight = (luminance > 0.179 ? 0 : 5);
+                    if (lit < 0.4) {
+                        darkLight = 5;
+                    } else if (lit >= 0.6) {
+                        darkLight = 0;
+                    }
+                    if (hue < 20 || (hue > 200 && hue < 295) || hue > 340) {
+                        darkLight = 5;
+                    } else if (hue > 305 && hue < 330) {
+                        if (lit <= 0.4) {
+                            darkLight = 5;
+                        } else {
+                            darkLight = 0;
+                        }
+                    } else if (hue > 60 && hue < 170) {
+                        darkLight = 0;
+                    }
+                    theTextFontClr =
+                        fontList[darkLight + index % 5 ];  // //Math.max(0, Math.min(4, Math.round(5 * Math.random())))
+                } else {
+                    theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
+                }
+                console.log("CLR:", hue, sat, lit, thisClr, luminance, theTextFontClr);
+                thisTextColourArray[thisClr.toUpperCase()] = theTextFontClr;
+                let clrSwatch =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    thisClr +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" +
+                    theTextFontClr +
+                    "'>A</text></svg>";
+                // let clrSwatch =
+                //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                //     thisColourArray[index % thisColourArray.length] +
+                //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                innerCode +=
+                    "<br/>" +
+                    clrSwatch +
+                    " " +
+                    uniqueLocationsArray[index];
+                    //  +
+                    // " H:" +
+                    // Math.round(hue) +
+                    // " lit:" +
+                    // lit +
+                    // " L:" +
+                    // luminance;
+            }
+
+            theSortedLocationsArray = uniqueLocationsArray;
+            console.log(theSortedLocationsArray);
+            // console.log("LOCS not sorted we think ...");
+            // console.log(uniqueLocationsArray);
+            
+            // console.log("LOCS yes SORTED we think ...");
+            // console.log(sortedLocs);
+            innerLegendDIV.innerHTML = innerCode;
+            legendDIV.style.display = "block";
+        } else {
+            for (let index = 0; index < thisColourArray.length; index++) {
+                let theTextFontClr = "Black";
+                let luminance = calcLuminance(thisColourArray[index]);
+                if (txtClrSetting == "B&W") {
+                    theTextFontClr = luminance > 0.179 ? "Black" : "White";
+                } else if (txtClrSetting == "alt") {
+                    theTextFontClr = fontList[(luminance > 0.179 ? 0 : 5) + (index % 5)]; // Math.max(0, Math.min(4, Math.round(5 * Math.random())))];
+                } else {
+                    theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
+                }
+                console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
+
+                // clrSwatchArray.push(
+                //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                //         thisColourArray[index] +
+                //         ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" +
+                //         theTextFontClr +
+                //         "'>A</text></svg>"
+                // );
+            }
+        }
+    }
+
+	function reverseCommaArray(arr, addSpace = false) {
+        let newArr = [];
+        for (var i = 0; i < arr.length; i++) {
+            let aPieces = arr[i].split(",");
+            let elem = "";
+            for (var j = aPieces.length - 1; j >= 0; j--) {
+                if (elem > "") {
+                    elem += ",";
+                }
+                elem += aPieces[j];
+            }
+            if (addSpace == true && aPieces.length == 1) {
+                elem = " " + elem;
+            } else if (addSpace == false && aPieces.length == 1) {
+                elem =  elem.trim();
+            }
+            newArr.push(elem);
+        }
+        return newArr;
+    }
+
+    function hslToRGBhex ( hue, sat, lum) {
+        let rgbArray = hslToRgb(hue, sat, lum);
+        let hexClr = "#" + fractionToHexChar(rgbArray[0]) +  fractionToHexChar(rgbArray[1]) +  fractionToHexChar(rgbArray[2]);
+        return hexClr;    
+    }
+
+    function fractionToHexChar( p ) {
+        let hx = Math.min(255,Math.max(0, Math.round(p*256))) ;
+        // console.log("convert ", p, " to ", hx , " to ", hx.toString(16));
+        hx = hx.toString(16);
+        if (hx.length < 2) {
+            hx = "0" + hx;
+        }
+        return hx;
+    }
+
+    function hslToRgb(h, s, l) {
+        const C = (1 - Math.abs(2 * l - 1)) * s;
+        const hPrime = h / 60;
+        const X = C * (1 - Math.abs((hPrime % 2) - 1));
+        const m = l - C / 2;
+        const withLight = (r, g, b) => [r + m, g + m, b + m];
+        if (hPrime <= 1) {
+            return withLight(C, X, 0);
+        } else if (hPrime <= 2) {
+            return withLight(X, C, 0);
+        } else if (hPrime <= 3) {
+            return withLight(0, C, X);
+        } else if (hPrime <= 4) {
+            return withLight(0, X, C);
+        } else if (hPrime <= 5) {
+            return withLight(X, 0, C);
+        } else if (hPrime <= 6) {
+            return withLight(C, 0, X);
+        }
+    };
+    
+    function switchFontColour( element, newClr ) {
+        let fontList = ["fontBlack","fontDarkGreen","fontDarkRed","fontDarkBlue","fontBrown","fontWhite","fontYellow","fontLime","fontPink","fontCyan"];
+        if (fontList.indexOf(newClr) == -1) {
+            console.log("Invalid colour sent to switchFontColour:", newClr);
+            return; // don't change anything - an invalid font has been entered
+        }
+        // let newClr  = fontList[ Math.max(0, Math.min(fontList.length - 1, Math.round(fontList.length * Math.random() )) )];
+        element.classList.remove("fontBlack" );
+        element.classList.remove("fontDarkGreen");
+        element.classList.remove("fontDarkRed" );
+        element.classList.remove("fontDarkBlue");
+        element.classList.remove("fontBrown" );
+        element.classList.remove("fontWhite" );
+        element.classList.remove("fontYellow");
+        element.classList.remove("fontLime" );
+        element.classList.remove("fontPink");
+        element.classList.remove("fontCyan");
+        element.classList.add(newClr);
+    }
 
     function updateFontsIfNeeded() {
         if (FanChartView.currentSettings["general_options_font4Names"] == font4Name && FanChartView.currentSettings["general_options_font4Info"] == font4Info) {
@@ -1165,11 +1731,26 @@
         let theDIV = document.getElementById("settingsDIV");
         theDIV.style.display = "none";
     };
+    FanChartView.hideLegend = function () {
+        let theDIV = document.getElementById("legendDIV");
+        theDIV.style.display = "none";
+    };
 
     FanChartView.toggleSettings = function () {
         // console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
         // console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
+        console.log("SETTINGS ARE:", theDIV.style.display);
+        if (theDIV.style.display == "none") {
+            theDIV.style.display = "block";
+        } else {
+            theDIV.style.display = "none";
+        }
+    };
+    FanChartView.toggleLegend = function () {
+        // console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
+        // console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
+        let theDIV = document.getElementById("legendDIV");
         console.log("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
@@ -1215,6 +1796,7 @@
                 "MiddleInitial",
                 "MiddleName",
                 "RealName",
+                "IsLiving",
                 "Nicknames",
                 "Prefix",
                 "Suffix",
@@ -1237,8 +1819,95 @@
                 "DataStatus",
             ]).then(function (result) {
                 FanChartView.theAncestors = result;
-                // console.log("theAncestors:", FanChartView.theAncestors);
+                console.log("theAncestors:", FanChartView.theAncestors);
                 // console.log("person with which to drawTree:", person);
+
+                // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
+                 let tmpAncArray = [];
+                 let tmpAhnT = [0, FanChartView.theAncestors[0].Id, FanChartView.theAncestors[0].Father, FanChartView.theAncestors[0].Mother];
+                 let tmpAhnTindex = [-1, 0];
+                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                     thePerson = FanChartView.theAncestors[ancNum];
+                     tmpAncArray.push([thePerson.Id, thePerson.Father, thePerson.Mother]);
+                 }
+
+                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                     for (var n = 2; n < 4; n++) {
+                         if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
+                             let thePerson = FanChartView.theAncestors[ancNum];
+                             tmpAhnTindex[n] = ancNum;
+                             tmpAhnT[2 * n] = thePerson.Father;
+                             tmpAhnT[2 * n + 1] = thePerson.Mother;
+                         }
+                     }
+                 }
+
+                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                     for (var n = 4; n < 8; n++) {
+                         if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
+                             let thePerson = FanChartView.theAncestors[ancNum];
+                             tmpAhnTindex[n] = ancNum;
+                             tmpAhnT[2 * n] = thePerson.Father;
+                             tmpAhnT[2 * n + 1] = thePerson.Mother;
+                         }
+                     }
+                 }
+
+                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                     for (var n = 8; n < 16; n++) {
+                         if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
+                             let thePerson = FanChartView.theAncestors[ancNum];
+                             tmpAhnTindex[n] = ancNum;
+                             tmpAhnT[2 * n] = thePerson.Father;
+                             tmpAhnT[2 * n + 1] = thePerson.Mother;
+                         }
+                     }
+                 }
+
+                 let relativeName = [
+                     "kid",
+                     "self",
+                     "Father",
+                     "Mother",
+                     "Grandfather",
+                     "Grandmother",
+                     "Grandfather",
+                     "Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                 ];
+                 for (var a = 1; a < 16; a++) {
+                     if (tmpAhnTindex[a] && tmpAhnTindex[a] > 0 && tmpAhnT[a] && tmpAhnT[a] < 0) {
+                         let thePersonNum = tmpAhnTindex[a];
+                         let theChildNum = tmpAhnTindex[Math.floor(a / 2)];
+                         console.log("Further - we need to fix ", FanChartView.theAncestors[thePersonNum]);
+
+                         FanChartView.theAncestors[thePersonNum].Id = a;
+                         FanChartView.theAncestors[thePersonNum]["Name"] = "Private-" + a;
+                         FanChartView.theAncestors[thePersonNum]["FirstName"] = "Private";
+                         FanChartView.theAncestors[thePersonNum]["LastNameAtBirth"] = relativeName[a];
+                         if (a % 2 == 0) {
+                             FanChartView.theAncestors[thePersonNum]["Gender"] = "Male";
+                             FanChartView.theAncestors[theChildNum].Father = a;
+                         } else {
+                             FanChartView.theAncestors[thePersonNum]["Gender"] = "Female";
+                             FanChartView.theAncestors[theChildNum].Mother = a;
+                         }
+                     }
+                 }
+
+                 console.log("tmpAhnT:", tmpAhnT);
+                 console.log("person:", person);
+                
+                 person._data.Father = FanChartView.theAncestors[0].Father;
+                 person._data.Mother = FanChartView.theAncestors[0].Mother;
+
                 for (let index = 0; index < FanChartView.theAncestors.length; index++) {
                     const element = FanChartView.theAncestors[index];
                     thePeopleList.add(FanChartView.theAncestors[index]);
@@ -1247,6 +1916,7 @@
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
+                fillOutFamilyStatsLocsForAncestors();
             });
         });
     };
@@ -1288,6 +1958,7 @@
             "MiddleInitial",
             "MiddleName",
             "RealName",
+            "IsLiving",
             "Nicknames",
             "Prefix",
             "Suffix",
@@ -1394,6 +2065,7 @@
             console.log("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
+            updateLegendIfNeeded();
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
             updateFontsIfNeeded();
@@ -1516,9 +2188,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
-                        <div class="name font${font4Name}"    id=nameDivFor${
+                        <div class="name fontBold font${font4Name}"    id=nameDivFor${
                         ancestorObject.ahnNum
-                    } style="font-size: 10px;" ><B>${getShortName(person)}</B></div>
+                    } style="font-size: 10px;" >${getShortName(person)}</div>
                         </div>
                     `;
                 } else if (thisGenNum == 8) {
@@ -1526,9 +2198,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
-                        <div class="name font${font4Name}"   id=nameDivFor${
+                        <div class="name fontBold font${font4Name}"   id=nameDivFor${
                         ancestorObject.ahnNum
-                    }  style="font-size: 14px;" ><B>${getShortName(person)}</B></div>
+                    }  style="font-size: 14px;" >${getShortName(person)}</div>
                     <div class="birth vital centered font${font4Info}" id=birthDivFor${
                         ancestorObject.ahnNum
                     }></div>
@@ -1539,9 +2211,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
-                        <div class="name font${font4Name}"  id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
+                        <div class="name fontBold font${font4Name}"  id=nameDivFor${ancestorObject.ahnNum}>${getSettingsName(
                         person
-                    )}</B></div>                    
+                    )}</div>                    
                     <div class="birth vital centered font${font4Info}" id=birthDivFor${
                         ancestorObject.ahnNum
                     }>${lifespanFull(person)}</div>
@@ -1581,8 +2253,8 @@
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   "> 
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
-                            <div class="name centered font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
-                                <B>${getSettingsName(person)}</B>
+                            <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
+                                ${getSettingsName(person)}
                             </div>                           
                         <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${lifespanFull(person)}</div>
 						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>                        
@@ -1622,9 +2294,9 @@
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   "> 
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
-                            <div class="name centered font${font4Name}" id=nameDivFor${
+                            <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
-                    }><B>${getSettingsName(person)}</B></div>
+                    }>${getSettingsName(person)}</div>
                         <div class="birth vital centered font${font4Info}" id=birthDivFor${
                         ancestorObject.ahnNum
                     }>${getSettingsDateAndPlace(person, "B", thisGenNum)}</div>
@@ -1661,9 +2333,9 @@
                         ancestorObject.ahnNum
                     } class="box" style="background-color: ${theClr} ; border:0; "> 
                     ${photoDiv}
-                    <div class="name centered font${font4Name}" id=nameDivFor${
+                    <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
-                    }><B>${getSettingsName(person)}</B></div>
+                    }>${getSettingsName(person)}</div>
                         <div class="birth vital centered font${font4Info}" id=birthDivFor${
                         ancestorObject.ahnNum
                     }>${getSettingsDateAndPlace(person, "B")}</div>
@@ -1697,8 +2369,8 @@
                     } style="background-color: ${theClr} ; border:0; ">
                      <div class="vital-info">
 						${photoDiv}
-						  <div class="name centered font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
-						    <b>${getSettingsName(person)}</b>						    
+						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
+						    ${getSettingsName(person)}						    
 						  </div>
 						  <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
                         person,
@@ -1757,34 +2429,70 @@
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
 
+            let luminance = 0.501;
+            let thisBkgdClr = "white";
+            let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
+            let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
+
+
             // LET'S START WITH COLOURIZING THE WEDGES - IF NEEDED
             if (ancestorObject.ahnNum == 1) {
                 let thisPersonsWedge = document.getElementById("ctrCirc");
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                    luminance = calcLuminance(thisPersonsWedge.style.fill);
+                    thisBkgdClr = thisPersonsWedge.style.fill;
                 }
             } else {
                 let thisPersonsWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                let theWedgeInfoForBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                    thisBkgdClr = thisPersonsWedge.style.fill;
                 } else {
                     console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
                 if (theWedgeBox) {
+                    
+                    if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
+                        
+                        let locString = ancestorObject.person._data["BirthCountry"];
+                        let clrIndex = theSortedLocationsArray.indexOf(locString);
+                        theClr = getColourFromSortedLocationsIndex(clrIndex);
 
-                    if (
+                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theWedgeBox.style.backgroundColor = theClr;
+
+                        // console.log(
+                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                        //     theClr
+                        // );
+                    } else if (settingForColourBy == "Location" && settingForSpecifyByLocation == "DeathBirthCountry") {
+                        let locString = ancestorObject.person._data["DeathCountry"];
+                        let clrIndex = theSortedLocationsArray.indexOf(locString);
+                        theClr = getColourFromSortedLocationsIndex(clrIndex);
+
+                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theWedgeBox.style.backgroundColor = theClr;
+
+                        // console.log(
+                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                        //     theClr
+                        // );
+                    } else if (
                         FanChartView.currentSettings["general_options_colourizeRepeats"] == true &&
                         repeatAncestorTracker[ancestorObject.person._data.Id]
                     ) {
                         theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
-                        theWedgeBox.style.background = theClr;
+                        theWedgeBox.style.backgroundColor = theClr;
+
                         // console.log(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
                     } else {
-                        theWedgeBox.style.background = getBackgroundColourFor(
+                        theWedgeBox.style.backgroundColor = getBackgroundColourFor(
                             thisGenNum,
                             thisPosNum,
                             ancestorObject.ahnNum
@@ -1795,19 +2503,127 @@
                         //     theWedgeBox.style.background
                         // );
                     }
-
+                    thisBkgdClr = theWedgeBox.style.backgroundColor;
+                    console.log("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
+                    luminance = calcLuminance( theWedgeBox.style.backgroundColor)
+                   
+                    
+                    console.log("LUMINANCE:",  luminance);
                     //  theWedgeBox.style.background = 'orange'; // TEMPORARY ONLY WHILE DOING SOME PLACEMENT RECON
+                    // theWedgeBox.style.backgroundColor = "yellow";
+                } else if(theWedgeInfoForBox) {
+                    if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
+                        let locString = ancestorObject.person._data["BirthCountry"];
+                        let clrIndex = theSortedLocationsArray.indexOf(locString);
+                        theClr = getColourFromSortedLocationsIndex(clrIndex);
+
+                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theWedgeInfoForBox.style.backgroundColor = theClr;
+
+                        // console.log(
+                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                        //     theClr
+                        // );
+                        thisBkgdClr - theClr; 
+                    } else if (settingForColourBy == "Location" && settingForSpecifyByLocation == "DeathBirthCountry") {
+                        let locString = ancestorObject.person._data["DeathCountry"];
+                        let clrIndex = theSortedLocationsArray.indexOf(locString);
+                        theClr = getColourFromSortedLocationsIndex(clrIndex);
+
+                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theWedgeInfoForBox.style.backgroundColor = theClr;
+
+                        // console.log(
+                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                        //     theClr
+                        // );
+                        thisBkgdClr - theClr; 
+                    } else if (
+                        FanChartView.currentSettings["general_options_colourizeRepeats"] == true &&
+                        repeatAncestorTracker[ancestorObject.person._data.Id]
+                    ) {
+                        theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theWedgeInfoForBox.style.backgroundColor = theClr;
+
+                        // console.log(
+                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
+                        //     theClr
+                        // );
+                        thisBkgdClr - theClr; 
+                    } else {
+                        thisBkgdClr = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
+                        // console.log(
+                        //     "in Transform -> NO COLOUR for ancestor ",
+                        //     ancestorObject.ahnNum,
+                        //     theWedgeBox.style.background
+                        // );
+                        theWedgeInfoForBox.style.backgroundColor = "#00000000"; // make it invisible - will not mess up the Print to PDF - AND - will avoid the overlapping edges you get in the inner portions
+                    }
+                    luminance = calcLuminance(thisBkgdClr);
+                    console.log(
+                        "We are in WEDGE INFO FOR box territory - font for ???",
+                        thisBkgdClr , luminance
+                    );
+                    // console.log("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
+                   
                 }
             }
 
             // NEXT - LET'S DO SOME POSITIONING TO GET EVERYONE IN PLACE !
             let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
             let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
+            
+
+            let fontList = ["fontBlack","fontDarkGreen","fontDarkRed","fontDarkBlue","fontBrown","fontWhite","fontYellow","fontLime","fontPink","fontCyan",];
+            let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];      
+            console.log("TextClrSetting = ", txtClrSetting)  ;
+            let theTextFontClr = "fontBlack";
+            if (txtClrSetting == "B&W") {
+                console.log("font for B&W : line 2438  : ", thisBkgdClr, luminance);
+                theTextFontClr = luminance > 0.179 ? "fontBlack" : "fontWhite";
+                if (thisBkgdClr.indexOf("rgb") > -1) {
+                    thisBkgdClr = hexify(thisBkgdClr);
+                    if (
+                        (thisTextColourArray[thisBkgdClr.toUpperCase()] &&
+                            thisTextColourArray[thisBkgdClr.toUpperCase()] == "BLACK") ||
+                        thisTextColourArray[thisBkgdClr.toUpperCase()] == "WHITE"
+                    ) {
+                        theTextFontClr = "font" + thisTextColourArray[thisBkgdClr.toUpperCase()];
+                    }
+                } else if (
+                    (thisTextColourArray[thisBkgdClr.toUpperCase()] &&
+                        thisTextColourArray[thisBkgdClr.toUpperCase()] == "BLACK") ||
+                    thisTextColourArray[thisBkgdClr.toUpperCase()] == "WHITE"
+                ) {
+                    theTextFontClr = "font" + thisTextColourArray[thisBkgdClr.toUpperCase()];
+                }
+            } else if (txtClrSetting == "alt") {
+                // theTextFontClr = fontList[ (luminance > 0.179 ? 0 : 5) + 
+                    // Math.max(0, Math.min(4, Math.round(5 * Math.random()))  ) ];
+                if (thisBkgdClr.indexOf("rgb") > -1)    {
+                    thisBkgdClr = hexify(thisBkgdClr);
+                }
+                theTextFontClr = "font" +  thisTextColourArray[thisBkgdClr.toUpperCase()];
+                // if (theTextFontClr == undefined) {
+                    console.log("FONT : ", thisBkgdClr, theTextFontClr,  thisTextColourArray);
+                // }
+            } else {
+                theTextFontClr = "fontBlack"; // not really needed ... but for completeness sake, and to make sure there's a legit value
+            }
+            console.log(
+                "theTextFontClr:",
+                theTextFontClr,
+                "for",
+                ancestorObject.person._data["FirstName"],
+                "thisBkgdClr",
+                thisBkgdClr
+            );
+            switchFontColour(theNameDIV, theTextFontClr);
 
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
                 // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
-                theNameDIV.innerHTML = "<B>" + getSettingsName(d) + "</B>";
+                theNameDIV.innerHTML =  getSettingsName(d)  ;
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
                     // console.log("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
@@ -1832,6 +2648,7 @@
                     theInfoBox.parentNode.parentNode.setAttribute("x", -160);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 320);
                 }
+                //  theInfoBox.style.backgroundColor = "orange";
             } else {
                 theInfoBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                 theInfoBox.parentNode.parentNode.setAttribute("width", 266);
@@ -2003,10 +2820,12 @@
             let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
             if (theBirthDIV) {
                 theBirthDIV.innerHTML = getSettingsDateAndPlace(d, "B", thisGenNum); // remember that d = ancestorObject.person
+                switchFontColour(theBirthDIV, theTextFontClr);
             }
             let theDeathDIV = document.getElementById("deathDivFor" + ancestorObject.ahnNum);
             if (theDeathDIV) {
                 theDeathDIV.innerHTML = getSettingsDateAndPlace(d, "D", thisGenNum); // remember that d = ancestorObject.person
+                switchFontColour(theDeathDIV, theTextFontClr);
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
@@ -2021,6 +2840,72 @@
         });
     };
 
+    function clrComponentValue( rgbValue ) {
+        let sRGB = rgbValue / 255;
+        if (sRGB <= 0.04045) {
+            return sRGB / 12.92;
+        } else {
+            return ((sRGB + 0.055) / 1.055) ** 2.4;
+        }
+    }
+
+    function hex2array( hexString) {
+        let trans = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
+        let theRGBarray = [
+            16 * trans.indexOf(hexString.substr(1, 1)) + trans.indexOf(hexString.substr(2, 1)),
+            16 * trans.indexOf(hexString.substr(3, 1)) + trans.indexOf(hexString.substr(4, 1)),
+            16 * trans.indexOf(hexString.substr(5, 1)) + trans.indexOf(hexString.substr(6, 1))
+        ];
+        return theRGBarray;
+    }
+
+    function hexify( clr ) {
+        let hex = "#";
+        let trans = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+        if (clr.indexOf("rgb") > -1) {
+            clr = clr.replace("rgb(", "").replace(")", "");
+            rgbClrs = clr.split(",");
+        }
+        for (let i = 0; i < rgbClrs.length; i++) {
+            const comp = rgbClrs[i];
+            let sixteens = Math.floor(comp / 16);
+            let ones = comp - 16*sixteens;
+            hex += trans[sixteens] + trans[ones];
+        }
+        return hex;
+
+    }
+    function calcLuminance(initBkgdClr) {
+        
+        let rgbClrs = [80, 80, 80];
+        if (initBkgdClr.indexOf("rgb") > -1) {
+            initBkgdClr = initBkgdClr.replace("rgb(", "").replace(")", "");
+            rgbClrs = initBkgdClr.split(",");
+        } else if (initBkgdClr.indexOf("#")> -1) {
+            rgbClrs = hex2array(initBkgdClr.toUpperCase());
+        } else {
+            let wasFound = false;
+            for (let index = 0; index < FullColoursArray.length; index++) {
+                const element = FullColoursArray[index];
+                if (element[1].toUpperCase() == initBkgdClr.toUpperCase()) {
+                    console.log("FOUND ", element);
+                    wasFound = true;
+                    rgbClrs = hex2array(element[2]);
+                    break;
+                }
+            }
+            if (!wasFound) {
+                console.log("FOUND - COULD NOT FIND COLOUR:", initBkgdClr);
+                rgbClrs = [40, 40, 40];
+            }
+        }
+        let luminance =
+            0.2126 * clrComponentValue(1.0 * rgbClrs[0]) +
+            0.7152 * clrComponentValue(1.0 * rgbClrs[1]) +
+            0.0722 * clrComponentValue(1.0 * rgbClrs[2]);
+
+        return luminance;
+    }
     /**
      * Show a popup for the person.
      */
@@ -2147,6 +3032,56 @@
 
     // Inheritance
     AncestorTree.prototype = Object.create(Tree.prototype);
+
+
+    /**
+     * Generate a string representing this person's lifespan 0000 - 0000
+     */
+    function theAge(person) {
+        let BirthDate = person.getBirthDate();
+        let age = -2;
+        if (person._data.IsLiving) {
+            age = -1;
+        }
+        if (BirthDate && /\d{4}-\d{2}-\d{2}/.test(BirthDate)) {
+            var partsBirth = BirthDate.split("-"),
+                yearBirth = parseInt(partsBirth[0], 10),
+                monthBirth = parseInt(partsBirth[1], 10),
+                dayBirth = parseInt(partsBirth[2], 10);
+        }
+        
+        let DeathDate = person.getDeathDate();
+        if (DeathDate && /\d{4}-\d{2}-\d{2}/.test(DeathDate)) {
+            var partsDeath = DeathDate.split("-"),
+                yearDeath = parseInt(partsDeath[0], 10),
+                monthDeath = parseInt(partsDeath[1], 10),
+                dayDeath = parseInt(partsDeath[2], 10);
+        }
+        
+        if (yearBirth > 0 && yearDeath > 0) {
+            age = yearDeath - yearBirth;
+            if (monthBirth > 0 && monthDeath > 0 && monthBirth > monthDeath) {
+                console.log("died before birthday in final year")
+                age -= 1;
+            } else if (
+                monthBirth > 0 &&
+                monthDeath > 0 &&
+                monthBirth == monthDeath &&
+                dayBirth > 0 &&
+                dayDeath > 0 &&
+                dayBirth > dayDeath
+            ) {
+                console.log("died before birthday in FINAL MONTH");
+                age -= 1;
+            }
+
+
+
+        }
+
+        return age;
+    }
+
 
     /**
      * Generate a string representing this person's lifespan 0000 - 0000
@@ -2674,7 +3609,7 @@
                 hasDeathDate = ( hasDeathDate && FanChartView.currentSettings["date_options_showDeath"]) ;
                 numLocSpotsAvailable = 0;
                 datePlaceString = "";
-                console.log(
+                /* console.log(
                     "DatePlaceString: numLocsSPots = 3 / Detailed BIRTH : ",
                     "thisDate:" + thisDate,
                     "hasDeathDate:" + hasDeathDate,
@@ -2683,7 +3618,7 @@
                         "locationTypes:" + FanChartView.currentSettings["place_options_locationTypes"],
                         "showDeath:" + FanChartView.currentSettings["place_options_showDeath"],
                         person._data.FirstName
-                );
+                ); */
                 if (
                     FanChartView.currentSettings["date_options_showBirth"] == false &&
                     hasDeathDate == true &&     
@@ -3017,9 +3952,19 @@
         let theName = "";
 
         if (FanChartView.currentSettings["name_options_firstName"] == "FirstNameAtBirth") {
-            theName = person._data.FirstName;
+            if (person._data.FirstName) {
+                theName = person._data.FirstName;
+            } else if (person._data.RealName) {
+                theName = person._data.RealName;
+            } else {
+                theName = "Private";
+            }
         } else {
-            theName = person._data.RealName;
+            if (person._data.RealName) {
+                theName = person._data.RealName;
+            } else {
+                theName = "Private";
+            }
         }
 
         if (FanChartView.currentSettings["name_options_middleName"] == true) {
@@ -3527,7 +4472,93 @@
         }
     }
 
-    function getBackgroundColourFor(gen, pos, ahnNum) {
+    function fillOutFamilyStatsLocsForAncestors() {
+        for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
+            const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ index ]];
+            if (thisPerp) {
+                thisPerp._data['age'] = theAge(thisPerp);
+                thisPerp._data['BirthCountry'] = getLocationFromString(thisPerp._data.BirthLocation, "C");
+                thisPerp._data['DeathCountry'] = getLocationFromString(thisPerp._data.DeathLocation, "C");
+                thisPerp._data['BirthRegion'] = getLocationFromString(thisPerp._data.BirthLocation, "R");
+                thisPerp._data['DeathRegion'] = getLocationFromString(thisPerp._data.DeathLocation, "R");
+                thisPerp._data['BirthTown'] = getLocationFromString(thisPerp._data.BirthLocation, "T");
+                thisPerp._data['DeathTown'] = getLocationFromString(thisPerp._data.DeathLocation, "T");
+                thisPerp._data['BirthTownFull'] = thisPerp._data.BirthLocation;
+                thisPerp._data['DeathTownFull'] = thisPerp._data.DeathLocation;
+                console.log(thisPerp._data.FirstName,  thisPerp._data.age, "*" + thisPerp._data.BirthRegion + "*" , "#" + thisPerp._data.DeathRegion + "#" );
+            }
+        }
+    
+    }
+    function fillOutFamilyStatsLocsForPerp(thisPerp) {
+        
+            if (thisPerp) {
+                thisPerp._data['age'] = theAge(thisPerp);
+                thisPerp._data['BirthCountry'] = getLocationFromString(thisPerp._data.BirthLocation, "C");
+                thisPerp._data['DeathCountry'] = getLocationFromString(thisPerp._data.DeathLocation, "C");
+                thisPerp._data['BirthRegion'] = getLocationFromString(thisPerp._data.BirthLocation, "R");
+                thisPerp._data['DeathRegion'] = getLocationFromString(thisPerp._data.DeathLocation, "R");
+                thisPerp._data['BirthTown'] = getLocationFromString(thisPerp._data.BirthLocation, "T");
+                thisPerp._data['DeathTown'] = getLocationFromString(thisPerp._data.DeathLocation, "T");
+                thisPerp._data['BirthTownFull'] = thisPerp._data.BirthLocation;
+                thisPerp._data['DeathTownFull'] = thisPerp._data.DeathLocation;
+                console.log(thisPerp._data.FirstName,  thisPerp._data.age, "*" + thisPerp._data.BirthRegion + "*" , "#" + thisPerp._data.DeathRegion + "#" );
+            }
+            return "done";
+        
+    }
+
+    function getLocationFromString( locString , locType) {
+        if (!locString || locString == "") {
+            return "";
+        }
+        if (locType == "C") {
+            if ( locString.indexOf(",") > -1) {
+                let lastCommaAt = locString.indexOf(",");
+                let nextCommaAt = lastCommaAt;
+                while (nextCommaAt > -1) {
+                    nextCommaAt = locString.indexOf(",", lastCommaAt + 1);
+                    if (nextCommaAt > -1) {
+                        lastCommaAt = nextCommaAt;
+                    }
+                }
+
+                return locString.substr(lastCommaAt + 1).trim();
+            } else {
+                return locString;
+            }
+        } else if (locType == "R") {
+            if (locString.indexOf(",") > -1) {
+                let lastCommaAt = locString.indexOf(",");
+                let penultimateCommaAt = -1;
+                let nextCommaAt = lastCommaAt;
+                while (nextCommaAt > -1) {
+                    nextCommaAt = locString.indexOf(",", lastCommaAt + 1);
+                    if (nextCommaAt > -1) {
+                        penultimateCommaAt = lastCommaAt
+                        lastCommaAt = nextCommaAt;
+                    }
+                }
+                if (penultimateCommaAt > -1) {
+                    return locString.substr(penultimateCommaAt + 1).trim();
+                } else {
+                    return locString.substr(lastCommaAt + 1).trim();
+                }
+
+            } else {
+                return locString;
+            }
+        } else {
+            if (locString.indexOf(",") > -1) {
+                return locString.substr(0, locString.indexOf(",") ).trim();
+            } else {
+                return locString.trim();
+            }
+        }
+
+    }
+
+    function getColourArray() {
         PastelsArray = [
             "#ECFFEF",
             "#CCEFEC",
@@ -3967,17 +4998,47 @@
         // start out with a random palette selected, so, if nothing else, at least there's something
         let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
 
-        // GET the settings that determine what the colouring should look like (if at all)
-        let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
-        if (settingForColourBy == "None") {
-            return "White";
-        }
- 
         let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
+        let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
+
         if (KeyColoursMatches[settingForPalette]) {
             thisColourArray = KeyColoursMatches[settingForPalette];
         }
+        if (settingForColourBy == "Location") {
+            thisColourArray = [];
+            for (let c = 0; c <= 6; c++) {
+                for (let i = 0; i < AllColoursArrays[c].length; i++) {
+                    const element = AllColoursArrays[c][i];
+                    if (thisColourArray.indexOf(element) == -1) {
+                        thisColourArray.push(element);
+                    }
+                }
+            }
+            // thisColourArray.sort();
+        } 
+        
+        return thisColourArray;
+    }
 
+    function getBackgroundColourFor(gen, pos, ahnNum) {
+  
+        
+        // GET the settings that determine what the colouring should look like (if at all)
+        let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
+        // WHILE we're here, might as well get the sub-settings if Family or Location colouring is being used ...
+        let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
+        let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
+        
+        let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
+
+        if (settingForColourBy == "None") {
+            return "White";
+        }
+        
+        let thisColourArray = getColourArray();
+        
+
+        
         let overRideByHighlight = false; //
         if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
             overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
@@ -3986,7 +5047,7 @@
             return "yellow";
         }
 
-        if (ahnNum == 1) {
+        if (ahnNum == 1 && settingForColourBy != "Location" && settingForColourBy != "Family") {
             return thisColourArray[0];
         }
 
@@ -4015,9 +5076,81 @@
                 thisColourArray = RainbowArrayLong;                 
              }
             return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
-        } else if (settingForColourBy == "Town") {
-        } else if (settingForColourBy == "Region") {
-        } else if (settingForColourBy == "Country") {
+        } else if (settingForColourBy == "Family") {
+            if (settingForSpecifyByFamily == "age") {
+                let thisAge = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.age;
+                if (thisAge == undefined) {
+                    let thePerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
+                    thisAge = theAge(thePerp);
+                    thePerp._data['age'] = thisAge;
+                    console.log ("thisAge - WAS undefined - now is:", thisAge);
+                } else {
+                    console.log("thisAge:", thisAge);
+                }
+
+                if (thisAge == -2) {
+                    return "white"; //thisColourArray[0];
+                } else if (thisAge == -1) {
+                    return "lime";//thisColourArray[0];
+                } else {
+                    let thisDecade = 1 + Math.max(0, Math.floor((thisAge + 0.5) / 10));
+                    console.log("Age " + thisAge + " in Decade # " + thisDecade);
+                    return thisColourArray[thisDecade];
+                }
+            } else if (settingForSpecifyByFamily == "spouses") {
+            } else if (settingForSpecifyByFamily == "siblings") {
+            }
+        } else if (settingForColourBy == "Location") {
+            let locString = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data[settingForSpecifyByLocation];
+            if (settingForSpecifyByLocation == "BirthDeathCountry") {
+                locString = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data["DeathCountry"];
+            } else if (settingForSpecifyByLocation == "DeathBirthCountry") {
+                locString = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data["BirthCountry"];
+            }
+            
+                if (locString == undefined) {
+                    let thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
+                    let res = fillOutFamilyStatsLocsForPerp(thisPerp);
+                    locString = thisPerp._data[settingForSpecifyByLocation];
+                    console.log(
+                        "NEW location for " + thisPerp._data.FirstName + " " + thisPerp._data.LastNameAtBirth,
+                        locString
+                    );
+                }
+            let index = theSortedLocationsArray.indexOf(locString);
+            if (index == -1) {
+                if (locString > "") {
+                    showRefreshInLegend();
+                }
+                return "white";
+            }
+            //   let hue = Math.round((360 * index) / theSortedLocationsArray.length);
+            //     let sat = 1 - ((index % 2)) * - 0.15;
+            //     let lit = 0.5 + ((index % 7) - 3) *  0.05;
+            //     let   = hslToRGBhex(hue,sat,lit);
+                let hue = Math.round((360 * index) / theSortedLocationsArray.length);
+                let sat = 1 - (index % 2) * -0.15;
+                let lit = 0.5 + ((index % 7) - 3) * 0.05;
+                let thisClr = hslToRGBhex(hue, sat, lit);
+                return thisClr;
+
+            //     console.log("CLR:", hue, sat, lit, thisClr);
+            //     let clrSwatch =
+            //         "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+            //         thisClr +
+            //         ";stroke:black;stroke-width:1;opacity:1' /></svg>";
+            //     // let clrSwatch =
+            //     //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+            //     //     thisColourArray[index % thisColourArray.length] +
+            //     //     ";stroke:black;stroke-width:1;opacity:1' /></svg>";
+            //     innerCode += "<br/>" + clrSwatch + " " + sortedLocs[index] ;                    
+            // }
+
+            
+
+            // let clrIndex = uniqueLocationsArray.indexOf(locString);
+            // return thisColourArray[clrIndex];
+            
         } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
         }
@@ -4025,6 +5158,23 @@
         return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
     }
 
+    function getColourFromSortedLocationsIndex(index) {
+        // let index = theSortedLocationsArray.indexOf(locString);
+        if (index == -1) {
+            return "white";
+        }
+        
+        //   let hue = Math.round((360 * index) / theSortedLocationsArray.length);
+        //     let sat = 1 - ((index % 2)) * - 0.15;
+        //     let lit = 0.5 + ((index % 7) - 3) *  0.05;
+        //     let   = hslToRGBhex(hue,sat,lit);
+        let hue = Math.round((360 * index) / theSortedLocationsArray.length);
+        let sat = 1 - (index % 2) * -0.15;
+        let lit = 0.5 + ((index % 7) - 3) * 0.05;
+        let thisClr = hslToRGBhex(hue, sat, lit);
+        return thisClr;
+    }
+    
     // Used this function to conditionally turn on / off the FanDoku link - but - now we want it on all the time
     // FanChartView.getCheckIn = function () {
     //     var API_URL = "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ok.php";
@@ -4036,4 +5186,445 @@
     //             return data;
     //         });
     // }
+
+     function test4ColourMatches() {
+        PastelsArray = [
+            "#ECFFEF",
+            "#CCEFEC",
+            "#CCFFCC",
+            "#FFFFCC",
+            "#FFE5CC",
+            "#FFCCCC",
+            "#FFCCE5",
+            "#FFCCFF",
+            "#E5CCFF",
+            "#D5CCEF",
+            "#E6E6FA",
+            "#FFB6C1",
+            "#F5DEB3",
+            "#FFFACD",
+            "#C5ECCF",
+            "#F0FFF0",
+            "#FDF5E6",
+            "#FFE4E1",
+        ];
+        RainbowArray = [
+            "#FFFACD",
+            "Red",
+            "Orange",
+            "Yellow",
+            "SpringGreen",
+            "SkyBlue",
+            "Orchid",
+            "Violet",
+            "DeepPink",
+            "Pink",
+            "MistyRose",
+            "OrangeRed",
+            "Gold",
+            "GreenYellow",
+            "Cyan",
+            "Plum",
+            "Magenta",
+            "#F83BB7",
+            "#FF45A3",
+            "PaleVioletRed",
+            "Pink",
+        ];// replaced some colours
+        RainbowArrayLong = [
+            "#FFFACD",
+            "Red",
+            "OrangeRed",
+            "Orange",
+            "Gold",
+            "Yellow",
+            "GreenYellow",
+            "SpringGreen",
+            "Cyan",
+            "SkyBlue",
+            "#B898E0",
+            "Orchid",
+            "Magenta",
+            "Violet",
+            "#F83BB7",
+            "DeepPink",
+            "#FF45A3",
+            "HotPink",
+            "#FF45A3",
+            "DeepPink",
+            "Violet",
+            "Magenta",
+            "Orchid",
+            "#B898E0",
+            "SkyBlue",
+            "Cyan",
+            "SpringGreen",
+            "GreenYellow",
+            "Yellow",
+            "Gold",
+            "Orange",
+            "OrangeRed",
+            "Red",
+        ];// replaced some colours
+        Rainbow8 = [
+            "Red",
+            "Orange",
+            "Yellow",
+            "SpringGreen",
+            "SkyBlue",
+            "Orchid",
+            "Violet",
+            "DeepPink",     
+            "HotPink" ,
+            "MistyRose",
+        ];
+        RainbowTweens = ["OrangeRed","Gold","GreenYellow","Cyan","Plum","Magenta","PaleVioletRed","Pink"];
+
+        GreysArrayOrig = [
+            "#ACACAC",
+            "#B0B0B0",
+            "#B4B4B4",
+            "#B8B8B8",
+            "#BCBCBC",
+            "#C0C0C0",
+            "#C4C4C4",
+            "#C8C8C8",
+            "#CCCCCC",
+            "#D0D0D0",
+            "#D4D4D4",
+            "#D8D8D8",
+            "#DCDCDC",
+            "#E0E0E0",
+            "#E4E4E4",
+            "#E8E8E8",
+            "#ECECEC",
+            "#F0F0F0",
+        ];
+        AltGreysArray = [
+            "#F0F0F0",
+            "#C5C5C5",
+            "#EAEAEA",
+            "#C0C0C0",
+            "#E5E5E5",
+            "#BABABA",
+            "#E0E0E0",
+            "#B5B5B5",
+            "#DADADA",
+            "#B0B0B0",
+            "#D5D5D5",
+            "#AAAAAA",
+            "#D0D0D0",
+            "#A5A5A5",
+            "#CACACA",
+            "#A0A0A0",
+            "#C5C5C5",
+            "#9A9A9A",
+            "#C5C5C5",
+            "#A0A0A0",
+            "#CACACA",
+            "#A5A5A5",
+            "#D0D0D0",
+            "#AAAAAA",
+            "#D5D5D5",
+            "#B0B0B0",
+            "#DADADA",
+            "#B5B5B5",
+            "#E0E0E0",
+            "#BABABA",
+            "#E5E5E5",
+            "#C0C0C0",
+            "#EAEAEA",
+            "#C5C5C5",
+            "#F0F0F0",
+        ];
+        GreysArray = [
+            "#F0F0F0",
+            "#EAEAEA",
+            "#E5E5E5",
+            "#E0E0E0",
+            "#DADADA",
+            "#D5D5D5",
+            "#D0D0D0",
+            "#CACACA",
+            "#C5C5C5",
+            "#C0C0C0",
+            "#BABABA",
+            "#B5B5B5",
+            "#B0B0B0",
+            "#AAAAAA",
+            "#A5A5A5",
+            "#A0A0A0",
+            "#9A9A9A",
+            "#A0A0A0",            
+            "#A5A5A5",
+            "#AAAAAA",
+            "#B0B0B0",
+            "#B5B5B5",
+            "#BABABA",
+            "#C0C0C0",
+            "#C5C5C5",
+            "#CACACA",
+            "#D0D0D0",
+            "#D5D5D5",
+            "#DADADA",
+            "#E0E0E0",
+            "#E5E5E5",
+            "#EAEAEA",
+            "#F0F0F0",
+        ];
+       RedsArray = [
+           "#FFF8F0",
+           "#FFF0F8",
+           "#FFF4F4",
+           "#FFF0F0",
+           "#FFE8E0",
+           "#FFE0E8",
+           "#FFE4E4",
+           "#FFE0E0",
+           "#FFD8D0",
+           "#FFD0D8",
+           "#FFD4D4",
+           "#FFD0D0",
+           "#FFC8C0",
+           "#FFC0C8",
+           "#FFC4C4",
+           "#FFC0C0",
+           "#FFB0B0",
+           "#FFA0A0",
+           "#FFB0B0",
+           "#FFC0C0",
+           "#FFC4C4",
+           "#FFC0C8",
+           "#FFC8C0",
+           "#FFD0D0",
+           "#FFD4D4",
+           "#FFD0D8",
+           "#FFD8D0",
+           "#FFE0E0",
+           "#FFE4E4",
+           "#FFE0E8",
+           "#FFE8E0",
+           "#FFF0F0",
+           "#FFF4F4",
+           "#FFF0F8",
+           "#FFF8F0",
+       ];
+       BluesArray = [
+           "#F8F0FF",
+           "#F0F8FF",
+           "#F4F4FF",
+           "#F0F0FF",
+           "#E8E0FF",
+           "#E0E8FF",
+           "#E4E4FF",
+           "#E0E0FF",
+           "#D8D0FF",
+           "#D0D8FF",
+           "#D4D4FF",
+           "#D0D0FF",
+           "#C8C0FF",
+           "#C0C8FF",
+           "#C4C4FF",
+           "#C0C0FF",
+           "#B0B0FF",
+           "#A0A0FF",
+
+           "#B0B0FF",
+           "#C0C0FF",
+           "#C4C4FF",
+           "#C0C8FF",
+           "#C8C0FF",
+           "#D0D0FF",
+           "#D4D4FF",
+           "#D0D8FF",
+           "#D8D0FF",
+           "#E0E0FF",
+           "#E4E4FF",
+           "#E0E8FF",
+           "#E8E0FF",
+           "#F0F0FF",
+           "#F4F4FF",
+           "#F0F8FF",
+           "#F8F0FF",
+       ];
+       GreensArray = [
+           "#F8FFF0",
+           "#F0FFF8",
+           "#F4FFF4",
+           "#F0FFF0",
+           "#E8FFE0",
+           "#E0FFE8",
+           "#E4FFE4",
+           "#E0FFE0",
+           "#D8FFD0",
+           "#D0FFD8",
+           "#D4FFD4",
+           "#D0FFD0",
+           "#C8FFC0",
+           "#C0FFC8",
+           "#C4FFC4",
+           "#C0FFC0",
+           "#B0FFB0",
+           "#A0FFA0",
+
+           "#B0FFB0",
+           "#C0FFC0",
+           "#C4FFC4",
+           "#C0FFC8",
+           "#C8FFC0",
+           "#D0FFD0",
+           "#D4FFD4",
+           "#D0FFD8",
+           "#D8FFD0",
+           "#E0FFE0",
+           "#E4FFE4",
+           "#E0FFE8",
+           "#E8FFE0",
+           "#F0FFF0",
+           "#F4FFF4",
+           "#F0FFF8",
+           "#F8FFF0",
+       ];
+       let AltRedsArray = [
+           "#FFF8F0",
+           "#FFD8D0",
+           "#FFF0F8",
+           "#FFD0D8",
+           "#FFF4F4",
+           "#FFD4D4",
+           "#FFF0F0",
+           "#FFD0D0",
+           "#FFE8E0",
+           "#FFC8C0",
+           "#FFE0E8",
+           "#FFC0C8",
+           "#FFE4E4",
+           "#FFC4C4",
+           "#FFE0E0",
+           "#FFC0C0",
+           "#FFEAEA",
+           "#FFA0A0",
+
+           "#FFEAEA",
+           "#FFC0C0",
+           "#FFE0E0",
+           "#FFC4C4",
+           "#FFE4E4",
+           "#FFC0C8",
+           "#FFE0E8",
+           "#FFC8C0",
+           "#FFE8E0",
+           "#FFD0D0",
+           "#FFF0F0",
+           "#FFD4D4",
+           "#FFF4F4",
+           "#FFD0D8",
+           "#FFF0F8",
+           "#FFD8D0",
+           "#F0F8FF",
+       ];
+       let AltGreensArray = [
+           "#F8FFF0",
+           "#D8FFD0",
+           "#F0FFF8",
+           "#D0FFD8",
+           "#F4FFF4",
+           "#D4FFD4",
+           "#F0FFF0",
+           "#D0FFD0",
+           "#E8FFE0",
+           "#C8FFC0",
+           "#E0FFE8",
+           "#C0FFC8",
+           "#E4FFE4",
+           "#C4FFC4",
+           "#E0FFE0",
+           "#C0FFC0",
+           "#EAFFEA",
+           "#A0FFA0",
+
+           "#EAFFEA",
+           "#C0FFC0",
+           "#E0FFE0",
+           "#C4FFC4",
+           "#E4FFE4",
+           "#C0FFC8",
+           "#E0FFE8",
+           "#C8FFC0",
+           "#E8FFE0",
+           "#D0FFD0",
+           "#F0FFF0",
+           "#D4FFD4",
+           "#F4FFF4",
+           "#D0FFD8",
+           "#F0FFF8",
+           "#D8FFD0",
+           "#F8F0FF",
+       ];
+       let AltBluesArray = [
+           "#F8F0FF",
+           "#D8D0FF",
+           "#F0F8FF",
+           "#D0D8FF",
+           "#F4F4FF",
+           "#D4D4FF",
+           "#F0F0FF",
+           "#D0D0FF",
+           "#E8E0FF",
+           "#C8C0FF",
+           "#E0E8FF",
+           "#C0C8FF",
+           "#E4E4FF",
+           "#C4C4FF",
+           "#E0E0FF",
+           "#C0C0FF",
+           "#EAEAFF",
+           "#A0A0FF",
+
+           "#EAEAFF",
+           "#C0C0FF",
+           "#E0E0FF",
+           "#C4C4FF",
+           "#E4E4FF",
+           "#C0C8FF",
+           "#E0E8FF",
+           "#C8C0FF",
+           "#E8E0FF",
+           "#D0D0FF",
+           "#F0F0FF",
+           "#D4D4FF",
+           "#F4F4FF",
+           "#D0D8FF",
+           "#F0F8FF",
+           "#D8D0FF",
+           "#F8FFFF",
+       ];
+
+       let allArrays = [PastelsArray, RainbowArray, RainbowArrayLong, Rainbow8, RainbowTweens, GreysArrayOrig, AltGreysArray , GreysArray , RedsArray, BluesArray, GreensArray, AltRedsArray, AltBluesArray, AltGreensArray, ColourArray];
+
+       for (let a = 0; a < allArrays.length; a++) {
+        const element = allArrays[a];
+        for (let b = 0; b < element.length; b++) {
+            const clr = element[b];
+            if (clr.indexOf("#") == -1){
+                console.log("TEST the clr:", clr);
+                let wasFound = false;
+                for (let c = 0; c < FullColoursArray.length; c++) {
+                    const fc = FullColoursArray[c];
+                    if (fc[1].toUpperCase() == clr.toUpperCase()) {
+                        console.log("FOUND ", fc);
+                        wasFound = true;
+                        break;
+                    }
+                }
+                if (!wasFound) {
+                    console.log("TEST - COULD NOT FIND COLOUR:", clr);
+                }
+                
+            }
+            
+        }
+        
+       }
+    }
 })();
