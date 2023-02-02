@@ -7,10 +7,6 @@ import { CacheLoader } from "./cache_loader.js";
 import { CachedPerson } from "./cached_person.js";
 
 window.CouplesTreeView = class CouplesTreeView extends View {
-    static #DESCRIPTION =
-        'See <a href="https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree" target="_blank">Couples Tree Help</a> ' +
-        "for help. Click and drag to pan around. Use track pad or mouse wheel to zoom the tree. " +
-        "Click on a person to see more detail. about the person";
     constructor() {
         super();
         CachedPerson.init(new PeopleCache(new CacheLoader()));
@@ -19,16 +15,21 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     meta() {
         return {
             title: "Couples Dynamic Tree",
-            description: CouplesTreeView.#DESCRIPTION,
-            docs: "https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree",
+            description:
+                'See <a href="https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree" target="_blank">Couples Tree Help</a> for help. ' +
+                "Click and drag to pan around. Use track pad or mouse wheel to zoom the tree. Click on a person to see more detail. about the person",
+            docs: "",
         };
     }
 
     init(container_selector, person_id) {
-        // If we need to clear the cache whenever the focus of the tree changes, uncomment the next line
+        // For now we clear the cache whenever the focus of the tree changes. If we don't do this, the new
+        // tree will automatically be drawn with all people in the cache that are connected to the central person.
+        // While this may be OK, a current problem is that this may include people (e.g. children of children)
+        // that are only partially loaded (e.g. spouses might not be loaded) and the current logic will not
+        // load them before drawing them (i.e. not for children of children), so ? will appear in stead of the
+        // spouse's name. [Mmm, not sure if this is still an issue, let's see...]
         // this.#peopleCache.clear();
-        wtViewRegistry.setInfoPanel(CouplesTreeView.#DESCRIPTION);
-        wtViewRegistry.showInfoPanel();
         new CouplesTreeViewer(container_selector).loadAndDraw(person_id);
     }
 };
