@@ -174,7 +174,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
                 err += ` You may need to be added to the starting profile's Trusted List.`;
             } else {
-                err += ` Try logging into the API.`;
+                err += ` Try the Apps Login.`;
             }
             wtViewRegistry.showError(err);
             wtViewRegistry.hideInfoPanel();
@@ -195,6 +195,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         $("#compactTreeLink").attr("href", `https://www.wikitree.com/treewidget/${p.Name}`);
         $("#toolsLink").attr("href", `https://www.wikitree.com/genealogy/${p.LastNameAtBirth}-Family-Tree-${count}`);
         $("#toolsLink").html(`${p.RealName}'s Tree &amp; Tools page`);
+
+        // Display our "info" panel with a description of this view.
+        wtViewRegistry.showInfoPanel();
 
         // Now clear out our tree view and start filling it recursively with generations.
         $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);

@@ -34,9 +34,11 @@ window.NameTestView = class NameTestView extends View {
                 "<li>Suffix(*) - the Suffix API field</br></ul>" +
                 "<p>A third function is:<br>" +
                 "&nbsp;&nbsp;&nbsp;&nbsp;<b>.withFormat(template)</b> that returns a string constructed according to <i>template</i>, " +
-                'where <i>template</i> is a string with placeholders, e.g.: "He is [FullName], better known as [PreferredName], but also as [Nicknames]."<br>' +
-                "<p>This page shows the result of calling the above functions with the indicated name parts parameter for the person specified above. " +
-                "as well as a few calls to <b>.withFormat</b>",
+                'where <i>template</i> is a string with placeholders, e.g.: "He is [FullName], better known as [PreferredName], but ' +
+                'also as [Nicknames]."<br>' +
+                "<p>This page shows the result of calling the above functions with the indicated name parts parameter for the person " +
+                "specified above, as well as a few calls to <b>.withFormat</b>. This is repeated for the same profile obtained with " +
+                "different combinations of requested fields in the API",
             docs: "",
             disabled: 1,
         };
@@ -44,32 +46,33 @@ window.NameTestView = class NameTestView extends View {
 
     init(container_selector, person_id) {
         const nameTest = new NameTest(container_selector, person_id);
-        nameTest.displayNames();
+        nameTest.displayNames(
+            "Id,Name,FirstName,LastNameCurrent,LastNameAtBirth,LastNameOther,Suffix,Prefix,Derived.BirthName," +
+                "Derived.BirthNamePrivate,MiddleName,MiddleInitial,RealName,Nicknames"
+        );
+        nameTest.displayNames("Name,Id,LastNameAtBirth,FirstName,MiddleName,LastNameCurrent");
     }
 };
 
 window.NameTest = class NameTest {
     constructor(selector, startId) {
         this.startId = startId;
-        this.selector = selector;
-        this.profileFields =
-            "Id,Name,FirstName,LastNameCurrent,LastNameAtBirth,LastNameOther,Suffix,Prefix,Derived.BirthName," +
-            "Derived.BirthNamePrivate,MiddleName,MiddleInitial,RealName,Nicknames";
+        $(selector).html(`<div id="nameTestResults"></div>`);
     }
 
-    async displayNames() {
+    async displayNames(profileFields) {
         const data = await WikiTreeAPI.postToAPI({
             action: "getPerson",
             key: this.startId,
-            fields: this.profileFields,
+            fields: profileFields,
         });
+        $("#nameTestResults").append(`<h3>Requested fields:</h3>\n<p>${profileFields}</p>`);
         if (data.length != 1) {
             wtViewRegistry.showError(`There was an error retrieving the profile for ${this.startId}.`);
             return;
         }
         const profileData = data[0].person;
         const name = new PersonName(profileData);
-        $(this.selector).html(`<div id="nameTestResults"></div>`);
         const partsTestResults = new Array(
             this.doPartsTest(name, ["PedigreeName"]),
             this.doPartsTest(name, [
@@ -165,8 +168,8 @@ window.NameTest = class NameTest {
     displayPartsResult(partsTestResult) {
         return (
             `<li class="testResult"><b>wantedParts</b>: ${partsTestResult.request}<br>\n` +
-            `<b>withParts:</b> ${partsTestResult.withParts}<br>\n` +
-            `<b>getParts</b>: ${
+            `<b>withParts returns</b>: ${partsTestResult.withParts}<br>\n` +
+            `<b>getParts returns</b>: ${
                 typeof partsTestResult.getParts === "string"
                     ? partsTestResult.getParts
                     : JSON.stringify([...partsTestResult.getParts.entries()])

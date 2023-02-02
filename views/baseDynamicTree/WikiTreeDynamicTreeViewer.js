@@ -98,13 +98,15 @@
         }
         self._load(id).then(function (person) {
             if (person._data.Name) {
+                wtViewRegistry.setInfoPanel(`Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.`);
+                wtViewRegistry.showInfoPanel();
                 self.drawTree(person);
             } else {
                 let err = `The starting profile data could not be retrieved.`;
                 if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
                     err += ` You may need to be added to the starting profile's Trusted List.`;
                 } else {
-                    err += ` Try logging into the API.`;
+                    err += ` Try the Apps login.`;
                 }
                 wtViewRegistry.showError(err);
                 wtViewRegistry.hideInfoPanel();
