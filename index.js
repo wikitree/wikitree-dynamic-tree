@@ -55,6 +55,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "calendar": new calendarView(),
         "couples": new CouplesTreeView(),
         "nameTest": new NameTestView(),
+        "cc7": new CC7View(),
     };
 
     for (let key in views) {
