@@ -441,7 +441,7 @@ window.SessionManager = class SessionManager {
 };
 
 function condLog(...args) {
-    if (debugLoggingOn) {
+    if ((typeof debugLoggingOn !== 'undefined') && (debugLoggingOn)) {
         console.log.apply(null, args);
     }
 }
