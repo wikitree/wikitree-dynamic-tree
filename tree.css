@@ -239,6 +239,38 @@ main {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.fontBlack {
+  color:black;
+}
+.fontDarkGreen {
+  color:darkgreen;
+}
+.fontDarkRed {
+  color:darkred;
+}
+.fontDarkBlue {
+  color:darkblue;
+}
+.fontBrown {
+  color:rgb(72, 32, 4);
+}
+
+.fontWhite {
+  color:white;
+}
+.fontYellow {
+  color: yellow;
+}
+.fontLime {
+  color:lime;
+}
+.fontPink{
+  color:hotpink;
+}
+.fontCyan {
+  color:cyan;
+}
+
 .fontScript {
   font-family: cursive;
 }
@@ -270,11 +302,19 @@ main {
   flex-grow: 1;
 }
 
+.selectSimpleDropDown {
+  appearance: auto;
+  background: white;
+  padding: 6px;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
   body {
-    background: transparent;
+    background: transparent;  
+    -webkit-print-color-adjust: exact;  /*  COLOR ADJUST rules added so that coloured DIVS (like the cells in a Fan Chart) get printed as displayed on screen */       
+    print-color-adjust: exact;          
   }
 
   header,

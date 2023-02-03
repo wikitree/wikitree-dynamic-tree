@@ -435,7 +435,8 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     optionDivElement.appendChild(labelElement);
                 } else if (option.type == "select") {
                     optionElement = document.createElement("select");
-                    optionElement.className = "optionSelect";
+                    optionElement.className = "optionSelect selectSimpleDropDown";
+                    // optionElement.onClick = "optionElementJustChanged();";
 
                     for (let value of option.values) {
                         let selectOptionElement = document.createElement("option");
@@ -450,10 +451,12 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let labelTextNode = document.createTextNode(option.label + ": ");
 
                     let labelElement = document.createElement("label");
+                    labelElement.id = fullOptionName + "_label";
 
                     labelElement.appendChild(labelTextNode);
-                    labelElement.appendChild(optionElement);
+                    // labelElement.appendChild(optionElement);
                     optionDivElement.appendChild(labelElement);
+                    optionDivElement.appendChild(optionElement);
                 } else if (option.type == "number") {
                     optionElement = document.createElement("input");
                     optionElement.type = "number";
@@ -504,6 +507,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
 
                 let breakElement = document.createElement("br");
+                breakElement.id = fullOptionName + "_BR";
                 optionDivElement.appendChild(breakElement);
 
                 subsectionPanelElement.appendChild(optionDivElement);
