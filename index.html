@@ -49,10 +49,21 @@
 
     <script src="views/nameTest/name_test.js"></script>
 
+    <script type="module" src="views/couplesTree/cached_person.js"></script>
+    <script type="module" src="views/couplesTree/cache_loader.js"></script>
+    <script type="module" src="views/couplesTree/people_cache.js"></script>
+    <script type="module" src="views/couplesTree/couples_tree.js"></script>
+    <link rel="stylesheet" href="views/couplesTree/couples_tree.css" />
+
     <link rel="stylesheet" href="tree.css" />
   </head>
 
   <body>
+    <script>
+      // A var statement creates a global variable. This is here because of modules (in inelegent solution, I know
+      // - the globals, not modules).
+      var debugLoggingOn = false; // set to true to turn on debug logging to the console
+    </script>
     <!-- The View Registry, for adding new views, is in index.js. -->
     <script src="index.js"></script>
     <header>

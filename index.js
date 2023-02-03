@@ -47,6 +47,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
         "calendar": new calendarView(),
+        "couples": new CouplesTreeView(),
         "nameTest": new NameTestView(),
     };
 

@@ -6,12 +6,6 @@
  *
  */
 
-// Set localTesting to true if you run this from your desktop. This would require that you have installed a browser
-// extension to fiddle with CORS permissions, like one of these for Chrome:
-//     https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc
-//     https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
-const localTesting = false;
-
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
@@ -149,9 +143,6 @@ window.wtCompleteName = function (person, options = {}) {
     return result.filter((part) => part !== null).join(" ");
 };
 
-// Our basic constructor for a Person. We expect the "person" data from the API returned result
-// (see getPerson below). The basic fields are just stored in the internal _data array.
-// We pull out the Parent and Child elements as their own Person objects.
 WikiTreeAPI.Person = class Person {
     constructor(data) {
         this._data = data;
@@ -250,86 +241,94 @@ WikiTreeAPI.Person = class Person {
     }
 }; // End Person class definition
 
-// To get a Person for a given id, we POST to the API's getPerson action. When we get a result back,
-// we convert the returned JSON data into a Person object.
-// Note that postToAPI returns the Promise from JavaScript's fetch() call.
-// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
-// So we can use this through our asynchronous actions with something like:
-// WikiTree.getPerson.then(function(result) {
-//    // the "result" here is that from our API call. The profile data is in result[0].person.
-// });
-//
-WikiTreeAPI.getPerson = function (id, fields) {
-    return WikiTreeAPI.postToAPI({
+/**
+ * Return a promise for a person object with the given id.
+ * An API call is made and the promise will store the result (if successful)
+ * in the cache (if enabled) before it is returned.
+ *
+ * @param {*} id The WikiTree ID of the person to retrieve
+ * @param {*} fields An array of field names to retrieve for the given person
+ * @returns a Person object
+ */
+WikiTreeAPI.getPerson = async function (id, fields) {
+    const result = await WikiTreeAPI.postToAPI({
         action: "getPerson",
         key: id,
         fields: fields.join(","),
         resolveRedirect: 1,
-    }).then(function (result) {
-        return new WikiTreeAPI.Person(result[0].person);
     });
+    return new WikiTreeAPI.Person(result[0].person);
 };
-// To get a set of Ancestors for a given id, we POST to the API's getAncestors action. When we get a result back,
-// we leave the result as an array of objects
-// Note that postToAPI returns the Promise from JavaScript's fetch() call.
-// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
 
-// So we can use this through our asynchronous actions with something like:
-// WikiTree.getAncestors(myID, 5, ['Id','Name', 'LastNameAtBirth']).then(function(result) {
-//    // the "result" here is that from our API call. The profile data is in result[0].ancestors, which will be an array of objects
-// });
-
-// WARNING:  If you just do a NewAncestorsArray = WikiTree.getAncestors(id,depth,fields);
-//     --> what you get is the promise object - NOT the array of ancestors you might expect.
-// You HAVE to use the .then() with embedded function to wait and process the results
-//
-WikiTreeAPI.getAncestors = function (id, depth, fields) {
-    return WikiTreeAPI.postToAPI({
+/**
+ * To get a set of Ancestors for a given id, we POST to the API's getAncestors action. When we get a result back,
+ * we leave the result as an array of objects
+ * Note that postToAPI returns the Promise from JavaScript's fetch() call.
+ * This function returns a Promise (as result of the await), which gets resolved once the await returns.
+ *
+ * So we can use this through our asynchronous actions with something like:
+ * WikiTree.getAncestors(myID, 5, ['Id','Name', 'LastNameAtBirth']).then(function(ancestors) {
+ *    // the "ancestors" here is the profile data in result[0].ancestors, an array of objects,
+ *    // where result is what was returned by the API call
+ * });
+ *
+ * WARNING:  If you just do a NewAncestorsArray = WikiTree.getAncestors(id,depth,fields);
+ *     --> what you get is the promise object - NOT the array of ancestors you might expect.
+ * You HAVE to use the .then() with embedded function, or await, to wait and process the results
+ *
+ * @param {*} id
+ * @param {*} depth
+ * @param {*} fields
+ * @returns
+ */
+WikiTreeAPI.getAncestors = async function (id, depth, fields) {
+    const result = await WikiTreeAPI.postToAPI({
         action: "getAncestors",
         key: id,
         depth: depth,
         fields: fields.join(","),
         resolveRedirect: 1,
-    }).then(function (result) {
-        // console.log( result[0].ancestors );
-        return result[0].ancestors;
     });
+    return result[0].ancestors;
 };
 
-// To get a set of Relatives for a given id or a SET of ids, we POST to the API's getRelatives action. When we get a result back,
-// we leave the result as an array of objects
-// Note that postToAPI returns the Promise from JavaScript's fetch() call.
-// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
-
-// PARAMETERS:
-//		IDs 	: can be a single string, with a single ID or a set of comma separated IDs - OR - it can be an array of IDs
-//		fields	: an array of fields to return for each profile (same as for getPerson or getProfile)
-//		options	: an option object which can contain these key-value pairs
-// bioFormat	Optional: "wiki", "html", or "both"
-// getParents	If true, the parents are returned
-// getChildren	If true, the children are returned
-// getSiblings	If true, the siblings are returned
-// getSpouses	If true, the spouses are returned
-
-// So we can use this through our asynchronous actions with something like:
-
-// WikiTree.getRelatives(nextIDsToLoad, ['Id','Name', 'LastNameAtBirth'], {getParents:true} ).then(
-//		function(result) {
-//  	 	  // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
-//				 for (let index = 0; index < result.length; index++) {
-//				 	thePeopleList.add(result[index].person);
-//				 }
-//		};
-
-// NOTE:  the "result" here that is the input to the .then function is the JSON from our API call. The profile data is in result[0].items, which will be an array of objects
-//  Each object (or item) has a key, user_id, user_name, then a person object (that contains the fields requested),
-//	 and inside that person object could be a Parents object, a Children object, a Siblings object and a Spouses object.
-//   If there is a Parents object, then in the list of fields will be Mother and Father, even if they weren't originally in the fields list parameter
-// });
-
-// WARNING:  See note above about what you get if you don't use the .then() ....
-//
-WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
+/**
+ * To get a set of Relatives for a given id or a SET of ids, we POST to the API's getRelatives action.
+ * When we get a result back, we leave the result as an array of objects
+ * Note that postToAPI returns the Promise from JavaScript's fetch() call.
+ * That feeds our await here, which also returns a Promise, which gets resolved when the wait is over.
+ *
+ * So we can use this through our asynchronous actions with something like:
+ *
+ *   WikiTree.getRelatives(nextIDsToLoad, ["Id", "Name", "LastNameAtBirth"], { getParents: true }).then(
+ *       function (peopleList) {
+ *           // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
+ *           for (let index = 0; index < peopleList.length; index++) {
+ *               thePeopleList.add(peopleList[index].person);
+ *           }
+ *       }
+ *   );
+ *
+ * NOTE:  the "peopleList" here that is the input to the .then function is the JSON from our API call, namely
+ * result[0].items, which will be an array of objects.
+ * Each object (or item) has a key, user_id, user_name, then a person object (that contains the fields requested),
+ * and inside that person object could be a Parents object, a Children object, a Siblings object and a Spouses object.
+ * If there is a Parents object, then in the list of fields will be Mother and Father, even if they weren't originally
+ * in the fields list parameter.
+ *
+ * WARNING:  See note above about what you get if you don't use the .then() ....
+ *
+ * @param {*} IDs can be a single string, with a single ID or a set of comma separated IDs. OR it can be an array of IDs
+ * @param {*} fields an array of fields to return for each profile (same as for getPerson or getProfile)
+ * @param {*} options an option object which can contain these key-value pairs
+ *                    - bioFormat	Optional: "wiki", "html", or "both"
+ *                    - getParents	If true, the parents are returned
+ *                    - getChildren	If true, the children are returned
+ *                    - getSiblings	If true, the siblings are returned
+ *                    - getSpouses	If true, the spouses are returned
+ * @returns a Promise for the JSON in the returned API response
+ */
+WikiTreeAPI.getRelatives = async function (IDs, fields, options = {}) {
     let getRelativesParameters = {
         action: "getRelatives",
         keys: IDs.join(","),
@@ -346,36 +345,48 @@ WikiTreeAPI.getRelatives = function (IDs, fields, options = {}) {
     }
     // console.log("getRelativesParameters: ", getRelativesParameters);
 
-    return WikiTreeAPI.postToAPI(getRelativesParameters).then(function (result) {
-        // console.log("RESULT from getRelatives:", result );
-        return result[0].items;
-    });
+    const result = await WikiTreeAPI.postToAPI(getRelativesParameters);
+    return result[0].items;
 };
 
-// To get the Watchlist for the logged in user, we POST to the API's getWatchlist action. When we get a result back,
-// we leave the result as an array of objects
-// Note that postToAPI returns the Promise from jquerys .ajax() call.
-// That feeds our .then() here, which also returns a Promise, which gets resolved by the return inside the "then" function.
-
-// So we can use this through our asynchronous actions with something like:
-// WikiTree.getWatchlist(limit, getPerson, getSpace, fields).then(function(result) {
-//    // the "result" here is that from our API call. The profile data is in result[0].watchlist, which will be an array of objects
-// });
-WikiTreeAPI.getWatchlist = function (limit, getPerson, getSpace, fields) {
-    return WikiTreeAPI.postToAPI({
+/**
+ * To get the Watchlist for the logged in user, we POST to the API's getWatchlist action. When we get a result back,
+ * we leave the result as an array of objects
+ * Note that postToAPI returns the Promise from JavaScript's fetch() call.
+ * That feeds our await here, which also returns a Promise, which gets resolved when the wait is over.
+ *
+ * So we can use this through our asynchronous actions with something like:
+ * WikiTree.getWatchlist(limit, getPerson, getSpace, fields).then(function(list) {
+ *    // the "list" here is the profile data in result[0].watchlist, which will be an array of objects,
+ *    // where "result" is the JSON that was returned from the API call.
+ * });
+ *
+ * @param {*} limit
+ * @param {*} getPerson
+ * @param {*} getSpace
+ * @param {*} fields
+ * @returns
+ */
+WikiTreeAPI.getWatchlist = async function (limit, getPerson, getSpace, fields) {
+    const result = await WikiTreeAPI.postToAPI({
         action: "getWatchlist",
         limit: limit,
         getPerson: getPerson,
         getSpace: getSpace,
         fields: fields.join(","),
         resolveRedirect: 1,
-    }).then(function (result) {
-        return result[0].watchlist;
     });
+    return result[0].watchlist;
 };
 
-// This is just a wrapper for the JavaScript fetch() call, sending along necessary options for the WikiTree API.
+/**
+ * This is just a wrapper for JavaScript's fetch() call, sending along necessary options for the WikiTree API.
+ *
+ * @param {*} postData
+ * @returns
+ */
 WikiTreeAPI.postToAPI = async function (postData) {
+    condLog(`>>>>> postToAPI ${postData.action} ${postData.key || postData.keys}`, postData);
     const API_URL = "https://api.wikitree.com/api.php";
 
     let formData = new FormData();
@@ -385,7 +396,7 @@ WikiTreeAPI.postToAPI = async function (postData) {
     // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
     let options = {
         method: "POST",
-        credentials: localTesting ? "omit" : "include",
+        credentials: "include",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
         },
@@ -398,20 +409,23 @@ WikiTreeAPI.postToAPI = async function (postData) {
     return await response.json();
 };
 
-// Utility function to get/set cookie data.
-// Adapted from https://github.com/carhartl/jquery-cookie which is obsolete and has been
-// superseded by https://github.com/js-cookie/js-cookie. The latter is a much more complete cookie utility.
-// Here we just want to get and set some simple values in limited circumstances to track an API login.
-// So we'll use a stripped-down function here and eliminate a prerequisite. This function should not be used
-// in complex circumstances.
-//
-// key     = The name of the cookie to set/read. If reading and no key, then array of all key/value pairs is returned.
-// value   = The value to set the cookie to. If undefined, the value is instead returned. If null, cookie is deleted.
-// options = Used when setting the cookie,
-//           options.expires = Date or number of days in the future (converted to Date for cookie)
-//           options.path, e.g. "/"
-//           options.domain, e.g. "apps.wikitree.com"
-//           options.secure, if true then cookie created with ";secure"
+/**
+ * Utility function to get/set cookie data.
+ * Adapted from https://github.com/carhartl/jquery-cookie which is obsolete and has been
+ * superseded by https://github.com/js-cookie/js-cookie. The latter is a much more complete cookie utility.
+ * Here we just want to get and set some simple values in limited circumstances to track an API login.
+ * So we'll use a stripped-down function here and eliminate a prerequisite. This function should not be used
+ * in complex circumstances.
+ *
+ * @param {*} key The name of the cookie to set/read. If reading and no key, then array of all key/value pairs is returned.
+ * @param {*} value The value to set the cookie to. If undefined, the value is instead returned. If null, cookie is deleted.
+ * @param {*} options Used when setting the cookie:
+ *            - options.expires = Date or number of days in the future (converted to Date for cookie)
+ *            - options.path, e.g. "/"
+ *            - options.domain, e.g. "apps.wikitree.com"
+ *            - options.secure, if true then cookie created with ";secure"
+ * @returns
+ */
 WikiTreeAPI.cookie = function (key, value, options) {
     if (options === undefined) {
         options = {};
