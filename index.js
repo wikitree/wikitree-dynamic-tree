@@ -41,7 +41,11 @@ window.addEventListener("DOMContentLoaded", (event) => {
     });
 
     // To add a new View, add a unique keyword with a value of the new View().
+    // The default view is the first one (but this is only used if the user has
+    // not used the page before, since the last view used is saved in a cookie
+    // and used the next time the user goes to this page).
     const views = {
+        "couples": new CouplesTreeView(),
         "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
         "timeline": new TimelineView(),
         "fanchart": new FanChartView(),
@@ -53,7 +57,6 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
         "calendar": new calendarView(),
-        "couples": new CouplesTreeView(),
         "nameTest": new NameTestView(),
         "cc7": new CC7View(),
     };
