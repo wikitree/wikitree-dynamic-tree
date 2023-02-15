@@ -1695,10 +1695,8 @@ export class CC7 {
                 maternalGrandmother,
             ].forEach(function (aGrandparent) {
                 if (aGrandparent) {
-                    console.log(1);
                     window.people.forEach(function (person) {
                         if (person.Id == aGrandparent.Father || person.Id == aGrandparent.Mother) {
-                            console.log(2);
                             let notIn = true;
                             if (person.Child.length) {
                                 person.Child.forEach(function (aChild) {
@@ -1710,7 +1708,6 @@ export class CC7 {
                             if (notIn) {
                                 person.Child.push(JSON.parse(JSON.stringify(aGrandparent)));
                             }
-                            console.log(person);
                         }
                     });
                 }
@@ -1733,7 +1730,7 @@ export class CC7 {
 
             let birthLocation = mPerson.BirthLocation;
             let birthLocationReversed = "";
-            if (birthLocation == "null" || typeof birthLocation == "undefined") {
+            if (birthLocation == null || typeof birthLocation == "undefined") {
                 birthLocation = "";
             } else {
                 const bLocation2ways = CC7.location2ways(birthLocation);
@@ -1742,7 +1739,7 @@ export class CC7 {
             }
             let deathLocation = mPerson.DeathLocation;
             let deathLocationReversed = "";
-            if (deathLocation == "null" || deathLocation == undefined) {
+            if (deathLocation == null || typeof deathLocation == "undefined") {
                 deathLocation = "";
             } else {
                 const dLocation2ways = CC7.location2ways(deathLocation);
@@ -1983,9 +1980,9 @@ export class CC7 {
                 if (!mPerson.Father && !mPerson.Mother) {
                     relNums["Parent_cell"] = "<td class='noParents number' title='missing parents'>0</td>";
                 } else if (!mPerson.Father) {
-                    relNums["Parent_cell"] = "<td class='noFather number' title='missing father'>0</td>";
+                    relNums["Parent_cell"] = "<td class='noFather number' title='missing father'>1</td>";
                 } else if (!mPerson.Mother) {
-                    relNums["Parent_cell"] = "<td class='noMother number' title='missing mother'>0</td>";
+                    relNums["Parent_cell"] = "<td class='noMother number' title='missing mother'>1</td>";
                 }
             }
 
@@ -2963,7 +2960,7 @@ export class CC7 {
                         }
                         window.chunksBack++;
                         if (window.peopleKeys.length == 0 && window.chunksOut == window.chunksBack) {
-                            console.log(window.people);
+                            //console.log(window.people);
                             CC7.hideShakingTree();
                             if (window.people.length == 0) {
                                 $("div.cc7Table").append(
