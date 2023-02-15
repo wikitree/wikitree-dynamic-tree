@@ -83,6 +83,42 @@ export class CC7 {
             <li>The lists are ordered alphabetically.</li>
         </ul>`;
 
+    static PROFILE_FIELDS = [
+        "BirthDate",
+        "BirthDateDecade",
+        "BirthLocation",
+        "Created",
+        "DataStatus",
+        "DeathDate",
+        "DeathDateDecade",
+        "DeathLocation",
+        "Derived.BirthName",
+        "Derived.BirthNamePrivate",
+        "Derived.LongName",
+        "Derived.LongNamePrivate",
+        "Father",
+        "FirstName",
+        "Gender",
+        "Id",
+        "IsLiving",
+        "LastNameAtBirth",
+        "LastNameCurrent",
+        "LastNameOther",
+        "Manager",
+        "MiddleName",
+        "Mother",
+        "Name",
+        "Nicknames",
+        "Prefix",
+        "Privacy",
+        "RealName",
+        "ShortName",
+        "Suffix",
+        "Touched",
+    ].join(",");
+
+    static RELATIONS_FIELDS = ["Children", "Parents", "Siblings", "Spouses"].join(",");
+
     constructor(selector, startId) {
         this.selector = selector;
         $(selector).html(
@@ -1042,40 +1078,32 @@ export class CC7 {
             }
         });
         if (fsReady == false) {
-            $.ajax({
-                url: "https://api.wikitree.com/api.php",
-                data: {
-                    action: "getRelatives",
-                    getSpouses: "1",
-                    getChildren: "1",
-                    getParents: "1",
-                    getSiblings: "1",
-                    keys: theClickedName,
-                },
-                crossDomain: true,
-                xhrFields: { withCredentials: true },
-                type: "POST",
-                dataType: "json",
-                success: function (data) {
-                    thePeople = data[0].items;
-                    thePeople.forEach(function (aPerson, index) {
-                        const mPerson = aPerson.person;
-                        const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
-                        mPerson.Spouse = mSpouses;
-                        const mChildren = CC7.getRels(mPerson.Children, mPerson, "Child");
-                        mPerson.Child = mChildren;
-                        const mSiblings = CC7.getRels(mPerson.Siblings, mPerson, "Sibling");
-                        mPerson.Sibling = mSiblings;
-                        const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
-                        mPerson.Parent = mParents;
-                    });
-                    window.people.forEach(function (aPeo) {
-                        if (aPeo.Name == theClickedName) {
-                            aPeo = mPerson;
-                        }
-                    });
-                    CC7.doFamilySheet(mPerson, theClicked);
-                },
+            WikiTreeAPI.postToAPI({
+                action: "getRelatives",
+                getSpouses: "1",
+                getChildren: "1",
+                getParents: "1",
+                getSiblings: "1",
+                keys: theClickedName,
+            }).then((data) => {
+                thePeople = data[0].items;
+                thePeople.forEach(function (aPerson, index) {
+                    const mPerson = aPerson.person;
+                    const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
+                    mPerson.Spouse = mSpouses;
+                    const mChildren = CC7.getRels(mPerson.Children, mPerson, "Child");
+                    mPerson.Child = mChildren;
+                    const mSiblings = CC7.getRels(mPerson.Siblings, mPerson, "Sibling");
+                    mPerson.Sibling = mSiblings;
+                    const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
+                    mPerson.Parent = mParents;
+                });
+                window.people.forEach(function (aPeo) {
+                    if (aPeo.Name == theClickedName) {
+                        aPeo = mPerson;
+                    }
+                });
+                CC7.doFamilySheet(mPerson, theClicked);
             });
         }
     }
@@ -1120,7 +1148,6 @@ export class CC7 {
         if (fbds[1] != "00" && fbds[2] != "00" && fbds[0] != "00") {
             // month is zero-indexed(!)
             const fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, fbds[2]);
-            //console.log(fbdsDate);
             fbd = fbdsDate.format("j M Y");
             if (dateFormat > 0) {
                 fbd = fbdsDate.format(fullDateFormat);
@@ -1258,7 +1285,6 @@ export class CC7 {
             "0",
             0,
         ];
-        //console.log(thing);
         if (!excludeValues.includes(thing)) {
             if (CC7.isNumeric(thing)) {
                 return true;
@@ -2858,54 +2884,43 @@ export class CC7 {
 
     static async getPeopleAction(keys, siblings, ancestors, descendants, nuclear, minGeneration, fields) {
         try {
-            const result = await $.ajax({
-                url: "https://api.wikitree.com/api.php",
-                crossDomain: true,
-                xhrFields: {
-                    withCredentials: true,
-                },
-                type: "POST",
-                dataType: "json",
-                data: {
-                    action: "getPeople",
-                    keys: keys,
-                    siblings: siblings,
-                    ancestors: ancestors,
-                    descendants: descendants,
-                    nuclear: nuclear,
-                    minGeneration: minGeneration,
-                    fields: fields,
-                },
+            const result = await WikiTreeAPI.postToAPI({
+                action: "getPeople",
+                keys: keys,
+                siblings: siblings,
+                ancestors: ancestors,
+                descendants: descendants,
+                nuclear: nuclear,
+                minGeneration: minGeneration,
+                fields: fields,
             });
-            return result;
+            const people = result[0].people;
+            if (typeof people == "undefined" || people == "") {
+                wtViewRegistry.showError(`No results obtained when requesting relatives for ${keys}`);
+                return null;
+            }
+            return result[0].people;
         } catch (error) {
-            CC7.hideShakingTree();
-            wtViewRegistry.showError(`Could not retrieve people profiles: ${error}`);
+            wtViewRegistry.showError(`Could not retrieve relatives for ${keys}: ${error}`);
+            return null;
         }
     }
 
-    static async getSomeRelatives(id, fields = "*") {
+    static async getSomeRelatives(ids, fields = "*") {
         try {
-            const result = await $.ajax({
-                url: "https://api.wikitree.com/api.php",
-                crossDomain: true,
-                xhrFields: { withCredentials: true },
-                type: "POST",
-                dataType: "json",
-                data: {
-                    action: "getRelatives",
-                    keys: id,
-                    fields: fields,
-                    getParents: 1,
-                    getSiblings: 1,
-                    getSpouses: 1,
-                    getChildren: 1,
-                },
+            const result = await WikiTreeAPI.postToAPI({
+                action: "getRelatives",
+                keys: ids,
+                fields: fields,
+                getParents: 1,
+                getSiblings: 1,
+                getSpouses: 1,
+                getChildren: 1,
             });
             return result[0].items;
         } catch (error) {
             CC7.hideShakingTree();
-            wtViewRegistry.showError(`Could not retrieve relatives for ${id}: ${error}`);
+            wtViewRegistry.showError(`Could not retrieve relatives for ${ids}: ${error}`);
         }
     }
 
@@ -2926,21 +2941,20 @@ export class CC7 {
             $("div.cc7Table").addClass("degreeView");
             const theDegree = $("#cc7Degree").val();
             const fields = "Id";
-            CC7.getPeopleAction($("#wtid").val(), 0, 0, 0, theDegree, theDegree, fields).then((result) => {
+            CC7.getPeopleAction($("#wtid").val(), 0, 0, 0, theDegree, theDegree, fields).then((people) => {
                 $("#oneDegreeList").remove();
                 const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
                 $("div.cc7Table").append(oneDegreeList);
-                window.peopleKeys = Object.keys(result[0].people);
+                if (people === null) {
+                    CC7.hideShakingTree();
+                    return;
+                }
+                window.peopleKeys = Object.keys(people);
                 while (window.peopleKeys.length) {
                     const chunk = window.peopleKeys.splice(0, 100).join(",");
                     //console.log(chunk);
                     window.chunksOut++;
-                    const oFields =
-                        "BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate,DeathDateDecade,DeathLocation," +
-                        "IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent,Prefix,Suffix,LastNameOther," +
-                        "Derived.LongName,Derived.LongNamePrivate,Manager,MiddleName,Mother,Name,Photo,RealName,ShortName," +
-                        "Touched,DataStatus,Derived.BirthName,Privacy,Created";
-                    CC7.getSomeRelatives(chunk, oFields).then((result) => {
+                    CC7.getSomeRelatives(chunk, CC7.PROFILE_FIELDS).then((result) => {
                         if (result) {
                             result.forEach(function (aPerson) {
                                 const mPerson = aPerson.person;
@@ -2967,7 +2981,7 @@ export class CC7 {
                                     $(
                                         "<div id='tooBig' style='text-align:center'>No Result... Maybe the CC7 is too big. <br>" +
                                             "These may be after the first thousand.<br>" +
-                                            "How about going to a grandparent and looking at their results?</div>"
+                                            "How about going to a grandparent and looking at their results or reduce the degrees?</div>"
                                     )
                                 );
                             } else {
@@ -2996,12 +3010,7 @@ export class CC7 {
                 .val()
                 .match(/.+\-.+/)
         ) {
-            const aFields =
-                "Parents,Siblings,Spouses,Children,BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate," +
-                "DeathDateDecade,DeathLocation,IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent," +
-                "Prefix,Suffix,LastNameOther,Derived.LongName,Derived.LongNamePrivate,Manager,MiddleName,Mother,Name," +
-                "Photo,RealName,ShortName,Touched,DataStatus,Derived.BirthName,Privacy";
-            window.ancestors = await CC7.getAncestors($("#wtid").val(), 3, aFields);
+            window.ancestors = await CC7.getAncestors($("#wtid").val(), 3, CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS);
             CC7.assignGeneration(window.ancestors, ancestors[0], 0);
         }
         event.preventDefault();
@@ -3024,97 +3033,87 @@ export class CC7 {
         } else {
             WTID = keys;
         }
-        $.ajax({
-            url: "https://api.wikitree.com/api.php",
-            crossDomain: true,
-            xhrFields: { withCredentials: true },
-            type: "POST",
-            data: {
-                action: "getRelatives",
-                keys: WTID,
-                getParents: "1",
-                getSiblings: "1",
-                getSpouses: "1",
-                getChildren: "1",
-                fields:
-                    "Name,Id,LastNameAtBirth,FirstName,MiddleName,LastNameCurrent,Touched,Created,Privacy,DataStatus," +
-                    "BirthDate,BirthDateDecade,DeathDate,DeathDateDecade,BirthLocation,DeathLocation,RealName,Gender,Nicknames," +
-                    "Suffix,Prefix,Derived.BirthName,Derived.BirthNamePrivate,MiddleName,MiddleInitial",
-            },
-            dataType: "json",
-            success: function (data) {
-                const items = data[0]["items"];
-                if (items) {
-                    items.forEach(function (item) {
-                        let person = item.person;
-                        if (window.gotEm.includes(person.Id) == false) {
-                            window.gotEm.push(person.Id);
-                            person.Degree = window.degree;
-                            window.people.push(person);
-                            thisDegreeIn++;
+        WikiTreeAPI.postToAPI({
+            action: "getRelatives",
+            keys: WTID,
+            getParents: "1",
+            getSiblings: "1",
+            getSpouses: "1",
+            getChildren: "1",
+            fields: CC7.PROFILE_FIELDS,
+        }).then((data) => {
+            const items = data[0]["items"];
+            if (items) {
+                items.forEach(function (item) {
+                    let person = item.person;
+                    if (window.gotEm.includes(person.Id) == false) {
+                        window.gotEm.push(person.Id);
+                        person.Degree = window.degree;
+                        window.people.push(person);
+                        thisDegreeIn++;
+                    }
+                    person = CC7.addFamilyToPerson(person);
+                    const arr = ["Parent", "Sibling", "Spouse", "Child"];
+                    arr.forEach(function (rel) {
+                        if (person[rel].length > 0) {
+                            person[rel].forEach(function (aRel) {
+                                if (
+                                    window.toGet.includes(aRel.Id) == false &&
+                                    window.gotEm.includes(aRel.Id) == false
+                                ) {
+                                    window.toGet.push(aRel.Id);
+                                }
+                            });
                         }
-                        person = CC7.addFamilyToPerson(person);
-                        const arr = ["Parent", "Sibling", "Spouse", "Child"];
-                        arr.forEach(function (rel) {
-                            if (person[rel].length > 0) {
-                                person[rel].forEach(function (aRel) {
-                                    if (
-                                        window.toGet.includes(aRel.Id) == false &&
-                                        window.gotEm.includes(aRel.Id) == false
-                                    ) {
-                                        window.toGet.push(aRel.Id);
-                                    }
-                                });
+                    });
+                });
+            }
+
+            if (window.degree < 3) {
+                if (window.ancestors) {
+                    window.ancestors.forEach(function (anAncestor) {
+                        if (anAncestor.Generation == window.degree + 1) {
+                            if (!window.gotEm.includes(anAncestor.Id) && !window.toGet.includes(anAncestor.Id)) {
+                                window.toGet.push(anAncestor.Id);
                             }
-                        });
+                        }
                     });
                 }
+            }
 
-                if (window.degree < 3) {
-                    if (window.ancestors) {
-                        window.ancestors.forEach(function (anAncestor) {
-                            if (anAncestor.Generation == window.degree + 1) {
-                                if (!window.gotEm.includes(anAncestor.Id) && !window.toGet.includes(anAncestor.Id)) {
-                                    window.toGet.push(anAncestor.Id);
-                                }
-                            }
-                        });
-                    }
+            const keys = window.toGet.join(",");
+            if (window.degree < maxDegree) {
+                CC7.getConnections(maxDegree, keys);
+                if ($("#degreesTable").length == 0) {
+                    $("div.cc7Table").append(
+                        $(
+                            "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
+                        )
+                    );
                 }
+                window.toGet = [];
+            } else {
+                CC7.hideShakingTree();
+                CC7.addPeopleTable();
+            }
+            if (window.degree > 0) {
+                $("#degreesTable")
+                    .find("tr")
+                    .eq(0)
+                    .append($("<td>" + window.degree + "</td>"));
+                $("#degreesTable")
+                    .find("tr")
+                    .eq(1)
+                    .append($("<td>" + window.thisDegreeIn + "</td>"));
 
-                const keys = window.toGet.join(",");
-                if (window.degree < maxDegree) {
-                    CC7.getConnections(maxDegree, keys);
-                    if ($("#degreesTable").length == 0) {
-                        $("div.cc7Table").append(
-                            $(
-                                "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
-                            )
-                        );
-                    }
-                    window.toGet = [];
-                } else {
-                    CC7.hideShakingTree();
-                    CC7.addPeopleTable();
-                }
-                if (window.degree > 0) {
-                    $("#degreesTable")
-                        .find("tr")
-                        .eq(0)
-                        .append($("<td>" + window.degree + "</td>"));
-                    $("#degreesTable")
-                        .find("tr")
-                        .eq(1)
-                        .append($("<td>" + window.thisDegreeIn + "</td>"));
-
-                    $("#degreesTable")
-                        .find("tr")
-                        .eq(2)
-                        .append($("<td>" + (parseInt(window.people.length) - 1) + "</td>"));
-                }
-                window.degree++;
-                window.thisDegreeIn = 0;
-            },
+                $("#degreesTable")
+                    .find("tr")
+                    .eq(2)
+                    .append($("<td>" + (parseInt(window.people.length) - 1) + "</td>"));
+            }
+            window.degree++;
+            window.thisDegreeIn = 0;
+            //},
         });
     }
 
@@ -3176,12 +3175,11 @@ export class CC7 {
                 return;
             }
 
-            const aFields =
-                "Parents,Siblings,Spouses,Children,BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate," +
-                "DeathDateDecade,DeathLocation,IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent," +
-                "Prefix,Suffix,LastNameOther,Derived.LongName,Derived.LongNamePrivate,Manager,MiddleName,Mother,Name," +
-                "Photo,RealName,ShortName,Touched,DataStatus,Derived.BirthName,Privacy";
-            window.ancestors = await CC7.getAncestors(window.people[0].Id, 3, aFields);
+            window.ancestors = await CC7.getAncestors(
+                window.people[0].Id,
+                3,
+                CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS
+            );
             CC7.assignGeneration(window.ancestors, ancestors[0], 0);
 
             $("#wtid").val(window.people[0].Name);
@@ -3358,18 +3356,11 @@ export class CC7 {
 
     static async getAncestors(id, depth, fields = "*") {
         try {
-            const result = await $.ajax({
-                url: "https://api.wikitree.com/api.php",
-                crossDomain: true,
-                xhrFields: { withCredentials: true },
-                type: "POST",
-                dataType: "json",
-                data: {
-                    action: "getAncestors",
-                    key: id,
-                    depth: depth,
-                    fields: fields,
-                },
+            const result = await WikiTreeAPI.postToAPI({
+                action: "getAncestors",
+                key: id,
+                depth: depth,
+                fields: fields,
             });
             if (typeof result[0].ancestors == "undefined") {
                 wtViewRegistry.showError(`Could not retrieve ancestors for ${id}: ${result[0].status}`);
