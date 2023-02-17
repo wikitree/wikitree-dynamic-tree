@@ -124,13 +124,13 @@ window.TimelineView = class TimelineView extends View {
                             });
                         } else {
                             if (x.BirthDate.split("-")[1] == "00") {
-                                // Death Month and Day not known
+                                // Birth Month and Day not known
                                 var birth = `${x.BirthDate.split("-")[0]}-01-01`;
-                            } else if (x.DeathDate.split("-")[2] == "00") {
-                                // Death Day is not known
+                            } else if (x.BirthDate.split("-")[2] == "00") {
+                                // Birth Day is not known
                                 var birth = `${x.BirthDate.split("-")[0]}-${x.BirthDate.split("-")[1]}-01`;
                             } else {
-                                //  Death Year, Month, and Day are known
+                                //  Birth Year, Month, and Day are known
                                 var birth = x.BirthDate;
                             }
                             if (x.DeathDate.split("-")[1] == "00") {
