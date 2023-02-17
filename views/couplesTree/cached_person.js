@@ -70,7 +70,7 @@ export class CachedPerson {
                 this.setSpouses(value);
             } else if (["Parents", "Children", "Siblings"].includes(key)) {
                 // Just set the IDs in the field and ensure each person is created and put in the cache
-                // We don't really need a Parents field since we have Mother and Father, but if we do add
+                // We don't really need a Parents field since we have Mother and Father, but we do add
                 // it because it is useful to determine if a profile's parents have been loaded and is
                 // being used to control how much of an ancestor tree should be drawn
                 const ids = Object.keys(value);
@@ -292,6 +292,9 @@ export class CachedPerson {
     }
     hasAParent() {
         return this.getFatherId() || this.getMotherId();
+    }
+    hasAChild() {
+        return this._data.HasChildren || this._data.Children?.length > 0;
     }
     isMale() {
         return this.getGender() == "Male";
