@@ -6,7 +6,7 @@ Originally downloaded 14 October 2022.
 
 modified by Greg Clarke, October 2022
 
-Modifications were made to turn this into a Class that could be used in 
+Modifications were made to turn this into a Class that could be used in
 any View of the Dynamic Tree that requires a settings panel
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -99,7 +99,9 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     createSettingsDIV(data) {
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="' + data.viewClassName + '.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '<span style="color:red; position:absolute; top:0.2em; right:0.6em"><A onclick="' +
+            data.viewClassName +
+            '.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
             this.createULelements(data) +
             '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>';
         ("</div>");
@@ -156,7 +158,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         // console.log("setActiveTab called: tabName is: " + tabName);
         // console.log("this:", this);
         // console.log("tabElements" , this.tabElements);
-        
+
         for (let tab in this.tabElements) {
             let tabElement = this.tabElements[tab];
             // console.log(tabElement);

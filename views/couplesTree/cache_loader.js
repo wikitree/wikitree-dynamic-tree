@@ -18,6 +18,7 @@ export class CacheLoader {
         "Gender",
         "Mother",
         "Father",
+        "HasChildren",
         "DataStatus",
         "Photo",
     ];
