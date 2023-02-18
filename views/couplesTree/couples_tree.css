@@ -2,6 +2,11 @@
   --content-padding: 0;
 }
 
+#couples-view-container {
+  position: relative;
+  cursor: grab;
+}
+
 h4 {
   font-size: 14px;
 }
@@ -147,4 +152,46 @@ h4 {
 
 .minus:hover {
   stroke: #fcbb71;
+}
+
+#ct-help-button {
+  background: #393a3c;
+  color: #fff;
+  font-size: 0.8em;
+  padding: 0.1em 0.5em;
+  border-radius: 50%;
+  float: right;
+  font-weight: bold;
+  cursor: pointer;
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  z-index: 11000;
+}
+
+xx {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+
+#ct-help-text {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 45em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  padding-right: 4em;
+  z-index: 11000;
+  cursor: default;
 }

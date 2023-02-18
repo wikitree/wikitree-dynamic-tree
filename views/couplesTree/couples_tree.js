@@ -1,4 +1,5 @@
 /*
+ * This code was adpated from WikiTreeDynamicTreeViewer.js
  * We use the D3.js library to render the graph.
  */
 
@@ -7,10 +8,7 @@ import { CacheLoader } from "./cache_loader.js";
 import { CachedPerson } from "./cached_person.js";
 
 window.CouplesTreeView = class CouplesTreeView extends View {
-    static #DESCRIPTION =
-        'See <a href="https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree" target="_blank">Couples Tree Help</a> ' +
-        "for help. Click and drag to pan around. Use track pad or mouse wheel to zoom the tree. " +
-        "Click on a person to see more detail. about the person";
+    static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
     constructor() {
         super();
         CachedPerson.init(new PeopleCache(new CacheLoader()));
@@ -37,7 +35,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     // if addTestInfo is true, a person's (integer) id is displayed in their person box (to assist with reading
     // the debug logs) and, if debug logging is on (see index.html), the Person object is logged to the console
     // whenever one clicks in a person box (i.e. when the person pop-up is generated).
-    const addTestInfo = ((typeof debugLoggingOn != 'undefined') && debugLoggingOn) && true;
+    const addTestInfo = typeof debugLoggingOn != "undefined" && debugLoggingOn && true;
 
     const originOffsetX = 500,
         originOffsetY = 300,
@@ -55,6 +53,28 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     const DOWN_ARROW = "\u21e9";
     const UP_ARROW = "\u21e7";
     const RIGHT_ARROW = "\u2907";
+
+    const HELP_TEXT = `
+        <xx>[ x ]</xx>
+        <h2 style="text-align: center">About The Couples Tree</h2>
+        <p>The display combines the trees of two people that are in some relationship
+           (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the ancestors and descendants
+           of both members of the couple. You can expand and contract the tree and change its focus as you please.
+           See <a href="https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree" target="_blank">Couples Tree Help</a>
+           for more detail.</p>
+        <p>Navigation Summary
+        <ul>
+            <li>⇩ - show the children of a couple, or all the spouses of the other member of the couple.
+            <li>⇧ - close the children or other spouses list.
+            <li>⤇ - select this spouse for this couple (can only be done for the central couple and blood-line descendants).
+            <li><img src="https://www.wikitree.com/images/icons/pedigree.gif"/> - make this person the focus of the tree.
+            <li>+ : expand the tree.
+            <li>– : prune this branch of the tree.
+            <li>Click on a person to see more detail about that person.
+            <li>Use your track pad (two finger drag) or mouse wheel to zoom the tree.
+            <li>Click and drag to pan around.
+        </ul>
+        <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>`;
 
     /**
      * A Couple consists of two Persons that are either married, or are the parents of a child.
@@ -107,10 +127,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          * The way we currently use idPrefixes results in the following ids:
          *   for ancestor couples:
          *     root: A-<aId>-<bId>
-         *     arbitrary: A_a_a_b-<aId-<bId> (the father's father's mother's parents)
+         *     arbitrary: A_a_a_b-<aId-<bId> (the root's father's father's mother's parents)
          *   for decendants couples
          *     root: D-<aId>-<bId>
-         *     arbitrary: D_2_0_1-<aId-<bId> (the 3rd child's first child's 2nd child and partner)
+         *     arbitrary: D_2_0_1-<aId-<bId> (the root's 3rd child's first child's 2nd child and partner)
          * @returns The ID of the current couple
          */
         getId() {
@@ -157,6 +177,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             return sortByBirthDate(list);
         }
 
+        mayHaveChildren() {
+            return this.a && this.b
+                ? this.a.hasAChild() && this.b.hasAChild()
+                : this.a?.hasAChild() || this.b?.hasAChild();
+        }
+
         isComplete() {
             return this.a && this.b;
         }
@@ -170,16 +196,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         isAncestorExpandable() {
-            return (
-                !this.children && this.hasAParent() && !this.expanded
-                //((this.a && !this.a._data.Parents) || (this.b && !this.b._data.Parents))
-            );
+            return !this.children && this.hasAParent() && !this.expanded;
         }
 
         isDescendantExpandable() {
             return (
                 !this.children &&
                 !this.expanded &&
+                this.mayHaveChildren() &&
                 ((this.a && !this.a.getChildrenIds()) || (this.b && !this.b.getChildrenIds()))
             );
         }
@@ -286,10 +310,46 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * CouplesTreeViewer
      */
     const CouplesTreeViewer = (window.CouplesTreeViewer = class CouplesTreeViewer {
-        constructor(selector) {
-            const container = document.querySelector(selector),
-                width = container.offsetWidth,
-                height = container.offsetHeight;
+        constructor(containerSelector) {
+            const viewContainer = document.querySelector(containerSelector);
+            const width = viewContainer.offsetWidth;
+            const height = viewContainer.offsetHeight;
+
+            // Add our own container so we can position things relative to it
+            const container = document.createElement("div");
+            container.id = "couples-view-container";
+            viewContainer.append(container);
+
+            // Add button for help text
+            const helpButton = document.createElement("div");
+            helpButton.id = "ct-help-button";
+            helpButton.setAttribute("title", "About this");
+            helpButton.textContent = "?";
+            helpButton.addEventListener("click", function () {
+                $("#ct-help-text").slideToggle();
+            });
+            container.append(helpButton);
+
+            // Add the help text as a draggable pop-up
+            const help = document.createElement("div");
+            help.innerHTML = HELP_TEXT;
+            help.id = "ct-help-text";
+            help.addEventListener("dblclick", function () {
+                $(this).slideToggle();
+            });
+            container.append(help);
+            document.querySelector("#ct-help-text xx").addEventListener("click", function () {
+                $(this).parent().slideUp();
+            });
+            document.getElementById("ct-help-text").addEventListener("mousedown", function () {
+                $(this).cursor = "grabbing";
+            });
+            document.getElementById("ct-help-text").addEventListener("mouseup", function () {
+                $(this).cursor = "default";
+            });
+            // $("#ct-help-text").draggable({
+            //     cursor: "grabbing",
+            // });
 
             // Setup zoom and pan
             const zoom = d3.behavior
@@ -495,7 +555,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const oldPerson = couple.getInFocus();
             const oldSpouse = couple.getNotInFocus();
             if (oldPerson && !oldPerson.isFullyEnriched()) {
-                await self.richLoad(oldPerson.getId(), oldSpouse?.getId());
+                await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId());
                 condLog(`loadMore done for ${couple.toString()}`, couple);
                 couple.expanded = true;
                 self.drawTree();
