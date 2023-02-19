@@ -1,13 +1,10 @@
-#view-container {
-  --content-padding: 0;
-}
-
 #couples-view-container {
+  --content-padding: 0;
   position: relative;
   cursor: grab;
 }
 
-h4 {
+#couples-view-container h4 {
   font-size: 14px;
 }
 

@@ -1,7 +1,14 @@
+/**
+ * This code was originally written by Ian Beacall (Beacall-6) as a stand-alone WikiTree App.
+ * With Ian's permission, Riël Smit (Smit-641) adapted it to be a WikiTree Dynamic Tree view.
+ *
+ * It makes use (through direct code inclusion) of FileSave (https://github.com/eligrey/FileSaver.js/)
+ * and SheetJs (https://www.npmjs.com/package/xlsx)
+ */
 export class CC7 {
     static #helpText = `
-        <x>x</x>
-        <h2 style="text-align: center">About this</h2>
+        <x>[ x ]</x>
+        <h2 style="text-align: center">About The CC7 Table</h2>
         <p>This tool allows you to retrieve the list of people that are connected to someone within 7 degrees.</p>
         <ul>
             <li>
@@ -49,7 +56,8 @@ export class CC7 {
                 boxes are greyed out as we can assume they didn't have any of these.
             </li>
             <li>
-                With the 'Wide table', grab and drag the table to scroll left and right.
+                With the 'Wide table', grab and drag the table to scroll left and right, or use a two-finger drag
+                on the track-pad.
             </li>
         </ul>
         <ul id="key" class="key">
@@ -62,16 +70,14 @@ export class CC7 {
         </ul>
         <h3>Hierarchy</h3>
         <ul>
-            <li>The number in the box next to a person's name shows how many profiles are 'hidden' below them.</li>
+            <li>The number in the first box next to a person's name shows how many profiles are 'hidden' below them.</li>
+            <li>
+                The icons in the box at the end of the line show the number of hidden people with missing parents
+                (blue and pink bricks for fathers and mothers respectively), possible missing spouses
+                (the couple icon), and children (the child icon).
+            </li>
             <li>Reveal more people by clicking the '+' buttons to the left of the names.</li>
             <li>The big '+' and '−' buttons expand and collapse the list by one degree at a time.</li>
-            <li>
-                The icons show missing parents (blue and pink bricks), and possible missing spouses and children.
-            </li>
-            <li>
-                The icons in the box to the right of the name show the number of hidden people with missing parents,
-                and possible missing spouses and children.
-            </li>
         </ul>
         <h3>List</h3>
         <ul>
@@ -122,7 +128,7 @@ export class CC7 {
     constructor(selector, startId) {
         this.selector = selector;
         $(selector).html(
-            `<div id="cc7Container" class="cc7Table app">
+            `<div id="cc7Container" class="cc7Table">
             <input type="text" placeholder="Enter WikiTree ID" id="wtid" value="${
                 wtViewRegistry.session.personName
             }" /><button
@@ -142,7 +148,7 @@ export class CC7 {
                 Get Degree 7 Only</button
             ><button id="savePeople" title="Save this data to a file for faster loading next time." class="small button">
                 Save</button
-            ><button class="small button" id="loadButton" title="Load a previously saved data file.">Load</button
+            ><button class="small button" id="loadButton" title="Load a previously saved data file.">Load A File</button
             ><input type="file" id="fileInput" style="display: none"/>
             <span id="help" title="About this">?</span>
             <div id="explanation">${CC7.#helpText}</div>
@@ -171,7 +177,9 @@ export class CC7 {
         $(".cc7Table #explanation x").click(function () {
             $(this).parent().slideUp();
         });
-        $("#explanation").draggable();
+        $("#explanation").draggable({
+            cursor: "grabbing",
+        });
 
         $("#getDegreeButton").on("click", CC7.getDegreeAction);
 
@@ -330,13 +338,13 @@ export class CC7 {
                     });
                     var isiPad = navigator.userAgent.match(/iPad/i) != null;
                     if (isiPad) {
-                        if ($("div.app").length) {
+                        if ($("#cc7Container").length) {
                             dTable.draggable({
                                 cursor: "grabbing",
                             });
                         }
                     } else {
-                        if ($("div.app").length) {
+                        if ($("#cc7Container").length) {
                             dTable.draggable({
                                 axis: "x",
                                 cursor: "grabbing",
@@ -466,21 +474,459 @@ export class CC7 {
         return [fName.trim(), sName.trim()];
     }
 
+    static getOffset(el) {
+        const rect = el.getBoundingClientRect();
+        return {
+            left: rect.left + window.scrollX,
+            top: rect.top + window.scrollY,
+        };
+    }
+
+    static getTheYear(theDate, ev, person) {
+        if (!CC7.isOK(theDate)) {
+            if (ev == "Birth" || ev == "Death") {
+                theDate = person[ev + "DateDecade"];
+            }
+        }
+        let theDateM = theDate.match(/[0-9]{4}/);
+        if (CC7.isOK(theDateM)) {
+            return parseInt(theDateM[0]);
+        } else {
+            return false;
+        }
+    }
+
+    static dateToYMD(enteredDate) {
+        let enteredD;
+        if (enteredDate.match(/[0-9]{3,4}\-[0-9]{2}\-[0-9]{2}/)) {
+            enteredD = enteredDate;
+        } else {
+            let eDMonth = "00";
+            let eDYear = enteredDate.match(/[0-9]{3,4}/);
+            if (eDYear != null) {
+                eDYear = eDYear[0];
+            }
+            let eDDate = enteredDate.match(/\b[0-9]{1,2}\b/);
+            if (eDDate != null) {
+                eDDate = eDDate[0].padStart(2, "0");
+            }
+            if (eDDate == null) {
+                eDDate = "00";
+            }
+
+            if (enteredDate.match(/jan/i) != null) {
+                eDMonth = "01";
+            }
+            if (enteredDate.match(/feb/i) != null) {
+                eDMonth = "02";
+            }
+            if (enteredDate.match(/mar/i) != null) {
+                eDMonth = "03";
+            }
+            if (enteredDate.match(/apr/i) != null) {
+                eDMonth = "04";
+            }
+            if (enteredDate.match(/may/i) != null) {
+                eDMonth = "05";
+            }
+            if (enteredDate.match(/jun/i) != null) {
+                eDMonth = "06";
+            }
+            if (enteredDate.match(/jul/i) != null) {
+                eDMonth = "07";
+            }
+            if (enteredDate.match(/aug/i) != null) {
+                eDMonth = "08";
+            }
+            if (enteredDate.match(/sep/i) != null) {
+                eDMonth = "09";
+            }
+            if (enteredDate.match(/oct/i) != null) {
+                eDMonth = "10";
+            }
+            if (enteredDate.match(/nov/i) != null) {
+                eDMonth = "11";
+            }
+            if (enteredDate.match(/dec/i) != null) {
+                eDMonth = "12";
+            }
+            enteredD = eDYear + "-" + eDMonth + "-" + eDDate;
+        }
+        return enteredD;
+    }
+
+    static mapGender(gender, maleName, femaleName, neutralName) {
+        return gender == "Male" ? maleName : gender == "Female" ? femaleName : neutralName;
+    }
+
+    static capitalizeFirstLetter(string) {
+        return string.substring(0, 1).toUpperCase() + string.substring(1);
+    }
+
+    static #BMD_EVENTS = ["Birth", "Death", "marriage"];
+
+    static getTimelineEvents(tPerson) {
+        const family = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
+        const timeLineEvent = [];
+        const startDate = CC7.getTheYear(tPerson.BirthDate, "Birth", tPerson);
+
+        // Get all BMD events for each family member
+        family.forEach(function (aPerson) {
+            CC7.#BMD_EVENTS.forEach(function (ev) {
+                let evDate = "";
+                let evLocation;
+                if (aPerson[ev + "Date"]) {
+                    evDate = aPerson[ev + "Date"];
+                    evLocation = aPerson[ev + "Location"];
+                } else if (aPerson[ev + "DateDecade"]) {
+                    evDate = aPerson[ev + "DateDecade"];
+                    evLocation = aPerson[ev + "Location"];
+                }
+                if (ev == "marriage") {
+                    if (aPerson[ev + "_date"]) {
+                        evDate = aPerson[ev + "_date"];
+                        evLocation = aPerson[ev + "_location"];
+                    }
+                }
+                if (aPerson.Relation) {
+                    const theRelation = aPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
+                    const gender = aPerson.Gender;
+                    if (theRelation == "Child") {
+                        aPerson.Relation = CC7.mapGender(gender, "son", "daughter", "child");
+                    } else if (theRelation == "Sibling") {
+                        aPerson.Relation = CC7.mapGender(gender, "brother", "sister", "sibling");
+                    } else if (theRelation == "Parent") {
+                        aPerson.Relation = CC7.mapGender(gender, "father", "mother", "parent");
+                    } else if (theRelation == "Spouse") {
+                        aPerson.Relation = CC7.mapGender(gender, "husband", "wife", "spouse");
+                    } else {
+                        aPerson.Relation = theRelation;
+                    }
+                }
+                if (evDate != "" && evDate != "0000" && CC7.isOK(evDate)) {
+                    let fName = aPerson.FirstName;
+                    if (!aPerson.FirstName) {
+                        fName = aPerson.RealName;
+                    }
+                    let bDate = aPerson.BirthDate;
+                    if (!aPerson.BirthDate) {
+                        bDate = aPerson.BirthDateDecade;
+                    }
+                    let mBio = aPerson.bio;
+                    if (!aPerson.bio) {
+                        mBio = "";
+                    }
+                    if (evLocation == undefined) {
+                        evLocation = "";
+                    }
+                    timeLineEvent.push({
+                        eventDate: evDate,
+                        location: evLocation,
+                        firstName: fName,
+                        LastNameAtBirth: aPerson.LastNameAtBirth,
+                        lastNameCurrent: aPerson.LastNameCurrent,
+                        birthDate: bDate,
+                        relation: aPerson.Relation,
+                        bio: mBio,
+                        evnt: ev,
+                        wtId: aPerson.Name,
+                    });
+                }
+            });
+            // Look for military events in bios
+            if (aPerson.bio) {
+                const tlTemplates = aPerson.bio.match(/\{\{[^]*?\}\}/gm);
+                if (tlTemplates != null) {
+                    const warTemplates = [
+                        "Creek War",
+                        "French and Indian War",
+                        "Iraq War",
+                        "Korean War",
+                        "Mexican-American War",
+                        "Spanish-American War",
+                        "The Great War",
+                        "US Civil War",
+                        "Vietnam War",
+                        "War in Afghanistan",
+                        "War of 1812",
+                        "World War II",
+                    ];
+                    tlTemplates.forEach(function (aTemp) {
+                        let evDate = "";
+                        let evLocation = "";
+                        let ev = "";
+                        let evDateStart = "";
+                        let evDateEnd = "";
+                        let evStart;
+                        let evEnd;
+                        aTemp = aTemp.replaceAll(/[{}]/g, "");
+                        const bits = aTemp.split("|");
+                        const templateTitle = bits[0].replaceAll(/\n/g, "").trim();
+                        bits.forEach(function (aBit) {
+                            const aBitBits = aBit.split("=");
+                            const aBitField = aBitBits[0].trim();
+                            if (aBitBits[1]) {
+                                const aBitFact = aBitBits[1].trim().replaceAll(/\n/g, "");
+                                if (warTemplates.includes(templateTitle) && CC7.isOK(aBitFact)) {
+                                    if (aBitField == "startdate") {
+                                        evDateStart = CC7.dateToYMD(aBitFact);
+                                        evStart = "joined " + templateTitle;
+                                    }
+                                    if (aBitField == "enddate") {
+                                        evDateEnd = CC7.dateToYMD(aBitFact);
+                                        evEnd = "left " + templateTitle;
+                                    }
+                                    if (aBitField == "enlisted") {
+                                        evDateStart = CC7.dateToYMD(aBitFact);
+                                        evStart = "enlisted for " + templateTitle.replace("american", "American");
+                                    }
+                                    if (aBitField == "discharged") {
+                                        evDateEnd = CC7.dateToYMD(aBitFact);
+                                        evEnd = "discharged from " + templateTitle.replace("american", "American");
+                                    }
+                                    if (aBitField == "branch") {
+                                        evLocation = aBitFact;
+                                    }
+                                }
+                            }
+                        });
+                        if (CC7.isOK(evDateStart)) {
+                            evDate = evDateStart;
+                            ev = evStart;
+                            timeLineEvent.push({
+                                eventDate: evDate,
+                                location: evLocation,
+                                firstName: aPerson.FirstName,
+                                LastNameAtBirth: aPerson.LastNameAtBirth,
+                                lastNameCurrent: aPerson.LastNameCurrent,
+                                birthDate: aPerson.BirthDate,
+                                relation: aPerson.Relation,
+                                bio: aPerson.bio,
+                                evnt: ev,
+                                wtId: aPerson.Name,
+                            });
+                        }
+                        if (CC7.isOK(evDateEnd)) {
+                            evDate = evDateEnd;
+                            ev = evEnd;
+                            timeLineEvent.push({
+                                eventDate: evDate,
+                                location: evLocation,
+                                firstName: aPerson.FirstName,
+                                LastNameAtBirth: aPerson.LastNameAtBirth,
+                                lastNameCurrent: aPerson.LastNameCurrent,
+                                birthDate: aPerson.BirthDate,
+                                relation: aPerson.Relation,
+                                bio: aPerson.bio,
+                                evnt: ev,
+                                wtId: aPerson.Name,
+                            });
+                        }
+                    });
+                }
+            }
+        });
+        return timeLineEvent;
+    }
+
+    static buildTimeline(tPerson, timelineEvents) {
+        const timelineTable = $(
+            `<div class='timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
+                `<caption>Events in the life of ${tPerson.FirstName}'s family</caption>` +
+                "<thead><th class='tlDate'>Date</th><th class='tlBioAge'>Age</th>" +
+                "<th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>" +
+                `</thead><tbody></tbody></table></div>`
+        );
+        let bpDead = false;
+        let bpDeadAge;
+        timelineEvents.forEach(function (aFact) {
+            // Add events to the table
+            const isEventForBioPerson = aFact.wtId == tPerson.Name;
+            const showDate = aFact.eventDate.replace("-00-00", "").replace("-00", "");
+            const tlDate = "<td class='tlDate'>" + showDate + "</td>";
+            let aboutAge = "";
+            let bpBdate = tPerson.BirthDate;
+            if (!tPerson.BirthDate) {
+                bpBdate = tPerson.BirthDateDecade.replace(/0s/, "5");
+            }
+            let hasBdate = true;
+            if (bpBdate == "0000-00-00") {
+                hasBdate = false;
+            }
+            const bpBD = CC7.getApproxDate(bpBdate);
+            const evDate = CC7.getApproxDate(aFact.eventDate);
+            const aPersonBD = CC7.getApproxDate(aFact.birthDate);
+            if (bpBD.Approx == true) {
+                aboutAge = "~";
+            }
+            if (evDate.Approx == true) {
+                aboutAge = "~";
+            }
+            const bpAgeAtEvent = CC7.getAge(new Date(bpBD.Date), new Date(evDate.Date));
+            let bpAge;
+            if (bpAgeAtEvent == 0) {
+                bpAge = "";
+            } else if (bpAgeAtEvent < 0) {
+                bpAge = `–${-bpAgeAtEvent}`;
+            } else {
+                bpAge = `${bpAgeAtEvent}`;
+            }
+            if (bpDead == true) {
+                const theDiff = parseInt(bpAgeAtEvent - bpDeadAge);
+                bpAge = "&#x1F397;+ " + theDiff;
+            }
+            let theBPAge;
+            if (aboutAge != "" && bpAge != "") {
+                theBPAge = "(" + bpAge + ")";
+            } else {
+                theBPAge = bpAge;
+            }
+            if (hasBdate == false) {
+                theBPAge = "";
+            }
+            const tlBioAge =
+                "<td class='tlBioAge'>" +
+                (aFact.evnt == "Death" && aFact.wtId == tPerson.Name ? "&#x1F397; " : "") +
+                theBPAge +
+                "</td>";
+            if (aFact.relation == undefined || isEventForBioPerson) {
+                aFact.relation = "";
+            }
+
+            let relation = aFact.relation.replace(/s$/, "");
+            const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
+
+            let fNames = aFact.firstName;
+            if (aFact.evnt == "marriage") {
+                fNames = tPerson.FirstName + " and " + aFact.firstName;
+                relation = "";
+            }
+            const tlFirstName = "<a href='https://www.wikitree.com/wiki/" + aFact.wtId + "'>" + fNames + "</a>";
+            const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
+
+            if (aPersonBD.Approx == true) {
+                aboutAge = "~";
+            }
+            let aPersonAge = CC7.getAge(new Date(aPersonBD.Date), new Date(evDate.Date));
+            if (aPersonAge == 0 || aPersonBD.Date.match(/0000/) != null) {
+                aPersonAge = "";
+                aboutAge = "";
+            }
+            let theAge;
+            if (aboutAge != "" && aPersonAge != "") {
+                theAge = "(" + aPersonAge + ")";
+            } else {
+                theAge = aPersonAge;
+            }
+
+            let descr;
+            if (CC7.#BMD_EVENTS.includes(aFact.evnt)) {
+                descr =
+                    CC7.capitalizeFirstLetter(eventName) +
+                    " of " +
+                    (relation == "" ? relation : relation + ", ") +
+                    tlFirstName +
+                    (theAge == "" ? "" : ", " + theAge);
+            } else {
+                const who =
+                    relation == ""
+                        ? tlFirstName
+                        : CC7.capitalizeFirstLetter(relation) +
+                          " " +
+                          tlFirstName +
+                          (theAge == "" ? "" : ", " + theAge + ",");
+                descr = who + " " + eventName;
+            }
+
+            const tlEventDescription = "<td class='tlEventDescription'>" + descr + "</td>";
+
+            let classText = "";
+            if (isEventForBioPerson) {
+                classText += "BioPerson ";
+            }
+            classText += aFact.evnt + " ";
+            const tlTR = $(
+                "<tr class='" + classText + "'>" + tlDate + tlBioAge + tlEventDescription + tlEventLocation + "</tr>"
+            );
+            timelineTable.find("tbody").append(tlTR);
+            if (aFact.evnt == "Death" && aFact.wtId == tPerson.Name) {
+                bpDead = true;
+                bpDeadAge = bpAgeAtEvent;
+            }
+        });
+        return timelineTable;
+    }
+
+    static showTimeline(jqClicked) {
+        const wtId = jqClicked.attr("data-name");
+        let tPerson = "";
+        for (const oPers of window.people) {
+            if (oPers.Name == wtId) {
+                tPerson = oPers;
+                break;
+            }
+        }
+        const theClickedName = tPerson.Name;
+        const familyId = theClickedName.replace(" ", "_") + "_timeLine";
+        if ($(`#${familyId}`).length) {
+            $(`#${familyId}`).slideToggle();
+            return;
+        }
+
+        const familyFacts = CC7.getTimelineEvents(tPerson);
+        // Sort the events
+        familyFacts.sort((a, b) => {
+            return a.eventDate.localeCompare(b.eventDate);
+        });
+        if (!tPerson.FirstName) {
+            tPerson.FirstName = tPerson.RealName;
+        }
+        // Make a table
+        const timelineTable = CC7.buildTimeline(tPerson, familyFacts, familyId);
+        // Attach the table to the container div
+        timelineTable.prependTo($("div.cc7Table"));
+        //timelineTable.css({ top: window.pointerY - 30, left: 10 });
+
+        timelineTable.attr("id", familyId);
+        timelineTable.draggable();
+        timelineTable.dblclick(function () {
+            $(this).slideUp();
+        });
+
+        CC7.setOffset(jqClicked, timelineTable, 75, 40);
+        $(window).resize(function () {
+            if (timelineTable.length) {
+                CC7.setOffset(jqClicked, timelineTable, 75, 40);
+            }
+        });
+
+        timelineTable.slideDown("slow");
+        timelineTable.find("x").click(function () {
+            timelineTable.slideUp();
+        });
+        timelineTable.find("w").click(function () {
+            timelineTable.toggleClass("wrap");
+        });
+    }
+
+    static setOffset(theClicked, elem, lOffset, tOffset) {
+        const theLeft = CC7.getOffset(theClicked[0]).left + lOffset;
+        elem.css({ top: CC7.getOffset(theClicked[0]).top + tOffset, left: theLeft });
+    }
+
     static peopleToTable(kPeople) {
         let disName = CC7.displayName(kPeople[0])[0];
-        if ($(".app").length) {
+        if ($("#cc7Container").length) {
             if (kPeople[0].MiddleName) {
                 disName = disName.replace(kPeople[0].MiddleName + " ", "");
             }
         }
-
         const captionHTML =
             "<a href='https://www.wikitree.com/wiki/" + CC7.htmlEntities(kPeople[0].Name) + "'>" + disName + "</a>";
-
         const kTable = $(
-            "<div class='familySheet'><w>↔</w><x>x</x><table><caption>" +
-                captionHTML +
-                "</caption><thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead><tbody></tbody></table></div>"
+            `<div class='familySheet'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
+                "<thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead>" +
+                "<tbody></tbody></table></div>"
         );
         kPeople.forEach(function (kPers) {
             let rClass = "";
@@ -598,11 +1044,11 @@ export class CC7 {
                 }
             }
         });
-        let rows = kTable.find("tbody tr");
+        const rows = kTable.find("tbody tr");
         rows.sort((a, b) => ($(b).data("birthdate") < $(a).data("birthdate") ? 1 : -1));
         kTable.find("tbody").append(rows);
 
-        let familyOrder = ["Parent", "Sibling", "Spouse", "Child"];
+        const familyOrder = ["Parent", "Sibling", "Spouse", "Child"];
         familyOrder.forEach(function (relWord) {
             kTable.find("tr[data-relation='" + relWord + "']").each(function () {
                 $(this).appendTo(kTable.find("tbody"));
@@ -616,451 +1062,38 @@ export class CC7 {
         return kTable;
     }
 
-    static getOffset(el) {
-        const rect = el.getBoundingClientRect();
-        return {
-            left: rect.left + window.scrollX,
-            top: rect.top + window.scrollY,
-        };
-    }
-
-    static getTheYear(theDate, ev, person) {
-        if (!CC7.isOK(theDate)) {
-            if (ev == "Birth" || ev == "Death") {
-                theDate = person[ev + "DateDecade"];
-            }
-        }
-        let theDateM = theDate.match(/[0-9]{4}/);
-        if (CC7.isOK(theDateM)) {
-            return parseInt(theDateM[0]);
-        } else {
-            return false;
-        }
-    }
-
-    static dateToYMD(enteredDate) {
-        let enteredD;
-        if (enteredDate.match(/[0-9]{3,4}\-[0-9]{2}\-[0-9]{2}/)) {
-            enteredD = enteredDate;
-        } else {
-            let eDMonth = "00";
-            let eDYear = enteredDate.match(/[0-9]{3,4}/);
-            if (eDYear != null) {
-                eDYear = eDYear[0];
-            }
-            let eDDate = enteredDate.match(/\b[0-9]{1,2}\b/);
-            if (eDDate != null) {
-                eDDate = eDDate[0].padStart(2, "0");
-            }
-            if (eDDate == null) {
-                eDDate = "00";
-            }
-
-            if (enteredDate.match(/jan/i) != null) {
-                eDMonth = "01";
-            }
-            if (enteredDate.match(/feb/i) != null) {
-                eDMonth = "02";
-            }
-            if (enteredDate.match(/mar/i) != null) {
-                eDMonth = "03";
-            }
-            if (enteredDate.match(/apr/i) != null) {
-                eDMonth = "04";
-            }
-            if (enteredDate.match(/may/i) != null) {
-                eDMonth = "05";
-            }
-            if (enteredDate.match(/jun/i) != null) {
-                eDMonth = "06";
-            }
-            if (enteredDate.match(/jul/i) != null) {
-                eDMonth = "07";
-            }
-            if (enteredDate.match(/aug/i) != null) {
-                eDMonth = "08";
-            }
-            if (enteredDate.match(/sep/i) != null) {
-                eDMonth = "09";
-            }
-            if (enteredDate.match(/oct/i) != null) {
-                eDMonth = "10";
-            }
-            if (enteredDate.match(/nov/i) != null) {
-                eDMonth = "11";
-            }
-            if (enteredDate.match(/dec/i) != null) {
-                eDMonth = "12";
-            }
-            enteredD = eDYear + "-" + eDMonth + "-" + eDDate;
-        }
-        return enteredD;
-    }
-
-    static mapGender(gender, maleName, femaleName, neutralName) {
-        return gender == "Male" ? maleName : gender == "Female" ? femaleName : neutralName;
-    }
-
-    static capitalizeFirstLetter(string) {
-        return string.substring(0, 1).toUpperCase() + string.substring(1);
-    }
-
-    static timeline(jqClicked) {
-        let tPerson = "";
-        window.people.forEach(function (oPers) {
-            if (oPers.Name == jqClicked.attr("data-name")) {
-                tPerson = oPers;
-            }
-        });
-
-        const family = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
-        const familyFacts = [];
-        const startDate = CC7.getTheYear(tPerson.BirthDate, "Birth", tPerson);
-        // Get all BMD events for each family member
-        const bmdEvents = ["Birth", "Death", "marriage"];
-        family.forEach(function (aPerson) {
-            bmdEvents.forEach(function (ev) {
-                let evDate = "";
-                let evLocation;
-                if (aPerson[ev + "Date"]) {
-                    evDate = aPerson[ev + "Date"];
-                    evLocation = aPerson[ev + "Location"];
-                } else if (aPerson[ev + "DateDecade"]) {
-                    evDate = aPerson[ev + "DateDecade"];
-                    evLocation = aPerson[ev + "Location"];
-                }
-                if (ev == "marriage") {
-                    if (aPerson[ev + "_date"]) {
-                        evDate = aPerson[ev + "_date"];
-                        evLocation = aPerson[ev + "_location"];
-                    }
-                }
-                if (aPerson.Relation) {
-                    const theRelation = aPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
-                    const gender = aPerson.Gender;
-                    if (theRelation == "Child") {
-                        aPerson.Relation = CC7.mapGender(gender, "son", "daughter", "child");
-                    } else if (theRelation == "Sibling") {
-                        aPerson.Relation = CC7.mapGender(gender, "brother", "sister", "sibling");
-                    } else if (theRelation == "Parent") {
-                        aPerson.Relation = CC7.mapGender(gender, "father", "mother", "parent");
-                    } else if (theRelation == "Spouse") {
-                        aPerson.Relation = CC7.mapGender(gender, "husband", "wife", "spouse");
-                    } else {
-                        aPerson.Relation = theRelation;
-                    }
-                }
-                if (evDate != "" && evDate != "0000" && CC7.isOK(evDate)) {
-                    let fName = aPerson.FirstName;
-                    if (!aPerson.FirstName) {
-                        fName = aPerson.RealName;
-                    }
-                    let bDate = aPerson.BirthDate;
-                    if (!aPerson.BirthDate) {
-                        bDate = aPerson.BirthDateDecade;
-                    }
-                    let mBio = aPerson.bio;
-                    if (!aPerson.bio) {
-                        mBio = "";
-                    }
-                    if (evLocation == undefined) {
-                        evLocation = "";
-                    }
-                    familyFacts.push({
-                        eventDate: evDate,
-                        location: evLocation,
-                        firstName: fName,
-                        LastNameAtBirth: aPerson.LastNameAtBirth,
-                        lastNameCurrent: aPerson.LastNameCurrent,
-                        birthDate: bDate,
-                        relation: aPerson.Relation,
-                        bio: mBio,
-                        evnt: ev,
-                        wtId: aPerson.Name,
-                    });
-                }
-            });
-            // Look for military events in bios
-            if (aPerson.bio) {
-                const tlTemplates = aPerson.bio.match(/\{\{[^]*?\}\}/gm);
-                if (tlTemplates != null) {
-                    const warTemplates = [
-                        "Creek War",
-                        "French and Indian War",
-                        "Iraq War",
-                        "Korean War",
-                        "Mexican-American War",
-                        "Spanish-American War",
-                        "The Great War",
-                        "US Civil War",
-                        "Vietnam War",
-                        "War in Afghanistan",
-                        "War of 1812",
-                        "World War II",
-                    ];
-                    tlTemplates.forEach(function (aTemp) {
-                        let evDate = "";
-                        let evLocation = "";
-                        let ev = "";
-                        let evDateStart = "";
-                        let evDateEnd = "";
-                        let evStart;
-                        let evEnd;
-                        aTemp = aTemp.replaceAll(/[{}]/g, "");
-                        const bits = aTemp.split("|");
-                        const templateTitle = bits[0].replaceAll(/\n/g, "").trim();
-                        bits.forEach(function (aBit) {
-                            const aBitBits = aBit.split("=");
-                            const aBitField = aBitBits[0].trim();
-                            if (aBitBits[1]) {
-                                const aBitFact = aBitBits[1].trim().replaceAll(/\n/g, "");
-                                if (warTemplates.includes(templateTitle) && CC7.isOK(aBitFact)) {
-                                    if (aBitField == "startdate") {
-                                        evDateStart = CC7.dateToYMD(aBitFact);
-                                        evStart = "joined " + templateTitle;
-                                    }
-                                    if (aBitField == "enddate") {
-                                        evDateEnd = CC7.dateToYMD(aBitFact);
-                                        evEnd = "left " + templateTitle;
-                                    }
-                                    if (aBitField == "enlisted") {
-                                        evDateStart = CC7.dateToYMD(aBitFact);
-                                        evStart = "enlisted for " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "discharged") {
-                                        evDateEnd = CC7.dateToYMD(aBitFact);
-                                        evEnd = "discharged from " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "branch") {
-                                        evLocation = aBitFact;
-                                    }
-                                }
-                            }
-                        });
-                        if (CC7.isOK(evDateStart)) {
-                            evDate = evDateStart;
-                            ev = evStart;
-                            familyFacts.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: aPerson.FirstName,
-                                LastNameAtBirth: aPerson.LastNameAtBirth,
-                                lastNameCurrent: aPerson.LastNameCurrent,
-                                birthDate: aPerson.BirthDate,
-                                relation: aPerson.Relation,
-                                bio: aPerson.bio,
-                                evnt: ev,
-                                wtId: aPerson.Name,
-                            });
-                        }
-                        if (CC7.isOK(evDateEnd)) {
-                            evDate = evDateEnd;
-                            ev = evEnd;
-                            familyFacts.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: aPerson.FirstName,
-                                LastNameAtBirth: aPerson.LastNameAtBirth,
-                                lastNameCurrent: aPerson.LastNameCurrent,
-                                birthDate: aPerson.BirthDate,
-                                relation: aPerson.Relation,
-                                bio: aPerson.bio,
-                                evnt: ev,
-                                wtId: aPerson.Name,
-                            });
-                        }
-                    });
-                }
-            }
-        });
-        // Sort the events
-        familyFacts.sort((a, b) => {
-            return a.eventDate.localeCompare(b.eventDate);
-        });
-        if (!tPerson.FirstName) {
-            tPerson.FirstName = tPerson.RealName;
-        }
-        // Make a table
-        const timelineTable = $(
-            `<div class='wrap timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>x</x><table id='timelineTable'>` +
-                `<caption>Events in the life of ${tPerson.FirstName}'s family</caption><thead><th class='tlDate'>Date</th>` +
-                `<th class='tlBioAge'>Age</th><th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>` +
-                `</thead></table></div>`
-        );
-        // Attach the table to the container div
-        timelineTable.prependTo($("div.cc7Table"));
-        timelineTable.css({ top: window.pointerY - 30, left: 10 });
-        let bpDead = false;
-        let bpDeadAge;
-
-        familyFacts.forEach(function (aFact) {
-            // Add events to the table
-            const isEventForBioPerson = aFact.wtId == tPerson.Name;
-            const showDate = aFact.eventDate.replace("-00-00", "").replace("-00", "");
-            const tlDate = "<td class='tlDate'>" + showDate + "</td>";
-            let aboutAge = "";
-            let bpBdate = tPerson.BirthDate;
-            if (!tPerson.BirthDate) {
-                bpBdate = tPerson.BirthDateDecade.replace(/0s/, "5");
-            }
-            let hasBdate = true;
-            if (bpBdate == "0000-00-00") {
-                hasBdate = false;
-            }
-            const bpBD = CC7.getApproxDate(bpBdate);
-            const evDate = CC7.getApproxDate(aFact.eventDate);
-            const aPersonBD = CC7.getApproxDate(aFact.birthDate);
-            if (bpBD.Approx == true) {
-                aboutAge = "~";
-            }
-            if (evDate.Approx == true) {
-                aboutAge = "~";
-            }
-            const bpAgeAtEvent = CC7.getAge(new Date(bpBD.Date), new Date(evDate.Date));
-            let bpAge;
-            if (bpAgeAtEvent == 0) {
-                bpAge = "";
-            } else if (bpAgeAtEvent < 0) {
-                bpAge = `–${-bpAgeAtEvent}`;
-            } else {
-                bpAge = `${bpAgeAtEvent}`;
-            }
-            if (bpDead == true) {
-                const theDiff = parseInt(bpAgeAtEvent - bpDeadAge);
-                bpAge = "&#x1F397;+ " + theDiff;
-            }
-            let theBPAge;
-            if (aboutAge != "" && bpAge != "") {
-                theBPAge = "(" + bpAge + ")";
-            } else {
-                theBPAge = bpAge;
-            }
-            if (hasBdate == false) {
-                theBPAge = "";
-            }
-            const tlBioAge =
-                "<td class='tlBioAge'>" +
-                (aFact.evnt == "Death" && aFact.wtId == tPerson.Name ? "&#x1F397; " : "") +
-                theBPAge +
-                "</td>";
-            if (aFact.relation == undefined || isEventForBioPerson) {
-                aFact.relation = "";
-            }
-
-            let relation = aFact.relation.replace(/s$/, "");
-            const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
-
-            let fNames = aFact.firstName;
-            if (aFact.evnt == "marriage") {
-                fNames = tPerson.FirstName + " and " + aFact.firstName;
-                relation = "";
-            }
-            const tlFirstName = "<a href='https://www.wikitree.com/wiki/" + aFact.wtId + "'>" + fNames + "</a>";
-            const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
-
-            if (aPersonBD.Approx == true) {
-                aboutAge = "~";
-            }
-            let aPersonAge = CC7.getAge(new Date(aPersonBD.Date), new Date(evDate.Date));
-            if (aPersonAge == 0 || aPersonBD.Date.match(/0000/) != null) {
-                aPersonAge = "";
-                aboutAge = "";
-            }
-            let theAge;
-            if (aboutAge != "" && aPersonAge != "") {
-                theAge = "(" + aPersonAge + ")";
-            } else {
-                theAge = aPersonAge;
-            }
-
-            let descr;
-            if (bmdEvents.includes(aFact.evnt)) {
-                descr =
-                    CC7.capitalizeFirstLetter(eventName) +
-                    " of " +
-                    (relation == "" ? relation : relation + ", ") +
-                    tlFirstName +
-                    (theAge == "" ? "" : ", " + theAge);
-            } else {
-                const who =
-                    relation == ""
-                        ? tlFirstName
-                        : CC7.capitalizeFirstLetter(relation) +
-                          " " +
-                          tlFirstName +
-                          (theAge == "" ? "" : ", " + theAge + ",");
-                descr = who + " " + eventName;
-            }
-
-            const tlEventDescription = "<td class='tlEventDescription'>" + descr + "</td>";
-
-            let classText = "";
-            if (isEventForBioPerson) {
-                classText += "BioPerson ";
-            }
-            classText += aFact.evnt + " ";
-            const tlTR = $(
-                "<tr class='" + classText + "'>" + tlDate + tlBioAge + tlEventDescription + tlEventLocation + "</tr>"
-            );
-            $("#timelineTable").append(tlTR);
-            if (aFact.evnt == "Death" && aFact.wtId == tPerson.Name) {
-                bpDead = true;
-                bpDeadAge = bpAgeAtEvent;
-            }
-        });
-        timelineTable.slideDown("slow");
-        timelineTable.find("x").click(function () {
-            timelineTable.slideUp();
-        });
-        timelineTable.find("w").click(function () {
-            timelineTable.toggleClass("wrap");
-        });
-
-        timelineTable.draggable();
-        timelineTable.dblclick(function () {
-            $(this).slideUp("swing");
-        });
-    }
-
     static doFamilySheet(fPerson, theClicked) {
-        let hidIt = false;
         const theClickedName = fPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_family";
         if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).fadeToggle();
-            hidIt = true;
+            $(`#${familyId}`).slideToggle();
+            return;
         }
 
-        if (hidIt == false) {
-            let thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
+        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
 
-            let kkTable = CC7.peopleToTable(thisFamily);
-            kkTable.prependTo("div.cc7Table");
-            kkTable.attr("id", familyId);
-            kkTable.draggable();
-            kkTable.on("dblclick", function () {
-                $(this).fadeOut();
-            });
+        const kkTable = CC7.peopleToTable(thisFamily);
+        kkTable.prependTo("div.cc7Table");
+        kkTable.attr("id", familyId);
+        kkTable.draggable();
+        kkTable.on("dblclick", function () {
+            $(this).slideUp();
+        });
 
-            let theLeft = CC7.getOffset(theClicked[0]).left;
+        CC7.setOffset(theClicked, kkTable, 0, 40);
+        $(window).resize(function () {
+            if (kkTable.length) {
+                CC7.setOffset(theClicked, kkTable, 0, 40);
+            }
+        });
 
-            kkTable.css({ top: CC7.getOffset(theClicked[0]).top + 50, left: theLeft });
-            $(window).resize(function () {
-                if (kkTable.length) {
-                    theLeft = CC7.getOffset(theClicked[0]).left;
-                    kkTable.css({ top: CC7.getOffset(theClicked[0]).top + 50, left: theLeft });
-                }
-            });
-
-            $(".familySheet x").unbind();
-            $(".familySheet x").click(function () {
-                $(this).parent().fadeOut();
-            });
-            $(".familySheet w").unbind();
-            $(".familySheet w").click(function () {
-                $(this).parent().toggleClass("wrap");
-            });
-        }
+        kkTable.slideDown("slow");
+        kkTable.find("x").click(function () {
+            kkTable.slideUp();
+        });
+        kkTable.find("w").click(function () {
+            kkTable.toggleClass("wrap");
+        });
     }
 
     static showFamilySheet(jq) {
@@ -1068,15 +1101,16 @@ export class CC7 {
         let theClickedName = jq.closest("tr").attr("data-name");
 
         let fsReady = false;
-        window.people.forEach(function (aPeo) {
+        for (const aPeo of window.people) {
             if (aPeo.Name == theClickedName) {
                 //console.log(aPeo.Name);
                 if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
                     CC7.doFamilySheet(aPeo, theClicked);
                     fsReady = true;
+                    break;
                 }
             }
-        });
+        }
         if (fsReady == false) {
             WikiTreeAPI.postToAPI({
                 action: "getRelatives",
@@ -1086,7 +1120,7 @@ export class CC7 {
                 getSiblings: "1",
                 keys: theClickedName,
             }).then((data) => {
-                thePeople = data[0].items;
+                const thePeople = data[0].items;
                 thePeople.forEach(function (aPerson, index) {
                     const mPerson = aPerson.person;
                     const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
@@ -1498,30 +1532,17 @@ export class CC7 {
 
     static async addPeopleTable() {
         $("#savePeople").show();
+        const sortTitle = "title='Click to sort'";
         const aCaption = "<caption></caption>";
+        const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
+        const createdTH = `<th id='created' ${sortTitle} data-order='asc'>Created</th>`;
+        const touchedTH = `<th id='touched' ${sortTitle} data-order='asc'>Modified</th>`;
+        const parentsNum = "<th id='parent' title='Parents. Click to sort.' data-order='desc'>Par.</th>";
+        const siblingsNum = "<th id='sibling' title='Siblings. Click to sort.' data-order='desc'>Sib.</th>";
+        const spousesNum = "<th id='spouse' title='Spouses. Click to sort.' data-order='desc'>Sp.</th>";
+        const childrenNum = "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>";
+        const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
 
-        let degreeTH = "";
-        let createdTH = "";
-        let touchedTH = "";
-        let parentsNum = "";
-        let siblingsNum = "";
-        let spousesNum = "";
-        let childrenNum = "";
-        let ageAtDeathCol = "";
-        if ($("div.cc7Table").length) {
-            if ($("span.none").length == 0) {
-            }
-
-            degreeTH = "<th id='degree'>°</th>";
-            createdTH = "<th id='created'  data-order='asc'>Created</th>";
-            touchedTH = "<th id='touched'  data-order='asc'>Modified</th>";
-            parentsNum = "<th id='parent' title='Parents' data-order='desc'>Par.</th>";
-            siblingsNum = "<th id='sibling'  title='Siblings'  data-order='desc'>Sib.</th>";
-            spousesNum = "<th id='spouse'  title='Spouses'  data-order='desc'>Sp.</th>";
-            childrenNum = "<th id='child'  title='Children'  data-order='desc'>Ch.</th>";
-
-            ageAtDeathCol = "<th id='age-at-death' title='Age at Death'  data-order='desc'>Age</th>";
-        }
         const aTable = $(
             "<table id='peopleTable' class='peopleTable'>" +
                 aCaption +
@@ -1531,7 +1552,13 @@ export class CC7 {
                 siblingsNum +
                 spousesNum +
                 childrenNum +
-                "<th id='firstname' data-order=''>Given name(s)</th><th id='lnab'>Last name at Birth</th><th id='lnc' data-order=''>Current Last Name</th><th id='birthdate' data-order=''>Birth date</th><th data-order='' id='birthlocation'>Birth place</th><th data-order='' id='deathdate'>Death date</th><th data-order='' id='deathlocation'>Death place</th>" +
+                `<th data-order='' id='firstname' ${sortTitle}>Given name(s)</th>` +
+                `<th data-order='' id='lnab' ${sortTitle}>Last name at Birth</th>` +
+                `<th data-order='' id='lnc' ${sortTitle}>Current Last Name</th>` +
+                `<th data-order='' id='birthdate' ${sortTitle}>Birth date</th>` +
+                `<th data-order='' id='birthlocation' ${sortTitle}>Birth place</th>` +
+                `<th data-order='' id='deathdate' ${sortTitle}>Death date</th>` +
+                `<th data-order='' id='deathlocation' ${sortTitle}>Death place</th>` +
                 ageAtDeathCol +
                 createdTH +
                 touchedTH +
@@ -2069,7 +2096,8 @@ export class CC7 {
                     privacy +
                     "' title='" +
                     privacyTitle +
-                    "'></td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png'></td><td><img class='timelineButton' src='./views/cc7/images/timeline.png'></td>" +
+                    `'></td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
+                    `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
                     relNums["Parent_cell"] +
                     relNums["Sibling_cell"] +
@@ -2115,9 +2143,7 @@ export class CC7 {
             CC7.showFamilySheet($(this));
         });
         $("img.timelineButton").click(function (event) {
-            window.pointerX = event.pageX;
-            window.pointerY = event.pageY;
-            CC7.timeline($(this).closest("tr"));
+            CC7.showTimeline($(this).closest("tr"));
         });
 
         aTable.find("th[id]").each(function () {
@@ -2838,7 +2864,11 @@ export class CC7 {
                 thisLI.find("li[data-degree='7'] img.missingChildren").length;
             const countBit = $("<span class='countBit'></span>");
             if (allCount > 0 && thisLI.children(".nodeCount").length == 0) {
-                $("<span class='nodeCount'>" + allCount + "</span>").appendTo(thisLI);
+                $(
+                    `<span class='nodeCount' title='Number of profiles hidden under ${thisLI.attr(
+                        "data-first-name"
+                    )}'>${allCount}</span>`
+                ).appendTo(thisLI);
             }
             if ((missingFathers || missingMothers || missingSpouses || missingChildren) && allCount > 0) {
                 countBit.appendTo(thisLI);
@@ -3151,7 +3181,18 @@ export class CC7 {
 
     static clearDisplay() {
         $(
-            "#degreesTable,#tableContainer,.tableContainer,#peopleTable,#wideTableButton,.viewButton,#lanceTable,#hierarchyView,#tooBig,#spLocationFilterLabel"
+            [
+                "#degreesTable",
+                "#hierarchyView",
+                "#lanceTable",
+                "#peopleTable",
+                "#spLocationFilterLabel",
+                "#tableContainer",
+                ".tableContainer",
+                "#tooBig",
+                ".viewButton",
+                "#wideTableButton",
+            ].join(",")
         ).remove();
     }
 

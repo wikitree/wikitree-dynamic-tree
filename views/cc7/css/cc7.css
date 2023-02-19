@@ -12,80 +12,27 @@ a:focus {
 a:active {
   color: #fb0e02;
 }
-table th {
+div.cc7Table {
+  --content-padding: 0;
+}
+div.cc7Table table th {
   text-align: left;
   padding-right: 3px;
 }
+div.cc7Table table th.tlBioAge {
+  text-align: center;
+}
 
-div.app .Female {
+div.cc7Table .Female {
   background-color: #ffe6ea;
 }
-div.app .Male {
+div.cc7Table .Male {
   background-color: #cceeff;
 }
 
-div.app header {
-  background: #f7f6f0 url(https://www.wikitree.com/images/header-bg-sm.gif) repeat-x bottom;
-  height: 60px;
-  padding: 10px;
-  position: relative;
-  z-index: 1000;
-}
-
-#loggedIn {
-  margin: 0.5em;
-  display: inline-block;
-  padding: 0 0.5em;
-  border: 1px solid gray;
-  border-radius: 1em;
-}
-
-ol,
-ul {
+div.cc7Table ol,
+div.cc7Table ul {
   margin-bottom: 1em;
-}
-h1 {
-  display: block;
-  font-size: 150%;
-  text-align: center;
-  margin-top: 0.2em;
-  width: auto;
-  margin-left: auto;
-  margin-right: auto;
-  position: relative;
-  z-index: 10000;
-  margin-block-start: 0;
-}
-
-.bdDates,
-.actionImgs {
-  white-space: nowrap;
-}
-.bdDates {
-  display: block;
-  margin-bottom: 0.5em;
-  margin-left: 1em;
-}
-#loading {
-  border: 3px solid green;
-  border-radius: 50%;
-  display: none;
-  padding: 1em;
-  margin: 0.5em auto auto;
-  width: 5em;
-  font-size: 2em;
-  position: relative;
-  background: white;
-  display: none;
-}
-x {
-  position: absolute;
-  top: 0em;
-  right: 1em;
-  font-family: "Open sans", sans;
-  font-size: 1em;
-  cursor: pointer;
-  font-weight: bold;
 }
 
 img.familyHome,
@@ -102,14 +49,14 @@ img.timelineButton {
   white-space: nowrap;
   table-layout: auto;
 }
-div.app #buttonBox button:active {
+div.cc7Table #buttonBox button:active {
   background: lightgreen;
   box-shadow: 1px 1px 1px #ccc;
 }
 div.cc7Table #spLocationFilterLabel {
   display: none;
 }
-div.app #tree {
+div.cc7Table #tree {
   display: block;
   height: 5em;
   border-radius: 50%;
@@ -117,30 +64,18 @@ div.app #tree {
   width: 5em;
   margin: auto;
 }
-.app .familySheet {
+.cc7Table .familySheet,
+.cc7Table .timeline {
   background: white;
   border-radius: 1em;
   border: 3px solid forestgreen;
   box-shadow: 0.5em 0.5em 0.5em 0.5em #ccc;
+  cursor: grab;
+  display: none;
   position: absolute;
-  padding: 1em;
+  padding: 1.5em 1em 1em;
   white-space: nowrap;
-}
-#timeline x,
-.familySheet x {
-  position: absolute;
-  top: 0;
-  right: 1.5em;
-  font-weight: bold;
-  cursor: pointer;
-}
-#timeline w,
-.familySheet w {
-  position: absolute;
-  top: 0;
-  left: 1em;
-  font-weight: bold;
-  cursor: pointer;
+  z-index: 10000;
 }
 .peopleTable a:link,
 .peopleTable a:visited {
@@ -160,27 +95,18 @@ div.app #tree {
   width: 80%;
   white-space: normal;
 }
-.timeline {
-  white-space: nowrap;
+.cc7Table .timeline {
   height: auto;
-  position: absolute;
   width: auto;
-  left: 10%;
-  z-index: 4000;
-  background: white;
-  border: 3px solid forestgreen;
-  border-radius: 1em;
-  box-shadow: 1em 1em 1em #ccc;
-  padding: 0.3em;
-  display: none;
-  cursor: move;
+  /* z-index: 4000; */
 }
 .timelineTable td {
-  padding: 0.3em;
+  padding: 0.1em;
 }
 .timelineTable caption {
   font-size: 1.5em;
   font-weight: bold;
+  padding: 0.5em;
 }
 .tlAge,
 .tlBioAge {
@@ -202,6 +128,7 @@ th.tlBioAge {
   right: 0.5em;
   font-weight: bold;
   cursor: pointer;
+  color: red;
 }
 .timeline w,
 .familySheet w {
@@ -211,20 +138,23 @@ th.tlBioAge {
   font-weight: bold;
   cursor: pointer;
 }
-.timeline .BioPerson,
-.timeline .marriage {
+.timelineTable .BioPerson,
+.timelineTable .marriage {
   font-weight: bold;
 }
-.timeline tr.BioPerson.Birth {
-  border-top: 1px solid forestgreen;
-}
-.timeline tr.BioPerson.Death {
-  border-bottom: 1px solid forestgreen;
-}
-
-.timelineTable {
+div.cc7Table .timelineTable {
   width: 98%;
   margin: auto;
+}
+div.cc7Table .timelineTable td {
+  border-top: none;
+  border-bottom: none;
+}
+.timelineTable tr.BioPerson.Birth {
+  border-top: 1px solid forestgreen;
+}
+.timelineTable tr.BioPerson.Death {
+  border-bottom: 1px solid forestgreen;
 }
 
 .cc7Table p {
@@ -279,6 +209,7 @@ th.tlBioAge {
 .cc7Table table#peopleTable {
   border-collapse: separate;
   border-spacing: 3px;
+  margin-top: 1em;
 }
 .cc7Table #peopleTable td {
   padding: 0.4em;
@@ -303,8 +234,6 @@ th.tlBioAge {
 }
 .cc7Table ul#key li {
   width: auto;
-}
-.cc7Table ul#key li {
   cursor: default;
 }
 
@@ -317,26 +246,21 @@ th.tlBioAge {
   box-shadow: 1em 1em 1em grey;
   padding-right: 4em;
   z-index: 11000;
+  cursor: grab;
 }
 .cc7Table #explanation x {
+  position: absolute;
   top: 0.2em;
   right: 0.6em;
   font-weight: bold;
+  font-size: 1em;
+  cursor: pointer;
+  color: red;
 }
 
-div.app h1 {
-  font-size: 1.7em;
-  margin-bottom: 0;
-}
 div.cc7Table {
   background: white;
   min-width: 650px;
-}
-h1 {
-  text-align: left;
-  float: left;
-  margin-left: 1em;
-  cursor: pointer;
 }
 
 #peopleList td,
@@ -360,16 +284,9 @@ img.familyHome {
   display: none;
 }
 
-div.app img.familyHome {
+div.cc7Table img.familyHome {
   height: 15px;
   display: inline;
-}
-div.familySheet {
-  z-index: 10000;
-  background: white;
-  padding: 1em;
-  border: 1px solid forestgreen;
-  border-radius: 1em;
 }
 #peopleList {
   display: none;
@@ -402,18 +319,15 @@ div.familySheet {
 #wtLogo {
   float: left;
 }
-.app h1 {
+/* .cc7Table h1 {
   cursor: default;
-}
+} */
 
-div.app select,
-div.app input {
+div.cc7Table select,
+div.cc7Table input {
   padding: 0.3em;
   width: auto;
   min-width: 90px;
-}
-div.app select,
-div.app input {
   padding-right: 1em;
   background-size: 1em 2em;
 }
@@ -458,6 +372,7 @@ td.actions img,
   color: #fff;
   font-size: 0.8em;
   padding: 0.1em 0.5em;
+  border: 0.2em;
   border-radius: 50%;
   float: right;
   font-weight: bold;
@@ -550,12 +465,6 @@ caption {
   padding-right: 2px;
   padding-left: 0;
 }
-div#tableContainer {
-  margin: 1em 3em 5em;
-  /* overflow: scroll; Must be 'scroll' not 'auto' */
-  -webkit-overflow-scrolling: touch;
-  /*width:100%; max-width:100%;*/
-}
 #peopleList .created,
 #peopleList .touched {
   display: none;
@@ -572,18 +481,14 @@ td.degree {
 div#status {
   padding: 1em;
 }
-div.app td {
+div.cc7Table td {
   border-top: 1px solid gray;
 }
-div.app {
-  background: white;
-}
-div.app th[id] {
+div.cc7Table th[id] {
   cursor: pointer;
 }
 
-#lanceTable,
-div.cc7Table #peopleTable {
+#lanceTable {
   margin-top: 1em;
 }
 #lanceTable td,
