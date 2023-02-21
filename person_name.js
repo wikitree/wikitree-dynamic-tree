@@ -357,12 +357,13 @@ class PersonName {
             fieldsNeeded.has("middleNames") ? this.middleNames || null : null,
         ]
             .filter((part) => part !== null)
-            .join(" ");
+            .join(" ")
+            .toLowerCase();
 
         // Ensure PreferredName is present and in parethesis only if not present as part of the other requested name parts
         let preferredName = this.preferredName;
         if (preferredName && theFirstName && fieldsNeeded.has("preferredName")) {
-            if (theFirstName.includes(preferredName)) {
+            if (theFirstName.match(new RegExp(`\\b${preferredName.toLowerCase()}\\b`))) {
                 preferredName = null;
             } else {
                 preferredName = `(${preferredName})`;
