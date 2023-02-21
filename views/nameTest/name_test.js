@@ -21,6 +21,8 @@ window.NameTestView = class NameTestView extends View {
         "<b>.withParts</b> is predetermined.</p>" +
         '<ul><li>PedigreeName - Prefix FirstName MiddleNames (PreferredName) "Nicknames" (LastNameAtBirth) LastNameCurrent Suffix aka LastNameOther</br>' +
         "<li>FullName - Prefix FirstName MiddleNames (LastNameAtBirth) LastNameCurrent Suffix.</br>" +
+        "<li>ShortName - PreferredName LastName" +
+        "<li>ColloquialName - 'NickNames LastName' if Nicknames is present, else ShortName" +
         "<li>LastName - LastNameCurrent if it exists, else LastNameAtBirth;</br>" +
         "<li>LastNameCurrent - if present and different from LastNameAtBirth, otherwise LastNameAtBirth</br>" +
         "<li>LastNameAtBirth - if present and different from LastNameCurrent, otherwise LastNameCurrent</br>" +
@@ -161,13 +163,11 @@ window.NameTest = class NameTest {
         const partsTestResults = new Array(
             this.doPartsTest(name, ["PedigreeName"]),
             this.doPartsTest(name, [
-                "PedigreeName",
                 "Prefix",
                 "FirstName",
                 "MiddleNames",
                 "PreferredName",
                 "Nicknames",
-                "LastName",
                 "LastNameAtBirth",
                 "LastNameCurrent",
                 "Suffix",
@@ -175,19 +175,18 @@ window.NameTest = class NameTest {
             ]),
             this.doPartsTest(name, ["FullName"]),
             this.doPartsTest(name, [
-                "FullName",
-                "PedigreeName",
                 "Prefix",
                 "FirstName",
                 "MiddleNames",
-                "PreferredName",
-                "Nicknames",
-                "LastName",
                 "LastNameAtBirth",
                 "LastNameCurrent",
                 "Suffix",
-                "LastNameOther",
             ]),
+            this.doPartsTest(name, ["FullName", "PreferredName", "Nicknames"]),
+            this.doPartsTest(name, ["ShortName"]),
+            this.doPartsTest(name, ["ShortName", "FirstName", "MiddleName", "Nicknames"]),
+            this.doPartsTest(name, ["ColloquialName"]),
+            this.doPartsTest(name, ["ColloquialName", "FirstName", "MiddleName", "Nicknames"]),
             this.doPartsTest(name, ["LastName"]),
             this.doPartsTest(name, ["LastNameCurrent"]),
             this.doPartsTest(name, ["LastNameAtBirth"]),
@@ -203,6 +202,33 @@ window.NameTest = class NameTest {
             this.doPartsTest(name, ["Nicknames"]),
             this.doPartsTest(name, ["Prefix"]),
             this.doPartsTest(name, ["Suffix"]),
+            this.doPartsTest(name, [
+                "PedigreeName",
+                "Prefix",
+                "FirstName",
+                "MiddleNames",
+                "PreferredName",
+                "Nicknames",
+                "LastName",
+                "LastNameAtBirth",
+                "LastNameCurrent",
+                "Suffix",
+                "LastNameOther",
+            ]),
+            this.doPartsTest(name, [
+                "FullName",
+                "PedigreeName",
+                "Prefix",
+                "FirstName",
+                "MiddleNames",
+                "PreferredName",
+                "Nicknames",
+                "LastName",
+                "LastNameAtBirth",
+                "LastNameCurrent",
+                "Suffix",
+                "LastNameOther",
+            ]),
             this.doPartsTest(name, ["FirstNames", "LastNameAtBirth", "LastNameOther"]),
             this.doPartsTest(name, ["MiddleNames", "PreferredName", "LastNameOther"]),
             this.doPartsTest(name, ["FirstInitial", "MiddleInitials", "LastNameAtBirth"]),
