@@ -50,8 +50,6 @@ class PersonName {
                     "FullFirstName",
                     "MiddleName",
                     "MiddleNames",
-                    "PreferredName",
-                    "Nicknames",
                     "LastName",
                     "LastNameAtBirth",
                     "LastNameCurrent",
