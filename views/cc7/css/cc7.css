@@ -527,6 +527,7 @@ div.cc7Table th[id] {
 }
 #hierarchyView ul {
   list-style: none;
+  margin-bottom: 5px;
 }
 #hierarchyView li {
   margin-bottom: 0.3em;

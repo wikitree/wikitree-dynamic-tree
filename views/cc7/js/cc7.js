@@ -125,6 +125,18 @@ export class CC7 {
 
     static RELATIONS_FIELDS = ["Children", "Parents", "Siblings", "Spouses"].join(",");
 
+    static WANTED_NAME_PARTS = [
+        "Prefix",
+        "FirstName",
+        "MiddleNames",
+        "PreferredName",
+        "Nicknames",
+        "LastNameAtBirth",
+        "LastNameCurrent",
+        "Suffix",
+        "LastNameOther",
+    ];
+
     constructor(selector, startId) {
         this.selector = selector;
         $(selector).html(
@@ -2450,20 +2462,11 @@ export class CC7 {
                 aPerson = CC7.missingBits(aPerson);
             }
             const theDegree = aPerson.Degree;
-            const wanted = [
-                "Prefix",
-                "FirstName",
-                "MiddleNames",
-                "Nicknames",
-                "LastNameAtBirth",
-                "LastNameCurrent",
-                "Suffix",
-                "LastNameOther",
-            ];
             const aName = new PersonName(aPerson);
-            const theName = aName.withParts(wanted);
-            const theLNAB = aName.withParts(["LastNameAtBirth"]);
-            const theFirstName = aName.withParts(["FirstName"]);
+            const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+            const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
+            const theLNAB = theParts.get("LastNameAtBirth");
+            const theFirstName = theParts.get("FirstName");
 
             if (CC7.isOK(theDegree)) {
                 if (!window.surnames["degree_" + theDegree].includes(theLNAB)) {
@@ -2631,20 +2634,11 @@ export class CC7 {
                         if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
                             const theDegree = aMember.Degree;
                             if (theDegree > aPerson.Degree) {
-                                const wanted = [
-                                    "Prefix",
-                                    "FirstName",
-                                    "MiddleNames",
-                                    "Nicknames",
-                                    "LastNameAtBirth",
-                                    "LastNameCurrent",
-                                    "Suffix",
-                                    "LastNameOther",
-                                ];
                                 const aName = new PersonName(aMember);
-                                const theName = aName.withParts(wanted);
-                                const theLNAB = aName.withParts(["LastNameAtBirth"]);
-                                const theFirstName = aName.withParts(["FirstName"]);
+                                const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+                                const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
+                                const theLNAB = theParts.get("LastNameAtBirth");
+                                const theFirstName = theParts.get("FirstName");
                                 let relation = aMember.Relation;
                                 if (aMember.Relation == "Siblings") {
                                     relation = "Sibling";
@@ -2707,20 +2701,11 @@ export class CC7 {
         );
         hierarchySection.insertBefore($("#peopleTable"));
         const aPerson = window.people[0];
-        const wanted = [
-            "Prefix",
-            "FirstName",
-            "MiddleNames",
-            "Nicknames",
-            "LastNameAtBirth",
-            "LastNameCurrent",
-            "Suffix",
-            "LastNameOther",
-        ];
         const aName = new PersonName(aPerson);
-        const theName = aName.withParts(wanted);
-        const theLNAB = aName.withParts(["LastNameAtBirth"]);
-        const theFirstName = aName.withParts(["FirstName"]);
+        const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+        const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
+        const theLNAB = theParts.get("LastNameAtBirth");
+        const theFirstName = theParts.get("FirstName");
         const linkName = CC7.htmlEntities(aPerson.Name);
         const anLi = $(
             `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Degree}' ` +
