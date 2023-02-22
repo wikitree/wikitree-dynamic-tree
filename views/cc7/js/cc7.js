@@ -3025,7 +3025,11 @@ export class CC7 {
                 .val()
                 .match(/.+\-.+/)
         ) {
-            window.ancestors = await CC7.getAncestors($("#wtid").val(), 3, CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS);
+            window.ancestors = await CC7.getAncestors(
+                $("#wtid").val().trim(),
+                3,
+                CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS
+            );
             CC7.assignGeneration(window.ancestors, ancestors[0], 0);
         }
         event.preventDefault();
@@ -3134,7 +3138,7 @@ export class CC7 {
 
     static makeFilename() {
         const date = new Date();
-        let fileName = $("#wtid").val() + "_";
+        let fileName = $("#wtid").val().trim() + "_";
         fileName += $("div.degreeView").length ? "Degree_" + $("#cc7Degree").val() + "_" : "";
         fileName += date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-";
         fileName += date.getDate().toString().padStart(2, "0") + "-";

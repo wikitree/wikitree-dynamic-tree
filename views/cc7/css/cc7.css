@@ -238,16 +238,39 @@ div.cc7Table .timelineTable td {
 }
 
 .cc7Table #explanation {
+  display: none;
   position: absolute;
   top: 100px;
   right: 100px;
   width: 45em;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
   background: white;
   box-shadow: 1em 1em 1em grey;
-  padding-right: 4em;
   z-index: 11000;
+}
+#explanation:hover {
   cursor: grab;
 }
+#explanation:active {
+  cursor: grabbing;
+}
+@media only screen and (max-width: 767px) {
+  .cc7Table .ui-draggable-handle {
+    -ms-touch-action: auto !important;
+    touch-action: auto !important;
+  }
+  .cc7Table #explanation {
+    position: relative !important;
+    width: 70% !important;
+    margin: auto !important;
+    top: auto;
+    right: auto;
+  }
+}
+
 .cc7Table #explanation x {
   position: absolute;
   top: 0.2em;
@@ -355,14 +378,6 @@ td.actions img,
   width: 20px;
   height: 20px;
   margin-right: 2px;
-}
-#explanation {
-  display: none;
-  width: 45em;
-  border: 3px solid forestgreen;
-  border-radius: 1em;
-  padding: 0.3em 1em;
-  margin: 1em auto;
 }
 #wideTableButton {
   margin-left: 0.5em;
