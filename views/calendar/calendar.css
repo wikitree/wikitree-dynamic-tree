@@ -45,7 +45,8 @@
   margin: auto;
 }
 
-span[id^="month-"] {
+span[id^="month-"],
+#ics {
   padding: 0 5px;
   font-size: 1.3em;
   color: #060;

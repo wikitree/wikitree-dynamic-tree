@@ -58,6 +58,8 @@ window.calendarView = class calendarView extends View {
                 Dec: [],
             };
 
+            let icsCalendar = "";
+
             /* The default view for the Calendar is a vertical display of events from the logged in
              * user's watchlist. This is based on the original Special:Anniversaries view.
              * To add a new view later, we need to destroy the current view $(".watchCalendar").remove();
@@ -69,6 +71,7 @@ window.calendarView = class calendarView extends View {
                             ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}&#8203</span>`).join(
                                 ""
                             )}
+                            <span id="ics">.ics</span>
                         </div>
                         <div class="loader">
                             <image class="loaderIMG" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
@@ -142,6 +145,8 @@ window.calendarView = class calendarView extends View {
                 }
 
                 // Then we insert the content into the correct month
+                icsCalendar = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:WikiTree Tree Apps Family Calendar\n`;
+
                 for (const monthName of MONTHS) {
                     // loop over all months
                     const shortName = monthName.slice(0, 3);
@@ -162,6 +167,12 @@ window.calendarView = class calendarView extends View {
                             )
                             .join("")
                     );
+                    icsCalendar += events
+                        .map(
+                            (event) =>
+                                `BEGIN:VEVENT\nDTSTAMP:${event.dt}T000000Z\nDTSTART;VALUE=DATE:${event.dt}\nRRULE:FREQ=YEARLY;BYMONTH=${event.month};BYMONTHDAY=${event.day}\nDTEND;VALUE=DATE:${event.dt}\nSUMMARY:${event.name} ${event.text} ${event.marriageText}\nEND:VEVENT\n`
+                        )
+                        .join("");
                 }
             }
             // Set our view handler
@@ -170,6 +181,16 @@ window.calendarView = class calendarView extends View {
                 $(`#${e.target.id.replace("month-", "")}`)
                     .addClass("box rounded orange")
                     .css("display", "block");
+            });
+
+            $("span[id='ics']").click(function (e) {
+                let href = document.createElement("a");
+                href.setAttribute("href", "data:text/plain," + encodeURIComponent(icsCalendar));
+                href.setAttribute("download", "WikiTreeCalendar.ics");
+                href.style.display = "none";
+                document.body.appendChild(href);
+                href.click();
+                document.body.removeChild(href);
             });
 
             // And here is our helpers.
@@ -187,12 +208,14 @@ window.calendarView = class calendarView extends View {
                 AllMonths[MONTHS[month - 1].slice(0, 3)].push({
                     id: person.Name,
                     name: person.ShortName,
-                    text: text,
+                    text: text.trim().replace(/\s+/g, " "),
                     date: date,
                     year: year,
                     month: month,
                     day: day,
+                    dt: date.replace(/\-/g, ""),
                     marriage: `<a href="https://www.wikitree.com/wiki/${link}">${spouse}</a>`,
+                    marriageText: `${spouse}`,
                 });
             }
         });
