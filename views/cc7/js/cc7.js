@@ -167,10 +167,18 @@ export class CC7 {
             </div>`
         );
 
+        const cc7Degree = Cookies.get("w_cc7Degree");
+        if (cc7Degree && cc7Degree > 0 && cc7Degree <= 7) {
+            $("#getPeopleButton").text(`Get CC${cc7Degree}`);
+            $("#getDegreeButton").text(`Get Degree ${cc7Degree} Only`);
+            const select = document.querySelector("#cc7Degree");
+            select.value = cc7Degree;
+        }
         $("#cc7Degree").on("change", function () {
             const theDegree = $("#cc7Degree").val();
             $("#getPeopleButton").text(`Get CC${theDegree}`);
             $("#getDegreeButton").text(`Get Degree ${theDegree} Only`);
+            Cookies.set("w_cc7Degree", theDegree, { expires: 365 });
         });
         $("#fileInput").on("change", CC7.handleFileUpload);
         $("#getPeopleButton").on("click", CC7.getConnectionsAction);
