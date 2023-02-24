@@ -1,4 +1,4 @@
-class PersonName {
+window.PersonName = class PersonName {
     static #emptySet = new Set();
     // The field names starting with Upper case are the part names the user specifies in wantedParts
     // The all lower case field names below are the internal names used for the different components
