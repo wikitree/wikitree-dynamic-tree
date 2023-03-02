@@ -341,15 +341,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             document.querySelector("#ct-help-text xx").addEventListener("click", function () {
                 $(this).parent().slideUp();
             });
-            document.getElementById("ct-help-text").addEventListener("mousedown", function () {
-                $(this).cursor = "grabbing";
-            });
-            document.getElementById("ct-help-text").addEventListener("mouseup", function () {
-                $(this).cursor = "default";
-            });
-            // $("#ct-help-text").draggable({
-            //     cursor: "grabbing",
-            // });
+            $("#ct-help-text").draggable();
 
             // Setup zoom and pan
             const zoom = d3.behavior

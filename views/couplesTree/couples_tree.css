@@ -1,7 +1,12 @@
 #couples-view-container {
   --content-padding: 0;
   position: relative;
+}
+#couples-view-container:hover {
   cursor: grab;
+}
+#couples-view-container:active {
+  cursor: grabbing;
 }
 
 #couples-view-container h4 {
@@ -77,10 +82,6 @@
 .button-words {
   color: black;
 }
-
-/* .button-words:hover {
-  color: #fc7171;
-} */
 
 .drop-button {
   font-size: 14px;
@@ -191,4 +192,24 @@ xx {
   padding-right: 4em;
   z-index: 11000;
   cursor: default;
+}
+#ct-help-text:hover {
+  cursor: grab;
+}
+#ct-help-text:active {
+  cursor: grabbing;
+}
+
+@media only screen and (max-width: 767px) {
+  #couples-view-container .ui-draggable-handle {
+    -ms-touch-action: auto !important;
+    touch-action: auto !important;
+  }
+  #couples-view-container #ct-help-text {
+    position: relative !important;
+    width: 70% !important;
+    margin: auto !important;
+    top: auto;
+    right: auto;
+  }
 }
