@@ -141,14 +141,14 @@ window.ViewRegistry = class ViewRegistry {
     // Fill in some data from the logged-in user.
     render() {
         let views = this.views;
-        const options = Object.keys(this.views)
-            .sort(function (a, b) {
-                // Sort the app options alphabetically by title
-                return views[a].title.localeCompare(views[b].title);
-            })
-            .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
-            .join("")
-            + `<option value="otherapps">Other Apps</option>`;
+        const options =
+            Object.keys(this.views)
+                .sort(function (a, b) {
+                    // Sort the app options alphabetically by title
+                    return views[a].title.localeCompare(views[b].title);
+                })
+                .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
+                .join("") + `<option value="otherapps">Other Apps</option>`;
 
         const submitBtn = document.querySelector(this.SHOW_BTN);
         submitBtn.addEventListener("click", (e) => this.onSubmit(e));
@@ -179,7 +179,7 @@ window.ViewRegistry = class ViewRegistry {
         const viewID = document.querySelector(this.VIEW_SELECT).value;
 
         // Special case of "other apps" where we send the user out of the dynamic tree apps page to a page at WikiTree.
-        if (viewID == 'otherapps') {
+        if (viewID == "otherapps") {
             if (wtID) {
                 window.open(`https://www.wikitree.com/treewidget/${wtID}/77`);
             } else {
@@ -366,9 +366,12 @@ window.LoginManager = class LoginManager {
     }
 
     logout() {
-        this.wtAPI.cookie(this.C_WT_USERNAME, '', { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
-        this.wtAPI.cookie(this.C_WT_USER_ID, '', { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
-        this.wtAPI.postToAPI({ action: "clientLogin", doLogout: 1 }).then((data) => { console.log('back from dologout'); window.location.reload(); });
+        this.wtAPI.cookie(this.C_WT_USERNAME, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
+        this.wtAPI.cookie(this.C_WT_USER_ID, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
+        this.wtAPI.postToAPI({ action: "clientLogin", doLogout: 1 }).then((data) => {
+            console.log("back from dologout");
+            window.location.reload();
+        });
     }
 
     onAuth(data) {
@@ -441,7 +444,7 @@ window.SessionManager = class SessionManager {
 };
 
 function condLog(...args) {
-    if ((typeof debugLoggingOn !== 'undefined') && (debugLoggingOn)) {
+    if (typeof debugLoggingOn !== "undefined" && debugLoggingOn) {
         console.log.apply(null, args);
     }
 }

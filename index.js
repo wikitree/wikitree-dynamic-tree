@@ -58,6 +58,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
         "calendar": new calendarView(),
         "nameTest": new NameTestView(),
+        "cc7": new CC7View(),
     };
 
     for (let key in views) {
