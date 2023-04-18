@@ -369,7 +369,6 @@ window.LoginManager = class LoginManager {
         this.wtAPI.cookie(this.C_WT_USERNAME, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
         this.wtAPI.cookie(this.C_WT_USER_ID, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
         this.wtAPI.postToAPI({ action: "clientLogin", doLogout: 1 }).then((data) => {
-            console.log("back from dologout");
             window.location.reload();
         });
     }

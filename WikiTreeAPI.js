@@ -9,6 +9,9 @@
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
+if (typeof API_URL === 'undefined') { var API_URL = "https://api.wikitree.com/api.php"; }
+
+
 const dateTokenCache = {};
 
 /**
@@ -387,12 +390,19 @@ WikiTreeAPI.getWatchlist = async function (limit, getPerson, getSpace, fields) {
  */
 WikiTreeAPI.postToAPI = async function (postData) {
     condLog(`>>>>> postToAPI ${postData.action} ${postData.key || postData.keys}`, postData);
-    const API_URL = "https://api.wikitree.com/api.php";
 
     let formData = new FormData();
     for (var key in postData) {
         formData.append(key, postData[key]);
     }
+
+    // If we have a token, add it to our form data.
+    if (typeof appsToken != 'undefined') {
+        formData.append('token', appsToken);
+    }
+
+
+
     // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
     let options = {
         method: "POST",
@@ -402,6 +412,7 @@ WikiTreeAPI.postToAPI = async function (postData) {
         },
         body: new URLSearchParams(formData),
     };
+
     const response = await fetch(API_URL, options);
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}: ${response.statusText}`);
