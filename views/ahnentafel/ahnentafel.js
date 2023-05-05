@@ -5,6 +5,7 @@
  */
 
 window.AhnentafelView = class AhnentafelView extends View {
+    static APP_ID = "Ahnentafel";
     meta() {
         return {
             title: "Ahnentafel Ancestor List",
@@ -160,7 +161,12 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         //$(this.selector).html("Working....");
         wtViewRegistry.showNotice(`Building the ancestor list to ${this.maxGeneration} generations...`);
 
-        let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
+        let data = await WikiTreeAPI.postToAPI({
+            appId: AhnentafelView.APP_ID,
+            action: "getPerson",
+            key: this.startId,
+            fields: this.profileFields,
+        });
         if (data.length != 1) {
             wtViewRegistry.showError(`There was an error starting with ${this.startId}.`);
             return;
@@ -203,6 +209,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
 
         let ancestorData = await WikiTreeAPI.postToAPI({
+            appId: AhnentafelView.APP_ID,
             action: "getAncestors",
             key: p.Id,
             fields: this.profileFields,
@@ -250,7 +257,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     async nextPerson(id) {
         if (id > 0) {
             // We used to get each profile individually.
-            // let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: this.profileFields });
+            // let data = await WikiTreeAPI.postToAPI({appId: AhnentafelView.APP_ID, action: "getPerson", key: id, fields: this.profileFields });
             // if (data.length != 1) {
             //     return this.blankPerson;
             // } else {
@@ -274,7 +281,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if (person.Id == 0) {
             html += `[${this.unknownName()} Unknown]`;
         } else {
-            if (!person.MiddleName) { person.MiddleName = ""; }
+            if (!person.MiddleName) {
+                person.MiddleName = "";
+            }
             if (this.generation == 1) {
                 html += "<b>";
                 html += `${person.FirstName} ${person.MiddleName} `;

@@ -1,4 +1,5 @@
 window.NameTestView = class NameTestView extends View {
+    static APP_ID = "NameTest";
     static #RECOMMENDED_FIELDS =
         "FirstName,LastNameAtBirth,LastNameCurrent,LastNameOther,MiddleName,Nicknames,Prefix,RealName,Suffix," +
         "Derived.BirthName,Derived.BirthNamePrivate";
@@ -146,6 +147,7 @@ window.NameTest = class NameTest {
 
     async displayNames(profileFields) {
         const data = await WikiTreeAPI.postToAPI({
+            appId: NameTestView.APP_ID,
             action: "getPerson",
             key: this.startId,
             fields: profileFields,

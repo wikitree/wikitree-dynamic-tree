@@ -1,27 +1,28 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * Fan Chart uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
- 
-* There is a Button Bar TABLE at the top of the container, 
+ *
+ * There is a Button Bar TABLE at the top of the container,
  * then the SVG graphic is below that.
- * 
+ *
  * The FIRST chunk of code in the SVG graphic are the <path> objects for the individual wedges of the Fan Chart,
  * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
- * 
+ *
  * The SECOND chunk in the SVG graphic are the individual people in the Fan Chart, created by the Nodes and the d3 deep magic
  * they are each basically at the end of the day a <g class"person ancestor" highlight_options_showHighlights
- * 
+ *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FanChartView, then calls a redraw
  */
 (function () {
+    const APP_ID = "FanChart";
     var originOffsetX = 500,
         originOffsetY = 300,
         boxWidth = 200 * 2,
         boxHeight = 50,
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
-        font4Name = "SansSerif";
-        font4Info = "SansSerif";
+    font4Name = "SansSerif";
+    font4Info = "SansSerif";
 
     /**
      * Constructor
@@ -215,7 +216,90 @@
         [0, "SteelBlue", "#4682B4"],
         [0, "Teal", "#008080"],
     ];
-    var LightColoursArray = [[1,"AliceBlue","#F0F8FF"], [1,"AntiqueWhite","#FAEBD7"], [1,"Aquamarine","#7FFFD4"], /*[1,"Azure","#F0FFFF"],*/ [1,"Beige","#F5F5DC"], /*[1,"Bisque","#FFE4C4"], [1,"BlanchedAlmond","#FFEBCD"], */[1,"BurlyWood","#DEB887"], [1,"CadetBlue","#5F9EA0"],/* [1,"Chartreuse","#7FFF00"], [1,"Coral","#FF7F50"], */[1,"CornflowerBlue","#6495ED"], [1,"Cornsilk","#FFF8DC"], [1,"Cyan","#00FFFF"], [1,"DarkCyan","#008B8B"], [1,"DarkGoldenRod","#B8860B"], [1,"DarkGray","#A9A9A9"], [1,"DarkKhaki","#BDB76B"], [1,"DarkOrange","#FF8C00"], [1,"DarkSalmon","#E9967A"], [1,"DarkSeaGreen","#8FBC8F"], [1,"DarkTurquoise","#00CED1"], [1,"DeepPink","#FF1493"], [1,"DeepSkyBlue","#00BFFF"], [1,"DodgerBlue","#1E90FF"], [1,"FloralWhite","#FFFAF0"], [1,"Gainsboro","#DCDCDC"], [1,"GhostWhite","#F8F8FF"], [1,"Gold","#FFD700"], [1,"GoldenRod","#DAA520"], [1,"GreenYellow","#ADFF2F"], [1,"HoneyDew","#F0FFF0"], [1,"HotPink","#FF69B4"], /*[1,"Ivory","#FFFFF0"],*/ [1,"Khaki","#F0E68C"], [1,"Lavender","#E6E6FA"], [1,"LavenderBlush","#FFF0F5"], [1,"LawnGreen","#7CFC00"], [1,"LemonChiffon","#FFFACD"], [1,"LightBlue","#ADD8E6"], [1,"LightCoral","#F08080"], /*[1,"LightCyan","#E0FFFF"],*/ [1,"LightGoldenRodYellow","#FAFAD2"], [1,"LightGray","#D3D3D3"], [1,"LightGreen","#90EE90"], [1,"LightPink","#FFB6C1"], [1,"LightSalmon","#FFA07A"], [1,"LightSeaGreen","#20B2AA"], [1,"LightSkyBlue","#87CEFA"], [1,"LightSlateGray","#778899"], [1,"LightSteelBlue","#B0C4DE"], [1,"LightYellow","#FFFFE0"], [1,"Lime","#00FF00"], [1,"LimeGreen","#32CD32"], [1,"Linen","#FAF0E6"], [1,"Magenta","#FF00FF"], [1,"MediumAquaMarine","#66CDAA"], [1,"MediumSpringGreen","#00FA9A"], [1,"MediumTurquoise","#48D1CC"], /*[1,"MintCream","#F5FFFA"],*/ [1,"MistyRose","#FFE4E1"], /*[1,"Moccasin","#FFE4B5"], */[1,"NavajoWhite","#FFDEAD"], [1,"OldLace","#FDF5E6"], [1,"Orange","#FFA500"], [1,"Orchid","#DA70D6"], [1,"PaleGoldenRod","#EEE8AA"], [1,"PaleGreen","#98FB98"], [1,"PaleTurquoise","#AFEEEE"], [1,"PaleVioletRed","#DB7093"], /*[1,"PapayaWhip","#FFEFD5"],*/ [1,"PeachPuff","#FFDAB9"], [1,"Pink","#FFC0CB"], [1,"Plum","#DDA0DD"], [1,"PowderBlue","#B0E0E6"], [1,"RosyBrown","#BC8F8F"], [1,"Salmon","#FA8072"], [1,"SandyBrown","#F4A460"], [1,"SeaShell","#FFF5EE"], [1,"Silver","#C0C0C0"], /*[1,"SkyBlue","#87CEEB"],*/ /*[1,"Snow","#FFFAFA"],*/ [1,"SpringGreen","#00FF7F"], [1,"Tan","#D2B48C"], [1,"Thistle","#D8BFD8"], [1,"Tomato","#FF6347"], [1,"Turquoise","#40E0D0"], [1,"Violet","#EE82EE"], [1,"Wheat","#F5DEB3"], /*[1,"White","#FFFFFF"],*/ /*[1,"WhiteSmoke","#F5F5F5"],*/ /*[1,"Yellow","#FFFF00"],*/ [1,"YellowGreen","#9ACD32"] ];
+    var LightColoursArray = [
+        [1, "AliceBlue", "#F0F8FF"],
+        [1, "AntiqueWhite", "#FAEBD7"],
+        [1, "Aquamarine", "#7FFFD4"],
+        /*[1,"Azure","#F0FFFF"],*/ [1, "Beige", "#F5F5DC"],
+        /*[1,"Bisque","#FFE4C4"], [1,"BlanchedAlmond","#FFEBCD"], */ [1, "BurlyWood", "#DEB887"],
+        [1, "CadetBlue", "#5F9EA0"],
+        /* [1,"Chartreuse","#7FFF00"], [1,"Coral","#FF7F50"], */ [1, "CornflowerBlue", "#6495ED"],
+        [1, "Cornsilk", "#FFF8DC"],
+        [1, "Cyan", "#00FFFF"],
+        [1, "DarkCyan", "#008B8B"],
+        [1, "DarkGoldenRod", "#B8860B"],
+        [1, "DarkGray", "#A9A9A9"],
+        [1, "DarkKhaki", "#BDB76B"],
+        [1, "DarkOrange", "#FF8C00"],
+        [1, "DarkSalmon", "#E9967A"],
+        [1, "DarkSeaGreen", "#8FBC8F"],
+        [1, "DarkTurquoise", "#00CED1"],
+        [1, "DeepPink", "#FF1493"],
+        [1, "DeepSkyBlue", "#00BFFF"],
+        [1, "DodgerBlue", "#1E90FF"],
+        [1, "FloralWhite", "#FFFAF0"],
+        [1, "Gainsboro", "#DCDCDC"],
+        [1, "GhostWhite", "#F8F8FF"],
+        [1, "Gold", "#FFD700"],
+        [1, "GoldenRod", "#DAA520"],
+        [1, "GreenYellow", "#ADFF2F"],
+        [1, "HoneyDew", "#F0FFF0"],
+        [1, "HotPink", "#FF69B4"],
+        /*[1,"Ivory","#FFFFF0"],*/ [1, "Khaki", "#F0E68C"],
+        [1, "Lavender", "#E6E6FA"],
+        [1, "LavenderBlush", "#FFF0F5"],
+        [1, "LawnGreen", "#7CFC00"],
+        [1, "LemonChiffon", "#FFFACD"],
+        [1, "LightBlue", "#ADD8E6"],
+        [1, "LightCoral", "#F08080"],
+        /*[1,"LightCyan","#E0FFFF"],*/ [1, "LightGoldenRodYellow", "#FAFAD2"],
+        [1, "LightGray", "#D3D3D3"],
+        [1, "LightGreen", "#90EE90"],
+        [1, "LightPink", "#FFB6C1"],
+        [1, "LightSalmon", "#FFA07A"],
+        [1, "LightSeaGreen", "#20B2AA"],
+        [1, "LightSkyBlue", "#87CEFA"],
+        [1, "LightSlateGray", "#778899"],
+        [1, "LightSteelBlue", "#B0C4DE"],
+        [1, "LightYellow", "#FFFFE0"],
+        [1, "Lime", "#00FF00"],
+        [1, "LimeGreen", "#32CD32"],
+        [1, "Linen", "#FAF0E6"],
+        [1, "Magenta", "#FF00FF"],
+        [1, "MediumAquaMarine", "#66CDAA"],
+        [1, "MediumSpringGreen", "#00FA9A"],
+        [1, "MediumTurquoise", "#48D1CC"],
+        /*[1,"MintCream","#F5FFFA"],*/ [1, "MistyRose", "#FFE4E1"],
+        /*[1,"Moccasin","#FFE4B5"], */ [1, "NavajoWhite", "#FFDEAD"],
+        [1, "OldLace", "#FDF5E6"],
+        [1, "Orange", "#FFA500"],
+        [1, "Orchid", "#DA70D6"],
+        [1, "PaleGoldenRod", "#EEE8AA"],
+        [1, "PaleGreen", "#98FB98"],
+        [1, "PaleTurquoise", "#AFEEEE"],
+        [1, "PaleVioletRed", "#DB7093"],
+        /*[1,"PapayaWhip","#FFEFD5"],*/ [1, "PeachPuff", "#FFDAB9"],
+        [1, "Pink", "#FFC0CB"],
+        [1, "Plum", "#DDA0DD"],
+        [1, "PowderBlue", "#B0E0E6"],
+        [1, "RosyBrown", "#BC8F8F"],
+        [1, "Salmon", "#FA8072"],
+        [1, "SandyBrown", "#F4A460"],
+        [1, "SeaShell", "#FFF5EE"],
+        [1, "Silver", "#C0C0C0"],
+        /*[1,"SkyBlue","#87CEEB"],*/ /*[1,"Snow","#FFFAFA"],*/ [1, "SpringGreen", "#00FF7F"],
+        [1, "Tan", "#D2B48C"],
+        [1, "Thistle", "#D8BFD8"],
+        [1, "Tomato", "#FF6347"],
+        [1, "Turquoise", "#40E0D0"],
+        [1, "Violet", "#EE82EE"],
+        [1, "Wheat", "#F5DEB3"],
+        /*[1,"White","#FFFFFF"],*/ /*[1,"WhiteSmoke","#F5F5F5"],*/ /*[1,"Yellow","#FFFF00"],*/ [
+            1,
+            "YellowGreen",
+            "#9ACD32",
+        ],
+    ];
 
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
@@ -711,7 +795,14 @@
             .scaleExtent([0.1, 2.5])
             .on("zoom", function () {
                 svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + 0.45 * d3.event.scale + ")");
-                console.log("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")", "width:", width, "height:", height);
+                console.log(
+                    "transform",
+                    "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")",
+                    "width:",
+                    width,
+                    "height:",
+                    height
+                );
             })
             // Offset so that first pan and zoom does not jump back to the origin
             // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
@@ -723,8 +814,10 @@
             ' <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
             ' <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
             '<td width="5%">&nbsp;' +
-            '<span id=legendASCII style="display:none;"><A onclick="FanChartView.toggleLegend();"><font size=+2>' + LEGEND_CLIPBOARD + "</font></A></span>" +
-            '</td>' +
+            '<span id=legendASCII style="display:none;"><A onclick="FanChartView.toggleLegend();"><font size=+2>' +
+            LEGEND_CLIPBOARD +
+            "</font></A></span>" +
+            "</td>" +
             '<td width="30%" align="center">' +
             ' <A onclick="FanChartView.numGens2Display -=1; FanChartView.redraw();"> -1 </A> ' +
             "[ <span id=numGensInBBar>5</span> generations ]" +
@@ -743,7 +836,7 @@
         var legendHTML =
             '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; align:left"><A onclick="FanChartView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
-            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>"; ;
+            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>";
 
         // console.log("SETTINGS:",settingsHTML);
 
@@ -788,7 +881,7 @@
         // NEXT STEPS : Return a True/False based on whether any changes were actually made --> THEN - call reDraw routine if needed
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
-        
+
         var svg = d3
             .select(container)
             .append("svg")
@@ -800,7 +893,7 @@
             // .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
             // .attr("transform", "scale(" + 0.5 + ")")
             .attr("transform", "translate(" + width / 2 + "," + 560 + ") scale(" + 0.45 + ") ");
-            // .attr("transform", "translate(" + width / 2 + "," + height / 2 + ") scale(" + 0.45 + ") ");
+        // .attr("transform", "translate(" + width / 2 + "," + height / 2 + ") scale(" + 0.45 + ") ");
 
         // console.log("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
@@ -828,7 +921,7 @@
             });
 
         /*
-            CREATE the FAN CHART Backdrop 
+            CREATE the FAN CHART Backdrop
             * Made of mostly Wedges (starting with the outermost circle)
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
@@ -1074,17 +1167,16 @@
         refreshLegendDIV.style.display = "block";
     }
 
-    FanChartView.refreshTheLegend = function() {
+    FanChartView.refreshTheLegend = function () {
         console.log("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
         let refreshLegendDIV = document.getElementById("refreshLegend");
         refreshLegendDIV.style.display = "none";
         updateLegendIfNeeded();
         FanChartView.redraw();
-        
-    }
+    };
 
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
-    FanChartView.optionElementJustChanged = function() {
+    FanChartView.optionElementJustChanged = function () {
         console.log("optionElementJustChanged !!!!!");
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         let clrPaletteSelector = document.getElementById("colour_options_palette");
@@ -1132,10 +1224,8 @@
             let theDIV = document.getElementById("legendDIV");
             theDIV.style.display = "none";
         }
+    };
 
-    }
-
- 
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
         // console.log(theMessage);
@@ -1192,6 +1282,7 @@
             FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
         } else {
             WikiTreeAPI.getRelatives(
+                APP_ID,
                 theListOfIDs,
                 [
                     "Id",
@@ -1201,7 +1292,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-                    
+
                     "Nicknames",
                     "Prefix",
                     "Suffix",
@@ -1336,13 +1427,14 @@
     }
 
     var thisTextColourArray = {};
-    function updateLegendIfNeeded() { console.log("DOING updateLegendIfNeeded");
+    function updateLegendIfNeeded() {
+        console.log("DOING updateLegendIfNeeded");
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
-        let legendDIV = document.getElementById('legendDIV');
-        let innerLegendDIV = document.getElementById('innerLegend');
-        
+        let legendDIV = document.getElementById("legendDIV");
+        let innerLegendDIV = document.getElementById("innerLegend");
+
         let fontList = [
             "Black",
             "DarkGreen",
@@ -1356,13 +1448,13 @@
             "Cyan",
         ];
         let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];
-        
+
         thisTextColourArray = {};
         let thisColourArray = getColourArray();
 
         if (settingForColourBy == "Family") {
             // console.log("TextClrSetting = ", txtClrSetting);
-            
+
             let innerCode = "";
             let clrSwatchArray = [];
             for (let index = 0; index < 12; index++) {
@@ -1371,30 +1463,36 @@
                 if (txtClrSetting == "B&W") {
                     theTextFontClr = luminance > 0.179 ? "Black" : "White";
                 } else if (txtClrSetting == "alt") {
-                    theTextFontClr =
-                        fontList[(luminance > 0.179 ? 0 : 5) + (index % 5) ] ; // Math.max(0, Math.min(4, Math.round(5 * Math.random())))];
+                    theTextFontClr = fontList[(luminance > 0.179 ? 0 : 5) + (index % 5)]; // Math.max(0, Math.min(4, Math.round(5 * Math.random())))];
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
                 console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
-                thisTextColourArray[thisColourArray[index].toUpperCase() ] = theTextFontClr;
+                thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
 
                 clrSwatchArray.push(
-                       "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
-                           thisColourArray[index] +
-                           ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" + theTextFontClr + "'>A</text></svg>"
-                   );
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                        thisColourArray[index] +
+                        ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" +
+                        theTextFontClr +
+                        "'>A</text></svg>"
+                );
             }
-                
+
             if (settingForSpecifyByFamily == "age") {
-                clrSwatchUNK =  "<svg width=20 height=20><rect width=20 height=20 style='fill:" + "white" + ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
-                clrSwatchLIVING =  "<svg width=20 height=20><rect width=20 height=20 style='fill:" + "lime" + ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
-                innerCode =   clrSwatchUNK + " age unknown <br/>"+ clrSwatchLIVING + " still living";
+                clrSwatchUNK =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "white" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                clrSwatchLIVING =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "lime" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                innerCode = clrSwatchUNK + " age unknown <br/>" + clrSwatchLIVING + " still living";
                 for (let index = 0; index < 10; index++) {
-                    innerCode += "<br/>"+ clrSwatchArray[index + 1] + " " + (index*10) + " - " + (index*10 + 9);                    
+                    innerCode += "<br/>" + clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
-
             }
             console.log("thisTextColourArray", thisTextColourArray);
             innerLegendDIV.innerHTML = innerCode;
@@ -1406,9 +1504,12 @@
             // LET's FIRST setup the ARRAY of UNIQUE LOCATIONS
             uniqueLocationsArray = [];
             for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
-                const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ index ]];
+                const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
                 if (thisPerp) {
-                    if (settingForSpecifyByLocation == "BirthDeathCountry" || settingForSpecifyByLocation == "DeathBirthCountry") {
+                    if (
+                        settingForSpecifyByLocation == "BirthDeathCountry" ||
+                        settingForSpecifyByLocation == "DeathBirthCountry"
+                    ) {
                         let thisLoc = thisPerp._data["BirthCountry"];
                         if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
                             uniqueLocationsArray.push(thisLoc);
@@ -1417,8 +1518,6 @@
                         if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
                             uniqueLocationsArray.push(thisLoc);
                         }
-
-                    
                     } else {
                         let thisLoc = thisPerp._data[settingForSpecifyByLocation];
                         if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
@@ -1430,8 +1529,7 @@
             let revLocArray = reverseCommaArray(uniqueLocationsArray, true);
             console.log(revLocArray);
             revLocArray.sort();
-            uniqueLocationsArray = reverseCommaArray(revLocArray, false);		
-			
+            uniqueLocationsArray = reverseCommaArray(revLocArray, false);
 
             clrSwatchUNK =
                 "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
@@ -1443,10 +1541,9 @@
             // console.log("RGB = ", fractionToHexChar(rgbArray[0]) );
             // console.log("RGB = ", fractionToHexChar(rgbArray[1]) );
             // console.log("RGB = ", fractionToHexChar(rgbArray[2]) );
-            
 
-            innerCode += "<br/>" + clrSwatchUNK + " unknown";                        
-            
+            innerCode += "<br/>" + clrSwatchUNK + " unknown";
+
             for (let index = 0; index < uniqueLocationsArray.length; index++) {
                 let hue = Math.round((360 * index) / uniqueLocationsArray.length);
                 let sat = 1 - (index % 2) * -0.15;
@@ -1462,13 +1559,13 @@
                     } else if (lit >= 0.6) {
                         theTextFontClr = "Black";
                     }
-                    if (hue < 20 || (hue > 200 && hue < 300)|| hue > 340) {
-                        theTextFontClr = "White"; 
+                    if (hue < 20 || (hue > 200 && hue < 300) || hue > 340) {
+                        theTextFontClr = "White";
                     } else if (hue > 60 && hue < 170) {
                         theTextFontClr = "Black";
                     }
                 } else if (txtClrSetting == "alt") {
-                    let darkLight = (luminance > 0.179 ? 0 : 5);
+                    let darkLight = luminance > 0.179 ? 0 : 5;
                     if (lit < 0.4) {
                         darkLight = 5;
                     } else if (lit >= 0.6) {
@@ -1485,8 +1582,7 @@
                     } else if (hue > 60 && hue < 170) {
                         darkLight = 0;
                     }
-                    theTextFontClr =
-                        fontList[darkLight + index % 5 ];  // //Math.max(0, Math.min(4, Math.round(5 * Math.random())))
+                    theTextFontClr = fontList[darkLight + (index % 5)]; // //Math.max(0, Math.min(4, Math.round(5 * Math.random())))
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
@@ -1502,25 +1598,21 @@
                 //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                 //     thisColourArray[index % thisColourArray.length] +
                 //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
-                innerCode +=
-                    "<br/>" +
-                    clrSwatch +
-                    " " +
-                    uniqueLocationsArray[index];
-                    //  +
-                    // " H:" +
-                    // Math.round(hue) +
-                    // " lit:" +
-                    // lit +
-                    // " L:" +
-                    // luminance;
+                innerCode += "<br/>" + clrSwatch + " " + uniqueLocationsArray[index];
+                //  +
+                // " H:" +
+                // Math.round(hue) +
+                // " lit:" +
+                // lit +
+                // " L:" +
+                // luminance;
             }
 
             theSortedLocationsArray = uniqueLocationsArray;
             console.log(theSortedLocationsArray);
             // console.log("LOCS not sorted we think ...");
             // console.log(uniqueLocationsArray);
-            
+
             // console.log("LOCS yes SORTED we think ...");
             // console.log(sortedLocs);
             innerLegendDIV.innerHTML = innerCode;
@@ -1550,7 +1642,7 @@
         }
     }
 
-	function reverseCommaArray(arr, addSpace = false) {
+    function reverseCommaArray(arr, addSpace = false) {
         let newArr = [];
         for (var i = 0; i < arr.length; i++) {
             let aPieces = arr[i].split(",");
@@ -1564,21 +1656,22 @@
             if (addSpace == true && aPieces.length == 1) {
                 elem = " " + elem;
             } else if (addSpace == false && aPieces.length == 1) {
-                elem =  elem.trim();
+                elem = elem.trim();
             }
             newArr.push(elem);
         }
         return newArr;
     }
 
-    function hslToRGBhex ( hue, sat, lum) {
+    function hslToRGBhex(hue, sat, lum) {
         let rgbArray = hslToRgb(hue, sat, lum);
-        let hexClr = "#" + fractionToHexChar(rgbArray[0]) +  fractionToHexChar(rgbArray[1]) +  fractionToHexChar(rgbArray[2]);
-        return hexClr;    
+        let hexClr =
+            "#" + fractionToHexChar(rgbArray[0]) + fractionToHexChar(rgbArray[1]) + fractionToHexChar(rgbArray[2]);
+        return hexClr;
     }
 
-    function fractionToHexChar( p ) {
-        let hx = Math.min(255,Math.max(0, Math.round(p*256))) ;
+    function fractionToHexChar(p) {
+        let hx = Math.min(255, Math.max(0, Math.round(p * 256)));
         // console.log("convert ", p, " to ", hx , " to ", hx.toString(16));
         hx = hx.toString(16);
         if (hx.length < 2) {
@@ -1606,33 +1699,53 @@
         } else if (hPrime <= 6) {
             return withLight(C, 0, X);
         }
-    };
-    
-    function switchFontColour( element, newClr ) {
-        let fontList = ["fontBlack","fontDarkGreen","fontDarkRed","fontDarkBlue","fontBrown","fontWhite","fontYellow","fontLime","fontPink","fontCyan"];
+    }
+
+    function switchFontColour(element, newClr) {
+        let fontList = [
+            "fontBlack",
+            "fontDarkGreen",
+            "fontDarkRed",
+            "fontDarkBlue",
+            "fontBrown",
+            "fontWhite",
+            "fontYellow",
+            "fontLime",
+            "fontPink",
+            "fontCyan",
+        ];
         if (fontList.indexOf(newClr) == -1) {
             console.log("Invalid colour sent to switchFontColour:", newClr);
             return; // don't change anything - an invalid font has been entered
         }
         // let newClr  = fontList[ Math.max(0, Math.min(fontList.length - 1, Math.round(fontList.length * Math.random() )) )];
-        element.classList.remove("fontBlack" );
+        element.classList.remove("fontBlack");
         element.classList.remove("fontDarkGreen");
-        element.classList.remove("fontDarkRed" );
+        element.classList.remove("fontDarkRed");
         element.classList.remove("fontDarkBlue");
-        element.classList.remove("fontBrown" );
-        element.classList.remove("fontWhite" );
+        element.classList.remove("fontBrown");
+        element.classList.remove("fontWhite");
         element.classList.remove("fontYellow");
-        element.classList.remove("fontLime" );
+        element.classList.remove("fontLime");
         element.classList.remove("fontPink");
         element.classList.remove("fontCyan");
         element.classList.add(newClr);
     }
 
     function updateFontsIfNeeded() {
-        if (FanChartView.currentSettings["general_options_font4Names"] == font4Name && FanChartView.currentSettings["general_options_font4Info"] == font4Info) {
+        if (
+            FanChartView.currentSettings["general_options_font4Names"] == font4Name &&
+            FanChartView.currentSettings["general_options_font4Info"] == font4Info
+        ) {
             console.log("NOTHING to see HERE in UPDATE FONT land");
         } else {
-            console.log("Update Fonts:", FanChartView.currentSettings["general_options_font4Names"], font4Name , FanChartView.currentSettings["general_options_font4Info"] ,font4Info);
+            console.log(
+                "Update Fonts:",
+                FanChartView.currentSettings["general_options_font4Names"],
+                font4Name,
+                FanChartView.currentSettings["general_options_font4Info"],
+                font4Info
+            );
             console.log(FanChartView.currentSettings);
 
             font4Name = FanChartView.currentSettings["general_options_font4Names"];
@@ -1647,7 +1760,6 @@
                 element.classList.remove("fontFantasy");
                 element.classList.remove("fontScript");
                 element.classList.add("font" + font4Name);
-                
             }
             let infoElements = document.getElementsByClassName("vital");
             for (let e = 0; e < infoElements.length; e++) {
@@ -1658,11 +1770,8 @@
                 element.classList.remove("fontFantasy");
                 element.classList.remove("fontScript");
                 element.classList.add("font" + font4Info);
-                
             }
-
         }
-
     }
     // function getStyleRule(ruleClass, property, cssFile) {
     //     for (var s = 0; s < document.styleSheets.length; s++) {
@@ -1690,7 +1799,7 @@
     //         if (sheet) {
     //         //     if ( !sheet.cssRules) {
     //         //         // nothing to see here
-                    
+
     //         //     } else {
 
     //         //         var rules = sheet.cssRules ? sheet.cssRules : sheet.rules;
@@ -1788,7 +1897,7 @@
             }
             // console.log(".load person:",person);
 
-            WikiTreeAPI.getAncestors(id, 5, [
+            WikiTreeAPI.getAncestors(APP_ID, id, 5, [
                 "Id",
                 "Derived.BirthName",
                 "Derived.BirthNamePrivate",
@@ -1823,90 +1932,95 @@
                 // console.log("person with which to drawTree:", person);
 
                 // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
-                 let tmpAncArray = [];
-                 let tmpAhnT = [0, FanChartView.theAncestors[0].Id, FanChartView.theAncestors[0].Father, FanChartView.theAncestors[0].Mother];
-                 let tmpAhnTindex = [-1, 0];
-                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                     thePerson = FanChartView.theAncestors[ancNum];
-                     tmpAncArray.push([thePerson.Id, thePerson.Father, thePerson.Mother]);
-                 }
+                let tmpAncArray = [];
+                let tmpAhnT = [
+                    0,
+                    FanChartView.theAncestors[0].Id,
+                    FanChartView.theAncestors[0].Father,
+                    FanChartView.theAncestors[0].Mother,
+                ];
+                let tmpAhnTindex = [-1, 0];
+                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                    thePerson = FanChartView.theAncestors[ancNum];
+                    tmpAncArray.push([thePerson.Id, thePerson.Father, thePerson.Mother]);
+                }
 
-                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                     for (var n = 2; n < 4; n++) {
-                         if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
-                             let thePerson = FanChartView.theAncestors[ancNum];
-                             tmpAhnTindex[n] = ancNum;
-                             tmpAhnT[2 * n] = thePerson.Father;
-                             tmpAhnT[2 * n + 1] = thePerson.Mother;
-                         }
-                     }
-                 }
+                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                    for (var n = 2; n < 4; n++) {
+                        if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
+                            let thePerson = FanChartView.theAncestors[ancNum];
+                            tmpAhnTindex[n] = ancNum;
+                            tmpAhnT[2 * n] = thePerson.Father;
+                            tmpAhnT[2 * n + 1] = thePerson.Mother;
+                        }
+                    }
+                }
 
-                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                     for (var n = 4; n < 8; n++) {
-                         if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
-                             let thePerson = FanChartView.theAncestors[ancNum];
-                             tmpAhnTindex[n] = ancNum;
-                             tmpAhnT[2 * n] = thePerson.Father;
-                             tmpAhnT[2 * n + 1] = thePerson.Mother;
-                         }
-                     }
-                 }
+                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                    for (var n = 4; n < 8; n++) {
+                        if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
+                            let thePerson = FanChartView.theAncestors[ancNum];
+                            tmpAhnTindex[n] = ancNum;
+                            tmpAhnT[2 * n] = thePerson.Father;
+                            tmpAhnT[2 * n + 1] = thePerson.Mother;
+                        }
+                    }
+                }
 
-                 for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                     for (var n = 8; n < 16; n++) {
-                         if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
-                             let thePerson = FanChartView.theAncestors[ancNum];
-                             tmpAhnTindex[n] = ancNum;
-                             tmpAhnT[2 * n] = thePerson.Father;
-                             tmpAhnT[2 * n + 1] = thePerson.Mother;
-                         }
-                     }
-                 }
+                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                    for (var n = 8; n < 16; n++) {
+                        if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
+                            let thePerson = FanChartView.theAncestors[ancNum];
+                            tmpAhnTindex[n] = ancNum;
+                            tmpAhnT[2 * n] = thePerson.Father;
+                            tmpAhnT[2 * n + 1] = thePerson.Mother;
+                        }
+                    }
+                }
 
-                 let relativeName = [
-                     "kid",
-                     "self",
-                     "Father",
-                     "Mother",
-                     "Grandfather",
-                     "Grandmother",
-                     "Grandfather",
-                     "Grandmother",
-                     "Great-Grandfather",
-                     "Great-Grandmother",
-                     "Great-Grandfather",
-                     "Great-Grandmother",
-                     "Great-Grandfather",
-                     "Great-Grandmother",
-                     "Great-Grandfather",
-                     "Great-Grandmother",
-                 ];
-                 for (var a = 1; a < 16; a++) {
-                     if (tmpAhnTindex[a] && tmpAhnTindex[a] > 0 && tmpAhnT[a] && tmpAhnT[a] < 0) {
-                         let thePersonNum = tmpAhnTindex[a];
-                         let theChildNum = tmpAhnTindex[Math.floor(a / 2)];
-                         console.log("Further - we need to fix ", FanChartView.theAncestors[thePersonNum]);
+                let relativeName = [
+                    "kid",
+                    "self",
+                    "Father",
+                    "Mother",
+                    "Grandfather",
+                    "Grandmother",
+                    "Grandfather",
+                    "Grandmother",
+                    "Great-Grandfather",
+                    "Great-Grandmother",
+                    "Great-Grandfather",
+                    "Great-Grandmother",
+                    "Great-Grandfather",
+                    "Great-Grandmother",
+                    "Great-Grandfather",
+                    "Great-Grandmother",
+                ];
+                for (var a = 1; a < 16; a++) {
+                    if (tmpAhnTindex[a] && tmpAhnTindex[a] > 0 && tmpAhnT[a] && tmpAhnT[a] < 0) {
+                        let thePersonNum = tmpAhnTindex[a];
+                        let theChildNum = tmpAhnTindex[Math.floor(a / 2)];
+                        console.log("Further - we need to fix ", FanChartView.theAncestors[thePersonNum]);
 
-                         FanChartView.theAncestors[thePersonNum].Id = a;
-                         FanChartView.theAncestors[thePersonNum]["Name"] = "Private-" + a;
-                         FanChartView.theAncestors[thePersonNum]["FirstName"] = "Private";
-                         FanChartView.theAncestors[thePersonNum]["LastNameAtBirth"] = relativeName[a];
-                         if (a % 2 == 0) {
-                             FanChartView.theAncestors[thePersonNum]["Gender"] = "Male";
-                             FanChartView.theAncestors[theChildNum].Father = a;
-                         } else {
-                             FanChartView.theAncestors[thePersonNum]["Gender"] = "Female";
-                             FanChartView.theAncestors[theChildNum].Mother = a;
-                         }
-                     }
-                 }
+                        FanChartView.theAncestors[thePersonNum].Id = a;
+                        FanChartView.theAncestors[thePersonNum]["Name"] = "Private-" + a;
+                        FanChartView.theAncestors[thePersonNum]["FirstName"] = "Private";
+                        FanChartView.theAncestors[thePersonNum]["LastNameAtBirth"] = relativeName[a];
+                        if (a % 2 == 0) {
+                            FanChartView.theAncestors[thePersonNum]["Gender"] = "Male";
+                            FanChartView.theAncestors[theChildNum].Father = a;
+                        } else {
+                            FanChartView.theAncestors[thePersonNum]["Gender"] = "Female";
+                            FanChartView.theAncestors[theChildNum].Mother = a;
+                        }
+                    }
+                }
 
-                 console.log("tmpAhnT:", tmpAhnT);
-                 console.log("person:", person);
-                
-                 person._data.Father = FanChartView.theAncestors[0].Father;
-                 person._data.Mother = FanChartView.theAncestors[0].Mother;
+                console.log("tmpAhnT:", tmpAhnT);
+                console.log("person:", person);
+
+                person._data.Father = FanChartView.theAncestors[0].Father;
+                person._data.Mother = FanChartView.theAncestors[0].Mother;
 
                 for (let index = 0; index < FanChartView.theAncestors.length; index++) {
                     const element = FanChartView.theAncestors[index];
@@ -1950,7 +2064,7 @@
      */
     FanChartView.prototype._load = function (id) {
         // console.log("INITIAL _load - line:118", id) ;
-        let thePersonObject = WikiTreeAPI.getPerson(id, [
+        let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
             "Derived.BirthNamePrivate",
@@ -2146,7 +2260,6 @@
                 // Calculate how many positions there are in this current Ring of Relatives
                 let numSpotsThisGen = 2 ** thisGenNum;
 
-
                 let borderColor = "rgba(102, 204, 102, .5)";
                 if (person.getGender() == "Male") {
                     // borderColor = "rgba(102, 102, 204, .5)";
@@ -2201,9 +2314,7 @@
                         <div class="name fontBold font${font4Name}"   id=nameDivFor${
                         ancestorObject.ahnNum
                     }  style="font-size: 14px;" >${getShortName(person)}</div>
-                    <div class="birth vital centered font${font4Info}" id=birthDivFor${
-                        ancestorObject.ahnNum
-                    }></div>
+                    <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}></div>
                         </div>
                     `;
                 } else if (thisGenNum == 7) {
@@ -2211,17 +2322,16 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
-                        <div class="name fontBold font${font4Name}"  id=nameDivFor${ancestorObject.ahnNum}>${getSettingsName(
-                        person
-                    )}</div>                    
+                        <div class="name fontBold font${font4Name}"  id=nameDivFor${
+                        ancestorObject.ahnNum
+                    }>${getSettingsName(person)}</div>
                     <div class="birth vital centered font${font4Info}" id=birthDivFor${
                         ancestorObject.ahnNum
                     }>${lifespanFull(person)}</div>
-                    <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>                        
+                    <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>
                         </div>
                     `;
                 } else if (thisGenNum == 6) {
-                    
                     // genNum 6 --> Full dates only + first location field (before ,)
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
@@ -2244,26 +2354,28 @@
                     }
 
                     let containerClass = "photoInfoContainer";
-                    if (thisPosNum >= numSpotsThisGen/2) {
+                    if (thisPosNum >= numSpotsThisGen / 2) {
                         containerClass += "End";
                     }
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
-                        } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   "> 
+                        } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
                                 ${getSettingsName(person)}
-                            </div>                           
-                        <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${lifespanFull(person)}</div>
-						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>                        
+                            </div>
+                        <div class="birth vital centered font${font4Info}" id=birthDivFor${
+                        ancestorObject.ahnNum
+                    }>${lifespanFull(person)}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>
                     </div>
                     </div>
                     `;
                 } else if (thisGenNum == 5) {
                     // genNum 5 ==> Full details (last ring that can hold it, with tweaks needed for 180º)
-                    
+
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -2285,13 +2397,13 @@
                     }
 
                     let containerClass = "photoInfoContainer";
-                    if (thisPosNum >= numSpotsThisGen/2) {
+                    if (thisPosNum >= numSpotsThisGen / 2) {
                         containerClass += "End";
                     }
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
-                        } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   "> 
+                        } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${
@@ -2301,13 +2413,10 @@
                         ancestorObject.ahnNum
                     }>${getSettingsDateAndPlace(person, "B", thisGenNum)}</div>
 						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>
-                        ${getSettingsDateAndPlace(person,"D", thisGenNum)}</div>
+                        ${getSettingsDateAndPlace(person, "D", thisGenNum)}</div>
                     </div>
                     </div>
                     `;
-                    
-                
-                    
                 } else if (thisGenNum == 4) {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
@@ -2331,7 +2440,7 @@
                     return `
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0; "> 
+                    } class="box" style="background-color: ${theClr} ; border:0; ">
                     ${photoDiv}
                     <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -2370,7 +2479,7 @@
                      <div class="vital-info">
 						${photoDiv}
 						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
-						    ${getSettingsName(person)}						    
+						    ${getSettingsName(person)}
 						  </div>
 						  <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
                         person,
@@ -2434,7 +2543,6 @@
             let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
             let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
 
-
             // LET'S START WITH COLOURIZING THE WEDGES - IF NEEDED
             if (ancestorObject.ahnNum == 1) {
                 let thisPersonsWedge = document.getElementById("ctrCirc");
@@ -2454,9 +2562,7 @@
                     console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
                 if (theWedgeBox) {
-                    
                     if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
-                        
                         let locString = ancestorObject.person._data["BirthCountry"];
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
                         theClr = getColourFromSortedLocationsIndex(clrIndex);
@@ -2505,13 +2611,12 @@
                     }
                     thisBkgdClr = theWedgeBox.style.backgroundColor;
                     console.log("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
-                    luminance = calcLuminance( theWedgeBox.style.backgroundColor)
-                   
-                    
-                    console.log("LUMINANCE:",  luminance);
+                    luminance = calcLuminance(theWedgeBox.style.backgroundColor);
+
+                    console.log("LUMINANCE:", luminance);
                     //  theWedgeBox.style.background = 'orange'; // TEMPORARY ONLY WHILE DOING SOME PLACEMENT RECON
                     // theWedgeBox.style.backgroundColor = "yellow";
-                } else if(theWedgeInfoForBox) {
+                } else if (theWedgeInfoForBox) {
                     if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
                         let locString = ancestorObject.person._data["BirthCountry"];
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
@@ -2524,7 +2629,7 @@
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
-                        thisBkgdClr - theClr; 
+                        thisBkgdClr - theClr;
                     } else if (settingForColourBy == "Location" && settingForSpecifyByLocation == "DeathBirthCountry") {
                         let locString = ancestorObject.person._data["DeathCountry"];
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
@@ -2537,7 +2642,7 @@
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
-                        thisBkgdClr - theClr; 
+                        thisBkgdClr - theClr;
                     } else if (
                         FanChartView.currentSettings["general_options_colourizeRepeats"] == true &&
                         repeatAncestorTracker[ancestorObject.person._data.Id]
@@ -2549,7 +2654,7 @@
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
-                        thisBkgdClr - theClr; 
+                        thisBkgdClr - theClr;
                     } else {
                         thisBkgdClr = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                         // console.log(
@@ -2560,23 +2665,29 @@
                         theWedgeInfoForBox.style.backgroundColor = "#00000000"; // make it invisible - will not mess up the Print to PDF - AND - will avoid the overlapping edges you get in the inner portions
                     }
                     luminance = calcLuminance(thisBkgdClr);
-                    console.log(
-                        "We are in WEDGE INFO FOR box territory - font for ???",
-                        thisBkgdClr , luminance
-                    );
+                    console.log("We are in WEDGE INFO FOR box territory - font for ???", thisBkgdClr, luminance);
                     // console.log("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
-                   
                 }
             }
 
             // NEXT - LET'S DO SOME POSITIONING TO GET EVERYONE IN PLACE !
             let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
             let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
-            
 
-            let fontList = ["fontBlack","fontDarkGreen","fontDarkRed","fontDarkBlue","fontBrown","fontWhite","fontYellow","fontLime","fontPink","fontCyan",];
-            let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];      
-            console.log("TextClrSetting = ", txtClrSetting)  ;
+            let fontList = [
+                "fontBlack",
+                "fontDarkGreen",
+                "fontDarkRed",
+                "fontDarkBlue",
+                "fontBrown",
+                "fontWhite",
+                "fontYellow",
+                "fontLime",
+                "fontPink",
+                "fontCyan",
+            ];
+            let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];
+            console.log("TextClrSetting = ", txtClrSetting);
             let theTextFontClr = "fontBlack";
             if (txtClrSetting == "B&W") {
                 console.log("font for B&W : line 2438  : ", thisBkgdClr, luminance);
@@ -2598,14 +2709,14 @@
                     theTextFontClr = "font" + thisTextColourArray[thisBkgdClr.toUpperCase()];
                 }
             } else if (txtClrSetting == "alt") {
-                // theTextFontClr = fontList[ (luminance > 0.179 ? 0 : 5) + 
-                    // Math.max(0, Math.min(4, Math.round(5 * Math.random()))  ) ];
-                if (thisBkgdClr.indexOf("rgb") > -1)    {
+                // theTextFontClr = fontList[ (luminance > 0.179 ? 0 : 5) +
+                // Math.max(0, Math.min(4, Math.round(5 * Math.random()))  ) ];
+                if (thisBkgdClr.indexOf("rgb") > -1) {
                     thisBkgdClr = hexify(thisBkgdClr);
                 }
-                theTextFontClr = "font" +  thisTextColourArray[thisBkgdClr.toUpperCase()];
+                theTextFontClr = "font" + thisTextColourArray[thisBkgdClr.toUpperCase()];
                 // if (theTextFontClr == undefined) {
-                    console.log("FONT : ", thisBkgdClr, theTextFontClr,  thisTextColourArray);
+                console.log("FONT : ", thisBkgdClr, theTextFontClr, thisTextColourArray);
                 // }
             } else {
                 theTextFontClr = "fontBlack"; // not really needed ... but for completeness sake, and to make sure there's a legit value
@@ -2623,7 +2734,7 @@
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
                 // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
-                theNameDIV.innerHTML =  getSettingsName(d)  ;
+                theNameDIV.innerHTML = getSettingsName(d);
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
                     // console.log("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
@@ -2632,7 +2743,7 @@
                     theInfoBox.parentNode.parentNode.setAttribute("width", 250);
                 } else if (ancestorObject.ahnNum > 7) {
                     // console.log(FanChartView.maxAngle,"º - G3 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
-                    
+
                     if (FanChartView.maxAngle == 180) {
                         theInfoBox.parentNode.parentNode.setAttribute("x", -140);
                         theInfoBox.parentNode.parentNode.setAttribute("width", 280);
@@ -2643,7 +2754,6 @@
                         theInfoBox.parentNode.parentNode.setAttribute("x", -180);
                         theInfoBox.parentNode.parentNode.setAttribute("width", 360);
                     }
-
                 } else if (thisGenNum == 1 && FanChartView.maxAngle == 180) {
                     theInfoBox.parentNode.parentNode.setAttribute("x", -160);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 320);
@@ -2694,17 +2804,17 @@
 
                 // IF we are in the outer rims, then we need to adjust / tweak the angle since it uses the baseline of the text as its frame of reference
                 if (thisGenNum >= 6) {
-                    let fontRadii = {6:25,  7: 9, 8: 14, 9: 17 };
+                    let fontRadii = { 6: 25, 7: 9, 8: 14, 9: 17 };
                     let fontRadius = fontRadii[thisGenNum];
-                     if (thisGenNum == 6 && FanChartView.maxAngle == 360) {
-                         fontRadius = 0;
-                     } else if (thisGenNum == 7 && FanChartView.maxAngle == 240) {
-                         fontRadius = 0;
-                     } else if (thisGenNum == 7 && FanChartView.maxAngle == 360) {
-                         fontRadius = -10;
-                     } else if (thisGenNum == 8 && FanChartView.maxAngle == 360) {
-                         fontRadius = 0;
-                     }
+                    if (thisGenNum == 6 && FanChartView.maxAngle == 360) {
+                        fontRadius = 0;
+                    } else if (thisGenNum == 7 && FanChartView.maxAngle == 240) {
+                        fontRadius = 0;
+                    } else if (thisGenNum == 7 && FanChartView.maxAngle == 360) {
+                        fontRadius = -10;
+                    } else if (thisGenNum == 8 && FanChartView.maxAngle == 360) {
+                        fontRadius = 0;
+                    }
                     let tweakAngle = (Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180) / Math.PI;
                     // console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
@@ -2768,11 +2878,11 @@
                     theWedgeBox.style["vertical-align"] = "top";
                 }
                 if (thisGenNum == 6) {
-                     if (FanChartView.maxAngle == 180) {
-                         thePhotoDIV.style.height = "50px";
-                     } else {
-                         thePhotoDIV.style.height = "60px";
-                     }
+                    if (FanChartView.maxAngle == 180) {
+                        thePhotoDIV.style.height = "50px";
+                    } else {
+                        thePhotoDIV.style.height = "60px";
+                    }
                 } else if (thisGenNum == 5) {
                     // let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                     // theWedgeBox.style["vertical-align"] = "top";
@@ -2783,17 +2893,14 @@
                     } else {
                         thePhotoDIV.style.height = "80px";
                     }
-
                 } else if (thisGenNum == 3) {
-                     if (FanChartView.maxAngle == 180) {
-                         thePhotoDIV.style.height = "80px";
-                     } else {
-                         thePhotoDIV.style.height = "85px";
-                     }
-
+                    if (FanChartView.maxAngle == 180) {
+                        thePhotoDIV.style.height = "80px";
+                    } else {
+                        thePhotoDIV.style.height = "85px";
+                    }
                 } else if (thisGenNum == 2) {
                     thePhotoDIV.style.height = "95px";
-
                 }
             }
 
@@ -2840,7 +2947,7 @@
         });
     };
 
-    function clrComponentValue( rgbValue ) {
+    function clrComponentValue(rgbValue) {
         let sRGB = rgbValue / 255;
         if (sRGB <= 0.04045) {
             return sRGB / 12.92;
@@ -2849,17 +2956,17 @@
         }
     }
 
-    function hex2array( hexString) {
-        let trans = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
+    function hex2array(hexString) {
+        let trans = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
         let theRGBarray = [
             16 * trans.indexOf(hexString.substr(1, 1)) + trans.indexOf(hexString.substr(2, 1)),
             16 * trans.indexOf(hexString.substr(3, 1)) + trans.indexOf(hexString.substr(4, 1)),
-            16 * trans.indexOf(hexString.substr(5, 1)) + trans.indexOf(hexString.substr(6, 1))
+            16 * trans.indexOf(hexString.substr(5, 1)) + trans.indexOf(hexString.substr(6, 1)),
         ];
         return theRGBarray;
     }
 
-    function hexify( clr ) {
+    function hexify(clr) {
         let hex = "#";
         let trans = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
         if (clr.indexOf("rgb") > -1) {
@@ -2869,19 +2976,17 @@
         for (let i = 0; i < rgbClrs.length; i++) {
             const comp = rgbClrs[i];
             let sixteens = Math.floor(comp / 16);
-            let ones = comp - 16*sixteens;
+            let ones = comp - 16 * sixteens;
             hex += trans[sixteens] + trans[ones];
         }
         return hex;
-
     }
     function calcLuminance(initBkgdClr) {
-        
         let rgbClrs = [80, 80, 80];
         if (initBkgdClr.indexOf("rgb") > -1) {
             initBkgdClr = initBkgdClr.replace("rgb(", "").replace(")", "");
             rgbClrs = initBkgdClr.split(",");
-        } else if (initBkgdClr.indexOf("#")> -1) {
+        } else if (initBkgdClr.indexOf("#") > -1) {
             rgbClrs = hex2array(initBkgdClr.toUpperCase());
         } else {
             let wasFound = false;
@@ -2963,7 +3068,7 @@
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
 						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
-                            
+
                             </div>
                             <div class="birth vital">${birthString(person)}</div>
                             <div class="death vital">${deathString(person)}</div>
@@ -3033,7 +3138,6 @@
     // Inheritance
     AncestorTree.prototype = Object.create(Tree.prototype);
 
-
     /**
      * Generate a string representing this person's lifespan 0000 - 0000
      */
@@ -3049,7 +3153,7 @@
                 monthBirth = parseInt(partsBirth[1], 10),
                 dayBirth = parseInt(partsBirth[2], 10);
         }
-        
+
         let DeathDate = person.getDeathDate();
         if (DeathDate && /\d{4}-\d{2}-\d{2}/.test(DeathDate)) {
             var partsDeath = DeathDate.split("-"),
@@ -3057,11 +3161,11 @@
                 monthDeath = parseInt(partsDeath[1], 10),
                 dayDeath = parseInt(partsDeath[2], 10);
         }
-        
+
         if (yearBirth > 0 && yearDeath > 0) {
             age = yearDeath - yearBirth;
             if (monthBirth > 0 && monthDeath > 0 && monthBirth > monthDeath) {
-                console.log("died before birthday in final year")
+                console.log("died before birthday in final year");
                 age -= 1;
             } else if (
                 monthBirth > 0 &&
@@ -3074,14 +3178,10 @@
                 console.log("died before birthday in FINAL MONTH");
                 age -= 1;
             }
-
-
-
         }
 
         return age;
     }
-
 
     /**
      * Generate a string representing this person's lifespan 0000 - 0000
@@ -3107,7 +3207,6 @@
 
         return lifespan;
     }
-
 
     /**
      * Generate text that display when and where the person was born
@@ -3162,7 +3261,7 @@
         }
     }
 
-    function getCleanDateString(dateString, type="YYYY") {
+    function getCleanDateString(dateString, type = "YYYY") {
         let theCleanDateString = "";
         if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
             var parts = dateString.split("-"),
@@ -3170,7 +3269,10 @@
             if (year && type == "YYYY") {
                 theCleanDateString += year;
             } else if (type == "Full") {
-                theCleanDateString += settingsStyleDate(dateString, FanChartView.currentSettings["date_options_dateFormat"]);
+                theCleanDateString += settingsStyleDate(
+                    dateString,
+                    FanChartView.currentSettings["date_options_dateFormat"]
+                );
             } else {
                 theCleanDateString += "?";
             }
@@ -3182,7 +3284,7 @@
     /**
      * Extract the LifeSpan BBBB - DDDD from a person
      */
-    function getLifeSpan(person, type="YYYY") {
+    function getLifeSpan(person, type = "YYYY") {
         let theLifeSpan = "";
         let theBirth = "";
         let theDeath = "";
@@ -3213,7 +3315,7 @@
         //         year = parseInt(parts[0], 10);
         //     if (year && type=="YYYY") {
         //         theDeath += year;
-                
+
         //     } else if (type == "Full") {
         //         theDeath += settingsStyleDate(dateString, FanChartView.currentSettings["date_options_dateFormat"]);
         //     } else {
@@ -3225,23 +3327,22 @@
 
         if (theBirth > "" && theBirth != "?" && theDeath > "" && theDeath != "?") {
             theLifeSpan = theBirth + " - " + theDeath;
-        } else if (theBirth > "" && theBirth != "?" ) {
+        } else if (theBirth > "" && theBirth != "?") {
             theLifeSpan = "b. " + theBirth;
-        } else if (theDeath > "" && theDeath != "?" ) {
+        } else if (theDeath > "" && theDeath != "?") {
             theLifeSpan = "d. " + theDeath;
         } else {
             theLifeSpan = "?";
         }
-            
+
         return theLifeSpan;
     }
 
-        /**
+    /**
      * Generate a string representing this person's lifespan 0000 - 0000
      */
     function lifespanFull(person) {
         var lifespan = "";
-            
 
         if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
             lifespan = "";
@@ -3254,21 +3355,20 @@
                 FanChartView.currentSettings["date_options_showDeath"]
             ) {
                 lifespan = getLifeSpan(person, "Full") + "<br/>";
-            } else if (FanChartView.currentSettings["date_options_showBirth"] ) {
+            } else if (FanChartView.currentSettings["date_options_showBirth"]) {
                 let dateString = person._data.BirthDate;
                 lifespan = getCleanDateString(dateString, "Full");
                 if (lifespan > "" && lifespan != "?") {
                     lifespan = "b. " + lifespan;
                 }
-            } else if (FanChartView.currentSettings["date_options_showDeath"] ) {
+            } else if (FanChartView.currentSettings["date_options_showDeath"]) {
                 let dateString = person._data.DeathDate;
                 lifespan = getCleanDateString(dateString, "Full");
                 if (lifespan > "" && lifespan != "?") {
                     lifespan = "d. " + lifespan;
                 }
             }
-        }    
-         
+        }
 
         return lifespan;
     }
@@ -3387,14 +3487,14 @@
     function getSettingsDateAndPlace(person, dateType, genNum = 0) {
         let datePlaceString = "";
         let thisDate = "";
-        let thisPlaceSimple = "";   
-        let thisPlaceMulti = "";   
-        let thisLifespan = "";     
+        let thisPlaceSimple = "";
+        let thisPlaceMulti = "";
+        let thisLifespan = "";
 
         let numLinesArrayObj = {
             180: [6, 6, 6, 6, 5, 3, 2, 1, 1, 1],
             240: [6, 6, 6, 6, 6, 5, 3, 2, 1, 1, 1],
-            360: [6, 6, 6, 6, 6, 6, 5, 3, 2, 1, 1, 1]
+            360: [6, 6, 6, 6, 6, 6, 5, 3, 2, 1, 1, 1],
         };
         let numLinesMax = numLinesArrayObj[FanChartView.maxAngle][genNum];
 
@@ -3402,7 +3502,7 @@
             return "";
         }
 
-        let hasDeathDate = false; 
+        let hasDeathDate = false;
         if (person._data.DeathDate) {
             if (person._data.DeathDate == "0000-00-00") {
                 hasDeathDate = false;
@@ -3412,15 +3512,15 @@
         }
 
         let hasDeathPlace = false;
-         if (person._data.DeathLocation) {
-             if (person._data.DeathLocation == "") {
-                 hasDeathPlace = false;
-             } else {
-                 hasDeathPlace = true;
-             }
-         }
+        if (person._data.DeathLocation) {
+            if (person._data.DeathLocation == "") {
+                hasDeathPlace = false;
+            } else {
+                hasDeathPlace = true;
+            }
+        }
 
-        let hasBirthDate = false; 
+        let hasBirthDate = false;
         if (person._data.BirthDate) {
             if (person._data.BirthDate == "0000-00-00") {
                 hasBirthDate = false;
@@ -3430,16 +3530,16 @@
         }
 
         let hasBirthPlace = false;
-         if (person._data.BirthLocation) {
-             if (person._data.BirthLocation == "") {
-                 hasBirthPlace = false;
-             } else {
-                 hasBirthPlace = true;
-             }
-         }
+        if (person._data.BirthLocation) {
+            if (person._data.BirthLocation == "") {
+                hasBirthPlace = false;
+            } else {
+                hasBirthPlace = true;
+            }
+        }
 
         if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
-            thisLifespan = getLifeSpan(person);            
+            thisLifespan = getLifeSpan(person);
         } else {
             thisLifespan = lifespanFull(person);
         }
@@ -3469,8 +3569,6 @@
             } else {
                 thisPlace = "";
             }
-  
-            
         } else if (dateType == "D") {
             if (person._data.DeathDate == "0000-00-00") {
                 thisDate = "";
@@ -3494,8 +3592,7 @@
                 );
             } else {
                 thisPlace = "";
-            }        
-        
+            }
         }
 
         if (thisPlace > "") {
@@ -3508,7 +3605,6 @@
                 thisPlaceSimple = thisPlace;
             }
         }
-
 
         if (thisDate > "" || thisPlace > "") {
             if (thisDate > "") {
@@ -3530,9 +3626,7 @@
                 } else {
                     datePlaceString += thisPlace;
                 }
-            
             }
-
         }
 
         if (numLinesMax == 2 && dateType == "B") {
@@ -3552,37 +3646,35 @@
                     );
                     if (thisPlace > "") {
                         if (thisPlace.indexOf(",") > -1) {
-                            return  "d. " + thisPlace.substring(0, thisPlace.indexOf(","));
+                            return "d. " + thisPlace.substring(0, thisPlace.indexOf(","));
                         } else {
-                            return  "d. " + thisPlace;
+                            return "d. " + thisPlace;
                         }
                     }
                 }
                 return "";
             }
-
         } else if (numLinesMax == 3) {
             // 2 Dates, or 1 Date + 1 Simple Loc , or 2 Simple Locs
             let numLocSpotsAvailable = 0;
 
-            if(FanChartView.currentSettings["date_options_dateTypes"] == "none") {
+            if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
                 numLocSpotsAvailable = 2;
                 if (thisPlaceSimple > "") {
                     return dateType.toLowerCase() + ". " + thisPlaceSimple;
                 } else {
                     return "";
                 }
-
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
                 numLocSpotsAvailable = 1;
-                if (thisLifespan > ""){
+                if (thisLifespan > "") {
                     datePlaceString = thisLifespan + "<br/>";
                 } else {
                     datePlaceString = "";
                 }
 
                 if (thisPlaceSimple > "") {
-                    datePlaceString +=  "b. " + thisPlaceSimple;
+                    datePlaceString += "b. " + thisPlaceSimple;
                 } else if (hasDeathPlace == true) {
                     if (
                         FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
@@ -3592,21 +3684,19 @@
                             person.getDeathLocation(),
                             FanChartView.currentSettings["place_options_locationFormatBD"]
                         );
-                        if (thisPlace > ""){
-                            if (thisPlace.indexOf(",") > -1){
+                        if (thisPlace > "") {
+                            if (thisPlace.indexOf(",") > -1) {
                                 datePlaceString += "d. " + thisPlace.substring(0, thisPlace.indexOf(","));
                             } else {
-                                datePlaceString += "d. " + thisPlace ;
+                                datePlaceString += "d. " + thisPlace;
                             }
                         }
                     }
-
                 }
                 return datePlaceString;
-
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed" && dateType == "B") {
                 hasBirthDate = hasBirthDate && FanChartView.currentSettings["date_options_showBirth"];
-                hasDeathDate = ( hasDeathDate && FanChartView.currentSettings["date_options_showDeath"]) ;
+                hasDeathDate = hasDeathDate && FanChartView.currentSettings["date_options_showDeath"];
                 numLocSpotsAvailable = 0;
                 datePlaceString = "";
                 /* console.log(
@@ -3621,7 +3711,7 @@
                 ); */
                 if (
                     FanChartView.currentSettings["date_options_showBirth"] == false &&
-                    hasDeathDate == true &&     
+                    hasDeathDate == true &&
                     hasDeathPlace == true
                 ) {
                     return "";
@@ -3640,7 +3730,6 @@
                 } else {
                     return "";
                 }
-
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed" && dateType == "D") {
                 hasBirthDate = hasBirthDate && FanChartView.currentSettings["date_options_showBirth"];
                 hasDeathDate = hasDeathDate && FanChartView.currentSettings["date_options_showDeath"];
@@ -3661,61 +3750,56 @@
                 } else {
                     return "";
                 }
-
-
             }
-
         } else if (numLinesMax == 5) {
             // 2 Dates + 2 Simple Locs, or 1 Date + 1 Multi Loc
             datePlaceString = "";
-            if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan")  {
+            if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
                 if (dateType == "B" && thisLifespan > "") {
                     datePlaceString = thisLifespan + "<br/>";
                 }
                 if (!hasBirthDate && !hasDeathDate) {
                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                } else if ( thisPlaceSimple > "" ) {
+                } else if (thisPlaceSimple > "") {
                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
                 }
-            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed" ) {
-                if (thisDate > ""){
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed") {
+                if (thisDate > "") {
                     datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceSimple;
                 } else if (thisPlaceSimple > "") {
                     datePlaceString = dateType.toLowerCase() + ". " + thisPlaceSimple;
                 }
-            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none" ) {
-                 if (thisPlaceMulti > "") {
-                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                 }
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
+                if (thisPlaceMulti > "") {
+                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                }
             }
             return datePlaceString;
         } else if (numLinesMax == 6) {
             // Full Meal Deal
             datePlaceString = "";
-             if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
-                 if (dateType == "B" && thisLifespan > "") {
-                     datePlaceString = thisLifespan + "<br/>";
-                 }
-                 if (thisPlaceMulti > "") {
-                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                 }
-             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed") {
-                 if (thisDate > "") {
-                     datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceMulti;
-                 } else if (thisPlaceMulti > "") {
-                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                 }
-             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
-                 if (thisPlaceMulti > "") {
-                     datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                 }
-             }
-             return datePlaceString;
+            if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
+                if (dateType == "B" && thisLifespan > "") {
+                    datePlaceString = thisLifespan + "<br/>";
+                }
+                if (thisPlaceMulti > "") {
+                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                }
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed") {
+                if (thisDate > "") {
+                    datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceMulti;
+                } else if (thisPlaceMulti > "") {
+                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                }
+            } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
+                if (thisPlaceMulti > "") {
+                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                }
+            }
+            return datePlaceString;
         } else {
             return "";
         }
-
-
 
         // if (genNum == 6) {
         //     if (FanChartView.maxAngle == 180) {
@@ -3748,11 +3832,11 @@
         // } else if (genNum == 8) {
         //     if (FanChartView.maxAngle < 360) {
         //         datePlaceString = "";
-                
+
         //         // nothing to add here - we're too cramped to add a place to the date
         //     } else  {
         //         datePlaceString = lifespanFull(person);
-                
+
         //     }
         // }
 
@@ -3760,7 +3844,11 @@
 
         // remove leading commas (when it's locations only)
         let origString = datePlaceString;
-        datePlaceString = datePlaceString.replace("b. ,", "b. ").replace("d. ,", "d. ").replace("b. <br/>", "b. ").replace("d. <br/>", "d. ");
+        datePlaceString = datePlaceString
+            .replace("b. ,", "b. ")
+            .replace("d. ,", "d. ")
+            .replace("b. <br/>", "b. ")
+            .replace("d. <br/>", "d. ");
         if (origString != datePlaceString) {
             // console.log("REPLACED ", origString," with ", datePlaceString);
         }
@@ -3770,14 +3858,16 @@
             datePlaceString == "b." ||
             datePlaceString == "b. <br/>" ||
             datePlaceString == "d. " ||
-            datePlaceString == "d." 
-            
+            datePlaceString == "d."
         ) {
             datePlaceString = "";
-        } else if (datePlaceString.indexOf("<br/>b.") > 1 && (datePlaceString.length - datePlaceString.indexOf("<br/>b.")) < 10) {
-            datePlaceString = datePlaceString.replace("<br/>b.","");
+        } else if (
+            datePlaceString.indexOf("<br/>b.") > 1 &&
+            datePlaceString.length - datePlaceString.indexOf("<br/>b.") < 10
+        ) {
+            datePlaceString = datePlaceString.replace("<br/>b.", "");
         }
-            return datePlaceString;
+        return datePlaceString;
     }
     function getSettingsDateAndPlaceWorking(person, dateType, genNum = 0) {
         let datePlaceString = "";
@@ -4474,46 +4564,53 @@
 
     function fillOutFamilyStatsLocsForAncestors() {
         for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
-            const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ index ]];
+            const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
             if (thisPerp) {
-                thisPerp._data['age'] = theAge(thisPerp);
-                thisPerp._data['BirthCountry'] = getLocationFromString(thisPerp._data.BirthLocation, "C");
-                thisPerp._data['DeathCountry'] = getLocationFromString(thisPerp._data.DeathLocation, "C");
-                thisPerp._data['BirthRegion'] = getLocationFromString(thisPerp._data.BirthLocation, "R");
-                thisPerp._data['DeathRegion'] = getLocationFromString(thisPerp._data.DeathLocation, "R");
-                thisPerp._data['BirthTown'] = getLocationFromString(thisPerp._data.BirthLocation, "T");
-                thisPerp._data['DeathTown'] = getLocationFromString(thisPerp._data.DeathLocation, "T");
-                thisPerp._data['BirthTownFull'] = thisPerp._data.BirthLocation;
-                thisPerp._data['DeathTownFull'] = thisPerp._data.DeathLocation;
-                console.log(thisPerp._data.FirstName,  thisPerp._data.age, "*" + thisPerp._data.BirthRegion + "*" , "#" + thisPerp._data.DeathRegion + "#" );
+                thisPerp._data["age"] = theAge(thisPerp);
+                thisPerp._data["BirthCountry"] = getLocationFromString(thisPerp._data.BirthLocation, "C");
+                thisPerp._data["DeathCountry"] = getLocationFromString(thisPerp._data.DeathLocation, "C");
+                thisPerp._data["BirthRegion"] = getLocationFromString(thisPerp._data.BirthLocation, "R");
+                thisPerp._data["DeathRegion"] = getLocationFromString(thisPerp._data.DeathLocation, "R");
+                thisPerp._data["BirthTown"] = getLocationFromString(thisPerp._data.BirthLocation, "T");
+                thisPerp._data["DeathTown"] = getLocationFromString(thisPerp._data.DeathLocation, "T");
+                thisPerp._data["BirthTownFull"] = thisPerp._data.BirthLocation;
+                thisPerp._data["DeathTownFull"] = thisPerp._data.DeathLocation;
+                console.log(
+                    thisPerp._data.FirstName,
+                    thisPerp._data.age,
+                    "*" + thisPerp._data.BirthRegion + "*",
+                    "#" + thisPerp._data.DeathRegion + "#"
+                );
             }
         }
-    
     }
     function fillOutFamilyStatsLocsForPerp(thisPerp) {
-        
-            if (thisPerp) {
-                thisPerp._data['age'] = theAge(thisPerp);
-                thisPerp._data['BirthCountry'] = getLocationFromString(thisPerp._data.BirthLocation, "C");
-                thisPerp._data['DeathCountry'] = getLocationFromString(thisPerp._data.DeathLocation, "C");
-                thisPerp._data['BirthRegion'] = getLocationFromString(thisPerp._data.BirthLocation, "R");
-                thisPerp._data['DeathRegion'] = getLocationFromString(thisPerp._data.DeathLocation, "R");
-                thisPerp._data['BirthTown'] = getLocationFromString(thisPerp._data.BirthLocation, "T");
-                thisPerp._data['DeathTown'] = getLocationFromString(thisPerp._data.DeathLocation, "T");
-                thisPerp._data['BirthTownFull'] = thisPerp._data.BirthLocation;
-                thisPerp._data['DeathTownFull'] = thisPerp._data.DeathLocation;
-                console.log(thisPerp._data.FirstName,  thisPerp._data.age, "*" + thisPerp._data.BirthRegion + "*" , "#" + thisPerp._data.DeathRegion + "#" );
-            }
-            return "done";
-        
+        if (thisPerp) {
+            thisPerp._data["age"] = theAge(thisPerp);
+            thisPerp._data["BirthCountry"] = getLocationFromString(thisPerp._data.BirthLocation, "C");
+            thisPerp._data["DeathCountry"] = getLocationFromString(thisPerp._data.DeathLocation, "C");
+            thisPerp._data["BirthRegion"] = getLocationFromString(thisPerp._data.BirthLocation, "R");
+            thisPerp._data["DeathRegion"] = getLocationFromString(thisPerp._data.DeathLocation, "R");
+            thisPerp._data["BirthTown"] = getLocationFromString(thisPerp._data.BirthLocation, "T");
+            thisPerp._data["DeathTown"] = getLocationFromString(thisPerp._data.DeathLocation, "T");
+            thisPerp._data["BirthTownFull"] = thisPerp._data.BirthLocation;
+            thisPerp._data["DeathTownFull"] = thisPerp._data.DeathLocation;
+            console.log(
+                thisPerp._data.FirstName,
+                thisPerp._data.age,
+                "*" + thisPerp._data.BirthRegion + "*",
+                "#" + thisPerp._data.DeathRegion + "#"
+            );
+        }
+        return "done";
     }
 
-    function getLocationFromString( locString , locType) {
+    function getLocationFromString(locString, locType) {
         if (!locString || locString == "") {
             return "";
         }
         if (locType == "C") {
-            if ( locString.indexOf(",") > -1) {
+            if (locString.indexOf(",") > -1) {
                 let lastCommaAt = locString.indexOf(",");
                 let nextCommaAt = lastCommaAt;
                 while (nextCommaAt > -1) {
@@ -4535,7 +4632,7 @@
                 while (nextCommaAt > -1) {
                     nextCommaAt = locString.indexOf(",", lastCommaAt + 1);
                     if (nextCommaAt > -1) {
-                        penultimateCommaAt = lastCommaAt
+                        penultimateCommaAt = lastCommaAt;
                         lastCommaAt = nextCommaAt;
                     }
                 }
@@ -4544,18 +4641,16 @@
                 } else {
                     return locString.substr(lastCommaAt + 1).trim();
                 }
-
             } else {
                 return locString;
             }
         } else {
             if (locString.indexOf(",") > -1) {
-                return locString.substr(0, locString.indexOf(",") ).trim();
+                return locString.substr(0, locString.indexOf(",")).trim();
             } else {
                 return locString.trim();
             }
         }
-
     }
 
     function getColourArray() {
@@ -4601,7 +4696,7 @@
             "#FF45A3",
             "PaleVioletRed",
             "Pink",
-        ];// replaced some colours
+        ]; // replaced some colours
         RainbowArrayLong = [
             "#FFFACD",
             "Red",
@@ -4636,7 +4731,7 @@
             "Orange",
             "OrangeRed",
             "Red",
-        ];// replaced some colours
+        ]; // replaced some colours
         Rainbow8 = [
             "Red",
             "Orange",
@@ -4645,11 +4740,11 @@
             "SkyBlue",
             "Orchid",
             "Violet",
-            "DeepPink",     
-            "HotPink" ,
+            "DeepPink",
+            "HotPink",
             "MistyRose",
         ];
-        RainbowTweens = ["OrangeRed","Gold","GreenYellow","Cyan","Plum","Magenta","PaleVioletRed","Pink"];
+        RainbowTweens = ["OrangeRed", "Gold", "GreenYellow", "Cyan", "Plum", "Magenta", "PaleVioletRed", "Pink"];
 
         GreysArrayOrig = [
             "#ACACAC",
@@ -4726,7 +4821,7 @@
             "#A5A5A5",
             "#A0A0A0",
             "#9A9A9A",
-            "#A0A0A0",            
+            "#A0A0A0",
             "#A5A5A5",
             "#AAAAAA",
             "#B0B0B0",
@@ -4743,233 +4838,233 @@
             "#EAEAEA",
             "#F0F0F0",
         ];
-       RedsArray = [
-           "#FFF8F0",
-           "#FFF0F8",
-           "#FFF4F4",
-           "#FFF0F0",
-           "#FFE8E0",
-           "#FFE0E8",
-           "#FFE4E4",
-           "#FFE0E0",
-           "#FFD8D0",
-           "#FFD0D8",
-           "#FFD4D4",
-           "#FFD0D0",
-           "#FFC8C0",
-           "#FFC0C8",
-           "#FFC4C4",
-           "#FFC0C0",
-           "#FFB0B0",
-           "#FFA0A0",
-           "#FFB0B0",
-           "#FFC0C0",
-           "#FFC4C4",
-           "#FFC0C8",
-           "#FFC8C0",
-           "#FFD0D0",
-           "#FFD4D4",
-           "#FFD0D8",
-           "#FFD8D0",
-           "#FFE0E0",
-           "#FFE4E4",
-           "#FFE0E8",
-           "#FFE8E0",
-           "#FFF0F0",
-           "#FFF4F4",
-           "#FFF0F8",
-           "#FFF8F0",
-       ];
-       BluesArray = [
-           "#F8F0FF",
-           "#F0F8FF",
-           "#F4F4FF",
-           "#F0F0FF",
-           "#E8E0FF",
-           "#E0E8FF",
-           "#E4E4FF",
-           "#E0E0FF",
-           "#D8D0FF",
-           "#D0D8FF",
-           "#D4D4FF",
-           "#D0D0FF",
-           "#C8C0FF",
-           "#C0C8FF",
-           "#C4C4FF",
-           "#C0C0FF",
-           "#B0B0FF",
-           "#A0A0FF",
+        RedsArray = [
+            "#FFF8F0",
+            "#FFF0F8",
+            "#FFF4F4",
+            "#FFF0F0",
+            "#FFE8E0",
+            "#FFE0E8",
+            "#FFE4E4",
+            "#FFE0E0",
+            "#FFD8D0",
+            "#FFD0D8",
+            "#FFD4D4",
+            "#FFD0D0",
+            "#FFC8C0",
+            "#FFC0C8",
+            "#FFC4C4",
+            "#FFC0C0",
+            "#FFB0B0",
+            "#FFA0A0",
+            "#FFB0B0",
+            "#FFC0C0",
+            "#FFC4C4",
+            "#FFC0C8",
+            "#FFC8C0",
+            "#FFD0D0",
+            "#FFD4D4",
+            "#FFD0D8",
+            "#FFD8D0",
+            "#FFE0E0",
+            "#FFE4E4",
+            "#FFE0E8",
+            "#FFE8E0",
+            "#FFF0F0",
+            "#FFF4F4",
+            "#FFF0F8",
+            "#FFF8F0",
+        ];
+        BluesArray = [
+            "#F8F0FF",
+            "#F0F8FF",
+            "#F4F4FF",
+            "#F0F0FF",
+            "#E8E0FF",
+            "#E0E8FF",
+            "#E4E4FF",
+            "#E0E0FF",
+            "#D8D0FF",
+            "#D0D8FF",
+            "#D4D4FF",
+            "#D0D0FF",
+            "#C8C0FF",
+            "#C0C8FF",
+            "#C4C4FF",
+            "#C0C0FF",
+            "#B0B0FF",
+            "#A0A0FF",
 
-           "#B0B0FF",
-           "#C0C0FF",
-           "#C4C4FF",
-           "#C0C8FF",
-           "#C8C0FF",
-           "#D0D0FF",
-           "#D4D4FF",
-           "#D0D8FF",
-           "#D8D0FF",
-           "#E0E0FF",
-           "#E4E4FF",
-           "#E0E8FF",
-           "#E8E0FF",
-           "#F0F0FF",
-           "#F4F4FF",
-           "#F0F8FF",
-           "#F8F0FF",
-       ];
-       GreensArray = [
-           "#F8FFF0",
-           "#F0FFF8",
-           "#F4FFF4",
-           "#F0FFF0",
-           "#E8FFE0",
-           "#E0FFE8",
-           "#E4FFE4",
-           "#E0FFE0",
-           "#D8FFD0",
-           "#D0FFD8",
-           "#D4FFD4",
-           "#D0FFD0",
-           "#C8FFC0",
-           "#C0FFC8",
-           "#C4FFC4",
-           "#C0FFC0",
-           "#B0FFB0",
-           "#A0FFA0",
+            "#B0B0FF",
+            "#C0C0FF",
+            "#C4C4FF",
+            "#C0C8FF",
+            "#C8C0FF",
+            "#D0D0FF",
+            "#D4D4FF",
+            "#D0D8FF",
+            "#D8D0FF",
+            "#E0E0FF",
+            "#E4E4FF",
+            "#E0E8FF",
+            "#E8E0FF",
+            "#F0F0FF",
+            "#F4F4FF",
+            "#F0F8FF",
+            "#F8F0FF",
+        ];
+        GreensArray = [
+            "#F8FFF0",
+            "#F0FFF8",
+            "#F4FFF4",
+            "#F0FFF0",
+            "#E8FFE0",
+            "#E0FFE8",
+            "#E4FFE4",
+            "#E0FFE0",
+            "#D8FFD0",
+            "#D0FFD8",
+            "#D4FFD4",
+            "#D0FFD0",
+            "#C8FFC0",
+            "#C0FFC8",
+            "#C4FFC4",
+            "#C0FFC0",
+            "#B0FFB0",
+            "#A0FFA0",
 
-           "#B0FFB0",
-           "#C0FFC0",
-           "#C4FFC4",
-           "#C0FFC8",
-           "#C8FFC0",
-           "#D0FFD0",
-           "#D4FFD4",
-           "#D0FFD8",
-           "#D8FFD0",
-           "#E0FFE0",
-           "#E4FFE4",
-           "#E0FFE8",
-           "#E8FFE0",
-           "#F0FFF0",
-           "#F4FFF4",
-           "#F0FFF8",
-           "#F8FFF0",
-       ];
-       let AltRedsArray = [
-           "#FFF8F0",
-           "#FFD8D0",
-           "#FFF0F8",
-           "#FFD0D8",
-           "#FFF4F4",
-           "#FFD4D4",
-           "#FFF0F0",
-           "#FFD0D0",
-           "#FFE8E0",
-           "#FFC8C0",
-           "#FFE0E8",
-           "#FFC0C8",
-           "#FFE4E4",
-           "#FFC4C4",
-           "#FFE0E0",
-           "#FFC0C0",
-           "#FFEAEA",
-           "#FFA0A0",
+            "#B0FFB0",
+            "#C0FFC0",
+            "#C4FFC4",
+            "#C0FFC8",
+            "#C8FFC0",
+            "#D0FFD0",
+            "#D4FFD4",
+            "#D0FFD8",
+            "#D8FFD0",
+            "#E0FFE0",
+            "#E4FFE4",
+            "#E0FFE8",
+            "#E8FFE0",
+            "#F0FFF0",
+            "#F4FFF4",
+            "#F0FFF8",
+            "#F8FFF0",
+        ];
+        let AltRedsArray = [
+            "#FFF8F0",
+            "#FFD8D0",
+            "#FFF0F8",
+            "#FFD0D8",
+            "#FFF4F4",
+            "#FFD4D4",
+            "#FFF0F0",
+            "#FFD0D0",
+            "#FFE8E0",
+            "#FFC8C0",
+            "#FFE0E8",
+            "#FFC0C8",
+            "#FFE4E4",
+            "#FFC4C4",
+            "#FFE0E0",
+            "#FFC0C0",
+            "#FFEAEA",
+            "#FFA0A0",
 
-           "#FFEAEA",
-           "#FFC0C0",
-           "#FFE0E0",
-           "#FFC4C4",
-           "#FFE4E4",
-           "#FFC0C8",
-           "#FFE0E8",
-           "#FFC8C0",
-           "#FFE8E0",
-           "#FFD0D0",
-           "#FFF0F0",
-           "#FFD4D4",
-           "#FFF4F4",
-           "#FFD0D8",
-           "#FFF0F8",
-           "#FFD8D0",
-           "#F0F8FF",
-       ];
-       let AltGreensArray = [
-           "#F8FFF0",
-           "#D8FFD0",
-           "#F0FFF8",
-           "#D0FFD8",
-           "#F4FFF4",
-           "#D4FFD4",
-           "#F0FFF0",
-           "#D0FFD0",
-           "#E8FFE0",
-           "#C8FFC0",
-           "#E0FFE8",
-           "#C0FFC8",
-           "#E4FFE4",
-           "#C4FFC4",
-           "#E0FFE0",
-           "#C0FFC0",
-           "#EAFFEA",
-           "#A0FFA0",
+            "#FFEAEA",
+            "#FFC0C0",
+            "#FFE0E0",
+            "#FFC4C4",
+            "#FFE4E4",
+            "#FFC0C8",
+            "#FFE0E8",
+            "#FFC8C0",
+            "#FFE8E0",
+            "#FFD0D0",
+            "#FFF0F0",
+            "#FFD4D4",
+            "#FFF4F4",
+            "#FFD0D8",
+            "#FFF0F8",
+            "#FFD8D0",
+            "#F0F8FF",
+        ];
+        let AltGreensArray = [
+            "#F8FFF0",
+            "#D8FFD0",
+            "#F0FFF8",
+            "#D0FFD8",
+            "#F4FFF4",
+            "#D4FFD4",
+            "#F0FFF0",
+            "#D0FFD0",
+            "#E8FFE0",
+            "#C8FFC0",
+            "#E0FFE8",
+            "#C0FFC8",
+            "#E4FFE4",
+            "#C4FFC4",
+            "#E0FFE0",
+            "#C0FFC0",
+            "#EAFFEA",
+            "#A0FFA0",
 
-           "#EAFFEA",
-           "#C0FFC0",
-           "#E0FFE0",
-           "#C4FFC4",
-           "#E4FFE4",
-           "#C0FFC8",
-           "#E0FFE8",
-           "#C8FFC0",
-           "#E8FFE0",
-           "#D0FFD0",
-           "#F0FFF0",
-           "#D4FFD4",
-           "#F4FFF4",
-           "#D0FFD8",
-           "#F0FFF8",
-           "#D8FFD0",
-           "#F8F0FF",
-       ];
-       let AltBluesArray = [
-           "#F8F0FF",
-           "#D8D0FF",
-           "#F0F8FF",
-           "#D0D8FF",
-           "#F4F4FF",
-           "#D4D4FF",
-           "#F0F0FF",
-           "#D0D0FF",
-           "#E8E0FF",
-           "#C8C0FF",
-           "#E0E8FF",
-           "#C0C8FF",
-           "#E4E4FF",
-           "#C4C4FF",
-           "#E0E0FF",
-           "#C0C0FF",
-           "#EAEAFF",
-           "#A0A0FF",
+            "#EAFFEA",
+            "#C0FFC0",
+            "#E0FFE0",
+            "#C4FFC4",
+            "#E4FFE4",
+            "#C0FFC8",
+            "#E0FFE8",
+            "#C8FFC0",
+            "#E8FFE0",
+            "#D0FFD0",
+            "#F0FFF0",
+            "#D4FFD4",
+            "#F4FFF4",
+            "#D0FFD8",
+            "#F0FFF8",
+            "#D8FFD0",
+            "#F8F0FF",
+        ];
+        let AltBluesArray = [
+            "#F8F0FF",
+            "#D8D0FF",
+            "#F0F8FF",
+            "#D0D8FF",
+            "#F4F4FF",
+            "#D4D4FF",
+            "#F0F0FF",
+            "#D0D0FF",
+            "#E8E0FF",
+            "#C8C0FF",
+            "#E0E8FF",
+            "#C0C8FF",
+            "#E4E4FF",
+            "#C4C4FF",
+            "#E0E0FF",
+            "#C0C0FF",
+            "#EAEAFF",
+            "#A0A0FF",
 
-           "#EAEAFF",
-           "#C0C0FF",
-           "#E0E0FF",
-           "#C4C4FF",
-           "#E4E4FF",
-           "#C0C8FF",
-           "#E0E8FF",
-           "#C8C0FF",
-           "#E8E0FF",
-           "#D0D0FF",
-           "#F0F0FF",
-           "#D4D4FF",
-           "#F4F4FF",
-           "#D0D8FF",
-           "#F0F8FF",
-           "#D8D0FF",
-           "#F8FFFF",
-       ];
+            "#EAEAFF",
+            "#C0C0FF",
+            "#E0E0FF",
+            "#C4C4FF",
+            "#E4E4FF",
+            "#C0C8FF",
+            "#E0E8FF",
+            "#C8C0FF",
+            "#E8E0FF",
+            "#D0D0FF",
+            "#F0F0FF",
+            "#D4D4FF",
+            "#F4F4FF",
+            "#D0D8FF",
+            "#F0F8FF",
+            "#D8D0FF",
+            "#F8FFFF",
+        ];
         let AllColoursArrays = [
             ColourArray,
             GreysArray,
@@ -5015,30 +5110,26 @@
                 }
             }
             // thisColourArray.sort();
-        } 
-        
+        }
+
         return thisColourArray;
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
-  
-        
         // GET the settings that determine what the colouring should look like (if at all)
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         // WHILE we're here, might as well get the sub-settings if Family or Location colouring is being used ...
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
-        
+
         let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
 
         if (settingForColourBy == "None") {
             return "White";
         }
-        
-        let thisColourArray = getColourArray();
-        
 
-        
+        let thisColourArray = getColourArray();
+
         let overRideByHighlight = false; //
         if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
             overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
@@ -5072,9 +5163,9 @@
             }
             return thisColourArray[1 + (Math.floor((16 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGGGrand") {
-             if (settingForPalette == "Rainbow") {                 
-                thisColourArray = RainbowArrayLong;                 
-             }
+            if (settingForPalette == "Rainbow") {
+                thisColourArray = RainbowArrayLong;
+            }
             return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "Family") {
             if (settingForSpecifyByFamily == "age") {
@@ -5082,8 +5173,8 @@
                 if (thisAge == undefined) {
                     let thePerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
                     thisAge = theAge(thePerp);
-                    thePerp._data['age'] = thisAge;
-                    console.log ("thisAge - WAS undefined - now is:", thisAge);
+                    thePerp._data["age"] = thisAge;
+                    console.log("thisAge - WAS undefined - now is:", thisAge);
                 } else {
                     console.log("thisAge:", thisAge);
                 }
@@ -5091,7 +5182,7 @@
                 if (thisAge == -2) {
                     return "white"; //thisColourArray[0];
                 } else if (thisAge == -1) {
-                    return "lime";//thisColourArray[0];
+                    return "lime"; //thisColourArray[0];
                 } else {
                     let thisDecade = 1 + Math.max(0, Math.floor((thisAge + 0.5) / 10));
                     console.log("Age " + thisAge + " in Decade # " + thisDecade);
@@ -5107,16 +5198,16 @@
             } else if (settingForSpecifyByLocation == "DeathBirthCountry") {
                 locString = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data["BirthCountry"];
             }
-            
-                if (locString == undefined) {
-                    let thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
-                    let res = fillOutFamilyStatsLocsForPerp(thisPerp);
-                    locString = thisPerp._data[settingForSpecifyByLocation];
-                    console.log(
-                        "NEW location for " + thisPerp._data.FirstName + " " + thisPerp._data.LastNameAtBirth,
-                        locString
-                    );
-                }
+
+            if (locString == undefined) {
+                let thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
+                let res = fillOutFamilyStatsLocsForPerp(thisPerp);
+                locString = thisPerp._data[settingForSpecifyByLocation];
+                console.log(
+                    "NEW location for " + thisPerp._data.FirstName + " " + thisPerp._data.LastNameAtBirth,
+                    locString
+                );
+            }
             let index = theSortedLocationsArray.indexOf(locString);
             if (index == -1) {
                 if (locString > "") {
@@ -5128,11 +5219,11 @@
             //     let sat = 1 - ((index % 2)) * - 0.15;
             //     let lit = 0.5 + ((index % 7) - 3) *  0.05;
             //     let   = hslToRGBhex(hue,sat,lit);
-                let hue = Math.round((360 * index) / theSortedLocationsArray.length);
-                let sat = 1 - (index % 2) * -0.15;
-                let lit = 0.5 + ((index % 7) - 3) * 0.05;
-                let thisClr = hslToRGBhex(hue, sat, lit);
-                return thisClr;
+            let hue = Math.round((360 * index) / theSortedLocationsArray.length);
+            let sat = 1 - (index % 2) * -0.15;
+            let lit = 0.5 + ((index % 7) - 3) * 0.05;
+            let thisClr = hslToRGBhex(hue, sat, lit);
+            return thisClr;
 
             //     console.log("CLR:", hue, sat, lit, thisClr);
             //     let clrSwatch =
@@ -5143,14 +5234,11 @@
             //     //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
             //     //     thisColourArray[index % thisColourArray.length] +
             //     //     ";stroke:black;stroke-width:1;opacity:1' /></svg>";
-            //     innerCode += "<br/>" + clrSwatch + " " + sortedLocs[index] ;                    
+            //     innerCode += "<br/>" + clrSwatch + " " + sortedLocs[index] ;
             // }
-
-            
 
             // let clrIndex = uniqueLocationsArray.indexOf(locString);
             // return thisColourArray[clrIndex];
-            
         } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
         }
@@ -5163,7 +5251,7 @@
         if (index == -1) {
             return "white";
         }
-        
+
         //   let hue = Math.round((360 * index) / theSortedLocationsArray.length);
         //     let sat = 1 - ((index % 2)) * - 0.15;
         //     let lit = 0.5 + ((index % 7) - 3) *  0.05;
@@ -5174,7 +5262,7 @@
         let thisClr = hslToRGBhex(hue, sat, lit);
         return thisClr;
     }
-    
+
     // Used this function to conditionally turn on / off the FanDoku link - but - now we want it on all the time
     // FanChartView.getCheckIn = function () {
     //     var API_URL = "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ok.php";
@@ -5187,7 +5275,7 @@
     //         });
     // }
 
-     function test4ColourMatches() {
+    function test4ColourMatches() {
         PastelsArray = [
             "#ECFFEF",
             "#CCEFEC",
@@ -5230,7 +5318,7 @@
             "#FF45A3",
             "PaleVioletRed",
             "Pink",
-        ];// replaced some colours
+        ]; // replaced some colours
         RainbowArrayLong = [
             "#FFFACD",
             "Red",
@@ -5265,7 +5353,7 @@
             "Orange",
             "OrangeRed",
             "Red",
-        ];// replaced some colours
+        ]; // replaced some colours
         Rainbow8 = [
             "Red",
             "Orange",
@@ -5274,11 +5362,11 @@
             "SkyBlue",
             "Orchid",
             "Violet",
-            "DeepPink",     
-            "HotPink" ,
+            "DeepPink",
+            "HotPink",
             "MistyRose",
         ];
-        RainbowTweens = ["OrangeRed","Gold","GreenYellow","Cyan","Plum","Magenta","PaleVioletRed","Pink"];
+        RainbowTweens = ["OrangeRed", "Gold", "GreenYellow", "Cyan", "Plum", "Magenta", "PaleVioletRed", "Pink"];
 
         GreysArrayOrig = [
             "#ACACAC",
@@ -5355,7 +5443,7 @@
             "#A5A5A5",
             "#A0A0A0",
             "#9A9A9A",
-            "#A0A0A0",            
+            "#A0A0A0",
             "#A5A5A5",
             "#AAAAAA",
             "#B0B0B0",
@@ -5372,259 +5460,272 @@
             "#EAEAEA",
             "#F0F0F0",
         ];
-       RedsArray = [
-           "#FFF8F0",
-           "#FFF0F8",
-           "#FFF4F4",
-           "#FFF0F0",
-           "#FFE8E0",
-           "#FFE0E8",
-           "#FFE4E4",
-           "#FFE0E0",
-           "#FFD8D0",
-           "#FFD0D8",
-           "#FFD4D4",
-           "#FFD0D0",
-           "#FFC8C0",
-           "#FFC0C8",
-           "#FFC4C4",
-           "#FFC0C0",
-           "#FFB0B0",
-           "#FFA0A0",
-           "#FFB0B0",
-           "#FFC0C0",
-           "#FFC4C4",
-           "#FFC0C8",
-           "#FFC8C0",
-           "#FFD0D0",
-           "#FFD4D4",
-           "#FFD0D8",
-           "#FFD8D0",
-           "#FFE0E0",
-           "#FFE4E4",
-           "#FFE0E8",
-           "#FFE8E0",
-           "#FFF0F0",
-           "#FFF4F4",
-           "#FFF0F8",
-           "#FFF8F0",
-       ];
-       BluesArray = [
-           "#F8F0FF",
-           "#F0F8FF",
-           "#F4F4FF",
-           "#F0F0FF",
-           "#E8E0FF",
-           "#E0E8FF",
-           "#E4E4FF",
-           "#E0E0FF",
-           "#D8D0FF",
-           "#D0D8FF",
-           "#D4D4FF",
-           "#D0D0FF",
-           "#C8C0FF",
-           "#C0C8FF",
-           "#C4C4FF",
-           "#C0C0FF",
-           "#B0B0FF",
-           "#A0A0FF",
+        RedsArray = [
+            "#FFF8F0",
+            "#FFF0F8",
+            "#FFF4F4",
+            "#FFF0F0",
+            "#FFE8E0",
+            "#FFE0E8",
+            "#FFE4E4",
+            "#FFE0E0",
+            "#FFD8D0",
+            "#FFD0D8",
+            "#FFD4D4",
+            "#FFD0D0",
+            "#FFC8C0",
+            "#FFC0C8",
+            "#FFC4C4",
+            "#FFC0C0",
+            "#FFB0B0",
+            "#FFA0A0",
+            "#FFB0B0",
+            "#FFC0C0",
+            "#FFC4C4",
+            "#FFC0C8",
+            "#FFC8C0",
+            "#FFD0D0",
+            "#FFD4D4",
+            "#FFD0D8",
+            "#FFD8D0",
+            "#FFE0E0",
+            "#FFE4E4",
+            "#FFE0E8",
+            "#FFE8E0",
+            "#FFF0F0",
+            "#FFF4F4",
+            "#FFF0F8",
+            "#FFF8F0",
+        ];
+        BluesArray = [
+            "#F8F0FF",
+            "#F0F8FF",
+            "#F4F4FF",
+            "#F0F0FF",
+            "#E8E0FF",
+            "#E0E8FF",
+            "#E4E4FF",
+            "#E0E0FF",
+            "#D8D0FF",
+            "#D0D8FF",
+            "#D4D4FF",
+            "#D0D0FF",
+            "#C8C0FF",
+            "#C0C8FF",
+            "#C4C4FF",
+            "#C0C0FF",
+            "#B0B0FF",
+            "#A0A0FF",
 
-           "#B0B0FF",
-           "#C0C0FF",
-           "#C4C4FF",
-           "#C0C8FF",
-           "#C8C0FF",
-           "#D0D0FF",
-           "#D4D4FF",
-           "#D0D8FF",
-           "#D8D0FF",
-           "#E0E0FF",
-           "#E4E4FF",
-           "#E0E8FF",
-           "#E8E0FF",
-           "#F0F0FF",
-           "#F4F4FF",
-           "#F0F8FF",
-           "#F8F0FF",
-       ];
-       GreensArray = [
-           "#F8FFF0",
-           "#F0FFF8",
-           "#F4FFF4",
-           "#F0FFF0",
-           "#E8FFE0",
-           "#E0FFE8",
-           "#E4FFE4",
-           "#E0FFE0",
-           "#D8FFD0",
-           "#D0FFD8",
-           "#D4FFD4",
-           "#D0FFD0",
-           "#C8FFC0",
-           "#C0FFC8",
-           "#C4FFC4",
-           "#C0FFC0",
-           "#B0FFB0",
-           "#A0FFA0",
+            "#B0B0FF",
+            "#C0C0FF",
+            "#C4C4FF",
+            "#C0C8FF",
+            "#C8C0FF",
+            "#D0D0FF",
+            "#D4D4FF",
+            "#D0D8FF",
+            "#D8D0FF",
+            "#E0E0FF",
+            "#E4E4FF",
+            "#E0E8FF",
+            "#E8E0FF",
+            "#F0F0FF",
+            "#F4F4FF",
+            "#F0F8FF",
+            "#F8F0FF",
+        ];
+        GreensArray = [
+            "#F8FFF0",
+            "#F0FFF8",
+            "#F4FFF4",
+            "#F0FFF0",
+            "#E8FFE0",
+            "#E0FFE8",
+            "#E4FFE4",
+            "#E0FFE0",
+            "#D8FFD0",
+            "#D0FFD8",
+            "#D4FFD4",
+            "#D0FFD0",
+            "#C8FFC0",
+            "#C0FFC8",
+            "#C4FFC4",
+            "#C0FFC0",
+            "#B0FFB0",
+            "#A0FFA0",
 
-           "#B0FFB0",
-           "#C0FFC0",
-           "#C4FFC4",
-           "#C0FFC8",
-           "#C8FFC0",
-           "#D0FFD0",
-           "#D4FFD4",
-           "#D0FFD8",
-           "#D8FFD0",
-           "#E0FFE0",
-           "#E4FFE4",
-           "#E0FFE8",
-           "#E8FFE0",
-           "#F0FFF0",
-           "#F4FFF4",
-           "#F0FFF8",
-           "#F8FFF0",
-       ];
-       let AltRedsArray = [
-           "#FFF8F0",
-           "#FFD8D0",
-           "#FFF0F8",
-           "#FFD0D8",
-           "#FFF4F4",
-           "#FFD4D4",
-           "#FFF0F0",
-           "#FFD0D0",
-           "#FFE8E0",
-           "#FFC8C0",
-           "#FFE0E8",
-           "#FFC0C8",
-           "#FFE4E4",
-           "#FFC4C4",
-           "#FFE0E0",
-           "#FFC0C0",
-           "#FFEAEA",
-           "#FFA0A0",
+            "#B0FFB0",
+            "#C0FFC0",
+            "#C4FFC4",
+            "#C0FFC8",
+            "#C8FFC0",
+            "#D0FFD0",
+            "#D4FFD4",
+            "#D0FFD8",
+            "#D8FFD0",
+            "#E0FFE0",
+            "#E4FFE4",
+            "#E0FFE8",
+            "#E8FFE0",
+            "#F0FFF0",
+            "#F4FFF4",
+            "#F0FFF8",
+            "#F8FFF0",
+        ];
+        let AltRedsArray = [
+            "#FFF8F0",
+            "#FFD8D0",
+            "#FFF0F8",
+            "#FFD0D8",
+            "#FFF4F4",
+            "#FFD4D4",
+            "#FFF0F0",
+            "#FFD0D0",
+            "#FFE8E0",
+            "#FFC8C0",
+            "#FFE0E8",
+            "#FFC0C8",
+            "#FFE4E4",
+            "#FFC4C4",
+            "#FFE0E0",
+            "#FFC0C0",
+            "#FFEAEA",
+            "#FFA0A0",
 
-           "#FFEAEA",
-           "#FFC0C0",
-           "#FFE0E0",
-           "#FFC4C4",
-           "#FFE4E4",
-           "#FFC0C8",
-           "#FFE0E8",
-           "#FFC8C0",
-           "#FFE8E0",
-           "#FFD0D0",
-           "#FFF0F0",
-           "#FFD4D4",
-           "#FFF4F4",
-           "#FFD0D8",
-           "#FFF0F8",
-           "#FFD8D0",
-           "#F0F8FF",
-       ];
-       let AltGreensArray = [
-           "#F8FFF0",
-           "#D8FFD0",
-           "#F0FFF8",
-           "#D0FFD8",
-           "#F4FFF4",
-           "#D4FFD4",
-           "#F0FFF0",
-           "#D0FFD0",
-           "#E8FFE0",
-           "#C8FFC0",
-           "#E0FFE8",
-           "#C0FFC8",
-           "#E4FFE4",
-           "#C4FFC4",
-           "#E0FFE0",
-           "#C0FFC0",
-           "#EAFFEA",
-           "#A0FFA0",
+            "#FFEAEA",
+            "#FFC0C0",
+            "#FFE0E0",
+            "#FFC4C4",
+            "#FFE4E4",
+            "#FFC0C8",
+            "#FFE0E8",
+            "#FFC8C0",
+            "#FFE8E0",
+            "#FFD0D0",
+            "#FFF0F0",
+            "#FFD4D4",
+            "#FFF4F4",
+            "#FFD0D8",
+            "#FFF0F8",
+            "#FFD8D0",
+            "#F0F8FF",
+        ];
+        let AltGreensArray = [
+            "#F8FFF0",
+            "#D8FFD0",
+            "#F0FFF8",
+            "#D0FFD8",
+            "#F4FFF4",
+            "#D4FFD4",
+            "#F0FFF0",
+            "#D0FFD0",
+            "#E8FFE0",
+            "#C8FFC0",
+            "#E0FFE8",
+            "#C0FFC8",
+            "#E4FFE4",
+            "#C4FFC4",
+            "#E0FFE0",
+            "#C0FFC0",
+            "#EAFFEA",
+            "#A0FFA0",
 
-           "#EAFFEA",
-           "#C0FFC0",
-           "#E0FFE0",
-           "#C4FFC4",
-           "#E4FFE4",
-           "#C0FFC8",
-           "#E0FFE8",
-           "#C8FFC0",
-           "#E8FFE0",
-           "#D0FFD0",
-           "#F0FFF0",
-           "#D4FFD4",
-           "#F4FFF4",
-           "#D0FFD8",
-           "#F0FFF8",
-           "#D8FFD0",
-           "#F8F0FF",
-       ];
-       let AltBluesArray = [
-           "#F8F0FF",
-           "#D8D0FF",
-           "#F0F8FF",
-           "#D0D8FF",
-           "#F4F4FF",
-           "#D4D4FF",
-           "#F0F0FF",
-           "#D0D0FF",
-           "#E8E0FF",
-           "#C8C0FF",
-           "#E0E8FF",
-           "#C0C8FF",
-           "#E4E4FF",
-           "#C4C4FF",
-           "#E0E0FF",
-           "#C0C0FF",
-           "#EAEAFF",
-           "#A0A0FF",
+            "#EAFFEA",
+            "#C0FFC0",
+            "#E0FFE0",
+            "#C4FFC4",
+            "#E4FFE4",
+            "#C0FFC8",
+            "#E0FFE8",
+            "#C8FFC0",
+            "#E8FFE0",
+            "#D0FFD0",
+            "#F0FFF0",
+            "#D4FFD4",
+            "#F4FFF4",
+            "#D0FFD8",
+            "#F0FFF8",
+            "#D8FFD0",
+            "#F8F0FF",
+        ];
+        let AltBluesArray = [
+            "#F8F0FF",
+            "#D8D0FF",
+            "#F0F8FF",
+            "#D0D8FF",
+            "#F4F4FF",
+            "#D4D4FF",
+            "#F0F0FF",
+            "#D0D0FF",
+            "#E8E0FF",
+            "#C8C0FF",
+            "#E0E8FF",
+            "#C0C8FF",
+            "#E4E4FF",
+            "#C4C4FF",
+            "#E0E0FF",
+            "#C0C0FF",
+            "#EAEAFF",
+            "#A0A0FF",
 
-           "#EAEAFF",
-           "#C0C0FF",
-           "#E0E0FF",
-           "#C4C4FF",
-           "#E4E4FF",
-           "#C0C8FF",
-           "#E0E8FF",
-           "#C8C0FF",
-           "#E8E0FF",
-           "#D0D0FF",
-           "#F0F0FF",
-           "#D4D4FF",
-           "#F4F4FF",
-           "#D0D8FF",
-           "#F0F8FF",
-           "#D8D0FF",
-           "#F8FFFF",
-       ];
+            "#EAEAFF",
+            "#C0C0FF",
+            "#E0E0FF",
+            "#C4C4FF",
+            "#E4E4FF",
+            "#C0C8FF",
+            "#E0E8FF",
+            "#C8C0FF",
+            "#E8E0FF",
+            "#D0D0FF",
+            "#F0F0FF",
+            "#D4D4FF",
+            "#F4F4FF",
+            "#D0D8FF",
+            "#F0F8FF",
+            "#D8D0FF",
+            "#F8FFFF",
+        ];
 
-       let allArrays = [PastelsArray, RainbowArray, RainbowArrayLong, Rainbow8, RainbowTweens, GreysArrayOrig, AltGreysArray , GreysArray , RedsArray, BluesArray, GreensArray, AltRedsArray, AltBluesArray, AltGreensArray, ColourArray];
+        let allArrays = [
+            PastelsArray,
+            RainbowArray,
+            RainbowArrayLong,
+            Rainbow8,
+            RainbowTweens,
+            GreysArrayOrig,
+            AltGreysArray,
+            GreysArray,
+            RedsArray,
+            BluesArray,
+            GreensArray,
+            AltRedsArray,
+            AltBluesArray,
+            AltGreensArray,
+            ColourArray,
+        ];
 
-       for (let a = 0; a < allArrays.length; a++) {
-        const element = allArrays[a];
-        for (let b = 0; b < element.length; b++) {
-            const clr = element[b];
-            if (clr.indexOf("#") == -1){
-                console.log("TEST the clr:", clr);
-                let wasFound = false;
-                for (let c = 0; c < FullColoursArray.length; c++) {
-                    const fc = FullColoursArray[c];
-                    if (fc[1].toUpperCase() == clr.toUpperCase()) {
-                        console.log("FOUND ", fc);
-                        wasFound = true;
-                        break;
+        for (let a = 0; a < allArrays.length; a++) {
+            const element = allArrays[a];
+            for (let b = 0; b < element.length; b++) {
+                const clr = element[b];
+                if (clr.indexOf("#") == -1) {
+                    console.log("TEST the clr:", clr);
+                    let wasFound = false;
+                    for (let c = 0; c < FullColoursArray.length; c++) {
+                        const fc = FullColoursArray[c];
+                        if (fc[1].toUpperCase() == clr.toUpperCase()) {
+                            console.log("FOUND ", fc);
+                            wasFound = true;
+                            break;
+                        }
+                    }
+                    if (!wasFound) {
+                        console.log("TEST - COULD NOT FIND COLOUR:", clr);
                     }
                 }
-                if (!wasFound) {
-                    console.log("TEST - COULD NOT FIND COLOUR:", clr);
-                }
-                
             }
-            
         }
-        
-       }
     }
 })();

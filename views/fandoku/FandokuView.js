@@ -1,19 +1,20 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * FanDoku game uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
- 
-* There is a Button Bar TABLE at the top of the container, 
+
+* There is a Button Bar TABLE at the top of the container,
  * then the SVG graphic is below that.
- * 
+ *
  * The FIRST chunk of code in the SVG graphic are the <path> objects for the individual wedges of the FanDoku game,
  * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
- * 
+ *
  * The SECOND chunk in the SVG graphic are the individual people in the FanDoku game, created by the Nodes and the d3 deep magic
  * they are each basically at the end of the day a <g class"person ancestor" transformed object with a translation from 0,0 and a rotation></g>
- * 
+ *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FandokuView, then calls a redraw
  */
 (function () {
+    const APP_ID = "Fandoku";
     var originOffsetX = 500,
         originOffsetY = 300,
         boxWidth = 200 * 2,
@@ -81,21 +82,36 @@
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
 
-    var fandokuDing = new Audio("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ding-idea-40142.mp3");
+    var fandokuDing = new Audio(
+        "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ding-idea-40142.mp3"
+    );
     if (!fandokuDing.canPlayType("audio/mpeg")) {
-        fandokuDing.setAttribute("src", "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ding-idea-40142.ogg");
+        fandokuDing.setAttribute(
+            "src",
+            "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/ding-idea-40142.ogg"
+        );
     }
     fandokuDing.loop = false;
 
-    var fandokuClap = new Audio("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/small-applause-6695.mp3");
+    var fandokuClap = new Audio(
+        "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/small-applause-6695.mp3"
+    );
     if (!fandokuClap.canPlayType("audio/mpeg")) {
-        fandokuClap.setAttribute("src", "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/small-applause-6695.ogg");
+        fandokuClap.setAttribute(
+            "src",
+            "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/small-applause-6695.ogg"
+        );
     }
     fandokuClap.loop = false;
 
-    var fandokuCheer = new Audio("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/crowdyayapplause25ppllong-6948.mp3");
+    var fandokuCheer = new Audio(
+        "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/crowdyayapplause25ppllong-6948.mp3"
+    );
     if (!fandokuCheer.canPlayType("audio/mpeg")) {
-        fandokuCheer.setAttribute("src", "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/crowdyayapplause25ppllong-6948.ogg");
+        fandokuCheer.setAttribute(
+            "src",
+            "https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/views/fandoku/crowdyayapplause25ppllong-6948.ogg"
+        );
     }
     fandokuCheer.loop = false;
 
@@ -113,7 +129,7 @@
 
     /** Keep track of WHICH cell has been selected (number == ahnenTafel number for cell in Fan Chart) */
     FandokuView.selectedFanCell = -1;
-    FandokuView.selectedFanColour = '';
+    FandokuView.selectedFanColour = "";
 
     /** Static variables to hold the state of the Number of Generations to be displayed, currently and previously  **/
     FandokuView.numGens2Display = 4;
@@ -176,9 +192,38 @@
     ];
 
     FandokuView.discouragingArray = [
-        "Sorry", "Nope", "Not quite", "Try again", "Oops", "Wrong", "Not", "Nyet", "Nicht", "Nein","Zut alors","Yikes","Hmmm","Almost","No","No-no","Oh oh", "Next?","Eek","Whoa","Non", "Sorry", "Woops","Next time","Close","Close-ish","Another?","Pardon?","Disculpe?","Lo siento"
+        "Sorry",
+        "Nope",
+        "Not quite",
+        "Try again",
+        "Oops",
+        "Wrong",
+        "Not",
+        "Nyet",
+        "Nicht",
+        "Nein",
+        "Zut alors",
+        "Yikes",
+        "Hmmm",
+        "Almost",
+        "No",
+        "No-no",
+        "Oh oh",
+        "Next?",
+        "Eek",
+        "Whoa",
+        "Non",
+        "Sorry",
+        "Woops",
+        "Next time",
+        "Close",
+        "Close-ish",
+        "Another?",
+        "Pardon?",
+        "Disculpe?",
+        "Lo siento",
     ];
-    
+
     function checkTabPress(e) {
         "use strict";
         // pick passed event or global event object if passed one is empty
@@ -324,7 +369,7 @@
         } else {
             console.log("nada : ", e.keyCode);
         }
-    };
+    }
 
     FandokuView.prototype.init = function (selector, startId) {
         // console.log("FandokuView.js - line:18", selector) ;
@@ -630,7 +675,7 @@
             });
 
         /*
-            CREATE the FanDoku game Backdrop 
+            CREATE the FanDoku game Backdrop
             * Made of mostly Wedges (starting with the outermost circle)
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
@@ -797,12 +842,12 @@
             .attr({
                 "id": "nopeTextObject",
                 "class": "centered",
-                "width" : "140px",
+                "width": "140px",
                 "height": "60px", // the foreignObject won't display in Firefox if it is 0 height
                 "x": 300,
                 "y": 300,
                 "font-size": "32px",
-                "font-color" : "yellow",
+                "font-color": "yellow",
                 "style": "background-color:red; display:none;",
             })
 
@@ -812,7 +857,6 @@
                 id: "nopeTextInner",
             })
             .html("<B style='color:yellow;'>NOPE!!!</B>");
-
 
         self.load(startId);
         // console.log(FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV);
@@ -882,21 +926,21 @@
 
     function doQuickFlashRed(theWedge) {
         // FIRST ... check to see if the option to DO the RED FLASH is enabled
-        if (FandokuView.currentSettings['options_options_doRedFlash'] == false) {
+        if (FandokuView.currentSettings["options_options_doRedFlash"] == false) {
             // if NOT, then get the heck out of Dodge!
             return;
         }
         console.log("DOquick Flash RED !!!");
         let randomIndex = Math.floor(Math.random() * FandokuView.discouragingArray.length);
-        
+
         let origClr = theWedge.style.fill;
-        theWedge.style.fill = 'red';
+        theWedge.style.fill = "red";
         console.log(theWedge);
         console.log(theWedge.getAttribute("d"));
         let theDstring = theWedge.getAttribute("d");
         let theDarray = theDstring.split(" ");
-        let midX = (1*theDarray[1] - 0 + 1*theDarray[9])/2 - 70;
-        let midY = (1*theDarray[2] - 0 + 1*theDarray[10])/2 - 30;
+        let midX = (1 * theDarray[1] - 0 + 1 * theDarray[9]) / 2 - 70;
+        let midY = (1 * theDarray[2] - 0 + 1 * theDarray[10]) / 2 - 30;
         let theR = Math.sqrt(midX * midX + midY * midY);
         let theDR = (theR - 100) / theR;
         let newX = theDR * midX;
@@ -908,31 +952,24 @@
         document.getElementById("nopeTextInner").innerHTML =
             '<b style="color:yellow;">' + FandokuView.discouragingArray[randomIndex] + "</b>";
 
-        document
-            .getElementById("nopeTextObject")
-            .setAttribute("x", newX);
-        document
-            .getElementById("nopeTextObject")
-            .setAttribute("y", newY) ;
-        setTimeout ( function () {
+        document.getElementById("nopeTextObject").setAttribute("x", newX);
+        document.getElementById("nopeTextObject").setAttribute("y", newY);
+        setTimeout(function () {
             theWedge.style.fill = origClr;
             document.getElementById("nopeTextObject").style.display = "none";
         }, 1000);
-
     }
-
 
     function updateFeedbackArea(theMessage) {
         if (theMessage == "+") {
             let randomIndex = Math.floor(Math.random() * FandokuView.encouragingArray.length);
             theMessage = FandokuView.encouragingArray[randomIndex];
-        } else if (theMessage == "-") {       
+        } else if (theMessage == "-") {
             if (FandokuView.numMisses % 2 == 0) {
                 theMessage = "Sorry, not a match.  Please try again.";
-            }     else  {
+            } else {
                 theMessage = "Please try again, that is not a match.";
-            }     
-
+            }
         }
         document.getElementById("FeedbackArea").innerHTML = theMessage;
     }
@@ -984,6 +1021,7 @@
             FandokuView.workingMaxNumGens = Math.min(FandokuView.maxNumGens, FandokuView.numGensRetrieved + 1);
         } else {
             WikiTreeAPI.getRelatives(
+                APP_ID,
                 theListOfIDs,
                 [
                     "Id",
@@ -1123,13 +1161,13 @@
         let theWedgeBox = document.getElementById("wedgeBoxFor" + ahnNum);
         let theWedgeInfo = document.getElementById("wedgeInfoFor" + ahnNum);
 
-        let isAmatch = (FandokuView.selectedNameNum == ahnNum);
+        let isAmatch = FandokuView.selectedNameNum == ahnNum;
         if (!isAmatch) {
             let selectedPersonFullName = getSettingsName(
                 thePeopleList[FandokuView.myAhnentafel.list[FandokuView.selectedNameNum]]
             );
             let ahnNumFullName = getSettingsName(thePeopleList[FandokuView.myAhnentafel.list[ahnNum]]);
-            isAmatch = (selectedPersonFullName == ahnNumFullName);
+            isAmatch = selectedPersonFullName == ahnNumFullName;
         }
 
         if (isAmatch) {
@@ -1154,7 +1192,7 @@
                 }
                 let thisID = "floatingNameHolder" + ahnNum;
                 let thisNameDIV = document.getElementById(thisID);
-            
+
                 if (theWedgeBox) {
                     theWedgeBox.style.background = theClr;
                 }
@@ -1214,14 +1252,14 @@
                 console.log("WOULD have been a match if the game had been LIVE !");
             }
         } else {
-            if (FandokuView.gameStatus == "Live"  ) {
+            if (FandokuView.gameStatus == "Live") {
                 if (
                     FandokuView.selectedNameNum > 1 &&
                     document.getElementById("floatingNameHolder" + FandokuView.selectedNameNum).style.display == "block"
                 ) {
                     updateAncestorsPlaced(false);
                     doQuickFlashRed(thisPersonsWedge);
-                    
+
                     console.log(
                         "SORRY BUDDY - please try again",
                         FandokuView.selectedNameNum,
@@ -1655,7 +1693,7 @@
     }
 
     function updateAncestorsPlaced(didPlace) {
-        if (FandokuView.gameStatus == "Live"){
+        if (FandokuView.gameStatus == "Live") {
             if (didPlace == true) {
                 FandokuView.numAncestorsPlaced++;
             } else {
@@ -1757,7 +1795,7 @@
             }
             // console.log(".load person:",person);
 
-            WikiTreeAPI.getAncestors(id, 5, [
+            WikiTreeAPI.getAncestors(APP_ID, id, 5, [
                 "Id",
                 "Derived.BirthName",
                 "Derived.BirthNamePrivate",
@@ -1829,7 +1867,7 @@
      */
     FandokuView.prototype._load = function (id) {
         // console.log("INITIAL _load - line:118", id) ;
-        let thePersonObject = WikiTreeAPI.getPerson(id, [
+        let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
             "Derived.BirthNamePrivate",
@@ -2065,7 +2103,7 @@
                     return `
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0; "> 
+                    } class="box" style="background-color: ${theClr} ; border:0; ">
                     ${photoDiv}
                     <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
                         person
@@ -2100,13 +2138,13 @@
                      <div class="vital-info">
 						${photoDiv}
 						  <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}>
-						    <b>${getSettingsName(person)}</b>						    
+						    <b>${getSettingsName(person)}</b>
 						  </div>
 						  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
 						  <div class="death vital centered" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>
-                   
+
                     `;
                 }
             });

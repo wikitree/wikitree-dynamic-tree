@@ -6,6 +6,7 @@
  * and SheetJs (https://www.npmjs.com/package/xlsx)
  */
 export class CC7 {
+    static APP_ID = "CC7";
     static #helpText = `
         <x>[ x ]</x>
         <h2 style="text-align: center">About The CC7 Table</h2>
@@ -1131,6 +1132,7 @@ export class CC7 {
         }
         if (fsReady == false) {
             WikiTreeAPI.postToAPI({
+                appId: CC7.APP_ID,
                 action: "getRelatives",
                 getSpouses: "1",
                 getChildren: "1",
@@ -2907,6 +2909,7 @@ export class CC7 {
     static async getPeopleAction(keys, siblings, ancestors, descendants, nuclear, minGeneration, fields) {
         try {
             const result = await WikiTreeAPI.postToAPI({
+                appId: CC7.APP_ID,
                 action: "getPeople",
                 keys: keys,
                 siblings: siblings,
@@ -2931,6 +2934,7 @@ export class CC7 {
     static async getSomeRelatives(ids, fields = "*") {
         try {
             const result = await WikiTreeAPI.postToAPI({
+                appId: CC7.APP_ID,
                 action: "getRelatives",
                 keys: ids,
                 fields: fields,
@@ -3060,6 +3064,7 @@ export class CC7 {
             WTID = keys;
         }
         WikiTreeAPI.postToAPI({
+            appId: CC7.APP_ID,
             action: "getRelatives",
             keys: WTID,
             getParents: "1",
@@ -3394,6 +3399,7 @@ export class CC7 {
     static async getAncestors(id, depth, fields = "*") {
         try {
             const result = await WikiTreeAPI.postToAPI({
+                appId: CC7.APP_ID,
                 action: "getAncestors",
                 key: id,
                 depth: depth,

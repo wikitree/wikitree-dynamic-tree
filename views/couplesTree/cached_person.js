@@ -80,7 +80,7 @@ export class CachedPerson {
                 }
             } else if (!["marriage_date", "marriage_location", "marriage_end_date"].includes(key)) {
                 // The above fields are only present in spouses and are handled in setSpouses.
-                // Other keys as handled here by copying them to this person object
+                // Other keys are handled here by copying them to this person object
                 this._data[key] = value;
             }
         }
@@ -103,7 +103,7 @@ export class CachedPerson {
         // spouse record again via API in order to obtain their Parents or Children records, that new record
         // no longer has the marriage data. Therefore, here we copy the marriage data (if any) from the Spouses
         // records to a new MarriageDates field at the Person._data level. We also determine who the first
-        // spouse is absed on marriage date (unknown date goes last).
+        // spouse is based on marriage date (unknown date goes last).
         let firstSpouseId = undefined;
         let firstMarriageDate = dateObject();
         this._data.MarriageDates = {};

@@ -202,6 +202,7 @@ window.ViewRegistry = class ViewRegistry {
 
         try {
             WikiTreeAPI.postToAPI({
+                appId: "ViewRegistry",
                 action: "getPerson",
                 key: wtID,
                 fields: basicFields.join(),
@@ -368,7 +369,7 @@ window.LoginManager = class LoginManager {
     logout() {
         this.wtAPI.cookie(this.C_WT_USERNAME, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
         this.wtAPI.cookie(this.C_WT_USER_ID, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
-        this.wtAPI.postToAPI({ action: "clientLogin", doLogout: 1 }).then((data) => {
+        this.wtAPI.postToAPI({ appId: "LoginManager", action: "clientLogin", doLogout: 1 }).then((data) => {
             window.location.reload();
         });
     }

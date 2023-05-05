@@ -1,4 +1,5 @@
 window.TimelineView = class TimelineView extends View {
+    static APP_ID = "Timeline";
     meta() {
         return {
             title: "Family Timeline",
@@ -10,6 +11,7 @@ window.TimelineView = class TimelineView extends View {
 
     init(selector, person_id) {
         WikiTreeAPI.postToAPI({
+            appId: TimelineView.APP_ID,
             action: "getPerson",
             key: person_id,
             fields: "Privacy,IsLiving,BirthDateDecade,DeathDateDecade,Parents,Siblings,Derived.ShortName,FirstName,LastNameAtBirth,LastNameCurrent,Name,BirthDate,DeathDate,Children,Spouses,Father,Mother",
