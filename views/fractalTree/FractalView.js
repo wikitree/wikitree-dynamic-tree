@@ -1,19 +1,20 @@
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * Fractal Tree uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
- 
-* There is a Button Bar TABLE at the top of the container, 
+ *
+ * There is a Button Bar TABLE at the top of the container,
  * then the SVG graphic is below that.
- * 
+ *
  * The FIRST chunk of code in the SVG graphic are the <path> objects for the individual wedges of the Fractal Tree,
  * each with a unique ID of wedgeAnB, where A = generation #, and B = position # within that generation, counting from far left, clockwise
- * 
+ *
  * The SECOND chunk in the SVG graphic are the individual people in the Fractal Tree, created by the Nodes and the d3 deep magic
  * they are each basically at the end of the day a <g class"person ancestor" transformed object with a translation from 0,0 and a rotation></g>
- * 
+ *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FractalView, then calls a redraw
  */
 (function () {
+    const APP_ID = "FractalTree";
     var originOffsetX = 500,
         originOffsetY = 300,
         boxWidth = 200 * 2,
@@ -64,53 +65,53 @@
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
     var ColourArray = [
-           "White",
+        "White",
 
-           "Gold",
-           "HotPink",
-           "LightCyan",
-           "Yellow",
-           "AntiqueWhite",
-           "MediumSpringGreen",
-           "Orange",
-           "DeepSkyBlue",
-           "PaleGoldenRod",
-           "Lime",
-           "Moccasin",
-           "PowderBlue",
-           "DarkGreen",
-           "Maroon",
-           "Navy",
-           "Brown",
-           "Indigo",
-           "RoyalBlue",
-           "FireBrick",
-           "Blue",
-           "SlateGrey",
-           "DarkMagenta",
-           "Red",
-           "DarkOrange",
-           "DarkGoldenRod",
-           "Green",
-           "MediumVioletRed",
-           "SteelBlue",
-           "Grey",
-           "MediumPurple",
-           "OliveDrab",
-           "Purple",
-           "DarkSlateBlue",
-           "SaddleBrown",
-           "Pink",
-           "Khaki",
-           "LemonChiffon",
-           "LightCyan",
-           "HotPink",
-           "Gold",
-           "Yellow",
-           "AntiqueWhite",
-           "MediumSpringGreen",
-           "Orange",
-       ];
+        "Gold",
+        "HotPink",
+        "LightCyan",
+        "Yellow",
+        "AntiqueWhite",
+        "MediumSpringGreen",
+        "Orange",
+        "DeepSkyBlue",
+        "PaleGoldenRod",
+        "Lime",
+        "Moccasin",
+        "PowderBlue",
+        "DarkGreen",
+        "Maroon",
+        "Navy",
+        "Brown",
+        "Indigo",
+        "RoyalBlue",
+        "FireBrick",
+        "Blue",
+        "SlateGrey",
+        "DarkMagenta",
+        "Red",
+        "DarkOrange",
+        "DarkGoldenRod",
+        "Green",
+        "MediumVioletRed",
+        "SteelBlue",
+        "Grey",
+        "MediumPurple",
+        "OliveDrab",
+        "Purple",
+        "DarkSlateBlue",
+        "SaddleBrown",
+        "Pink",
+        "Khaki",
+        "LemonChiffon",
+        "LightCyan",
+        "HotPink",
+        "Gold",
+        "Yellow",
+        "AntiqueWhite",
+        "MediumSpringGreen",
+        "Orange",
+    ];
 
     FractalView.prototype.meta = function () {
         return {
@@ -609,9 +610,9 @@
             });
 
         /*
-            CREATE the Fractal Tree Backdrop 
+            CREATE the Fractal Tree Backdrop
             * Made of Lines connecting two ancestors together
-            
+
         */
 
         for (let index = 0; index < 2 ** FractalView.maxNumGens; index++) {
@@ -902,7 +903,6 @@
                 element3.setAttribute("display", "none");
                 element3.style.display = "none";
             }
-            
         }
     };
 
@@ -962,6 +962,7 @@
             FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
         } else {
             WikiTreeAPI.getRelatives(
+                APP_ID,
                 theListOfIDs,
                 [
                     "Id",
@@ -985,7 +986,7 @@
                     "Name",
                     "Gender",
                     "Privacy",
-                    "DataStatus"
+                    "DataStatus",
                 ],
                 { getParents: true }
             ).then(function (result) {
@@ -1001,7 +1002,6 @@
                     FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
 
                     clearMessageBelowButtonBar();
-                    
                 }
             });
         }
@@ -1121,7 +1121,7 @@
             }
             // console.log(".load person:",person);
 
-            WikiTreeAPI.getAncestors(id, 3, [
+            WikiTreeAPI.getAncestors(APP_ID, id, 3, [
                 "Id",
                 "Derived.BirthName",
                 "Derived.BirthNamePrivate",
@@ -1189,7 +1189,7 @@
      */
     FractalView.prototype._load = function (id) {
         // console.log("INITIAL _load - line:118", id) ;
-        let thePersonObject = WikiTreeAPI.getPerson(id, [
+        let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
             "Derived.BirthNamePrivate",
@@ -1412,7 +1412,7 @@
                     // borderColor = "rgba(204, 102, 102, .5)";
                 }
 
-                let theClr = 'white';
+                let theClr = "white";
                 // SETUP the repeatAncestorTracker
                 if (FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
                     console.log(
@@ -1572,7 +1572,7 @@
                 // COLOUR the div appropriately
                 let thisDivsColour = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                 // CHECK to see if this is a Repeat Ancestor AND if ColourizeRepeats option is turned on
-                 if (
+                if (
                     FractalView.currentSettings["general_options_colourizeRepeats"] == true &&
                     repeatAncestorTracker[ancestorObject.person._data.Id]
                 ) {
@@ -1664,10 +1664,9 @@
             // console.log("Place",d._data.Name,"ahnNum:" + ancestorObject.ahnNum,"Gen:"+thisGenNum,"Pos:" + thisPosNum, FractalView.maxAngle);
 
             // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
-            setTimeout ( function () {
+            setTimeout(function () {
                 showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, 0); // nameAngle = 0 ... taken from FanChart ... leaving here JUST IN CASE we turn the boxes on their side
-            } , 200);
-
+            }, 200);
 
             // FINALLY ... we return the transformation statement back - the translation based on our  calculations
             return "translate(" + newX + "," + newY + ")";
@@ -2189,52 +2188,51 @@
         });
     }
 
-
     function safeName(inp) {
         return inp.replace(/ /g, "_");
     }
 
     function updateFontsIfNeeded() {
-    if (
-        FractalView.currentSettings["general_options_font4Names"] == font4Name &&
-        FractalView.currentSettings["general_options_font4Info"] == font4Info
-    ) {
-        console.log("NOTHING to see HERE in UPDATE FONT land");
-    } else {
-        console.log(
-            "Update Fonts:",
-            FractalView.currentSettings["general_options_font4Names"],
-            font4Name,
-            FractalView.currentSettings["general_options_font4Info"],
-            font4Info
-        );
-        console.log(FractalView.currentSettings);
+        if (
+            FractalView.currentSettings["general_options_font4Names"] == font4Name &&
+            FractalView.currentSettings["general_options_font4Info"] == font4Info
+        ) {
+            console.log("NOTHING to see HERE in UPDATE FONT land");
+        } else {
+            console.log(
+                "Update Fonts:",
+                FractalView.currentSettings["general_options_font4Names"],
+                font4Name,
+                FractalView.currentSettings["general_options_font4Info"],
+                font4Info
+            );
+            console.log(FractalView.currentSettings);
 
-        font4Name = FractalView.currentSettings["general_options_font4Names"];
-        font4Info = FractalView.currentSettings["general_options_font4Info"];
+            font4Name = FractalView.currentSettings["general_options_font4Names"];
+            font4Info = FractalView.currentSettings["general_options_font4Info"];
 
-        let nameElements = document.getElementsByClassName("name");
-        for (let e = 0; e < nameElements.length; e++) {
-            const element = nameElements[e];
-            element.classList.remove("fontSerif");
-            element.classList.remove("fontSansSerif");
-            element.classList.remove("fontMono");
-            element.classList.remove("fontFantasy");
-            element.classList.remove("fontScript");
-            element.classList.add("font" + font4Name);
-        }
-        let infoElements = document.getElementsByClassName("vital");
-        for (let e = 0; e < infoElements.length; e++) {
-            const element = infoElements[e];
-            element.classList.remove("fontSerif");
-            element.classList.remove("fontSansSerif");
-            element.classList.remove("fontMono");
-            element.classList.remove("fontFantasy");
-            element.classList.remove("fontScript");
-            element.classList.add("font" + font4Info);
+            let nameElements = document.getElementsByClassName("name");
+            for (let e = 0; e < nameElements.length; e++) {
+                const element = nameElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Name);
+            }
+            let infoElements = document.getElementsByClassName("vital");
+            for (let e = 0; e < infoElements.length; e++) {
+                const element = infoElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Info);
+            }
         }
     }
-}    
     function updateDNAlinks(nodes) {
         //{ ahnNum: i, person: thePeopleList[this.list[i]] }
         for (let index = 0; index < nodes.length; index++) {
@@ -2248,9 +2246,7 @@
 
     function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
         // console.log("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
-        
 
-        
         // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
         let dnaImgX = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "inner");
         let dnaImgXDiv = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "img");
@@ -2301,20 +2297,21 @@
 
         let elem = document.getElementById("wedgeInfoFor" + ahnNum).parentNode;
         console.log(elem.parentNode);
-    
+
         if (elem) {
             let rect = elem.getBoundingClientRect();
             let elemParent = elem.parentNode;
             let rectParent = elemParent.getBoundingClientRect();
-            thisY = newY - 0  + 1*(rect.height ) - 0 + 1*elemParent.getAttribute("y") + 10 ;
-            thisY = newY - 0  + 1*elemParent.getAttribute("y") +  (1*rect.height + 2)/FractalView.currentScaleFactor ;
-            console.log("SVG d3:", d3 );
-            console.log("SVG scale:", d3.scale, FractalView.currentScaleFactor );
+            thisY = newY - 0 + 1 * rect.height - 0 + 1 * elemParent.getAttribute("y") + 10;
+            thisY =
+                newY - 0 + 1 * elemParent.getAttribute("y") + (1 * rect.height + 2) / FractalView.currentScaleFactor;
+            console.log("SVG d3:", d3);
+            console.log("SVG scale:", d3.scale, FractalView.currentScaleFactor);
             console.log("SVG behave:", d3.behavior);
             console.log(
-                `ahnNum: ${ahnNum} , newY: ${newY} , height: ${rect.height} , heightElem: ${elem.getAttribute("height")} , heightParent: ${
-                    rectParent.height
-                } , ParentY: ${elemParent.getAttribute("y")} , thisY: ${thisY} ,`
+                `ahnNum: ${ahnNum} , newY: ${newY} , height: ${rect.height} , heightElem: ${elem.getAttribute(
+                    "height"
+                )} , heightParent: ${rectParent.height} , ParentY: ${elemParent.getAttribute("y")} , thisY: ${thisY} ,`
             );
             console.log(rect);
             console.log(rectParent);
@@ -2324,14 +2321,14 @@
                 // line1.style.display = "inline-block";
                 line1.setAttribute("x1", newX - 200);
                 line1.setAttribute("x2", newX + 200);
-                line1.setAttribute("y1", thisY );
-                line1.setAttribute("y2", thisY );
+                line1.setAttribute("y1", thisY);
+                line1.setAttribute("y2", thisY);
                 console.log(line1);
                 // line2.style.display = "inline-block";
                 line2.setAttribute("x1", newX - 200);
                 line2.setAttribute("x2", newX + 200);
-                line2.setAttribute("y1", newY - 0  + 1*elemParent.getAttribute("y")  );
-                line2.setAttribute("y2", newY - 0  + 1*elemParent.getAttribute("y")  );
+                line2.setAttribute("y1", newY - 0 + 1 * elemParent.getAttribute("y"));
+                line2.setAttribute("y2", newY - 0 + 1 * elemParent.getAttribute("y"));
                 console.log(line2);
             }
         }
@@ -2459,8 +2456,8 @@
             // dnaImgX.setAttribute("y", newY * dFraction);
             // dnaImgXDiv.style.rotate = nameAngle + "deg";
             // if (thisGenNum == 0) {
-                dnaImgX.setAttribute("x", newX);
-                dnaImgX.setAttribute("y",  thisY);
+            dnaImgX.setAttribute("x", newX);
+            dnaImgX.setAttribute("y", thisY);
             // }
             if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 dnaImgX.style.display = "none";
@@ -2477,8 +2474,8 @@
             // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
             // dnaImgYDiv.style.rotate = nameAngle + "deg";
             // if (thisGenNum == 0) {
-                dnaImgY.setAttribute("y", /* newY +  */thisY);
-                dnaImgY.setAttribute("x", newX - (35 * dOrtho) / 0.13);
+            dnaImgY.setAttribute("y", /* newY +  */ thisY);
+            dnaImgY.setAttribute("x", newX - (35 * dOrtho) / 0.13);
             //     console.log("@GenNum == 0 ; dOrtho = ", dOrtho);
             // }
             if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
@@ -2505,8 +2502,8 @@
             // dnaImgMT.setAttribute("y", newY * dFraction + dOrtho * newX);
             // dnaImgMTDiv.style.rotate = nameAngle + "deg";
             // if (thisGenNum == 0) {
-                dnaImgMT.setAttribute("y", /* newY +  */thisY);
-                dnaImgMT.setAttribute("x", newX + (35 * dOrtho) / 0.13);
+            dnaImgMT.setAttribute("y", /* newY +  */ thisY);
+            dnaImgMT.setAttribute("x", newX + (35 * dOrtho) / 0.13);
             // }
             if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 dnaImgMT.style.display = "none";
@@ -2535,8 +2532,8 @@
             // dnaImgDs.setAttribute("y", newY * dFraction + dOrtho2 * newX);
             // dnaImgDsDiv.style.rotate = nameAngle + "deg";
             // if (thisGenNum == 0) {
-                dnaImgDs.setAttribute("y", /* newY +  */thisY);
-                dnaImgDs.setAttribute("x", newX + 35);
+            dnaImgDs.setAttribute("y", /* newY +  */ thisY);
+            dnaImgDs.setAttribute("x", newX + 35);
             // }
             if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 dnaImgDs.style.display = "none";
@@ -2564,8 +2561,8 @@
             // dnaImgAs.setAttribute("y", newY * dFraction - dOrtho2 * newX);
             // dnaImgAsDiv.style.rotate = nameAngle - 90 + "deg";
             // if (thisGenNum == 0) {
-                dnaImgAs.setAttribute("y", /* newY +  */thisY);
-                dnaImgAs.setAttribute("x", newX  -35);
+            dnaImgAs.setAttribute("y", /* newY +  */ thisY);
+            dnaImgAs.setAttribute("x", newX - 35);
             // }
             if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 dnaImgAs.style.display = "none";
@@ -2592,8 +2589,8 @@
             // dnaImgConfirmed.setAttribute("y", newY * (gen > 5 ? (newR + 10) / newR : dFraction) - dOrtho * newX);
             // dnaImgConfirmedDiv.style.rotate = nameAngle + "deg";
             // if (thisGenNum == 0) {
-                dnaImgConfirmed.setAttribute("y", /* newY +  */thisY);
-                dnaImgConfirmed.setAttribute("x", newX - 37.5);
+            dnaImgConfirmed.setAttribute("y", /* newY +  */ thisY);
+            dnaImgConfirmed.setAttribute("x", newX - 37.5);
             // }
 
             if (FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
@@ -2682,7 +2679,7 @@
             }
         }
     }
-    
+
     function getBackgroundColourForB4(gen, pos, ahnNum) {
         PastelsArray = [
             "#ECFFEF",
@@ -2823,502 +2820,500 @@
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
-            PastelsArray = [
-                "#ECFFEF",
-                "#CCEFEC",
-                "#CCFFCC",
-                "#FFFFCC",
-                "#FFE5CC",
-                "#FFCCCC",
-                "#FFCCE5",
-                "#FFCCFF",
-                "#E5CCFF",
-                "#D5CCEF",
-                "#E6E6FA",
-                "#FFB6C1",
-                "#F5DEB3",
-                "#FFFACD",
-                "#C5ECCF",
-                "#F0FFF0",
-                "#FDF5E6",
-                "#FFE4E1",
-            ];
-            RainbowArray = [
-                "#FFFACD",
-                "Red",
-                "Orange",
-                "Yellow",
-                "SpringGreen",
-                "SkyBlue",
-                "Orchid",
-                "Violet",
-                "DeepPink",
-                "Pink",
-                "MistyRose",
-                "OrangeRed",
-                "Gold",
-                "GreenYellow",
-                "Cyan",
-                "Plum",
-                "Magenta",
-                "#F83BB7",
-                "#FF45A3",
-                "PaleVioletRed",
-                "Pink",
-            ]; // replaced some colours
-            RainbowArrayLong = [
-                "#FFFACD",
-                "Red",
-                "OrangeRed",
-                "Orange",
-                "Gold",
-                "Yellow",
-                "GreenYellow",
-                "SpringGreen",
-                "Cyan",
-                "SkyBlue",
-                "#B898E0",
-                "Orchid",
-                "Magenta",
-                "Violet",
-                "#F83BB7",
-                "DeepPink",
-                "#FF45A3",
-                "HotPink",
-                "#FF45A3",
-                "DeepPink",
-                "Violet",
-                "Magenta",
-                "Orchid",
-                "#B898E0",
-                "SkyBlue",
-                "Cyan",
-                "SpringGreen",
-                "GreenYellow",
-                "Yellow",
-                "Gold",
-                "Orange",
-                "OrangeRed",
-                "Red",
-            ]; // replaced some colours
-            Rainbow8 = [
-                "Red",
-                "Orange",
-                "Yellow",
-                "SpringGreen",
-                "SkyBlue",
-                "Orchid",
-                "Violet",
-                "DeepPink",
-                "HotPink",
-                "MistyRose",
-            ];
-            RainbowTweens = ["OrangeRed", "Gold", "GreenYellow", "Cyan", "Plum", "Magenta", "PaleVioletRed", "Pink"];
+        PastelsArray = [
+            "#ECFFEF",
+            "#CCEFEC",
+            "#CCFFCC",
+            "#FFFFCC",
+            "#FFE5CC",
+            "#FFCCCC",
+            "#FFCCE5",
+            "#FFCCFF",
+            "#E5CCFF",
+            "#D5CCEF",
+            "#E6E6FA",
+            "#FFB6C1",
+            "#F5DEB3",
+            "#FFFACD",
+            "#C5ECCF",
+            "#F0FFF0",
+            "#FDF5E6",
+            "#FFE4E1",
+        ];
+        RainbowArray = [
+            "#FFFACD",
+            "Red",
+            "Orange",
+            "Yellow",
+            "SpringGreen",
+            "SkyBlue",
+            "Orchid",
+            "Violet",
+            "DeepPink",
+            "Pink",
+            "MistyRose",
+            "OrangeRed",
+            "Gold",
+            "GreenYellow",
+            "Cyan",
+            "Plum",
+            "Magenta",
+            "#F83BB7",
+            "#FF45A3",
+            "PaleVioletRed",
+            "Pink",
+        ]; // replaced some colours
+        RainbowArrayLong = [
+            "#FFFACD",
+            "Red",
+            "OrangeRed",
+            "Orange",
+            "Gold",
+            "Yellow",
+            "GreenYellow",
+            "SpringGreen",
+            "Cyan",
+            "SkyBlue",
+            "#B898E0",
+            "Orchid",
+            "Magenta",
+            "Violet",
+            "#F83BB7",
+            "DeepPink",
+            "#FF45A3",
+            "HotPink",
+            "#FF45A3",
+            "DeepPink",
+            "Violet",
+            "Magenta",
+            "Orchid",
+            "#B898E0",
+            "SkyBlue",
+            "Cyan",
+            "SpringGreen",
+            "GreenYellow",
+            "Yellow",
+            "Gold",
+            "Orange",
+            "OrangeRed",
+            "Red",
+        ]; // replaced some colours
+        Rainbow8 = [
+            "Red",
+            "Orange",
+            "Yellow",
+            "SpringGreen",
+            "SkyBlue",
+            "Orchid",
+            "Violet",
+            "DeepPink",
+            "HotPink",
+            "MistyRose",
+        ];
+        RainbowTweens = ["OrangeRed", "Gold", "GreenYellow", "Cyan", "Plum", "Magenta", "PaleVioletRed", "Pink"];
 
-            GreysArrayOrig = [
-                "#ACACAC",
-                "#B0B0B0",
-                "#B4B4B4",
-                "#B8B8B8",
-                "#BCBCBC",
-                "#C0C0C0",
-                "#C4C4C4",
-                "#C8C8C8",
-                "#CCCCCC",
-                "#D0D0D0",
-                "#D4D4D4",
-                "#D8D8D8",
-                "#DCDCDC",
-                "#E0E0E0",
-                "#E4E4E4",
-                "#E8E8E8",
-                "#ECECEC",
-                "#F0F0F0",
-            ];
-            AltGreysArray = [
-                "#F0F0F0",
-                "#C5C5C5",
-                "#EAEAEA",
-                "#C0C0C0",
-                "#E5E5E5",
-                "#BABABA",
-                "#E0E0E0",
-                "#B5B5B5",
-                "#DADADA",
-                "#B0B0B0",
-                "#D5D5D5",
-                "#AAAAAA",
-                "#D0D0D0",
-                "#A5A5A5",
-                "#CACACA",
-                "#A0A0A0",
-                "#C5C5C5",
-                "#9A9A9A",
-                "#C5C5C5",
-                "#A0A0A0",
-                "#CACACA",
-                "#A5A5A5",
-                "#D0D0D0",
-                "#AAAAAA",
-                "#D5D5D5",
-                "#B0B0B0",
-                "#DADADA",
-                "#B5B5B5",
-                "#E0E0E0",
-                "#BABABA",
-                "#E5E5E5",
-                "#C0C0C0",
-                "#EAEAEA",
-                "#C5C5C5",
-                "#F0F0F0",
-            ];
-            GreysArray = [
-                "#F0F0F0",
-                "#EAEAEA",
-                "#E5E5E5",
-                "#E0E0E0",
-                "#DADADA",
-                "#D5D5D5",
-                "#D0D0D0",
-                "#CACACA",
-                "#C5C5C5",
-                "#C0C0C0",
-                "#BABABA",
-                "#B5B5B5",
-                "#B0B0B0",
-                "#AAAAAA",
-                "#A5A5A5",
-                "#A0A0A0",
-                "#9A9A9A",
-                "#A0A0A0",
-                "#A5A5A5",
-                "#AAAAAA",
-                "#B0B0B0",
-                "#B5B5B5",
-                "#BABABA",
-                "#C0C0C0",
-                "#C5C5C5",
-                "#CACACA",
-                "#D0D0D0",
-                "#D5D5D5",
-                "#DADADA",
-                "#E0E0E0",
-                "#E5E5E5",
-                "#EAEAEA",
-                "#F0F0F0",
-            ];
-            RedsArray = [
-                "#FFF8F0",
-                "#FFF0F8",
-                "#FFF4F4",
-                "#FFF0F0",
-                "#FFE8E0",
-                "#FFE0E8",
-                "#FFE4E4",
-                "#FFE0E0",
-                "#FFD8D0",
-                "#FFD0D8",
-                "#FFD4D4",
-                "#FFD0D0",
-                "#FFC8C0",
-                "#FFC0C8",
-                "#FFC4C4",
-                "#FFC0C0",
-                "#FFB0B0",
-                "#FFA0A0",
-                "#FFB0B0",
-                "#FFC0C0",
-                "#FFC4C4",
-                "#FFC0C8",
-                "#FFC8C0",
-                "#FFD0D0",
-                "#FFD4D4",
-                "#FFD0D8",
-                "#FFD8D0",
-                "#FFE0E0",
-                "#FFE4E4",
-                "#FFE0E8",
-                "#FFE8E0",
-                "#FFF0F0",
-                "#FFF4F4",
-                "#FFF0F8",
-                "#FFF8F0",
-            ];
-            BluesArray = [
-                "#F8F0FF",
-                "#F0F8FF",
-                "#F4F4FF",
-                "#F0F0FF",
-                "#E8E0FF",
-                "#E0E8FF",
-                "#E4E4FF",
-                "#E0E0FF",
-                "#D8D0FF",
-                "#D0D8FF",
-                "#D4D4FF",
-                "#D0D0FF",
-                "#C8C0FF",
-                "#C0C8FF",
-                "#C4C4FF",
-                "#C0C0FF",
-                "#B0B0FF",
-                "#A0A0FF",
+        GreysArrayOrig = [
+            "#ACACAC",
+            "#B0B0B0",
+            "#B4B4B4",
+            "#B8B8B8",
+            "#BCBCBC",
+            "#C0C0C0",
+            "#C4C4C4",
+            "#C8C8C8",
+            "#CCCCCC",
+            "#D0D0D0",
+            "#D4D4D4",
+            "#D8D8D8",
+            "#DCDCDC",
+            "#E0E0E0",
+            "#E4E4E4",
+            "#E8E8E8",
+            "#ECECEC",
+            "#F0F0F0",
+        ];
+        AltGreysArray = [
+            "#F0F0F0",
+            "#C5C5C5",
+            "#EAEAEA",
+            "#C0C0C0",
+            "#E5E5E5",
+            "#BABABA",
+            "#E0E0E0",
+            "#B5B5B5",
+            "#DADADA",
+            "#B0B0B0",
+            "#D5D5D5",
+            "#AAAAAA",
+            "#D0D0D0",
+            "#A5A5A5",
+            "#CACACA",
+            "#A0A0A0",
+            "#C5C5C5",
+            "#9A9A9A",
+            "#C5C5C5",
+            "#A0A0A0",
+            "#CACACA",
+            "#A5A5A5",
+            "#D0D0D0",
+            "#AAAAAA",
+            "#D5D5D5",
+            "#B0B0B0",
+            "#DADADA",
+            "#B5B5B5",
+            "#E0E0E0",
+            "#BABABA",
+            "#E5E5E5",
+            "#C0C0C0",
+            "#EAEAEA",
+            "#C5C5C5",
+            "#F0F0F0",
+        ];
+        GreysArray = [
+            "#F0F0F0",
+            "#EAEAEA",
+            "#E5E5E5",
+            "#E0E0E0",
+            "#DADADA",
+            "#D5D5D5",
+            "#D0D0D0",
+            "#CACACA",
+            "#C5C5C5",
+            "#C0C0C0",
+            "#BABABA",
+            "#B5B5B5",
+            "#B0B0B0",
+            "#AAAAAA",
+            "#A5A5A5",
+            "#A0A0A0",
+            "#9A9A9A",
+            "#A0A0A0",
+            "#A5A5A5",
+            "#AAAAAA",
+            "#B0B0B0",
+            "#B5B5B5",
+            "#BABABA",
+            "#C0C0C0",
+            "#C5C5C5",
+            "#CACACA",
+            "#D0D0D0",
+            "#D5D5D5",
+            "#DADADA",
+            "#E0E0E0",
+            "#E5E5E5",
+            "#EAEAEA",
+            "#F0F0F0",
+        ];
+        RedsArray = [
+            "#FFF8F0",
+            "#FFF0F8",
+            "#FFF4F4",
+            "#FFF0F0",
+            "#FFE8E0",
+            "#FFE0E8",
+            "#FFE4E4",
+            "#FFE0E0",
+            "#FFD8D0",
+            "#FFD0D8",
+            "#FFD4D4",
+            "#FFD0D0",
+            "#FFC8C0",
+            "#FFC0C8",
+            "#FFC4C4",
+            "#FFC0C0",
+            "#FFB0B0",
+            "#FFA0A0",
+            "#FFB0B0",
+            "#FFC0C0",
+            "#FFC4C4",
+            "#FFC0C8",
+            "#FFC8C0",
+            "#FFD0D0",
+            "#FFD4D4",
+            "#FFD0D8",
+            "#FFD8D0",
+            "#FFE0E0",
+            "#FFE4E4",
+            "#FFE0E8",
+            "#FFE8E0",
+            "#FFF0F0",
+            "#FFF4F4",
+            "#FFF0F8",
+            "#FFF8F0",
+        ];
+        BluesArray = [
+            "#F8F0FF",
+            "#F0F8FF",
+            "#F4F4FF",
+            "#F0F0FF",
+            "#E8E0FF",
+            "#E0E8FF",
+            "#E4E4FF",
+            "#E0E0FF",
+            "#D8D0FF",
+            "#D0D8FF",
+            "#D4D4FF",
+            "#D0D0FF",
+            "#C8C0FF",
+            "#C0C8FF",
+            "#C4C4FF",
+            "#C0C0FF",
+            "#B0B0FF",
+            "#A0A0FF",
 
-                "#B0B0FF",
-                "#C0C0FF",
-                "#C4C4FF",
-                "#C0C8FF",
-                "#C8C0FF",
-                "#D0D0FF",
-                "#D4D4FF",
-                "#D0D8FF",
-                "#D8D0FF",
-                "#E0E0FF",
-                "#E4E4FF",
-                "#E0E8FF",
-                "#E8E0FF",
-                "#F0F0FF",
-                "#F4F4FF",
-                "#F0F8FF",
-                "#F8F0FF",
-            ];
-            GreensArray = [
-                "#F8FFF0",
-                "#F0FFF8",
-                "#F4FFF4",
-                "#F0FFF0",
-                "#E8FFE0",
-                "#E0FFE8",
-                "#E4FFE4",
-                "#E0FFE0",
-                "#D8FFD0",
-                "#D0FFD8",
-                "#D4FFD4",
-                "#D0FFD0",
-                "#C8FFC0",
-                "#C0FFC8",
-                "#C4FFC4",
-                "#C0FFC0",
-                "#B0FFB0",
-                "#A0FFA0",
+            "#B0B0FF",
+            "#C0C0FF",
+            "#C4C4FF",
+            "#C0C8FF",
+            "#C8C0FF",
+            "#D0D0FF",
+            "#D4D4FF",
+            "#D0D8FF",
+            "#D8D0FF",
+            "#E0E0FF",
+            "#E4E4FF",
+            "#E0E8FF",
+            "#E8E0FF",
+            "#F0F0FF",
+            "#F4F4FF",
+            "#F0F8FF",
+            "#F8F0FF",
+        ];
+        GreensArray = [
+            "#F8FFF0",
+            "#F0FFF8",
+            "#F4FFF4",
+            "#F0FFF0",
+            "#E8FFE0",
+            "#E0FFE8",
+            "#E4FFE4",
+            "#E0FFE0",
+            "#D8FFD0",
+            "#D0FFD8",
+            "#D4FFD4",
+            "#D0FFD0",
+            "#C8FFC0",
+            "#C0FFC8",
+            "#C4FFC4",
+            "#C0FFC0",
+            "#B0FFB0",
+            "#A0FFA0",
 
-                "#B0FFB0",
-                "#C0FFC0",
-                "#C4FFC4",
-                "#C0FFC8",
-                "#C8FFC0",
-                "#D0FFD0",
-                "#D4FFD4",
-                "#D0FFD8",
-                "#D8FFD0",
-                "#E0FFE0",
-                "#E4FFE4",
-                "#E0FFE8",
-                "#E8FFE0",
-                "#F0FFF0",
-                "#F4FFF4",
-                "#F0FFF8",
-                "#F8FFF0",
-            ];
-            let AltRedsArray = [
-                "#FFF8F0",
-                "#FFD8D0",
-                "#FFF0F8",
-                "#FFD0D8",
-                "#FFF4F4",
-                "#FFD4D4",
-                "#FFF0F0",
-                "#FFD0D0",
-                "#FFE8E0",
-                "#FFC8C0",
-                "#FFE0E8",
-                "#FFC0C8",
-                "#FFE4E4",
-                "#FFC4C4",
-                "#FFE0E0",
-                "#FFC0C0",
-                "#FFEAEA",
-                "#FFA0A0",
+            "#B0FFB0",
+            "#C0FFC0",
+            "#C4FFC4",
+            "#C0FFC8",
+            "#C8FFC0",
+            "#D0FFD0",
+            "#D4FFD4",
+            "#D0FFD8",
+            "#D8FFD0",
+            "#E0FFE0",
+            "#E4FFE4",
+            "#E0FFE8",
+            "#E8FFE0",
+            "#F0FFF0",
+            "#F4FFF4",
+            "#F0FFF8",
+            "#F8FFF0",
+        ];
+        let AltRedsArray = [
+            "#FFF8F0",
+            "#FFD8D0",
+            "#FFF0F8",
+            "#FFD0D8",
+            "#FFF4F4",
+            "#FFD4D4",
+            "#FFF0F0",
+            "#FFD0D0",
+            "#FFE8E0",
+            "#FFC8C0",
+            "#FFE0E8",
+            "#FFC0C8",
+            "#FFE4E4",
+            "#FFC4C4",
+            "#FFE0E0",
+            "#FFC0C0",
+            "#FFEAEA",
+            "#FFA0A0",
 
-                "#FFEAEA",
-                "#FFC0C0",
-                "#FFE0E0",
-                "#FFC4C4",
-                "#FFE4E4",
-                "#FFC0C8",
-                "#FFE0E8",
-                "#FFC8C0",
-                "#FFE8E0",
-                "#FFD0D0",
-                "#FFF0F0",
-                "#FFD4D4",
-                "#FFF4F4",
-                "#FFD0D8",
-                "#FFF0F8",
-                "#FFD8D0",
-                "#F0F8FF",
-            ];
-            let AltGreensArray = [
-                "#F8FFF0",
-                "#D8FFD0",
-                "#F0FFF8",
-                "#D0FFD8",
-                "#F4FFF4",
-                "#D4FFD4",
-                "#F0FFF0",
-                "#D0FFD0",
-                "#E8FFE0",
-                "#C8FFC0",
-                "#E0FFE8",
-                "#C0FFC8",
-                "#E4FFE4",
-                "#C4FFC4",
-                "#E0FFE0",
-                "#C0FFC0",
-                "#EAFFEA",
-                "#A0FFA0",
+            "#FFEAEA",
+            "#FFC0C0",
+            "#FFE0E0",
+            "#FFC4C4",
+            "#FFE4E4",
+            "#FFC0C8",
+            "#FFE0E8",
+            "#FFC8C0",
+            "#FFE8E0",
+            "#FFD0D0",
+            "#FFF0F0",
+            "#FFD4D4",
+            "#FFF4F4",
+            "#FFD0D8",
+            "#FFF0F8",
+            "#FFD8D0",
+            "#F0F8FF",
+        ];
+        let AltGreensArray = [
+            "#F8FFF0",
+            "#D8FFD0",
+            "#F0FFF8",
+            "#D0FFD8",
+            "#F4FFF4",
+            "#D4FFD4",
+            "#F0FFF0",
+            "#D0FFD0",
+            "#E8FFE0",
+            "#C8FFC0",
+            "#E0FFE8",
+            "#C0FFC8",
+            "#E4FFE4",
+            "#C4FFC4",
+            "#E0FFE0",
+            "#C0FFC0",
+            "#EAFFEA",
+            "#A0FFA0",
 
-                "#EAFFEA",
-                "#C0FFC0",
-                "#E0FFE0",
-                "#C4FFC4",
-                "#E4FFE4",
-                "#C0FFC8",
-                "#E0FFE8",
-                "#C8FFC0",
-                "#E8FFE0",
-                "#D0FFD0",
-                "#F0FFF0",
-                "#D4FFD4",
-                "#F4FFF4",
-                "#D0FFD8",
-                "#F0FFF8",
-                "#D8FFD0",
-                "#F8F0FF",
-            ];
-            let AltBluesArray = [
-                "#F8F0FF",
-                "#D8D0FF",
-                "#F0F8FF",
-                "#D0D8FF",
-                "#F4F4FF",
-                "#D4D4FF",
-                "#F0F0FF",
-                "#D0D0FF",
-                "#E8E0FF",
-                "#C8C0FF",
-                "#E0E8FF",
-                "#C0C8FF",
-                "#E4E4FF",
-                "#C4C4FF",
-                "#E0E0FF",
-                "#C0C0FF",
-                "#EAEAFF",
-                "#A0A0FF",
+            "#EAFFEA",
+            "#C0FFC0",
+            "#E0FFE0",
+            "#C4FFC4",
+            "#E4FFE4",
+            "#C0FFC8",
+            "#E0FFE8",
+            "#C8FFC0",
+            "#E8FFE0",
+            "#D0FFD0",
+            "#F0FFF0",
+            "#D4FFD4",
+            "#F4FFF4",
+            "#D0FFD8",
+            "#F0FFF8",
+            "#D8FFD0",
+            "#F8F0FF",
+        ];
+        let AltBluesArray = [
+            "#F8F0FF",
+            "#D8D0FF",
+            "#F0F8FF",
+            "#D0D8FF",
+            "#F4F4FF",
+            "#D4D4FF",
+            "#F0F0FF",
+            "#D0D0FF",
+            "#E8E0FF",
+            "#C8C0FF",
+            "#E0E8FF",
+            "#C0C8FF",
+            "#E4E4FF",
+            "#C4C4FF",
+            "#E0E0FF",
+            "#C0C0FF",
+            "#EAEAFF",
+            "#A0A0FF",
 
-                "#EAEAFF",
-                "#C0C0FF",
-                "#E0E0FF",
-                "#C4C4FF",
-                "#E4E4FF",
-                "#C0C8FF",
-                "#E0E8FF",
-                "#C8C0FF",
-                "#E8E0FF",
-                "#D0D0FF",
-                "#F0F0FF",
-                "#D4D4FF",
-                "#F4F4FF",
-                "#D0D8FF",
-                "#F0F8FF",
-                "#D8D0FF",
-                "#F8FFFF",
-            ];
-            let AllColoursArrays = [
-                ColourArray,
-                GreysArray,
-                RedsArray,
-                GreensArray,
-                BluesArray,
-                PastelsArray,
-                RainbowArray,
-                AltGreysArray,
-                AltGreensArray,
-            ];
-            let KeyColoursMatches = {
-                random: ColourArray,
-                Greys: GreysArray,
-                Reds: RedsArray,
-                Greens: GreensArray,
-                Blues: BluesArray,
-                AltGreys: AltGreysArray,
-                AltGreens: AltGreensArray,
-                AltReds: AltRedsArray,
-                AltBlues: AltBluesArray,
-                Pastels: PastelsArray,
-                Rainbow: RainbowArray,
-            };
+            "#EAEAFF",
+            "#C0C0FF",
+            "#E0E0FF",
+            "#C4C4FF",
+            "#E4E4FF",
+            "#C0C8FF",
+            "#E0E8FF",
+            "#C8C0FF",
+            "#E8E0FF",
+            "#D0D0FF",
+            "#F0F0FF",
+            "#D4D4FF",
+            "#F4F4FF",
+            "#D0D8FF",
+            "#F0F8FF",
+            "#D8D0FF",
+            "#F8FFFF",
+        ];
+        let AllColoursArrays = [
+            ColourArray,
+            GreysArray,
+            RedsArray,
+            GreensArray,
+            BluesArray,
+            PastelsArray,
+            RainbowArray,
+            AltGreysArray,
+            AltGreensArray,
+        ];
+        let KeyColoursMatches = {
+            random: ColourArray,
+            Greys: GreysArray,
+            Reds: RedsArray,
+            Greens: GreensArray,
+            Blues: BluesArray,
+            AltGreys: AltGreysArray,
+            AltGreens: AltGreensArray,
+            AltReds: AltRedsArray,
+            AltBlues: AltBluesArray,
+            Pastels: PastelsArray,
+            Rainbow: RainbowArray,
+        };
 
-            // start out with a random palette selected, so, if nothing else, at least there's something
-            let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
+        // start out with a random palette selected, so, if nothing else, at least there's something
+        let thisColourArray = AllColoursArrays[Math.floor(Math.random() * AllColoursArrays.length)];
 
-            // GET the settings that determine what the colouring should look like (if at all)
-            let settingForColourBy = FractalView.currentSettings["colour_options_colourBy"];
-            if (settingForColourBy == "None") {
-                return "White";
-            }
+        // GET the settings that determine what the colouring should look like (if at all)
+        let settingForColourBy = FractalView.currentSettings["colour_options_colourBy"];
+        if (settingForColourBy == "None") {
+            return "White";
+        }
 
-            let settingForPalette = FractalView.currentSettings["colour_options_palette"];
-            if (KeyColoursMatches[settingForPalette]) {
-                thisColourArray = KeyColoursMatches[settingForPalette];
-            }
+        let settingForPalette = FractalView.currentSettings["colour_options_palette"];
+        if (KeyColoursMatches[settingForPalette]) {
+            thisColourArray = KeyColoursMatches[settingForPalette];
+        }
 
-            let overRideByHighlight = false; //
-            if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
-                overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
-            }
-            if (overRideByHighlight == true) {
-                return "yellow";
-            }
+        let overRideByHighlight = false; //
+        if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+            overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
+        }
+        if (overRideByHighlight == true) {
+            return "yellow";
+        }
 
-            if (ahnNum == 1) {
-                return thisColourArray[0];
-            }
+        if (ahnNum == 1) {
+            return thisColourArray[0];
+        }
 
-            let numThisGen = 2 ** gen;
+        let numThisGen = 2 ** gen;
 
-            if (settingForColourBy == "Gender") {
-                return thisColourArray[1 + (ahnNum % 2)];
-            } else if (settingForColourBy == "Generation") {
-                if (settingForPalette == "Rainbow") {
-                    for (var i = 0; i < FractalView.numGens2Display; i++) {
-                        thisColourArray[FractalView.numGens2Display - i] = Rainbow8[i];
-                    }
+        if (settingForColourBy == "Gender") {
+            return thisColourArray[1 + (ahnNum % 2)];
+        } else if (settingForColourBy == "Generation") {
+            if (settingForPalette == "Rainbow") {
+                for (var i = 0; i < FractalView.numGens2Display; i++) {
+                    thisColourArray[FractalView.numGens2Display - i] = Rainbow8[i];
                 }
-                return thisColourArray[1 + (gen % thisColourArray.length)];
-            } else if (settingForColourBy == "Grand") {
-                return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
-            } else if (settingForColourBy == "GGrand") {
-                return thisColourArray[1 + (Math.floor((8 * pos) / numThisGen) % thisColourArray.length)];
-            } else if (settingForColourBy == "GGGrand") {
-                if (settingForPalette == "Rainbow") {
-                    thisColourArray = RainbowArrayLong;
-                }
-                return thisColourArray[1 + (Math.floor((16 * pos) / numThisGen) % thisColourArray.length)];
-            } else if (settingForColourBy == "GGGGrand") {
-                if (settingForPalette == "Rainbow") {
-                    thisColourArray = RainbowArrayLong;
-                }
-                return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
-            } else if (settingForColourBy == "Town") {
-            } else if (settingForColourBy == "Region") {
-            } else if (settingForColourBy == "Country") {
-            } else if (settingForColourBy == "random") {
-                return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
             }
-
+            return thisColourArray[1 + (gen % thisColourArray.length)];
+        } else if (settingForColourBy == "Grand") {
+            return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
+        } else if (settingForColourBy == "GGrand") {
+            return thisColourArray[1 + (Math.floor((8 * pos) / numThisGen) % thisColourArray.length)];
+        } else if (settingForColourBy == "GGGrand") {
+            if (settingForPalette == "Rainbow") {
+                thisColourArray = RainbowArrayLong;
+            }
+            return thisColourArray[1 + (Math.floor((16 * pos) / numThisGen) % thisColourArray.length)];
+        } else if (settingForColourBy == "GGGGrand") {
+            if (settingForPalette == "Rainbow") {
+                thisColourArray = RainbowArrayLong;
+            }
+            return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
+        } else if (settingForColourBy == "Town") {
+        } else if (settingForColourBy == "Region") {
+        } else if (settingForColourBy == "Country") {
+        } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
         }
 
-
+        return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
+    }
 })();

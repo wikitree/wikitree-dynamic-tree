@@ -1,4 +1,5 @@
 window.calendarView = class calendarView extends View {
+    static APP_ID = "FamilyAnniversaries";
     meta() {
         return {
             title: "Family Anniversaries",
@@ -24,6 +25,7 @@ window.calendarView = class calendarView extends View {
         }
 
         WikiTreeAPI.postToAPI({
+            appId: calendarView.APP_ID,
             action: "getPerson",
             key: person_id,
             fields: "Name",
@@ -81,7 +83,7 @@ window.calendarView = class calendarView extends View {
                     </div>
                 `);
             }
-            WikiTreeAPI.getWatchlist(5000, 1, 0, [
+            WikiTreeAPI.getWatchlist(calendarView.APP_ID, 5000, 1, 0, [
                 "Derived.ShortName",
                 "BirthDate",
                 "DeathDate",
@@ -153,7 +155,7 @@ window.calendarView = class calendarView extends View {
                                     <div>
                                         ${event.day} ${getMonth(event.date)} ${event.year}
                                         <a href="https://www.wikitree.com/wiki/${event.id}">${event.name}</a>
-                                        ${event.text} ${event.marriage} 
+                                        ${event.text} ${event.marriage}
                                         [<span class="small"><a href="https://www.wikitree.com/treewidget/${
                                             event.id
                                         }/6">share tree image</a>

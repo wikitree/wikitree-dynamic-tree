@@ -14,6 +14,7 @@
  * The Button Bar does not resize, but has clickable elements, which set global variables in the WebsView, then calls a redraw
  */
 (function () {
+    const APP_ID = "AncestorWebs";
     var originOffsetX = 500,
         originOffsetY = 300,
         boxWidth = 200 * 2,
@@ -688,6 +689,7 @@
             WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
         } else {
             WikiTreeAPI.getRelatives(
+                APP_ID,
                 theListOfIDs,
                 [
                     "Id",
@@ -807,7 +809,7 @@
             }
             // console.log(".load person:",person);
 
-            WikiTreeAPI.getAncestors(id, 3, [
+            WikiTreeAPI.getAncestors(APP_ID, id, 3, [
                 "Id",
                 "Derived.BirthName",
                 "Derived.BirthNamePrivate",
@@ -873,7 +875,7 @@
      */
     WebsView.prototype._load = function (id) {
         // console.log("INITIAL _load - line:118", id) ;
-        let thePersonObject = WikiTreeAPI.getPerson(id, [
+        let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
             "Derived.BirthNamePrivate",

@@ -54,7 +54,8 @@ export class PeopleCache {
     /**
      * If an enriched person with the given id (i.e. data.id) exists in the cache and it has at least
      * the same level of richness than the given data, the cached Person is returned, otherwise
-     * the loader is asked to load the data
+     * the data is used to create a new CachedPerson and add it to the cache, replacing any previous
+     * person with the same id.
      * @param {*} data
      * @returns
      */
@@ -66,9 +67,6 @@ export class PeopleCache {
             condLog(`getWithData from cache ${cachedPerson.toString()}`);
             //TODO: should we update cachedPerson with any new data??
             return cachedPerson;
-        }
-        if (id == 33628647) {
-            condLog(`gotcha`, cachedPerson);
         }
         const newPerson = new CachedPerson(data);
         cachedPerson = this.#cache.get(id);

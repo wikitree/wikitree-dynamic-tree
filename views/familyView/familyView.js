@@ -4,6 +4,7 @@
  * @type {Window.FamilyView}
  */
 window.FamilyView = class FamilyView extends window.View {
+    static APP_ID = "FamilyGroup";
     /**
      * Provide information about the view to display in the menu system
      *
@@ -228,7 +229,7 @@ window.FamilyGroup = class FamilyGroup {
     makeLinkToSelf(person) {
         if (person.Id !== this.person_id) {
             let html = `<span class="icon"> <a href="#name=${person.Name}&view=familygroup">`;
-            html += `<img src="${this.baseWikiURL}${this.imgFamilyGroup}" border="0" width="7" height="11" 
+            html += `<img src="${this.baseWikiURL}${this.imgFamilyGroup}" border="0" width="7" height="11"
                     alt="family group sheet" title="Family Group Sheet">`;
             html += `</a></span>`;
             return html;
@@ -352,7 +353,7 @@ window.FamilyGroup = class FamilyGroup {
         let motherName = this.extractParentLink(person, "Mother");
         let childType = person.Gender === "Male" ? "son" : "daughter";
 
-        html += ` the ${childType} of ${fatherName} and ${motherName}. 
+        html += ` the ${childType} of ${fatherName} and ${motherName}.
             See ${this.linkedShortName(person)}'s ${this.linkToTreeAndTools(
             person,
             "Tree &amp; Tools page"
@@ -379,7 +380,7 @@ window.FamilyGroup = class FamilyGroup {
         }
         // Build the introduction line
         return `<h2>Children of ${person.RealName}</h2>
-                <p>The above shows children where ${this.profileLink(person, person.RealName)}'s ${relation} the 
+                <p>The above shows children where ${this.profileLink(person, person.RealName)}'s ${relation} the
                 other parent and may therefore be incomplete. Here is a simple list of all ${pronoun} children:</p>
                 <ol>`;
     }
@@ -392,6 +393,7 @@ window.FamilyGroup = class FamilyGroup {
     async displayFamilyGroup() {
         // Attempt to retrieve the data for the given person id
         let data = await window.WikiTreeAPI.postToAPI({
+            appId: FamilyView.APP_ID,
             action: "getPerson",
             key: this.person_id,
             fields: this.profileFields,
@@ -408,8 +410,8 @@ window.FamilyGroup = class FamilyGroup {
         // gauge if it is a private profile that the logged-in user has access to
         if (person.Privacy < 50 && !person.Gender) {
             $(this.selector).html(
-                `<p>Sorry, this profile is <a href="${this.baseWikiURL}${this.urlPrivacy}">Private</a> 
-                and you are not on the profile's 
+                `<p>Sorry, this profile is <a href="${this.baseWikiURL}${this.urlPrivacy}">Private</a>
+                and you are not on the profile's
                 <a href="${this.baseWikiURL}${this.urlTrustedList}">Trusted List</a>.</p>`
             );
             return;
@@ -472,7 +474,7 @@ window.FamilyGroup = class FamilyGroup {
                         }
                         let html = `<div class="fv_familyBlock">
                             <h2>${person.RealName} and ${this.fullName(spouse)}</h2>
-                            <h3>${person.RealName} married ${this.birthName(spouse)}, 
+                            <h3>${person.RealName} married ${this.birthName(spouse)},
                             ${window.wtDate(spouse, "marriage_date", { formatString: "D MM YYYY" })}
                             ${marr_place}</h3>`;
                         html += this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);

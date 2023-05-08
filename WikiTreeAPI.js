@@ -9,8 +9,9 @@
 // Put our functions into a "WikiTreeAPI" namespace.
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
-if (typeof API_URL === 'undefined') { var API_URL = "https://api.wikitree.com/api.php"; }
-
+if (typeof API_URL === "undefined") {
+    var API_URL = "https://api.wikitree.com/api.php";
+}
 
 const dateTokenCache = {};
 
@@ -249,12 +250,14 @@ WikiTreeAPI.Person = class Person {
  * An API call is made and the promise will store the result (if successful)
  * in the cache (if enabled) before it is returned.
  *
+ * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} id The WikiTree ID of the person to retrieve
  * @param {*} fields An array of field names to retrieve for the given person
  * @returns a Person object
  */
-WikiTreeAPI.getPerson = async function (id, fields) {
+WikiTreeAPI.getPerson = async function (appId, id, fields) {
     const result = await WikiTreeAPI.postToAPI({
+        appId: appId,
         action: "getPerson",
         key: id,
         fields: fields.join(","),
@@ -270,22 +273,24 @@ WikiTreeAPI.getPerson = async function (id, fields) {
  * This function returns a Promise (as result of the await), which gets resolved once the await returns.
  *
  * So we can use this through our asynchronous actions with something like:
- * WikiTree.getAncestors(myID, 5, ['Id','Name', 'LastNameAtBirth']).then(function(ancestors) {
+ * WikiTree.getAncestors(appId, myID, 5, ['Id','Name', 'LastNameAtBirth']).then(function(ancestors) {
  *    // the "ancestors" here is the profile data in result[0].ancestors, an array of objects,
  *    // where result is what was returned by the API call
  * });
  *
- * WARNING:  If you just do a NewAncestorsArray = WikiTree.getAncestors(id,depth,fields);
+ * WARNING:  If you just do a NewAncestorsArray = WikiTree.getAncestors(appId,id,depth,fields);
  *     --> what you get is the promise object - NOT the array of ancestors you might expect.
  * You HAVE to use the .then() with embedded function, or await, to wait and process the results
  *
+ * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} id
  * @param {*} depth
  * @param {*} fields
  * @returns
  */
-WikiTreeAPI.getAncestors = async function (id, depth, fields) {
+WikiTreeAPI.getAncestors = async function (appId, id, depth, fields) {
     const result = await WikiTreeAPI.postToAPI({
+        appId: appId,
         action: "getAncestors",
         key: id,
         depth: depth,
@@ -303,7 +308,7 @@ WikiTreeAPI.getAncestors = async function (id, depth, fields) {
  *
  * So we can use this through our asynchronous actions with something like:
  *
- *   WikiTree.getRelatives(nextIDsToLoad, ["Id", "Name", "LastNameAtBirth"], { getParents: true }).then(
+ *   WikiTree.getRelatives(appId, nextIDsToLoad, ["Id", "Name", "LastNameAtBirth"], { getParents: true }).then(
  *       function (peopleList) {
  *           // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
  *           for (let index = 0; index < peopleList.length; index++) {
@@ -321,6 +326,7 @@ WikiTreeAPI.getAncestors = async function (id, depth, fields) {
  *
  * WARNING:  See note above about what you get if you don't use the .then() ....
  *
+ * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} IDs can be a single string, with a single ID or a set of comma separated IDs. OR it can be an array of IDs
  * @param {*} fields an array of fields to return for each profile (same as for getPerson or getProfile)
  * @param {*} options an option object which can contain these key-value pairs
@@ -331,8 +337,9 @@ WikiTreeAPI.getAncestors = async function (id, depth, fields) {
  *                    - getSpouses	If true, the spouses are returned
  * @returns a Promise for the JSON in the returned API response
  */
-WikiTreeAPI.getRelatives = async function (IDs, fields, options = {}) {
+WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
     let getRelativesParameters = {
+        appId: appId,
         action: "getRelatives",
         keys: IDs.join(","),
         fields: fields.join(","),
@@ -359,19 +366,21 @@ WikiTreeAPI.getRelatives = async function (IDs, fields, options = {}) {
  * That feeds our await here, which also returns a Promise, which gets resolved when the wait is over.
  *
  * So we can use this through our asynchronous actions with something like:
- * WikiTree.getWatchlist(limit, getPerson, getSpace, fields).then(function(list) {
+ * WikiTree.getWatchlist(appId, limit, getPerson, getSpace, fields).then(function(list) {
  *    // the "list" here is the profile data in result[0].watchlist, which will be an array of objects,
  *    // where "result" is the JSON that was returned from the API call.
  * });
  *
+ * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} limit
  * @param {*} getPerson
  * @param {*} getSpace
  * @param {*} fields
  * @returns
  */
-WikiTreeAPI.getWatchlist = async function (limit, getPerson, getSpace, fields) {
+WikiTreeAPI.getWatchlist = async function (appId, limit, getPerson, getSpace, fields) {
     const result = await WikiTreeAPI.postToAPI({
+        appId: appId,
         action: "getWatchlist",
         limit: limit,
         getPerson: getPerson,
@@ -393,15 +402,15 @@ WikiTreeAPI.postToAPI = async function (postData) {
 
     let formData = new FormData();
     for (var key in postData) {
-        formData.append(key, postData[key]);
+        // We prepend 'TA-' to any appId to indicate the app is run as part of the "Tree Apps"
+        const value = key == "appId" ? `TA-${postData[key]}` : postData[key];
+        formData.append(key, value);
     }
 
     // If we have a token, add it to our form data.
-    if (typeof appsToken != 'undefined') {
-        formData.append('token', appsToken);
+    if (typeof appsToken != "undefined") {
+        formData.append("token", appsToken);
     }
-
-
 
     // We're POSTing the data, so we don't worry about URL size limits and want JSON back.
     let options = {

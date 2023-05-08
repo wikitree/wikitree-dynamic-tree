@@ -1,4 +1,5 @@
 window.PrinterFriendlyView = class PrinterFriendlyView extends View {
+    static APP_ID = "PrinterFriendly";
     WT_DOMAIN = "https://www.wikitree.com";
     PERSON_FIELDS = [
         ...["Id", "Name", "Father", "Mother", "Gender", "Photo"],
@@ -28,7 +29,12 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     }
 
     async loadView(containerSelector, personID) {
-        let data = await this.wtAPI.getAncestors(personID, this.generationsCount - 1, this.PERSON_FIELDS);
+        let data = await this.wtAPI.getAncestors(
+            PrinterFriendlyView.APP_ID,
+            personID,
+            this.generationsCount - 1,
+            this.PERSON_FIELDS
+        );
         this.people = Object.assign({}, ...data.map((x) => ({ [x.Id.toString()]: x })));
 
         this.prepareTemplate(this.generationsCount, "O"); // O = origin

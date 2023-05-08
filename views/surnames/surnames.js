@@ -5,6 +5,7 @@
  */
 
 window.SurnamesView = class SurnamesView extends View {
+    static APP_ID = "SurnamesList";
     meta() {
         return {
             title: "Surnames List",
@@ -53,7 +54,12 @@ window.Surnames = class Surnames {
     async displaySurnames() {
         wtViewRegistry.showNotice(`Gathering surnames from ancestors to ${this.maxGeneration} generations...`);
 
-        let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: this.startId, fields: this.profileFields });
+        let data = await WikiTreeAPI.postToAPI({
+            appId: SurnamesView.APP_ID,
+            action: "getPerson",
+            key: this.startId,
+            fields: this.profileFields,
+        });
         if (data.length != 1) {
             wtViewRegistry.showError(`There was an error starting with ${this.startId}.`);
             return;
@@ -149,7 +155,12 @@ window.Surnames = class Surnames {
     // display keeps going with an "Unknown" relative displayed.
     async nextPerson(id) {
         if (id > 0) {
-            let data = await WikiTreeAPI.postToAPI({ action: "getPerson", key: id, fields: this.profileFields });
+            let data = await WikiTreeAPI.postToAPI({
+                appId: SurnamesView.APP_ID,
+                action: "getPerson",
+                key: id,
+                fields: this.profileFields,
+            });
             if (data.length != 1) {
                 return this.blankPerson;
             } else {

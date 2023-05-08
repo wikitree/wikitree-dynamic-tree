@@ -4,6 +4,7 @@
  */
 
 (function () {
+    const APP_ID = "DynamicTree";
     var originOffsetX = 500,
         originOffsetY = 300,
         boxWidth = 200,
@@ -98,7 +99,9 @@
         }
         self._load(id).then(function (person) {
             if (person._data.Name) {
-                wtViewRegistry.setInfoPanel(`Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.`);
+                wtViewRegistry.setInfoPanel(
+                    `Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.`
+                );
                 wtViewRegistry.showInfoPanel();
                 self.drawTree(person);
             } else {
@@ -139,7 +142,7 @@
      * Main WikiTree API call
      */
     WikiTreeDynamicTreeViewer.prototype._load = function (id) {
-        return WikiTreeAPI.getPerson(id, [
+        return WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
             "Derived.BirthNamePrivate",

@@ -1,6 +1,7 @@
 import { CachedPerson } from "./cached_person.js";
 
 export class CacheLoader {
+    static APP_ID = "CouplesTree";
     static DEFAULT_PRIMARY_FIELDS = [
         "Id",
         "Name",
@@ -62,6 +63,7 @@ export class CacheLoader {
      */
     async getPersonViaAPI(id, fields) {
         const result = await WikiTreeAPI.postToAPI({
+            appId: CacheLoader.APP_ID,
             action: "getPerson",
             key: id,
             fields: fields.join(","),
