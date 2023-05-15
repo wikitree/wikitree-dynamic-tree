@@ -343,29 +343,22 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
             $("#ct-help-text").draggable();
 
+            const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+            const g = svg.append("g");
+
             // Setup zoom and pan
-            const zoom = d3.behavior
+            const zoom = d3
                 .zoom()
                 .scaleExtent([0.1, 1])
-                .on("zoom", function () {
-                    svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
-                })
-                // Offset so that first pan and zoom does not jump back to the origin
-                .translate([originOffsetX, originOffsetY]);
-
-            const svg = d3
-                .select(container)
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height)
-                .call(zoom)
-                .append("g")
-                // Left padding of tree; TODO: find a better way
-                .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
+                .on("zoom", function (event) {
+                    g.attr("transform", event.transform);
+                });
+            svg.call(zoom);
+            svg.call(zoom.transform, d3.zoomIdentity.scale(1).translate(originOffsetX, originOffsetY));
 
             // Setup controllers for the ancestor and descendant trees
-            this.ancestorTree = new AncestorTree(svg);
-            this.descendantTree = new DescendantTree(svg);
+            this.ancestorTree = new AncestorTree(g);
+            this.descendantTree = new DescendantTree(g);
 
             const self = this;
 
@@ -398,13 +391,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             // Setup pattern
             svg.append("defs")
                 .append("pattern")
-                .attr({
+                .attrs({
                     id: "loader",
                     width: 20,
                     height: 20,
                 })
                 .append("image")
-                .attr({
+                .attrs({
                     width: 20,
                     height: 20,
                     //'xlink:href': 'ringLoader.svg'
@@ -595,16 +588,16 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const couples = d3
                 .select(`#${coupleId}`)
                 .remove()
-                .each(function (couple) {
-                    changeIt(couple);
+                .each(function (d) {
+                    changeIt(d.data);
                 });
 
             // If we changed a root node, we also have to change the other tree's root node
             if (foundRoot) {
                 d3.select(`#${flipRootId(coupleId)}`)
                     .remove()
-                    .each(function (couple) {
-                        changeIt(couple);
+                    .each(function (d) {
+                        changeIt(d.data);
                     });
             }
             // Redraw the tree
@@ -642,10 +635,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         drawTree(ancestorRoot, descendantRoot) {
             condLog("=======drawTree for:", ancestorRoot, descendantRoot, CachedPerson.getCache());
             if (ancestorRoot) {
-                this.ancestorTree.data(ancestorRoot);
+                this.ancestorTree.setRoot(ancestorRoot);
             }
             if (descendantRoot) {
-                this.descendantTree.data(descendantRoot);
+                this.descendantTree.setRoot(descendantRoot);
             }
             condLog("draw ancestorTree:", this.ancestorTree);
             this.ancestorTree.draw();
@@ -685,6 +678,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this.direction = direction != DESCENDANTS ? ANCESTORS : DESCENDANTS;
             this.selector = this.getSelector();
             this.root = null;
+            this.getChildrenFn = null;
 
             this._expand = function () {
                 return $.Deferred().resolve().promise();
@@ -698,7 +692,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 return $.Deferred().resolve().promise();
             };
 
-            this.tree = d3.layout
+            this.treeLayout = d3
                 .tree()
                 .nodeSize([nodeHeight, nodeWidth])
                 .separation(function () {
@@ -719,13 +713,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          * Set the `children` function for the tree
          */
         children(fn) {
-            this.tree.children(fn);
+            this.getChildrenFn = fn;
             return this;
         }
         /**
          * Set the root of the tree
          */
-        data(data) {
+        setRoot(data) {
             this.root = data;
             return this;
         }
@@ -756,8 +750,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          */
         draw() {
             if (this.root) {
-                const nodes = this.tree.nodes(this.root);
-                const links = this.tree.links(nodes);
+                const rootHierarchy = this.treeLayout(d3.hierarchy(this.root, this.getChildrenFn));
+                const nodes = rootHierarchy.descendants();
+                const links = rootHierarchy.links();
                 this.drawLinks(links);
                 this.drawNodes(nodes);
             } else {
@@ -773,21 +768,21 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             // Get a list of existing links
             const link = this.svg.selectAll("path.link." + this.selector).data(links, function (link) {
-                return link.target.getId();
+                return link.target.data.getId();
             });
-
-            // Add new links
-            link.enter()
-                .append("path")
-                .attr("class", "link " + this.selector);
 
             // Remove old links
             link.exit().remove();
 
-            // Update the paths
-            link.attr("d", function (d) {
-                return self.elbow(d);
-            });
+            // Add new links
+            link.enter()
+                .append("path")
+                .attr("class", "link " + this.selector)
+                .merge(link)
+                // Update the paths
+                .attr("d", function (d) {
+                    return self.elbow(d);
+                });
         }
         /**
          * Helper function for drawing angled connecting lines
@@ -806,7 +801,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     offsetDir = -1;
                 } else if (dx > 0) {
                     offsetDir = 1;
-                } else if (d.target.idPrefix.endsWith("b")) {
+                } else if (d.target.data.idPrefix.endsWith("b")) {
                     offsetDir = 1;
                 } else {
                     offsetDir = -1;
@@ -841,76 +836,77 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const self = this;
 
             // Get a list of existing nodes
-            const node = this.svg.selectAll("g.couple." + this.selector).data(nodes, function (couple) {
-                return couple.getId();
+            const nodeUpdate = this.svg.selectAll("g.couple." + this.selector).data(nodes, function (d) {
+                return d.data.getId();
             });
+
+            // Remove old nodes
+            nodeUpdate.exit().remove();
 
             // Add new nodes. We flag the root nodes so we can easily find and remove them if we change
             // a partner in the root node (the only node where we're allowed to do so)
-            const nodeEnter = node
+            const nodeEnter = nodeUpdate
                 .enter()
                 .append("g")
-                .attr({
-                    class: function (couple) {
-                        return "couple " + self.selector + (couple.isRoot ? " root" : "");
+                .attrs({
+                    class: function (d) {
+                        return "couple " + self.selector + (d.data.isRoot ? " root" : "");
                     },
-                    id: function (couple) {
-                        return couple.getId();
+                    id: function (d) {
+                        return d.data.getId();
                     },
                 });
 
             // Draw the person boxes
             nodeEnter
                 .append("foreignObject")
-                .attr({
+                .attrs({
                     width: boxWidth,
                     height: 0.01,
                     x: -halfBoxWidth,
-                    y: function (c) {
-                        return c.hasNoSpouse() ? -halfBoxHeight : -boxHeight;
+                    y: function (d) {
+                        return d.data.hasNoSpouse() ? -halfBoxHeight : -boxHeight;
                     },
                 })
                 .style("overflow", "visible") // so the name will wrap
-                .append((couple) => {
-                    return self.drawCouple(couple);
+                .append((d) => {
+                    return self.drawCouple(d.data);
                 });
 
+            const allNodes = nodeEnter.merge(nodeUpdate);
+
             // Draw the plus icons
-            const expandable = node.filter(function (couple) {
-                return !couple.children && self.direction == ANCESTORS
-                    ? couple.isAncestorExpandable()
-                    : couple.isDescendantExpandable();
+            const expandable = allNodes.filter(function (d) {
+                return !d.children && self.direction == ANCESTORS
+                    ? d.data.isAncestorExpandable()
+                    : d.data.isDescendantExpandable();
             });
 
-            const contractable = node.filter(function (couple) {
-                return couple.children != undefined;
+            const contractable = allNodes.filter(function (d) {
+                return d.children != undefined;
             });
 
             self.drawPlus(expandable.data(), this.selector);
 
             self.drawMinus(contractable.data(), this.selector);
 
-            // Remove old nodes
-            const e = node.exit();
-            e.remove();
-
-            this.svg.selectAll(".box").on("click", function (event) {
-                d3.event.stopPropagation();
+            this.svg.selectAll(".box").on("click", function (event, d) {
+                event.stopPropagation();
                 let person = undefined;
                 if (this.classList.contains("L")) {
-                    person = this.parentNode.__data__.a;
+                    person = this.parentNode.__data__.data.a;
                 } else if (this.classList.contains("R")) {
-                    person = this.parentNode.__data__.b;
+                    person = this.parentNode.__data__.data.b;
                 } else {
                     return;
                 }
-                self.personPopup(person, d3.mouse(self.svg.node()), d3.mouse(this));
+                self.personPopup(person, d3.pointer(event, self.svg.node()));
             });
 
             // Set up behaviour of the "change partner" buttons in the descendant tree and the
             // ancestor tree root (the only places where it is allowed).
             this.svg.selectAll(".select-spouse-button").on("click", function (event) {
-                d3.event.stopPropagation();
+                event.stopPropagation();
                 const coupleId = this.getAttribute("couple-id");
                 const personId = this.getAttribute("person-id");
                 const newPartnerId = this.getAttribute("spouse-id");
@@ -918,7 +914,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
 
             // Position
-            node.attr("transform", function (d) {
+            allNodes.attr("transform", function (d) {
                 return "translate(" + self.direction * d.y + "," + d.x + ")";
             });
         }
@@ -1070,81 +1066,83 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         drawPlus(couples, selector) {
             const self = this;
 
-            const buttons = self.svg.selectAll("g.plus." + selector).data(couples, function (couple) {
-                return couple.getId();
+            let buttons = self.svg.selectAll("g.plus." + selector).data(couples, function (d) {
+                return d.data.getId();
             });
 
-            buttons
+            buttons.exit().remove();
+
+            buttons = buttons
                 .enter()
                 .append(drawPlus(selector))
-                .on("click", function (couple) {
+                .on("click", function (event, d) {
                     const plus = d3.select(this);
                     const loader = self.svg
                         .append("image")
-                        .attr({
+                        .attrs({
                             "height": 16,
                             "width": 16,
                             "transform": plus.attr("transform"),
                             "xlink:href": "https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif",
                         })
                         .attr("transform", function () {
-                            const y = self.direction * (couple.y + halfBoxWidth + 12);
-                            return "translate(" + y + "," + (couple.x - 8) + ")";
+                            const y = self.direction * (d.y + halfBoxWidth + 12);
+                            return "translate(" + y + "," + (d.x - 8) + ")";
                         });
                     plus.remove();
-                    self._expand(couple).then(function () {
+                    self._expand(d.data).then(function () {
                         loader.remove();
                     });
-                });
+                })
+                .merge(buttons);
 
-            buttons.exit().remove();
-
-            buttons.attr("transform", function (couple) {
-                const y = self.direction * (couple.y + halfBoxWidth + 20);
-                return "translate(" + y + "," + couple.x + ")";
+            buttons.attr("transform", function (d) {
+                const y = self.direction * (d.y + halfBoxWidth + 20);
+                return "translate(" + y + "," + d.x + ")";
             });
         }
         drawMinus(couples, selector) {
             const self = this;
 
-            const buttons = self.svg.selectAll("g.minus." + selector).data(couples, function (couple) {
-                return couple.getId();
+            let buttons = self.svg.selectAll("g.minus." + selector).data(couples, function (d) {
+                return d.data.getId();
             });
 
-            buttons
+            buttons.exit().remove();
+
+            buttons = buttons
                 .enter()
                 .append(drawMinus(selector))
-                .on("click", function (couple) {
+                .on("click", function (event, d) {
                     const minus = d3.select(this);
                     const loader = self.svg
                         .append("image")
-                        .attr({
+                        .attrs({
                             height: 16,
                             width: 16,
                             // transform: minus.attr('transform'),
                             // 'xlink:href': 'https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif',
                         })
                         .attr("transform", function () {
-                            const y = self.direction * (couple.y + halfBoxWidth + 12);
-                            return "translate(" + y + "," + (couple.x - 8) + ")";
+                            const y = self.direction * (d.y + halfBoxWidth + 12);
+                            return "translate(" + y + "," + (d.x - 8) + ")";
                         });
                     minus.remove();
-                    self._contract(couple).then(function () {
+                    self._contract(d.data).then(function () {
                         loader.remove();
                     });
-                });
+                })
+                .merge(buttons);
 
-            buttons.exit().remove();
-
-            buttons.attr("transform", function (couple) {
-                const y = self.direction * (couple.y + halfBoxWidth + 20);
-                return "translate(" + y + "," + couple.x + ")";
+            buttons.attr("transform", function (d) {
+                const y = self.direction * (d.y + halfBoxWidth + 20);
+                return "translate(" + y + "," + d.x + ")";
             });
         }
         /**
          * Show a popup for the person.
          */
-        personPopup(person, event, xyInCouple) {
+        personPopup(person, xy) {
             this.removePopups();
             if (!person || person.isNoSpouse) {
                 return;
@@ -1173,11 +1171,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const popup = this.svg
                 .append("g")
                 .attr("class", "popup")
-                .attr("transform", "translate(" + event[0] + "," + event[1] + ")");
+                .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")");
 
             popup
                 .append("foreignObject")
-                .attr({
+                .attrs({
                     width: 400,
                     height: 300,
                 })
@@ -1277,8 +1275,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      */
     function drawPlus(selector) {
         return function () {
-            const group = d3.select(document.createElementNS(d3.ns.prefix.svg, "g")).attr("class", "plus " + selector);
-            group.append("circle").attr({
+            const group = d3.select(document.createElementNS(d3.namespaces.svg, "g")).attr("class", "plus " + selector);
+            group.append("circle").attrs({
                 cx: 0,
                 cy: 0,
                 r: 10,
@@ -1298,9 +1296,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      */
     function drawMinus(selector) {
         return function () {
-            const group = d3.select(document.createElementNS(d3.ns.prefix.svg, "g")).attr("class", "minus " + selector);
+            const group = d3
+                .select(document.createElementNS(d3.namespaces.svg, "g"))
+                .attr("class", "minus " + selector);
 
-            group.append("circle").attr({
+            group.append("circle").attrs({
                 cx: 0,
                 cy: 0,
                 r: 10,

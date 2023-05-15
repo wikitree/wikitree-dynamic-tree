@@ -1,0 +1,172 @@
+/* .ale #controlBlock {
+  font-family: sans-serif;
+  font-size: 14px;
+} */
+#aleContainer {
+  padding: 0.3em;
+}
+div.ale select,
+div.ale input {
+  padding: 0.3em;
+  width: auto;
+  /* min-width: 90px; */
+  /* padding-right: 1em; */
+  background-size: 1em 2em;
+  margin: 5px 5px 0px 0px;
+}
+
+#generation,
+#maxLevel {
+  width: 3em;
+  min-width: 3em;
+  margin-right: 10px;
+  margin-top: 0;
+  /* margin-right: 2em;
+  margin-left: 1em;
+  white-space: nowrap;
+  margin-bottom: 1em; */
+}
+/* #generation option,
+#maxLevel option {
+  text-align: center;
+} */
+
+.ale #wtid {
+  margin-left: 5px;
+}
+
+.ale fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0.625em;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  margin-bottom: 10px;
+}
+.ale fieldset input {
+  margin: 0;
+}
+.ale fieldset label {
+  margin-right: 0;
+}
+.ale fieldset label.left {
+  margin-left: 10px;
+}
+.ale fieldset label.right {
+  margin-right: 10px;
+}
+
+.ale .node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 3px;
+}
+
+.ale .node circle.ofinterest {
+  stroke: coral;
+}
+
+.ale .node circle.end {
+  stroke: red;
+}
+
+.ale .node rect.dup.marked {
+  stroke-width: 3px;
+  stroke: black;
+}
+
+.ale .node text {
+  font: 12px sans-serif;
+}
+
+.ale text.marked {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.ale .link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+.ale .link.ofinterest {
+  stroke: lightcoral;
+}
+
+.ale .link.marked {
+  stroke: green;
+}
+
+.ale .links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+
+.ale .nodes circle {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+#edgeFactor,
+#tHeight,
+#tWidth {
+  width: 4em;
+}
+
+.ale #help-button {
+  /* background: #393a3c; */
+  background: darkgreen;
+  color: #fff;
+  font-size: 0.8em;
+  padding: 0.1em 0.5em;
+  border-radius: 50%;
+  float: right;
+  font-weight: bold;
+  cursor: pointer;
+  /* position: absolute;
+  top: 0.2em;
+  right: 0.2em; */
+  z-index: 11000;
+}
+
+.ale #help-text {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 50em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  /* padding-right: 4em; */
+  z-index: 11000;
+  cursor: default;
+}
+
+.ale xx {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+
+.ale #help-text:hover {
+  cursor: grab;
+}
+.ale #help-text:active {
+  cursor: grabbing;
+}

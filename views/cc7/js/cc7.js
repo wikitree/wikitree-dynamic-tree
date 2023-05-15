@@ -170,14 +170,12 @@ export class CC7 {
 
         const cc7Degree = CC7.getCookie("w_cc7Degree");
         if (cc7Degree && cc7Degree > 0 && cc7Degree <= 7) {
-            $("#getPeopleButton").text(`Get CC${cc7Degree}`);
             $("#getDegreeButton").text(`Get Degree ${cc7Degree} Only`);
             const select = document.querySelector("#cc7Degree");
             select.value = cc7Degree;
         }
         $("#cc7Degree").on("change", function () {
             const theDegree = $("#cc7Degree").val();
-            $("#getPeopleButton").text(`Get CC${theDegree}`);
             $("#getDegreeButton").text(`Get Degree ${theDegree} Only`);
             CC7.setCookie("w_cc7Degree", theDegree, { expires: 365 });
         });

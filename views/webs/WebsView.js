@@ -293,17 +293,6 @@
             ],
         });
 
-        // Setup zoom and pan
-        var zoom = d3.behavior
-            .zoom()
-            .scaleExtent([0.1, 1])
-            .on("zoom", function () {
-                svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
-            })
-            // Offset so that first pan and zoom does not jump back to the origin
-            // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
-            .translate([width / 2, height / 2]);
-
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
@@ -378,20 +367,22 @@
         };
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
-        var svg = d3
-            .select(container)
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .call(zoom)
-            .append("g")
-            // Left padding of tree; TODO: find a better way
-            // .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
-            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+        const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+        const g = svg.append("g");
+
+        // Setup zoom and pan
+        const zoom = d3
+            .zoom()
+            .scaleExtent([0.1, 1])
+            .on("zoom", function (event) {
+                g.attr("transform", event.transform);
+            });
+        svg.call(zoom);
+        svg.call(zoom.transform, d3.zoomIdentity.scale(1).translate(width / 2, height / 2));
 
         // console.log("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Ancestor Webs
-        self.ancestorTree = new AncestorTree(svg);
+        self.ancestorTree = new AncestorTree(g);
 
         // Listen to tree events --> NOT NEEDED ANYMORE without the PLUS SIGNS (holdover from original Dynamic Tree version)
         // self.ancestorTree.expand(function (person) {
@@ -401,13 +392,13 @@
         // Setup pattern
         svg.append("defs")
             .append("pattern")
-            .attr({
+            .attrs({
                 id: "loader",
                 width: 20,
                 height: 20,
             })
             .append("image")
-            .attr({
+            .attrs({
                 width: 20,
                 height: 20,
                 //'xlink:href': 'ringLoader.svg'
@@ -422,7 +413,7 @@
         for (let index = 0; index < 2 ** WebsView.maxNumGens; index++) {
             // Create  Empty Lines, hidden, to be used later
             // One to the person's Pa (Father) and the other to their Ma (Mother)
-            svg.append("line").attr({
+            g.append("line").attrs({
                 id: "lineForPerson" + index + "Pa",
                 display: "none",
                 x1: 0,
@@ -431,7 +422,7 @@
                 y2: 0,
                 style: "stroke: black; stroke-width: 1;",
             });
-            svg.append("line").attr({
+            g.append("line").attrs({
                 id: "lineForPerson" + index + "Ma",
                 display: "none",
                 x1: 0,
@@ -928,6 +919,7 @@
         // console.log("Create TREE var");
         this.svg = svg;
         this.root = null;
+        this.getChildrenFn = null;
         this.selector = selector;
         this.direction = typeof direction === "undefined" ? 1 : direction;
 
@@ -935,7 +927,7 @@
             return $.Deferred().resolve().promise();
         };
 
-        this.tree = d3.layout
+        this.tree = d3
             .tree()
             .nodeSize([nodeHeight, nodeWidth])
             .separation(function () {
@@ -947,7 +939,7 @@
      * Set the `children` function for the tree
      */
     Tree.prototype.children = function (fn) {
-        this.tree.children(fn);
+        this.getChildrenFn = fn;
         return this;
     };
 
@@ -1055,31 +1047,6 @@
     };
 
     /**
-     * Draw/redraw the connecting lines
-     */
-    Tree.prototype.drawLinks = function (links) {
-        var self = this;
-        console.log("DRAWING links for ", links);
-        // Get a list of existing links
-        var link = this.svg.selectAll("path.link." + this.selector).data(links, function (link) {
-            return link.target.getId();
-        });
-
-        // Add new links
-        link.enter()
-            .append("path")
-            .attr("class", "link " + this.selector);
-
-        // Remove old links
-        link.exit().remove();
-
-        // Update the paths
-        link.attr("d", function (d) {
-            return self.elbow(d);
-        });
-    };
-
-    /**
      * Helper function for drawing straight connecting lines
      * http://stackoverflow.com/a/10249720/879121
      */
@@ -1125,7 +1092,7 @@
         // Draw the person boxes
         nodeEnter
             .append("foreignObject")
-            .attr({
+            .attrs({
                 id: "foreignObj4",
                 width: boxWidth,
                 height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
@@ -1193,16 +1160,17 @@
             });
 
         // Show info popup on click
-        nodeEnter.on("click", function (ancestorObject) {
+        nodeEnter.on("click", function (event, ancestorObject) {
             let person = ancestorObject.person; //thePeopleList[ person.id ];
-            d3.event.stopPropagation();
-            self.personPopup(person, d3.mouse(self.svg.node()));
+            event.stopPropagation();
+            self.personPopup(person, d3.pointer(event, self.svg.node()));
         });
 
         WebsView.myAncestorTree = self;
 
         // Remove old nodes
         node.exit().remove();
+        node = nodeEnter.merge(node);
 
         // *****************************
         // *
@@ -1608,7 +1576,7 @@
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, event) {
+    Tree.prototype.personPopup = function (person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
@@ -1626,7 +1594,7 @@
         var popup = this.svg
             .append("g")
             .attr("class", "popup")
-            .attr("transform", "translate(" + event[0] + "," + event[1] + ")");
+            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")");
 
         let borderColor = "rgba(102, 204, 102, .5)";
         if (person.getGender() == "Male") {
@@ -1638,7 +1606,7 @@
 
         popup
             .append("foreignObject")
-            .attr({
+            .attrs({
                 width: 400,
                 height: 300,
             })

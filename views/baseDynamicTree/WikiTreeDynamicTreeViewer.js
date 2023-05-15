@@ -34,29 +34,22 @@
 
         var self = this;
 
+        const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+        const g = svg.append("g");
+
         // Setup zoom and pan
-        var zoom = d3.behavior
+        const zoom = d3
             .zoom()
             .scaleExtent([0.1, 1])
-            .on("zoom", function () {
-                svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
-            })
-            // Offset so that first pan and zoom does not jump back to the origin
-            .translate([originOffsetX, originOffsetY]);
-
-        var svg = d3
-            .select(container)
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .call(zoom)
-            .append("g")
-            // Left padding of tree; TODO: find a better way
-            .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
+            .on("zoom", function (event) {
+                g.attr("transform", event.transform);
+            });
+        svg.call(zoom);
+        svg.call(zoom.transform, d3.zoomIdentity.translate(originOffsetX, originOffsetY).scale(1));
 
         // Setup controllers for the ancestor and descendant trees
-        self.ancestorTree = new AncestorTree(svg);
-        self.descendantTree = new DescendantTree(svg);
+        self.ancestorTree = new AncestorTree(g);
+        self.descendantTree = new DescendantTree(g);
 
         // Listen to tree events
         self.ancestorTree.expand(function (person) {
@@ -70,13 +63,13 @@
         // Setup pattern
         svg.append("defs")
             .append("pattern")
-            .attr({
+            .attrs({
                 id: "loader",
                 width: 20,
                 height: 20,
             })
             .append("image")
-            .attr({
+            .attrs({
                 width: 20,
                 height: 20,
                 //'xlink:href': 'ringLoader.svg'
@@ -190,6 +183,7 @@
     var Tree = function (svg, selector, direction) {
         this.svg = svg;
         this.root = null;
+        this.getChildrenFn = null;
         this.selector = selector;
         this.direction = typeof direction === "undefined" ? 1 : direction;
 
@@ -197,7 +191,7 @@
             return $.Deferred().resolve().promise();
         };
 
-        this.tree = d3.layout
+        this.tree = d3
             .tree()
             .nodeSize([nodeHeight, nodeWidth])
             .separation(function () {
@@ -209,7 +203,7 @@
      * Set the `children` function for the tree
      */
     Tree.prototype.children = function (fn) {
-        this.tree.children(fn);
+        this.getChildrenFn = fn;
         return this;
     };
 
@@ -238,8 +232,9 @@
      */
     Tree.prototype.draw = function () {
         if (this.root) {
-            var nodes = this.tree.nodes(this.root),
-                links = this.tree.links(nodes);
+            const rootHierarchy = this.tree(d3.hierarchy(this.root, this.getChildrenFn));
+            const nodes = rootHierarchy.descendants();
+            const links = rootHierarchy.links();
             this.drawLinks(links);
             this.drawNodes(nodes);
         } else {
@@ -256,21 +251,21 @@
 
         // Get a list of existing links
         var link = this.svg.selectAll("path.link." + this.selector).data(links, function (link) {
-            return link.target.getId();
+            return link.target.data.getId();
         });
-
-        // Add new links
-        link.enter()
-            .append("path")
-            .attr("class", "link " + this.selector);
 
         // Remove old links
         link.exit().remove();
 
-        // Update the paths
-        link.attr("d", function (d) {
-            return self.elbow(d);
-        });
+        // Add new links
+        link.enter()
+            .append("path")
+            .attr("class", "link " + this.selector)
+            .merge(link)
+            // Update the paths
+            .attr("d", function (d) {
+                return self.elbow(d);
+            });
     };
 
     /**
@@ -296,9 +291,12 @@
         var self = this;
 
         // Get a list of existing nodes
-        var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (person) {
-            return person.getId();
+        var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (d) {
+            return d.data.getId();
         });
+
+        // Remove old nodes
+        node.exit().remove();
 
         // Add new nodes
         var nodeEnter = node
@@ -309,7 +307,7 @@
         // Draw the person boxes
         nodeEnter
             .append("foreignObject")
-            .attr({
+            .attrs({
                 width: boxWidth,
                 height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
                 x: -boxWidth / 2,
@@ -317,7 +315,8 @@
             })
             .style("overflow", "visible") // so the name will wrap
             .append("xhtml:div")
-            .html((person) => {
+            .html((d) => {
+                const person = d.data;
                 let borderColor = "rgba(102, 204, 102, .5)";
                 if (person.getGender() == "Male") {
                     borderColor = "rgba(102, 102, 204, .5)";
@@ -335,20 +334,20 @@
             });
 
         // Show info popup on click
-        nodeEnter.on("click", function (person) {
-            d3.event.stopPropagation();
-            self.personPopup(person, d3.mouse(self.svg.node()));
+        nodeEnter.on("click", function (event, d) {
+            event.stopPropagation();
+            self.personPopup(d.data, d3.pointer(event, self.svg.node()));
         });
 
+        node = nodeEnter.merge(node);
+
         // Draw the plus icons
-        var expandable = node.filter(function (person) {
+        var expandable = node.filter(function (d) {
+            const person = d.data;
             return !person.getChildren() && (person.getFatherId() || person.getMotherId());
         });
 
         self.drawPlus(expandable.data());
-
-        // Remove old nodes
-        node.exit().remove();
 
         // Position
         node.attr("transform", function (d) {
@@ -367,32 +366,33 @@
     Tree.prototype.drawPlus = function (persons) {
         var self = this;
 
-        var buttons = self.svg.selectAll("g.plus").data(persons, function (person) {
-            return person.getId();
+        var buttons = self.svg.selectAll("g.plus").data(persons, function (d) {
+            return d.data.getId();
         });
 
-        buttons
+        buttons = buttons
             .enter()
             .append(drawPlus())
-            .on("click", function (person) {
+            .on("click", function (event, d) {
                 var plus = d3.select(this);
                 var loader = self.svg
                     .append("image")
-                    .attr({
+                    .attrs({
                         //'xlink:href': 'https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif',
                         height: 16,
                         width: 16,
                         // transform: plus.attr('transform')
                     })
                     .attr("transform", function () {
-                        var y = self.direction * (person.y + boxWidth / 2 + 12);
-                        return "translate(" + y + "," + (person.x - 8) + ")";
+                        var y = self.direction * (d.y + boxWidth / 2 + 12);
+                        return "translate(" + y + "," + (d.x - 8) + ")";
                     });
                 plus.remove();
-                self._expand(person).then(function () {
+                self._expand(d.data).then(function () {
                     loader.remove();
                 });
-            });
+            })
+            .merge(buttons);
 
         buttons.attr("transform", function (person) {
             var y = self.direction * (person.y + boxWidth / 2 + 20);
@@ -403,10 +403,8 @@
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, event) {
+    Tree.prototype.personPopup = function (person, xy) {
         this.removePopups();
-
-        var treeUrl = window.location.pathname + "?id=" + person.getName();
 
         var photoUrl = person.getPhotoUrl(75);
         if (photoUrl) {
@@ -423,7 +421,7 @@
         var popup = this.svg
             .append("g")
             .attr("class", "popup")
-            .attr("transform", "translate(" + event[0] + "," + event[1] + ")");
+            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")");
 
         let borderColor = "rgba(102, 204, 102, .5)";
         if (person.getGender() == "Male") {
@@ -435,7 +433,7 @@
 
         popup
             .append("foreignObject")
-            .attr({
+            .attrs({
                 width: 400,
                 height: 300,
             })
@@ -529,9 +527,9 @@
      */
     function drawPlus() {
         return function () {
-            var group = d3.select(document.createElementNS(d3.ns.prefix.svg, "g")).attr("class", "plus");
+            const group = d3.select(document.createElementNS(d3.namespaces.svg, "g")).attr("class", "plus");
 
-            group.append("circle").attr({
+            group.append("circle").attrs({
                 cx: 0,
                 cy: 0,
                 r: 10,
