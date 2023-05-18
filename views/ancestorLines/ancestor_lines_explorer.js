@@ -295,12 +295,7 @@ export class AncestorLinesExplorer {
         });
 
         const container = $("#theSvg");
-        container.draggable();
-        // container.draggable({ containment: "#svgContainer" });
-        // The above containment in effect disables draggability.
-        // If one removes it, it is possible to drag the tree over the control block and since the tree is "on top"
-        // it then prevents one from accessing the controls until moved away again. I have not found a way yet
-        // to force #theSvg to be behind #controlBlock.
+        container.draggable({ axis: "x" });
 
         // Add click action to help button
         const helpButton = document.getElementById("help-button");
