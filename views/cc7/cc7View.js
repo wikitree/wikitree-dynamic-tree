@@ -2,7 +2,7 @@ import { CC7 } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
     static #DESCRIPTION =
-        "Note: loading all 7 degrees may take a long time (5 minutes plus). You may want to start with a smaller number first.";
+        "Loading 7 degrees may take a long time (5 minutes plus) so the default is set to 3. Feel free to change it.";
     meta() {
         return {
             title: "CC7 Views",

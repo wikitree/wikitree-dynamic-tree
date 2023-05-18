@@ -312,6 +312,7 @@ export class AncestorTree {
     static findAllPaths(srcNode, dstWtIds) {
         const allPaths = [];
         for (const dstWtId of dstWtIds) {
+            if (dstWtId == "") continue;
             if (!AncestorTree.#peopleByWtId.has(dstWtId)) {
                 console.error(`Profile ${dstWtId} is not present in the ancestor tree`);
                 continue;

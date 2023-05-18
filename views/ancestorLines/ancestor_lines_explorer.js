@@ -67,21 +67,21 @@ export class AncestorLinesExplorer {
 
     constructor(selector, startId) {
         this.selector = selector;
-        $(selector).html(`<div id="aleContainer" class="ale">
-            <div id="controlBlock">
+        $(selector).html(`<div id="aleContainer" class="ale" z-index: 1>
+            <div id="controlBlock" z-index: 1000>
             <label for="generation">Max Generations:</label
             ><select id="generation" title="The number of generations to retrieve">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
-                <option value="4">4</option>
+                <option value="4" selected>4</option>
                 <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="7">7</option>
                 <option value="8">8</option>
                 <option value="9">9</option>
                 <option value="10">10</option>
-                <option value="11" selected>11</option>
+                <option value="11">11</option>
                 <option value="12">12</option>
                 <option value="13">13</option>
                 <option value="14">14</option>
@@ -92,10 +92,6 @@ export class AncestorLinesExplorer {
                 <option value="19">19</option>
                 <option value="20">20</option>
             </select>
-            <label for="wtid">Start Profile:</label
-            ><input id="wtid" type="text" placeholder="Enter WikiTree ID" value="${
-                wtViewRegistry.session.personName
-            }" />
             <button id="getAncestorsButton" class="small button" title="Get ancestor data up to this generation from WikiTree">
                 Get 11 Generations and Draw Tree
             </button
@@ -169,7 +165,7 @@ export class AncestorLinesExplorer {
                             type="number"
                             min="200"
                             step="100"
-                            value="2500"
+                            value="1500"
                             title="The width of the graph. If too small, content to the right is clipped."
                         />
                     </td>
@@ -220,7 +216,7 @@ export class AncestorLinesExplorer {
                             type="number"
                             min="100"
                             step="100"
-                            value="3000"
+                            value="500"
                             title="The height of the graph. Determines the vertical distance between nodes."
                         />
                     </td>
@@ -257,7 +253,8 @@ export class AncestorLinesExplorer {
                 </tr>
                 </table>
             </fieldset>
-            <section id="theSvg"></section>
+            </div><div id="svgContainer">
+                <section id="theSvg"  z-index: 500></section>
             </div>
         </div>`);
 
@@ -269,11 +266,6 @@ export class AncestorLinesExplorer {
             AncestorLinesExplorer.setGetPeopleButtonText($("#generation").val());
         });
         $("#getAncestorsButton").on("click", AncestorLinesExplorer.getAncestorsAndPaint);
-        $("#wtid").keyup(function (e) {
-            if (e.keyCode == 13) {
-                $("#getAncestorsButton").click();
-            }
-        });
         $("#drawTreeButton").on("click", AncestorLinesExplorer.findPathsAndDrawTree);
         $("#edgeFactor").keyup(function (e) {
             if (e.keyCode == 13) {
@@ -302,8 +294,13 @@ export class AncestorLinesExplorer {
             $("#fileInput").click();
         });
 
-        const container = $("#aleContainer");
+        const container = $("#theSvg");
         container.draggable();
+        // container.draggable({ containment: "#svgContainer" });
+        // The above containment in effect disables draggability.
+        // If one removes it, it is possible to drag the tree over the control block and since the tree is "on top"
+        // it then prevents one from accessing the controls until moved away again. I have not found a way yet
+        // to force #theSvg to be behind #controlBlock.
 
         // Add click action to help button
         const helpButton = document.getElementById("help-button");
@@ -320,6 +317,7 @@ export class AncestorLinesExplorer {
         document.querySelector("#help-text xx").addEventListener("click", function () {
             $(this).parent().slideUp();
         });
+        $("#getAncestorsButton").click();
     }
 
     static setGetPeopleButtonText(n) {
@@ -329,11 +327,11 @@ export class AncestorLinesExplorer {
     static async getAncestorsAndPaint(event) {
         let wtId;
         if (
-            $("#wtid")
+            $(wtViewRegistry.WT_ID_TEXT)
                 .val()
                 .match(/.+\-.+/)
         ) {
-            wtId = $("#wtid").val().trim();
+            wtId = $(wtViewRegistry.WT_ID_TEXT).val().trim();
         } else {
             return;
         }
@@ -361,7 +359,7 @@ export class AncestorLinesExplorer {
             .trim()
             .split(",")
             .map((s) => s.trim())
-            .map((s) => s.replaceAll("_", " "));
+            .map((s) => s.replaceAll(" ", "_"));
 
         const [pathsRoot, nodes, links, pathEndpoints] = AncestorTree.findPaths(otherWtIds);
         showTree(
@@ -390,14 +388,10 @@ export class AncestorLinesExplorer {
     }
 
     static makeFilename() {
-        const date = new Date();
-        let fileName = `Gen_${AncestorTree.maxGeneration}_` + $("#wtid").val().trim() + "_";
-        fileName += date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-";
-        fileName += date.getDate().toString().padStart(2, "0") + "-";
-        fileName += date.getHours().toString().padStart(2, "0");
-        fileName += date.getMinutes().toString().padStart(2, "0");
-        fileName += date.getSeconds().toString().padStart(2, "0");
-        return fileName;
+        return (
+            `Gen_${AncestorTree.maxGeneration}_${$(wtViewRegistry.WT_ID_TEXT).val().trim()}_` +
+            new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19)
+        );
     }
 
     static saveArrayToFile(array, fileName) {
@@ -441,7 +435,7 @@ export class AncestorLinesExplorer {
             }
             AncestorTree.replaceWith(people);
             AncestorLinesExplorer.hideShakingTree();
-            $("#wtid").val(AncestorTree.root.getWtId());
+            $(wtViewRegistry.WT_ID_TEXT).val(AncestorTree.root.getWtId());
             $("#generation").val(AncestorTree.maxGeneration);
             AncestorLinesExplorer.setGetPeopleButtonText(AncestorTree.maxGeneration);
             AncestorLinesExplorer.findPathsAndDrawTree();
@@ -491,7 +485,7 @@ export class AncestorLinesExplorer {
             "Van Timor-1",
         ];
 
-        if ($("#wtid").val() == myWtId && !$("#otherWtIds").val().length) {
+        if ($(wtViewRegistry.WT_ID_TEXT).val() == myWtId && !$("#otherWtIds").val().length) {
             $("#otherWtIds").val(smitOtherWtIds.join(","));
             document.getElementById("onlyPaths").checked = true;
         }

@@ -1,7 +1,3 @@
-/* .ale #controlBlock {
-  font-family: sans-serif;
-  font-size: 14px;
-} */
 #aleContainer {
   padding: 0.3em;
 }
@@ -9,8 +5,6 @@ div.ale select,
 div.ale input {
   padding: 0.3em;
   width: auto;
-  /* min-width: 90px; */
-  /* padding-right: 1em; */
   background-size: 1em 2em;
   margin: 5px 5px 0px 0px;
 }
@@ -21,18 +15,6 @@ div.ale input {
   min-width: 3em;
   margin-right: 10px;
   margin-top: 0;
-  /* margin-right: 2em;
-  margin-left: 1em;
-  white-space: nowrap;
-  margin-bottom: 1em; */
-}
-/* #generation option,
-#maxLevel option {
-  text-align: center;
-} */
-
-.ale #wtid {
-  margin-left: 5px;
 }
 
 .ale fieldset {
@@ -122,7 +104,6 @@ div.ale input {
 }
 
 .ale #help-button {
-  /* background: #393a3c; */
   background: darkgreen;
   color: #fff;
   font-size: 0.8em;
@@ -131,9 +112,6 @@ div.ale input {
   float: right;
   font-weight: bold;
   cursor: pointer;
-  /* position: absolute;
-  top: 0.2em;
-  right: 0.2em; */
   z-index: 11000;
 }
 
@@ -149,7 +127,6 @@ div.ale input {
   width: 50em;
   background: white;
   box-shadow: 1em 1em 1em grey;
-  /* padding-right: 4em; */
   z-index: 11000;
   cursor: default;
 }
