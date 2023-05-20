@@ -156,10 +156,10 @@ export function showTree(
     function update(source) {
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
+        
         // Assigns the x and y position for the nodes
-
         width = calculateWidth();
-        console.log(`Update: width = ${width}, height = ${height}`);
+        // console.log(`Update: width = ${width}, height = ${height}`);
         d3.select("#theSvg svg").attr("width", width + margin.right + margin.left);
 
         treemap = treemap.size([height, width]);

@@ -60,10 +60,10 @@ export class AncestorLinesExplorer {
 
     constructor(selector, startId) {
         this.selector = selector;
-        $(selector).html(`<div id="aleContainer" class="ale" z-index: 1>
-            <div id="controlBlock" z-index: 1000>
-            <label for="generation">Max Generations:</label
-            ><select id="generation" title="The number of generations to retrieve">
+        $(selector).html(`<div id="aleContainer" class="ale">
+            <div id="controlBlock">
+              <label for="generation">Max Generations:</label
+              ><select id="generation" title="The number of generations to retrieve">
                 <option value="2">2</option>
                 <option value="3">3</option>
                 <option value="4">4</option>
@@ -83,157 +83,137 @@ export class AncestorLinesExplorer {
                 <option value="18">18</option>
                 <option value="19">19</option>
                 <option value="20">20</option>
-            </select>
-            <button id="getAncestorsButton" class="small button" title="Get ancestor data up to this generation from WikiTree">
-                Get 11 Generations and Draw Tree
-            </button
-            ><button
+              </select>
+              <button id="getAncestorsButton" class="small button" title="Get ancestor data up to this generation from WikiTree">
+                Get 11 Generations and Draw Tree</button
+              ><button
                 id="savePeople"
                 title="Save the currently loaded data to a file for faster loading in future."
-                class="small button"
-            >
-                Save
-            </button
-            ><button id="loadButton" class="small button" title="Load a previously saved data file and draw its tree.">
-                Load a File
-            </button
-            ><input id="fileInput" type="file" style="display: none"
-            /><button
+                class="small button">
+                Save</button
+              ><button id="loadButton" class="small button" title="Load a previously saved data file and draw its tree.">
+                Load a File</button
+              ><input id="fileInput" type="file" style="display: none" /><button
                 id="drawTreeButton"
                 class="small button"
-                title="Draw the tree, highlighting paths to the people of interest"
-            >
+                title="Draw the tree, highlighting paths to the people of interest">
                 (Re-)Draw Tree
-            </button>
-            <span id="help-button" title="About this">?</span>
-            <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
-            <br />
-            <label for="otherWtIds">People of Interest:</label>
-            <input id="otherWtIds"
+              </button>
+              <span id="help-button" title="About this">?</span>
+              <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
+              <br />
+              <label for="otherWtIds">People of Interest:</label>
+              <input
+                id="otherWtIds"
                 type="text"
                 placeholder="(Optional) Enter comma-seperated WikiTree IDs"
                 size="110"
                 title="Identify people of interest that need to be highlighted in the tree" />
-            <br />
-            <fieldset>
+              <br />
+              <fieldset>
                 <legend>Options:</legend>
                 <table>
-                <tr>
+                  <tr>
                     <td>
-                        <input
-                            id="expandPaths"
-                            type="checkbox"
-                            checked
-                            title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest."
-                        />
-                        <label
-                            for="expandPaths"
-                            title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest."
-                            class="right"
-                        >
-                            Fully expand lines of interest</label
-                        >
+                      <input
+                        id="expandPaths"
+                        type="checkbox"
+                        checked
+                        title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest." />
+                      <label
+                        for="expandPaths"
+                        title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest."
+                        class="right">
+                        Fully expand lines of interest</label
+                      >
                     </td>
                     <td>
-                        <input
-                            id="connectors"
-                            type="checkbox"
-                            title="Do not expand a path to beyond a duplicate if a previous path already exists. Just draw a connector."
-                        />
-                        <label
-                            for="connectors"
-                            title="Do not expand a path to beyond a duplicate if a previous path already exists. Just draw a connector."
-                            class="right"
-                        >
-                            Connectors.</label
-                        >
+                      <input
+                        id="connectors"
+                        type="checkbox"
+                        title="Do not expand a path to beyond a duplicate if a previous path already exists. Just draw a connector." />
+                      <label
+                        for="connectors"
+                        title="Do not expand a path to beyond a duplicate if a previous path already exists. Just draw a connector."
+                        class="right">
+                        Connectors.</label
+                      >
                     </td>
                     <td>
-                        <label for="edgeFactor" title="Determines the horizontal distance between nodes." class="left"> Edge Factor</label>
-                        <input id="edgeFactor" type="number" value="180" step="10" title="Determines the horizontal distance between nodes." />
+                      <label for="edgeFactor" title="Determines the horizontal distance between nodes." class="left">
+                        Edge Factor</label
+                      >
+                      <input
+                        id="edgeFactor"
+                        type="number"
+                        value="180"
+                        step="10"
+                        title="Determines the horizontal distance between nodes." />
                     </td>
-                </tr>
-                <tr>
+                  </tr>
+                  <tr>
                     <td>
-                        <input
-                            id="onlyPaths"
-                            type="checkbox"
-                            title="Show only the lines to the above people of interest (exept if there are none, then all lines are shown)."
-                        />
-                        <label
-                            for="onlyPaths"
-                            title="Show only the lines to the above people of interest (exept if there are none, then all lines are shown)."
-                            class="right"
-                        >
-                            Show only lines of interest</label
-                        >
-                    </td>
-                    <td>
-                        <input
-                            id="labels"
-                            type="checkbox"
-                            checked
-                            title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right."
-                        />
-                        <label
-                            for="labels"
-                            title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right."
-                            class="right"
-                        >
-                            Labels left only.</label
-                        >
+                      <input
+                        id="onlyPaths"
+                        type="checkbox"
+                        title="Show only the lines to the above people of interest (exept if there are none, then all lines are shown)." />
+                      <label
+                        for="onlyPaths"
+                        title="Show only the lines to the above people of interest (exept if there are none, then all lines are shown)."
+                        class="right">
+                        Show only lines of interest</label
+                      >
                     </td>
                     <td>
-                        <label for="tHFactor"
-                            title="Determines the display height of the tree."
-                            class="left"
-                        >
-                            Height Factor</label
-                        >
-                        <input
-                            id="tHFactor"
-                            type="number"
-                            min="1"
-                            value="34"
-                            title="Determines the display height of the tree."
-                        />
-                    </td>
+                      <input
+                        id="labels"
+                        type="checkbox"
+                        checked
+                        title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right." />
+                      <label
+                        for="labels"
+                        title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right."
+                        class="right">
+                        Labels left only.</label
+                      >
                     </td>
                     <td>
-                        <label for="maxLevel"
-                            title="The level up to which to draw the full tree (0 for all)."
-                            class="left"
-                        >
-                            Show tree to level:</label
-                        ><select id="maxLevel" title="The level up to which to draw the full tree (0 for all).">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8" selected>8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                            <option value="11">11</option>
-                            <option value="12">12</option>
-                            <option value="13">13</option>
-                            <option value="14">14</option>
-                            <option value="15">15</option>
-                            <option value="16">16</option>
-                            <option value="17">17</option>
-                            <option value="18">18</option>
-                            <option value="19">19</option>
-                            <option value="20">20</option>
-                        </select>
+                      <label for="tHFactor" title="Determines the display height of the tree." class="left"> Height Factor</label>
+                      <input id="tHFactor" type="number" min="1" value="34" title="Determines the display height of the tree." />
                     </td>
-                </tr>
+                    <td>
+                      <label for="maxLevel" title="The level up to which to draw the full tree (0 for all)." class="left">
+                        Show tree to level:</label
+                      ><select id="maxLevel" title="The level up to which to draw the full tree (0 for all).">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8" selected>8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                      </select>
+                    </td>
+                  </tr>
                 </table>
-            </fieldset>
-            </div><div id="svgContainer">
-                <section id="theSvg" </section>
+              </fieldset>
+            </div>
+            <div id="svgContainer">
+              <section id="theSvg"></section>
             </div>
         </div>`);
 
@@ -434,7 +414,7 @@ export class AncestorLinesExplorer {
             $("#tree").slideDown();
         } else {
             const treeGIF = $("<img id='tree' src='./views/ancestorLines/tree.gif'>");
-            treeGIF.appendTo("#svgContainer");
+            treeGIF.prependTo("#svgContainer");
             $("#tree").css({
                 "display": "block",
                 "margin": "auto",
@@ -442,6 +422,8 @@ export class AncestorLinesExplorer {
                 "width": "100px",
                 "border-radius": "50%",
                 "border": "3px solid forestgreen",
+                "position": "relative",
+                "top": "0",
             });
         }
     }
