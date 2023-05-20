@@ -38,6 +38,14 @@ export class Person {
     }
     clearGenerations() {
         this.generations.clear();
+        this.setNrOlderGenerations(0);
+    }
+
+    setNrOlderGenerations(n) {
+        this.nrOlderGenerations = n;
+    }
+    getNrOlderGenerations() {
+        return this.nrOlderGenerations;
     }
 
     // Basic "getters" for the data elements.

@@ -11,6 +11,7 @@ export class AncestorTree {
     static root;
     static maxGeneration;
     static duplicates = new Map();
+    static genCounts = [];
 
     static init() {
         AncestorTree.#people = new Map();
@@ -188,6 +189,7 @@ export class AncestorTree {
     // Returns the max generation
     static validateAndSetGenerations(rootId) {
         AncestorTree.#peopleByWtId.clear();
+        AncestorTree.genCounts = [0];
         // clear each person's generation info
         for (const person of AncestorTree.#people.values()) {
             person.clearGenerations();
@@ -204,6 +206,7 @@ export class AncestorTree {
             }
         }
         console.log(`nr duplicates=${AncestorTree.duplicates.size}`);
+        console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
     }
 
     // Set the generation of each person in the tree using a recursive depth-first search, while
@@ -225,11 +228,20 @@ export class AncestorTree {
             maxG = generation;
         }
         pers.addGeneration(generation);
+        // Create a record of the number of people at each generation
+        if (typeof AncestorTree.genCounts[generation] == "undefined") {
+            AncestorTree.genCounts[generation] = 1;
+        } else {
+            AncestorTree.genCounts[generation] += 1;
+        }
+
         // make sure to create a new descendants object before passing it on in the 2 recursive calls
         descendants = new Set(descendants).add(id);
         const m1 = AncestorTree.#validate_and_set_generations(pers.getFatherId(), generation + 1, descendants, maxG);
         const m2 = AncestorTree.#validate_and_set_generations(pers.getMotherId(), generation + 1, descendants, maxG);
-        return Math.max(m1, m2);
+        maxG = Math.max(m1, m2);
+        pers.setNrOlderGenerations(maxG - generation);
+        return maxG;
     }
 
     static get(id) {
@@ -306,7 +318,21 @@ export class AncestorTree {
                 src = dst;
             }
         }
-        return [pathsRoot, nodes, links, otherWtIds];
+        return [pathsRoot, nodes, links, otherWtIds, AncestorTree.getGenCountsForPaths(paths)];
+    }
+
+    static getGenCountsForPaths(paths) {
+        const genCounts = [0];
+        const pLengths = paths.map((a) => a.length);
+        const maxPathLength = Math.max(...pLengths);
+        for (let g = 0; g < maxPathLength; ++g) {
+            let cnt = 0;
+            for (const path of paths) {
+                if (path[g]) cnt += 1;
+            }
+            genCounts.push(cnt);
+        }
+        return genCounts;
     }
 
     static findAllPaths(srcNode, dstWtIds) {

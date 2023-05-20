@@ -6,24 +6,72 @@
 import { AncestorTree } from "./ancestor_tree.js";
 
 export function showTree(
-    theRoot,
-    pathsNodes,
-    pathsLinks,
-    duplicates,
-    pathEndpoints,
-    maxGen,
-    expandPaths,
-    onlyPaths,
+    theTree,
+    loiNodes,
+    loiLinks,
+    loiEndpoints,
+    loiGenCounts,
+    maxGenToShow,
+    expandLOIs,
+    showOnlyLOIs,
     connectors,
     labelsLeftOnly
 ) {
-    let markedNodes = new Set();
-    let markedPaths = new Map();
-    // if (pathsLinks.size == 0) onlyPaths = false;
+    const theRoot = theTree.root;
+    const duplicates = theTree.duplicates;
+    const markedNodes = new Set();
+    const markedPaths = new Map();
+
     // Set the dimensions and margins of the diagram
-    var margin = { top: 20, right: 90, bottom: 30, left: (theRoot.getDisplayName().length + 1) * 8 },
-        width = $("#tWidth").val() - margin.left - margin.right,
-        height = $("#tHeight").val() - margin.top - margin.bottom;
+    const margin = { top: 10, right: 10, bottom: 10, left: theRoot.getDisplayName().length * 8 };
+    const edgeFactor = +$("#edgeFactor").val() || 180;
+    const heightFactor = +$("#tHFactor").val() || 32;
+    var currentMaxShowDepth = Math.max(
+        Math.min(theTree.maxGeneration, maxGenToShow),
+        expandLOIs ? loiGenCounts.length : 0
+    );
+    var width = calculateWidth();
+    var height = calculateHeight();
+    // console.log(`width = ${width}, height = ${height}`);
+
+    function calculateWidth() {
+        // console.log(`calculateWidth: currentMaxShowDepth=${currentMaxShowDepth}, edgeFactor=${edgeFactor}`);
+        return (
+            (currentMaxShowDepth + 1) * edgeFactor - margin.left - margin.right + (labelsLeftOnly ? 0 : edgeFactor * 2)
+        );
+    }
+
+    function calculateHeight() {
+        const hf = showOnlyLOIs ? heightFactor * 1.75 : heightFactor;
+        return getSizeOfLargestGenToShow() * hf - margin.top - margin.bottom;
+    }
+
+    function getSizeOfLargestGenToShow() {
+        // find the generation (in the part of the tree to be displayed) with the most people
+        const theCounts = showOnlyLOIs ? loiGenCounts : theTree.genCounts;
+        const [largestGenSize, largestGen] = maxAndIndex(theCounts);
+        let largestGenSizeToShow = largestGenSize;
+        if (maxGenToShow > 0 && maxGenToShow < theTree.maxGeneration) {
+            largestGenSizeToShow = largestGen <= maxGenToShow ? largestGenSize : theCounts[maxGenToShow];
+        }
+        // console.log(`theCounts=${theCounts}`);
+        // console.log(
+        //     `largestGen = ${largestGen}, largestGenSize=${largestGenSize}, maxGenToShow=${maxGenToShow}, largestGenSizeToShow=${largestGenSizeToShow}`
+        // );
+        return largestGenSizeToShow;
+    }
+
+    function maxAndIndex(arr) {
+        let idx = 0;
+        let maxSize = 0;
+        for (let i = 1; i < arr.length; ++i) {
+            if (arr[i] > maxSize) {
+                idx = i;
+                maxSize = arr[i];
+            }
+        }
+        return [maxSize, idx];
+    }
 
     // append the svg object to the body of the page
     // appends a 'group' element to 'svg'
@@ -40,7 +88,7 @@ export function showTree(
     const duration = 750;
 
     // declares a tree layout and assigns the size
-    const treemap = d3.tree().size([height, width]);
+    var treemap = d3.tree().size([height, width]);
 
     const inTree = connectors ? new Set() : undefined;
     // Assigns parent, children, height, depth
@@ -49,22 +97,25 @@ export function showTree(
     });
     root.x0 = height / 2;
     root.y0 = 0;
+    root.depth = 0;
     // console.log("root", root);
 
     // Collapse after the maxGen level
+    // and add depth numbers
     const q = [root];
     while (q.length > 0) {
         const n = q.shift();
         const wtId = n.data.getWtId();
 
-        if (onlyPaths) {
+        if (showOnlyLOIs) {
             if (
-                pathsNodes.has(wtId) &&
-                !pathEndpoints.includes(wtId) &&
-                (expandPaths || n.data.isBelowGeneration(maxGen))
+                loiNodes.has(wtId) &&
+                !loiEndpoints.includes(wtId) &&
+                (expandLOIs || n.data.isBelowGeneration(maxGenToShow))
             ) {
                 if (n.children) {
                     for (const c of n.children) {
+                        c.depth = n.depth + 1;
                         q.push(c);
                     }
                 }
@@ -73,11 +124,12 @@ export function showTree(
             }
         } else {
             if (
-                n.data.isBelowGeneration(maxGen) ||
-                (expandPaths && pathsNodes.has(wtId) && !pathEndpoints.includes(wtId))
+                n.data.isBelowGeneration(maxGenToShow) ||
+                (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))
             ) {
                 if (n.children) {
                     for (const c of n.children) {
+                        c.depth = n.depth + 1;
                         q.push(c);
                     }
                 }
@@ -89,11 +141,14 @@ export function showTree(
 
     update(root);
 
-    // Collapse the node and all it's children
+    // Collapse the node and all it's children while adding depth numbers
     function collapseSubtree(d) {
         if (d.children) {
             d._children = d.children;
-            d._children.forEach(collapseSubtree);
+            d._children.forEach((c) => {
+                c.depth = d.depth + 1;
+                collapseSubtree(c);
+            });
             d.children = null;
         }
     }
@@ -102,6 +157,12 @@ export function showTree(
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
         // Assigns the x and y position for the nodes
+
+        width = calculateWidth();
+        console.log(`Update: width = ${width}, height = ${height}`);
+        d3.select("#theSvg svg").attr("width", width + margin.right + margin.left);
+
+        treemap = treemap.size([height, width]);
         const treeData = treemap(root);
         //console.log("treeData", treeData);
 
@@ -112,7 +173,7 @@ export function showTree(
         // Normalize for fixed-depth.
         nodes.forEach(function (d) {
             // d.y = d.depth * (onlyPaths ? 90 : 180);
-            d.y = d.depth * ($("#edgeFactor").val() || 180);
+            d.y = d.depth * edgeFactor;
         });
 
         // ****************** Nodes section ***************************
@@ -136,7 +197,7 @@ export function showTree(
             .append("circle")
             .attr("class", function (d) {
                 const wtId = d.data.getWtId();
-                return pathsNodes.has(wtId) ? (pathEndpoints.includes(wtId) ? "node end" : "node ofinterest") : "node";
+                return loiNodes.has(wtId) ? (loiEndpoints.includes(wtId) ? "node end" : "node ofinterest") : "node";
             })
             .attr("r", 1e-6)
             .style("fill", function (d) {
@@ -148,6 +209,7 @@ export function showTree(
                 return `${birthString(d.data)}\n${deathString(d.data)}`;
             });
 
+        // Flag duplicate nodes with coloured square
         nodeEnter
             .filter((d) => d.data.isDuplicate())
             .append("rect")
@@ -241,7 +303,7 @@ export function showTree(
             .insert("path", "g")
             .attr("class", function (d) {
                 const lnkId = `${d.parent.data.getWtId()}:${d.data.getWtId()}`;
-                let klass = pathsLinks.has(lnkId) ? "link ofinterest" : "link";
+                let klass = loiLinks.has(lnkId) ? "link ofinterest" : "link";
                 for (const m of markedPaths.values()) {
                     if (m.has(lnkId)) return `${klass} marked`;
                 }
@@ -293,11 +355,15 @@ export function showTree(
         // Toggle children on click.
         function toggleChildren(event, d) {
             if (d.children) {
+                // contract
                 d._children = d.children;
                 d.children = null;
             } else {
+                // expand
                 d.children = d._children;
                 d._children = null;
+                const newDeoth = d.depth + d.data.getNrOlderGenerations();
+                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDeoth);
             }
             update(d);
         }

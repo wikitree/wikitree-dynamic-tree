@@ -31,32 +31,25 @@ export class AncestorLinesExplorer {
             or whether they should also stop at the tree level specified. Separately you can specify whether or not only
             these "lines of interest" should be displayed or not.
         </p>
-        <p>You can control the tree layout through 4 controls:</p>
+        <p>
+            The size of the drawn tree is determined by the data, but also by the 3 controls below. When you draw a
+            complete tree (or any other time too!) you can fine tune the tree layout by adjusting these parameters.
+        </p>
         <ul>
             <li>
-            The <b>Edge Factor</b> controls the horizontal distance between the tree layers: the smaller the number, the
-            closer the layers are on the horizontal axis.
+            The <b>Edge Factor</b> controls the horizontal distance between generations: the smaller the number, the
+            closer the generations are on the horizontal axis.
             </li>
             <li>
-            The <b>Height</b> specifies the height of the display area and effectively controls the vertical distance
-            between the nodes. The larger the number, the further the vertical distance between the nodes.
+            The <b>Height Factor</b> controls the vertical distance between the nodes.
+            The larger the number, the further the vertical distance between the nodes.
             </li>
             <li>
-            The <b>Width</b> specifies the width of the display area. As the tree is drawn to the right, anything that
-            does not fit into this width, will be clipped.
-            </li>
-            <li>
-            The <b>Show tree eto level</b> value determines how many levels of the tree will be filled in with people that
-            are not in a line to a person of interest. If you set this value to 0, the complete tree will be shown
-            (subject to the setting of the other parameters).
+            The <b>Show tree to level</b> value determines how many generations of the tree will be shown with all
+            the people available and not just those directly connected to a person of interest. If you set this value to 0,
+            the complete tree will be shown (subject to the setting of the other parameters).
             </li>
         </ul>
-        <p>
-            When you draw a complete tree (or any other time too!) experiment with the above values untill you find optimal
-            values for readablitiy of your tree given its size. You can specify big numbers. For example a height of 15000
-            and height of 3000 worked ok for me on a request of 12 generations that resulted in a tree with 16 levels. Just
-            be prepared to scroll (or drag) the screen to see everything.
-        </p>
         <p>
             If you find problems with this app or have suggestions for improvements, please
             <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641" , target="_blank"
@@ -71,11 +64,10 @@ export class AncestorLinesExplorer {
             <div id="controlBlock" z-index: 1000>
             <label for="generation">Max Generations:</label
             ><select id="generation" title="The number of generations to retrieve">
-                <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
-                <option value="4" selected>4</option>
-                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="5" selected>5</option>
                 <option value="6">6</option>
                 <option value="7">7</option>
                 <option value="8">8</option>
@@ -132,11 +124,11 @@ export class AncestorLinesExplorer {
                             id="expandPaths"
                             type="checkbox"
                             checked
-                            title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest"
+                            title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest."
                         />
                         <label
                             for="expandPaths"
-                            title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest"
+                            title="Ignore the 'Show tree to level' setting when drawing the lines to the above people of interest."
                             class="right"
                         >
                             Fully expand lines of interest</label
@@ -157,21 +149,8 @@ export class AncestorLinesExplorer {
                         >
                     </td>
                     <td>
-                        <label for="tWidth" title="The width of the graph. If too small, content to the right is clipped." class="left">
-                            Width</label
-                        >
-                        <input
-                            id="tWidth"
-                            type="number"
-                            min="200"
-                            step="100"
-                            value="1500"
-                            title="The width of the graph. If too small, content to the right is clipped."
-                        />
-                    </td>
-                    <td>
-                        <label for="edgeFactor" title="Determines the horizontal distance between nodes" class="left"> Edge Factor</label>
-                        <input id="edgeFactor" type="number" value="180" step="10" title="Determines the horizontal distance between nodes" />
+                        <label for="edgeFactor" title="Determines the horizontal distance between nodes." class="left"> Edge Factor</label>
+                        <input id="edgeFactor" type="number" value="180" step="10" title="Determines the horizontal distance between nodes." />
                     </td>
                 </tr>
                 <tr>
@@ -193,40 +172,40 @@ export class AncestorLinesExplorer {
                         <input
                             id="labels"
                             type="checkbox"
-                            title="Do not expand a path to beyond a duplicate if a previous path already exists. Just draw a connector."
+                            checked
+                            title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right."
                         />
                         <label
                             for="labels"
-                            title="Place node labels only to the left of nodes"
+                            title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right."
                             class="right"
                         >
                             Labels left only.</label
                         >
                     </td>
                     <td>
-                        <label
-                            for="tHeight"
-                            title="The height of the graph. Determines the vertical distance between nodes."
+                        <label for="tHFactor"
+                            title="Determines the display height of the tree."
                             class="left"
                         >
-                            Height</label
+                            Height Factor</label
                         >
                         <input
-                            id="tHeight"
+                            id="tHFactor"
                             type="number"
-                            min="100"
-                            step="100"
-                            value="500"
-                            title="The height of the graph. Determines the vertical distance between nodes."
+                            min="1"
+                            value="34"
+                            title="Determines the display height of the tree."
                         />
+                    </td>
                     </td>
                     <td>
                         <label for="maxLevel"
-                            title="The level up to which to draw the full tree (0 for all)"
+                            title="The level up to which to draw the full tree (0 for all)."
                             class="left"
                         >
                             Show tree to level:</label
-                        ><select id="maxLevel" title="The level up to which to draw the full tree (0 for all)">
+                        ><select id="maxLevel" title="The level up to which to draw the full tree (0 for all).">
                             <option value="0">0</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -254,7 +233,7 @@ export class AncestorLinesExplorer {
                 </table>
             </fieldset>
             </div><div id="svgContainer">
-                <section id="theSvg"  z-index: 500></section>
+                <section id="theSvg" </section>
             </div>
         </div>`);
 
@@ -272,12 +251,7 @@ export class AncestorLinesExplorer {
                 $("#drawTreeButton").click();
             }
         });
-        $("#tHeight").keyup(function (e) {
-            if (e.keyCode == 13) {
-                $("#drawTreeButton").click();
-            }
-        });
-        $("#tWidth").keyup(function (e) {
+        $("#tHFactor").keyup(function (e) {
             if (e.keyCode == 13) {
                 $("#drawTreeButton").click();
             }
@@ -319,6 +293,14 @@ export class AncestorLinesExplorer {
         $("#getAncestorsButton").text(`Get ${n} Generations and Draw Tree`);
     }
 
+    static nrGenerationsToRetrieve() {
+        const nrGenerations = $("#generation").val();
+        if (nrGenerations > 1) {
+            return nrGenerations - 1;
+        }
+        return 4;
+    }
+
     static async getAncestorsAndPaint(event) {
         let wtId;
         if (
@@ -335,13 +317,15 @@ export class AncestorLinesExplorer {
         AncestorLinesExplorer.clearDisplay();
         AncestorLinesExplorer.showShakingTree();
         const nrGenerations = $("#generation").val();
-        const theTreeRoot = await AncestorLinesExplorer.retrieveAncestorsFromWT(wtId, nrGenerations);
+        await AncestorLinesExplorer.retrieveAncestorsFromWT(wtId, nrGenerations);
         AncestorLinesExplorer.hideShakingTree();
-        AncestorLinesExplorer.findPathsAndDrawTree();
+        AncestorLinesExplorer.findPathsAndDrawTree(event);
     }
 
-    static findPathsAndDrawTree() {
-        AncestorLinesExplorer.checkAndSetMySpecialPeople();
+    static findPathsAndDrawTree(event) {
+        if (event.shiftKey) {
+            AncestorLinesExplorer.checkAndSetMySpecialPeople();
+        }
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
         const connectors = document.getElementById("connectors").checked;
@@ -356,13 +340,13 @@ export class AncestorLinesExplorer {
             .map((s) => s.trim())
             .map((s) => s.replaceAll(" ", "_"));
 
-        const [pathsRoot, nodes, links, pathEndpoints] = AncestorTree.findPaths(otherWtIds);
+        const [pathsRoot, nodes, links, pathEndpoints, pathGens] = AncestorTree.findPaths(otherWtIds);
         showTree(
-            AncestorTree.root,
+            AncestorTree,
             nodes,
             links,
-            AncestorTree.duplicates,
             pathEndpoints,
+            pathGens,
             fullTreelevel,
             expandPaths,
             onlyPaths,
@@ -372,7 +356,8 @@ export class AncestorLinesExplorer {
     }
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {
-        const [theTreeRoot, buildTime] = await AncestorTree.buildTreeWithGetRelatives(wtId, nrGenerations);
+        const treeDepth = nrGenerations > 1 ? nrGenerations - 1 : 4;
+        const [theTreeRoot, buildTime] = await AncestorTree.buildTreeWithGetRelatives(wtId, treeDepth);
         // console.log("theTreeRoot", theTreeRoot);
         // console.log(`Tree, size=${Tree.getPeople().size}, buildTime=${buildTime}ms`, Tree.getPeople());
         return theTreeRoot;
@@ -433,7 +418,7 @@ export class AncestorLinesExplorer {
             $(wtViewRegistry.WT_ID_TEXT).val(AncestorTree.root.getWtId());
             $("#generation").val(AncestorTree.maxGeneration);
             AncestorLinesExplorer.setGetPeopleButtonText(AncestorTree.maxGeneration);
-            AncestorLinesExplorer.findPathsAndDrawTree();
+            AncestorLinesExplorer.findPathsAndDrawTree(event);
         };
 
         try {
@@ -449,7 +434,7 @@ export class AncestorLinesExplorer {
             $("#tree").slideDown();
         } else {
             const treeGIF = $("<img id='tree' src='./views/ancestorLines/tree.gif'>");
-            treeGIF.appendTo("#buttonBlock");
+            treeGIF.appendTo("#svgContainer");
             $("#tree").css({
                 "display": "block",
                 "margin": "auto",

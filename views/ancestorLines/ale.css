@@ -98,8 +98,7 @@ div.ale input {
 }
 
 #edgeFactor,
-#tHeight,
-#tWidth {
+#tHFactor{
   width: 4em;
 }
 
