@@ -304,7 +304,7 @@ export class AncestorLinesExplorer {
 
     static findPathsAndDrawTree(event) {
         if (event.shiftKey) {
-            AncestorLinesExplorer.checkAndSetMySpecialPeople();
+            AncestorLinesExplorer.setEarlySaAfricaIndiaIds();
         }
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
@@ -432,12 +432,13 @@ export class AncestorLinesExplorer {
         $("#tree").slideUp();
     }
 
-    static checkAndSetMySpecialPeople() {
-        const myWtId = "Smit-641";
-        const smitOtherWtIds = [
+    static setEarlySaAfricaIndiaIds() {
+        // The below is just a selection, there are many more
+        const earlySaAfricaAsiaIds = [
             "Goringhaikona-1",
             "Van Angola-11",
             "Van Bengale-1",
+            "Van de_Caap-61",
             "Van Malbaar-1",
             "Van Malabar-16",
             "Van Mombasa-1",
@@ -447,9 +448,8 @@ export class AncestorLinesExplorer {
             "Van Timor-1",
         ];
 
-        if ($(wtViewRegistry.WT_ID_TEXT).val() == myWtId && !$("#otherWtIds").val().length) {
-            $("#otherWtIds").val(smitOtherWtIds.join(","));
-            document.getElementById("onlyPaths").checked = true;
+        if (!$("#otherWtIds").val().length) {
+            $("#otherWtIds").val(earlySaAfricaAsiaIds.join(","));
         }
     }
 }
