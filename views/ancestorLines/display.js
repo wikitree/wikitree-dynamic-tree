@@ -10,7 +10,7 @@ export function showTree(
     loiNodes,
     loiLinks,
     loiEndpoints,
-    loiGenCounts,
+    genCountsInLOI,
     maxGenToShow,
     expandLOIs,
     showOnlyLOIs,
@@ -28,7 +28,7 @@ export function showTree(
     const heightFactor = +$("#tHFactor").val() || 32;
     var currentMaxShowDepth = Math.max(
         Math.min(theTree.maxGeneration, maxGenToShow),
-        expandLOIs ? loiGenCounts.length : 0
+        expandLOIs ? genCountsInLOI.length : 0
     );
     var width = calculateWidth();
     var height = calculateHeight();
@@ -48,7 +48,7 @@ export function showTree(
 
     function getSizeOfLargestGenToShow() {
         // find the generation (in the part of the tree to be displayed) with the most people
-        const theCounts = showOnlyLOIs ? loiGenCounts : theTree.genCounts;
+        const theCounts = showOnlyLOIs ? genCountsInLOI : theTree.genCounts;
         const [largestGenSize, largestGen] = maxAndIndex(theCounts);
         let largestGenSizeToShow = largestGenSize;
         if (maxGenToShow > 0 && maxGenToShow < theTree.maxGeneration) {
@@ -156,7 +156,7 @@ export function showTree(
     function update(source) {
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
-        
+
         // Assigns the x and y position for the nodes
         width = calculateWidth();
         // console.log(`Update: width = ${width}, height = ${height}`);

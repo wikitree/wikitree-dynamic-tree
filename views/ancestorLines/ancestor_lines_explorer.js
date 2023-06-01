@@ -9,18 +9,34 @@ export class AncestorLinesExplorer {
             Use this application to load the direct ancestors (up to 'Max Generations') of the person identified in the
             start profile and draw their family tree up to the specified tree level. Although one might have specified N
             generations to be retrieved, the maximum level of the tree might be at more than N generations if an ancestor
-            appears at more than one generation (i.e. level in the tree). People that appear more than once in the tree are
-            marked with a coloured square. If the 'Connectors' checkbox is ticked, a tree line will not be extended to
-            beyond a duplicate person if there is already a line containing this person.
+            appears at more than one generation (i.e. level in the tree).
         </p>
-        <p>
-            To see more generations for which information has been loaded, you can expand the tree by clicking on any circle
-            which has been coloured in. You can also collapse branches of the tree by clicking on any circle not coloured
-            in. If you click on a coloured square (that indicates a duplicate person), all the other occurrences of that
-            person, as well as the lines to them are highlighted. Click the square again to remove the highlights. If you
-            click on the name of a person, a new tab is opened with that person's Wikitree Profile. If you hover over a node
-            in the tree, the birth- and death date and location of that person is displayed.
-        </p>
+        <ul>
+            <li>
+                People that appear more than once in the tree are marked with a coloured square.
+            </li><li>
+                If you click on a coloured square, all the other occurrences of that person, as well as the lines to them,
+                are highlighted. Click the square again to remove the highlights.
+            </li><li>
+                You can collapse (hide) branches of the tree by clicking on any circle that is coloured in white.
+            </li><li>
+                You can expand the tree by clicking on any circle that is coloured in steel-blue.
+            </li><li>
+                Click on the name of a person to open a new tab with that person's Wikitree Profile.
+            </li><li>
+                If you hover your pointer over the cricle (or square) associted with a person, the birth- and death date
+                and location of that person is displayed.
+            </li><li>
+                If the 'Connectors' checkbox is ticked, a tree line will not be extended to beyond a duplicate person if
+                there is already a line containing this person.
+            </li><li>
+                If the 'Labels left only' box is ticked, people's names will only appear to the left of the circle that
+                represents them. Otherwise, if a tree branch has not been hidden (see below) and there are no ancestors
+                to show for a person (i.e. their circle is coloured white), the name will appear to the right of the circle.
+            </li><li>
+                Changing any of the options only takes effect when '(Re-)Draw Tree' or 'Go' is clicked.
+            </li>
+        </ul>
         <p>
             The more generations are requested in a load, the longer it may take, so please be patient. Once loaded, you can
             save the data locally to your device and re-load it much faster later.
@@ -32,22 +48,20 @@ export class AncestorLinesExplorer {
             these "lines of interest" should be displayed or not.
         </p>
         <p>
-            The size of the drawn tree is determined by the data, but also by the 3 controls below. When you draw a
-            complete tree (or any other time too!) you can fine tune the tree layout by adjusting these parameters.
+            The size of the drawn tree is determined by the data, but also by the 3 controls below. You can fine tune the
+            tree layout by adjusting these parameters.
         </p>
         <ul>
             <li>
-            The <b>Edge Factor</b> controls the horizontal distance between generations: the smaller the number, the
-            closer the generations are on the horizontal axis.
-            </li>
-            <li>
-            The <b>Height Factor</b> controls the vertical distance between the nodes.
-            The larger the number, the further the vertical distance between the nodes.
-            </li>
-            <li>
-            The <b>Show tree to level</b> value determines how many generations of the tree will be shown with all
-            the people available and not just those directly connected to a person of interest. If you set this value to 0,
-            the complete tree will be shown (subject to the setting of the other parameters).
+                The <b>Edge Factor</b> controls the horizontal distance between generations: the smaller the number, the
+                closer the generations are on the horizontal axis.
+            </li><li>
+                The <b>Height Factor</b> controls the vertical distance between people at the same level in the tree.
+                The larger the number, the further apart they are on the vertical axis.
+            </li><li>
+                The <b>Show tree to level</b> value determines how many generations of the tree will be shown with all
+                the people available and not just those directly connected to a person of interest. If you set this
+                value to 0,the complete tree will be shown (subject to the setting of the other parameters).
             </li>
         </ul>
         <p>
@@ -140,7 +154,7 @@ export class AncestorLinesExplorer {
                       >
                     </td>
                     <td>
-                      <label for="edgeFactor" title="Determines the horizontal distance between nodes." class="left">
+                      <label for="edgeFactor" title="Determines the horizontal distance between generations." class="left">
                         Edge Factor</label
                       >
                       <input
@@ -148,7 +162,7 @@ export class AncestorLinesExplorer {
                         type="number"
                         value="180"
                         step="10"
-                        title="Determines the horizontal distance between nodes." />
+                        title="Determines the horizontal distance between generations." />
                     </td>
                   </tr>
                   <tr>
@@ -169,10 +183,10 @@ export class AncestorLinesExplorer {
                         id="labels"
                         type="checkbox"
                         checked
-                        title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right." />
+                        title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right." />
                       <label
                         for="labels"
-                        title="Place node labels only to the left of nodes. Otherwise nodes with no ancestors have their labels on the right."
+                        title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right."
                         class="right">
                         Labels left only.</label
                       >
@@ -318,7 +332,8 @@ export class AncestorLinesExplorer {
             .trim()
             .split(",")
             .map((s) => s.trim())
-            .map((s) => s.replaceAll(" ", "_"));
+            .map((s) => s.replaceAll(" ", "_"))
+            .filter((s) => s.length > 0);
 
         const [pathsRoot, nodes, links, pathEndpoints, pathGens] = AncestorTree.findPaths(otherWtIds);
         showTree(
@@ -329,7 +344,7 @@ export class AncestorLinesExplorer {
             pathGens,
             fullTreelevel,
             expandPaths,
-            onlyPaths,
+            onlyPaths && links.size != 0, // If we have no lines of interest, don't only show them
             connectors,
             labelsLeftOnly
         );
