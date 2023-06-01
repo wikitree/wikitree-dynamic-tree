@@ -296,14 +296,8 @@ export class AncestorLinesExplorer {
     }
 
     static async getAncestorsAndPaint(event) {
-        let wtId;
-        if (
-            $(wtViewRegistry.WT_ID_TEXT)
-                .val()
-                .match(/.+\-.+/)
-        ) {
-            wtId = $(wtViewRegistry.WT_ID_TEXT).val().trim();
-        } else {
+        const wtId = wtViewRegistry.getCurrentWtId();
+        if (!wtId.match(/.+\-.+/)) {
             return;
         }
 
@@ -364,7 +358,7 @@ export class AncestorLinesExplorer {
 
     static makeFilename() {
         return (
-            `Gen_${AncestorTree.maxGeneration}_${$(wtViewRegistry.WT_ID_TEXT).val().trim()}_` +
+            `Gen_${AncestorTree.maxGeneration}_${wtViewRegistry.getCurrentWtId()}_` +
             new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19)
         );
     }

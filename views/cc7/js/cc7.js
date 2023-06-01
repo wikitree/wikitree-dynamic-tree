@@ -2962,68 +2962,63 @@ export class CC7 {
         window.chunksOut = 0;
         window.chunksBack = 0;
         event.preventDefault();
-        if (
-            $(wtViewRegistry.WT_ID_TEXT)
-                .val()
-                .match(/.+\-.+/)
-        ) {
+        const wtId = wtViewRegistry.getCurrentWtId();
+        if (wtId.match(/.+\-.+/)) {
             CC7.clearDisplay();
             CC7.showShakingTree();
             $("div.cc7Table").addClass("degreeView");
             const theDegree = $("#cc7Degree").val();
             const fields = "Id";
-            CC7.getPeopleAction($(wtViewRegistry.WT_ID_TEXT).val(), 0, 0, 0, theDegree, theDegree, fields).then(
-                (people) => {
-                    $("#oneDegreeList").remove();
-                    const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
-                    $("div.cc7Table").append(oneDegreeList);
-                    if (people === null) {
-                        CC7.hideShakingTree();
-                        return;
-                    }
-                    window.peopleKeys = Object.keys(people);
-                    while (window.peopleKeys.length) {
-                        const chunk = window.peopleKeys.splice(0, 100).join(",");
-                        //console.log(chunk);
-                        window.chunksOut++;
-                        CC7.getSomeRelatives(chunk, CC7.PROFILE_FIELDS).then((result) => {
-                            if (result) {
-                                result.forEach(function (aPerson) {
-                                    const mPerson = aPerson.person;
-                                    const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
-                                    mPerson.Spouse = mSpouses;
-                                    const mChildren = CC7.getRels(mPerson.Children, mPerson, "Child");
-                                    mPerson.Child = mChildren;
-                                    const mSiblings = CC7.getRels(mPerson.Siblings, mPerson, "Sibling");
-                                    mPerson.Sibling = mSiblings;
-                                    const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
-                                    mPerson.Parent = mParents;
-                                    mPerson.Degree = $("#cc7Degree").val();
-                                    if (mPerson.Name != $(wtViewRegistry.WT_ID_TEXT).val()) {
-                                        window.people.push(mPerson);
-                                    }
-                                });
-                            }
-                            window.chunksBack++;
-                            if (window.peopleKeys.length == 0 && window.chunksOut == window.chunksBack) {
-                                //console.log(window.people);
-                                CC7.hideShakingTree();
-                                if (window.people.length == 0) {
-                                    $("div.cc7Table").append(
-                                        $(
-                                            "<div id='tooBig' style='text-align:center'>No Result... Maybe the CC7 is too big. <br>" +
-                                                "These may be after the first thousand.<br>" +
-                                                "How about going to a grandparent and looking at their results or reduce the degrees?</div>"
-                                        )
-                                    );
-                                } else {
-                                    CC7.addPeopleTable();
-                                }
-                            }
-                        });
-                    }
+            CC7.getPeopleAction(wtId, 0, 0, 0, theDegree, theDegree, fields).then((people) => {
+                $("#oneDegreeList").remove();
+                const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
+                $("div.cc7Table").append(oneDegreeList);
+                if (people === null) {
+                    CC7.hideShakingTree();
+                    return;
                 }
-            );
+                window.peopleKeys = Object.keys(people);
+                while (window.peopleKeys.length) {
+                    const chunk = window.peopleKeys.splice(0, 100).join(",");
+                    //console.log(chunk);
+                    window.chunksOut++;
+                    CC7.getSomeRelatives(chunk, CC7.PROFILE_FIELDS).then((result) => {
+                        if (result) {
+                            result.forEach(function (aPerson) {
+                                const mPerson = aPerson.person;
+                                const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
+                                mPerson.Spouse = mSpouses;
+                                const mChildren = CC7.getRels(mPerson.Children, mPerson, "Child");
+                                mPerson.Child = mChildren;
+                                const mSiblings = CC7.getRels(mPerson.Siblings, mPerson, "Sibling");
+                                mPerson.Sibling = mSiblings;
+                                const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
+                                mPerson.Parent = mParents;
+                                mPerson.Degree = $("#cc7Degree").val();
+                                if (mPerson.Name != wtViewRegistry.getCurrentWtId()) {
+                                    window.people.push(mPerson);
+                                }
+                            });
+                        }
+                        window.chunksBack++;
+                        if (window.peopleKeys.length == 0 && window.chunksOut == window.chunksBack) {
+                            //console.log(window.people);
+                            CC7.hideShakingTree();
+                            if (window.people.length == 0) {
+                                $("div.cc7Table").append(
+                                    $(
+                                        "<div id='tooBig' style='text-align:center'>No Result... Maybe the CC7 is too big. <br>" +
+                                            "These may be after the first thousand.<br>" +
+                                            "How about going to a grandparent and looking at their results or reduce the degrees?</div>"
+                                    )
+                                );
+                            } else {
+                                CC7.addPeopleTable();
+                            }
+                        }
+                    });
+                }
+            });
         }
     }
 
@@ -3038,16 +3033,9 @@ export class CC7 {
     static async getConnectionsAction(event) {
         wtViewRegistry.clearStatus();
         const theDegree = $("#cc7Degree").val();
-        if (
-            $(wtViewRegistry.WT_ID_TEXT)
-                .val()
-                .match(/.+\-.+/)
-        ) {
-            window.ancestors = await CC7.getAncestors(
-                $(wtViewRegistry.WT_ID_TEXT).val().trim(),
-                3,
-                CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS
-            );
+        const wtId = wtViewRegistry.getCurrentWtId();
+        if (wtId.match(/.+\-.+/)) {
+            window.ancestors = await CC7.getAncestors(wtId, 3, CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS);
             CC7.assignGeneration(window.ancestors, ancestors[0], 0);
         }
         event.preventDefault();
@@ -3066,7 +3054,7 @@ export class CC7 {
     static getConnections(maxDegree, keys = 0) {
         let WTID;
         if (keys == 0) {
-            WTID = $(wtViewRegistry.WT_ID_TEXT).val().trim();
+            WTID = wtViewRegistry.getCurrentWtId();
         } else {
             WTID = keys;
         }
@@ -3157,7 +3145,7 @@ export class CC7 {
 
     static makeFilename() {
         const theDegree = $("#cc7Degree").val();
-        let fileName = `CC${theDegree}_${$(wtViewRegistry.WT_ID_TEXT).val().trim()}_`;
+        let fileName = `CC${theDegree}_${wtViewRegistry.getCurrentWtId()}_`;
         fileName += $("div.degreeView").length ? `Degree_${theDegree}_` : "";
         fileName += new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
         return fileName;
