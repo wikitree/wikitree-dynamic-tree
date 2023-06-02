@@ -17,6 +17,10 @@ div.ale input {
   margin-top: 0;
 }
 
+#aleOptions {
+  cursor: pointer;
+}
+
 .ale fieldset {
   display: block;
   margin-inline-start: 2px;
@@ -64,6 +68,7 @@ div.ale input {
   stroke: black;
 }
 
+.ale .treeHeader,
 .ale .node text {
   font: 12px sans-serif;
 }
@@ -97,8 +102,13 @@ div.ale input {
   stroke-width: 1.5px;
 }
 
+#aleBrickWallColour {
+  width: 2em;
+  padding: 2px;
+}
+
 #edgeFactor,
-#tHFactor{
+#tHFactor {
   width: 4em;
 }
 

@@ -24,17 +24,27 @@ export class AncestorLinesExplorer {
             </li><li>
                 Click on the name of a person to open a new tab with that person's Wikitree Profile.
             </li><li>
-                If you hover your pointer over the cricle (or square) associted with a person, the birth- and death date
-                and location of that person is displayed.
+                If you hover your pointer over a person, the birth- and death date and location of that person is displayed.
             </li><li>
-                If the 'Connectors' checkbox is ticked, a tree line will not be extended to beyond a duplicate person if
-                there is already a line containing this person.
+                If the <b>Connectors</b> checkbox is ticked, a tree line will not be extended to beyond a duplicate
+                person if there is already a line containing this person.
             </li><li>
-                If the 'Labels left only' box is ticked, people's names will only appear to the left of the circle that
-                represents them. Otherwise, if a tree branch has not been hidden (see below) and there are no ancestors
+                If the <b>Labels left only</b> box is ticked, people's names will only appear to the left of the circle
+                that represents them. Otherwise, if a tree branch has not been hidden (see below) and there are no ancestors
                 to show for a person (i.e. their circle is coloured white), the name will appear to the right of the circle.
             </li><li>
-                Changing any of the options only takes effect when '(Re-)Draw Tree' or 'Go' is clicked.
+                The table has a header labeling each generation. This can be removed via the <b>Hide tree header</b>
+                tickbox.
+            </li><li>
+                The <b>Brick wall colour</b> determines in which colour the names of people with no ancestors on record
+                are displayed. The default is black, i.e. they will be displayed like everyone else. If you want to
+                distinguish them, choose another colour.
+            </li><li>
+                Changes to tickbox options only take effect when <b>(Re-)Draw Tree</b> or <b>Go</b> is clicked. A colour
+                change takes effect immediately, while the remaining options can be applied immediatly by pressing enter
+                after any of them was changed.
+            </li><li>
+                The list of options can be hidden by clicking on the <b>Options</b> label.
             </li>
         </ul>
         <p>
@@ -125,8 +135,8 @@ export class AncestorLinesExplorer {
                 title="Identify people of interest that need to be highlighted in the tree" />
               <br />
               <fieldset>
-                <legend>Options:</legend>
-                <table>
+                <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
+                <table id="optionsTbl">
                   <tr>
                     <td>
                       <input
@@ -150,7 +160,19 @@ export class AncestorLinesExplorer {
                         for="connectors"
                         title="Do not expand a path to beyond a duplicate if a previous path already exists. Just draw a connector."
                         class="right">
-                        Connectors.</label
+                        Connectors</label
+                      >
+                    </td>
+                    <td>
+                      <input
+                        id="hideTreeHeader"
+                        type="checkbox"
+                        title="Remove the Parents, GrandParetns, etc header above the tree." />
+                      <label
+                        for="hideTreeHeader"
+                        title="Remove the Parents, GrandParetns, etc header above the tree."
+                        class="right">
+                        Hide tree header</label
                       >
                     </td>
                     <td>
@@ -188,8 +210,21 @@ export class AncestorLinesExplorer {
                         for="labels"
                         title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right."
                         class="right">
-                        Labels left only.</label
+                        Labels left only</label
                       >
+                    </td>
+                    <td>
+                      <label
+                        for="aleBrickWallColour"
+                        title="Choose the colour for people with no known ancestors."
+                        class="left">
+                        Brick wall colour</label
+                      >
+                      <input
+                        id="aleBrickWallColour"
+                        type="color"
+                        value="#000000"
+                        title="Choose the colour for people with no known ancestors." />
                     </td>
                     <td>
                       <label for="tHFactor" title="Determines the display height of the tree." class="left"> Height Factor</label>
@@ -261,6 +296,13 @@ export class AncestorLinesExplorer {
             e.preventDefault();
             $("#fileInput").click();
         });
+        $("#aleOptions").click(function (e) {
+            e.preventDefault();
+            $("#optionsTbl").slideToggle();
+        });
+        $("#aleBrickWallColour").on("change", function () {
+            $("#drawTreeButton").click();
+        });
 
         const container = $("#theSvg");
         container.draggable({ axis: "x" });
@@ -317,6 +359,7 @@ export class AncestorLinesExplorer {
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
         const connectors = document.getElementById("connectors").checked;
+        const hideTreeHeader = document.getElementById("hideTreeHeader").checked;
         const labelsLeftOnly = document.getElementById("labels").checked;
         let fullTreelevel = document.getElementById("maxLevel").value;
         if (fullTreelevel == 0) fullTreelevel = Number.MAX_SAFE_INTEGER;
@@ -340,6 +383,7 @@ export class AncestorLinesExplorer {
             expandPaths,
             onlyPaths && links.size != 0, // If we have no lines of interest, don't only show them
             connectors,
+            hideTreeHeader,
             labelsLeftOnly
         );
     }
@@ -354,6 +398,7 @@ export class AncestorLinesExplorer {
 
     static clearDisplay() {
         $("#theSvg svg").remove();
+        $("#theSvg .treeHeader").remove();
     }
 
     static makeFilename() {

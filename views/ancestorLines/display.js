@@ -15,6 +15,7 @@ export function showTree(
     expandLOIs,
     showOnlyLOIs,
     connectors,
+    hideTreeHeader,
     labelsLeftOnly
 ) {
     const theRoot = theTree.root;
@@ -25,23 +26,36 @@ export function showTree(
     // Set the dimensions and margins of the diagram
     const margin = { top: 10, right: 10, bottom: 10, left: theRoot.getDisplayName().length * 8 };
     const edgeFactor = +$("#edgeFactor").val() || 180;
-    const heightFactor = +$("#tHFactor").val() || 32;
+    const heightFactor = +$("#tHFactor").val() || 34;
+    const brickWallColour = $("#aleBrickWallColour").val() || "#ff0000";
     var currentMaxShowDepth = Math.max(
         Math.min(theTree.maxGeneration, maxGenToShow),
         expandLOIs ? genCountsInLOI.length : 0
     );
-    var width = calculateWidth();
-    var height = calculateHeight();
-    // console.log(`width = ${width}, height = ${height}`);
 
-    function calculateWidth() {
-        // console.log(`calculateWidth: currentMaxShowDepth=${currentMaxShowDepth}, edgeFactor=${edgeFactor}`);
-        return (
-            (currentMaxShowDepth + 1) * edgeFactor - margin.left - margin.right + (labelsLeftOnly ? 0 : edgeFactor * 2)
-        );
+    function calculateWidths() {
+        const tWith = calculateTreeWidth();
+        return [tWith, calculateSvgWidth(tWith)];
     }
 
-    function calculateHeight() {
+    function calculateTreeWidth() {
+        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : edgeFactor * 2);
+        // console.log(
+        //     `treeWidth: currentMaxShowDepth:${currentMaxShowDepth} * eF:${edgeFactor} + ${
+        //         labelsLeftOnly ? 0 : edgeFactor * 2
+        //     } = ${result}`
+        // );
+        return result;
+    }
+
+    function calculateSvgWidth(tWidth) {
+        const fudgeFactor = edgeFactor;
+        const w = tWidth + margin.right + margin.left + fudgeFactor;
+        // console.log(`svg width = w:${tWidth} + r:${margin.right} + l:${margin.left} + fudge:${fudgeFactor} = ${w}`);
+        return w;
+    }
+
+    function calculateTreeHeight() {
         const hf = showOnlyLOIs ? heightFactor * 1.75 : heightFactor;
         return getSizeOfLargestGenToShow() * hf - margin.top - margin.bottom;
     }
@@ -73,29 +87,50 @@ export function showTree(
         return [maxSize, idx];
     }
 
+    const treeHeight = calculateTreeHeight();
+    const [treeWidth, svgWidth] = calculateWidths();
+
     // append the svg object to the body of the page
     // appends a 'group' element to 'svg'
     // moves the 'group' element to the top left margin
     var svg = d3
         .select("#theSvg")
         .append("svg")
-        .attr("width", width + margin.right + margin.left)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("width", svgWidth)
+        .attr("height", treeHeight + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    if (!hideTreeHeader) {
+        const tbl = d3
+            .select("#theSvg")
+            .insert("table", ":first-child")
+            .attr("class", "treeHeader")
+            .attr("width", edgeFactor * (currentMaxShowDepth - 1))
+            .style("margin-left", `${margin.left}px`);
+        const tr = tbl.append("tr");
+        for (let lvl = 2; lvl <= currentMaxShowDepth; ++lvl) {
+            tr.append("td").style("width", `${edgeFactor}px`).attr("align", "right").text(genHeader(lvl));
+        }
+        // console.log(
+        //     `tbl width = edgeFactor:${edgeFactor} * (currentMaxShowDepth:${currentMaxShowDepth}-1) = ${
+        //         edgeFactor * (currentMaxShowDepth - 1)
+        //     }`
+        // );
+    }
 
     var idCounter = 0;
     const duration = 750;
 
     // declares a tree layout and assigns the size
-    var treemap = d3.tree().size([height, width]);
+    var treemap = d3.tree().size([treeHeight, treeWidth]);
 
     const inTree = connectors ? new Set() : undefined;
     // Assigns parent, children, height, depth
     const root = d3.hierarchy(theRoot, function (d) {
         return d.getD3Children(inTree);
     });
-    root.x0 = height / 2;
+    root.x0 = treeHeight / 2;
     root.y0 = 0;
     root.depth = 0;
     // console.log("root", root);
@@ -141,6 +176,44 @@ export function showTree(
 
     update(root);
 
+    function genHeader(level) {
+        let relType = "";
+        if (level == 1) {
+            return level;
+        }
+        const [parent, grand, great] = edgeFactor >= 120 ? ["Parents", "Grand", "Great-"] : ["P", "G", "G-"];
+        if (level > 1) {
+            relType = parent;
+        }
+        if (level > 2) {
+            relType = grand + relType;
+        }
+        if (level > 3) {
+            relType = great + relType;
+        }
+        if (level > 4) {
+            relType = ordinal(level - 3) + " " + relType;
+        }
+        return `${relType} (${level})`;
+    }
+
+    function ordinal(n) {
+        if (n >= 10 && n <= 20) {
+            return `${n}th`;
+        }
+        const m = n % 10;
+        switch (m) {
+            case 1:
+                return `${n}st`;
+            case 2:
+                return `${n}nd`;
+            case 3:
+                return `${n}rd`;
+            default:
+                return `${n}th`;
+        }
+    }
+
     // Collapse the node and all it's children while adding depth numbers
     function collapseSubtree(d) {
         if (d.children) {
@@ -158,11 +231,11 @@ export function showTree(
         // console.log("update: markedLinks", markedPaths);
 
         // Assigns the x and y position for the nodes
-        width = calculateWidth();
-        // console.log(`Update: width = ${width}, height = ${height}`);
-        d3.select("#theSvg svg").attr("width", width + margin.right + margin.left);
+        const [treeWidth, svgWidth] = calculateWidths();
+        // console.log(`Update: treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`);
+        d3.select("#theSvg svg").attr("width", svgWidth);
 
-        treemap = treemap.size([height, width]);
+        treemap = treemap.size([treeHeight, treeWidth]);
         const treeData = treemap(root);
         //console.log("treeData", treeData);
 
@@ -243,6 +316,11 @@ export function showTree(
             .attr("wtId", (d) => d.data.getId())
             .text(function (d) {
                 return d.data.getDisplayName();
+            })
+            .style("fill", (d) => (d.data.hasAParent() ? "inherit" : brickWallColour))
+            .append("title")
+            .text(function (d) {
+                return `${birthString(d.data)}\n${deathString(d.data)}`;
             });
 
         // UPDATE
@@ -270,7 +348,7 @@ export function showTree(
             .attr("width", 10)
             .attr("height", 10)
             .style("fill", function (d) {
-                return myColour(duplicates.get(d.data.getId()));
+                return aColour(duplicates.get(d.data.getId()));
             })
             .attr("cursor", "pointer");
 
@@ -423,10 +501,10 @@ export function showTree(
     }
 }
 
-function myColour(n) {
+function aColour(n) {
     return ColourArray[n % ColourArray.length];
 }
-var ColourArray = [
+export const ColourArray = [
     "Gold",
     "HotPink",
     "LightCyan",
