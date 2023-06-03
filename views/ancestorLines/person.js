@@ -180,7 +180,13 @@ export class Person {
 
 class LinkToPerson extends Person {
     constructor(p) {
-        super({ Id: p.getId(), Name: p.getWtId(), BirthName: `See ${p.getDisplayName()}`, DataStatus: { Spouse: "" } });
+        super({
+            Id: p.getId(),
+            Name: p.getWtId(),
+            BirthName: `See ${p.getDisplayName()}`,
+            DataStatus: { Spouse: "" },
+        });
         this.generations = p.generations;
+        this.nrOlderGenerations = 0;
     }
 }

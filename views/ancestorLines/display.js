@@ -317,7 +317,10 @@ export function showTree(
             .text(function (d) {
                 return d.data.getDisplayName();
             })
-            .style("fill", (d) => (d.data.hasAParent() ? "inherit" : brickWallColour))
+            .style("fill", (d) => {
+                // we go via Ancestor Tree here in case d.data is a connector
+                return AncestorTree.get(d.data.getId()).hasAParent() ? "inherit" : brickWallColour;
+            })
             .append("title")
             .text(function (d) {
                 return `${birthString(d.data)}\n${deathString(d.data)}`;
@@ -432,16 +435,20 @@ export function showTree(
 
         // Toggle children on click.
         function toggleChildren(event, d) {
+            if (event.shiftKey) {
+                console.log(d.data.toString(), d.data);
+                return;
+            }
             if (d.children) {
                 // contract
                 d._children = d.children;
                 d.children = null;
-            } else {
+            } else if (d._children) {
                 // expand
                 d.children = d._children;
                 d._children = null;
-                const newDeoth = d.depth + d.data.getNrOlderGenerations();
-                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDeoth);
+                const newDepth = d.depth + d.data.getNrOlderGenerations();
+                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDepth);
             }
             update(d);
         }
