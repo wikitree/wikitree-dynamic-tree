@@ -175,7 +175,7 @@ window.ViewRegistry = class ViewRegistry {
     onSubmit(e) {
         e.preventDefault();
 
-        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const wtID = this.getCurrentWtId();
         const viewID = document.querySelector(this.VIEW_SELECT).value;
 
         // Special case of "other apps" where we send the user out of the dynamic tree apps page to a page at WikiTree.
@@ -214,7 +214,7 @@ window.ViewRegistry = class ViewRegistry {
 
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
     onPersonDataReceived(view, data) {
-        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const wtID = this.getCurrentWtId();
         const infoPanel = document.querySelector(this.INFO_PANEL);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
@@ -267,11 +267,15 @@ window.ViewRegistry = class ViewRegistry {
 
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
 
-        const wtID = document.querySelector(this.WT_ID_TEXT).value;
+        const wtID = this.getCurrentWtId();
         const viewSelect = document.querySelector(this.VIEW_SELECT).value;
         let url = window.location.href.split("?")[0].split("#")[0];
         url = `${url}#name=${wtID}&view=${viewSelect}`;
         history.replaceState("", "", url);
+    }
+
+    getCurrentWtId() {
+        return document.querySelector(this.WT_ID_TEXT).value.trim();
     }
 
     hideInfoPanel() {

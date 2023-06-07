@@ -342,9 +342,6 @@ div.cc7Table img.familyHome {
 #wtLogo {
   float: left;
 }
-/* .cc7Table h1 {
-  cursor: default;
-} */
 
 div.cc7Table select,
 div.cc7Table input {
@@ -366,10 +363,6 @@ div.cc7Table input {
 #peopleList tr {
   padding: 0.2em;
   border-bottom: 1px solid gray;
-}
-
-#wtid {
-  margin-left: 0.5em;
 }
 
 td.actions img,

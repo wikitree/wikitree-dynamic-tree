@@ -789,24 +789,6 @@
             ],
         });
 
-        // Setup zoom and pan
-        var zoom = d3.behavior
-            .zoom()
-            .scaleExtent([0.1, 2.5])
-            .on("zoom", function () {
-                svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + 0.45 * d3.event.scale + ")");
-                console.log(
-                    "transform",
-                    "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")",
-                    "width:",
-                    width,
-                    "height:",
-                    height
-                );
-            })
-            // Offset so that first pan and zoom does not jump back to the origin
-            // .translate([originOffsetX, originOffsetY]); // SWITCHING to trying half the width and height to centre it better
-            .translate([width / 2, 560 /* height / 2 */]);
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
@@ -881,23 +863,23 @@
         // NEXT STEPS : Return a True/False based on whether any changes were actually made --> THEN - call reDraw routine if needed
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
+        const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+        const g = svg.append("g");
 
-        var svg = d3
-            .select(container)
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .call(zoom)
-            .append("g")
-            // Left padding of tree; TODO: find a better way
-            // .attr("transform", "translate(" + originOffsetX + "," + originOffsetY + ")");
-            // .attr("transform", "scale(" + 0.5 + ")")
-            .attr("transform", "translate(" + width / 2 + "," + 560 + ") scale(" + 0.45 + ") ");
-        // .attr("transform", "translate(" + width / 2 + "," + height / 2 + ") scale(" + 0.45 + ") ");
+        // Setup zoom and pan
+        const zoom = d3
+            .zoom()
+            .scaleExtent([0.1, 1])
+            .on("zoom", function (event) {
+                g.attr("transform", event.transform);
+            });
+        svg.call(zoom);
+        // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
+        svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 560).scale(0.45));
 
         // console.log("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
-        self.ancestorTree = new AncestorTree(svg);
+        self.ancestorTree = new AncestorTree(g);
         console.log("2. d3.scale = ", d3.scale);
 
         // Listen to tree events --> NOT NEEDED ANYMORE without the PLUS SIGNS (holdover from original Dynamic Tree version)
@@ -908,13 +890,13 @@
         // Setup pattern
         svg.append("defs")
             .append("pattern")
-            .attr({
+            .attrs({
                 id: "loader",
                 width: 20,
                 height: 20,
             })
             .append("image")
-            .attr({
+            .attrs({
                 width: 20,
                 height: 20,
                 //'xlink:href': 'ringLoader.svg'
@@ -930,7 +912,7 @@
             for (let index = 0; index < 2 ** genIndex; index++) {
                 if (genIndex <= 1) {
                     // Use a SECTOR for the parents
-                    svg.append("path").attr(
+                    g.append("path").attrs(
                         SVGfunctions.getSVGforSector(
                             0,
                             0,
@@ -951,7 +933,7 @@
                     );
                 } else {
                     // Use a WEDGE for ancestors further out
-                    svg.append("path").attr(
+                    g.append("path").attrs(
                         SVGfunctions.getSVGforWedge(
                             0,
                             0,
@@ -977,12 +959,12 @@
         // HIDE all the unused Wedges in the outer rims that we don't need yet
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
-                d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attr({ display: "none" });
+                d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
             }
         }
 
         // CREATE a CIRCLE for the Central Person to be drawn on top of
-        svg.append("circle").attr({
+        g.append("circle").attrs({
             "cx": 0,
             "cy": 0,
             "r": 135,
@@ -995,12 +977,12 @@
         // BEFORE we go further ... let's add the DNA objects we might need later
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
-                svg.append("g")
-                    .attr({
+                g.append("g")
+                    .attrs({
                         id: "imgDNA-x-" + genIndex + "i" + index,
                     })
                     .append("foreignObject")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-x-" + genIndex + "i" + index + "inner",
                         class: "centered",
                         width: "20px",
@@ -1013,17 +995,17 @@
 
                     .style("overflow", "visible") // so the name will wrap
                     .append("xhtml:div")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-x-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
 
-                svg.append("g")
-                    .attr({
+                g.append("g")
+                    .attrs({
                         id: "imgDNA-y-" + genIndex + "i" + index,
                     })
                     .append("foreignObject")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-y-" + genIndex + "i" + index + "inner",
                         class: "centered",
                         width: "20px",
@@ -1036,17 +1018,17 @@
 
                     .style("overflow", "visible") // so the name will wrap
                     .append("xhtml:div")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-y-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");
 
-                svg.append("g")
-                    .attr({
+                g.append("g")
+                    .attrs({
                         id: "imgDNA-mt-" + genIndex + "i" + index,
                     })
                     .append("foreignObject")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
                         class: "centered",
                         width: "20px",
@@ -1059,17 +1041,17 @@
 
                     .style("overflow", "visible") // so the name will wrap
                     .append("xhtml:div")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-mt-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
 
-                svg.append("g")
-                    .attr({
+                g.append("g")
+                    .attrs({
                         id: "imgDNA-Ds-" + genIndex + "i" + index,
                     })
                     .append("foreignObject")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
                         class: "centered",
                         width: "20px",
@@ -1082,17 +1064,17 @@
 
                     .style("overflow", "visible") // so the name will wrap
                     .append("xhtml:div")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
 
-                svg.append("g")
-                    .attr({
+                g.append("g")
+                    .attrs({
                         id: "imgDNA-As-" + genIndex + "i" + index,
                     })
                     .append("foreignObject")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-As-" + genIndex + "i" + index + "inner",
                         class: "centered",
                         width: "20px",
@@ -1105,17 +1087,17 @@
 
                     .style("overflow", "visible") // so the name will wrap
                     .append("xhtml:div")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-As-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
 
-                svg.append("g")
-                    .attr({
+                g.append("g")
+                    .attrs({
                         id: "imgDNA-Confirmed-" + genIndex + "i" + index,
                     })
                     .append("foreignObject")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
                         class: "centered",
                         width: "20px",
@@ -1128,7 +1110,7 @@
 
                     .style("overflow", "visible") // so the name will wrap
                     .append("xhtml:div")
-                    .attr({
+                    .attrs({
                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
@@ -1387,7 +1369,7 @@
                     }
 
                     //  console.log(SVGcode.id);
-                    d3.select("#" + SVGcode.id).attr({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
+                    d3.select("#" + SVGcode.id).attrs({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
 
                     let theWedge = d3.select("#" + SVGcode.id);
                     //  console.log( "theWedge:",theWedge[0][0] );
@@ -1396,7 +1378,7 @@
             // HIDE all the unused Wedges in the outer rims that we don't need yet
             for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
                 for (let index = 0; index < 2 ** genIndex; index++) {
-                    d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attr({ display: "none" });
+                    d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
                     let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
                     let dnaImgY = document.getElementById("imgDNA-y-" + genIndex + "i" + index + "inner");
                     let dnaImgMT = document.getElementById("imgDNA-mt-" + genIndex + "i" + index + "inner");
@@ -2124,6 +2106,7 @@
         // console.log("Create TREE var");
         this.svg = svg;
         this.root = null;
+        this.getChildrenFn = null;
         this.selector = selector;
         this.direction = typeof direction === "undefined" ? 1 : direction;
 
@@ -2131,7 +2114,7 @@
             return $.Deferred().resolve().promise();
         };
 
-        this.tree = d3.layout
+        this.tree = d3
             .tree()
             .nodeSize([nodeHeight, nodeWidth])
             .separation(function () {
@@ -2143,7 +2126,7 @@
      * Set the `children` function for the tree
      */
     Tree.prototype.children = function (fn) {
-        this.tree.children(fn);
+        this.getChildrenFn = fn;
         return this;
     };
 
@@ -2242,7 +2225,7 @@
         // * which happens if you decrease the # of generations (by two) then go back up again
         nodeEnter
             .append("foreignObject")
-            .attr({
+            .attrs({
                 id: "foreignObj4",
                 width: boxWidth,
                 height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
@@ -2496,10 +2479,10 @@
             });
 
         // Show info popup on click
-        nodeEnter.on("click", function (ancestorObject) {
+        nodeEnter.on("click", function (event, ancestorObject) {
             let person = ancestorObject.person; //thePeopleList[ person.id ];
-            d3.event.stopPropagation();
-            self.personPopup(person, d3.mouse(self.svg.node()));
+            event.stopPropagation();
+            self.personPopup(person, d3.pointer(event, self.svg.node()));
         });
 
         // set this variable so that we can access this tree and redraw it at any time when needed - a scoping issue solution!
@@ -2511,6 +2494,7 @@
         // ****************
 
         node.exit().remove();
+        node = nodeEnter.merge(node);
 
         // *****************************
         // *
@@ -3014,7 +2998,7 @@
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, event) {
+    Tree.prototype.personPopup = function (person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
@@ -3043,7 +3027,7 @@
         var popup = this.svg
             .append("g")
             .attr("class", "popup")
-            .attr("transform", "translate(" + event[0] + "," + event[1] + ")");
+            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")");
 
         let borderColor = "rgba(102, 204, 102, .5)";
         if (person.getGender() == "Male") {
@@ -3055,7 +3039,7 @@
 
         popup
             .append("foreignObject")
-            .attr({
+            .attrs({
                 width: 400,
                 height: 300,
             })

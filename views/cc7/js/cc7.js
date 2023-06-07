@@ -142,23 +142,21 @@ export class CC7 {
         this.selector = selector;
         $(selector).html(
             `<div id="cc7Container" class="cc7Table">
-            <input type="text" placeholder="Enter WikiTree ID" id="wtid" value="${
-                wtViewRegistry.session.personName
-            }" /><button
+            <button
                 class="small button"
                 id="getPeopleButton"
                 title="Get a list of connected people up to this degree">
-                Get CC7</button
+                Get CC3</button
             ><select id="cc7Degree" title="Select the degree of connection">
                 <option value="1">1</option>
                 <option value="2">2</option>
-                <option value="3">3</option>
+                <option value="3" selected>3</option>
                 <option value="4">4</option>
                 <option value="5">5</option>
                 <option value="6">6</option>
-                <option value="7" selected>7</option></select
+                <option value="7">7</option></select
             ><button class="small button" id="getDegreeButton" title="Get only people connected at the indicated degree">
-                Get Degree 7 Only</button
+                Get Degree 3 Only</button
             ><button id="savePeople" title="Save this data to a file for faster loading next time." class="small button">
                 Save</button
             ><button class="small button" id="loadButton" title="Load a previously saved data file.">Load A File</button
@@ -170,25 +168,15 @@ export class CC7 {
 
         const cc7Degree = CC7.getCookie("w_cc7Degree");
         if (cc7Degree && cc7Degree > 0 && cc7Degree <= 7) {
-            $("#getPeopleButton").text(`Get CC${cc7Degree}`);
-            $("#getDegreeButton").text(`Get Degree ${cc7Degree} Only`);
-            const select = document.querySelector("#cc7Degree");
-            select.value = cc7Degree;
+            CC7.handleDegreeChange(cc7Degree);
         }
         $("#cc7Degree").on("change", function () {
             const theDegree = $("#cc7Degree").val();
-            $("#getPeopleButton").text(`Get CC${theDegree}`);
-            $("#getDegreeButton").text(`Get Degree ${theDegree} Only`);
-            CC7.setCookie("w_cc7Degree", theDegree, { expires: 365 });
+            CC7.handleDegreeChange(theDegree);
         });
         $("#fileInput").on("change", CC7.handleFileUpload);
         $("#getPeopleButton").on("click", CC7.getConnectionsAction);
 
-        $("#wtid").keyup(function (e) {
-            if (e.keyCode == 13) {
-                $("#getPeopleButton").click();
-            }
-        });
         $("#help").click(function () {
             $("#explanation").slideToggle();
         });
@@ -211,6 +199,23 @@ export class CC7 {
             e.preventDefault();
             $("#fileInput").click();
         });
+        $("#getPeopleButton").click();
+    }
+
+    static handleDegreeChange(newDegree) {
+        $("#getPeopleButton").text(`Get CC${newDegree}`);
+        $("#getDegreeButton").text(`Get Degree ${newDegree} Only`);
+        // Set the selected degree value if required
+        let theDegree = $("#cc7Degree").val();
+        if (newDegree != theDegree) {
+            const select = document.querySelector("#cc7Degree");
+            select.value = newDegree;
+        }
+        // Set the cookie if required
+        theDegree = CC7.getCookie("w_cc7Degree");
+        if (newDegree != theDegree) {
+            CC7.setCookie("w_cc7Degree", newDegree, { expires: 365 });
+        }
     }
 
     // Age functions
@@ -2957,17 +2962,14 @@ export class CC7 {
         window.chunksOut = 0;
         window.chunksBack = 0;
         event.preventDefault();
-        if (
-            $("#wtid")
-                .val()
-                .match(/.+\-.+/)
-        ) {
+        const wtId = wtViewRegistry.getCurrentWtId();
+        if (wtId.match(/.+\-.+/)) {
             CC7.clearDisplay();
             CC7.showShakingTree();
             $("div.cc7Table").addClass("degreeView");
             const theDegree = $("#cc7Degree").val();
             const fields = "Id";
-            CC7.getPeopleAction($("#wtid").val(), 0, 0, 0, theDegree, theDegree, fields).then((people) => {
+            CC7.getPeopleAction(wtId, 0, 0, 0, theDegree, theDegree, fields).then((people) => {
                 $("#oneDegreeList").remove();
                 const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
                 $("div.cc7Table").append(oneDegreeList);
@@ -2993,7 +2995,7 @@ export class CC7 {
                                 const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
                                 mPerson.Parent = mParents;
                                 mPerson.Degree = $("#cc7Degree").val();
-                                if (mPerson.Name != $("#wtid").val()) {
+                                if (mPerson.Name != wtViewRegistry.getCurrentWtId()) {
                                     window.people.push(mPerson);
                                 }
                             });
@@ -3031,16 +3033,9 @@ export class CC7 {
     static async getConnectionsAction(event) {
         wtViewRegistry.clearStatus();
         const theDegree = $("#cc7Degree").val();
-        if (
-            $("#wtid")
-                .val()
-                .match(/.+\-.+/)
-        ) {
-            window.ancestors = await CC7.getAncestors(
-                $("#wtid").val().trim(),
-                3,
-                CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS
-            );
+        const wtId = wtViewRegistry.getCurrentWtId();
+        if (wtId.match(/.+\-.+/)) {
+            window.ancestors = await CC7.getAncestors(wtId, 3, CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS);
             CC7.assignGeneration(window.ancestors, ancestors[0], 0);
         }
         event.preventDefault();
@@ -3059,7 +3054,7 @@ export class CC7 {
     static getConnections(maxDegree, keys = 0) {
         let WTID;
         if (keys == 0) {
-            WTID = $("#wtid").val().trim();
+            WTID = wtViewRegistry.getCurrentWtId();
         } else {
             WTID = keys;
         }
@@ -3149,14 +3144,10 @@ export class CC7 {
     }
 
     static makeFilename() {
-        const date = new Date();
-        let fileName = $("#wtid").val().trim() + "_";
-        fileName += $("div.degreeView").length ? "Degree_" + $("#cc7Degree").val() + "_" : "";
-        fileName += date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-";
-        fileName += date.getDate().toString().padStart(2, "0") + "-";
-        fileName += date.getHours().toString().padStart(2, "0");
-        fileName += date.getMinutes().toString().padStart(2, "0");
-        fileName += date.getSeconds().toString().padStart(2, "0");
+        const theDegree = $("#cc7Degree").val();
+        let fileName = `CC${theDegree}_${wtViewRegistry.getCurrentWtId()}_`;
+        fileName += $("div.degreeView").length ? `Degree_${theDegree}_` : "";
+        fileName += new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
         return fileName;
     }
 
@@ -3224,7 +3215,7 @@ export class CC7 {
             );
             CC7.assignGeneration(window.ancestors, ancestors[0], 0);
 
-            $("#wtid").val(window.people[0].Name);
+            $(wtViewRegistry.WT_ID_TEXT).val(window.people[0].Name);
             CC7.addPeopleTable();
             $("div.cc7Table #hierarchyViewButton").before(
                 $(
@@ -3252,6 +3243,7 @@ export class CC7 {
                     .eq(2)
                     .append($(`<td>${degreeSum}</td>`));
             }
+            CC7.handleDegreeChange(maxDegree);
             CC7.hideShakingTree();
         };
 

@@ -8,7 +8,8 @@
 
     <link rel="icon" href="https://www.wikitree.com/favicon.ico" />
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.min.js"></script>
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
     <script src="WikiTreeAPI.js"></script>
@@ -49,7 +50,7 @@
 
     <script src="views/nameTest/name_test.js"></script>
 
-    <!-- jquery-ui.min.js is used by both couples_tree and cc7 only for its draggable function.
+    <!-- jquery-ui.min.js is used by couples_tree, cc7 and ancestorLines, but only for its draggable function.
      It has been created at https://jqueryui.com/download/ to only contain draggable and its
      dependencies. -->
     <script src="views/cc7/js/jquery-ui.min.js"></script>
@@ -65,6 +66,15 @@
     <script type="module" src="views/cc7/js/cc7.js"></script>
     <script type="module" src="views/cc7/cc7View.js"></script>
     <link rel="stylesheet" href="views/cc7/css/cc7.css" />
+
+    <!-- Beware, Ancestor Line Explorer uses FileSaver and jquery-ui.min above-->
+    <script type="module" src="views/ancestorLines/api.js"></script>
+    <script type="module" src="views/ancestorLines/person.js"></script>
+    <script type="module" src="views/ancestorLines/ancestor_tree.js"></script>
+    <script type="module" src="views/ancestorLines/display.js"></script>
+    <script type="module" src="views/ancestorLines/ancestor_lines_explorer.js"></script>
+    <script type="module" src="views/ancestorLines/ale_view.js"></script>
+    <link rel="stylesheet" href="views/ancestorLines/ale.css" />
 
     <link rel="stylesheet" href="tree.css" />
   </head>
