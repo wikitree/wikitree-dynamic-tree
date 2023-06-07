@@ -47,6 +47,9 @@ window.Surnames = class Surnames {
         // as well as Mother and Father so we can go back more generations.
         this.profileFields =
             "Id,Name,FirstName,RealName,LastNameAtBirth,LastNameCurrent,Gender,DataStatus,Privacy,Father,Mother";
+
+        // Hold the data for all of our ancestor people profiles.
+        this.people = new Array();
     }
 
     // This is the start of our view generation. We grab the starting profile by ID.
@@ -100,26 +103,45 @@ window.Surnames = class Surnames {
         html += `</p>`;
         $("#view-description").html(html);
 
+        // Get all of our ancestors in one swoop using getPeople.
+        await this.getAncestors();
+
+
         // Add our starting profile.
         $("#surnamesList").append(
             `<div class="generationRow"><div class="surnameItem gen0 newSurname"><a href="https://www.wikitree.com/wiki/${p.Name}">${p.LastNameAtBirth}</a></div></div>`
         );
         this.surnamesSeen.push(p.LastNameAtBirth);
 
-        // Add ancestors recursively.
+        // Add ancestor profiles recursively to our display.
         let paternal = new Array();
         paternal.push(await this.nextPerson(p.Father));
 
         let maternal = new Array();
         maternal.push(await this.nextPerson(p.Mother));
 
+        // Display them all.
         this.displayAncestors(paternal, maternal);
     }
 
-    // This is a recursive function listing all of the surnames for the given set of people/ancestors, and then
-    // calling itself again for the next generation until we hit a maximum depth.
+    // Call getPeople at the API to get our full set of ancestors. These are returned as a list of "people" that are not yet
+    // in a tree of parents. We'll run through the list and create our paternal and maternal arrays.
+    async getAncestors() {
+        let data = await WikiTreeAPI.postToAPI({
+            appId: SurnamesView.APP_ID,
+            action: "getPeople",
+            keys: this.startId,
+            fields: this.profileFields,
+            ancestors: this.maxGeneration
+        });
+        this.people = new Array();
+        this.people = data[0].people;
+    }
 
-    async displayAncestors(paternal, maternal) {
+    // This is a recursive function listing all of the surnames for the given set of people/ancestors, and then
+    // calling itself again for the next generation until we hit a maximum depth or we run out of ancestor data.
+
+    displayAncestors(paternal, maternal) {
         let nextPaternal = new Array();
         let nextMaternal = new Array();
 
@@ -128,16 +150,16 @@ window.Surnames = class Surnames {
         html += `<div class="paternalColumn">`;
         for (let i = 0; i < paternal.length; i++) {
             html += this.displayPerson(paternal[i]);
-            nextPaternal.push(await this.nextPerson(paternal[i].Father));
-            nextPaternal.push(await this.nextPerson(paternal[i].Mother));
+            nextPaternal.push(this.nextPerson(paternal[i].Father));
+            nextPaternal.push(this.nextPerson(paternal[i].Mother));
         }
         html += `</div>`;
 
         html += `<div class="maternalColumn">`;
         for (let i = 0; i < maternal.length; i++) {
             html += this.displayPerson(maternal[i]);
-            nextMaternal.push(await this.nextPerson(maternal[i].Father));
-            nextMaternal.push(await this.nextPerson(maternal[i].Mother));
+            nextMaternal.push(this.nextPerson(maternal[i].Father));
+            nextMaternal.push(this.nextPerson(maternal[i].Mother));
         }
         html += `</div>`;
 
@@ -153,7 +175,10 @@ window.Surnames = class Surnames {
 
     // Grab a parent profile for the next generation. If we don't have an id, we use a place-holder instead, so the
     // display keeps going with an "Unknown" relative displayed.
-    async nextPerson(id) {
+    // We used to get the next person one at a time by calling the API getPerson, but we gathered them all up front with getPeople
+    // so now we can just return that.
+    nextPerson(id) {
+        /* Old getPerson version (we also had this as an async function that could be await'd)
         if (id > 0) {
             let data = await WikiTreeAPI.postToAPI({
                 appId: SurnamesView.APP_ID,
@@ -167,6 +192,12 @@ window.Surnames = class Surnames {
                 return data[0].person;
             }
         }
+        */
+
+        if (id in this.people) {
+            return this.people[id];
+        }
+
         return this.blankPerson;
     }
 
