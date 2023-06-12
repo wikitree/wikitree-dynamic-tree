@@ -3,7 +3,7 @@
  */
 
 import { API } from "./api.js";
-import { Person } from "./person.js";
+import { Person, LinkToPerson } from "./person.js";
 
 export class AncestorTree {
     static #people;
@@ -17,7 +17,6 @@ export class AncestorTree {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
-        Person.init(AncestorTree.#people);
     }
 
     static clear() {
@@ -26,6 +25,7 @@ export class AncestorTree {
         AncestorTree.duplicates.clear();
         AncestorTree.root = undefined;
         AncestorTree.maxGeneration = 0;
+        AncestorTree.genCounts = [];
     }
 
     static replaceWith(treeArray) {
@@ -37,160 +37,113 @@ export class AncestorTree {
         AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
     }
 
-    static async buildTreeWithGetAncestors(wtId, depth) {
+    static async buildTreeWithGetPeople(wtId, depth) {
         const starttime = performance.now();
         let remainingDepth = depth;
         let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
-        const data = await API.getAncestorData(wtId, reqDepth);
-        let [root, nrAdded] = AncestorTree.addPeople(data);
-        AncestorTree.root = root;
+        let start = 0;
+        let [resultByKey, parentsNotLoaded] = await AncestorTree.makePagedCallAndAddPeople(
+            [wtId],
+            reqDepth,
+            start,
+            API.GET_PERSON_LIMIT
+        );
+        if (!resultByKey) return [AncestorTree.root, performance.now() - starttime];
+        const rootId = resultByKey[wtId].Id;
 
-        // We limit requests to an ancestor depth of req_depth
         remainingDepth -= reqDepth;
-        reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
-        let subtreeIds = new Set([root.getId()]);
-        while (reqDepth > 0) {
-            const profilesToLoad = new Set();
-            for (const r of subtreeIds) {
-                for (const id of AncestorTree.parentsNotLoaded(AncestorTree.#people.get(r))) {
-                    profilesToLoad.add(id);
-                }
-            }
-            console.log(`Current tree has ${nrAdded} profiles`);
-            console.log(
-                `Retrieving ${reqDepth} generations of ancestor data for each of possibly ${profilesToLoad.size} people).`
-            );
-            // console.log(
-            //     'logging <N>.<records-retrieved>(<people-found>)+<tree-expanded-with>:<new-tree-size> after each retrieval')
-            let cnt = 0;
-            subtreeIds.clear();
-            for (const pId of profilesToLoad) {
-                [root, cnt] = await AncestorTree.expand(pId, reqDepth, cnt);
-                if (typeof root != "undefined") {
-                    subtreeIds.add(root);
+        // const profilesToLoad = AncestorTree.parentsNotLoaded(AncestorTree.#people.get(rootId));
+        while (parentsNotLoaded.size > 0 && remainingDepth > 0) {
+            console.log(`Levels remaining:${remainingDepth}. Found ${parentsNotLoaded.size} more to load`);
+            const chunkSize = 100;
+            const idsToGet = [...parentsNotLoaded];
+            parentsNotLoaded.clear();
+            reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
+            for (let s = 0; s <= idsToGet.length; s += chunkSize) {
+                const chunkedIds = idsToGet.slice(s, s + chunkSize);
+
+                const oldTreeSize = AncestorTree.#people.size;
+                const reqSize = chunkedIds.length;
+                // console.log(`Current tree has ${oldTreeSize} profiles`);
+                console.log(
+                    `Retrieving ${reqSize} (${s} to ${s + reqSize - 1}) of ${
+                        idsToGet.length
+                    } people and their ancestors.`
+                );
+
+                const [, subtreeNotLoaded] = await AncestorTree.makePagedCallAndAddPeople(
+                    chunkedIds,
+                    reqDepth,
+                    start,
+                    API.GET_PERSON_LIMIT
+                );
+                const newTreeSize = AncestorTree.#people.size;
+                console.log(
+                    `Levels remaining:${remainingDepth}. #keys in original request:${reqSize}, profiles added:${
+                        newTreeSize - oldTreeSize
+                    }, new tree size:${newTreeSize}, found to load:${subtreeNotLoaded.size}`
+                );
+                for (const elm of subtreeNotLoaded) {
+                    parentsNotLoaded.add(elm);
                 }
             }
             remainingDepth -= reqDepth;
-            reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
         }
-        AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
+        AncestorTree.validateAndSetGenerations(rootId);
         return [AncestorTree.root, performance.now() - starttime];
     }
 
-    static async buildTreeWithGetRelatives(wtId, depth) {
-        const starttime = performance.now();
-        let remainingDepth = depth;
-        let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
-        console.log(`Calling getAncestors with key:${wtId}, depth:${reqDepth}`);
-        const data = await API.getAncestorData(wtId, reqDepth);
-        let [root, nrAdded] = AncestorTree.addPeople(data);
-        AncestorTree.root = root;
+    static async makePagedCallAndAddPeople(reqIds, depth, start, limit) {
+        console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
+        const [resultByKey, ancestor_json] = await API.getPeople([reqIds], depth, start, limit);
+        let profiles = ancestor_json ? Object.values(ancestor_json) : [];
+        console.log(`Received ${profiles.length} profiles`);
+        const notLoaded = new Set();
 
-        remainingDepth -= reqDepth;
-        const profilesToLoad = AncestorTree.parentsNotLoaded(AncestorTree.#people.get(root.getId()));
-        while (profilesToLoad.size > 0 && remainingDepth > 0) {
-            const oldTreeSize = AncestorTree.#people.size;
-            const reqSize = profilesToLoad.size;
-            console.log(`Current tree has ${oldTreeSize} profiles`);
-            console.log(`Retrieving ${profilesToLoad.size} people and their parents).`);
-
-            const items = await API.getRelatives(Array.from(profilesToLoad));
-
-            const wtIdsFound = [];
-            const wtIdsAdded = [];
-            profilesToLoad.clear();
-            for (const item of items) {
-                const person = addPerson(item.person);
-                if (person) {
-                    addToProfilesToLoad(person.getFatherId());
-                    addToProfilesToLoad(person.getMotherId());
-                }
-            }
-            const newTreeSize = AncestorTree.#people.size;
-            // if (wtIdsAdded.length < wtIdsFound.length) {
-            //   console.log(`Found: ${wtIdsFound}`);
-            // }
-            // console.log(`New: ${wtIdsAdded}`);
-            console.log(
-                `${remainingDepth}. requested:${reqSize}, received:${items.length}, added:${
-                    newTreeSize - oldTreeSize
-                }, total:${newTreeSize}`
-            );
-
-            --remainingDepth;
-
-            function addPerson(data) {
-                let newPerson;
-                const id = +data.Id;
-                const wtId = data.Name;
-                wtIdsFound.push(wtId);
+        while (profiles.length > 0) {
+            // Note: the root returned here, might not in fact be the root, because getPeople does not guarantee return order
+            let nrAdded = 0;
+            for (const item of profiles) {
+                const id = +item.Id;
                 if (!AncestorTree.#people.has(id)) {
-                    newPerson = new Person(data);
-                    AncestorTree.#people.set(id, newPerson);
-                    wtIdsAdded.push(wtId);
+                    // This is a new person, add them to the tree
+                    const person = new Person(item);
+                    AncestorTree.#people.set(id, person);
+                    ++nrAdded;
+
+                    // Keep track of parent ids for which that parent is not in the tree
+                    notLoaded.delete(id);
+                    for (const parentId of person.getParentIds()) {
+                        if (parentId && !AncestorTree.#people.has(+parentId)) {
+                            notLoaded.add(+parentId);
+                        }
+                    }
                 }
-                return newPerson;
             }
+            console.log(`Added ${nrAdded} people to the tree`);
 
-            function addToProfilesToLoad(id) {
-                if (id && !AncestorTree.#people.has(id)) profilesToLoad.add(id);
-            }
-        }
-        AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
-        return [AncestorTree.root, performance.now() - starttime];
-    }
+            // Check if we're done
+            if (profiles.length < API.GET_PERSON_LIMIT) break;
 
-    // Expand the given tree at the given person, by retrieving the ancestor data of its
-    // given ancestor_id to a depth of req_depth. cnt is used
-    // to count how many requests have been made in total. It does not really belong here,
-    // but allows the informational message to be printed in one place only
-    static async expand(ancestorId, reqDepth, cnt) {
-        const oldTreeSize = AncestorTree.#people.size;
-        let root = undefined;
-        let branchSize = 0;
-        const data = await API.getAncestorData(ancestorId, reqDepth);
-        if (data.length > 0) {
-            [root, branchSize] = AncestorTree.addPeople(data);
+            // We have more paged profiles to fetch
+            start += API.GET_PERSON_LIMIT;
+            console.log(
+                `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
+            );
+            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+            profiles = Object.values(ancestor_json);
+            console.log(`Received ${profiles.length} profiles`);
         }
-        const newTreeSize = AncestorTree.#people.size;
-        cnt += 1;
-        console.log(
-            `${cnt}. records:${data.length}, people:${branchSize}, growth:${
-                newTreeSize - oldTreeSize
-            }, total:${newTreeSize}`
-        );
-        return [root, cnt];
-    }
-
-    static addPeople(ancestor_json_list) {
-        const rootId = ancestor_json_list[0].Id;
-        let nrAdded = 0;
-        const wtIdsFound = [];
-        const wtIdsAdded = [];
-        for (const item of ancestor_json_list) {
-            const id = +item.Id;
-            const wtId = item.Name;
-            wtIdsFound.push(wtId);
-            if (!AncestorTree.#people.has(id)) {
-                const person = new Person(item);
-                AncestorTree.#people.set(id, person);
-                wtIdsAdded.push(wtId);
-                ++nrAdded;
-            }
-        }
-        if (wtIdsAdded.length < wtIdsFound.length) {
-            // console.log(`Found: ${wtIdsFound}`);
-        }
-        // console.log(`New: ${wtIdsAdded}`);
-        return [AncestorTree.#people.get(rootId), nrAdded];
+        return [resultByKey, notLoaded];
     }
 
     // Validate that the tree is acyclic while filling in the generation data for each person in the tree.
     // Returns the max generation
     static validateAndSetGenerations(rootId) {
+        AncestorTree.root = AncestorTree.#people.get(rootId);
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.genCounts = [0];
-        // clear each person's generation info
+        // Clear each person's generation info and add them to the byWtId map
         for (const person of AncestorTree.#people.values()) {
             person.clearGenerations();
             AncestorTree.#peopleByWtId.set(person.getWtId(), person);
@@ -358,10 +311,73 @@ export class AncestorTree {
         if (srcNode.getWtId() == dstWtId) {
             allPaths.push([...path]);
         } else {
-            for (const adjnode of srcNode.getD3Children()) {
+            for (const adjnode of AncestorTree.getD3Children(srcNode)) {
                 path.push(adjnode.getId());
                 AncestorTree.DFS(adjnode, dstWtId, path, allPaths);
                 path.pop();
+            }
+        }
+    }
+
+    static toArray() {
+        // Add tree nodes to the array while doing a breadth-first walk of the tree.
+        // This is done to ensure the root node is at the front of the array.
+        // A node is added as a tuple [id, person] for backward compatibility with
+        // the Array.from() that was used previously
+        let i = 0;
+        const a = [[AncestorTree.root.getId(), AncestorTree.root]];
+        while (i < a.length) {
+            const n = a[i++];
+            for (const pId of n[1].getParentIds()) {
+                if (pId && AncestorTree.#people.has(pId)) {
+                    a.push([pId, AncestorTree.#people.get(pId)]);
+                }
+            }
+        }
+        return a;
+    }
+
+    // Usefull for debugging
+    static toSmallArray() {
+        let i = 0;
+        const a = [toSmall(AncestorTree.root)];
+        while (i < a.length) {
+            const n = a[i++];
+            for (const pId of [n.father, n.mother]) {
+                if (pId && AncestorTree.#people.has(pId)) {
+                    a.push(toSmall(AncestorTree.#people.get(pId)));
+                }
+            }
+        }
+        return a;
+
+        function toSmall(p) {
+            return {
+                id: p.getId(),
+                wtId: p.getWtId(),
+                name: p.getDisplayName(),
+                birthdate: p.getBirthDate(),
+                father: p.getFatherId(),
+                mother: p.getMotherId(),
+            };
+        }
+    }
+
+    static getD3Children(person, alreadyInTree) {
+        const parents = [];
+        addParent(+person.getFatherId());
+        addParent(+person.getMotherId());
+        return parents;
+
+        function addParent(id) {
+            if (id && AncestorTree.#people.has(id)) {
+                const person = AncestorTree.#people.get(id);
+                if (alreadyInTree && alreadyInTree.has(id)) {
+                    parents.push(new LinkToPerson(person));
+                } else {
+                    if (alreadyInTree) alreadyInTree.add(id);
+                    parents.push(person);
+                }
             }
         }
     }
@@ -379,7 +395,7 @@ export class AncestorTree {
 
         while (q.length > 0) {
             const src = q.shift();
-            for (const p of AncestorTree.#peopleByWtId.get(src.id).getD3Children()) {
+            for (const p of AncestorTree.getD3Children(AncestorTree.#peopleByWtId.get(src.id))) {
                 const id = p.getWtId();
                 if (!nodes.has(id)) {
                     const dst = {
