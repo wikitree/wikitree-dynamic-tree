@@ -134,7 +134,7 @@ export class AncestorLinesExplorer {
                 <input
                   id="otherWtIds"
                   type="text"
-                  placeholder="(Optional) Enter comma-seperated WikiTree IDs"
+                  placeholder="(Optional) Enter comma-separated WikiTree IDs"
                   size="110"
                   title="Identify people of interest that need to be highlighted in the tree" />
                 <table id="optionsTbl">
