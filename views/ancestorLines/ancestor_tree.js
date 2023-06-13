@@ -95,7 +95,7 @@ export class AncestorTree {
 
     static async makePagedCallAndAddPeople(reqIds, depth, start, limit) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
-        const [resultByKey, ancestor_json] = await API.getPeople([reqIds], depth, start, limit);
+        const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
         console.log(`Received ${profiles.length} profiles`);
         const notLoaded = new Set();
