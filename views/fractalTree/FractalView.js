@@ -568,13 +568,13 @@
         // Setup zoom and pan
         const zoom = d3
             .zoom()
-            .scaleExtent([0.1, 1])
+            .scaleExtent([0.05, 1])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
                 FractalView.currentScaleFactor = event.transform.k;
             });
         svg.call(zoom);
-        svg.call(zoom.transform, d3.zoomIdentity.scale(1).translate(width / 2, height / 2));
+        svg.call(zoom.transform, d3.zoomIdentity.scale(0.75).translate(4/3*width / 2, height / 2));
 
         // console.log("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fractal Tree
