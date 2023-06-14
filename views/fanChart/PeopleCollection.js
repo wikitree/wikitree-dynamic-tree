@@ -24,8 +24,23 @@ PeopleCollection.PeopleList = class PeopleList {
     // THEN ... we use the add method to add one person to it, using the WikiTree ID as the key
     add(newPerson) {
         if (newPerson && newPerson.Id) {
+            // console.log("Adding: ", newPerson.Id);
             this[newPerson.Id] = new WikiTreeAPI.Person(newPerson);
+        } else {
+            console.log("Can't add newPerson: ", newPerson);
         }
+    }
+    // A simple function to Count all the  people in the collection to the console.log (for debugging purposes)
+    population() {
+        let numPeeps = 0;
+
+        for (const key in this) {
+            if (Object.hasOwnProperty.call(this, key)) {
+                numPeeps++;
+            }
+        }
+        console.log("There are ", numPeeps, " in PeopleCollection");
+        return numPeeps;
     }
 
     // A simple function to List All people in the collection to the console.log (for debugging purposes)
