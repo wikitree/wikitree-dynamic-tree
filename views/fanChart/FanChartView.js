@@ -442,6 +442,17 @@
                             defaultValue: "SansSerif",
                         },
                         { optionName: "break0", type: "br" },
+                        {
+                            optionName: "extraInfo",
+                            type: "radio",
+                            label: "Extras",
+                            values: [
+                                { value: "none", text: "none" },
+                                { value: "ahnNum", text: "Ahnentafel number" },
+                                { value: "WikiTreeID", text: "WikiTree ID" },
+                            ],
+                            defaultValue: "none",
+                        },
                         // {
                         //     optionName: "showWikiID",
                         //     label: "Show WikiTree ID for each person",
@@ -768,11 +779,12 @@
                                 { value: "DNAinheritance", text: "X/Y/mt DNA inheritance" },
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "-", text: "-" },
-                                { value: "review", text: "Profiles needing review" },
+                                { value: "cat", text: "Category" },
+                                // { value: "review", text: "Profiles needing review" },
                             ],
                             defaultValue: "DNAinheritance",
                         },
-                        { optionName: "break", comment: "For WikiTree DNA pages:", type: "br" },
+                        { optionName: "break4DNA", comment: "For WikiTree DNA pages:", type: "br" },
                         {
                             optionName: "howDNAlinks",
                             type: "radio",
@@ -783,6 +795,19 @@
                                 { value: "ShowAll", text: "Show All Links" },
                             ],
                             defaultValue: "Highlights",
+                        },
+                        {
+                            optionName: "catName",
+                            type: "select",
+                            label: "Choose Category",
+                            values: [
+                                { value: "Unsourced", text: "Unsourced" },
+                                // { value: "numChildren", text: "number of children" },
+                                // { value: "numSiblings", text: "number of all siblings" },
+                                // { value: "numFullSiblings", text: "number of full siblings only" },
+                                // { value: "numSpouses", text: "number of spouses" },
+                            ],
+                            defaultValue: "Unsourced",
                         },
                     ],
                 },
@@ -869,7 +894,7 @@
         // Setup zoom and pan
         const zoom = d3
             .zoom()
-            .scaleExtent([0.1, 1])
+            .scaleExtent([0.1, 1.5])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
             });
@@ -1140,7 +1165,18 @@
         specLocSelectorBR.style.display = "none";
         specFamSelectorBR.style.display = "none";
 
-        // console.log(theCheckIn);
+        // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let highlightSelector = document.getElementById("highlight_options_highlightBy");
+        highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+        catNameSelector.style.display = "none";
+        catNameSelectorLabel.style.display = "none";
+        
+
+        console.log("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
         // FanChartView.showFandokuLink = theCheckIn;
     };
 
@@ -1171,7 +1207,15 @@
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
         let legendASCIIspan = document.getElementById("legendASCII");
 
-        console.log("VALUE:", bkgdClrSelector.value);
+        // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let highlightSelector = document.getElementById("highlight_options_highlightBy");
+        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        let howDNAlinksRadiosBR = document.getElementById("highlight_options_howDNAlinks_BR");
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+        
+        console.log("VALUES:", bkgdClrSelector.value, highlightSelector.value);
+      
         if (bkgdClrSelector.value == "Family") {
             specFamSelector.style.display = "inline-block";
             legendASCIIspan.style.display = "inline-block";
@@ -1205,6 +1249,18 @@
 
             let theDIV = document.getElementById("legendDIV");
             theDIV.style.display = "none";
+        }
+
+        if (highlightSelector.value == "cat") {
+            break4DNASelector.parentNode.style.display = "none";
+            howDNAlinksRadiosBR.parentNode.style.display = "none";
+            catNameSelector.style.display = "inline-block";
+            catNameSelectorLabel.style.display = "inline-block";
+        } else {
+            break4DNASelector.parentNode.style.display = "block";
+            howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
         }
     };
 
@@ -1254,18 +1310,24 @@
 
     function loadAncestorsAtLevel(newLevel) {
         console.log("Need to load MORE peeps from Generation ", newLevel);
-        let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        // let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        let id = FanChartView.myAhnentafel.list[1];
         // console.log(theListOfIDs);
-        if (theListOfIDs.length == 0) {
+        // if (theListOfIDs.length == 0) {
+        if (1 == 0) {
             // console.log("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
             FanChartView.numGensRetrieved++;
             FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
         } else {
-            WikiTreeAPI.getRelatives(
-                APP_ID,
-                theListOfIDs,
+
+             WikiTreeAPI.getPeople(
+                // (appId, IDs, fields, options = {}) 
+                APP_ID , id,
+            // WikiTreeAPI.getRelatives(
+            //     APP_ID,
+            //     theListOfIDs,
                 [
                     "Id",
                     "Derived.BirthName",
@@ -1274,7 +1336,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-
+                    "Bio",
                     "Nicknames",
                     "Prefix",
                     "Suffix",
@@ -1296,15 +1358,19 @@
                     "Privacy",
                     "DataStatus",
                 ],
-                { getParents: true }
+                { 
+                    ancestors: newLevel,
+                    minGeneration: newLevel 
+                }
             ).then(function (result) {
                 if (result) {
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
                     FanChartView.theAncestors = result;
                     console.log("theAncestors:", FanChartView.theAncestors);
                     // console.log("person with which to drawTree:", person);
-                    for (let index = 0; index < FanChartView.theAncestors.length; index++) {
-                        thePeopleList.add(FanChartView.theAncestors[index].person);
+                    // for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                    for (const index in  FanChartView.theAncestors) {
+                        thePeopleList.add(FanChartView.theAncestors[index]);
                     }
                     FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     FanChartView.workingMaxNumGens = Math.min(
@@ -1879,136 +1945,115 @@
             }
             // console.log(".load person:",person);
 
-            WikiTreeAPI.getAncestors(APP_ID, id, 5, [
-                "Id",
-                "Derived.BirthName",
-                "Derived.BirthNamePrivate",
-                "FirstName",
-                "MiddleInitial",
-                "MiddleName",
-                "RealName",
-                "IsLiving",
-                "Nicknames",
-                "Prefix",
-                "Suffix",
-                "LastNameAtBirth",
-                "LastNameCurrent",
-                "BirthDate",
-                "BirthLocation",
-                "DeathDate",
-                "DeathLocation",
-                "Mother",
-                "Father",
-                "Children",
-                "Parents",
-                "Spouses",
-                "Siblings",
-                "Photo",
-                "Name",
-                "Gender",
-                "Privacy",
-                "DataStatus",
-            ]).then(function (result) {
+             // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
+            WikiTreeAPI.getPeople(
+                // (appId, IDs, fields, options = {}) 
+                APP_ID , id,
+            
+                [
+                    "Id",
+                    "Derived.BirthName",
+                    "Derived.BirthNamePrivate",
+                    "FirstName",
+                    "MiddleInitial",
+                    "MiddleName",
+                    "RealName",
+                    "Bio",
+                    "IsLiving",
+                    "Nicknames",
+                    "Prefix",
+                    "Suffix",
+                    "LastNameAtBirth",
+                    "LastNameCurrent",
+                    "BirthDate",
+                    "BirthLocation",
+                    "DeathDate",
+                    "DeathLocation",
+                    "Mother",
+                    "Father",
+                    "Children",
+                    "Parents",
+                    "Spouses",
+                    "Siblings",
+                    "Photo",
+                    "Name",
+                    "Gender",
+                    "Privacy",
+                    "DataStatus"
+                ],
+                {
+                    ancestors:5
+                }
+            ).then(function (result) {
                 FanChartView.theAncestors = result;
                 console.log("theAncestors:", FanChartView.theAncestors);
                 // console.log("person with which to drawTree:", person);
 
                 // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
-                let tmpAncArray = [];
-                let tmpAhnT = [
-                    0,
-                    FanChartView.theAncestors[0].Id,
-                    FanChartView.theAncestors[0].Father,
-                    FanChartView.theAncestors[0].Mother,
-                ];
-                let tmpAhnTindex = [-1, 0];
-                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                    thePerson = FanChartView.theAncestors[ancNum];
-                    tmpAncArray.push([thePerson.Id, thePerson.Father, thePerson.Mother]);
-                }
-
-                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                    for (var n = 2; n < 4; n++) {
-                        if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
-                            let thePerson = FanChartView.theAncestors[ancNum];
-                            tmpAhnTindex[n] = ancNum;
-                            tmpAhnT[2 * n] = thePerson.Father;
-                            tmpAhnT[2 * n + 1] = thePerson.Mother;
-                        }
+               
+                // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                for (const ancNum in FanChartView.theAncestors) {
+                    let thePerson = FanChartView.theAncestors[ancNum];
+                    if (thePerson.Id < 0) {
+                        thePerson.Id = 100 - thePerson.Id;
+                        thePerson["Name"] = "Private-" + thePerson.Id;
+                        thePerson["FirstName"] = "Private";
+                        thePerson["LastNameAtBirth"] = "TBD!";
                     }
-                }
-
-                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                    for (var n = 4; n < 8; n++) {
-                        if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
-                            let thePerson = FanChartView.theAncestors[ancNum];
-                            tmpAhnTindex[n] = ancNum;
-                            tmpAhnT[2 * n] = thePerson.Father;
-                            tmpAhnT[2 * n + 1] = thePerson.Mother;
-                        }
+                    if (thePerson.Mother < 0) {
+                        thePerson.Mother = 100 - thePerson.Mother;
                     }
-                }
-
-                for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                    for (var n = 8; n < 16; n++) {
-                        if (tmpAncArray[ancNum][0] == tmpAhnT[n]) {
-                            let thePerson = FanChartView.theAncestors[ancNum];
-                            tmpAhnTindex[n] = ancNum;
-                            tmpAhnT[2 * n] = thePerson.Father;
-                            tmpAhnT[2 * n + 1] = thePerson.Mother;
-                        }
+                    if (thePerson.Father < 0) {
+                        thePerson.Father = 100 - thePerson.Father;
                     }
+                    thePeopleList.add(thePerson);
+                    
                 }
-
-                let relativeName = [
-                    "kid",
-                    "self",
-                    "Father",
-                    "Mother",
-                    "Grandfather",
-                    "Grandmother",
-                    "Grandfather",
-                    "Grandmother",
-                    "Great-Grandfather",
-                    "Great-Grandmother",
-                    "Great-Grandfather",
-                    "Great-Grandmother",
-                    "Great-Grandfather",
-                    "Great-Grandmother",
-                    "Great-Grandfather",
-                    "Great-Grandmother",
-                ];
-                for (var a = 1; a < 16; a++) {
-                    if (tmpAhnTindex[a] && tmpAhnTindex[a] > 0 && tmpAhnT[a] && tmpAhnT[a] < 0) {
-                        let thePersonNum = tmpAhnTindex[a];
-                        let theChildNum = tmpAhnTindex[Math.floor(a / 2)];
-                        console.log("Further - we need to fix ", FanChartView.theAncestors[thePersonNum]);
-
-                        FanChartView.theAncestors[thePersonNum].Id = a;
-                        FanChartView.theAncestors[thePersonNum]["Name"] = "Private-" + a;
-                        FanChartView.theAncestors[thePersonNum]["FirstName"] = "Private";
-                        FanChartView.theAncestors[thePersonNum]["LastNameAtBirth"] = relativeName[a];
-                        if (a % 2 == 0) {
-                            FanChartView.theAncestors[thePersonNum]["Gender"] = "Male";
-                            FanChartView.theAncestors[theChildNum].Father = a;
-                        } else {
-                            FanChartView.theAncestors[thePersonNum]["Gender"] = "Female";
-                            FanChartView.theAncestors[theChildNum].Mother = a;
-                        }
-                    }
-                }
-
-                console.log("tmpAhnT:", tmpAhnT);
+                
                 console.log("person:", person);
 
-                person._data.Father = FanChartView.theAncestors[0].Father;
-                person._data.Mother = FanChartView.theAncestors[0].Mother;
+                person._data.Father = FanChartView.theAncestors[id].Father;
+                person._data.Mother = FanChartView.theAncestors[id].Mother;
 
-                for (let index = 0; index < FanChartView.theAncestors.length; index++) {
-                    const element = FanChartView.theAncestors[index];
-                    thePeopleList.add(FanChartView.theAncestors[index]);
-                }
+                // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
                 FanChartView.myAhnentafel.update(person);
+                
+                let relativeName = [
+                     "kid",
+                     "self",
+                     "Father",
+                     "Mother",
+                     "Grandfather",
+                     "Grandmother",
+                     "Grandfather",
+                     "Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                     "Great-Grandfather",
+                     "Great-Grandmother",
+                ];
+
+                // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                for (var a = 1; a < 16; a++) {
+                    let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
+                    // console.log("Peep ",a, thisPeep);
+                    if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                        
+                        thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                        if (a % 2 == 0) {
+                            thisPeep._data["Gender"] = "Male";
+                           
+                        } else {
+                            thisPeep._data["Gender"] = "Female";
+                           
+                        }
+                        // console.log("FOUND a TBD!", thisPeep);
+                    }
+                }
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
@@ -2054,6 +2099,7 @@
             "MiddleInitial",
             "MiddleName",
             "RealName",
+            "Bio",
             "IsLiving",
             "Nicknames",
             "Prefix",
@@ -2251,6 +2297,18 @@
                     // borderColor = "rgba(204, 102, 102, .5)";
                 }
 
+                // EXTRA INFO  (ahnNum or WikiTreeID or nothing)
+                let extraInfoForThisAnc = "";
+                let extraBR = "";
+                console.log("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"] );
+                if (FanChartView.currentSettings["general_options_extraInfo"] == "ahnNum") {
+                    //FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
+                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
+                    extraBR = "<br/>";
+                } else if (FanChartView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
+                    extraInfoForThisAnc = ancestorObject.Name;
+                    extraBR = "<br/>";
+                }
                 // DEFAULT STYLE used to be style="background-color: ${borderColor} ;"
 
                 let theClr = "none";
@@ -2305,6 +2363,9 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
+                        <span  id=extraInfoFor${
+                            ancestorObject.ahnNum
+                        }>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="name fontBold font${font4Name}"  id=nameDivFor${
                         ancestorObject.ahnNum
                     }>${getSettingsName(person)}</div>
@@ -2344,6 +2405,7 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
+                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
@@ -2387,6 +2449,7 @@
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
+                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${
@@ -2424,6 +2487,7 @@
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
                     } class="box" style="background-color: ${theClr} ; border:0; ">
+                    <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                     ${photoDiv}
                     <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -2459,6 +2523,7 @@
                     return `<div class="box centered" id=wedgeInfoFor${
                         ancestorObject.ahnNum
                     } style="background-color: ${theClr} ; border:0; ">
+                     <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                      <div class="vital-info">
 						${photoDiv}
 						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
@@ -2925,6 +2990,21 @@
 
             // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
             showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle);
+
+            // LET'S UPDATE THOSE EXTRAS TOO ... OK ?
+            let theExtraDIV = document.getElementById("extraInfoFor" + ancestorObject.ahnNum);
+            let extraInfoForThisAnc = "";
+            let extraBR = "";
+            console.log("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"]);
+            if (FanChartView.currentSettings["general_options_extraInfo"] == "ahnNum") {
+                //FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
+                extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
+                extraBR = "<br/>";
+            } else if (FanChartView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
+                extraInfoForThisAnc = d._data.Name;
+                extraBR = "<br/>";
+            }
+            if (theExtraDIV) {theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;}
 
             // FINALLY ... we return the transformation statement back - the translation based on our Trig calculations, and the rotation based on the nameAngle
             return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
@@ -4520,6 +4600,17 @@
                     }
                 }
             }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
+            let catNameSelector = document.getElementById("highlight_options_catName");
+            console.log("Looking for BIOs that Have the following: ", catNameSelector.value);
+             if (
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio && 
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf("[[Category:" + catNameSelector.value) > -1
+             ) {
+                 return true;
+             }
+
         }
 
         return false;
@@ -4547,6 +4638,9 @@
     }
 
     function fillOutFamilyStatsLocsForAncestors() {
+        console.log("fillOutFamilyStatsLocsForAncestors");
+        categoryList = [];
+        stickerList = [];
         for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
             const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
             if (thisPerp) {
@@ -4563,12 +4657,84 @@
                     thisPerp._data.FirstName,
                     thisPerp._data.age,
                     "*" + thisPerp._data.BirthRegion + "*",
-                    "#" + thisPerp._data.DeathRegion + "#"
+                    "#" + thisPerp._data.DeathRegion + "#",
+                    // thisPerp._data.bio
                 );
+                if (thisPerp._data.bio) {
+                    console.log(thisPerp._data.FirstName, "has a BIO !");
+                    parseThisBio(thisPerp._data.bio);
+                }
             }
         }
+        console.log("ALL CATEGORIES:\n", categoryList);
+        console.log("ALL STICKERS:\n", stickerList);
+
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let innerCatHTML = "<option selected value=\"Unsourced\">Unsourced</option>";
+        for (let i = 0; i < categoryList.length; i++) {
+            const cat = categoryList[i];
+            innerCatHTML += "<option value=\"" + cat + "\">" +  cat +"</option>";
+        }
+        if (stickerList.length > 0) {
+            innerCatHTML += '<option value="Sticker">STICKERS:</option>';
+            for (let i = 0; i < stickerList.length; i++) {
+                const cat = stickerList[i];
+                innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
+            }
+        }
+        catNameSelector.innerHTML = innerCatHTML;
+        
+
     }
-    function fillOutFamilyStatsLocsForPerp(thisPerp) {
+
+    let categoryList = [];
+    let stickerList = [];
+
+        function parseThisBio(bio) {
+
+        let catBeginBrackets = bio.indexOf("[[Category:");
+        while (catBeginBrackets > -1) {
+            let catEndBrackets = bio.indexOf("]]", catBeginBrackets);
+            if (catEndBrackets > -1) {
+                console.log(bio.substring(catBeginBrackets, catEndBrackets));
+                let thisCatName = bio.substring(catBeginBrackets + 11, catEndBrackets);
+                if (categoryList.indexOf(thisCatName) == -1){
+                    categoryList.push(thisCatName);
+                }
+                catBeginBrackets = bio.indexOf("[[Category:", catEndBrackets);
+            } else {
+                catBeginBrackets = -2;
+            }
+        }
+        
+        let stickBeginBrackets = bio.indexOf("{{");
+        let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births"];
+        while (stickBeginBrackets > -1) {
+            let stickEndBrackets = bio.indexOf("}}", stickBeginBrackets);
+            if (stickEndBrackets > -1) {
+                console.log(bio.substring(stickBeginBrackets, stickEndBrackets));
+                let thisStickName = bio.substring(stickBeginBrackets + 2, stickEndBrackets);
+                if (stickerList.indexOf(thisStickName) == -1){
+                    let OK2UseThisSticker = false;
+                    for (let index = 0; index < acceptedStickers.length && !OK2UseThisSticker; index++) {
+                        const element = acceptedStickers[index];
+                        if (thisStickName.indexOf(element) > -1) {
+                            OK2UseThisSticker = true;
+                            if (element == "Adopted Child") {  thisStickName = element; }
+                        }
+                    }
+                    if (OK2UseThisSticker){ stickerList.push(thisStickName); }
+                }
+                stickBeginBrackets = bio.indexOf("{{", stickEndBrackets);
+            } else {
+                stickBeginBrackets = -2;
+            }
+        }
+
+    }
+    
+     function fillOutFamilyStatsLocsForPerp(thisPerp) {
+        console.log("fillOutFamilyStatsLocsForPerp");
         if (thisPerp) {
             thisPerp._data["age"] = theAge(thisPerp);
             thisPerp._data["BirthCountry"] = getLocationFromString(thisPerp._data.BirthLocation, "C");
@@ -4585,6 +4751,9 @@
                 "*" + thisPerp._data.BirthRegion + "*",
                 "#" + thisPerp._data.DeathRegion + "#"
             );
+             if (thisPerp._data["Bio"]) {
+                 console.log(thisPerp._data.FirstName, "has a BIO !");
+             }
         }
         return "done";
     }
