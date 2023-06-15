@@ -4708,7 +4708,7 @@
         }
         
         let stickBeginBrackets = bio.indexOf("{{");
-        let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births"];
+        let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births", "Estimated Date"];
         while (stickBeginBrackets > -1) {
             let stickEndBrackets = bio.indexOf("}}", stickBeginBrackets);
             if (stickEndBrackets > -1) {
