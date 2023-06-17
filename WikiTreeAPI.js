@@ -402,7 +402,7 @@ WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
  */
 WikiTreeAPI.getPeople = async function (appId, IDs, fields, options = {}) {
     let theKeys = IDs;
-    console.log("IDs", IDs, typeof IDs);
+    // console.log("IDs", IDs, typeof IDs);
     if (typeof IDs == "object" /*  && IDs.indexOf(",") > -1 */) {
         theKeys = IDs.join(",");
     }
@@ -421,7 +421,7 @@ WikiTreeAPI.getPeople = async function (appId, IDs, fields, options = {}) {
             getPeopleParameters[key] = element;
         }
     }
-    console.log("NEED: getPeopleParameters: ", getPeopleParameters);
+    // console.log("NEED: getPeopleParameters: ", getPeopleParameters);
 
     const result = await WikiTreeAPI.postToAPI(getPeopleParameters);
     return result[0].people;
@@ -492,7 +492,7 @@ WikiTreeAPI.postToAPI = async function (postData) {
 
     const response = await fetch(API_URL, options);
     if (!response.ok) {
-        console.log(" ${response.status}: ${response.statusText} ");
+        // console.log(" ${response.status}: ${response.statusText} ");
         throw new Error(`HTTP error! Status: ${response.status}: ${response.statusText}`);
     }
     return await response.json();
