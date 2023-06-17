@@ -30,7 +30,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // then makes that Person the Primary ID, Ahnentafel # 1, then
     // climbs through their ancestors to fill out the rest of the Ahnentafel
     update(newPerson) {
-        // console.log("Update the Ahnentafel object", newPerson);
+        // condLog("Update the Ahnentafel object", newPerson);
 
         if (newPerson && newPerson._data.Id) {
             this.primaryPerson = newPerson;
@@ -47,7 +47,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
             if (this.primaryPerson._data.Mother && this.primaryPerson._data.Mother > 0) {
                 this.addToAhnenTafel(this.primaryPerson._data.Mother, 3);
             }
-            this.listAll(); // sends message to the console.log for validation - this could be commented out and not hurt anything
+            this.listAll(); // sends message to the condLog for validation - this could be commented out and not hurt anything
         }
     }
 
@@ -130,16 +130,16 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
                 let thisAncestor = { ahnNum: i, person: thePeopleList[this.list[i]], p: primePersonNum };
                 theList.push(thisAncestor);
 
-                // console.log("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
+                // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
             }
         }
-        console.log("listOfAncestorsForFanChart has ", theList.length, " ancestors.");
+        condLog("listOfAncestorsForFanChart has ", theList.length, " ancestors.");
         return theList;
     }
 
-    // A very BASIC tool to use for quick console.log relief
+    // A very BASIC tool to use for quick condLog relief
     listAll() {
-        console.log("Ahnentafel:", this);
+        condLog("Ahnentafel:", this);
     }
 
     // This function will go through all people at generation (newLevel - 1) - and find all the IDs for their parents
@@ -173,10 +173,10 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
                     }
                 }
 
-                // console.log("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
+                // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
             }
         }
-        console.log("listOfAncestorsToBeLoadedForLevel has ", theList.length, " ancestors.");
+        condLog("listOfAncestorsToBeLoadedForLevel has ", theList.length, " ancestors.");
         return theList;
     }
 
@@ -194,10 +194,10 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
                 if (theList.indexOf(thisID) == -1) {
                     theList.push(thisID);
                 }
-                // console.log("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
+                // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
             }
         }
-        console.log("listOfAncestorsAtLevel ", genNum, "has ", theList.length, " ancestors.\n", theList);
+        condLog("listOfAncestorsAtLevel ", genNum, "has ", theList.length, " ancestors.\n", theList);
         return theList;
     }
 };

@@ -341,7 +341,7 @@
     };
 
     FractalView.prototype.init = function (selector, startId) {
-        // console.log("FractalView.js - line:18", selector) ;
+        // condLog("FractalView.js - line:18", selector) ;
         var container = document.querySelector(selector),
             width = container.offsetWidth,
             height = container.offsetHeight;
@@ -849,12 +849,12 @@
 
         function settingsChanged(e) {
             if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
-                console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                console.log("NEW settings are:", FractalView.currentSettings);
+                condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+                condLog("NEW settings are:", FractalView.currentSettings);
                 FractalView.myAncestorTree.draw();
                 updateFontsIfNeeded();
             } else {
-                console.log("NOTHING happened according to SETTINGS OBJ");
+                condLog("NOTHING happened according to SETTINGS OBJ");
             }
         }
 
@@ -873,7 +873,7 @@
         svg.call(zoom);
         svg.call(zoom.transform, d3.zoomIdentity.scale(0.75).translate(((4 / 3) * width) / 2, height / 2));
 
-        // console.log("creating SVG object and setting up ancestor tree object")
+        // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fractal Tree
         self.ancestorTree = new AncestorTree(g);
 
@@ -1094,7 +1094,7 @@
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-        // console.log("bkgdClrSelector", bkgdClrSelector);
+        // condLog("bkgdClrSelector", bkgdClrSelector);
         bkgdClrSelector.setAttribute("onchange", "FractalView.optionElementJustChanged();");
         let specFamSelector = document.getElementById("colour_options_specifyByFamily");
         let specLocSelector = document.getElementById("colour_options_specifyByLocation");
@@ -1116,7 +1116,7 @@
     }
 
     FractalView.refreshTheLegend = function () {
-        console.log("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
+        condLog("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
         let refreshLegendDIV = document.getElementById("refreshLegend");
         refreshLegendDIV.style.display = "none";
         updateLegendIfNeeded();
@@ -1125,7 +1125,7 @@
 
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
     FractalView.optionElementJustChanged = function () {
-        console.log("optionElementJustChanged !!!!!");
+        condLog("optionElementJustChanged !!!!!");
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         let clrPaletteSelector = document.getElementById("colour_options_palette");
         let clrPaletteSelectorLabel = document.getElementById("colour_options_palette_label");
@@ -1137,7 +1137,7 @@
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
         let legendASCIIspan = document.getElementById("legendASCII");
 
-        console.log("VALUE:", bkgdClrSelector.value);
+        condLog("VALUE:", bkgdClrSelector.value);
         if (bkgdClrSelector.value == "Family") {
             specFamSelector.style.display = "inline-block";
             legendASCIIspan.style.display = "inline-block";
@@ -1175,7 +1175,7 @@
     };
 
     FractalView.drawLines = function () {
-        console.log("DRAWING LINES stuff should go here");
+        condLog("DRAWING LINES stuff should go here");
         for (let index = 0; index < 2 ** (FractalView.numGens2Display - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
             element.setAttribute("display", "block");
@@ -1214,7 +1214,7 @@
                             2 *
                             FractalView.maxDiamPerGen[g] -
                         1 * FractalView.maxDiamPerGen[g];
-                    // console.log(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
+                    // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
                 } else {
                     if (g <= thisGenNum) {
                         Y +=
@@ -1234,7 +1234,7 @@
                             2 *
                             FractalView.maxDiamPerGen[g] -
                         1 * FractalView.maxDiamPerGen[g];
-                    // console.log(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
+                    // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
 
                 if (!FractalView.myAhnentafel.list[j]) {
@@ -1277,7 +1277,7 @@
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
-        // console.log(theMessage);
+        // condLog(theMessage);
         if (theMessage > "") {
             theMessage = "<P align=center>" + theMessage + "</P>";
         }
@@ -1312,7 +1312,7 @@
 
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FractalView.numGens2Display;
-        // console.log("numGensSpan:", numGensSpan);
+        // condLog("numGensSpan:", numGensSpan);
         if (FractalView.numGens2Display > FractalView.numGensRetrieved) {
             loadAncestorsAtLevel(FractalView.numGens2Display);
             FractalView.numGensRetrieved = FractalView.numGens2Display;
@@ -1320,11 +1320,11 @@
     }
 
     function loadAncestorsAtLevel(newLevel) {
-        console.log("Need to load MORE peeps from Generation ", newLevel);
+        condLog("Need to load MORE peeps from Generation ", newLevel);
         let theListOfIDs = FractalView.myAhnentafel.list[1]; //OfAncestorsToBeLoadedForLevel(newLevel);
-        // console.log(theListOfIDs);
+        // condLog(theListOfIDs);
         if (theListOfIDs.length == 0) {
-            // console.log("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
+            // condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             FractalView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
             FractalView.numGensRetrieved++;
@@ -1370,8 +1370,8 @@
                 if (result) {
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
                     FractalView.theAncestors = result;
-                    // console.log("theAncestors:", FractalView.theAncestors);
-                    // console.log("person with which to drawTree:", person);
+                    // condLog("theAncestors:", FractalView.theAncestors);
+                    // condLog("person with which to drawTree:", person);
                     for (const index in FractalView.theAncestors) {
                         thePeopleList.add(FractalView.theAncestors[index]);
                     }
@@ -1385,7 +1385,7 @@
     }
     // Redraw the Wedges if needed for the Fractal Tree
     function redoWedgesForFractal() {
-        // console.log("TIme to RE-WEDGIFY !", this, FractalView);
+        // condLog("TIme to RE-WEDGIFY !", this, FractalView);
 
         if (FractalView.lastAngle != FractalView.maxAngle || FractalView.lastNumGens != FractalView.numGens2Display) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
@@ -1423,11 +1423,11 @@
                         );
                     }
 
-                    //  console.log(SVGcode.id);
+                    //  condLog(SVGcode.id);
                     d3.select("#" + SVGcode.id).attrs({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
 
                     let theWedge = d3.select("#" + SVGcode.id);
-                    //  console.log( "theWedge:",theWedge[0][0] );
+                    //  condLog( "theWedge:",theWedge[0][0] );
                 }
             }
             // HIDE all the unused Wedges in the outer rims that we don't need yet
@@ -1444,8 +1444,8 @@
     /** FUNCTION used to force a redraw of the Fractal Tree, used when called from Button Bar after a parameter has been changed */
 
     FractalView.redraw = function () {
-        // console.log("FractalView.redraw");
-        // console.log("Now theAncestors = ", FractalView.theAncestors);
+        // condLog("FractalView.redraw");
+        // condLog("Now theAncestors = ", FractalView.theAncestors);
         // thePeopleList.listAll();
         recalcAndDisplayNumGens();
         redoWedgesForFractal();
@@ -1458,10 +1458,10 @@
     };
 
     FractalView.toggleSettings = function () {
-        console.log("TIME to TOGGLE the SETTINGS NOW !!!", FractalView.fractalSettingsOptionsObject);
-        console.log(FractalView.fractalSettingsOptionsObject.getDefaultOptions());
+        condLog("TIME to TOGGLE the SETTINGS NOW !!!", FractalView.fractalSettingsOptionsObject);
+        condLog(FractalView.fractalSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
-        console.log("SETTINGS ARE:", theDIV.style.display);
+        condLog("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
         } else {
@@ -1470,10 +1470,10 @@
     };
 
     FractalView.toggleLegend = function () {
-        // console.log("TIME to TOGGLE the SETTINGS NOW !!!", FractalView.fanchartSettingsOptionsObject);
-        // console.log(FractalView.fanchartSettingsOptionsObject.getDefaultOptions());
+        // condLog("TIME to TOGGLE the SETTINGS NOW !!!", FractalView.fanchartSettingsOptionsObject);
+        // condLog(FractalView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("legendDIV");
-        // console.log("SETTINGS ARE:", theDIV.style.display);
+        // condLog("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
         } else {
@@ -1490,17 +1490,17 @@
      * Load and display a person
      */
     FractalView.prototype.load = function (id) {
-        // console.log("FractalView.prototype.load");
+        // condLog("FractalView.prototype.load");
         var self = this;
         self._load(id).then(function (person) {
-            // console.log("FractalView.prototype.load : self._load(id) ");
+            // condLog("FractalView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
             thePeopleList.add(person);
             thePeopleList.listAll();
 
             if (person.children && person.children.length > 0) {
                 for (let index = 0; index < person.children.length; index++) {
-                    // console.log(".load person Child # " + index, person.children[index]);
+                    // condLog(".load person Child # " + index, person.children[index]);
                     if (person.children[index]) {
                         // Assign Ahnentafel #s to initial Father and Mother
                         if (person.children[index]._data.Gender == "Male") {
@@ -1511,9 +1511,9 @@
                     }
                 }
             } else {
-                // console.log("Did not go through KIDS loop: ", person, person.depth);
+                // condLog("Did not go through KIDS loop: ", person, person.depth);
             }
-            // console.log(".load person:",person);
+            // condLog(".load person:",person);
 
             // WikiTreeAPI.getAncestors(APP_ID, id, 3,
             WikiTreeAPI.getPeople(
@@ -1553,8 +1553,8 @@
                 { ancestors: 3 }
             ).then(function (result) {
                 FractalView.theAncestors = result;
-                console.log("theAncestors:", FractalView.theAncestors);
-                console.log("person with which to drawTree:", person);
+                condLog("theAncestors:", FractalView.theAncestors);
+                condLog("person with which to drawTree:", person);
                 for (const ancNum in FractalView.theAncestors) {
                     let thePerson = FractalView.theAncestors[ancNum];
                     if (thePerson.Id < 0) {
@@ -1599,7 +1599,7 @@
                 // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[FractalView.myAhnentafel.list[a]];
-                    // console.log("Peep ",a, thisPeep);
+                    // condLog("Peep ",a, thisPeep);
                     if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
                         if (a % 2 == 0) {
@@ -1607,7 +1607,7 @@
                         } else {
                             thisPeep._data["Gender"] = "Female";
                         }
-                        // console.log("FOUND a TBD!", thisPeep);
+                        // condLog("FOUND a TBD!", thisPeep);
                     }
                 }
 
@@ -1624,13 +1624,13 @@
      */
     FractalView.prototype.loadMore = function (oldPerson) {
         var self = this;
-        // console.log("loadMore - line:94", oldPerson) ;
+        // condLog("loadMore - line:94", oldPerson) ;
         return self._load(oldPerson.getId()).then(function (newPerson) {
             var mother = newPerson.getMother(),
                 father = newPerson.getFather();
 
             if (mother) {
-                // console.log("mother:", mother);
+                // condLog("mother:", mother);
                 oldPerson.setMother(mother);
             }
             if (father) {
@@ -1647,7 +1647,7 @@
      * Testing username change ...
      */
     FractalView.prototype._load = function (id) {
-        // console.log("INITIAL _load - line:118", id) ;
+        // condLog("INITIAL _load - line:118", id) ;
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -1678,7 +1678,7 @@
             "Privacy",
             "DataStatus",
         ]);
-        // console.log("_load PersonObj:",thePersonObject);
+        // condLog("_load PersonObj:",thePersonObject);
         return thePersonObject;
     };
 
@@ -1686,10 +1686,10 @@
      * Draw/redraw the tree
      */
     FractalView.prototype.drawTree = function (data) {
-        console.log("FractalView.prototype.drawTree");
+        condLog("FractalView.prototype.drawTree");
 
         if (data) {
-            // console.log("(FractalView.prototype.drawTree WITH data !)");
+            // condLog("(FractalView.prototype.drawTree WITH data !)");
             this.ancestorTree.data(data);
             // this.descendantTree.data(data);
         }
@@ -1705,7 +1705,7 @@
      * `direction` is either 1 (forward) or -1 (backward).
      */
     var Tree = function (svg, selector, direction) {
-        // console.log("Create TREE var");
+        // condLog("Create TREE var");
         this.svg = svg;
         this.root = null;
         this.getChildrenFn = null;
@@ -1756,11 +1756,11 @@
      * Draw/redraw the tree
      */
     Tree.prototype.draw = function () {
-        console.log("Tree.prototype.draw");
+        condLog("Tree.prototype.draw");
         if (this.root) {
             // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
             var nodes = FractalView.myAhnentafel.listOfAncestorsForFanChart(FractalView.numGens2Display); // [];//this.tree.nodes(this.root);
-            console.log("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
+            condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
 
             FractalView.maxDiamPerGen = [];
             let widestBox = 200;
@@ -1772,7 +1772,7 @@
                     (((2 + (i % 2)) * widestBox) / 3 + theBlobBuffer);
             }
 
-            console.log("maxDiamPerGen", FractalView.maxDiamPerGen);
+            condLog("maxDiamPerGen", FractalView.maxDiamPerGen);
 
             updateLegendIfNeeded();
 
@@ -1804,20 +1804,20 @@
      * Draw the person boxes.
      */
     Tree.prototype.drawNodes = function (nodes) {
-        // console.log("Tree.prototpe.DRAW NODES", nodes);
+        // condLog("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
 
-        // console.log("this.selector = ", this.selector);
+        // condLog("this.selector = ", this.selector);
 
         // Get a list of existing nodes
         var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (ancestorObject) {
             let person = ancestorObject.person;
-            // console.log("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
+            // condLog("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
             // return person;
             return ancestorObject.ahnNum; //getId();
         });
 
-        // console.log("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
+        // condLog("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
 
         // Add new nodes
         var nodeEnter = node
@@ -1825,7 +1825,7 @@
             .append("g")
             .attr("class", "person " + this.selector);
 
-        // console.log("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
+        // condLog("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
 
         // Draw the person boxes
         nodeEnter
@@ -1855,7 +1855,7 @@
                 let theClr = "white";
                 // SETUP the repeatAncestorTracker
                 if (FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
-                    console.log(
+                    condLog(
                         "new repeat ancestor:",
                         FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
                     );
@@ -1965,7 +1965,7 @@
         //     return !person.getChildren() && (person.getFatherId() || person.getMotherId());
         // });
 
-        // console.log("line:397 - self just before the DRAW PLUS command: ", self);
+        // condLog("line:397 - self just before the DRAW PLUS command: ", self);
         // self.drawPlus(expandable.data());
         FractalView.myAncestorTree = self;
 
@@ -1987,7 +1987,7 @@
             //			Each person in the data collection has an .AhnNum numeric property assigned, which uniquely determines where their name plate should be displayed.
 
             d = ancestorObject.person; //thePeopleList[ person.id ];
-            console.log("node.attr.transform  - line:1989 (x,y) = ",d.x, d.y, d._data.Name);
+            condLog("node.attr.transform  - line:1989 (x,y) = ",d.x, d.y, d._data.Name);
 
             let thisRadius = 270; // NEED TO CHANGE THIS FROM BEING HARD CODED EVENTUALLY
 
@@ -2012,7 +2012,7 @@
                 let theOutsideClr = "";
 
                 theInfoBoxParentDIV = theInfoBox.parentNode;
-                // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
+                // condLog("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
                 // theInfoBox.style.width = "300px";
                 // theInfoBox.style.x = "-190px";
 
@@ -2026,11 +2026,11 @@
                     let locString = ancestorObject.person._data["BirthCountry"];
                     let clrIndex = theSortedLocationsArray.indexOf(locString);
                     theOutsideClr = getColourFromSortedLocationsIndex(clrIndex);
-                    // console.log("PICK ME PICK ME:", theClr, theInfoBoxParentDIV);
+                    // condLog("PICK ME PICK ME:", theClr, theInfoBoxParentDIV);
                     // // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                     // theInfoBoxParentDIV.style.backgroundColor = "yellow";
 
-                    // console.log(
+                    // condLog(
                     //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                     //     theClr
                     // );
@@ -2041,8 +2041,8 @@
 
                     // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                     // theInfoBoxParentDIV.style.backgroundColor = "yellow";
-                    //  console.log("PICKER ME PICKER ME:", theClr, theInfoBoxParentDIV);
-                    // console.log(
+                    //  condLog("PICKER ME PICKER ME:", theClr, theInfoBoxParentDIV);
+                    // condLog(
                     //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                     //     theClr
                     // );
@@ -2132,20 +2132,20 @@
                         0 +
                         ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] -
                         1 * FractalView.maxDiamPerGen[g];
-                    // console.log(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
+                    // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
                 } else {
                     Y +=
                         0 +
                         ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] -
                         1 * FractalView.maxDiamPerGen[g];
-                    // console.log(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
+                    // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
             }
-            // console.log( ancestorObject.ahnNum, thisGenNum, thisPosNum, ancestorObject.person._data.FirstName, ancestorObject.person._data.Name , X , Y);
+            // condLog( ancestorObject.ahnNum, thisGenNum, thisPosNum, ancestorObject.person._data.FirstName, ancestorObject.person._data.Name , X , Y);
 
             let newX = X;
             let newY = Y;
-            // console.log("Place",d._data.Name,"ahnNum:" + ancestorObject.ahnNum,"Gen:"+thisGenNum,"Pos:" + thisPosNum, FractalView.maxAngle);
+            // condLog("Place",d._data.Name,"ahnNum:" + ancestorObject.ahnNum,"Gen:"+thisGenNum,"Pos:" + thisPosNum, FractalView.maxAngle);
 
             let fontList = [
                 "fontBlack",
@@ -2164,11 +2164,11 @@
             let thisBkgdClr = thisDivsColour; //"white";
 
             let txtClrSetting = FractalView.currentSettings["colour_options_textColour"];
-            console.log("TextClrSetting = ", txtClrSetting);
+            condLog("TextClrSetting = ", txtClrSetting);
             let theTextFontClr = "fontBlack";
             if (txtClrSetting == "B&W") {
                 luminance = calcLuminance(thisBkgdClr);
-                console.log("font for B&W : line 2438  : ", thisBkgdClr, luminance);
+                condLog("font for B&W : line 2438  : ", thisBkgdClr, luminance);
                 theTextFontClr = luminance > 0.179 ? "fontBlack" : "fontWhite";
                 if (thisBkgdClr.indexOf("rgb") > -1) {
                     thisBkgdClr = hexify(thisBkgdClr);
@@ -2194,7 +2194,7 @@
                 }
                 theTextFontClr = "font" + thisTextColourArray[thisBkgdClr.toUpperCase()];
                 // if (theTextFontClr == undefined) {
-                console.log("FONT : ", thisBkgdClr, theTextFontClr, thisTextColourArray);
+                condLog("FONT : ", thisBkgdClr, theTextFontClr, thisTextColourArray);
                 // }
             } else {
                 theTextFontClr = "fontBlack"; // not really needed ... but for completeness sake, and to make sure there's a legit value
@@ -2207,7 +2207,7 @@
 
             if (theVitalDIV) {
                 theVitalDIV.classList.add(theTextFontClr);
-                console.log("theTextFontClr:", theTextFontClr);
+                condLog("theTextFontClr:", theTextFontClr);
                 // theVitalDIV.classList.add("fontYellow");
             } else {
                 theVitalDIV.classList.add("fontBlack");
@@ -2282,7 +2282,7 @@
 			`);
 
         d3.select("#view-container").on("click", function () {
-            console.log("d3.select treeViewerContainer onclick - REMOVE POPUP");
+            condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
     };
@@ -2296,7 +2296,7 @@
      * select on it, like we do with nodes and links.
      */
     Tree.prototype.removePopups = function () {
-        console.log("Tree.prototype - REMOVE POPUPS (plural) function");
+        condLog("Tree.prototype - REMOVE POPUPS (plural) function");
         d3.selectAll(".popup").remove();
     };
 
@@ -2304,7 +2304,7 @@
      * Manage the ancestors tree
      */
     var AncestorTree = function (svg) {
-        console.log("new var ANCESTOR TREE");
+        condLog("new var ANCESTOR TREE");
 
         // RESET  the # of Gens parameters
         FractalView.numGens2Display = 3;
@@ -2314,7 +2314,7 @@
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
-            console.log("Defining the CHILDREN for ", person._data.Name);
+            condLog("Defining the CHILDREN for ", person._data.Name);
             var children = [],
                 mother = person.getMother(),
                 father = person.getFather();
@@ -2365,7 +2365,7 @@
         if (yearBirth > 0 && yearDeath > 0) {
             age = yearDeath - yearBirth;
             if (monthBirth > 0 && monthDeath > 0 && monthBirth > monthDeath) {
-                console.log("died before birthday in final year");
+                condLog("died before birthday in final year");
                 age -= 1;
             } else if (
                 monthBirth > 0 &&
@@ -2375,7 +2375,7 @@
                 dayDeath > 0 &&
                 dayBirth > dayDeath
             ) {
-                console.log("died before birthday in FINAL MONTH");
+                condLog("died before birthday in FINAL MONTH");
                 age -= 1;
             }
         }
@@ -2476,7 +2476,7 @@
                 thisPerp._data["DeathTown"] = getLocationFromString(thisPerp._data.DeathLocation, "T");
                 thisPerp._data["BirthTownFull"] = thisPerp._data.BirthLocation;
                 thisPerp._data["DeathTownFull"] = thisPerp._data.DeathLocation;
-                console.log(
+                condLog(
                     thisPerp._data.FirstName,
                     thisPerp._data.age,
                     "*" + thisPerp._data.BirthRegion + "*",
@@ -2496,7 +2496,7 @@
             thisPerp._data["DeathTown"] = getLocationFromString(thisPerp._data.DeathLocation, "T");
             thisPerp._data["BirthTownFull"] = thisPerp._data.BirthLocation;
             thisPerp._data["DeathTownFull"] = thisPerp._data.DeathLocation;
-            console.log(
+            condLog(
                 thisPerp._data.FirstName,
                 thisPerp._data.age,
                 "*" + thisPerp._data.BirthRegion + "*",
@@ -2656,7 +2656,7 @@
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
-        // console.log("settingsStyleDate:", dateString, formatString);
+        // condLog("settingsStyleDate:", dateString, formatString);
         if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
             var parts = dateString.split("-"),
                 year = parseInt(parts[0], 10),
@@ -2780,7 +2780,7 @@
                 datePlaceString += thisPlace;
             }
         }
-        // console.log("SENDING getSettingsDate: ", datePlaceString);
+        // condLog("SENDING getSettingsDate: ", datePlaceString);
         return datePlaceString;
     }
 
@@ -2820,7 +2820,7 @@
             theName += " " + person._data.LastNameCurrent;
         }
 
-        // console.log("SENDING getSettingsName: " , theName);
+        // condLog("SENDING getSettingsName: " , theName);
         return theName;
 
         // const birthName = person.getDisplayName();
@@ -2828,7 +2828,7 @@
         // const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
         // const fullMealDeallName = `${person._data.Prefix} ${person._data.FirstName} ${person._data.MiddleName} ${person._data.LastNameCurrent} ${person._data.Suffix} `;
 
-        // console.log("FULL: " , fullMealDeallName);
+        // condLog("FULL: " , fullMealDeallName);
 
         // return fullMealDeallName;
 
@@ -2882,13 +2882,13 @@
 
     var thisTextColourArray = {};
     function updateLegendIfNeeded() {
-        console.log("DOING updateLegendIfNeeded");
+        condLog("DOING updateLegendIfNeeded");
         let settingForColourBy = FractalView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
         let legendDIV = document.getElementById("legendDIV");
         let innerLegendDIV = document.getElementById("innerLegend");
-        console.log("settingForSpecifyByLocation:", settingForSpecifyByLocation);
+        condLog("settingForSpecifyByLocation:", settingForSpecifyByLocation);
         let fontList = [
             "Black",
             "DarkGreen",
@@ -2907,7 +2907,7 @@
         let thisColourArray = getColourArray();
 
         if (settingForColourBy == "Family") {
-            // console.log("TextClrSetting = ", txtClrSetting);
+            // condLog("TextClrSetting = ", txtClrSetting);
 
             let innerCode = "";
             let clrSwatchArray = [];
@@ -2921,7 +2921,7 @@
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
-                console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                condLog("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
                 thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
 
                 clrSwatchArray.push(
@@ -2948,7 +2948,7 @@
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
             }
-            //  console.log("thisTextColourArray", thisTextColourArray);
+            //  condLog("thisTextColourArray", thisTextColourArray);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else if (settingForColourBy == "Location") {
@@ -2981,7 +2981,7 @@
                 }
             }
             let revLocArray = reverseCommaArray(uniqueLocationsArray, true);
-            console.log(revLocArray);
+            condLog(revLocArray);
             revLocArray.sort();
             uniqueLocationsArray = reverseCommaArray(revLocArray, false);
 
@@ -2991,10 +2991,10 @@
                 ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
 
             //     let rgbArray = hslToRgb(255, 1, 0.5);
-            // console.log("hslToRgb:", rgbArray );
-            // console.log("RGB = ", fractionToHexChar(rgbArray[0]) );
-            // console.log("RGB = ", fractionToHexChar(rgbArray[1]) );
-            // console.log("RGB = ", fractionToHexChar(rgbArray[2]) );
+            // condLog("hslToRgb:", rgbArray );
+            // condLog("RGB = ", fractionToHexChar(rgbArray[0]) );
+            // condLog("RGB = ", fractionToHexChar(rgbArray[1]) );
+            // condLog("RGB = ", fractionToHexChar(rgbArray[2]) );
 
             innerCode += "<br/>" + clrSwatchUNK + " unknown";
 
@@ -3004,7 +3004,7 @@
                 let lit = 0.5 + ((index % 7) - 3) * 0.05;
                 let thisClr = hslToRGBhex(hue, sat, lit);
                 let theTextFontClr = "Black";
-                //  console.log("Compare CLRS: ", thisClr, " vs ", thisColourArray[index]);
+                //  condLog("Compare CLRS: ", thisClr, " vs ", thisColourArray[index]);
                 let luminance = calcLuminance(thisColourArray[index]);
                 if (txtClrSetting == "B&W") {
                     theTextFontClr = luminance > 0.179 ? "Black" : "White";
@@ -3040,7 +3040,7 @@
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
-                //  console.log("CLR:", hue, sat, lit, thisClr, luminance, theTextFontClr);
+                //  condLog("CLR:", hue, sat, lit, thisClr, luminance, theTextFontClr);
                 thisTextColourArray[thisClr.toUpperCase()] = theTextFontClr;
                 let clrSwatch =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
@@ -3063,12 +3063,12 @@
             }
 
             theSortedLocationsArray = uniqueLocationsArray;
-            //  console.log(theSortedLocationsArray);
-            // console.log("LOCS not sorted we think ...");
-            // console.log(uniqueLocationsArray);
+            //  condLog(theSortedLocationsArray);
+            // condLog("LOCS not sorted we think ...");
+            // condLog(uniqueLocationsArray);
 
-            // console.log("LOCS yes SORTED we think ...");
-            // console.log(sortedLocs);
+            // condLog("LOCS yes SORTED we think ...");
+            // condLog(sortedLocs);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else {
@@ -3082,7 +3082,7 @@
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
-                //  console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                //  condLog("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
                 thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
 
                 // clrSwatchArray.push(
@@ -3126,7 +3126,7 @@
 
     function fractionToHexChar(p) {
         let hx = Math.min(255, Math.max(0, Math.round(p * 256)));
-        // console.log("convert ", p, " to ", hx , " to ", hx.toString(16));
+        // condLog("convert ", p, " to ", hx , " to ", hx.toString(16));
         hx = hx.toString(16);
         if (hx.length < 2) {
             hx = "0" + hx;
@@ -3201,14 +3201,14 @@
             for (let index = 0; index < FullColoursArray.length; index++) {
                 const element = FullColoursArray[index];
                 if (element[1].toUpperCase() == initBkgdClr.toUpperCase()) {
-                    //  console.log("FOUND ", element);
+                    //  condLog("FOUND ", element);
                     wasFound = true;
                     rgbClrs = hex2array(element[2]);
                     break;
                 }
             }
             if (!wasFound) {
-                //  console.log("FOUND - COULD NOT FIND COLOUR:", initBkgdClr);
+                //  condLog("FOUND - COULD NOT FIND COLOUR:", initBkgdClr);
                 rgbClrs = [40, 40, 40];
             }
         }
@@ -3234,7 +3234,7 @@
             "fontCyan",
         ];
         if (fontList.indexOf(newClr) == -1) {
-            console.log("Invalid colour sent to switchFontColour:", newClr);
+            condLog("Invalid colour sent to switchFontColour:", newClr);
             return; // don't change anything - an invalid font has been entered
         }
         // let newClr  = fontList[ Math.max(0, Math.min(fontList.length - 1, Math.round(fontList.length * Math.random() )) )];
@@ -3256,16 +3256,16 @@
             FractalView.currentSettings["general_options_font4Names"] == font4Name &&
             FractalView.currentSettings["general_options_font4Info"] == font4Info
         ) {
-            console.log("NOTHING to see HERE in UPDATE FONT land");
+            condLog("NOTHING to see HERE in UPDATE FONT land");
         } else {
-            console.log(
+            condLog(
                 "Update Fonts:",
                 FractalView.currentSettings["general_options_font4Names"],
                 font4Name,
                 FractalView.currentSettings["general_options_font4Info"],
                 font4Info
             );
-            console.log(FractalView.currentSettings);
+            condLog(FractalView.currentSettings);
 
             font4Name = FractalView.currentSettings["general_options_font4Names"];
             font4Info = FractalView.currentSettings["general_options_font4Info"];
@@ -3299,12 +3299,12 @@
             let i = element.ahnNum;
             let peep = element.person;
             let peepNameID = safeName(peep._data.Name);
-            console.log("Peep:", peepNameID);
+            condLog("Peep:", peepNameID);
         }
     }
 
     function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
-        // console.log("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
+        // condLog("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
 
         // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
         let dnaImgX = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "inner");
@@ -3355,7 +3355,7 @@
         let thisY = 100;
 
         let elem = document.getElementById("wedgeInfoFor" + ahnNum).parentNode;
-        console.log(elem.parentNode);
+        condLog(elem.parentNode);
 
         if (elem) {
             let rect = elem.getBoundingClientRect();
@@ -3364,16 +3364,16 @@
             thisY = newY - 0 + 1 * rect.height - 0 + 1 * elemParent.getAttribute("y") + 10;
             thisY =
                 newY - 0 + 1 * elemParent.getAttribute("y") + (1 * rect.height + 2) / FractalView.currentScaleFactor;
-            // console.log("SVG d3:", d3);
-            // console.log("SVG scale:", d3.scale, FractalView.currentScaleFactor);
-            // console.log("SVG behave:", d3.behavior);
-            // console.log(
+            // condLog("SVG d3:", d3);
+            // condLog("SVG scale:", d3.scale, FractalView.currentScaleFactor);
+            // condLog("SVG behave:", d3.behavior);
+            // condLog(
             //     `ahnNum: ${ahnNum} , newY: ${newY} , height: ${rect.height} , heightElem: ${elem.getAttribute(
             //         "height"
             //     )} , heightParent: ${rectParent.height} , ParentY: ${elemParent.getAttribute("y")} , thisY: ${thisY} ,`
             // );
-            // console.log(rect);
-            // console.log(rectParent);
+            // condLog(rect);
+            // condLog(rectParent);
             const line1 = document.getElementById("line1ForPerson" + ahnNum);
             const line2 = document.getElementById("line2ForPerson" + ahnNum);
             if (line1) {
@@ -3382,13 +3382,13 @@
                 line1.setAttribute("x2", newX + 200);
                 line1.setAttribute("y1", thisY);
                 line1.setAttribute("y2", thisY);
-                // console.log(line1);
+                // condLog(line1);
                 // line2.style.display = "inline-block";
                 line2.setAttribute("x1", newX - 200);
                 line2.setAttribute("x2", newX + 200);
                 line2.setAttribute("y1", newY - 0 + 1 * elemParent.getAttribute("y"));
                 line2.setAttribute("y2", newY - 0 + 1 * elemParent.getAttribute("y"));
-                // console.log(line2);
+                // condLog(line2);
             }
         }
 
@@ -3485,7 +3485,7 @@
                 }
             } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
                 if (ahnNum == 1) {
-                    console.log(thePeopleList[FractalView.myAhnentafel.list[1]]._data);
+                    condLog(thePeopleList[FractalView.myAhnentafel.list[1]]._data);
                     if (dnaImgConfirmed) {
                         dnaImgConfirmed.style.display = "block";
                     }
@@ -3535,7 +3535,7 @@
             // if (thisGenNum == 0) {
             dnaImgY.setAttribute("y", /* newY +  */ thisY);
             dnaImgY.setAttribute("x", newX - (35 * dOrtho) / 0.13);
-            //     console.log("@GenNum == 0 ; dOrtho = ", dOrtho);
+            //     condLog("@GenNum == 0 ; dOrtho = ", dOrtho);
             // }
             if (ext > "" && FractalView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 dnaImgY.style.display = "none";
@@ -3585,7 +3585,7 @@
                 '">' +
                 "<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>" +
                 "</A>";
-            // console.log(theLink);
+            // condLog(theLink);
             dnaImgDsDiv.innerHTML = theLink;
             // dnaImgDs.setAttribute("x", newX * dFraction - dOrtho2 * newY);
             // dnaImgDs.setAttribute("y", newY * dFraction + dOrtho2 * newX);
@@ -3697,7 +3697,7 @@
             }
         } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
             if (ahnNum == 1) {
-                console.log(thePeopleList[FractalView.myAhnentafel.list[1]]._data);
+                condLog(thePeopleList[FractalView.myAhnentafel.list[1]]._data);
                 return true;
             } else {
                 let childAhnNum = Math.floor(ahnNum / 2);
@@ -4260,9 +4260,9 @@
                     let thePerp = thePeopleList[FractalView.myAhnentafel.list[ahnNum]];
                     thisAge = theAge(thePerp);
                     thePerp._data["age"] = thisAge;
-                    console.log("thisAge - WAS undefined - now is:", thisAge);
+                    condLog("thisAge - WAS undefined - now is:", thisAge);
                 } else {
-                    console.log("thisAge:", thisAge);
+                    condLog("thisAge:", thisAge);
                 }
 
                 if (thisAge == -2) {
@@ -4271,7 +4271,7 @@
                     return "lime"; //thisColourArray[0];
                 } else {
                     let thisDecade = 1 + Math.max(0, Math.floor((thisAge + 0.5) / 10));
-                    console.log("Age " + thisAge + " in Decade # " + thisDecade);
+                    condLog("Age " + thisAge + " in Decade # " + thisDecade);
                     return thisColourArray[thisDecade];
                 }
             } else if (settingForSpecifyByFamily == "spouses") {
@@ -4289,7 +4289,7 @@
                 let thisPerp = thePeopleList[FractalView.myAhnentafel.list[ahnNum]];
                 let res = fillOutFamilyStatsLocsForPerp(thisPerp);
                 locString = thisPerp._data[settingForSpecifyByLocation];
-                console.log(
+                condLog(
                     "NEW location for " + thisPerp._data.FirstName + " " + thisPerp._data.LastNameAtBirth,
                     locString
                 );
@@ -4311,7 +4311,7 @@
             let thisClr = hslToRGBhex(hue, sat, lit);
             return thisClr;
 
-            //     console.log("CLR:", hue, sat, lit, thisClr);
+            //     condLog("CLR:", hue, sat, lit, thisClr);
             //     let clrSwatch =
             //         "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
             //         thisClr +

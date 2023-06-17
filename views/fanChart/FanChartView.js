@@ -343,9 +343,9 @@
     };
 
     FanChartView.prototype.init = function (selector, startId) {
-        // console.log("FanChartView.js - line:18", selector) ;
+        // condLog("FanChartView.js - line:18", selector) ;
         // let theCheckIn =  FanChartView.getCheckIn();
-        // // console.log("theCheckIN:", theCheckIn);
+        // // condLog("theCheckIN:", theCheckIn);
         // FanChartView.showFandokuLink = theCheckIn;
 
         var container = document.querySelector(selector),
@@ -845,7 +845,7 @@
             '<span style="color:red; align:left"><A onclick="FanChartView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
             "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>";
 
-        // console.log("SETTINGS:",settingsHTML);
+        // condLog("SETTINGS:",settingsHTML);
 
         // '<ul class="profile-tabs">' +
         //     '<li id=general-tab>General</li>' +
@@ -875,11 +875,11 @@
 
         function settingsChanged(e) {
             if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
-                // console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                console.log("NEW settings are:", FanChartView.currentSettings);
+                // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+                condLog("NEW settings are:", FanChartView.currentSettings);
                 FanChartView.myAncestorTree.draw();
             } else {
-                // console.log("NOTHING happened according to SETTINGS OBJ");
+                // condLog("NOTHING happened according to SETTINGS OBJ");
             }
         }
 
@@ -902,10 +902,10 @@
         // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
         svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 560).scale(0.45));
 
-        // console.log("creating SVG object and setting up ancestor tree object")
+        // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
         self.ancestorTree = new AncestorTree(g);
-        console.log("2. d3.scale = ", d3.scale);
+        condLog("2. d3.scale = ", d3.scale);
 
         // Listen to tree events --> NOT NEEDED ANYMORE without the PLUS SIGNS (holdover from original Dynamic Tree version)
         // self.ancestorTree.expand(function (person) {
@@ -1143,14 +1143,14 @@
         }
 
         self.load(startId);
-        // console.log(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
+        // condLog(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FanChartView.fanchartSettingsOptionsObject.buildPage();
         FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-        // console.log("bkgdClrSelector", bkgdClrSelector);
+        // condLog("bkgdClrSelector", bkgdClrSelector);
         bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
         let specFamSelector = document.getElementById("colour_options_specifyByFamily");
         let specLocSelector = document.getElementById("colour_options_specifyByLocation");
@@ -1176,7 +1176,7 @@
         catNameSelectorLabel.style.display = "none";
         
 
-        console.log("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
+        condLog("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
         // FanChartView.showFandokuLink = theCheckIn;
     };
 
@@ -1186,7 +1186,7 @@
     }
 
     FanChartView.refreshTheLegend = function () {
-        console.log("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
+        condLog("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
         let refreshLegendDIV = document.getElementById("refreshLegend");
         refreshLegendDIV.style.display = "none";
         updateLegendIfNeeded();
@@ -1195,7 +1195,7 @@
 
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
     FanChartView.optionElementJustChanged = function () {
-        console.log("optionElementJustChanged !!!!!");
+        condLog("optionElementJustChanged !!!!!");
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         let clrPaletteSelector = document.getElementById("colour_options_palette");
         let clrPaletteSelectorLabel = document.getElementById("colour_options_palette_label");
@@ -1214,7 +1214,7 @@
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
         
-        console.log("VALUES:", bkgdClrSelector.value, highlightSelector.value);
+        condLog("VALUES:", bkgdClrSelector.value, highlightSelector.value);
       
         if (bkgdClrSelector.value == "Family") {
             specFamSelector.style.display = "inline-block";
@@ -1266,7 +1266,7 @@
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
-        // console.log(theMessage);
+        // condLog(theMessage);
         if (theMessage > "") {
             theMessage = "<P align=center>" + theMessage + "</P>";
         }
@@ -1301,7 +1301,7 @@
 
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FanChartView.numGens2Display;
-        // console.log("numGensSpan:", numGensSpan);
+        // condLog("numGensSpan:", numGensSpan);
         if (FanChartView.numGens2Display > FanChartView.numGensRetrieved) {
             loadAncestorsAtLevel(FanChartView.numGens2Display);
             FanChartView.numGensRetrieved = FanChartView.numGens2Display;
@@ -1309,13 +1309,13 @@
     }
 
     function loadAncestorsAtLevel(newLevel) {
-        console.log("Need to load MORE peeps from Generation ", newLevel);
+        condLog("Need to load MORE peeps from Generation ", newLevel);
         // let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
         let id = FanChartView.myAhnentafel.list[1];
-        // console.log(theListOfIDs);
+        // condLog(theListOfIDs);
         // if (theListOfIDs.length == 0) {
         if (1 == 0) {
-            // console.log("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
+            // condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
             FanChartView.numGensRetrieved++;
@@ -1366,8 +1366,8 @@
                 if (result) {
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
                     FanChartView.theAncestors = result;
-                    console.log("theAncestors:", FanChartView.theAncestors);
-                    // console.log("person with which to drawTree:", person);
+                    condLog("theAncestors:", FanChartView.theAncestors);
+                    // condLog("person with which to drawTree:", person);
                     // for (let index = 0; index < FanChartView.theAncestors.length; index++) {
                     for (const index in  FanChartView.theAncestors) {
                         thePeopleList.add(FanChartView.theAncestors[index]);
@@ -1385,7 +1385,7 @@
     }
     // Redraw the Wedges if needed for the Fan Chart
     function redoWedgesForFanChart() {
-        // console.log("TIme to RE-WEDGIFY !", this, FanChartView);
+        // condLog("TIme to RE-WEDGIFY !", this, FanChartView);
 
         if (
             FanChartView.lastAngle != FanChartView.maxAngle ||
@@ -1434,11 +1434,11 @@
                         );
                     }
 
-                    //  console.log(SVGcode.id);
+                    //  condLog(SVGcode.id);
                     d3.select("#" + SVGcode.id).attrs({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
 
                     let theWedge = d3.select("#" + SVGcode.id);
-                    //  console.log( "theWedge:",theWedge[0][0] );
+                    //  condLog( "theWedge:",theWedge[0][0] );
                 }
             }
             // HIDE all the unused Wedges in the outer rims that we don't need yet
@@ -1476,7 +1476,7 @@
 
     var thisTextColourArray = {};
     function updateLegendIfNeeded() {
-        console.log("DOING updateLegendIfNeeded");
+        condLog("DOING updateLegendIfNeeded");
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -1501,7 +1501,7 @@
         let thisColourArray = getColourArray();
 
         if (settingForColourBy == "Family") {
-            // console.log("TextClrSetting = ", txtClrSetting);
+            // condLog("TextClrSetting = ", txtClrSetting);
 
             let innerCode = "";
             let clrSwatchArray = [];
@@ -1515,7 +1515,7 @@
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
-                console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                condLog("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
                 thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
 
                 clrSwatchArray.push(
@@ -1542,7 +1542,7 @@
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
             }
-            console.log("thisTextColourArray", thisTextColourArray);
+            condLog("thisTextColourArray", thisTextColourArray);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else if (settingForColourBy == "Location") {
@@ -1575,7 +1575,7 @@
                 }
             }
             let revLocArray = reverseCommaArray(uniqueLocationsArray, true);
-            console.log(revLocArray);
+            condLog(revLocArray);
             revLocArray.sort();
             uniqueLocationsArray = reverseCommaArray(revLocArray, false);
 
@@ -1585,10 +1585,10 @@
                 ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
 
             //     let rgbArray = hslToRgb(255, 1, 0.5);
-            // console.log("hslToRgb:", rgbArray );
-            // console.log("RGB = ", fractionToHexChar(rgbArray[0]) );
-            // console.log("RGB = ", fractionToHexChar(rgbArray[1]) );
-            // console.log("RGB = ", fractionToHexChar(rgbArray[2]) );
+            // condLog("hslToRgb:", rgbArray );
+            // condLog("RGB = ", fractionToHexChar(rgbArray[0]) );
+            // condLog("RGB = ", fractionToHexChar(rgbArray[1]) );
+            // condLog("RGB = ", fractionToHexChar(rgbArray[2]) );
 
             innerCode += "<br/>" + clrSwatchUNK + " unknown";
 
@@ -1598,7 +1598,7 @@
                 let lit = 0.5 + ((index % 7) - 3) * 0.05;
                 let thisClr = hslToRGBhex(hue, sat, lit);
                 let theTextFontClr = "Black";
-                console.log("Compare CLRS: ", thisClr, " vs ", thisColourArray[index]);
+                condLog("Compare CLRS: ", thisClr, " vs ", thisColourArray[index]);
                 let luminance = calcLuminance(thisColourArray[index]);
                 if (txtClrSetting == "B&W") {
                     theTextFontClr = luminance > 0.179 ? "Black" : "White";
@@ -1634,7 +1634,7 @@
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
-                console.log("CLR:", hue, sat, lit, thisClr, luminance, theTextFontClr);
+                condLog("CLR:", hue, sat, lit, thisClr, luminance, theTextFontClr);
                 thisTextColourArray[thisClr.toUpperCase()] = theTextFontClr;
                 let clrSwatch =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
@@ -1657,12 +1657,12 @@
             }
 
             theSortedLocationsArray = uniqueLocationsArray;
-            console.log(theSortedLocationsArray);
-            // console.log("LOCS not sorted we think ...");
-            // console.log(uniqueLocationsArray);
+            condLog(theSortedLocationsArray);
+            // condLog("LOCS not sorted we think ...");
+            // condLog(uniqueLocationsArray);
 
-            // console.log("LOCS yes SORTED we think ...");
-            // console.log(sortedLocs);
+            // condLog("LOCS yes SORTED we think ...");
+            // condLog(sortedLocs);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else {
@@ -1676,7 +1676,7 @@
                 } else {
                     theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
                 }
-                console.log("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                condLog("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
                 thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
 
                 // clrSwatchArray.push(
@@ -1720,7 +1720,7 @@
 
     function fractionToHexChar(p) {
         let hx = Math.min(255, Math.max(0, Math.round(p * 256)));
-        // console.log("convert ", p, " to ", hx , " to ", hx.toString(16));
+        // condLog("convert ", p, " to ", hx , " to ", hx.toString(16));
         hx = hx.toString(16);
         if (hx.length < 2) {
             hx = "0" + hx;
@@ -1763,7 +1763,7 @@
             "fontCyan",
         ];
         if (fontList.indexOf(newClr) == -1) {
-            console.log("Invalid colour sent to switchFontColour:", newClr);
+            condLog("Invalid colour sent to switchFontColour:", newClr);
             return; // don't change anything - an invalid font has been entered
         }
         // let newClr  = fontList[ Math.max(0, Math.min(fontList.length - 1, Math.round(fontList.length * Math.random() )) )];
@@ -1785,16 +1785,16 @@
             FanChartView.currentSettings["general_options_font4Names"] == font4Name &&
             FanChartView.currentSettings["general_options_font4Info"] == font4Info
         ) {
-            console.log("NOTHING to see HERE in UPDATE FONT land");
+            condLog("NOTHING to see HERE in UPDATE FONT land");
         } else {
-            console.log(
+            condLog(
                 "Update Fonts:",
                 FanChartView.currentSettings["general_options_font4Names"],
                 font4Name,
                 FanChartView.currentSettings["general_options_font4Info"],
                 font4Info
             );
-            console.log(FanChartView.currentSettings);
+            condLog(FanChartView.currentSettings);
 
             font4Name = FanChartView.currentSettings["general_options_font4Names"];
             font4Info = FanChartView.currentSettings["general_options_font4Info"];
@@ -1829,7 +1829,7 @@
     //             if (rules == null) return null;
     //             for (var i = 0; i < rules.length; i++) {
     //                 if (rules[i].selectorText == ruleClass) {
-    //                     // console.log("r:", rules[i].style[property] );
+    //                     // condLog("r:", rules[i].style[property] );
     //                     return rules[i].style[property];
     //                     //or rules[i].style["border"]="2px solid red";
     //                     //or rules[i].style["boxShadow"]="4px 4px 4px -2px rgba(0,0,0,0.5)";
@@ -1843,7 +1843,7 @@
     // function listStyleRules(ruleClass, property, cssFile) {
     //     for (var s = 0; s < document.styleSheets.length; s++) {
     //         var sheet = document.styleSheets[s];
-    //         console.log("SS" + s, sheet);
+    //         condLog("SS" + s, sheet);
     //         if (sheet) {
     //         //     if ( !sheet.cssRules) {
     //         //         // nothing to see here
@@ -1856,9 +1856,9 @@
     //         //         } else {
     //         //             // go through the rules
     //         //             for (var i = 0; i < rules.length; i++) {
-    //         //                 console.log("ss" + s, "r" + i, rules[i].selectorText, rules[i].style);
+    //         //                 condLog("ss" + s, "r" + i, rules[i].selectorText, rules[i].style);
     //         //                 // if (rules[i].selectorText == ruleClass) {
-    //         //                     // console.log("r:", rules[i].style[property] );
+    //         //                     // condLog("r:", rules[i].style[property] );
     //         //                     // return rules[i].style[property];
     //         //                     //or rules[i].style["border"]="2px solid red";
     //         //                     //or rules[i].style["boxShadow"]="4px 4px 4px -2px rgba(0,0,0,0.5)";
@@ -1874,10 +1874,10 @@
 
     /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
     FanChartView.redraw = function () {
-        console.log("FanChartView.redraw");
+        condLog("FanChartView.redraw");
         // listStyleRules();
-        // console.log(document.styleSheets[0].cssRules);
-        // console.log("Now theAncestors = ", FanChartView.theAncestors);
+        // condLog(document.styleSheets[0].cssRules);
+        // condLog("Now theAncestors = ", FanChartView.theAncestors);
         // thePeopleList.listAll();
         recalcAndDisplayNumGens();
         redoWedgesForFanChart();
@@ -1894,10 +1894,10 @@
     };
 
     FanChartView.toggleSettings = function () {
-        // console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
-        // console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
+        // condLog("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
+        // condLog(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
-        console.log("SETTINGS ARE:", theDIV.style.display);
+        condLog("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
         } else {
@@ -1905,10 +1905,10 @@
         }
     };
     FanChartView.toggleLegend = function () {
-        // console.log("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
-        // console.log(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
+        // condLog("TIME to TOGGLE the SETTINGS NOW !!!", FanChartView.fanchartSettingsOptionsObject);
+        // condLog(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("legendDIV");
-        console.log("SETTINGS ARE:", theDIV.style.display);
+        condLog("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
         } else {
@@ -1920,17 +1920,17 @@
      * Load and display a person
      */
     FanChartView.prototype.load = function (id) {
-        // console.log("FanChartView.prototype.load");
+        // condLog("FanChartView.prototype.load");
         var self = this;
         self._load(id).then(function (person) {
-            // console.log("FanChartView.prototype.load : self._load(id) ");
+            // condLog("FanChartView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
             thePeopleList.add(person);
             thePeopleList.listAll();
 
             if (person.children && person.children.length > 0) {
                 for (let index = 0; index < person.children.length; index++) {
-                    // console.log(".load person Child # " + index, person.children[index]);
+                    // condLog(".load person Child # " + index, person.children[index]);
                     if (person.children[index]) {
                         // Assign Ahnentafel #s to initial Father and Mother
                         if (person.children[index]._data.Gender == "Male") {
@@ -1941,9 +1941,9 @@
                     }
                 }
             } else {
-                // console.log("Did not go through KIDS loop: ", person, person.depth);
+                // condLog("Did not go through KIDS loop: ", person, person.depth);
             }
-            // console.log(".load person:",person);
+            // condLog(".load person:",person);
 
              // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
             WikiTreeAPI.getPeople(
@@ -1986,8 +1986,8 @@
                 }
             ).then(function (result) {
                 FanChartView.theAncestors = result;
-                console.log("theAncestors:", FanChartView.theAncestors);
-                // console.log("person with which to drawTree:", person);
+                condLog("theAncestors:", FanChartView.theAncestors);
+                // condLog("person with which to drawTree:", person);
 
                 // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
                
@@ -2010,7 +2010,7 @@
                     
                 }
                 
-                console.log("person:", person);
+                condLog("person:", person);
 
                 person._data.Father = FanChartView.theAncestors[id].Father;
                 person._data.Mother = FanChartView.theAncestors[id].Mother;
@@ -2040,7 +2040,7 @@
                 // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
-                    // console.log("Peep ",a, thisPeep);
+                    // condLog("Peep ",a, thisPeep);
                     if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
                         
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
@@ -2051,7 +2051,7 @@
                             thisPeep._data["Gender"] = "Female";
                            
                         }
-                        // console.log("FOUND a TBD!", thisPeep);
+                        // condLog("FOUND a TBD!", thisPeep);
                     }
                 }
                 self.drawTree(person);
@@ -2067,13 +2067,13 @@
      */
     FanChartView.prototype.loadMore = function (oldPerson) {
         var self = this;
-        // console.log("loadMore - line:94", oldPerson) ;
+        // condLog("loadMore - line:94", oldPerson) ;
         return self._load(oldPerson.getId()).then(function (newPerson) {
             var mother = newPerson.getMother(),
                 father = newPerson.getFather();
 
             if (mother) {
-                // console.log("mother:", mother);
+                // condLog("mother:", mother);
                 oldPerson.setMother(mother);
             }
             if (father) {
@@ -2090,7 +2090,7 @@
      * Testing username change ...
      */
     FanChartView.prototype._load = function (id) {
-        // console.log("INITIAL _load - line:118", id) ;
+        // condLog("INITIAL _load - line:118", id) ;
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -2122,7 +2122,7 @@
             "Privacy",
             "DataStatus",
         ]);
-        // console.log("_load PersonObj:",thePersonObject);
+        // condLog("_load PersonObj:",thePersonObject);
         return thePersonObject;
     };
 
@@ -2130,10 +2130,10 @@
      * Draw/redraw the tree
      */
     FanChartView.prototype.drawTree = function (data) {
-        // console.log("FanChartView.prototype.drawTree");
+        // condLog("FanChartView.prototype.drawTree");
 
         if (data) {
-            // console.log("(FanChartView.prototype.drawTree WITH data !)");
+            // condLog("(FanChartView.prototype.drawTree WITH data !)");
             this.ancestorTree.data(data);
             // this.descendantTree.data(data);
         }
@@ -2149,7 +2149,7 @@
      * `direction` is either 1 (forward) or -1 (backward).
      */
     var Tree = function (svg, selector, direction) {
-        // console.log("Create TREE var");
+        // condLog("Create TREE var");
         this.svg = svg;
         this.root = null;
         this.getChildrenFn = null;
@@ -2200,12 +2200,12 @@
      * Draw/redraw the tree
      */
     Tree.prototype.draw = function () {
-        // console.log("Tree.prototype.draw");
+        // condLog("Tree.prototype.draw");
         if (this.root) {
             // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
             var nodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
 
-            console.log("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
+            condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
             updateLegendIfNeeded();
@@ -2238,20 +2238,20 @@
      * Draw the person boxes.
      */
     Tree.prototype.drawNodes = function (nodes) {
-        // console.log("Tree.prototpe.DRAW NODES", nodes);
+        // condLog("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
 
-        // console.log("this.selector = ", this.selector);
+        // condLog("this.selector = ", this.selector);
 
         // Get a list of existing nodes
         var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (ancestorObject) {
             let person = ancestorObject.person;
-            // console.log("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
+            // condLog("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
             // return person;
             return ancestorObject.ahnNum; //getId();
         });
 
-        // console.log("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
+        // condLog("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
 
         // *********************
         // ADD new nodes
@@ -2261,7 +2261,7 @@
             .append("g")
             .attr("class", "person " + this.selector);
 
-        // console.log("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
+        // condLog("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
 
         // *********************
         // Draw the person boxes (part of the ADD routine)
@@ -2300,7 +2300,7 @@
                 // EXTRA INFO  (ahnNum or WikiTreeID or nothing)
                 let extraInfoForThisAnc = "";
                 let extraBR = "";
-                console.log("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"] );
+                condLog("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"] );
                 if (FanChartView.currentSettings["general_options_extraInfo"] == "ahnNum") {
                     //FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
                     extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
@@ -2315,7 +2315,7 @@
 
                 // SETUP the repeatAncestorTracker
                 if (FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
-                    console.log(
+                    condLog(
                         "new repeat ancestor:",
                         FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
                     );
@@ -2335,7 +2335,7 @@
 
                 // theClr = "orange";
 
-                // console.log(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
+                // condLog(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
 
                 if (thisGenNum >= 9) {
                     return `
@@ -2381,7 +2381,7 @@
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     // Use generic gender photos if there is not profile photo available
-                    //console.log(
+                    //condLog(
                     //     "FanChartView.currentSettings[photo_options_useSilhouette] : ",
                     //     FanChartView.currentSettings["photo_options_useSilhouette"]
                     // );
@@ -2425,7 +2425,7 @@
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     // Use generic gender photos if there is not profile photo available
-                    //console.log(
+                    //condLog(
                     //     "FanChartView.currentSettings[photo_options_useSilhouette] : ",
                     //     FanChartView.currentSettings["photo_options_useSilhouette"]
                     // );
@@ -2468,7 +2468,7 @@
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     // Use generic gender photos if there is not profile photo available
-                    //console.log(
+                    //condLog(
                     //     "FanChartView.currentSettings[photo_options_useSilhouette] : ",
                     //     FanChartView.currentSettings["photo_options_useSilhouette"]
                     // );
@@ -2608,7 +2608,7 @@
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                     thisBkgdClr = thisPersonsWedge.style.fill;
                 } else {
-                    console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
+                    condLog("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
                 if (theWedgeBox) {
                     if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
@@ -2619,7 +2619,7 @@
                         // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.backgroundColor = theClr;
 
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
@@ -2631,7 +2631,7 @@
                         // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.backgroundColor = theClr;
 
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
@@ -2642,7 +2642,7 @@
                         theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.backgroundColor = theClr;
 
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
@@ -2652,17 +2652,17 @@
                             thisPosNum,
                             ancestorObject.ahnNum
                         );
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> NO COLOUR for ancestor ",
                         //     ancestorObject.ahnNum,
                         //     theWedgeBox.style.background
                         // );
                     }
                     thisBkgdClr = theWedgeBox.style.backgroundColor;
-                    console.log("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
+                    condLog("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
                     luminance = calcLuminance(theWedgeBox.style.backgroundColor);
 
-                    console.log("LUMINANCE:", luminance);
+                    condLog("LUMINANCE:", luminance);
                     //  theWedgeBox.style.background = 'orange'; // TEMPORARY ONLY WHILE DOING SOME PLACEMENT RECON
                     // theWedgeBox.style.backgroundColor = "yellow";
                 } else if (theWedgeInfoForBox) {
@@ -2674,7 +2674,7 @@
                         // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeInfoForBox.style.backgroundColor = theClr;
 
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
@@ -2687,7 +2687,7 @@
                         // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeInfoForBox.style.backgroundColor = theClr;
 
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
@@ -2699,14 +2699,14 @@
                         theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeInfoForBox.style.backgroundColor = theClr;
 
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
                         thisBkgdClr - theClr;
                     } else {
                         thisBkgdClr = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
-                        // console.log(
+                        // condLog(
                         //     "in Transform -> NO COLOUR for ancestor ",
                         //     ancestorObject.ahnNum,
                         //     theWedgeBox.style.background
@@ -2714,8 +2714,8 @@
                         theWedgeInfoForBox.style.backgroundColor = "#00000000"; // make it invisible - will not mess up the Print to PDF - AND - will avoid the overlapping edges you get in the inner portions
                     }
                     luminance = calcLuminance(thisBkgdClr);
-                    console.log("We are in WEDGE INFO FOR box territory - font for ???", thisBkgdClr, luminance);
-                    // console.log("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
+                    condLog("We are in WEDGE INFO FOR box territory - font for ???", thisBkgdClr, luminance);
+                    // condLog("theWedgeBox.style.backgroundColor = ", theWedgeBox.style.backgroundColor);
                 }
             }
 
@@ -2736,10 +2736,10 @@
                 "fontCyan",
             ];
             let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];
-            console.log("TextClrSetting = ", txtClrSetting);
+            condLog("TextClrSetting = ", txtClrSetting);
             let theTextFontClr = "fontBlack";
             if (txtClrSetting == "B&W") {
-                console.log("font for B&W : line 2438  : ", thisBkgdClr, luminance);
+                condLog("font for B&W : line 2438  : ", thisBkgdClr, luminance);
                 theTextFontClr = luminance > 0.179 ? "fontBlack" : "fontWhite";
                 if (thisBkgdClr.indexOf("rgb") > -1) {
                     thisBkgdClr = hexify(thisBkgdClr);
@@ -2765,12 +2765,12 @@
                 }
                 theTextFontClr = "font" + thisTextColourArray[thisBkgdClr.toUpperCase()];
                 // if (theTextFontClr == undefined) {
-                console.log("FONT : ", thisBkgdClr, theTextFontClr, thisTextColourArray);
+                condLog("FONT : ", thisBkgdClr, theTextFontClr, thisTextColourArray);
                 // }
             } else {
                 theTextFontClr = "fontBlack"; // not really needed ... but for completeness sake, and to make sure there's a legit value
             }
-            console.log(
+            condLog(
                 "theTextFontClr:",
                 theTextFontClr,
                 "for",
@@ -2782,16 +2782,16 @@
 
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
-                // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
+                // condLog("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
                 theNameDIV.innerHTML = getSettingsName(d);
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
-                    // console.log("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
+                    // condLog("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
                     theInfoBox.parentNode.parentNode.setAttribute("y", -120);
                     theInfoBox.parentNode.parentNode.setAttribute("x", -125);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 250);
                 } else if (ancestorObject.ahnNum > 7) {
-                    // console.log(FanChartView.maxAngle,"º - G3 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
+                    // condLog(FanChartView.maxAngle,"º - G3 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
 
                     if (FanChartView.maxAngle == 180) {
                         theInfoBox.parentNode.parentNode.setAttribute("x", -140);
@@ -2815,7 +2815,7 @@
 
                 if (thisGenNum == 4) {
                     theInfoBox.parentNode.parentNode.setAttribute("y", -100);
-                    // console.log(FanChartView.maxAngle, "º - G4 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
+                    // condLog(FanChartView.maxAngle, "º - G4 - ahnNum #", ancestorObject.ahnNum, FanChartView.maxAngle);
                     if (FanChartView.maxAngle == 180) {
                         theInfoBox.parentNode.parentNode.setAttribute("x", -85);
                         theInfoBox.parentNode.parentNode.setAttribute("width", 170);
@@ -2865,7 +2865,7 @@
                         fontRadius = 0;
                     }
                     let tweakAngle = (Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180) / Math.PI;
-                    // console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
+                    // condLog("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
                         placementAngle += tweakAngle;
                     } else {
@@ -2965,7 +2965,7 @@
                 } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {
                     thePhotoDIV.style.display = "none";
                     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                    // console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
+                    // condLog("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
             } else if (thePhotoDIV && thePhotoDIV.style.display == "none" && theInfoBox) {
                 theInfoBox.parentNode.parentNode.setAttribute("y", -60);
@@ -2995,7 +2995,7 @@
             let theExtraDIV = document.getElementById("extraInfoFor" + ancestorObject.ahnNum);
             let extraInfoForThisAnc = "";
             let extraBR = "";
-            console.log("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"]);
+            condLog("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"]);
             if (FanChartView.currentSettings["general_options_extraInfo"] == "ahnNum") {
                 //FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
                 extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
@@ -3057,14 +3057,14 @@
             for (let index = 0; index < FullColoursArray.length; index++) {
                 const element = FullColoursArray[index];
                 if (element[1].toUpperCase() == initBkgdClr.toUpperCase()) {
-                    console.log("FOUND ", element);
+                    condLog("FOUND ", element);
                     wasFound = true;
                     rgbClrs = hex2array(element[2]);
                     break;
                 }
             }
             if (!wasFound) {
-                console.log("FOUND - COULD NOT FIND COLOUR:", initBkgdClr);
+                condLog("FOUND - COULD NOT FIND COLOUR:", initBkgdClr);
                 rgbClrs = [40, 40, 40];
             }
         }
@@ -3096,12 +3096,12 @@
         let fandokuLink = "";
 
         if (person._data.Id == FanChartView.myAhnentafel.list[1]) {
-            // console.log("FOUND THE PRIMARY PERP!");
+            // condLog("FOUND THE PRIMARY PERP!");
             // if (FanChartView.showFandokuLink == "YES"){
             fandokuLink = `<span class="tree-links"><button onclick=location.assign("https://apps.wikitree.com/apps/clarke11007/WTdynamicTree/#name=${person.getName()}&view=fandoku"); style="padding:2px;">Play FanDoku</button></span>`;
             // }
         } else {
-            // console.log("Popup a poopy peep");
+            // condLog("Popup a poopy peep");
         }
 
         var popup = this.svg
@@ -3144,7 +3144,7 @@
 			`);
 
         d3.select("#view-container").on("click", function () {
-            // console.log("d3.select treeViewerContainer onclick - REMOVE POPUP");
+            // condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
     };
@@ -3158,7 +3158,7 @@
      * select on it, like we do with nodes and links.
      */
     Tree.prototype.removePopups = function () {
-        // console.log("Tree.prototype - REMOVE POPUPS (plural) function");
+        // condLog("Tree.prototype - REMOVE POPUPS (plural) function");
         d3.selectAll(".popup").remove();
     };
 
@@ -3166,7 +3166,7 @@
      * Manage the ancestors tree
      */
     var AncestorTree = function (svg) {
-        console.log("new var ANCESTOR TREE");
+        condLog("new var ANCESTOR TREE");
 
         // RESET  the # of Gens parameters
         FanChartView.numGens2Display = 5;
@@ -3178,7 +3178,7 @@
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
-            // console.log("Defining the CHILDREN for ", person._data.Name);
+            // condLog("Defining the CHILDREN for ", person._data.Name);
             var children = [],
                 mother = person.getMother(),
                 father = person.getFather();
@@ -3229,7 +3229,7 @@
         if (yearBirth > 0 && yearDeath > 0) {
             age = yearDeath - yearBirth;
             if (monthBirth > 0 && monthDeath > 0 && monthBirth > monthDeath) {
-                console.log("died before birthday in final year");
+                condLog("died before birthday in final year");
                 age -= 1;
             } else if (
                 monthBirth > 0 &&
@@ -3239,7 +3239,7 @@
                 dayDeath > 0 &&
                 dayBirth > dayDeath
             ) {
-                console.log("died before birthday in FINAL MONTH");
+                condLog("died before birthday in FINAL MONTH");
                 age -= 1;
             }
         }
@@ -3497,7 +3497,7 @@
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
-        // console.log("settingsStyleDate:", dateString, formatString);
+        // condLog("settingsStyleDate:", dateString, formatString);
         if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
             var parts = dateString.split("-"),
                 year = parseInt(parts[0], 10),
@@ -3763,7 +3763,7 @@
                 hasDeathDate = hasDeathDate && FanChartView.currentSettings["date_options_showDeath"];
                 numLocSpotsAvailable = 0;
                 datePlaceString = "";
-                /* console.log(
+                /* condLog(
                     "DatePlaceString: numLocsSPots = 3 / Detailed BIRTH : ",
                     "thisDate:" + thisDate,
                     "hasDeathDate:" + hasDeathDate,
@@ -3904,7 +3904,7 @@
         //     }
         // }
 
-        console.log("WARNING WARNING WILL ROBINSON ... RETURN DATE PLACE STRING HAS GONE PAST!");
+        condLog("WARNING WARNING WILL ROBINSON ... RETURN DATE PLACE STRING HAS GONE PAST!");
 
         // remove leading commas (when it's locations only)
         let origString = datePlaceString;
@@ -3914,7 +3914,7 @@
             .replace("b. <br/>", "b. ")
             .replace("d. <br/>", "d. ");
         if (origString != datePlaceString) {
-            // console.log("REPLACED ", origString," with ", datePlaceString);
+            // condLog("REPLACED ", origString," with ", datePlaceString);
         }
         // check for empty b. or d. entries
         if (
@@ -4077,7 +4077,7 @@
             .replace("b. <br/>", "b. ")
             .replace("d. <br/>", "d. ");
         if (origString != datePlaceString) {
-            // console.log("REPLACED ", origString," with ", datePlaceString);
+            // condLog("REPLACED ", origString," with ", datePlaceString);
         }
         // check for empty b. or d. entries
         if (
@@ -4150,7 +4150,7 @@
         // const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
         // const fullMealDeallName = `${person._data.Prefix} ${person._data.FirstName} ${person._data.MiddleName} ${person._data.LastNameCurrent} ${person._data.Suffix} `;
 
-        // console.log("FULL: " , fullMealDeallName);
+        // condLog("FULL: " , fullMealDeallName);
 
         // return fullMealDeallName;
 
@@ -4199,18 +4199,18 @@
     }
 
     function getAngleOfRotation(theElement) {
-        // console.log("getAngleOfRotation of ", theElement.parentNode.parentNode.parentNode);
+        // condLog("getAngleOfRotation of ", theElement.parentNode.parentNode.parentNode);
         let theBigElement = theElement.parentNode.parentNode.parentNode;
         // let theTransform = theBigElement.getPropertyOf("transform");
-        // console.log("t:", theBigElement["transform"]);
+        // condLog("t:", theBigElement["transform"]);
         // let theTransform = theBigElement.transform.baseVal;
-        // console.log("theTransform:", theTransform);
+        // condLog("theTransform:", theTransform);
         for (let t in theTransform) {
             const transformObj = theTransform[t];
-            // console.log("obj:", transformObj);
+            // condLog("obj:", transformObj);
         }
 
-        // console.log("Count: " + theTransform.length);
+        // condLog("Count: " + theTransform.length);
 
         return 9;
     }
@@ -4226,12 +4226,12 @@
             let i = element.ahnNum;
             let peep = element.person;
             let peepNameID = safeName(peep._data.Name);
-            // console.log("Peep:", peepNameID);
+            // condLog("Peep:", peepNameID);
         }
     }
 
     function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
-        // console.log("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
+        // condLog("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
 
         // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
         let dnaImgX = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "inner");
@@ -4373,7 +4373,7 @@
                 }
             } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
                 if (ahnNum == 1) {
-                    console.log(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
+                    condLog(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
                     if (dnaImgConfirmed) {
                         dnaImgConfirmed.style.display = "block";
                     }
@@ -4422,7 +4422,7 @@
             if (thisGenNum == 0) {
                 dnaImgY.setAttribute("y", 100);
                 dnaImgY.setAttribute("x", 0 - (35 * dOrtho) / 0.13);
-                console.log("@GenNum == 0 ; dOrtho = ", dOrtho);
+                condLog("@GenNum == 0 ; dOrtho = ", dOrtho);
             }
             if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 dnaImgY.style.display = "none";
@@ -4472,7 +4472,7 @@
                 '">' +
                 "<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>" +
                 "</A>";
-            // console.log(theLink);
+            // condLog(theLink);
             dnaImgDs.setAttribute("x", newX * dFraction - dOrtho2 * newY);
             dnaImgDs.setAttribute("y", newY * dFraction + dOrtho2 * newX);
             dnaImgDsDiv.innerHTML = theLink;
@@ -4584,7 +4584,7 @@
             }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
             if (ahnNum == 1) {
-                console.log(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
+                condLog(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
                 return true;
             } else {
                 let childAhnNum = Math.floor(ahnNum / 2);
@@ -4602,7 +4602,7 @@
             }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
             let catNameSelector = document.getElementById("highlight_options_catName");
-            console.log("Looking for BIOs that Have the following: ", catNameSelector.value);
+            condLog("Looking for BIOs that Have the following: ", catNameSelector.value);
              if (
                  thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                  thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio && 
@@ -4638,7 +4638,7 @@
     }
 
     function fillOutFamilyStatsLocsForAncestors() {
-        console.log("fillOutFamilyStatsLocsForAncestors");
+        condLog("fillOutFamilyStatsLocsForAncestors");
         categoryList = [];
         stickerList = [];
         for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
@@ -4653,7 +4653,7 @@
                 thisPerp._data["DeathTown"] = getLocationFromString(thisPerp._data.DeathLocation, "T");
                 thisPerp._data["BirthTownFull"] = thisPerp._data.BirthLocation;
                 thisPerp._data["DeathTownFull"] = thisPerp._data.DeathLocation;
-                console.log(
+                condLog(
                     thisPerp._data.FirstName,
                     thisPerp._data.age,
                     "*" + thisPerp._data.BirthRegion + "*",
@@ -4661,13 +4661,13 @@
                     // thisPerp._data.bio
                 );
                 if (thisPerp._data.bio) {
-                    console.log(thisPerp._data.FirstName, "has a BIO !");
+                    condLog(thisPerp._data.FirstName, "has a BIO !");
                     parseThisBio(thisPerp._data.bio);
                 }
             }
         }
-        console.log("ALL CATEGORIES:\n", categoryList);
-        console.log("ALL STICKERS:\n", stickerList);
+        condLog("ALL CATEGORIES:\n", categoryList);
+        condLog("ALL STICKERS:\n", stickerList);
 
         let catNameSelector = document.getElementById("highlight_options_catName");
         let innerCatHTML = "<option selected value=\"Unsourced\">Unsourced</option>";
@@ -4696,7 +4696,7 @@
         while (catBeginBrackets > -1) {
             let catEndBrackets = bio.indexOf("]]", catBeginBrackets);
             if (catEndBrackets > -1) {
-                console.log(bio.substring(catBeginBrackets, catEndBrackets));
+                condLog(bio.substring(catBeginBrackets, catEndBrackets));
                 let thisCatName = bio.substring(catBeginBrackets + 11, catEndBrackets);
                 if (categoryList.indexOf(thisCatName) == -1){
                     categoryList.push(thisCatName);
@@ -4712,7 +4712,7 @@
         while (stickBeginBrackets > -1) {
             let stickEndBrackets = bio.indexOf("}}", stickBeginBrackets);
             if (stickEndBrackets > -1) {
-                console.log(bio.substring(stickBeginBrackets, stickEndBrackets));
+                condLog(bio.substring(stickBeginBrackets, stickEndBrackets));
                 let thisStickName = bio.substring(stickBeginBrackets + 2, stickEndBrackets);
                 if (stickerList.indexOf(thisStickName) == -1){
                     let OK2UseThisSticker = false;
@@ -4734,7 +4734,7 @@
     }
     
      function fillOutFamilyStatsLocsForPerp(thisPerp) {
-        console.log("fillOutFamilyStatsLocsForPerp");
+        condLog("fillOutFamilyStatsLocsForPerp");
         if (thisPerp) {
             thisPerp._data["age"] = theAge(thisPerp);
             thisPerp._data["BirthCountry"] = getLocationFromString(thisPerp._data.BirthLocation, "C");
@@ -4745,14 +4745,14 @@
             thisPerp._data["DeathTown"] = getLocationFromString(thisPerp._data.DeathLocation, "T");
             thisPerp._data["BirthTownFull"] = thisPerp._data.BirthLocation;
             thisPerp._data["DeathTownFull"] = thisPerp._data.DeathLocation;
-            console.log(
+            condLog(
                 thisPerp._data.FirstName,
                 thisPerp._data.age,
                 "*" + thisPerp._data.BirthRegion + "*",
                 "#" + thisPerp._data.DeathRegion + "#"
             );
              if (thisPerp._data["Bio"]) {
-                 console.log(thisPerp._data.FirstName, "has a BIO !");
+                 condLog(thisPerp._data.FirstName, "has a BIO !");
              }
         }
         return "done";
@@ -5327,9 +5327,9 @@
                     let thePerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
                     thisAge = theAge(thePerp);
                     thePerp._data["age"] = thisAge;
-                    console.log("thisAge - WAS undefined - now is:", thisAge);
+                    condLog("thisAge - WAS undefined - now is:", thisAge);
                 } else {
-                    console.log("thisAge:", thisAge);
+                    condLog("thisAge:", thisAge);
                 }
 
                 if (thisAge == -2) {
@@ -5338,7 +5338,7 @@
                     return "lime"; //thisColourArray[0];
                 } else {
                     let thisDecade = 1 + Math.max(0, Math.floor((thisAge + 0.5) / 10));
-                    console.log("Age " + thisAge + " in Decade # " + thisDecade);
+                    condLog("Age " + thisAge + " in Decade # " + thisDecade);
                     return thisColourArray[thisDecade];
                 }
             } else if (settingForSpecifyByFamily == "spouses") {
@@ -5356,7 +5356,7 @@
                 let thisPerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
                 let res = fillOutFamilyStatsLocsForPerp(thisPerp);
                 locString = thisPerp._data[settingForSpecifyByLocation];
-                console.log(
+                condLog(
                     "NEW location for " + thisPerp._data.FirstName + " " + thisPerp._data.LastNameAtBirth,
                     locString
                 );
@@ -5378,7 +5378,7 @@
             let thisClr = hslToRGBhex(hue, sat, lit);
             return thisClr;
 
-            //     console.log("CLR:", hue, sat, lit, thisClr);
+            //     condLog("CLR:", hue, sat, lit, thisClr);
             //     let clrSwatch =
             //         "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
             //         thisClr +
@@ -5422,7 +5422,7 @@
     //     fetch(API_URL)
     //         .then((response) => response.text())
     //         .then((data) => {
-    //             // console.log("GOT THE DATA:", data);
+    //             // condLog("GOT THE DATA:", data);
     //             FanChartView.showFandokuLink = data;
     //             return data;
     //         });
@@ -5864,18 +5864,18 @@
             for (let b = 0; b < element.length; b++) {
                 const clr = element[b];
                 if (clr.indexOf("#") == -1) {
-                    console.log("TEST the clr:", clr);
+                    condLog("TEST the clr:", clr);
                     let wasFound = false;
                     for (let c = 0; c < FullColoursArray.length; c++) {
                         const fc = FullColoursArray[c];
                         if (fc[1].toUpperCase() == clr.toUpperCase()) {
-                            console.log("FOUND ", fc);
+                            condLog("FOUND ", fc);
                             wasFound = true;
                             break;
                         }
                     }
                     if (!wasFound) {
-                        console.log("TEST - COULD NOT FIND COLOUR:", clr);
+                        condLog("TEST - COULD NOT FIND COLOUR:", clr);
                     }
                 }
             }
