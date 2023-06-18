@@ -719,6 +719,16 @@
         return null;
     }
 
+    function acceptableDarkLineClr ( initClr ) {
+        if (initClr == "LightSkyBlue" || initClr == "HotPink") {
+            return initClr;    
+        }
+        let theClr = initClr;
+        if (ColourArray.indexOf(initClr) > -1) {
+            theClr = LineColourArray[ColourArray.indexOf(initClr)];
+        }
+        return theClr;
+    }
     WebsView.drawLines = function (theNodes) {
         // condLog("DRAWING LINES stuff should go here");
         let numSpotsMaxGen = 2 ** (WebsView.numGens2Display - 1);
@@ -915,7 +925,7 @@
                             } else {
                                 condLog("theNodePa.person._data.theClr DOES NOT EXIST");
                             }
-                            elementPa.setAttribute("style", "fill:none; stroke:" + theClr);
+                            elementPa.setAttribute("style", "fill:none; stroke:" + acceptableDarkLineClr(theClr));
                             // if (repeatAncestorTracker && )
                             // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                             if (theNodePa && theNodePa["newY"] && theNodePa["newY"] > 0) {
@@ -974,7 +984,7 @@
                                     //  elementPa.setAttribute("style", "fill:none;stroke:" + theLineClr);
                                 }
                             }
-                            elementMa.setAttribute("style", "fill:none;stroke:" + theClr);
+                            elementMa.setAttribute("style", "fill:none;stroke:" + acceptableDarkLineClr(theClr));
                             if (theNodeMa && theNodeMa["newY"] && theNodeMa["newY"] > 0) {
                                 condLog("Found newY for Ma: ", theNodeMa["newY"]);
                                 if (
@@ -1119,7 +1129,7 @@
                             if (elementMa.getAttribute("display") == "block") {
                                 // CREATE PARENTAL CONNECTOR TO JOIN BOTH
                                 // NOTE:  WILL HAVE TO ADD LOGIC HERE TO ONLY DO THIS IF FIRST SIDE_BY_EACH COUPLE IN CASE OF MULTIPLE MARRIAGES
-
+                                theLineClr = acceptableDarkLineClr(theLineClr);
                                 elementPa.setAttribute("style", "fill:none;stroke:" + theLineClr);
                                 elementMa.setAttribute("style", "fill:none;stroke:" + theLineClr);
 
@@ -1194,7 +1204,10 @@
                                                 LineColourArray.length
                                         ];
                                     theClr = theLineClr;
-                                    elementPa.setAttribute("style", "fill:none;stroke:" + theLineClr);
+                                    elementPa.setAttribute(
+                                        "style",
+                                        "fill:none;stroke:" + acceptableDarkLineClr(theLineClr)
+                                    );
                                 }
                             }
                         }
