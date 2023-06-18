@@ -724,8 +724,9 @@
             return initClr;    
         }
         let theClr = initClr;
-        if (ColourArray.indexOf(initClr) > -1) {
-            theClr = LineColourArray[ColourArray.indexOf(initClr)];
+        const clrIdx = ColourArray.indexOf(initClr);
+        if (clrIdx > -1) {
+            theClr = LineColourArray[clrIdx];
         }
         return theClr;
     }
@@ -1386,7 +1387,7 @@
                     "WHEN there is more than one Starting Person, this feature will be active,<BR> and it will show a Web of all the Ancestors<BR>that are COMMON to the people entered."
                     );
             } else {
-                flashWarningMessageBelowButtonBar("Please be patient while searching for COMMON Ancestors ...");
+                showTemporaryMessageBelowButtonBar("Please be patient while searching for COMMON Ancestors ...");
                 // showTemporaryMessageBelowButtonBar("DISPLAY COMMON NOW");
                 WebsView.viewMode = "Common";
                 WebsView.redraw();
@@ -3001,6 +3002,7 @@
             // and if needed a rotation based on the nameAngle
             // return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
+        
     };
 
    function findPercentileForAhnNum(anAhnNum, orderedNodes, primeNum= 0) {
