@@ -1,6 +1,7 @@
 /**
  * This code was originally written by Ian Beacall (Beacall-6) as a stand-alone WikiTree App.
- * With Ian's permission, Riël Smit (Smit-641) adapted it to be a WikiTree Dynamic Tree view.
+ * With Ian's permission, Riël Smit (Smit-641) adapted it to be a WikiTree Dynamic Tree view
+ * using the getPeople API call for fetching the CC7 profiles.
  *
  * It makes use (through direct code inclusion) of FileSave (https://github.com/eligrey/FileSaver.js/)
  * and SheetJs (https://www.npmjs.com/package/xlsx)
@@ -124,7 +125,9 @@ export class CC7 {
         "Touched",
     ].join(",");
 
-    static RELATIONS_FIELDS = ["Children", "Parents", "Siblings", "Spouses"].join(",");
+    static GET_PEOPLE_FIELDS = CC7.PROFILE_FIELDS + ",Spouses";
+    static GET_PEOPLE_LIMIT = 1000;
+    static MAX_DEGREE = 7;
 
     static WANTED_NAME_PARTS = [
         "Prefix",
@@ -167,7 +170,7 @@ export class CC7 {
         );
 
         const cc7Degree = CC7.getCookie("w_cc7Degree");
-        if (cc7Degree && cc7Degree > 0 && cc7Degree <= 7) {
+        if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
             CC7.handleDegreeChange(cc7Degree);
         }
         $("#cc7Degree").on("change", function () {
@@ -183,7 +186,7 @@ export class CC7 {
         $("#explanation").dblclick(function () {
             $(this).slideToggle();
         });
-        $(".cc7Table #explanation x").click(function () {
+        $("#cc7Container #explanation x").click(function () {
             $(this).parent().slideUp();
         });
         $("#explanation").draggable();
@@ -192,8 +195,7 @@ export class CC7 {
 
         $("#savePeople").click(function (e) {
             e.preventDefault();
-            const fileName = CC7.makeFilename();
-            CC7.downloadArray(window.people, fileName);
+            CC7.handleFileDownload();
         });
         $("#loadButton").click(function (e) {
             e.preventDefault();
@@ -202,7 +204,8 @@ export class CC7 {
         $("#getPeopleButton").click();
     }
 
-    static handleDegreeChange(newDegree) {
+    static handleDegreeChange(wantedDegree) {
+        const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
         $("#getPeopleButton").text(`Get CC${newDegree}`);
         $("#getDegreeButton").text(`Get Degree ${newDegree} Only`);
         // Set the selected degree value if required
@@ -287,17 +290,17 @@ export class CC7 {
     }
     // End age functions
 
-    static showShakingTree() {
+    static showShakingTree(callback) {
         if ($("#tree").length) {
-            $("#tree").slideDown();
+            $("#tree").slideDown("fast", "swing", callback);
         } else {
             const treeGIF = $("<img id='tree' src='./views/cc7/images/tree.gif'>");
-            treeGIF.appendTo("div.cc7Table");
+            treeGIF.appendTo("#cc7Container");
             $("#tree").css({
                 "display": "block",
                 "margin": "auto",
-                "height": "100px",
-                "width": "100px",
+                "height": "50px",
+                "width": "50px",
                 "border-radius": "50%",
                 "border": "3px solid forestgreen",
             });
@@ -305,7 +308,7 @@ export class CC7 {
     }
 
     static hideShakingTree() {
-        $("#tree").slideUp();
+        $("#tree").slideUp("fast");
     }
 
     static async addWideTableButton() {
@@ -344,9 +347,6 @@ export class CC7 {
                     CC7.setCookie("w_wideTable", 1, { expires: 365 });
                     $(this).text("Normal Table");
                     $("#peopleTable").attr("title", "Drag to scroll left or right");
-                    // if ($("div.cc7Table").length == 0) {
-                    //     $("#buttonBox").show();
-                    // }
                     let container;
                     if ($("#tableContainer").length) {
                         container = $("#tableContainer");
@@ -587,7 +587,7 @@ export class CC7 {
         return string.substring(0, 1).toUpperCase() + string.substring(1);
     }
 
-    static #BMD_EVENTS = ["Birth", "Death", "marriage"];
+    static #BMD_EVENTS = ["Birth", "Death", "Marriage"];
 
     static getTimelineEvents(tPerson) {
         const family = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
@@ -606,10 +606,11 @@ export class CC7 {
                     evDate = aPerson[ev + "DateDecade"];
                     evLocation = aPerson[ev + "Location"];
                 }
-                if (ev == "marriage") {
-                    if (aPerson[ev + "_date"]) {
-                        evDate = aPerson[ev + "_date"];
-                        evLocation = aPerson[ev + "_location"];
+                if (ev == "Marriage") {
+                    const marriageData = tPerson.Marriage[aPerson.Id];
+                    if (marriageData && marriageData[ev + "Date"]) {
+                        evDate = marriageData[ev + "Date"];
+                        evLocation = marriageData[ev + "Location"];
                     }
                 }
                 if (aPerson.Relation) {
@@ -882,14 +883,8 @@ export class CC7 {
     }
 
     static showTimeline(jqClicked) {
-        const wtId = jqClicked.attr("data-name");
-        let tPerson = "";
-        for (const oPers of window.people) {
-            if (oPers.Name == wtId) {
-                tPerson = oPers;
-                break;
-            }
-        }
+        const id = +jqClicked.attr("data-id");
+        let tPerson = window.people.get(id);
         const theClickedName = tPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_timeLine";
         if ($(`#${familyId}`).length) {
@@ -897,6 +892,7 @@ export class CC7 {
             return;
         }
 
+        CC7.assignRelationshipsFor(tPerson);
         const familyFacts = CC7.getTimelineEvents(tPerson);
         // Sort the events
         familyFacts.sort((a, b) => {
@@ -908,7 +904,7 @@ export class CC7 {
         // Make a table
         const timelineTable = CC7.buildTimeline(tPerson, familyFacts, familyId);
         // Attach the table to the container div
-        timelineTable.prependTo($("div.cc7Table"));
+        timelineTable.prependTo($("#cc7Container"));
         //timelineTable.css({ top: window.pointerY - 30, left: 10 });
 
         timelineTable.attr("id", familyId);
@@ -939,10 +935,11 @@ export class CC7 {
     }
 
     static peopleToTable(kPeople) {
-        let disName = CC7.displayName(kPeople[0])[0];
+        const personOfInterest = kPeople[0];
+        let disName = CC7.displayName(personOfInterest)[0];
         if ($("#cc7Container").length) {
-            if (kPeople[0].MiddleName) {
-                disName = disName.replace(kPeople[0].MiddleName + " ", "");
+            if (personOfInterest.MiddleName) {
+                disName = disName.replace(personOfInterest.MiddleName + " ", "");
             }
         }
         const captionHTML =
@@ -1047,24 +1044,27 @@ export class CC7 {
 
             if (kPers.Relation == "Spouse") {
                 let marriageDeets = "m.";
-                const dMdate = CC7.ymdFix(kPers.marriage_date);
-                if (dMdate != "") {
-                    marriageDeets += " " + dMdate;
-                }
-                if (CC7.isOK(kPers.marriage_location)) {
-                    marriageDeets += " " + kPers.marriage_location;
-                }
-                if (marriageDeets != "m.") {
-                    const spouseLine = $(
-                        "<tr class='marriageRow " +
-                            kPers.Gender +
-                            "' data-spouse='" +
-                            kPers.Name +
-                            "'><td>&nbsp;</td><td colspan='3'>" +
-                            marriageDeets +
-                            "</td><td></td><td></td></tr>"
-                    );
-                    kTable.find("tbody").append(spouseLine);
+                const marriageData = personOfInterest.Marriage[kPers.Id];
+                if (marriageData) {
+                    const dMdate = CC7.ymdFix(marriageData.MarriageDate);
+                    if (dMdate != "") {
+                        marriageDeets += " " + dMdate;
+                    }
+                    if (CC7.isOK(marriageData.MarriageLocation)) {
+                        marriageDeets += " " + marriageData.MarriageLocation;
+                    }
+                    if (marriageDeets != "m.") {
+                        const spouseLine = $(
+                            "<tr class='marriageRow " +
+                                kPers.Gender +
+                                "' data-spouse='" +
+                                kPers.Name +
+                                "'><td>&nbsp;</td><td colspan='3'>" +
+                                marriageDeets +
+                                "</td><td></td><td></td></tr>"
+                        );
+                        kTable.find("tbody").append(spouseLine);
+                    }
                 }
             }
         });
@@ -1094,10 +1094,11 @@ export class CC7 {
             return;
         }
 
+        CC7.assignRelationshipsFor(fPerson);
         const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
 
         const kkTable = CC7.peopleToTable(thisFamily);
-        kkTable.prependTo("div.cc7Table");
+        kkTable.prependTo("#cc7Container");
         kkTable.attr("id", familyId);
         kkTable.draggable();
         kkTable.on("dblclick", function () {
@@ -1120,22 +1121,29 @@ export class CC7 {
         });
     }
 
-    static showFamilySheet(jq) {
-        let theClicked = jq;
-        let theClickedName = jq.closest("tr").attr("data-name");
-
-        let fsReady = false;
-        for (const aPeo of window.people) {
-            if (aPeo.Name == theClickedName) {
-                //console.log(aPeo.Name);
-                if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
-                    CC7.doFamilySheet(aPeo, theClicked);
-                    fsReady = true;
-                    break;
+    static assignRelationshipsFor(person) {
+        person.Relation = undefined;
+        for (const rel of ["Parent", "Spouse", "Sibling", "Child"]) {
+            const relatives = person[rel];
+            if (relatives) {
+                for (const relative of relatives) {
+                    relative.Relation = rel;
                 }
             }
         }
-        if (fsReady == false) {
+    }
+
+    static showFamilySheet(jq) {
+        const theClicked = jq;
+        const jqClosest = jq.closest("tr");
+        const theClickedName = jqClosest.attr("data-name");
+        const theClickedId = +jqClosest.attr("data-id");
+
+        const aPeo = window.people.get(theClickedId);
+        if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
+            CC7.doFamilySheet(aPeo, theClicked);
+        } else {
+            console.log(`Calling getRelatives for ${theClickedName}`);
             WikiTreeAPI.postToAPI({
                 appId: CC7.APP_ID,
                 action: "getRelatives",
@@ -1145,32 +1153,45 @@ export class CC7 {
                 getSiblings: "1",
                 keys: theClickedName,
             }).then((data) => {
-                const thePeople = data[0].items;
-                thePeople.forEach(function (aPerson, index) {
-                    const mPerson = aPerson.person;
-                    const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
-                    mPerson.Spouse = mSpouses;
-                    const mChildren = CC7.getRels(mPerson.Children, mPerson, "Child");
-                    mPerson.Child = mChildren;
-                    const mSiblings = CC7.getRels(mPerson.Siblings, mPerson, "Sibling");
-                    mPerson.Sibling = mSiblings;
-                    const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
-                    mPerson.Parent = mParents;
-                });
-                window.people.forEach(function (aPeo) {
-                    if (aPeo.Name == theClickedName) {
-                        aPeo = mPerson;
-                    }
-                });
+                // Construct this person so it conforms to the profiles retrieved using getPeople
+                const mPerson = CC7.convertToInternal(data[0].items[0].person);
+                window.people.set(+mPerson.Id, mPerson);
                 CC7.doFamilySheet(mPerson, theClicked);
             });
         }
     }
 
-    static getRels(rel, person, theRelation = false) {
+    static convertToInternal(pData) {
+        const person = CC7.addFamilyToPerson(pData);
+        if (person.Parents) person.Parents = Object.keys(person.Parents);
+        if (person.Siblings) person.Siblings = Object.keys(person.Siblings);
+        if (person.Children) person.Children = Object.keys(person.Children);
+        person.Marriage = {};
+        if (person.Spouses) {
+            for (const sp of Object.values(person.Spouses)) {
+                person.Marriage[sp.Id] = {
+                    MarriageDate: sp.marriage_date,
+                    MarriageEndDate: sp.marriage_end_date,
+                    MarriageLocation: sp.marriage_location,
+                    DoNotDisplay: sp.do_not_display,
+                };
+            }
+        }
+        return person;
+    }
+
+    static addFamilyToPerson(person) {
+        person.Parent = CC7.getRels(person.Parents, "Parent");
+        person.Sibling = CC7.getRels(person.Siblings, "Sibling");
+        person.Spouse = CC7.getRels(person.Spouses, "Spouse");
+        person.Child = CC7.getRels(person.Children, "Child");
+        return person;
+    }
+
+    static getRels(rel, theRelation = false) {
         const peeps = [];
         if (typeof rel == undefined || rel == null) {
-            return false;
+            return peeps;
         }
         const pKeys = Object.keys(rel);
         pKeys.forEach(function (pKey) {
@@ -1344,6 +1365,8 @@ export class CC7 {
             "0000",
             "0",
             0,
+            -1,
+            "-1",
         ];
         if (!excludeValues.includes(thing)) {
             if (CC7.isNumeric(thing)) {
@@ -1556,10 +1579,10 @@ export class CC7 {
         });
     }
 
-    static async addPeopleTable() {
+    static async addPeopleTable(caption) {
         $("#savePeople").show();
         const sortTitle = "title='Click to sort'";
-        const aCaption = "<caption></caption>";
+        const aCaption = `<caption>${caption}</caption>`;
         const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
         const createdTH = `<th id='created' ${sortTitle} data-order='asc'>Created</th>`;
         const touchedTH = `<th id='touched' ${sortTitle} data-order='asc'>Modified</th>`;
@@ -1594,219 +1617,38 @@ export class CC7 {
         if ($(".peopleTable").length) {
             $(".peopleTable").eq(0).replaceWith(aTable);
         } else {
-            aTable.appendTo($("div.cc7Table"));
+            aTable.appendTo($("#cc7Container"));
         }
 
-        function makePrivateAncestor(ancestor, degree, gender, name, firstname, lnab, lnc) {
-            const person = ancestor;
-            person.Degree = degree;
-            person.Gender = gender;
-            person.Name = name;
-            person.FirstName = firstname;
-            person.LastNameAtBirth = lnab;
-            person.LastNameCurrent = lnc;
-            person.DataStatus = { Spouse: "", Gender: "" };
-            return person;
-        }
-        function addRelativeArraysToPrivateAncestor(person, spouse, child) {
-            person.Parent = [];
-            person.Spouse = [spouse];
-            person.Sibling = [];
-            person.Child = [child];
-            return person;
-        }
-        function addMissingGrandparents(parent, ForM, gender, name, relation, lnab, lnc, parentClone) {
-            let person;
-            if (parent[ForM] < 0) {
-                window.ancestors.forEach(function (anAncestor) {
-                    if (anAncestor.Id == parent[ForM]) {
-                        person = makePrivateAncestor(anAncestor, 2, gender, name, relation, lnab, lnc);
+        function sortIdsByDegreeAndBirthDate(keys) {
+            const collator = new Intl.Collator();
+            return [...keys]
+                .map((k) => {
+                    const mPerson = window.people.get(k);
+                    let birthDate = CC7.ymdFix(mPerson.BirthDate);
+                    if (birthDate == "" && mPerson.BirthDateDecade) {
+                        birthDate = mPerson.BirthDateDecade || "";
+                    }
+                    return [k, mPerson.Degree < 0 ? 100 : mPerson.Degree, birthDate];
+                })
+                .sort((a, b) => {
+                    if (a[1] == b[1]) {
+                        return collator.compare(a[2], b[2]);
+                    } else {
+                        return a[1] - b[1];
                     }
                 });
-            } else {
-                window.people.forEach(function (aPerson) {
-                    if (aPerson.Id == parent[ForM]) {
-                        person = JSON.parse(JSON.stringify(aPerson));
-                    }
-                });
-            }
-            if (person) {
-                const personClone = JSON.parse(JSON.stringify(person));
-                person = addRelativeArraysToPrivateAncestor(person, "", parentClone);
-                parent.Parent.push(personClone);
-                if (!parent.Parents) {
-                    parent.Parents = {};
-                }
-                parent.Parents[person.Id] = personClone;
-                if (window[ForM] < 0) {
-                    window.people.push(person);
-                }
-                console.log(person, window.people);
-            }
-            return person;
         }
 
-        if (!window.people[0].Father || !window.people[0].Mother) {
-            window.people[0].Father = window.ancestors[0].Father;
-            window.people[0].Mother = window.ancestors[0].Mother;
-            let theFather;
-            let theMother;
-            window.ancestors.forEach(function (anAncestor) {
-                if (window.people[0].Father && anAncestor.Id == window.people[0].Father) {
-                    theFather = makePrivateAncestor(
-                        anAncestor,
-                        1,
-                        "Male",
-                        "Private-Father",
-                        "Father",
-                        window.people[0].LastNameAtBirth,
-                        window.people[0].LastNameAtBirth
-                    );
-                    if (window.people[0].Father < 0) {
-                        window.people.push(theFather);
-                    }
-                }
-                if (window.people[0].Mother && anAncestor.Id == window.people[0].Mother) {
-                    theMother = makePrivateAncestor(
-                        anAncestor,
-                        1,
-                        "Female",
-                        "Private-Mother",
-                        "Mother",
-                        "Private",
-                        "Private"
-                    );
-                    if (window.people[0].Mother < 0) {
-                        window.people.push(theMother);
-                    }
-                }
-            });
+        for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+            const mPerson = window.people.get(id);
 
-            if (theFather) {
-                var theFatherClone = JSON.parse(JSON.stringify(theFather));
-                window.people[0].Parent.push(theFatherClone);
-            }
-            if (theMother) {
-                var theMotherClone = JSON.parse(JSON.stringify(theMother));
-                window.people[0].Parent.push(theMotherClone);
-            }
-            let paternalGrandfather, paternalGrandmother, maternalGrandfather, maternalGrandmother;
-            if (theFather) {
-                let fSpouse = "";
-                if (theMother) {
-                    fSpouse = theMotherClone;
-                }
-                theFather = addRelativeArraysToPrivateAncestor(
-                    theFather,
-                    fSpouse,
-                    JSON.parse(JSON.stringify(window.ancestors[0]))
-                );
-
-                if (theFather.Father) {
-                    paternalGrandfather = addMissingGrandparents(
-                        theFather,
-                        "Father",
-                        "Male",
-                        "Private-Grandfather-1",
-                        "Grandfather",
-                        window.people[0].LastNameAtBirth,
-                        window.people[0].LastNameAtBirth,
-                        theFatherClone
-                    );
-                }
-                if (theFather.Mother) {
-                    paternalGrandmother = addMissingGrandparents(
-                        theFather,
-                        "Mother",
-                        "Female",
-                        "Private-Grandmother-1",
-                        "Grandmother",
-                        "Private",
-                        "Private",
-                        theFatherClone
-                    );
-                }
-            }
-
-            if (theMother) {
-                let fSpouse = "";
-                if (theFather) {
-                    fSpouse = theFatherClone;
-                }
-                theMother = addRelativeArraysToPrivateAncestor(
-                    theMother,
-                    fSpouse,
-                    JSON.parse(JSON.stringify(window.ancestors[0]))
-                );
-
-                if (theMother.Father) {
-                    maternalGrandfather = addMissingGrandparents(
-                        theMother,
-                        "Father",
-                        "Male",
-                        "Private-Grandfather-2",
-                        "Grandfather",
-                        "Private",
-                        "Private",
-                        theMotherClone
-                    );
-                }
-                if (theMother.Mother) {
-                    maternalGrandmother = addMissingGrandparents(
-                        theMother,
-                        "Mother",
-                        "Female",
-                        "Private-Grandmother-2",
-                        "Grandmother",
-                        "Private",
-                        "Private",
-                        theMotherClone
-                    );
-                }
-            }
-
-            [
-                theFather,
-                theMother,
-                paternalGrandfather,
-                paternalGrandmother,
-                maternalGrandfather,
-                maternalGrandmother,
-            ].forEach(function (aGrandparent) {
-                if (aGrandparent) {
-                    window.people.forEach(function (person) {
-                        if (person.Id == aGrandparent.Father || person.Id == aGrandparent.Mother) {
-                            let notIn = true;
-                            if (person.Child.length) {
-                                person.Child.forEach(function (aChild) {
-                                    if (aChild.Id == aGrandparent.Id) {
-                                        notIn = false;
-                                    }
-                                });
-                            }
-                            if (notIn) {
-                                person.Child.push(JSON.parse(JSON.stringify(aGrandparent)));
-                            }
-                        }
-                    });
-                }
-            });
-        }
-
-        window.people.forEach(function (mPerson, index) {
-            let birthDate = CC7.ymdFix(mPerson.BirthDate);
-            if (birthDate == "") {
-                if (mPerson.BirthDateDecade) {
-                    birthDate = mPerson.BirthDateDecade;
-                }
-            }
             let deathDate = CC7.ymdFix(mPerson.DeathDate);
             if (deathDate == "") {
                 if (mPerson.deathDateDecade) {
                     deathDate = mPerson.DeathDateDecade;
                 }
             }
-
             let birthLocation = mPerson.BirthLocation;
             let birthLocationReversed = "";
             if (birthLocation == null || typeof birthLocation == "undefined") {
@@ -1989,7 +1831,7 @@ export class CC7 {
                 Child_cell: "",
             };
 
-            if ($("div.cc7Table").length) {
+            if ($("#cc7Container").length) {
                 degreeCell = "<td class='degree'>" + mPerson.Degree + "°</td>";
                 ddegree = "data-degree='" + mPerson.Degree + "'";
                 if (mPerson.Created) {
@@ -2049,7 +1891,7 @@ export class CC7 {
                         word = aR + "s";
                     }
                     if (aR == "Spouse") {
-                        if (mPerson.DataStatus.Spouse == "blank" || diedYoung == true) {
+                        if (mPerson.DataStatus?.Spouse == "blank" || diedYoung == true) {
                             cellClass = "class='none number'";
                         }
                     }
@@ -2065,11 +1907,9 @@ export class CC7 {
                 }
             }
 
-            let diedYoungImg = "";
             let diedYoungClass = "";
             if (diedYoung == true) {
                 diedYoungClass = "diedYoung";
-                diedYoungImg = "<img  src='./views/cc7/images/diedYoung.png' class='diedYoungImg'>";
             }
 
             let gender = mPerson.Gender;
@@ -2094,7 +1934,9 @@ export class CC7 {
                     relNums["Spouse_data"] +
                     " " +
                     relNums["Child_data"] +
-                    " data-name='" +
+                    " data-id='" +
+                    mPerson.Id +
+                    "' data-name='" +
                     CC7.htmlEntities(mPerson.Name) +
                     "' data-locations='" +
                     CC7.htmlEntities(oLocations) +
@@ -2157,9 +1999,9 @@ export class CC7 {
             );
 
             aTable.find("tbody").append(aLine);
-        });
+        }
 
-        if ($("div.cc7Table").length == 0) {
+        if ($("#cc7Container").length == 0) {
             $(".peopleTable caption").click(function () {
                 $(this).parent().find("thead,tbody").slideToggle();
             });
@@ -2201,7 +2043,7 @@ export class CC7 {
             $(this).addClass("active");
             $("#peopleTable,#lanceTable").hide().removeClass("active");
             if ($("#hierarchyView").length == 0) {
-                CC7.hierarchyCC7();
+                CC7.showShakingTree(() => CC7.hierarchyCC7());
                 $("#wideTableButton").hide();
             } else {
                 $("#hierarchyView").show();
@@ -2260,7 +2102,7 @@ export class CC7 {
 
         CC7.hideShakingTree();
         $("#countdown").fadeOut();
-        if ($("div.cc7Table").length == 0) {
+        if ($("#cc7Container").length == 0) {
             $("#birthdate").click();
         }
 
@@ -2326,7 +2168,6 @@ export class CC7 {
             fbd = fPerson["BirthDate"].split("-")[0];
         } else if (typeof fPerson["BirthDateDecade"] != "undefined" && fPerson["BirthDateDecade"] != "unknown") {
             fbd = fPerson["BirthDateDecade"];
-            // decadeMidpoint = fPerson["BirthDateDecade"].slice(0, -2) + 5;
         } else {
             fbd = "";
         }
@@ -2345,7 +2186,6 @@ export class CC7 {
                 fdd = fPerson["DeathDate"].split("-")[0];
             } else if (typeof fPerson["DeathDateDecade"] != "undefined" && fPerson["DeathDateDecade"] != "unknown") {
                 fdd = fPerson["DeathDateDecade"];
-                // decadeMidpoint = fPerson["DeathDateDecade"].slice(0, -2) + 5;
             } else {
                 fdd = "";
             }
@@ -2471,7 +2311,7 @@ export class CC7 {
             lanceTable.find("tbody tr").append(aCell);
         }
 
-        window.people.forEach(function (aPerson) {
+        for (let aPerson of window.people.values()) {
             if (!aPerson.Missing) {
                 aPerson = CC7.missingBits(aPerson);
             }
@@ -2482,7 +2322,7 @@ export class CC7 {
             const theLNAB = theParts.get("LastNameAtBirth");
             const theFirstName = theParts.get("FirstName");
 
-            if (CC7.isOK(theDegree)) {
+            if (CC7.isOK(theDegree) && theDegree <= CC7.MAX_DEGREE) {
                 if (!window.surnames["degree_" + theDegree].includes(theLNAB)) {
                     window.surnames["degree_" + theDegree].push(theLNAB);
                     const anLi2 = $(
@@ -2525,30 +2365,30 @@ export class CC7 {
                         }
                     });
                 }
+                const linkName = CC7.htmlEntities(aPerson.Name);
+                const missing = CC7.missingThings(aPerson);
+                const anLi = $(
+                    "<li " +
+                        missing.missingBit +
+                        " data-first-name='" +
+                        theFirstName +
+                        "' data-lnab='" +
+                        theLNAB +
+                        "' data-name=\"" +
+                        aPerson.Name +
+                        "\"><a target='_blank' href='https://www.wikitree.com/wiki/" +
+                        linkName +
+                        "'>" +
+                        theName +
+                        "</a> " +
+                        missing.missingIcons +
+                        "</li>"
+                );
+                $("#degree_" + theDegree)
+                    .find("ol")
+                    .append(anLi);
             }
-            const linkName = CC7.htmlEntities(aPerson.Name);
-            const missing = CC7.missingThings(aPerson);
-            const anLi = $(
-                "<li " +
-                    missing.missingBit +
-                    " data-first-name='" +
-                    theFirstName +
-                    "' data-lnab='" +
-                    theLNAB +
-                    "' data-name=\"" +
-                    aPerson.Name +
-                    "\"><a target='_blank' href='https://www.wikitree.com/wiki/" +
-                    linkName +
-                    "'>" +
-                    theName +
-                    "</a> " +
-                    missing.missingIcons +
-                    "</li>"
-            );
-            $("#degree_" + theDegree)
-                .find("ol")
-                .append(anLi);
-        });
+        }
 
         $("td ol,th ol").each(function () {
             CC7.sortList($(this), "lnab");
@@ -2568,7 +2408,8 @@ export class CC7 {
             (CC7.ageAtDeath(aPerson, false) > 15 ||
                 aPerson?.DeathDate == "0000-00-00" ||
                 aPerson?.BirthDate == "0000-00-00") &&
-            ((aPerson?.Spouse != "known" && aPerson?.Spouse != "blank") || aPerson.NoChildren != "1")
+            ((aPerson?.DataStatus.Spouse != "known" && aPerson?.DataStatus.Spouse != "blank") ||
+                aPerson.NoChildren != "1")
         ) {
             if (aPerson.Spouse.length == 0 && aPerson?.DataStatus?.Spouse != "blank") {
                 aPerson.Missing.push("Spouse");
@@ -2607,101 +2448,56 @@ export class CC7 {
 
     static addPeopleToHierarchy(degree) {
         $("#hierarchyView li[data-degree='" + degree + "']").each(function () {
-            const wtid = $(this).data("name");
+            const id = $(this).data("id");
             const thisLI = $(this);
-            window.people.forEach(function (aPerson) {
-                if (aPerson.Name == wtid) {
-                    const familyMembersKeys = [];
-                    if (aPerson.Parents) {
-                        if (aPerson.Father) {
-                            familyMembersKeys.push({ id: aPerson.Father, relation: "Father" });
-                        }
-                        if (aPerson.Mother) {
-                            familyMembersKeys.push({ id: aPerson.Mother, relation: "Mother" });
+            const aPerson = window.people.get(+id);
+
+            if (aPerson) {
+                CC7.assignRelationshipsFor(aPerson);
+                const familyMembers = [].concat(aPerson.Parent, aPerson.Sibling, aPerson.Spouse, aPerson.Child);
+
+                familyMembers.forEach(function (aMember) {
+                    aMember = CC7.missingBits(aMember);
+
+                    if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
+                        const theDegree = aMember.Degree;
+                        if (theDegree > aPerson.Degree) {
+                            const aName = new PersonName(aMember);
+                            const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+                            const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
+                            const theLNAB = theParts.get("LastNameAtBirth");
+                            const theFirstName = theParts.get("FirstName");
+
+                            let relation = aMember.Relation;
+                            if (relation == "Child") {
+                                relation = CC7.mapGender(aMember.Gender, "Son", "Daughter", "Child");
+                            } else if (relation == "Sibling") {
+                                relation = CC7.mapGender(aMember.Gender, "Brother", "Sister", "Sibling");
+                            } else if (relation == "Parent") {
+                                relation = CC7.mapGender(aMember.Gender, "Father", "Mother", "Parent");
+                            } else if (relation == "Spouse") {
+                                relation = CC7.mapGender(aMember.Gender, "Husband", "Wife", "Spouse");
+                            }
+
+                            const missing = CC7.missingThings(aMember);
+                            const missingBit = missing.missingBit;
+                            const missingIcons = missing.missingIcons;
+                            const linkName = CC7.htmlEntities(aMember.Name);
+                            const bdDates = CC7.displayDates(aMember);
+                            const anLi = $(
+                                `<li data-birth-date='${aMember.BirthDate}' data-father='${aMember.Father}' ` +
+                                    `data-mother='${aMember.Mother}' data-id='${aMember.Id}' data-relation='${relation}' ` +
+                                    `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Degree}' ` +
+                                    `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Degree}° ` +
+                                    `<span class='relation ${relation}'>${relation}</span>: ` +
+                                    `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a> ` +
+                                    `<span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
+                            );
+                            thisLI.children("ul").append(anLi);
                         }
                     }
-                    const relations = ["Siblings", "Spouses", "Children"];
-                    relations.forEach(function (aRelation) {
-                        if (aPerson[aRelation]) {
-                            const relKeys = Object.keys(aPerson[aRelation]);
-                            relKeys.forEach(function (aRel) {
-                                familyMembersKeys.push({ id: aRel, relation: aRelation });
-                            });
-                        }
-                    });
-
-                    const familyMembers = [];
-
-                    familyMembersKeys.forEach(function (aKeyPair) {
-                        window.people.forEach(function (oPerson) {
-                            if (aKeyPair.id == oPerson.Id) {
-                                const oPersonClone = JSON.parse(JSON.stringify(oPerson));
-                                oPersonClone.Relation = aKeyPair.relation;
-                                familyMembers.push(oPersonClone);
-                            }
-                        });
-                    });
-
-                    familyMembers.forEach(function (aMember) {
-                        aMember = CC7.missingBits(aMember);
-
-                        if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
-                            const theDegree = aMember.Degree;
-                            if (theDegree > aPerson.Degree) {
-                                const aName = new PersonName(aMember);
-                                const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
-                                const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
-                                const theLNAB = theParts.get("LastNameAtBirth");
-                                const theFirstName = theParts.get("FirstName");
-                                let relation = aMember.Relation;
-                                if (aMember.Relation == "Siblings") {
-                                    relation = "Sibling";
-                                    if (aMember.Gender == "Male") {
-                                        relation = "Brother";
-                                    }
-                                    if (aMember.Gender == "Female") {
-                                        relation = "Sister";
-                                    }
-                                }
-                                if (aMember.Relation == "Children") {
-                                    relation = "Child";
-                                    if (aMember.Gender == "Male") {
-                                        relation = "Son";
-                                    }
-                                    if (aMember.Gender == "Female") {
-                                        relation = "Daughter";
-                                    }
-                                }
-                                if (aMember.Relation == "Spouses") {
-                                    relation = "Spouse";
-                                    if (aMember.Gender == "Male") {
-                                        relation = "Husband";
-                                    }
-                                    if (aMember.Gender == "Female") {
-                                        relation = "Wife";
-                                    }
-                                }
-
-                                const missing = CC7.missingThings(aMember);
-                                const missingBit = missing.missingBit;
-                                const missingIcons = missing.missingIcons;
-                                const linkName = CC7.htmlEntities(aMember.Name);
-                                const bdDates = CC7.displayDates(aMember);
-                                const anLi = $(
-                                    `<li data-birth-date='${aMember.BirthDate}' data-father='${aMember.Father}' ` +
-                                        `data-mother='${aMember.Mother}' data-id='${aMember.Id}' data-relation='${relation}' ` +
-                                        `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Degree}' ` +
-                                        `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Degree}° ` +
-                                        `<span class='relation ${relation}'>${relation}</span>: ` +
-                                        `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a> ` +
-                                        `<span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
-                                );
-                                thisLI.children("ul").append(anLi);
-                            }
-                        }
-                    });
-                }
-            });
+                });
+            }
         });
     }
 
@@ -2714,7 +2510,8 @@ export class CC7 {
                 "</menu><ul></ul></section>"
         );
         hierarchySection.insertBefore($("#peopleTable"));
-        const aPerson = window.people[0];
+
+        const aPerson = window.people.get(window.rootId);
         const aName = new PersonName(aPerson);
         const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
         const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
@@ -2727,7 +2524,7 @@ export class CC7 {
                 `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a><ul></ul></li>`
         );
         hierarchySection.children("ul").append(anLi);
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < CC7.MAX_DEGREE; i++) {
             CC7.addPeopleToHierarchy(i);
         }
         $("#hierarchyView li").each(function () {
@@ -2749,7 +2546,7 @@ export class CC7 {
         });
         $("#showAllDegrees").on("click", function (e) {
             e.preventDefault();
-            window.visibleDegrees = 7;
+            window.visibleDegrees = CC7.MAX_DEGREE;
             if ($(this).text() == "Expand All") {
                 $(this).text("Collapse All");
                 $("#hierarchyView ul ul").show();
@@ -2767,7 +2564,7 @@ export class CC7 {
         });
         $("#showOneMoreDegree").on("click", function (e) {
             e.preventDefault();
-            if (window.visibleDegrees < 7) {
+            if (window.visibleDegrees < CC7.MAX_DEGREE) {
                 window.visibleDegrees++;
                 let j = window.visibleDegrees;
                 for (let i = 0; i < j + 1; i++) {
@@ -2795,7 +2592,7 @@ export class CC7 {
                 window.visibleDegrees--;
                 let j = window.visibleDegrees;
 
-                for (let i = 7; i >= j + 1; i--) {
+                for (let i = CC7.MAX_DEGREE; i >= j + 1; i--) {
                     $("li[data-degree='" + i + "']")
                         .parent()
                         .hide();
@@ -2834,6 +2631,7 @@ export class CC7 {
             }
             theUL.children("li[data-relation='Father']").prependTo(theUL);
         });
+        CC7.hideShakingTree();
     }
 
     static showMissingCounts(jq) {
@@ -2911,243 +2709,337 @@ export class CC7 {
         }
     }
 
-    static async getPeopleAction(keys, siblings, ancestors, descendants, nuclear, minGeneration, fields) {
+    static async getPeopleAtNthDegree(key, degree, start, limit) {
         try {
             const result = await WikiTreeAPI.postToAPI({
                 appId: CC7.APP_ID,
                 action: "getPeople",
-                keys: keys,
-                siblings: siblings,
-                ancestors: ancestors,
-                descendants: descendants,
-                nuclear: nuclear,
-                minGeneration: minGeneration,
-                fields: fields,
+                keys: key,
+                nuclear: degree,
+                minGeneration: degree,
+                start: start,
+                limit: limit,
+                fields: CC7.GET_PEOPLE_FIELDS,
             });
             const people = result[0].people;
             if (typeof people == "undefined" || people == "") {
-                wtViewRegistry.showError(`No results obtained when requesting relatives for ${keys}`);
+                wtViewRegistry.showError(`No results obtained when requesting relatives for ${key}`);
                 return null;
             }
-            return result[0].people;
+            return [result[0].resultByKey, result[0].people];
         } catch (error) {
-            wtViewRegistry.showError(`Could not retrieve relatives for ${keys}: ${error}`);
+            wtViewRegistry.showError(`Could not retrieve relatives for ${key}: ${error}`);
             return null;
         }
     }
 
-    static async getSomeRelatives(ids, fields = "*") {
-        try {
-            const result = await WikiTreeAPI.postToAPI({
-                appId: CC7.APP_ID,
-                action: "getRelatives",
-                keys: ids,
-                fields: fields,
-                getParents: 1,
-                getSiblings: 1,
-                getSpouses: 1,
-                getChildren: 1,
-            });
-            return result[0].items;
-        } catch (error) {
-            CC7.hideShakingTree();
-            wtViewRegistry.showError(`Could not retrieve relatives for ${ids}: ${error}`);
-        }
-    }
-
-    static getDegreeAction(event) {
+    static async getDegreeAction(event) {
         wtViewRegistry.clearStatus();
-        window.people = [];
-        window.peopleKeys = [];
-        window.chunksOut = 0;
-        window.chunksBack = 0;
+        window.people = new Map();
+        window.rootId = null;
         event.preventDefault();
         const wtId = wtViewRegistry.getCurrentWtId();
         if (wtId.match(/.+\-.+/)) {
             CC7.clearDisplay();
             CC7.showShakingTree();
-            $("div.cc7Table").addClass("degreeView");
+            $("#cc7Container").addClass("degreeView");
             const theDegree = $("#cc7Degree").val();
-            const fields = "Id";
-            CC7.getPeopleAction(wtId, 0, 0, 0, theDegree, theDegree, fields).then((people) => {
-                $("#oneDegreeList").remove();
-                const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
-                $("div.cc7Table").append(oneDegreeList);
-                if (people === null) {
-                    CC7.hideShakingTree();
-                    return;
-                }
-                window.peopleKeys = Object.keys(people);
-                while (window.peopleKeys.length) {
-                    const chunk = window.peopleKeys.splice(0, 100).join(",");
-                    //console.log(chunk);
-                    window.chunksOut++;
-                    CC7.getSomeRelatives(chunk, CC7.PROFILE_FIELDS).then((result) => {
-                        if (result) {
-                            result.forEach(function (aPerson) {
-                                const mPerson = aPerson.person;
-                                const mSpouses = CC7.getRels(mPerson.Spouses, mPerson, "Spouse");
-                                mPerson.Spouse = mSpouses;
-                                const mChildren = CC7.getRels(mPerson.Children, mPerson, "Child");
-                                mPerson.Child = mChildren;
-                                const mSiblings = CC7.getRels(mPerson.Siblings, mPerson, "Sibling");
-                                mPerson.Sibling = mSiblings;
-                                const mParents = CC7.getRels(mPerson.Parents, mPerson, "Parent");
-                                mPerson.Parent = mParents;
-                                mPerson.Degree = $("#cc7Degree").val();
-                                if (mPerson.Name != wtViewRegistry.getCurrentWtId()) {
-                                    window.people.push(mPerson);
-                                }
-                            });
-                        }
-                        window.chunksBack++;
-                        if (window.peopleKeys.length == 0 && window.chunksOut == window.chunksBack) {
-                            //console.log(window.people);
-                            CC7.hideShakingTree();
-                            if (window.people.length == 0) {
-                                $("div.cc7Table").append(
-                                    $(
-                                        "<div id='tooBig' style='text-align:center'>No Result... Maybe the CC7 is too big. <br>" +
-                                            "These may be after the first thousand.<br>" +
-                                            "How about going to a grandparent and looking at their results or reduce the degrees?</div>"
-                                    )
-                                );
-                            } else {
-                                CC7.addPeopleTable();
-                            }
-                        }
-                    });
-                }
-            });
+            let start = 0;
+            const limit = CC7.GET_PEOPLE_LIMIT;
+            console.log(
+                `Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, limit:${limit}`
+            );
+            const starttime = performance.now();
+            const [resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            $("#oneDegreeList").remove();
+            const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
+            $("#cc7Container").append(oneDegreeList);
+            if (peopleData === null) {
+                CC7.hideShakingTree();
+                return;
+            }
+            window.rootId = +resultByKey[wtId].Id;
+            let profiles = peopleData ? Object.values(peopleData) : [];
+            console.log(`Received ${profiles.length} profiles`);
+
+            while (profiles.length > 0) {
+                CC7.addPeople(profiles, start, theDegree);
+
+                // Check if we're done
+                if (profiles.length < limit) break;
+
+                // We have more paged profiles to fetch
+                start += limit;
+                console.log(
+                    `Retrieving getPeople result page. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
+                );
+                const [, ancestor_json] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+                profiles = Object.values(ancestor_json);
+                console.log(`Received ${profiles.length} profiles`);
+            }
+            console.log(
+                `Retrieved ${window.people.size} unique profiles at CC${theDegree} in ${
+                    performance.now() - starttime
+                }ms`
+            );
+            const root = CC7.hideShakingTree();
+            CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
         }
     }
 
-    static addFamilyToPerson(person) {
-        person.Parent = CC7.getRels(person.Parents, person, "Parent");
-        person.Sibling = CC7.getRels(person.Siblings, person, "Sibling");
-        person.Spouse = CC7.getRels(person.Spouses, person, "Spouse");
-        person.Child = CC7.getRels(person.Children, person, "Child");
-        return person;
+    static addPeople(profiles, start = 0, degree = -1) {
+        let nrAdded = 0;
+        for (const person of profiles) {
+            let id = +person.Id;
+            if (id < 0) {
+                // WT returns negative ids for private profiles, but they seem to be unique only
+                // within the result returned by the call (i.e. per page). However, since they are
+                // different people, we give them uniq ids.
+                id += -start;
+            }
+            if (!window.people.has(id)) {
+                // This is a new person, add them to the tree
+                person.Parents = [person.Father, person.Mother];
+                if (id < 0) {
+                    // This is a private profile
+                    person.Id = id;
+                    person.Name = `Private${id}`;
+                    person.DataStatus = { Spouse: "", Gender: "" };
+                }
+                // To be filled later
+                person.Parent = [];
+                person.Spouse = [];
+                person.Sibling = [];
+                person.Child = [];
+                person.Marriage = {};
+                person.Degree = degree;
+
+                window.people.set(id, person);
+                ++nrAdded;
+            } else {
+                console.log(`${person.Name} (${id}) not added since they are already present`);
+            }
+        }
+        console.log(`Added ${nrAdded} people to the tree`);
+        return nrAdded;
     }
 
     static async getConnectionsAction(event) {
         wtViewRegistry.clearStatus();
         const theDegree = $("#cc7Degree").val();
         const wtId = wtViewRegistry.getCurrentWtId();
-        if (wtId.match(/.+\-.+/)) {
-            window.ancestors = await CC7.getAncestors(wtId, 3, CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS);
-            CC7.assignGeneration(window.ancestors, ancestors[0], 0);
-        }
         event.preventDefault();
-        $("div.cc7Table").removeClass("degreeView");
-        window.people = [];
-        window.gotEm = [];
-        window.toGet = [];
-        window.thisDegreeIn = 0;
-        window.degree = 0;
-        window.people = [];
+        $("#cc7Container").removeClass("degreeView");
+        window.people = new Map();
+        window.rootId = 0;
         CC7.clearDisplay();
         CC7.getConnections(theDegree);
-        CC7.showShakingTree();
     }
 
-    static getConnections(maxDegree, keys = 0) {
-        let WTID;
-        if (keys == 0) {
-            WTID = wtViewRegistry.getCurrentWtId();
-        } else {
-            WTID = keys;
-        }
-        WikiTreeAPI.postToAPI({
-            appId: CC7.APP_ID,
-            action: "getRelatives",
-            keys: WTID,
-            getParents: "1",
-            getSiblings: "1",
-            getSpouses: "1",
-            getChildren: "1",
-            fields: CC7.PROFILE_FIELDS,
-        }).then((data) => {
-            const items = data[0]["items"];
-            if (items) {
-                items.forEach(function (item) {
-                    let person = item.person;
-                    if (window.gotEm.includes(person.Id) == false) {
-                        window.gotEm.push(person.Id);
-                        person.Degree = window.degree;
-                        window.people.push(person);
-                        thisDegreeIn++;
+    static async getConnections(maxWantedDegree) {
+        CC7.showShakingTree();
+        const wtId = wtViewRegistry.getCurrentWtId();
+        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree);
+        window.rootId = +resultByKey[wtId].Id;
+
+        // add Parent, Child, and Spouse arrays
+        for (const pers of window.people.values()) {
+            for (const pId of pers.Parents) {
+                if (pId) {
+                    const parent = window.people.get(+pId);
+                    if (parent) {
+                        pers.Parent.push(parent);
+                        parent.Child.push(pers);
                     }
-                    person = CC7.addFamilyToPerson(person);
-                    const arr = ["Parent", "Sibling", "Spouse", "Child"];
-                    arr.forEach(function (rel) {
-                        if (person[rel].length > 0) {
-                            person[rel].forEach(function (aRel) {
-                                if (
-                                    window.toGet.includes(aRel.Id) == false &&
-                                    window.gotEm.includes(aRel.Id) == false
-                                ) {
-                                    window.toGet.push(aRel.Id);
-                                }
-                            });
-                        }
-                    });
-                });
-            }
-
-            if (window.degree < 3) {
-                if (window.ancestors) {
-                    window.ancestors.forEach(function (anAncestor) {
-                        if (anAncestor.Generation == window.degree + 1) {
-                            if (!window.gotEm.includes(anAncestor.Id) && !window.toGet.includes(anAncestor.Id)) {
-                                window.toGet.push(anAncestor.Id);
-                            }
-                        }
-                    });
                 }
             }
-
-            const keys = window.toGet.join(",");
-            if (window.degree < maxDegree) {
-                CC7.getConnections(maxDegree, keys);
-                if ($("#degreesTable").length == 0) {
-                    $("div.cc7Table").append(
-                        $(
-                            "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
-                        )
+            for (const sp of pers.Spouses) {
+                const spouse = window.people.get(+sp.Id);
+                if (spouse) {
+                    // Add to spouse array if it is not already there
+                    // Note that this does not cater for someone married to the same person more than once,
+                    // but currently WikiTree also does not cater for that.
+                    if (!pers.Marriage[spouse.Id]) {
+                        pers.Marriage[spouse.Id] = {
+                            MarriageDate: sp.MarriageDate,
+                            MarriageEndDate: sp.MarriageEndDate,
+                            MarriageLocation: sp.MarriageLocation,
+                            DoNotDisplay: sp.DoNotDisplay,
+                        };
+                        pers.Spouse.push(spouse);
+                    }
+                }
+            }
+        }
+        // Now that all child arrays are complete, add Sibling arrays
+        for (const pers of window.people.values()) {
+            if (pers.Child.length) {
+                // Add this person's children as siblings to each of his children
+                for (const child of pers.Child) {
+                    // Exclude this child from the sibling list
+                    const siblings = pers.Child.filter((c) => c.Id != child.Id);
+                    // Add each one unless it already is there (mothers and fathers may have same and different children)
+                    const childsCurrentSibIds = new Set(child.Sibling.map((s) => s.Id));
+                    for (const sib of siblings) {
+                        if (!childsCurrentSibIds.has(sib.Id)) {
+                            child.Sibling.push(sib);
+                        }
+                    }
+                }
+            }
+        }
+        // Finally, calculate and assign degrees
+        const degreeCounts = {};
+        const root = window.people.get(window.rootId);
+        root.Degree = 0;
+        let actualMaxDegree = 0;
+        const q = [window.rootId];
+        while (q.length > 0) {
+            const pId = q.shift();
+            const p = window.people.get(+pId);
+            if (p) {
+                const newDegree = p.Degree + 1;
+                if (newDegree <= 0) {
+                    console.error(
+                        `This should be impossible. Person ${p.Name} found with no degree number on the degree q`
                     );
+                    continue;
                 }
-                window.toGet = [];
-            } else {
-                CC7.hideShakingTree();
-                CC7.addPeopleTable();
-            }
-            if (window.degree > 0) {
-                $("#degreesTable")
-                    .find("tr")
-                    .eq(0)
-                    .append($("<td>" + window.degree + "</td>"));
-                $("#degreesTable")
-                    .find("tr")
-                    .eq(1)
-                    .append($("<td>" + window.thisDegreeIn + "</td>"));
+                // Add the next degree people from this person to the queue only if they don't
+                // already have a degree
+                for (const relation of ["Parent", "Spouse", "Child", "Sibling"]) {
+                    const relIds = CC7.getIdsOf(p[relation]);
+                    //console.log(`Checking ${relIds.length} ${relation}s of ${p.Name} (${p.Id})`);
+                    for (const relId of relIds) {
+                        const relative = window.people.get(relId);
+                        if (relative && relative.Degree < 0) {
+                            // the relative exists and doesn't have a degree
+                            // Assign them a degree and add them to the queue so their relatives can be inspected
+                            if (newDegree > actualMaxDegree) {
+                                actualMaxDegree = newDegree;
+                            }
+                            relative.Degree = newDegree;
+                            q.push(relId);
 
-                $("#degreesTable")
-                    .find("tr")
-                    .eq(2)
-                    .append($("<td>" + (parseInt(window.people.length) - 1) + "</td>"));
+                            // Update the degree counts
+                            if (degreeCounts[newDegree]) {
+                                degreeCounts[newDegree] = degreeCounts[newDegree] + 1;
+                            } else {
+                                degreeCounts[newDegree] = 1;
+                            }
+                            //console.log(`Assigned ${relative.Name} (${relative.Id}) degree ${degree}`);
+                        }
+                    }
+                }
             }
-            window.degree++;
-            window.thisDegreeIn = 0;
-            //},
+        }
+        CC7.hideShakingTree();
+        if ($("#degreesTable").length != 0) {
+            $("#degreesTable").remove();
+        }
+        $("#cc7Container").append(
+            $(
+                "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
+            )
+        );
+        CC7.buildDegreeTableData(degreeCounts, actualMaxDegree);
+        const aName = new PersonName(window.people.get(window.rootId));
+
+        CC7.addPeopleTable(
+            `CC${Math.min(maxWantedDegree, actualMaxDegree)} for ${new PersonName(root).withParts(
+                CC7.WANTED_NAME_PARTS
+            )}`
+        );
+    }
+
+    static getIdsOf(arrayOfPeople) {
+        return arrayOfPeople.map((p) => +p.Id);
+    }
+
+    static async makePagedCallAndAddPeople(reqIds, upToDegree) {
+        let start = 0;
+        let callNr = 1;
+        const limit = CC7.GET_PEOPLE_LIMIT;
+        if ($("#degreesTable").length == 0) {
+            $("#cc7Container").append(
+                $(
+                    "<table id='degreesTable'><tr><th colspan=2>Collecting Profiles</th></tr><tr><th>API req #</th></tr><tr><th>Received</th></tr><tr><th>Newly added</th></tr><tr><th>Total</th></tr></table>"
+                )
+            );
+        }
+        $("#degreesTable tr")
+            .eq(1)
+            .append($(`<td>${callNr}</td>`));
+        console.log(`Calling getPeople with keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`);
+        const starttime = performance.now();
+        const [resultByKey, peopleData] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
+        let profiles = peopleData ? Object.values(peopleData) : [];
+        console.log(`Received ${profiles.length} profiles`);
+
+        while (profiles.length > 0) {
+            $("#degreesTable tr")
+                .eq(2)
+                .append($(`<td>${profiles.length}</td>`));
+
+            // Note: getPeople does not guarantee return order
+            const nrAdded = CC7.addPeople(profiles, start);
+            $("#degreesTable tr")
+                .eq(3)
+                .append($(`<td>${nrAdded}</td>`));
+            $("#degreesTable tr")
+                .eq(4)
+                .append($(`<td>${window.people.size}</td>`));
+
+            // Check if we're done
+            if (profiles.length < limit) break;
+
+            // We have more paged profiles to fetch
+            start += limit;
+            callNr += 1;
+            $("#degreesTable tr")
+                .eq(1)
+                .append($(`<td>${callNr}</td>`));
+            console.log(
+                `Retrieving getPeople result page. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+            );
+            const [, ancestor_json] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
+            profiles = Object.values(ancestor_json);
+            console.log(`Received ${profiles.length} profiles`);
+        }
+        console.log(
+            `Retrieved ${window.people.size} unique CC${upToDegree} profiles in ${performance.now() - starttime}ms`
+        );
+        return resultByKey;
+    }
+
+    static async getPeopleUpToDegree(ids, depth, start = 0, limit = CC7.GET_PEOPLE_LIMIT) {
+        const result = await WikiTreeAPI.postToAPI({
+            appId: CC7.APP_ID,
+            action: "getPeople",
+            keys: ids.join(","),
+            start: start,
+            limit: limit,
+            nuclear: depth,
+            fields: CC7.GET_PEOPLE_FIELDS,
         });
+        const status = result[0]["status"];
+        if (status != "") {
+            console.warn(`getpeople returned status: ${status}`);
+        }
+        const resultByKey = result[0]["resultByKey"];
+        const people = result[0]["people"];
+
+        return [resultByKey, people];
     }
 
     static makeFilename() {
+        return CC7.makeSheetname() + new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
+    }
+
+    static makeSheetname() {
         const theDegree = $("#cc7Degree").val();
         let fileName = `CC${theDegree}_${wtViewRegistry.getCurrentWtId()}_`;
         fileName += $("div.degreeView").length ? `Degree_${theDegree}_` : "";
-        fileName += new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
         return fileName;
     }
 
@@ -3188,85 +3080,132 @@ export class CC7 {
         ).remove();
     }
 
+    static handleFileDownload() {
+        try {
+            CC7.collapsePeople();
+            const fileName = CC7.makeFilename();
+            CC7.downloadArray(
+                [[window.rootId, window.people.get(window.rootId)], ...window.people.entries()],
+                fileName
+            );
+        } finally {
+            this.expandPeople(window.people);
+        }
+    }
+
+    static collapsePeople() {
+        // Replace people objects with their IDs
+        for (const person of window.people.values()) {
+            for (const relation of ["Parent", "Sibling", "Spouse", "Child"]) {
+                if (person[relation]) {
+                    const ids = CC7.getIdsOf(person[relation]);
+                    person[relation] = ids;
+                }
+            }
+        }
+    }
+
+    static expandPeople(peopleMap) {
+        // Replace ids with people objects
+        for (const person of peopleMap.values()) {
+            for (const relation of ["Parent", "Sibling", "Spouse", "Child"]) {
+                if (person[relation]) {
+                    const peeps = [];
+                    for (const id of person[relation]) {
+                        const relative = peopleMap.get(id);
+                        if (relative) peeps.push(relative);
+                    }
+                    person[relation] = peeps;
+                }
+            }
+        }
+        return peopleMap;
+    }
+
     static handleFileUpload(event) {
         wtViewRegistry.clearStatus();
         const file = event.target.files[0];
         if (typeof file == "undefined" || file == "") {
             return;
         }
-        const reader = new FileReader();
-        CC7.clearDisplay();
-        CC7.showShakingTree();
 
+        const reader = new FileReader();
         reader.onload = async function (e) {
             const contents = e.target.result;
             try {
-                window.people = JSON.parse(contents);
+                const peeps = JSON.parse(contents);
+                window.rootId = peeps[0][0];
+                window.people = CC7.expandPeople(new Map(peeps));
             } catch (error) {
                 CC7.hideShakingTree();
                 wtViewRegistry.showError(`The input file is not valid: ${error}`);
                 return;
             }
 
-            window.ancestors = await CC7.getAncestors(
-                window.people[0].Id,
-                3,
-                CC7.PROFILE_FIELDS + CC7.RELATIONS_FIELDS
+            const root = window.people.get(window.rootId);
+            $(wtViewRegistry.WT_ID_TEXT).val(root.Name);
+            const degreeCounts = {};
+            let maxDegree = 0;
+            for (const aPerson of window.people.values()) {
+                if (degreeCounts[aPerson.Degree]) {
+                    degreeCounts[aPerson.Degree] = degreeCounts[aPerson.Degree] + 1;
+                } else {
+                    degreeCounts[aPerson.Degree] = 1;
+                }
+                if (aPerson.Degree > maxDegree) {
+                    maxDegree = aPerson.Degree;
+                }
+            }
+            CC7.buildDegreeTableData(degreeCounts, maxDegree);
+            CC7.handleDegreeChange(maxDegree);
+            CC7.addPeopleTable(
+                `CC${Math.min(maxDegree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`
             );
-            CC7.assignGeneration(window.ancestors, ancestors[0], 0);
-
-            $(wtViewRegistry.WT_ID_TEXT).val(window.people[0].Name);
-            CC7.addPeopleTable();
-            $("div.cc7Table #hierarchyViewButton").before(
+            $("#cc7Container #hierarchyViewButton").before(
                 $(
                     "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
-            const degreeCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
-            let maxDegree = 0;
-            window.people.forEach(function (aPerson) {
-                degreeCounts[aPerson.Degree] = degreeCounts[aPerson.Degree] + 1;
-                if (aPerson.Degree > maxDegree) {
-                    maxDegree = aPerson.Degree;
-                }
-            });
-            let degreeSum = 0;
-            for (let i = 1; i <= maxDegree; i++) {
-                degreeSum = degreeSum + degreeCounts[i];
-                $("#degreesTable tr")
-                    .eq(0)
-                    .append($(`<td>${i}</td>`));
-                $("#degreesTable tr")
-                    .eq(1)
-                    .append($(`<td>${degreeCounts[i]}</td>`));
-                $("#degreesTable tr")
-                    .eq(2)
-                    .append($(`<td>${degreeSum}</td>`));
-            }
-            CC7.handleDegreeChange(maxDegree);
             CC7.hideShakingTree();
         };
 
         try {
-            reader.readAsText(file);
+            CC7.clearDisplay();
+            CC7.showShakingTree(() => reader.readAsText(file));
         } catch (error) {
             CC7.hideShakingTree();
             wtViewRegistry.showError(`The input file is not valid: ${error}`);
         }
     }
 
+    static buildDegreeTableData(degreeCounts, maxDegree) {
+        let degreeSum = 0;
+        for (let i = 1; i <= maxDegree; ++i) {
+            degreeSum = degreeSum + degreeCounts[i];
+            $("#degreesTable tr")
+                .eq(0)
+                .append($(`<td>${i}</td>`));
+            $("#degreesTable tr")
+                .eq(1)
+                .append($(`<td>${degreeCounts[i]}</td>`));
+            $("#degreesTable tr")
+                .eq(2)
+                .append($(`<td>${degreeSum}</td>`));
+        }
+    }
+
     static cc7excelOut() {
-        const fileName = CC7.makeFilename();
+        const sheetName = CC7.makeSheetname();
 
         const wb = XLSX.utils.book_new();
         wb.Props = {
-            Title: fileName,
-            Subject: fileName,
+            Title: sheetName,
+            Subject: sheetName,
             Author: "WikiTree",
             CreatedDate: new Date(),
         };
 
-        wb.SheetNames.push(fileName);
+        wb.SheetNames.push(sheetName);
         const ws_data = [];
         const headings = [
             "WikiTree ID",
@@ -3337,12 +3276,12 @@ export class CC7 {
         });
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        wb.Sheets[fileName] = ws;
+        wb.Sheets[sheetName] = ws;
 
         function s2ab(s) {
             const buf = new ArrayBuffer(s.length);
             const view = new Uint8Array(buf);
-            for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
             return buf;
         }
 
@@ -3388,28 +3327,9 @@ export class CC7 {
         });
     }
 
-    static async getAncestors(id, depth, fields = "*") {
-        try {
-            const result = await WikiTreeAPI.postToAPI({
-                appId: CC7.APP_ID,
-                action: "getAncestors",
-                key: id,
-                depth: depth,
-                fields: fields,
-            });
-            if (typeof result[0].ancestors == "undefined") {
-                wtViewRegistry.showError(`Could not retrieve ancestors for ${id}: ${result[0].status}`);
-                return [];
-            }
-            return result[0].ancestors;
-        } catch (error) {
-            wtViewRegistry.showError(`Could not retrieve ancestors for ${id}: ${error}`);
-        }
-    }
-
     static assignGeneration(persons, person, generation) {
         person.Generation = generation;
-        for (let ancestor of persons) {
+        for (const ancestor of persons) {
             if (ancestor.Id === person.Father || ancestor.Id === person.Mother) {
                 CC7.assignGeneration(persons, ancestor, generation + 1);
             }

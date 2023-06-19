@@ -1,6 +1,7 @@
 export class API {
     static APP_ID = "AncestorLineExplorer";
-    static MAX_API_DEPTH = 8; // how many generations we are prepared to retrieve per API call
+    static MAX_API_DEPTH = 10; // how many generations we are prepared to retrieve per API call
+    static GET_PERSON_LIMIT = 1000;
     static PRIMARY_FIELDS = [
         "BirthDate",
         "BirthLocation",
@@ -21,7 +22,7 @@ export class API {
         "Mother",
         "Name",
         "Nicknames",
-        "Photo",
+        // "Photo",
         "Prefix",
         "RealName",
         "Suffix",
@@ -33,5 +34,17 @@ export class API {
 
     static async getRelatives(ids, fields = API.PRIMARY_FIELDS) {
         return WikiTreeAPI.getRelatives(API.APP_ID, ids, fields);
+    }
+
+    static async getPeople(ids, ancestors = 0, start = 0, limit = API.GET_PERSON_LIMIT, fields = API.PRIMARY_FIELDS) {
+        const [status, resultByKey, people] = await WikiTreeAPI.getPeople(API.APP_ID, ids, fields, {
+            ancestors: ancestors,
+            start: start,
+            limit: limit,
+        });
+        if (status != "") {
+            console.warn(`getpeople returned status: ${status}`);
+        }
+        return [resultByKey, people];
     }
 }
