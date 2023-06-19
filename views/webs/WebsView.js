@@ -479,7 +479,7 @@
             "[ <span id=numGensInBBar>5</span> generations ]" +
             ' <A style="cursor:pointer;" onclick="WebsView.numGens2Display +=1; WebsView.redraw();"> +1 </A> ' +
             "</td>" +
-            '<td width="5%">&nbsp;</td>' +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"><A style="cursor:pointer;" onclick="WebsView.comingSoon(1);"><B>+</B>' +
             PERSON_SILHOUETTE +
             "</A> &nbsp; " +
@@ -1474,6 +1474,7 @@
         condLog("Need to load MORE peeps from Generation ", newLevel, "numGensRetrieved", WebsView.numGensRetrieved);
         // let theListOfIDs = WebsView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
         let theListOfIDs = [WebsView.myAhnentafel.list[1]];
+        let loadingTD = document.getElementById("loadingTD");
         if (newLevel > 8) {
             theListOfIDs = WebsView.myAhnentafel.listOfAncestorsAtLevel(6);    
         }
@@ -1529,6 +1530,7 @@
             condLog("IF list.length == 0, Need to adjust WebsView.workingMaxNumGens -> ", WebsView.workingMaxNumGens);
         } else {
             condLog("Need to start call to GetPeople",theOptions,theListOfIDs.length + " peeps");
+            loadingTD.innerHTML = "loading";
             WikiTreeAPI.getPeople(
                 APP_ID,
                 theListOfIDs,
@@ -1577,6 +1579,7 @@
                         WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
                         condLog("IF .THEN ... Need to adjust WebsView.workingMaxNumGens -> ", WebsView.workingMaxNumGens);
                         clearMessageBelowButtonBar();
+                        loadingTD.innerHTML = "&nbsp;";
                     }
                 } else {
                     condLog("Need to know there is NO RESULT !");
@@ -1612,7 +1615,7 @@
     };
 
     function redoRootSelector() {
-        condLog("REDO THE ROOT SELECTOR !!!");
+        condLog("REDO THE ROOT SELECTOR !!!", WebsView.primePerson);
         let rootPersonName = getFLname(WebsView.primePerson);
 
         let rootPersonSelector =
@@ -4724,7 +4727,7 @@
 
     // NEW FUNCTIONS HERE to DEAL WITH MULTIPLE ROOT PEOPLE
     
-    function loadNewPrimaryPerson(newPrimeID) {
+    function loadNewPrimaryPerson(newPrimeID, passNum = 1) {
         condLog("Need to load a NEW PRIMARY ", newPrimeID, WebsView.numGensRetrieved + " generations");
         flashWarningMessageBelowButtonBar("Please be patient while new family tree is being loaded ...");
         //  let theListOfIDs = WebsView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
@@ -4739,12 +4742,19 @@
             // WikiTreeAPI.getAncestors(
             //     APP_ID,
             //     newPrimeID,
+            let theListOfIDs = [newPrimeID];    
+            if (passNum == 1) {
+                theOptions = { ancestors: Math.min(9,WebsView.numGensRetrieved) };
+            } else if (passNum > 1 && WebsView.numGensRetrieved > 9) {
+                 
+                theListOfIDs = WebsView.myAhnentafel.listOfAncestorsAtLevel(6);    
                 
-
+                theOptions = { ancestors: WebsView.numGensRetrieved - 6, minGeneration : 3};
+            }
             // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
             WikiTreeAPI.getPeople(
                 // (appId, IDs, fields, options = {}) 
-                APP_ID , newPrimeID,
+                APP_ID , theListOfIDs,
                             
                 [
                     "Id",
@@ -4769,7 +4779,7 @@
                     "Gender",
                     "Privacy",
                 ],
-                { ancestors: WebsView.numGensRetrieved }
+                theOptions
             ).then(function (result) {
                 if (result) {
                     WebsView.theAncestors = result;
@@ -4777,32 +4787,46 @@
                     condLog("WebsView.primePerson:", WebsView.primePerson);
                     condLog("B4 loop - thePeopleList had ", thePeopleList.population());
                     condLog("WebsView.theAncestors.length", Object.keys(result).length);
-                    if (
-                        result 
-                        // WebsView.theAncestors.length > 0 // &&
-                        // WebsView.theAncestors[0]
-                    ) {
+
+                    // if (
+                    //     result 
+                    //     // WebsView.theAncestors.length > 0 // &&
+                    //     // WebsView.theAncestors[0]
+                    // ) {
                         let thisNewID = newPrimeID; //WebsView.theAncestors[0].Id;
                         // WebsView.listOfPrimePersons.push(thisNewID);
                         // WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
-                        let thisPrimeNum = WebsView.listOfPrimePersons.length + 1;
+                        let thisPrimeNum = WebsView.listOfPrimePersons.length; 
+                        if (passNum == 1) {
+                            thisPrimeNum = WebsView.listOfPrimePersons.length + 1;
+                        }
+                        condLog(
+                            "passNum,thisPrimeNum,newPrimeID,WebsView.primePerson",
+                            passNum,
+                            thisPrimeNum,
+                            newPrimeID,
+                            WebsView.primePerson
+                        );
                         // for (let index = 0; index < WebsView.theAncestors.length; index++) {
                         for (const ancID in WebsView.theAncestors) {
                             let thePerson = WebsView.theAncestors[ancID];
-                            if (thePerson.Id < 0) {
-                                thePerson.Id = thisPrimeNum * 100 - thePerson.Id;
-                                thePerson["Name"] = "Private-" + thePerson.Id;
-                                thePerson["FirstName"] = "Private";
-                                thePerson["LastNameAtBirth"] = "TBD!";
-                            }
-                            if (thePerson.Mother < 0) {
-                                thePerson.Mother = thisPrimeNum * 100 - thePerson.Mother;
-                            }
-                            if (thePerson.Father < 0) {
-                                thePerson.Father = thisPrimeNum * 100 - thePerson.Father;
+                            if (passNum == 1) {
+                                if (thePerson.Id < 0) {
+                                    thePerson.Id = thisPrimeNum * 100 - thePerson.Id;
+                                    thePerson["Name"] = "Private-" + thePerson.Id;
+                                    thePerson["FirstName"] = "Private";
+                                    thePerson["LastNameAtBirth"] = "TBD!";
+                                }
+                                if (thePerson.Mother < 0) {
+                                    thePerson.Mother = thisPrimeNum * 100 - thePerson.Mother;
+                                }
+                                if (thePerson.Father < 0) {
+                                    thePerson.Father = thisPrimeNum * 100 - thePerson.Father;
+                                }
                             }
                             thePeopleList.add(WebsView.theAncestors[ancID]);
-                            if (WebsView.theAncestors[ancID].Name.toUpperCase() == newPrimeID.toUpperCase()) {
+
+                            if (passNum == 1 && WebsView.theAncestors[ancID].Name.toUpperCase() == newPrimeID.toUpperCase()) {
                                 thisNewID = WebsView.theAncestors[ancID].Id;
                                 WebsView.listOfPrimePersons.push(thisNewID);
                                 WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
@@ -4810,9 +4834,12 @@
                         }
 
                         let theNewPrimePerson = thePeopleList[thisNewID];
-                        theNewPrimePerson._data.Father = WebsView.theAncestors[thisNewID].Father;
-                        theNewPrimePerson._data.Mother = WebsView.theAncestors[thisNewID].Mother;
-
+                        if (passNum == 1) {
+                            theNewPrimePerson._data.Father = WebsView.theAncestors[thisNewID].Father;
+                            theNewPrimePerson._data.Mother = WebsView.theAncestors[thisNewID].Mother;
+                        }
+                        
+                        condLog("theNewPrimePerson", thisNewID, theNewPrimePerson);
                         
 
                         // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
@@ -4838,7 +4865,7 @@
                         ];
 
                         // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
-                        for (var a = 1; a < 16; a++) {
+                        for (var a = 1; a < 16 && passNum == 1; a++) {
                             let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
                             // condLog("Peep ",a, thisPeep);
                             if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
@@ -4852,41 +4879,51 @@
                             }
                         }
 
-                        // FINALLY - set the PRIME PERSON, and the DRAW the Ancestor Tree
-                        WebsView.primePerson = theNewPrimePerson;
-                        WebsView.myAncestorTree.draw();
-                        // self.drawTree(thePerson);
-                        clearMessageBelowButtonBar();
-                        condLog(
-                            "AFT loop - thePeopleList had ",
-                            thePeopleList.population(),
-                            "people",
-                            WebsView.listOfAhnentafels.length,
-                            "Ahnentafels",
-                            WebsView.listOfPrimePersons.length,
-                            "primer persons",
-                            "currentPrimeNum:",
-                            WebsView.currentPrimeNum,
-                            WebsView.myAhnentafel
-                        );
+                        if(passNum == 1 && WebsView.numGensRetrieved > 9) {
+                            // NEED to PREP FOR PASS 2
 
-                        while (WebsView.listOfAhnentafels.length < WebsView.listOfPrimePersons.length) {
-                            WebsView.listOfAhnentafels.push(new AhnenTafel.Ahnentafel());
-                        }
+                            loadNewPrimaryPerson(thisNewID, 2);
 
-                        for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
-                            WebsView.listOfAhnentafels[index].update(
-                                WebsView.PeopleList[WebsView.listOfPrimePersons[index]]
+                        } else {
+
+                            
+                            // FINALLY - set the PRIME PERSON, and the DRAW the Ancestor Tree
+                            condLog("theNewPrimePerson:", theNewPrimePerson);
+                            WebsView.primePerson = theNewPrimePerson;
+                            WebsView.myAncestorTree.draw();
+                            // self.drawTree(thePerson);
+                            clearMessageBelowButtonBar();
+                            condLog(
+                                "AFT loop - thePeopleList had ",
+                                thePeopleList.population(),
+                                "people",
+                                WebsView.listOfAhnentafels.length,
+                                "Ahnentafels",
+                                WebsView.listOfPrimePersons.length,
+                                "primer persons",
+                                "currentPrimeNum:",
+                                WebsView.currentPrimeNum,
+                                WebsView.myAhnentafel
                             );
-                        }
-                        condLog("LIST of AHNENTAFELS:");
-                        for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
-                            condLog(WebsView.listOfAhnentafels[index]);
-                        }
 
-                        recalculateCommonNames();
-                        redoRootSelector();
-                    }
+                            while (WebsView.listOfAhnentafels.length < WebsView.listOfPrimePersons.length) {
+                                WebsView.listOfAhnentafels.push(new AhnenTafel.Ahnentafel());
+                            }
+
+                            for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
+                                WebsView.listOfAhnentafels[index].update(
+                                    WebsView.PeopleList[WebsView.listOfPrimePersons[index]]
+                                );
+                            }
+                            condLog("LIST of AHNENTAFELS:");
+                            for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
+                                condLog(WebsView.listOfAhnentafels[index]);
+                            }
+
+                            recalculateCommonNames();
+                            redoRootSelector();
+                        }
+                    // }
                     condLog("thePeopleList:", thePeopleList);
                 }
             });
