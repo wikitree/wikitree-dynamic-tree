@@ -829,7 +829,7 @@
             "[ <span id=numGensInBBar>3</span> generations ]" +
             ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display +=1; FractalView.redraw();"> +1 </A> ' +
             "</td>" +
-            '<td width="5%">&nbsp;</td>' +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right">' +
             ' <A style="cursor:pointer;" onclick="FractalView.toggleSettings();"><font size=+2>' +
             SETTINGS_GEAR +
@@ -1331,6 +1331,8 @@
             FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
         } else {
             // WikiTreeAPI.getRelatives(
+            let loadingTD = document.getElementById("loadingTD");
+            loadingTD.innerHTML = "loading";
             WikiTreeAPI.getPeople(
                 // (appId, IDs, fields, options = {})
                 APP_ID,
@@ -1369,7 +1371,7 @@
             ).then(function (result) {
                 if (result) {
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                    FractalView.theAncestors = result;
+                    FractalView.theAncestors = result[2];
                     // condLog("theAncestors:", FractalView.theAncestors);
                     // condLog("person with which to drawTree:", person);
                     for (const index in FractalView.theAncestors) {
@@ -1379,6 +1381,7 @@
                     FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
 
                     clearMessageBelowButtonBar();
+                    loadingTD.innerHTML = "&nbsp;"
                 }
             });
         }
@@ -1552,7 +1555,7 @@
                 ],
                 { ancestors: 3 }
             ).then(function (result) {
-                FractalView.theAncestors = result;
+                FractalView.theAncestors = result[2];
                 condLog("theAncestors:", FractalView.theAncestors);
                 condLog("person with which to drawTree:", person);
                 for (const ancNum in FractalView.theAncestors) {
