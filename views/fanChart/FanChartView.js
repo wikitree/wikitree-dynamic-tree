@@ -2096,7 +2096,7 @@
                         thePeopleList[ancNum]._data["bio"] = thePerson.bio;
                     }                    
                 }
-                console.log("DONE loading BIOS for ",whichGen, "generations from",id);
+                condLog("DONE loading BIOS for ",whichGen, "generations from",id);
                 findCategoriesOfAncestors();
             }
             );
