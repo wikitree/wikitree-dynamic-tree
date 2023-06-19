@@ -1560,8 +1560,9 @@
                theOptions
             ).then(function (result) {
                 if (result) {
-                    // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                    WebsView.theAncestors = result;
+                    
+                    WebsView.theAncestors = result[2];
+                    
                     condLog("theAncestors:", WebsView.theAncestors, Object.keys(result).length);
                     // condLog("person with which to drawTree:", person);
                     let numPeepsAdded = 0;
@@ -1958,8 +1959,9 @@
                 ], 
                 {ancestors:5}
             ).then(function (result) {
-                WebsView.theAncestors = result;
+                WebsView.theAncestors = result[2];
                 condLog("getPeople RESULT:", result);
+                condLog("FOUND id = ", result[1][id].Id)
                 condLog("person with which to drawTree:", person);
                 // for (let index = 0; index < WebsView.theAncestors.length; index++) {
                 for (const ancID in WebsView.theAncestors) {
@@ -4728,8 +4730,13 @@
     // NEW FUNCTIONS HERE to DEAL WITH MULTIPLE ROOT PEOPLE
     
     function loadNewPrimaryPerson(newPrimeID, passNum = 1) {
+        let loadingTD = document.getElementById("loadingTD");
+
         condLog("Need to load a NEW PRIMARY ", newPrimeID, WebsView.numGensRetrieved + " generations");
         flashWarningMessageBelowButtonBar("Please be patient while new family tree is being loaded ...");
+        if (passNum > 1) {
+            flashWarningMessageBelowButtonBar("Thank you for your patience - need to retrieve a few more family members ...");
+        }
         //  let theListOfIDs = WebsView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
         // condLog(theListOfIDs);
         if (newPrimeID.length == 0) {
@@ -4740,9 +4747,10 @@
             //  WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
         } else {
             // WikiTreeAPI.getAncestors(
-            //     APP_ID,
-            //     newPrimeID,
+                //     APP_ID,
+                //     newPrimeID,
             let theListOfIDs = [newPrimeID];    
+            loadingTD.innerHTML = "loading";
             if (passNum == 1) {
                 theOptions = { ancestors: Math.min(9,WebsView.numGensRetrieved) };
             } else if (passNum > 1 && WebsView.numGensRetrieved > 9) {
@@ -4782,24 +4790,30 @@
                 theOptions
             ).then(function (result) {
                 if (result) {
-                    WebsView.theAncestors = result;
+                    WebsView.theAncestors = result[2];
+                    condLog("getPeople RESULT:", result);
+                    
                     condLog("theAncestors:", WebsView.theAncestors);
                     condLog("WebsView.primePerson:", WebsView.primePerson);
                     condLog("B4 loop - thePeopleList had ", thePeopleList.population());
                     condLog("WebsView.theAncestors.length", Object.keys(result).length);
 
-                    // if (
-                    //     result 
-                    //     // WebsView.theAncestors.length > 0 // &&
-                    //     // WebsView.theAncestors[0]
-                    // ) {
+                    
                         let thisNewID = newPrimeID; //WebsView.theAncestors[0].Id;
+                        // condLog("FOUND id = ", result[1][newPrimeID].Id);
+                        if (
+                            passNum == 1
+                            ) {                           
+                            thisNewID = result[1][newPrimeID].Id;
+                            condLog("FOUND id = ", result[1][newPrimeID].Id);
+                            WebsView.listOfPrimePersons.push(thisNewID);
+                            WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
+                        }
+
                         // WebsView.listOfPrimePersons.push(thisNewID);
                         // WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
                         let thisPrimeNum = WebsView.listOfPrimePersons.length; 
-                        if (passNum == 1) {
-                            thisPrimeNum = WebsView.listOfPrimePersons.length + 1;
-                        }
+                        
                         condLog(
                             "passNum,thisPrimeNum,newPrimeID,WebsView.primePerson",
                             passNum,
@@ -4824,13 +4838,7 @@
                                     thePerson.Father = thisPrimeNum * 100 - thePerson.Father;
                                 }
                             }
-                            thePeopleList.add(WebsView.theAncestors[ancID]);
-
-                            if (passNum == 1 && WebsView.theAncestors[ancID].Name.toUpperCase() == newPrimeID.toUpperCase()) {
-                                thisNewID = WebsView.theAncestors[ancID].Id;
-                                WebsView.listOfPrimePersons.push(thisNewID);
-                                WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
-                            }
+                            thePeopleList.add(WebsView.theAncestors[ancID]);                          
                         }
 
                         let theNewPrimePerson = thePeopleList[thisNewID];
@@ -4922,6 +4930,7 @@
 
                             recalculateCommonNames();
                             redoRootSelector();
+                            loadingTD.innerHTML = "&nbsp;";
                         }
                     // }
                     condLog("thePeopleList:", thePeopleList);
