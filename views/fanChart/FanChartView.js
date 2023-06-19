@@ -304,6 +304,10 @@
     var numRepeatAncestors = 0;
     var repeatAncestorTracker = new Object();
 
+    var categoryList = [];
+    var stickerList = [];
+
+
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
 
     /** Static variable to hold unique ids for private persons **/
@@ -830,7 +834,7 @@
             "[ <span id=numGensInBBar>5</span> generations ]" +
             ' <A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();"> +1 </A> ' +
             "</td>" +
-            '<td width="5%">&nbsp;</td>' +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
             ' <A onclick="FanChartView.toggleSettings();"><font size=+2>' +
             SETTINGS_GEAR +
@@ -1311,6 +1315,7 @@
     function loadAncestorsAtLevel(newLevel) {
         condLog("Need to load MORE peeps from Generation ", newLevel);
         // let theListOfIDs = FanChartView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        let loadingTD = document.getElementById("loadingTD");
         let id = FanChartView.myAhnentafel.list[1];
         // condLog(theListOfIDs);
         // if (theListOfIDs.length == 0) {
@@ -1321,7 +1326,7 @@
             FanChartView.numGensRetrieved++;
             FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
         } else {
-
+            loadingTD.innerHTML = "loading";
              WikiTreeAPI.getPeople(
                 // (appId, IDs, fields, options = {}) 
                 APP_ID , id,
@@ -1336,7 +1341,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-                    "Bio",
+                    // "Bio",
                     "Nicknames",
                     "Prefix",
                     "Suffix",
@@ -1365,7 +1370,7 @@
             ).then(function (result) {
                 if (result) {
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                    FanChartView.theAncestors = result;
+                    FanChartView.theAncestors = result[2];
                     condLog("theAncestors:", FanChartView.theAncestors);
                     // condLog("person with which to drawTree:", person);
                     // for (let index = 0; index < FanChartView.theAncestors.length; index++) {
@@ -1379,6 +1384,8 @@
                     );
 
                     clearMessageBelowButtonBar();
+                    loadingTD.innerHTML = "&nbsp;";
+                    loadBiosNow(id, newLevel);
                 }
             });
         }
@@ -1922,6 +1929,7 @@
     FanChartView.prototype.load = function (id) {
         // condLog("FanChartView.prototype.load");
         var self = this;
+        
         self._load(id).then(function (person) {
             // condLog("FanChartView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
@@ -1958,7 +1966,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-                    "Bio",
+                    // "Bio",
                     "IsLiving",
                     "Nicknames",
                     "Prefix",
@@ -1985,7 +1993,7 @@
                     ancestors:5
                 }
             ).then(function (result) {
-                FanChartView.theAncestors = result;
+                FanChartView.theAncestors = result[2];
                 condLog("theAncestors:", FanChartView.theAncestors);
                 // condLog("person with which to drawTree:", person);
 
@@ -2058,9 +2066,42 @@
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
                 fillOutFamilyStatsLocsForAncestors();
+                loadBiosNow(id) ;
             });
         });
     };
+
+    // This function will load Bios in the background
+    function loadBiosNow(id, whichGen = 5) {
+        let options = { ancestors:5 };
+        if (whichGen > 5) {
+            options = { ancestors:whichGen, minGeneration:whichGen };
+        }
+
+        WikiTreeAPI.getPeople(
+                // (appId, IDs, fields, options = {}) 
+                APP_ID , id,
+            
+                [
+                    "Bio",
+                ],
+                options
+            ).then(function (result) {
+                FanChartView.theAncestors = result[2];
+                condLog("theAncestors:", FanChartView.theAncestors);
+                
+                for (const ancNum in FanChartView.theAncestors) {
+                    let thePerson = FanChartView.theAncestors[ancNum];
+                    if (thePeopleList[ancNum] && thePeopleList[ancNum]._data && thePerson.bio && thePerson.bio > "") {
+                        thePeopleList[ancNum]._data["bio"] = thePerson.bio;
+                    }                    
+                }
+                console.log("DONE loading BIOS for ",whichGen, "generations from",id);
+                findCategoriesOfAncestors();
+            }
+            );
+        
+    }
 
     /**
      * Load more ancestors. Update existing data in place
@@ -2099,7 +2140,7 @@
             "MiddleInitial",
             "MiddleName",
             "RealName",
-            "Bio",
+            // "Bio",
             "IsLiving",
             "Nicknames",
             "Prefix",
@@ -4660,20 +4701,33 @@
                     "#" + thisPerp._data.DeathRegion + "#",
                     // thisPerp._data.bio
                 );
+                 
+            }
+        }
+    }
+    
+    function findCategoriesOfAncestors() {
+        condLog("findCategoriesOfAncestors");
+        categoryList = [];
+        stickerList = [];
+        for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
+            const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
+            if (thisPerp) {
                 if (thisPerp._data.bio) {
-                    condLog(thisPerp._data.FirstName, "has a BIO !");
                     parseThisBio(thisPerp._data.bio);
                 }
             }
         }
         condLog("ALL CATEGORIES:\n", categoryList);
         condLog("ALL STICKERS:\n", stickerList);
-
+        categoryList.sort();
+        stickerList.sort();
+        
         let catNameSelector = document.getElementById("highlight_options_catName");
-        let innerCatHTML = "<option selected value=\"Unsourced\">Unsourced</option>";
+        let innerCatHTML = '<option selected value="Unsourced">Unsourced</option>';
         for (let i = 0; i < categoryList.length; i++) {
             const cat = categoryList[i];
-            innerCatHTML += "<option value=\"" + cat + "\">" +  cat +"</option>";
+            innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
         }
         if (stickerList.length > 0) {
             innerCatHTML += '<option value="Sticker">STICKERS:</option>';
@@ -4683,12 +4737,8 @@
             }
         }
         catNameSelector.innerHTML = innerCatHTML;
-        
-
     }
 
-    let categoryList = [];
-    let stickerList = [];
 
         function parseThisBio(bio) {
 
