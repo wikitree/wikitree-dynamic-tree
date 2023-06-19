@@ -1,10 +1,4 @@
 export class Person {
-    static #people = new Map();
-
-    static init(map) {
-        Person.#people = map;
-    }
-
     constructor(data, fromFile = false) {
         let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
         if (fromFile) {
@@ -79,25 +73,6 @@ export class Person {
     getParentIds() {
         return [this._data.Father, this._data.Mother];
     }
-    getD3Children(alreadyInTree) {
-        const self = this;
-        const parents = [];
-        addParent(+this.getFatherId());
-        addParent(+this.getMotherId());
-        return parents;
-
-        function addParent(id) {
-            if (id && Person.#people.has(id)) {
-                const person = Person.#people.get(id);
-                if (alreadyInTree && alreadyInTree.has(id)) {
-                    parents.push(new LinkToPerson(person));
-                } else {
-                    if (alreadyInTree) alreadyInTree.add(id);
-                    parents.push(person);
-                }
-            }
-        }
-    }
     getDisplayName() {
         return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate;
     }
@@ -157,20 +132,8 @@ export class Person {
             return self._data.isDiedYoung;
         }
     }
-    hasFields(mustHaveFields) {
-        let hasAll = true;
-        for (const i in mustHaveFields || []) {
-            hasAll &&= Object.hasOwn(this._data, mustHaveFields[i]);
-        }
-        return hasAll;
-    }
-
     isDeadEnd() {
         return !this.hasAParent();
-    }
-
-    size() {
-        return this.#people.size;
     }
 
     toString() {
@@ -178,7 +141,7 @@ export class Person {
     }
 }
 
-class LinkToPerson extends Person {
+export class LinkToPerson extends Person {
     constructor(p) {
         super({
             Id: p.getId(),

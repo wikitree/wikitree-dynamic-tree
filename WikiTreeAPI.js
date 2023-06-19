@@ -327,7 +327,7 @@ WikiTreeAPI.getAncestors = async function (appId, id, depth, fields) {
  * WARNING:  See note above about what you get if you don't use the .then() ....
  *
  * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
- * @param {*} IDs can be a single string, with a single ID or a set of comma separated IDs. OR it can be an array of IDs
+ * @param {*} IDs An array of IDs
  * @param {*} fields an array of fields to return for each profile (same as for getPerson or getProfile)
  * @param {*} options an option object which can contain these key-value pairs
  *                    - bioFormat	Optional: "wiki", "html", or "both"
@@ -357,6 +357,42 @@ WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
 
     const result = await WikiTreeAPI.postToAPI(getRelativesParameters);
     return result[0].items;
+};
+
+/**
+ * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
+ * @param {*} ids is an array of IDs
+ * @param {*} fields an array of fields to return for each profile (same as for getPerson or getProfile)
+ * @param {*} options an option object which can contain these key-value pairs
+ *            - bioFormat	Optional: "wiki", "html", or "both"
+ *            - siblings	If 1, then get siblings of profiles, If 0 (default), do not get siblings
+ *            - ancestors	Number of generations of ancestors (parents) to return from the starting id(s). Default 0.
+ *            - descendents	If true, the siblings are returned
+ *            - nuclear     Number of generations of nuclear relatives (parents, children, siblings, spouses) to return from the starting id(s). Default 0.
+ *            - minGeneration Generation number to start at when gathering relatives
+ *            - limit       The maximum number of related profiles to return (default 1000)
+ *            - start       The starting number of the returned page of (limit) profiles (default 0)
+ *           See https://github.com/wikitree/wikitree-api/blob/main/getPeople.md for more detail
+ * @returns a Promise for the status, resultByKey and people JSON items in the returned API response
+ */
+WikiTreeAPI.getPeople = async function (appId, ids, fields, options = {}) {
+    let getPeopleParameters = {
+        appId: appId,
+        action: "getPeople",
+        keys: ids.join(","),
+        fields: fields.join(","),
+    };
+
+    // go through the options object, and add any of those options to the getPeopleParameters
+    for (const key in options) {
+        if (Object.hasOwnProperty.call(options, key)) {
+            const element = options[key];
+            getPeopleParameters[key] = element;
+        }
+    }
+
+    const result = await WikiTreeAPI.postToAPI(getPeopleParameters);
+    return [result[0].status, result[0].resultByKey, result[0].people];
 };
 
 /**
