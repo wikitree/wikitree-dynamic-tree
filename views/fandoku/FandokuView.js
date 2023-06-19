@@ -566,7 +566,7 @@
             "</span>" +
             "<span id=gameStats  style='display:none'>0 / 31</span>" +
             "</td>" +
-            '<td width="5%">&nbsp;</td>' +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
             "<button id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
             "<button id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
@@ -1002,7 +1002,8 @@
 
     function loadAncestorsAtLevel(newLevel) {
         condLog("Need to load MORE peeps from Generation ", newLevel);
-        let theListOfIDs = FandokuView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        // let theListOfIDs = FandokuView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        let theListOfIDs = FandokuView.myAhnentafel.list[1]; //OfAncestorsToBeLoadedForLevel(newLevel);
         // condLog(theListOfIDs);
         if (theListOfIDs.length == 0) {
             // condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
@@ -1011,7 +1012,10 @@
             FandokuView.numGensRetrieved++;
             FandokuView.workingMaxNumGens = Math.min(FandokuView.maxNumGens, FandokuView.numGensRetrieved + 1);
         } else {
-            WikiTreeAPI.getRelatives(
+            let loadingTD = document.getElementById("loadingTD");
+            loadingTD.innerHTML = "loading";
+
+            WikiTreeAPI.getPeople(
                 APP_ID,
                 theListOfIDs,
                 [
@@ -1042,20 +1046,22 @@
                     "Gender",
                     "Privacy",
                 ],
-                { getParents: true }
+                { ancestors: newLevel + 1, minGeneration: newLevel }
             ).then(function (result) {
                 if (result) {
+                    condLog("loadAncestorsAtLevel",newLevel, result);
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                    FandokuView.theAncestors = result;
+                    FandokuView.theAncestors = result[2];
                     condLog("theAncestors:", FandokuView.theAncestors);
                     // condLog("person with which to drawTree:", person);
-                    for (let index = 0; index < FandokuView.theAncestors.length; index++) {
-                        thePeopleList.add(FandokuView.theAncestors[index].person);
+                    for ( index in FandokuView.theAncestors) {
+                        thePeopleList.add(FandokuView.theAncestors[index]);
                     }
                     FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     FandokuView.workingMaxNumGens = Math.min(FandokuView.maxNumGens, FandokuView.numGensRetrieved + 41);
 
                     clearMessageBelowButtonBar();
+                    loadingTD.innerHTML = "&nbsp;";
                 }
             });
         }
@@ -1786,8 +1792,11 @@
             }
             // condLog(".load person:",person);
 
-            WikiTreeAPI.getAncestors(APP_ID, id, 5, [
-                "Id",
+             // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
+            WikiTreeAPI.getPeople(
+                // (appId, IDs, fields, options = {}) 
+                APP_ID , id,
+                ["Id",
                 "Derived.BirthName",
                 "Derived.BirthNamePrivate",
                 "FirstName",
@@ -1812,12 +1821,16 @@
                 "Photo",
                 "Name",
                 "Gender",
-                "Privacy",
-            ]).then(function (result) {
-                FandokuView.theAncestors = result;
+                "Privacy"],
+                {
+                    ancestors:5
+                }
+            ).then(function (result) {
+                condLog("load", id, result);
+                FandokuView.theAncestors = result[2];
                 condLog("theAncestors:", FandokuView.theAncestors);
                 condLog("person with which to drawTree:", person);
-                for (let index = 0; index < FandokuView.theAncestors.length; index++) {
+                for ( index in  FandokuView.theAncestors) {
                     const element = FandokuView.theAncestors[index];
                     thePeopleList.add(FandokuView.theAncestors[index]);
                 }
