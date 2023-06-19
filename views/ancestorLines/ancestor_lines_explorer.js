@@ -13,9 +13,9 @@ export class AncestorLinesExplorer {
         </p>
         <p>
             <em><b>Warning</b>: A "full" (or complete) ancesstor tree of 15 generations or higher (e.g. for Windsor-1)
-            WILL take a long time to retrieve and an even longer to draw (a 15 generation tree can contain 32768 people).
+            WILL take a long time to retrieve and an even longer time to draw (a 15 generation tree can contain 32768 people).
             It may even crash your browser.
-            It is possible, however, to rerieve 20 generations of trees that are relatively sparse in the older
+            It is possible, however, to retrieve 20 generations of trees that are relatively sparse in the older
             generations.</em>
         </p>
         <ul>
@@ -76,9 +76,9 @@ export class AncestorLinesExplorer {
                 The <b>Height Factor</b> controls the vertical distance between people at the same level in the tree.
                 The larger the number, the further apart they are on the vertical axis.
             </li><li>
-                The <b>Show tree to level</b> value determines how many generations of the tree will be shown with all
-                the people available and not just those directly connected to a person of interest. If you set this
-                value to 0,the complete tree will be shown (subject to the setting of the other parameters).
+                The <b>Limit display to generation</b> value determines how many generations of the tree will be shown with
+                all the people available rather than just those directly connected to a person of interest. If you select
+                'All',the complete tree will be shown (subject to the setting of the other parameters).
             </li>
         </ul>
         <p>
@@ -240,10 +240,10 @@ export class AncestorLinesExplorer {
                       <input id="tHFactor" type="number" min="1" value="34" title="Determines the display height of the tree." />
                     </td>
                     <td>
-                      <label for="maxLevel" title="The tree will be drawn with only this number of generations (0 for all)." class="left">
+                      <label for="maxLevel" title="The tree will be drawn with only this number of generations." class="left">
                         Limit display to generation:</label
-                      ><select id="maxLevel" title="The tree will be drawn with only this number of generations (0 for all).">
-                        <option value="0">0</option>
+                      ><select id="maxLevel" title="The tree will be drawn with only this number of generations.">
+                        <option value="0">All</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -324,7 +324,7 @@ export class AncestorLinesExplorer {
         const select = document.getElementById("maxLevel");
         select.options.length = 0;
         for (let i = 0; i <= maxLevel; ++i) {
-            select.options[i] = new Option(`${i}`, i, i == 5, i == selected);
+            select.options[i] = new Option(`${i == 0 ? "All" : i}`, i, i == 5, i == selected);
         }
     }
 
@@ -478,8 +478,8 @@ export class AncestorLinesExplorer {
             $("#tree").css({
                 "display": "block",
                 "margin": "auto",
-                "height": "100px",
-                "width": "100px",
+                "height": "50px",
+                "width": "50px",
                 "border-radius": "50%",
                 "border": "3px solid forestgreen",
                 "position": "relative",
