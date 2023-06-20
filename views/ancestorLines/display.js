@@ -128,7 +128,7 @@ export function showTree(
     const inTree = connectors ? new Set() : undefined;
     // Assigns parent, children, height, depth
     const root = d3.hierarchy(theRoot, function (d) {
-        return d.getD3Children(inTree);
+        return AncestorTree.getD3Children(d, inTree);
     });
     root.x0 = treeHeight / 2;
     root.y0 = 0;

@@ -103,11 +103,6 @@ div.cc7Table #tree {
 .timelineTable td {
   padding: 0.1em;
 }
-.timelineTable caption {
-  font-size: 1.5em;
-  font-weight: bold;
-  padding: 0.5em;
-}
 .tlAge,
 .tlBioAge {
   text-align: center;
@@ -199,8 +194,11 @@ div.cc7Table .timelineTable td {
   border: 1px solid #ddd;
 }
 .cc7Table caption {
+  font-family: sans-serif;
+  font-size: 1.2em;
+  font-weight: bold;
   text-align: left;
-  padding: 1em;
+  padding: 0.5em;
   background: white;
   border-top: 1px solid forestgreen;
   border-bottom: 1px solid forestgreen;
@@ -450,12 +448,6 @@ img.missingImg:active {
   background: #f7f6f0;
   border-radius: 1em;
   border-bottom: 2px solid forestgreen;
-}
-caption {
-  font-size: 1.2em;
-  font-weight: bold;
-  background: #f7f6f0;
-  padding: 0.5em 0;
 }
 #peopleList tr[data-name=""] td.actions img,
 #peopleList tr[data-name=""] td.actions a {
