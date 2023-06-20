@@ -93,8 +93,8 @@ export class AncestorLinesExplorer {
         this.selector = selector;
         $(selector).html(`<div id="aleContainer" class="ale">
             <div id="controlBlock">
-              <label for="generation"  title="The number of generations to fetch from WikiTree">Max Generations:</label
-              ><select id="generation" title="The number of generations to fetch from WikiTree">
+              <label for="generation">Max Generations:</label
+              ><select id="generation" title="The number of generations to retrieve">
                 <option value="2">2</option>
                 <option value="3">3</option>
                 <option value="4">4</option>
@@ -124,19 +124,25 @@ export class AncestorLinesExplorer {
                 Save</button
               ><button id="loadButton" class="small button" title="Load a previously saved data file and draw its tree.">
                 Load a File</button
-              ><input id="fileInput" type="file" style="display: none" />
+              ><input id="fileInput" type="file" style="display: none" /><button
+                id="drawTreeButton"
+                class="small button"
+                title="Draw the tree, highlighting paths to the people of interest">
+                (Re-)Draw Tree
+              </button>
               <span id="help-button" title="About this">?</span>
               <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
               <br />
+              <label for="otherWtIds">People of Interest:</label>
+              <input
+                id="otherWtIds"
+                type="text"
+                placeholder="(Optional) Enter comma-seperated WikiTree IDs"
+                size="110"
+                title="Identify people of interest that need to be highlighted in the tree" />
+              <br />
               <fieldset>
                 <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
-                <label for="otherWtIds">People of Interest:</label>
-                <input
-                  id="otherWtIds"
-                  type="text"
-                  placeholder="(Optional) Enter comma-separated WikiTree IDs"
-                  size="110"
-                  title="Identify people of interest that need to be highlighted in the tree" />
                 <table id="optionsTbl">
                   <tr>
                     <td>
@@ -187,14 +193,6 @@ export class AncestorLinesExplorer {
                         step="10"
                         title="Determines the horizontal distance between generations." />
                     </td>
-                    <td align="right">
-                      <button
-                        id="drawTreeButton"
-                        class="small button"
-                        title="Draw the tree, highlighting paths to the people of interest">
-                        (Re-)Draw Tree
-                      </button>
-                    </rd>
                   </tr>
                   <tr>
                     <td>
@@ -248,7 +246,22 @@ export class AncestorLinesExplorer {
                         <option value="2">2</option>
                         <option value="3">3</option>
                         <option value="4">4</option>
-                        <option value="5" selected>5</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8" selected>8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
                       </select>
                     </td>
                   </tr>
@@ -284,7 +297,7 @@ export class AncestorLinesExplorer {
         $("#savePeople").click(function (e) {
             e.preventDefault();
             const fileName = AncestorLinesExplorer.makeFilename();
-            AncestorLinesExplorer.saveArrayToFile(AncestorTree.toArray(), fileName);
+            AncestorLinesExplorer.saveArrayToFile(Array.from(AncestorTree.getPeople()), fileName);
         });
         $("#loadButton").click(function (e) {
             e.preventDefault();
@@ -297,7 +310,6 @@ export class AncestorLinesExplorer {
         $("#aleBrickWallColour").on("change", function () {
             $("#drawTreeButton").click();
         });
-        AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
 
         const container = $("#theSvg");
         container.draggable({ axis: "x" });
@@ -356,8 +368,6 @@ export class AncestorLinesExplorer {
     }
 
     static findPathsAndDrawTree(event) {
-        const selectedMaxLevel = Math.min(document.getElementById("maxLevel").value, AncestorTree.maxGeneration);
-        AncestorLinesExplorer.updateMaxLevelSelection(AncestorTree.maxGeneration, selectedMaxLevel);
         if (event.shiftKey) {
             AncestorLinesExplorer.setEarlySaAfricaIndiaIds();
         }
@@ -395,9 +405,9 @@ export class AncestorLinesExplorer {
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {
         const treeDepth = nrGenerations > 1 ? nrGenerations - 1 : 4;
-        const [theTreeRoot, buildTime] = await AncestorTree.buildTreeWithGetPeople(wtId, treeDepth);
+        const [theTreeRoot, buildTime] = await AncestorTree.buildTreeWithGetRelatives(wtId, treeDepth);
         // console.log("theTreeRoot", theTreeRoot);
-        console.log(`Tree size=${AncestorTree.getPeople().size}, buildTime=${buildTime}ms`);
+        // console.log(`Tree, size=${Tree.getPeople().size}, buildTime=${buildTime}ms`, Tree.getPeople());
         return theTreeRoot;
     }
 
@@ -455,9 +465,8 @@ export class AncestorLinesExplorer {
             AncestorTree.replaceWith(people);
             AncestorLinesExplorer.hideShakingTree();
             $(wtViewRegistry.WT_ID_TEXT).val(AncestorTree.root.getWtId());
-            const maxGen = Math.min(AncestorTree.maxGeneration, 20);
-            $("#generation").val(maxGen);
-            AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
+            $("#generation").val(AncestorTree.maxGeneration);
+            AncestorLinesExplorer.setGetPeopleButtonText(AncestorTree.maxGeneration);
             AncestorLinesExplorer.findPathsAndDrawTree(event);
         };
 

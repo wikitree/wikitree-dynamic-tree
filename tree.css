@@ -17,7 +17,7 @@ header {
   padding: var(--content-padding);
 }
 
-header > * {
+header>* {
   margin: 0;
 }
 
@@ -41,7 +41,7 @@ header > * {
   padding: 10px 0;
 }
 
-#wt-api-login > * {
+#wt-api-login>* {
   margin: 0;
 }
 
@@ -59,8 +59,12 @@ main {
   margin: 0;
 }
 
-#info-panel > h2 {
+#info-panel>h2 {
   margin: 0;
+}
+
+#settingsDIV>ul>li {
+  cursor: pointer;
 }
 
 #view-select {
@@ -166,10 +170,10 @@ main {
   padding: 10px;
 }
 
-.popup-link:hover {
-  /*  text-decoration: none;
-  cursor: pointer;*/
-}
+/* .popup-link:hover {
+    text-decoration: none;
+  cursor: pointer; 
+} */
 
 .popup-box {
   border-style: solid;
@@ -227,6 +231,7 @@ main {
   text-align: center;
   justify-content: center;
 }
+
 .marginBottomZero {
   margin-bottom: 0;
 }
@@ -240,35 +245,43 @@ main {
 }
 
 .fontBlack {
-  color:black;
+  color: black;
 }
+
 .fontDarkGreen {
-  color:darkgreen;
+  color: darkgreen;
 }
+
 .fontDarkRed {
-  color:darkred;
+  color: darkred;
 }
+
 .fontDarkBlue {
-  color:darkblue;
+  color: darkblue;
 }
+
 .fontBrown {
-  color:rgb(72, 32, 4);
+  color: rgb(72, 32, 4);
 }
 
 .fontWhite {
-  color:white;
+  color: white;
 }
+
 .fontYellow {
   color: yellow;
 }
+
 .fontLime {
-  color:lime;
+  color: lime;
 }
-.fontPink{
-  color:hotpink;
+
+.fontPink {
+  color: hotpink;
 }
+
 .fontCyan {
-  color:cyan;
+  color: cyan;
 }
 
 .fontScript {
@@ -292,6 +305,7 @@ main {
   flex-direction: row;
   justify-content: space-between;
 }
+
 .photoInfoContainerEnd {
   display: flex;
   flex-direction: row-reverse;
@@ -308,13 +322,20 @@ main {
   padding: 6px;
 }
 
+.selectedMenuBarOption {
+  appearance: auto;
+  background: yellow;
+  padding: 3px;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
   body {
-    background: transparent;  
-    -webkit-print-color-adjust: exact;  /*  COLOR ADJUST rules added so that coloured DIVS (like the cells in a Fan Chart) get printed as displayed on screen */       
-    print-color-adjust: exact;          
+    background: transparent;
+    -webkit-print-color-adjust: exact;
+    /*  COLOR ADJUST rules added so that coloured DIVS (like the cells in a Fan Chart) get printed as displayed on screen */
+    print-color-adjust: exact;
   }
 
   header,
@@ -325,6 +346,7 @@ main {
   #btnBarDIV {
     display: none;
   }
+
   #view-container {
     border: none;
     min-height: initial;

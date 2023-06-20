@@ -30,7 +30,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // then makes that Person the Primary ID, Ahnentafel # 1, then
     // climbs through their ancestors to fill out the rest of the Ahnentafel
     update(newPerson) {
-        // console.log("Update the Ahnentafel object", newPerson);
+        // condLog("Update the Ahnentafel object", newPerson);
 
         if (newPerson && newPerson._data.Id) {
             this.primaryPerson = newPerson;
@@ -47,7 +47,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
             if (this.primaryPerson._data.Mother && this.primaryPerson._data.Mother > 0) {
                 this.addToAhnenTafel(this.primaryPerson._data.Mother, 3);
             }
-            this.listAll(); // sends message to the console.log for validation - this could be commented out and not hurt anything
+            this.listAll(); // sends message to the condLog for validation - this could be commented out and not hurt anything
         }
     }
 
@@ -88,29 +88,28 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // Returns an array of objects, each one holding the WikiTree ID # and the list of Ahnentafel #s associated with them for each repeat ancestor
     listOfRepeatAncestors(numGens = 16) {
         let theList = [];
-        let maxAhnNum = 2**numGens - 1;
+        let maxAhnNum = 2 ** numGens - 1;
         for (var id in this.listByPerson) {
             if (this.listByPerson[id] && this.listByPerson[id].length > 1) {
-                if (this.hasTwoAncestorsInThisAhnenRange(this.listByPerson[id] , maxAhnNum)) {
+                if (this.hasTwoAncestorsInThisAhnenRange(this.listByPerson[id], maxAhnNum)) {
                     theList.push({ id: id, AhnNums: this.listByPerson[id] });
                 }
-
             }
         }
         return theList;
     }
 
     // Wee function to quickly look through a list of AhnenNumbers and determine if there are at least 2 of them within a specific range (determined by max # of gens currently being displayed)
-    hasTwoAncestorsInThisAhnenRange(listOfAhnNums , maxAhnNum) {
+    hasTwoAncestorsInThisAhnenRange(listOfAhnNums, maxAhnNum) {
         let numInRange = 0;
         for (let index = 0; index < listOfAhnNums.length; index++) {
-            if ( listOfAhnNums[index] <= maxAhnNum) {
+            if (listOfAhnNums[index] <= maxAhnNum) {
                 numInRange++;
             }
         }
-        
-        return (numInRange >= 2);
-    }    
+
+        return numInRange >= 2;
+    }
 
     // Returns an array of objects for building the Fan Chart (and potentially other trees)
     // Each entry contains the Ahnentafel #, and the Person object for each ancestor
@@ -120,7 +119,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // THIS way - using an object with a unique Ahnentafel # for each occurence of an ancestor,
     //  you can have as many as you need in the resulting Tree / Chart
 
-    listOfAncestorsForFanChart(numGens = 5) {
+    listOfAncestorsForFanChart(numGens = 5, primePersonNum = 0) {
         let theList = [];
         let maxNum = this.list.length;
         let maxNumInGen = 2 ** numGens;
@@ -128,25 +127,25 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
 
         for (var i = 0; i < theMax; i++) {
             if (this.list[i] && this.list[i] > 0 && thePeopleList[this.list[i]]) {
-                let thisAncestor = { ahnNum: i, person: thePeopleList[this.list[i]] };
+                let thisAncestor = { ahnNum: i, person: thePeopleList[this.list[i]], p: primePersonNum };
                 theList.push(thisAncestor);
 
-                // console.log("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
+                // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
             }
         }
-        console.log("listOfAncestorsForFanChart has ", theList.length, " ancestors.");
+        condLog("listOfAncestorsForFanChart has ", theList.length, " ancestors.");
         return theList;
     }
 
-    // A very BASIC tool to use for quick console.log relief
+    // A very BASIC tool to use for quick condLog relief
     listAll() {
-        console.log("Ahnentafel:", this);
+        condLog("Ahnentafel:", this);
     }
 
     // This function will go through all people at generation (newLevel - 1) - and find all the IDs for their parents
     // IF that parent already exists in the thePeopleList - fine - no big whoop
     // IF that parent DOES NOT EXIST, then add their ID to the huge list we're going to send back
-    listOfAncestorsToBeLoadedForLevel(numGens) {
+    listOfAncestorsToBeLoadedForLevel(numGens = 10) {
         let theList = [];
         let maxNum = this.list.length;
         let maxNumInGen = 2 ** numGens;
@@ -174,10 +173,31 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
                     }
                 }
 
-                // console.log("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
+                // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
             }
         }
-        console.log("listOfAncestorsToBeLoadedForLevel has ", theList.length, " ancestors.");
+        condLog("listOfAncestorsToBeLoadedForLevel has ", theList.length, " ancestors.");
+        return theList;
+    }
+
+    // This function will go through all people at generation (genNum) - and find all the IDs for those people
+    // Duplicate IDs will be removed (or not added actually)
+
+    listOfAncestorsAtLevel(genNum = 8) {
+        let theList = [];
+        let maxNumInGen = 2 ** genNum;
+        let minNumInGen = 2 ** (genNum - 1);
+
+        for (var i = minNumInGen; i < maxNumInGen; i++) {
+            if (this.list[i] && this.list[i] > 0 && thePeopleList[this.list[i]]) {
+                let thisID = thePeopleList[this.list[i]]._data.Id;
+                if (theList.indexOf(thisID) == -1) {
+                    theList.push(thisID);
+                }
+                // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);
+            }
+        }
+        condLog("listOfAncestorsAtLevel ", genNum, "has ", theList.length, " ancestors.\n", theList);
         return theList;
     }
 };

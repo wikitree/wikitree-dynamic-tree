@@ -81,15 +81,15 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     //        general:{panelElement:general-panel, buttonElement:general-tab}
     //      }
     createTabMapping(data) {
-        // console.log("createTabMapping : ", data.tabs);
+        // condLog("createTabMapping : ", data.tabs);
         let theMapping = {};
         for (let tab in data.tabs) {
-            // console.log("createTabMapping - TAB:", tab, data.tabs[tab].name);
+            // condLog("createTabMapping - TAB:", tab, data.tabs[tab].name);
             let tabName = data.tabs[tab].name;
             let theElement = { panelElement: tabName + "-panel", buttonElement: tabName + "-tab" };
             theMapping[tabName] = theElement;
         }
-        // console.log("createTabMapping - THE MAPPING: ", theMapping);
+        // condLog("createTabMapping - THE MAPPING: ", theMapping);
 
         return theMapping;
     }
@@ -99,7 +99,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     createSettingsDIV(data) {
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; position:absolute; top:0.2em; right:0.6em"><A onclick="' +
+            '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
             '.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
             this.createULelements(data) +
@@ -113,18 +113,18 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // input --> data is the object passed through from the Dynamic View that needs the settings
     // this function is used by the createSettingsDIV function, but could be used standalone if you wanted a different wrapper for your settings
     createULelements(data) {
-        // console.log("createULelements : ", data.tabs);
+        // condLog("createULelements : ", data.tabs);
         let theUL = "<ul class='profile-tabs'>";
         let theDIVs = "";
         for (let tab in data.tabs) {
-            // console.log("createULelements - TAB:", tab, data.tabs[tab].name);
+            // condLog("createULelements - TAB:", tab, data.tabs[tab].name);
             let tabName = data.tabs[tab].name;
             theUL += '<li id="' + tabName + '-tab">' + data.tabs[tab].label + "</li>";
             theDIVs += '<div id="' + tabName + '-panel"></div>';
         }
         theUL += "</ul>";
-        // console.log("createULelements - THE List: ", theUL);
-        // console.log("createULelements - THE DIVs: ", theDIVs);
+        // condLog("createULelements - THE List: ", theUL);
+        // condLog("createULelements - THE DIVs: ", theDIVs);
         return theUL + theDIVs;
     }
 
@@ -150,20 +150,20 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
             }
         }
-        console.log("DEFAULT OPTIONS:", defaultOptions);
+        condLog("DEFAULT OPTIONS:", defaultOptions);
         return defaultOptions;
     }
 
     setActiveTab(tabName) {
-        // console.log("setActiveTab called: tabName is: " + tabName);
-        // console.log("this:", this);
-        // console.log("tabElements" , this.tabElements);
+        // condLog("setActiveTab called: tabName is: " + tabName);
+        // condLog("this:", this);
+        // condLog("tabElements" , this.tabElements);
 
         for (let tab in this.tabElements) {
             let tabElement = this.tabElements[tab];
-            // console.log(tabElement);
+            // condLog(tabElement);
             if (!tabElement) {
-                console.log("setActiveTab: No tab element found for '" + tab + "'");
+                condLog("setActiveTab: No tab element found for '" + tab + "'");
                 continue;
             }
             let tabButtonElement = tabElement.buttonElement;
@@ -221,7 +221,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         for (let tab in tabMapping) {
             let tabElementData = tabMapping[tab];
             if (!tabElementData) {
-                console.log("buildPage: no tabElementData found for name: " + tab);
+                condLog("buildPage: no tabElementData found for name: " + tab);
                 continue;
             }
 
@@ -229,11 +229,11 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             let tabButtonElement = document.getElementById(tabElementData.buttonElement);
 
             if (!tabPanelElement) {
-                console.log("buildPage: no tabPanelElement found for name: " + tab);
+                condLog("buildPage: no tabPanelElement found for name: " + tab);
                 continue;
             }
             if (!tabButtonElement) {
-                console.log("buildPage: no tabButtonElement found for name: " + tab);
+                condLog("buildPage: no tabButtonElement found for name: " + tab);
                 continue;
             }
 
@@ -246,10 +246,10 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
         // Link up the tab panels and buttons and create all the subsection elements
         for (let tab of this.optionsRegistry.tabs) {
-            // console.log("buildPage: for tab of this.optionsRegistry : ", tab.name, tab);
+            // condLog("buildPage: for tab of this.optionsRegistry : ", tab.name, tab);
             let tabButtonElement = this.tabElements[tab.name].buttonElement;
             tabButtonElement.onclick = function (event) {
-                // console.log("going to try to do activeTabChanged", this, self);
+                // condLog("going to try to do activeTabChanged", this, self);
                 self.activeTabChanged(tab.name);
             };
 
@@ -326,14 +326,14 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         // create all the individual option elements (and subheading elements)
         for (let optionsGroup of this.optionsRegistry.optionsGroups) {
             if (!optionsGroup.tab) {
-                console.log("buildPage: optionsGroup has no tab, optionsGroup is:");
-                console.log(optionsGroup);
+                condLog("buildPage: optionsGroup has no tab, optionsGroup is:");
+                condLog(optionsGroup);
                 continue;
             }
 
             if (!optionsGroup.subsection) {
-                console.log("buildPage: optionsGroup has no subsection, optionsGroup is:");
-                console.log(optionsGroup);
+                condLog("buildPage: optionsGroup has no subsection, optionsGroup is:");
+                condLog(optionsGroup);
                 continue;
             }
 
@@ -342,17 +342,17 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
             let tabElementObj = this.tabElements[tabName];
             if (!tabElementObj) {
-                console.log("buildPage: no element found for tab: " + tabName);
+                condLog("buildPage: no element found for tab: " + tabName);
                 continue;
             }
 
             let subsectionPanelElement = tabElementObj.subsections[subsectionName].panelElement;
 
             if (!subsectionPanelElement) {
-                console.log("buildPage: no subsectionElement found for name: " + subsectionName);
-                console.log(this.tabElements);
-                console.log("optionsGroup is:");
-                console.log(optionsGroup);
+                condLog("buildPage: no subsectionElement found for name: " + subsectionName);
+                condLog(this.tabElements);
+                condLog("optionsGroup is:");
+                condLog(optionsGroup);
                 continue;
             }
 
@@ -404,7 +404,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let radioNum = 0;
                     for (let value of option.values) {
                         if (value.value == "br") {
-                            // console.log("Found BR in options values", value);
+                            // condLog("Found BR in options values", value);
                             // IN CASE there is a LONG list of radio button options
                             // or a visual breaking them down into more similar chunks is needed
                             // a bogus value of "br" is put in the original initObject to force a line break
@@ -487,7 +487,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     labelElement.appendChild(optionElement);
                     optionDivElement.appendChild(labelElement);
                 } else if (option.type == "br") {
-                    // console.log("TRYING to BR", option);
+                    // condLog("TRYING to BR", option);
                     optionElement = document.createElement("label");
                     if (option.label && option.label > "") {
                         let labelTextNode = document.createTextNode(" " + option.label);
@@ -524,7 +524,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             }
         }
 
-        console.log("getRegistryTab: not found: " + tabName);
+        condLog("getRegistryTab: not found: " + tabName);
     }
 
     getRegistrySubsection(tabName, subsectionName) {
@@ -537,7 +537,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
             }
         }
-        console.log("getRegistrySubsection: not found: " + tabName + ", " + subsectionName);
+        condLog("getRegistrySubsection: not found: " + tabName + ", " + subsectionName);
     }
 
     getRegistrySubheading(tabName, subsectionName, subheadingName) {
@@ -550,7 +550,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
             }
         }
-        console.log("getRegistrySubheading: not found: " + tabName + ", " + subsectionName + ", " + subheadingName);
+        condLog("getRegistrySubheading: not found: " + tabName + ", " + subsectionName + ", " + subheadingName);
     }
 
     /**
@@ -610,10 +610,10 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
                 theCurrentSettings[setting] = thisVal;
             }
-            // console.log("Setting:", setting, thisVal, thisType);
+            // condLog("Setting:", setting, thisVal, thisType);
         }
 
-        // console.log("POST  - NEW CURRENT settings are:", theCurrentSettings);
+        // condLog("POST  - NEW CURRENT settings are:", theCurrentSettings);
 
         return settingsChanged;
     }
@@ -690,11 +690,11 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     //             status.textContent = "";
     //           }, 750);
     //         } else {
-    //           console.log("saveOptions: Runtime error is:");
-    //           console.log(chrome.runtime.lastError);
+    //           condLog("saveOptions: Runtime error is:");
+    //           condLog(chrome.runtime.lastError);
 
     //           chrome.storage.sync.getBytesInUse(null, function (bytesInUse) {
-    //             console.log("saveOptions: total sync storage in use is : " + bytesInUse);
+    //             condLog("saveOptions: total sync storage in use is : " + bytesInUse);
     //           });
 
     //           // This fixed the issue in iPad simulator. But it seems a bit drastic...
@@ -720,11 +720,11 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     //                     status.textContent = "";
     //                   }, 750);
     //                 } else {
-    //                   console.log("saveOptions, after clear: Runtime error is:");
-    //                   console.log(chrome.runtime.lastError);
+    //                   condLog("saveOptions, after clear: Runtime error is:");
+    //                   condLog(chrome.runtime.lastError);
 
     //                   chrome.storage.sync.getBytesInUse(null, function (bytesInUse) {
-    //                     console.log("saveOptions, after clear: total sync storage in use is : " + bytesInUse);
+    //                     condLog("saveOptions, after clear: total sync storage in use is : " + bytesInUse);
     //                   });
 
     //                   var status = document.getElementById("status");
@@ -740,11 +740,11 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     //       }
     //     );
     //   } catch (e) {
-    //     console.log("saveOptions: caught error is:");
-    //     console.log(e);
+    //     condLog("saveOptions: caught error is:");
+    //     condLog(e);
 
     //     chrome.storage.sync.getBytesInUse(null, function (bytesInUse) {
-    //       console.log("saveOptions: total sync storage in use is : " + bytesInUse);
+    //       condLog("saveOptions: total sync storage in use is : " + bytesInUse);
     //     });
 
     //     var status = document.getElementById("status");
@@ -768,7 +768,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
     //         let element = document.getElementById(fullOptionName);
     //         if (!element) {
-    //           console.log("restoreOptions: no element found with id: " + fullOptionName);
+    //           condLog("restoreOptions: no element found with id: " + fullOptionName);
     //           continue;
     //         }
 
@@ -783,11 +783,11 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // }
 
     // function setActiveSubsection(tabName, subsectionName) {
-    //   //console.log("setActiveTab called: tabName is: " + tabName);
+    //   //condLog("setActiveTab called: tabName is: " + tabName);
 
     //   let tabElement = tabElements[tabName];
     //   if (!tabElement) {
-    //     console.log("setActiveTab: No tab element found for '" + tab + "'");
+    //     condLog("setActiveTab: No tab element found for '" + tab + "'");
     //     return;
     //   }
 
@@ -862,7 +862,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
     //       let element = document.getElementById(fullOptionName);
     //       if (!element) {
-    //         console.log("saveOptionsFromPage: no element found with id: " + fullOptionName);
+    //         condLog("saveOptionsFromPage: no element found with id: " + fullOptionName);
     //         continue;
     //       }
 
