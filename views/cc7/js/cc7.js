@@ -2840,7 +2840,7 @@ export class CC7 {
         CC7.showShakingTree();
         const wtId = wtViewRegistry.getCurrentWtId();
         let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree);
-        window.rootId = +resultByKey[wtId].Id;
+        window.rootId = +resultByKey[wtId]?.Id;
 
         // add Parent, Child, and Spouse arrays
         for (const pers of window.people.values()) {
@@ -2957,57 +2957,60 @@ export class CC7 {
     }
 
     static async makePagedCallAndAddPeople(reqIds, upToDegree) {
-        let start = 0;
-        let callNr = 1;
-        const limit = CC7.GET_PEOPLE_LIMIT;
         if ($("#degreesTable").length == 0) {
             $("#cc7Container").append(
                 $(
-                    "<table id='degreesTable'><tr><th colspan=2>Collecting Profiles</th></tr><tr><th>API req #</th></tr><tr><th>Received</th></tr><tr><th>Newly added</th></tr><tr><th>Total</th></tr></table>"
+                    "<table id='degreesTable'><tr><th colspan=2>Collecting Profiles</th></tr><tr><th>Data Request No.</th></tr><tr><th>Received</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
         }
-        $("#degreesTable tr")
-            .eq(1)
-            .append($(`<td>${callNr}</td>`));
-        console.log(`Calling getPeople with keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`);
+        const loadingGIF = "<td><img width='12' height='12' src='./views/cc7/images/load-33_128.gif'></td>";
+        let start = 0;
+        let callNr = 0;
+        const limit = CC7.GET_PEOPLE_LIMIT;
+        let resultByKey = {};
+
         const starttime = performance.now();
-        const [resultByKey, peopleData] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
-        let profiles = peopleData ? Object.values(peopleData) : [];
-        console.log(`Received ${profiles.length} profiles`);
-
-        while (profiles.length > 0) {
-            $("#degreesTable tr")
-                .eq(2)
-                .append($(`<td>${profiles.length}</td>`));
-
-            // Note: getPeople does not guarantee return order
-            const nrAdded = CC7.addPeople(profiles, start);
-            $("#degreesTable tr")
-                .eq(3)
-                .append($(`<td>${nrAdded}</td>`));
-            $("#degreesTable tr")
-                .eq(4)
-                .append($(`<td>${window.people.size}</td>`));
-
-            // Check if we're done
-            if (profiles.length < limit) break;
-
-            // We have more paged profiles to fetch
-            start += limit;
+        let getMore = true;
+        while (getMore) {
             callNr += 1;
             $("#degreesTable tr")
                 .eq(1)
                 .append($(`<td>${callNr}</td>`));
-            console.log(
-                `Retrieving getPeople result page. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
-            );
-            const [, ancestor_json] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
-            profiles = Object.values(ancestor_json);
+            $("#degreesTable tr").eq(2).append($(loadingGIF));
+            $("#degreesTable tr").eq(3).append($(loadingGIF));
+
+            if (callNr == 1) {
+                console.log(
+                    `Calling getPeople with keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                );
+            } else {
+                console.log(
+                    `Retrieving getPeople result page. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                );
+            }
+            const [keysResult, peopleData] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
+            if (callNr == 1) {
+                resultByKey = keysResult;
+            }
+            const profiles = peopleData ? Object.values(peopleData) : [];
+
             console.log(`Received ${profiles.length} profiles`);
+            const degTable = document.getElementById("degreesTable");
+            degTable.rows[2].cells[callNr].innerHTML = profiles.length;
+
+            // Note: getPeople does not guarantee return order
+            CC7.addPeople(profiles, start);
+            degTable.rows[3].cells[callNr].innerHTML = window.people.size;
+
+            start += limit;
+            // Check if we're done
+            getMore = profiles.length == limit;
         }
         console.log(
-            `Retrieved ${window.people.size} unique CC${upToDegree} profiles in ${performance.now() - starttime}ms`
+            `Retrieved ${window.people.size} unique CC${upToDegree} profiles with ${callNr} API calls in ${
+                performance.now() - starttime
+            }ms`
         );
         return resultByKey;
     }
