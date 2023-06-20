@@ -262,14 +262,14 @@
                 }
             }
 
-            console.log("A TAB KEY has  been pressed", FandokuView.newOrder);
+            condLog("A TAB KEY has  been pressed", FandokuView.newOrder);
             let lookingFor = FandokuView.newOrder[FandokuView.selectedNameNum - 2] + dDirect;
             if (lookingFor >= FandokuView.newOrder.length + 2 || FandokuView.selectedNameNum == -1) {
                 lookingFor = 2;
             } else if (lookingFor < 2) {
                 lookingFor = FandokuView.newOrder.length + 1;
             }
-            console.log("lookingFor", lookingFor, "FandokuView.selectedNameNum:", FandokuView.selectedNameNum);
+            condLog("lookingFor", lookingFor, "FandokuView.selectedNameNum:", FandokuView.selectedNameNum);
 
             for (let tryNum = 0; tryNum <= FandokuView.newOrder.length; tryNum++) {
                 // put this loop within a loop, so if we don’t find a match that is displayed (‘block’)
@@ -280,7 +280,7 @@
                     if (FandokuView.newOrder[index] == lookingFor) {
                         // let nextIndex = (index + 1) % FandokuView.newOrder.length;
                         let nextNum = index + 2;
-                        console.log(
+                        condLog(
                             "floatingName" + nextNum,
                             document.getElementById("floatingNameHolder" + nextNum).style.display
                         );
@@ -300,7 +300,7 @@
                 }
             }
         } else if (e.keyCode >= 73 && e.keyCode <= 76 && FandokuView.gameStatus == "Live") {
-            console.log("You have clicked on I J K L and want to highlight a cell of the Fan Chart!  Go for it !");
+            condLog("You have clicked on I J K L and want to highlight a cell of the Fan Chart!  Go for it !");
 
             let dDirect = 1; // if key code == 76 (L) --> go RIGHT
             if (e.keyCode == 74) {
@@ -334,13 +334,13 @@
                 2 ** FandokuView.numGens2Display - 1
             );
 
-            console.log("YOU SHOULD now be LIGHTING UP CELL # ", FandokuView.selectedFanCell);
+            condLog("YOU SHOULD now be LIGHTING UP CELL # ", FandokuView.selectedFanCell);
             let thisGenNum = Math.floor(Math.log2(FandokuView.selectedFanCell));
             let thisPosNum = FandokuView.selectedFanCell - 2 ** thisGenNum;
             let thisWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
             if (thisWedge) {
                 FandokuView.selectedFanColour = thisWedge.style.fill;
-                console.log("COLOUR was:", thisWedge.style.fill);
+                condLog("COLOUR was:", thisWedge.style.fill);
                 thisWedge.style.fill = "lime";
             }
         } else if (
@@ -349,7 +349,7 @@
             FandokuView.selectedFanCell > 1 &&
             FandokuView.selectedNameNum > 1
         ) {
-            console.log("ENTER has been hit - let's see if there is a YELLOW and a GREEN that match up !");
+            condLog("ENTER has been hit - let's see if there is a YELLOW and a GREEN that match up !");
 
             let thisGenNum = Math.floor(Math.log2(FandokuView.selectedFanCell));
             let thisPosNum = FandokuView.selectedFanCell - 2 ** thisGenNum;
@@ -361,18 +361,18 @@
                 let parts = [2 ** thisGenNum, thisPosNum];
                 if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                     let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
-                    console.log("REAL ahnNum : ", realAhnNum);
+                    condLog("REAL ahnNum : ", realAhnNum);
                     ahnNum = realAhnNum;
                 }
                 repositionWedge(ahnNum, thisGenNum, parts); // NEEDS TWEAKING HERE !
             }
         } else {
-            console.log("nada : ", e.keyCode);
+            condLog("nada : ", e.keyCode);
         }
     }
 
     FandokuView.prototype.init = function (selector, startId) {
-        // console.log("FandokuView.js - line:18", selector) ;
+        // condLog("FandokuView.js - line:18", selector) ;
 
         var body = document.querySelector("body");
         body.addEventListener("keyup", checkTabPress);
@@ -566,7 +566,7 @@
             "</span>" +
             "<span id=gameStats  style='display:none'>0 / 31</span>" +
             "</td>" +
-            '<td width="5%">&nbsp;</td>' +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
             "<button id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
             "<button id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
@@ -582,7 +582,7 @@
         // '<H3 align=center>FanDoku game Settings</H3>' +
 
         settingsHTML += FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV; // +
-        // console.log("SETTINGS:",settingsHTML);
+        // condLog("SETTINGS:",settingsHTML);
 
         // '<ul class="profile-tabs">' +
         //     '<li id=general-tab>General</li>' +
@@ -613,11 +613,11 @@
 
         function settingsChanged(e) {
             // if (FandokuView.fanchartSettingsOptionsObject.hasSettingsChanged(FandokuView.currentSettings)) {
-            //     // console.log("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-            //     console.log("NEW settings are:", FandokuView.currentSettings);
+            //     // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+            //     condLog("NEW settings are:", FandokuView.currentSettings);
             //     FandokuView.myAncestorTree.draw();
             // } else {
-            //     // console.log("NOTHING happened according to SETTINGS OBJ");
+            //     // condLog("NOTHING happened according to SETTINGS OBJ");
             // }
             FandokuView.startGame();
         }
@@ -641,7 +641,7 @@
         // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
         svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height * 0.6).scale(0.45));
 
-        // console.log("creating SVG object and setting up ancestor tree object")
+        // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the FanDoku game
         self.ancestorTree = new AncestorTree(g);
 
@@ -703,7 +703,7 @@
                 .html(" <b>Random Ancestor</b>")
                 .on("click", function () {
                     let ahnNum = this.id.substring(12);
-                    console.log("NAME CLICK - ", this.id, ahnNum);
+                    condLog("NAME CLICK - ", this.id, ahnNum);
                     toggleFloatingName(this.id, ahnNum);
                 });
         }
@@ -733,15 +733,15 @@
                             )
                         )
                         .on("click", function () {
-                            console.log("CLICKITY CLICK - ", this.id);
+                            condLog("CLICKITY CLICK - ", this.id);
                             let thisCode = this.id.substring(5);
                             let parts = thisCode.split("n");
                             let ahnNum = 1 * parts[0] - 0 + 1 * parts[1];
                             let gen = Math.floor(Math.log2(parts[0]));
-                            console.log(thisCode, ahnNum, gen);
+                            condLog(thisCode, ahnNum, gen);
                             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                                 let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
-                                console.log("REAL ahnNum : ", realAhnNum);
+                                condLog("REAL ahnNum : ", realAhnNum);
                                 ahnNum = realAhnNum;
                             }
                             recolourWedge(this.id, gen /* parts[0] */, parts[1], ahnNum);
@@ -771,21 +771,21 @@
                             )
                         )
                         .on("click", function () {
-                            console.log("CLICK CLICK - ", this.id);
+                            condLog("CLICK CLICK - ", this.id);
                             let thisCode = this.id.substring(5);
                             let parts = thisCode.split("n");
                             let ahnNum = 1 * parts[0] - 0 + 1 * parts[1];
                             let gen = Math.floor(Math.log2(parts[0]));
-                            console.log(thisCode, ahnNum, gen);
+                            condLog(thisCode, ahnNum, gen);
                             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                                 let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
-                                console.log("REAL ahnNum : ", realAhnNum);
+                                condLog("REAL ahnNum : ", realAhnNum);
                                 ahnNum = realAhnNum;
                             }
                             recolourWedge(this.id, gen /* parts[0] */, parts[1], ahnNum);
                             repositionWedge(ahnNum, gen, parts);
                             // let thisWedge = document.getElementById("wedgeInfoFor" + ahnNum);
-                            // console.log("CLICK:", thisWedge.parentNode.parentNode.parentNode);
+                            // condLog("CLICK:", thisWedge.parentNode.parentNode.parentNode);
                             // let thisGparentNode =   thisWedge.parentNode.parentNode.parentNode;
                             // let numSpotsThisGen = parts[0];
                             // let pos = 1*parts[1];
@@ -800,7 +800,7 @@
                             // let newY = gen * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
 
                             // let theTransform =  "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
-                            // console.log(thisGparentNode.getAttribute("transform") , theTransform);
+                            // condLog(thisGparentNode.getAttribute("transform") , theTransform);
                             // thisGparentNode.setAttribute("transform" , theTransform);
                         });
                 }
@@ -850,7 +850,7 @@
             .html("<B style='color:yellow;'>NOPE!!!</B>");
 
         self.load(startId);
-        // console.log(FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV);
+        // condLog(FandokuView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FandokuView.fanchartSettingsOptionsObject.buildPage();
         FandokuView.fanchartSettingsOptionsObject.setActiveTab("rules");
         FandokuView.currentSettings = FandokuView.fanchartSettingsOptionsObject.getDefaultOptions();
@@ -866,14 +866,14 @@
     };
 
     function repositionWedge(ahnNum, gen, parts) {
-        console.log("repositionWedge : ", ahnNum, gen, parts);
+        condLog("repositionWedge : ", ahnNum, gen, parts);
         let thisWedge = document.getElementById("wedgeInfoFor" + ahnNum);
         if (!thisWedge) {
-            console.log("WARNING: No Wedge found for ", ahnNum, "at", "wedgeInfoFor" + ahnNum);
+            condLog("WARNING: No Wedge found for ", ahnNum, "at", "wedgeInfoFor" + ahnNum);
             return;
         }
         if (FandokuView.gameStatus == "Live" || FandokuView.gameStatus == "Post") {
-            console.log("CLICK:", thisWedge.parentNode.parentNode.parentNode);
+            condLog("CLICK:", thisWedge.parentNode.parentNode.parentNode);
             let thisGparentNode = thisWedge.parentNode.parentNode.parentNode;
             let numSpotsThisGen = parts[0];
             let pos = 1 * parts[1];
@@ -886,16 +886,16 @@
             let newY = gen * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
 
             let theTransform = "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
-            console.log(thisGparentNode.getAttribute("transform"), theTransform);
+            condLog(thisGparentNode.getAttribute("transform"), theTransform);
             thisGparentNode.setAttribute("transform", theTransform);
         } else {
-            console.log("MIGHT have been a match - but the game is NOT LIVE !!!");
+            condLog("MIGHT have been a match - but the game is NOT LIVE !!!");
         }
     }
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
     function flashWarningMessageBelowButtonBar(theMessage) {
-        // console.log(theMessage);
+        // condLog(theMessage);
         if (theMessage > "") {
             theMessage = "<P align=center>" + theMessage + "</P>";
         }
@@ -921,13 +921,13 @@
             // if NOT, then get the heck out of Dodge!
             return;
         }
-        console.log("DOquick Flash RED !!!");
+        condLog("DOquick Flash RED !!!");
         let randomIndex = Math.floor(Math.random() * FandokuView.discouragingArray.length);
 
         let origClr = theWedge.style.fill;
         theWedge.style.fill = "red";
-        console.log(theWedge);
-        console.log(theWedge.getAttribute("d"));
+        condLog(theWedge);
+        condLog(theWedge.getAttribute("d"));
         let theDstring = theWedge.getAttribute("d");
         let theDarray = theDstring.split(" ");
         let midX = (1 * theDarray[1] - 0 + 1 * theDarray[9]) / 2 - 70;
@@ -936,9 +936,9 @@
         let theDR = (theR - 100) / theR;
         let newX = theDR * midX;
         let newY = theDR * midY;
-        console.log("theDarray:", theDarray);
-        console.log("midX, midY, theR, theDR , newX, newY:", midX, midY, theR, theDR, newX, newY);
-        console.log(document.getElementById("nopeTextObject"));
+        condLog("theDarray:", theDarray);
+        condLog("midX, midY, theR, theDR , newX, newY:", midX, midY, theR, theDR, newX, newY);
+        condLog(document.getElementById("nopeTextObject"));
         document.getElementById("nopeTextObject").style.display = "block";
         document.getElementById("nopeTextInner").innerHTML =
             '<b style="color:yellow;">' + FandokuView.discouragingArray[randomIndex] + "</b>";
@@ -973,7 +973,7 @@
                 "3 is the minimum number of generations you can use for this FanDoku game.."
             );
         } else if (FandokuView.numGens2Display > FandokuView.workingMaxNumGens) {
-            console.log("NUMS:", FandokuView.numGens2Display, FandokuView.workingMaxNumGens, FandokuView.maxNumGens);
+            condLog("NUMS:", FandokuView.numGens2Display, FandokuView.workingMaxNumGens, FandokuView.maxNumGens);
             FandokuView.numGens2Display = FandokuView.workingMaxNumGens;
             if (FandokuView.workingMaxNumGens < FandokuView.maxNumGens) {
                 flashWarningMessageBelowButtonBar(
@@ -988,7 +988,7 @@
 
         var numGensSpan = document.querySelector("#numGensInBBar");
         numGensSpan.textContent = FandokuView.numGens2Display;
-        // console.log("numGensSpan:", numGensSpan);
+        // condLog("numGensSpan:", numGensSpan);
         if (FandokuView.numGens2Display > FandokuView.numGensRetrieved) {
             loadAncestorsAtLevel(FandokuView.numGens2Display);
             FandokuView.numGensRetrieved = FandokuView.numGens2Display;
@@ -1001,17 +1001,21 @@
     }
 
     function loadAncestorsAtLevel(newLevel) {
-        console.log("Need to load MORE peeps from Generation ", newLevel);
-        let theListOfIDs = FandokuView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
-        // console.log(theListOfIDs);
+        condLog("Need to load MORE peeps from Generation ", newLevel);
+        // let theListOfIDs = FandokuView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
+        let theListOfIDs = FandokuView.myAhnentafel.list[1]; //OfAncestorsToBeLoadedForLevel(newLevel);
+        // condLog(theListOfIDs);
         if (theListOfIDs.length == 0) {
-            // console.log("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
+            // condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
             FandokuView.numGensRetrieved++;
             FandokuView.workingMaxNumGens = Math.min(FandokuView.maxNumGens, FandokuView.numGensRetrieved + 1);
         } else {
-            WikiTreeAPI.getRelatives(
+            let loadingTD = document.getElementById("loadingTD");
+            loadingTD.innerHTML = "loading";
+
+            WikiTreeAPI.getPeople(
                 APP_ID,
                 theListOfIDs,
                 [
@@ -1042,27 +1046,29 @@
                     "Gender",
                     "Privacy",
                 ],
-                { getParents: true }
+                { ancestors: newLevel + 1, minGeneration: newLevel }
             ).then(function (result) {
                 if (result) {
+                    condLog("loadAncestorsAtLevel",newLevel, result);
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
-                    FandokuView.theAncestors = result;
-                    console.log("theAncestors:", FandokuView.theAncestors);
-                    // console.log("person with which to drawTree:", person);
-                    for (let index = 0; index < FandokuView.theAncestors.length; index++) {
-                        thePeopleList.add(FandokuView.theAncestors[index].person);
+                    FandokuView.theAncestors = result[2];
+                    condLog("theAncestors:", FandokuView.theAncestors);
+                    // condLog("person with which to drawTree:", person);
+                    for ( index in FandokuView.theAncestors) {
+                        thePeopleList.add(FandokuView.theAncestors[index]);
                     }
                     FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     FandokuView.workingMaxNumGens = Math.min(FandokuView.maxNumGens, FandokuView.numGensRetrieved + 41);
 
                     clearMessageBelowButtonBar();
+                    loadingTD.innerHTML = "&nbsp;";
                 }
             });
         }
     }
     // Redraw the Wedges if needed for the FanDoku game
     function redoWedgesForFanChart() {
-        // console.log("TIme to RE-WEDGIFY !", this, FandokuView);
+        // condLog("TIme to RE-WEDGIFY !", this, FandokuView);
 
         // FandokuView.maxAngle = 240; // ADDED THIS FOR FANDOKU !!!
         // FandokuView.lastAngle = 180; // ADDED THIS FOR FANDOKU !!!
@@ -1105,11 +1111,11 @@
                         );
                     }
 
-                    //  console.log(SVGcode.id);
+                    //  condLog(SVGcode.id);
                     d3.select("#" + SVGcode.id).attrs({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
 
                     let theWedge = d3.select("#" + SVGcode.id);
-                    //  console.log( "theWedge:",theWedge[0][0] );
+                    //  condLog( "theWedge:",theWedge[0][0] );
                 }
             }
             // HIDE all the unused Wedges in the outer rims that we don't need yet
@@ -1124,13 +1130,13 @@
     }
 
     function toggleFloatingName(id, ahnNum) {
-        console.log("toggleFloatingName", id, ahnNum);
+        condLog("toggleFloatingName", id, ahnNum);
         for (let index = 2; index < 2 ** FandokuView.maxNumGens; index++) {
             let thisID = "floatingName" + index;
             let thisNameDIV = document.getElementById(thisID);
             if (thisNameDIV) {
                 if (thisID == id) {
-                    console.log("Floating Name background was already: ", thisNameDIV.style.background);
+                    condLog("Floating Name background was already: ", thisNameDIV.style.background);
                     if (thisNameDIV.style.background == "yellow") {
                         thisNameDIV.style.background = "white";
                         FandokuView.selectedNameNum = -1;
@@ -1146,8 +1152,8 @@
     }
 
     function recolourWedge(id, gen, pos, ahnNum) {
-        console.log("recolourWedge:", id, gen, pos, ahnNum);
-        console.log("recolourWedge B4 version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
+        condLog("recolourWedge:", id, gen, pos, ahnNum);
+        condLog("recolourWedge B4 version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
         let thisPersonsWedge = document.getElementById(id);
         let theWedgeBox = document.getElementById("wedgeBoxFor" + ahnNum);
         let theWedgeInfo = document.getElementById("wedgeInfoFor" + ahnNum);
@@ -1163,7 +1169,7 @@
 
         if (isAmatch) {
             let theClr = getBackgroundColourFor(gen, pos, ahnNum);
-            console.log("re wedge clr:", gen, pos, ahnNum, theClr);
+            condLog("re wedge clr:", gen, pos, ahnNum, theClr);
             if (
                 FandokuView.currentSettings["rules_options_genderHinting"] == true &&
                 FandokuView.gameStatus == "Live"
@@ -1179,7 +1185,7 @@
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = theClr;
                 } else {
-                    console.log("Can't find: ", id);
+                    condLog("Can't find: ", id);
                 }
                 let thisID = "floatingNameHolder" + ahnNum;
                 let thisNameDIV = document.getElementById(thisID);
@@ -1202,7 +1208,7 @@
                 }
                 FandokuView.foundAncestors[ahnNum] = true;
                 let foundFalse = false;
-                console.log("ahnNum:", ahnNum, gen, pos, "FandokuView.foundAncestors", FandokuView.foundAncestors);
+                condLog("ahnNum:", ahnNum, gen, pos, "FandokuView.foundAncestors", FandokuView.foundAncestors);
                 for (let index = 2 ** gen; index < 2 ** (gen + 1) && foundFalse == false; index++) {
                     if (FandokuView.foundAncestors[index] == false) {
                         foundFalse = true;
@@ -1228,19 +1234,19 @@
                     } else if (gen == 128) {
                         specificGen = "5x great grandparents";
                     }
-                    console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 852);
+                    condLog("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 852);
                     if (FandokuView.gameStatus == "Live") {
                         updateFeedbackArea("Congratulations - you just cleared the " + specificGen + " generation");
                     }
                 } else {
-                    console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 855);
+                    condLog("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 855);
                     if (FandokuView.currentSettings["options_options_doFeedback"] == true) {
                         updateFeedbackArea("+");
                     }
                 }
-                console.log("recolourWedge AFT version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
+                condLog("recolourWedge AFT version of FandokuView.foundAncestors:", FandokuView.foundAncestors);
             } else {
-                console.log("WOULD have been a match if the game had been LIVE !");
+                condLog("WOULD have been a match if the game had been LIVE !");
             }
         } else {
             if (FandokuView.gameStatus == "Live") {
@@ -1251,13 +1257,13 @@
                     updateAncestorsPlaced(false);
                     doQuickFlashRed(thisPersonsWedge);
 
-                    console.log(
+                    condLog(
                         "SORRY BUDDY - please try again",
                         FandokuView.selectedNameNum,
                         document.getElementById("floatingNameHolder" + FandokuView.selectedNameNum)
                     );
                 } else {
-                    console.log("Maybe you were just moving things around a bit ...");
+                    condLog("Maybe you were just moving things around a bit ...");
                 }
             }
         }
@@ -1332,7 +1338,7 @@
     /** FUNCTION used to force a redraw of the FanDoku game, used when called from Button Bar after a parameter has been changed */
 
     FandokuView.endGame = function () {
-        console.log("FandokuView.endGame");
+        condLog("FandokuView.endGame");
         clearInterval(FandokuView.gameTimerInterval);
         FandokuView.gameStatus = "Post";
         let ahnNum = 1;
@@ -1345,13 +1351,13 @@
                 let parts = [base, pos];
                 if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                     let realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(ahnNum);
-                    console.log("REAL ahnNum : ", realAhnNum);
+                    condLog("REAL ahnNum : ", realAhnNum);
                     ahnNum = realAhnNum;
                 }
                 repositionWedge(ahnNum, gen, parts); // NEEDS TWEAKING HERE !
             }
         }
-        // console.log("Now theAncestors = ", FandokuView.theAncestors);
+        // condLog("Now theAncestors = ", FandokuView.theAncestors);
         // thePeopleList.listAll();
         //  recalcAndDisplayNumGens();
         //  redoWedgesForFanChart();
@@ -1359,7 +1365,7 @@
         document.getElementById("endGameButton").style.display = "none";
         document.getElementById("resetGameButton").style.display = "inline-block";
         if (FandokuView.totalNumAncestors != FandokuView.numAncestorsPlaced) {
-            console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 938);
+            condLog("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 938);
             let theGameName = "Fan Chart";
             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                 theGameName = "FanDoku";
@@ -1396,8 +1402,8 @@
     };
 
     FandokuView.setupGame = function () {
-        console.log("FandokuView.setupGame");
-        console.log(fandokuDing);
+        condLog("FandokuView.setupGame");
+        condLog(fandokuDing);
         FandokuView.gameStatus = "Pre";
         // fandokuDing.play();
         // HIDE ALL the NAMES (especially ones for generations we're not using)
@@ -1413,11 +1419,11 @@
         for (let ahnNum = 2; ahnNum < 2 ** FandokuView.numGens2Display; ahnNum++) {
             hideWedge(ahnNum);
             let thisNameObj = document.getElementById("floatingNameObject" + ahnNum);
-            // console.log(thisNameObj);
-            // console.log("x",thisNameObj.x, "attr",thisNameObj.getAttribute("x"));
+            // condLog(thisNameObj);
+            // condLog("x",thisNameObj.x, "attr",thisNameObj.getAttribute("x"));
             HolderCoords.push([Math.random(), thisNameObj.getAttribute("x"), thisNameObj.getAttribute("y"), ahnNum]);
         }
-        console.log(HolderCoords);
+        condLog(HolderCoords);
         HolderCoords.sort();
         FandokuView.newOrder = [];
 
@@ -1429,7 +1435,7 @@
         }
 
         updateFeedbackArea("Choose game type, then click START GAME");
-        // console.log("Now theAncestors = ", FandokuView.theAncestors);
+        // condLog("Now theAncestors = ", FandokuView.theAncestors);
         // thePeopleList.listAll();
         //  recalcAndDisplayNumGens();
         //  redoWedgesForFanChart();
@@ -1451,15 +1457,15 @@
     }
 
     FandokuView.startGame = function () {
-        console.log("FandokuView.startGame");
+        condLog("FandokuView.startGame");
         updateFeedbackArea(
             "Click on Ancestor name for yellow highlight, then click on matching cell inside Fan Chart."
         );
         let settingsHaveChanged = FandokuView.fanchartSettingsOptionsObject.hasSettingsChanged(
             FandokuView.currentSettings
         );
-        console.log(FandokuView.myAhnentafel);
-        console.log("Settings Changed:", settingsHaveChanged, FandokuView.currentSettings);
+        condLog(FandokuView.myAhnentafel);
+        condLog("Settings Changed:", settingsHaveChanged, FandokuView.currentSettings);
 
         // SETUP the genMForder array  based on whether we're doing a FAN CHART or a FANDOKU type of game
         // 1 is normal order Father then Mother (going clockwise), -1 is Mother / Father order for that generation
@@ -1483,10 +1489,10 @@
             }
         }
 
-        console.log("mfORDER : ", FandokuView.genMForder);
+        condLog("mfORDER : ", FandokuView.genMForder);
         FandokuView.ahnNumCellNumArray = [0, 1];
         updateAhnCellArray(1, 1, 2); // ahnNumChild , posNumChild , parentGenNum
-        console.log("mf ahnCellArray: ", FandokuView.ahnNumCellNumArray);
+        condLog("mf ahnCellArray: ", FandokuView.ahnNumCellNumArray);
 
         // CHECK for gen 6 or gen 7, and if so - then change maxAngle appropriately (min 240, min 360)
         if (FandokuView.numGens2Display == 6) {
@@ -1499,7 +1505,7 @@
 
         // DO THE GENDER HINTING (bkgd colour of blue or pink) - IF CHECKED
         if (FandokuView.currentSettings["rules_options_genderHinting"] == true) {
-            // console.log("GENDER PAINTING BEGIN!");
+            // condLog("GENDER PAINTING BEGIN!");
             for (let genNum = 1; genNum < FandokuView.numGens2Display; genNum++) {
                 for (let posNum = 0; posNum < 2 ** genNum; posNum++) {
                     let thisWedge = document.getElementById("wedge" + 2 ** genNum + "n" + posNum);
@@ -1522,7 +1528,7 @@
                 let thisAdjustedPosNum = FandokuView.ahnNumCellNumArray[2 ** genNum + posNum];
 
                 if (thisWedge && FandokuView.myAhnentafel.list[thisAdjustedPosNum] == undefined) {
-                    console.log("num:", thisAdjustedPosNum, FandokuView.myAhnentafel.list[thisAdjustedPosNum]);
+                    condLog("num:", thisAdjustedPosNum, FandokuView.myAhnentafel.list[thisAdjustedPosNum]);
                     let thisClr = "#F0F0F0"; // a light blue - lighter than "lightskyblue";
                     thisWedge.style.fill = thisClr;
                 }
@@ -1540,7 +1546,7 @@
 
         for (let ahnNum = 2; ahnNum < 2 ** FandokuView.numGens2Display; ahnNum++) {
             let thisNameObj = document.getElementById("floatingName" + ahnNum);
-            console.log("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
+            condLog("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
             let thePeep = thePeopleList[FandokuView.myAhnentafel.list[ahnNum]];
             if (thePeep) {
                 theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
@@ -1604,7 +1610,7 @@
 
             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                 realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
-                console.log("REAL ahnNum : ", realAhnNum);
+                condLog("REAL ahnNum : ", realAhnNum);
                 // ahnNum = realAhnNum;
                 parts[1] = realAhnNum - base;
                 id = "wedge" + base + "n" + parts[1];
@@ -1612,7 +1618,7 @@
             let thisShowNumWedge = document.getElementById("wedgeInfoFor" + showNum);
             let numTries = 0;
             while (!thisShowNumWedge && numTries < 100) {
-                console.log("DANGER DANGER WILL ROBINSON - this WEDGE does not exist !!!!");
+                condLog("DANGER DANGER WILL ROBINSON - this WEDGE does not exist !!!!");
 
                 showNum = base + Math.floor(Math.random() * base);
 
@@ -1624,7 +1630,7 @@
 
                 if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                     realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum);
-                    console.log("REAL ahnNum : ", realAhnNum);
+                    condLog("REAL ahnNum : ", realAhnNum);
                     // ahnNum = realAhnNum;
                     parts[1] = realAhnNum - base;
                     id = "wedge" + base + "n" + parts[1];
@@ -1656,7 +1662,7 @@
                 let realAhnNum = showNum2;
                 if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                     realAhnNum = FandokuView.ahnNumCellNumArray.indexOf(showNum2);
-                    console.log("REAL ahnNum : ", realAhnNum);
+                    condLog("REAL ahnNum : ", realAhnNum);
                     // ahnNum = realAhnNum;
                     parts[1] = realAhnNum - base;
                     id = "wedge" + base + "n" + parts[1];
@@ -1678,7 +1684,7 @@
         if (gameTimerDIV) {
             gameTimerDIV.textContent = displayTimeMinSecs;
         } else {
-            console.log("STOPPING the GAME TIMER now");
+            condLog("STOPPING the GAME TIMER now");
             clearInterval(FandokuView.gameTimerInterval);
         }
     }
@@ -1705,7 +1711,7 @@
                 fandokuCheer.play();
             }
             FandokuView.endGame();
-            console.log("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 1097);
+            condLog("status:", FandokuView.gameStatus, "calling updateFeedbackArea from ", 1097);
             let theGameName = "Fan Chart";
             if (FandokuView.currentSettings["rules_options_gameType"] == "FanDoku") {
                 theGameName = "FanDoku game";
@@ -1726,8 +1732,8 @@
     }
 
     FandokuView.redraw = function () {
-        // console.log("FandokuView.redraw");
-        // console.log("Now theAncestors = ", FandokuView.theAncestors);
+        // condLog("FandokuView.redraw");
+        // condLog("Now theAncestors = ", FandokuView.theAncestors);
         // thePeopleList.listAll();
         recalcAndDisplayNumGens();
         redoWedgesForFanChart();
@@ -1745,10 +1751,10 @@
     };
 
     FandokuView.toggleSettings = function () {
-        console.log("TIME to TOGGLE the SETTINGS NOW !!!", FandokuView.fanchartSettingsOptionsObject);
-        console.log(FandokuView.fanchartSettingsOptionsObject.getDefaultOptions());
+        condLog("TIME to TOGGLE the SETTINGS NOW !!!", FandokuView.fanchartSettingsOptionsObject);
+        condLog(FandokuView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
-        console.log("SETTINGS ARE:", theDIV.style.display);
+        condLog("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
         } else {
@@ -1760,18 +1766,18 @@
      * Load and display a person
      */
     FandokuView.prototype.load = function (id) {
-        // console.log("FandokuView.prototype.load");
+        // condLog("FandokuView.prototype.load");
         var self = this;
         // FandokuView.maxAngle = 240;
         self._load(id).then(function (person) {
-            // console.log("FandokuView.prototype.load : self._load(id) ");
+            // condLog("FandokuView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
             thePeopleList.add(person);
             thePeopleList.listAll();
 
             if (person.children && person.children.length > 0) {
                 for (let index = 0; index < person.children.length; index++) {
-                    // console.log(".load person Child # " + index, person.children[index]);
+                    // condLog(".load person Child # " + index, person.children[index]);
                     if (person.children[index]) {
                         // Assign Ahnentafel #s to initial Father and Mother
                         if (person.children[index]._data.Gender == "Male") {
@@ -1782,12 +1788,15 @@
                     }
                 }
             } else {
-                // console.log("Did not go through KIDS loop: ", person, person.depth);
+                // condLog("Did not go through KIDS loop: ", person, person.depth);
             }
-            // console.log(".load person:",person);
+            // condLog(".load person:",person);
 
-            WikiTreeAPI.getAncestors(APP_ID, id, 5, [
-                "Id",
+             // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
+            WikiTreeAPI.getPeople(
+                // (appId, IDs, fields, options = {}) 
+                APP_ID , id,
+                ["Id",
                 "Derived.BirthName",
                 "Derived.BirthNamePrivate",
                 "FirstName",
@@ -1812,12 +1821,16 @@
                 "Photo",
                 "Name",
                 "Gender",
-                "Privacy",
-            ]).then(function (result) {
-                FandokuView.theAncestors = result;
-                console.log("theAncestors:", FandokuView.theAncestors);
-                console.log("person with which to drawTree:", person);
-                for (let index = 0; index < FandokuView.theAncestors.length; index++) {
+                "Privacy"],
+                {
+                    ancestors:5
+                }
+            ).then(function (result) {
+                condLog("load", id, result);
+                FandokuView.theAncestors = result[2];
+                condLog("theAncestors:", FandokuView.theAncestors);
+                condLog("person with which to drawTree:", person);
+                for ( index in  FandokuView.theAncestors) {
                     const element = FandokuView.theAncestors[index];
                     thePeopleList.add(FandokuView.theAncestors[index]);
                 }
@@ -1834,13 +1847,13 @@
      */
     FandokuView.prototype.loadMore = function (oldPerson) {
         var self = this;
-        // console.log("loadMore - line:94", oldPerson) ;
+        // condLog("loadMore - line:94", oldPerson) ;
         return self._load(oldPerson.getId()).then(function (newPerson) {
             var mother = newPerson.getMother(),
                 father = newPerson.getFather();
 
             if (mother) {
-                // console.log("mother:", mother);
+                // condLog("mother:", mother);
                 oldPerson.setMother(mother);
             }
             if (father) {
@@ -1857,7 +1870,7 @@
      * Testing username change ...
      */
     FandokuView.prototype._load = function (id) {
-        // console.log("INITIAL _load - line:118", id) ;
+        // condLog("INITIAL _load - line:118", id) ;
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -1886,7 +1899,7 @@
             "Gender",
             "Privacy",
         ]);
-        // console.log("_load PersonObj:",thePersonObject);
+        // condLog("_load PersonObj:",thePersonObject);
         return thePersonObject;
     };
 
@@ -1894,10 +1907,10 @@
      * Draw/redraw the tree
      */
     FandokuView.prototype.drawTree = function (data) {
-        // console.log("FandokuView.prototype.drawTree");
+        // condLog("FandokuView.prototype.drawTree");
 
         if (data) {
-            // console.log("(FandokuView.prototype.drawTree WITH data !)");
+            // condLog("(FandokuView.prototype.drawTree WITH data !)");
             this.ancestorTree.data(data);
             // this.descendantTree.data(data);
         }
@@ -1913,7 +1926,7 @@
      * `direction` is either 1 (forward) or -1 (backward).
      */
     var Tree = function (svg, selector, direction) {
-        // console.log("Create TREE var");
+        // condLog("Create TREE var");
         this.svg = svg;
         this.root = null;
         this.getChildrenFn = null;
@@ -1964,12 +1977,12 @@
      * Draw/redraw the tree
      */
     Tree.prototype.draw = function () {
-        console.log("Tree.prototype.draw");
+        condLog("Tree.prototype.draw");
         if (this.root) {
             // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
             var nodes = FandokuView.myAhnentafel.listOfAncestorsForFanChart(FandokuView.numGens2Display); // [];//this.tree.nodes(this.root);
 
-            console.log("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
+            condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
             this.drawNodes(nodes);
@@ -1999,20 +2012,20 @@
      * Draw the person boxes.
      */
     Tree.prototype.drawNodes = function (nodes) {
-        // console.log("Tree.prototpe.DRAW NODES", nodes);
+        // condLog("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
 
-        // console.log("this.selector = ", this.selector);
+        // condLog("this.selector = ", this.selector);
 
         // Get a list of existing nodes
         var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (ancestorObject) {
             let person = ancestorObject.person;
-            // console.log("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
+            // condLog("var node: function person ? " , person.getId(), ancestorObject.ahnNum);
             // return person;
             return ancestorObject.ahnNum; //getId();
         });
 
-        // console.log("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
+        // condLog("Tree.prototpe.DRAW NODES - SINGULAR node:", node);
 
         // *********************
         // ADD new nodes
@@ -2025,7 +2038,7 @@
                 // id : "personG" + ancestorObject.ahnNum
             });
 
-        // console.log("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
+        // condLog("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
 
         // *********************
         // Draw the person boxes (part of the ADD routine)
@@ -2070,14 +2083,14 @@
                     }
                 }
 
-                // console.log(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
+                // condLog(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
 
                 if (thisGenNum >= 14) {
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     // Use generic gender photos if there is not profile photo available
-                    //console.log(
+                    //condLog(
                     //     "FandokuView.currentSettings[photo_options_useSilhouette] : ",
                     //     FandokuView.currentSettings["photo_options_useSilhouette"]
                     // );
@@ -2183,9 +2196,9 @@
             // Calculate which position # (starting lower left and going clockwise around the FanDoku game) (0 is father's father's line, largest number is mother's mother's line)
             let oldPosNum = ancestorObject.ahnNum - 2 ** thisGenNum; // ORIGINAL CALCULATION - when everything was PURE FANCHART
             let thisPosNum = FandokuView.ahnNumCellNumArray[ancestorObject.ahnNum] - 2 ** thisGenNum; // REVISED CALCULATION - using Array to translate pure Ahnentafel #s to Position Numbers, in case of FanDoku mode !
-            console.log("ahnNum, Array:", ancestorObject.ahnNum, FandokuView.ahnNumCellNumArray);
-            console.log("value of ahnNum in Array:", FandokuView.ahnNumCellNumArray[ancestorObject.ahnNum]);
-            console.log("PosNums:", oldPosNum, thisPosNum);
+            condLog("ahnNum, Array:", ancestorObject.ahnNum, FandokuView.ahnNumCellNumArray);
+            condLog("value of ahnNum in Array:", FandokuView.ahnNumCellNumArray[ancestorObject.ahnNum]);
+            condLog("PosNums:", oldPosNum, thisPosNum);
             thisPosNum = oldPosNum;
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
@@ -2202,7 +2215,7 @@
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = "white"; // getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                 } else {
-                    console.log("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
+                    condLog("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
                 if (theWedgeBox) {
                     theWedgeBox.style.background = "white";
@@ -2220,7 +2233,7 @@
 
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
-                // console.log("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
+                // condLog("POSITION node ", ancestorObject.ahnNum , theInfoBox, theInfoBox.parentNode, theInfoBox.parentNode.parentNode, theInfoBox.parentNode.parentNode.getAttribute('y'));
                 let theNameDIVhtml = "<B>" + getFullName(d) + "</B>";
                 if (FandokuView.currentSettings["showLifeSpan"] == true) {
                     theNameDIVhtml += "<br/>(" + getLifeSpan(d) + ")";
@@ -2229,7 +2242,7 @@
 
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
                 if (ancestorObject.ahnNum == 1) {
-                    // console.log("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
+                    // condLog("BOUNDS for Central Perp: ", theInfoBox.getBoundingClientRect() );
                     theInfoBox.parentNode.parentNode.setAttribute("y", -120);
                     theInfoBox.parentNode.parentNode.setAttribute("x", -125);
                     theInfoBox.parentNode.parentNode.setAttribute("width", 250);
@@ -2288,7 +2301,7 @@
                     let fontRadii = { 7: 9, 8: 13, 9: 15 };
                     let fontRadius = fontRadii[thisGenNum];
                     let tweakAngle = (Math.atan(fontRadius / (thisGenNum * thisRadius)) * 180) / Math.PI;
-                    // console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
+                    // condLog("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
                         placementAngle += tweakAngle;
                     } else {
@@ -2354,7 +2367,7 @@
                     // } else if (thePhotoDIV && FandokuView.currentSettings["photo_options_showCentralPic"] == false) {
                     //     thePhotoDIV.style.display = "none";
                     //     theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
-                    //     console.log("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
+                    //     condLog("ADJUSTING the CENTRAL PERSON INFO without PIC downwards, i hope");
                 }
             }
 
@@ -2372,7 +2385,7 @@
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
             let newX = thisGenNum * thisRadius * Math.cos((placementAngle * Math.PI) / 180);
             let newY = thisGenNum * thisRadius * Math.sin((placementAngle * Math.PI) / 180);
-            // console.log(
+            // condLog(
             //     "Place",
             //     d._data.Name,
             //     "ahnNum:" + ancestorObject.ahnNum,
@@ -2443,7 +2456,7 @@
 			`);
 
         d3.select("#view-container").on("click", function () {
-            console.log("d3.select treeViewerContainer onclick - REMOVE POPUP");
+            condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
     };
@@ -2457,7 +2470,7 @@
      * select on it, like we do with nodes and links.
      */
     Tree.prototype.removePopups = function () {
-        console.log("Tree.prototype - REMOVE POPUPS (plural) function");
+        condLog("Tree.prototype - REMOVE POPUPS (plural) function");
         d3.selectAll(".popup").remove();
     };
 
@@ -2465,7 +2478,7 @@
      * Manage the ancestors tree
      */
     var AncestorTree = function (svg) {
-        console.log("new var ANCESTOR TREE");
+        condLog("new var ANCESTOR TREE");
 
         // RESET  the # of Gens parameters
         FandokuView.numGens2Display = 4;
@@ -2475,7 +2488,7 @@
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
-            console.log("Defining the CHILDREN for ", person._data.Name);
+            condLog("Defining the CHILDREN for ", person._data.Name);
             var children = [],
                 mother = person.getMother(),
                 father = person.getFather();
@@ -2675,7 +2688,7 @@
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
-        // console.log("settingsStyleDate:", dateString, formatString);
+        // condLog("settingsStyleDate:", dateString, formatString);
         if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
             var parts = dateString.split("-"),
                 year = parseInt(parts[0], 10),
@@ -2848,7 +2861,7 @@
         // const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
         // const fullMealDeallName = `${person._data.Prefix} ${person._data.FirstName} ${person._data.MiddleName} ${person._data.LastNameCurrent} ${person._data.Suffix} `;
 
-        // console.log("FULL: " , fullMealDeallName);
+        // condLog("FULL: " , fullMealDeallName);
 
         // return fullMealDeallName;
 
@@ -2925,18 +2938,18 @@
     }
 
     function getAngleOfRotation(theElement) {
-        // console.log("getAngleOfRotation of ", theElement.parentNode.parentNode.parentNode);
+        // condLog("getAngleOfRotation of ", theElement.parentNode.parentNode.parentNode);
         let theBigElement = theElement.parentNode.parentNode.parentNode;
         // let theTransform = theBigElement.getPropertyOf("transform");
-        // console.log("t:", theBigElement["transform"]);
+        // condLog("t:", theBigElement["transform"]);
         // let theTransform = theBigElement.transform.baseVal;
-        // console.log("theTransform:", theTransform);
+        // condLog("theTransform:", theTransform);
         for (let t in theTransform) {
             const transformObj = theTransform[t];
-            // console.log("obj:", transformObj);
+            // condLog("obj:", transformObj);
         }
 
-        // console.log("Count: " + theTransform.length);
+        // condLog("Count: " + theTransform.length);
 
         return 9;
     }
@@ -3055,7 +3068,7 @@
     }
 
     FandokuView.pickMe = function (num) {
-        console.log("PICK ME, PICK ME !!!!", num);
+        condLog("PICK ME, PICK ME !!!!", num);
     };
 
     // SOUND EFFECTS

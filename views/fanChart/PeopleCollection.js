@@ -24,22 +24,37 @@ PeopleCollection.PeopleList = class PeopleList {
     // THEN ... we use the add method to add one person to it, using the WikiTree ID as the key
     add(newPerson) {
         if (newPerson && newPerson.Id) {
+            // condLog("Adding: ", newPerson.Id);
             this[newPerson.Id] = new WikiTreeAPI.Person(newPerson);
+        } else {
+            condLog("Can't add newPerson: ", newPerson);
         }
     }
+    // A simple function to Count all the  people in the collection to the condLog (for debugging purposes)
+    population() {
+        let numPeeps = 0;
 
-    // A simple function to List All people in the collection to the console.log (for debugging purposes)
+        for (const key in this) {
+            if (Object.hasOwnProperty.call(this, key)) {
+                numPeeps++;
+            }
+        }
+        condLog("There are ", numPeeps, " in PeopleCollection");
+        return numPeeps;
+    }
+
+    // A simple function to List All people in the collection to the condLog (for debugging purposes)
     listAll() {
         let numPeeps = 0;
 
         for (const key in this) {
             if (Object.hasOwnProperty.call(this, key)) {
                 const element = this[key];
-                // console.log(key );
+                // condLog(key );
                 numPeeps++;
             }
         }
-        console.log("There are ", numPeeps, " in PeopleCollection");
+        condLog("There are ", numPeeps, " in PeopleCollection");
     }
 
     // A similar List function to create an Array of Person objects to feed to the d3 Tree function
@@ -52,10 +67,10 @@ PeopleCollection.PeopleList = class PeopleList {
                 numPeeps++;
                 element._data.ahnNum = numPeeps;
                 theListOfPersons.push(element);
-                // console.log("Add to list: ",key , element);
+                // condLog("Add to list: ",key , element);
             }
         }
-        // console.log("There are ",numPeeps," in PeopleCollection");
+        // condLog("There are ",numPeeps," in PeopleCollection");
         return theListOfPersons;
     }
 };
@@ -63,5 +78,5 @@ PeopleCollection.PeopleList = class PeopleList {
 // CREATE the INSTANCE of the PeopleCollection, call it thePeopleList, and refer to it as such throughout the views that use this
 var thePeopleList = new PeopleCollection.PeopleList();
 
-// console.log(thePeopleList);
+// condLog(thePeopleList);
 // thePeopleList.listAll();
