@@ -1162,8 +1162,10 @@
                                     dir: X - (Xpa + Xma) / 2,
                                     elem: elementPa,
                                     parentsIDs: theParentIDs,
+                                    theLineClr: theLineClr,
                                 });
                             } else {
+                                theLineClr = acceptableDarkLineClr(theLineClr);
                                 elementPa.setAttribute(
                                     "points",
                                     theXmultiplier * X -
@@ -1193,6 +1195,7 @@
                                     dir: X - 3 - Xpa,
                                     elem: elementPa,
                                     parentsIDs: theParentIDs,
+                                    theLineClr: theLineClr,
                                 });
 
                                 if (theNodePa.person._data.Id) {
@@ -1260,6 +1263,7 @@
                                 dir: X + 3 - Xma,
                                 elem: elementMa,
                                 parentsIDs: theParentIDs,
+                                theLineClr: theLineClr,
                             });
                         }
                     }
@@ -1308,7 +1312,8 @@
                     let availableSlotFound = -1;
                     if (yParentGenSlotsUsed[thisParentIDsPlusGenNum] > -1) {
                         availableSlotFound = yParentGenSlotsUsed[thisParentIDsPlusGenNum];
-                        condLog("USING availableSlotFound = ", availableSlotFound);
+                        yAvailableSlots[availableSlotFound] = conn.b;
+                        condLog(c, "USING ASSIGNED availableSlotFound = ", availableSlotFound, thisParentIDsPlusGenNum);
                     }
                     for (let ys = 0; ys < yAvailableSlots.length && availableSlotFound == -1; ys++) {
                         if (conn.a > yAvailableSlots[ys]) {
@@ -1316,6 +1321,7 @@
                             yAvailableSlots[ys] = conn.b;
                             availableSlotFound = ys;
                             yParentGenSlotsUsed[thisParentIDsPlusGenNum] = ys;
+                            condLog(c, "Found OPEN availableSlotFound = ", availableSlotFound, thisParentIDsPlusGenNum);
                         }
                     }
                     if (availableSlotFound == -1) {
@@ -1323,8 +1329,25 @@
                         yAvailableSlots.push(conn.b);
                         availableSlotFound = yAvailableSlots.length - 1;
                         yParentGenSlotsUsed[thisParentIDsPlusGenNum] = availableSlotFound;
+                        condLog(c, "NEEDS NEW availableSlotFound = ", availableSlotFound, thisParentIDsPlusGenNum);
                     }
-                    condLog("Connector ", c, " @ height : ", availableSlotFound);
+                    
+                    condLog(
+                        "Connector ",
+                        c,
+                        conn.theLineClr,
+                        "genNum:",
+                        thisGenNum,
+                        " @ height : ",
+                        availableSlotFound,
+                        "y = ",
+                        conn.y1 - 20 - 10 * availableSlotFound,
+                        "x = [",
+                        conn.a,
+                        " .. ",
+                        conn.b,
+                        "]"
+                    );
 
                     let X1 = conn.a;
                     let X2 = conn.b;
@@ -1333,6 +1356,9 @@
                         X1 = conn.b;
                         X2 = conn.a;
                     }
+
+                    
+                   
                     conn.elem.setAttribute(
                         "points",
                         X1 +
