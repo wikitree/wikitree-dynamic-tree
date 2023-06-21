@@ -1217,15 +1217,20 @@
                             ) {
                                 useSteps = true;
                             } else {
-                                if ((useNodePa && theNodePa && thePaObjInRepeatList.id > 0) || (useNodeMa && theNodeMa && theMaObjInRepeatList.id > 0) ){ 
-                                    useSteps = defaultUseStepsValue;
+                                if ((useNodePa && theNodePa && thePaObjInRepeatList.id > 0) ){ 
+                                    useSteps4Pa = defaultUseStepsValue;
+                                    useSteps = false;
+
+                                } else if ( (useNodeMa && theNodeMa && theMaObjInRepeatList.id > 0) ){ 
+                                    useSteps4Ma = defaultUseStepsValue;
+                                    useSteps = false;
                                 } else {
                                     useSteps = false;
                                 }
                             }
-                            condLog("theNode - parent -->", useSteps);
+                            condLog("theNode - parent -->", useSteps, useSteps4Pa, useSteps4Ma);
                         } else {
-                            condLog("theNode - NO STEPS EVER", theNode, useSteps, defaultUseStepsValue);
+                            // condLog("theNode - NO STEPS EVER", theNode, useSteps, defaultUseStepsValue);
                             useSteps = false;
                         }
                     }
@@ -1289,10 +1294,14 @@
                                     LineColourArray.length
                             ];
                         condLog(
-                            "Connecting something with Ps ?? : ",
+                            "Connecting something with Ps ?? : ", thisNodesID, 
                             thePeopleList[thisNodesID]._data.thePs,
                             theLineClr
                         );
+
+                        if (theLineClr == undefined) {
+                            theLineClr = LineColourArray[thisNodesID % LineColourArray.length];
+                        }
                         if (isAlreadyConnected) {
                             // do NOTHING
                             elementPa.setAttribute(
@@ -2592,12 +2601,12 @@
 
                 nodes = newNodes;
                 condLog("AFter USE THIS loopage : ", nodes);
-                for (let n = 0; n < nodes.length; n++) {
-                    const element = nodes[n];
-                    if (element){
-                        condLog(element.p, element.ahnNum, element._data);
-                    }
-                }
+                // for (let n = 0; n < nodes.length; n++) {
+                //     const element = nodes[n];
+                //     if (element){
+                //         // condLog(element.p, element.ahnNum, element._data);
+                //     }
+                // }
             }
 
             if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
@@ -3426,7 +3435,7 @@
             const element = nodes[index];
             if (element && element.ahnNum) {
                 if (element.ahnNum == thisAhnNum) {
-                    condLog("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
+                    // condLog("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
                     if (whichPrime >= 0 && element.p != whichPrime) {
                         // do nothing
                         // condLog("do NOthing ", whichPrime, element.p, element.ahnNum);
@@ -3825,14 +3834,14 @@
 
                 // LET's ENSURE THAT THE NEW PERCENTILE IS BETWEEN COUPLES and NOT in the MIDDLE of a COUPLE (at the highest GEN)
                 let closestPosNum = Math.ceil( ((2 ** (maxGenNum + 2) ) * (newPercentile  -  1.0 * WebsView.currentPrimeNum)  - 1) /2  ) ;
-                condLog("CLOSEST POS NUM @ gen ", maxGenNum, " is ", closestPosNum);
+                // condLog("CLOSEST POS NUM @ gen ", maxGenNum, " is ", closestPosNum);
                 // ROUND to nearest multiple of 8 (to make it directly above an empty space from below)
                 closestPosNum = 8 * Math.max(1, Math.round( closestPosNum / 8 )) ;
                 // while (closestPosNumArray.length > 0 && closestPosNumArray.indexOf(closestPosNum) > -1) {
                 //     closestPosNum += 2;
                 // }
                 closestPosNumArray.push(closestPosNum);
-                condLog("==> ", closestPosNum + " / " + (2 ** (maxGenNum + 1) ));
+                // condLog("==> ", closestPosNum + " / " + (2 ** (maxGenNum + 1) ));
                 if (element.AhnNums[0] % 2 == 0 ) {
                     closestPosNum -= 0.5;
                     if (WebsView.viewMode == "Indi") {
@@ -3993,7 +4002,7 @@
                     let theDudPerson = thePeopleList[element.id];
                     if (theDudPerson){
                         theDudPerson._data.theClr = "#B0B0B0";
-                        condLog("dud", theDudPerson);
+                        // condLog("dud", theDudPerson);
                     }
 
                     // for (let d = 0; d < element.AhnNums.length; d++) {
