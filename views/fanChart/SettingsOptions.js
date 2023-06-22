@@ -429,9 +429,22 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             }
 
                             labelElement.appendChild(radioOptionElement);
-
-                            let optionLabelTextNode = document.createTextNode(" " + value.text);
-                            labelElement.appendChild(optionLabelTextNode);
+                            if (value.text == "SVG") {
+                                let optionSVGNode = document.createElement("SVG");
+                                optionSVGNode.id = fullOptionName + "_SVG" + radioNum;
+                                labelElement.appendChild(optionSVGNode);
+                            } else if (value.text && value.text.indexOf("IMG:") == 0) {
+                                let optionIMGNode = document.createElement("IMG");
+                                optionIMGNode.id = fullOptionName + "_IMG" + radioNum;
+                                optionIMGNode.src = value.text.substring(4);
+                                if (value.width > 0) {
+                                    optionIMGNode.width = value.width;
+                                }
+                                labelElement.appendChild(optionIMGNode);
+                            } else {
+                                let optionLabelTextNode = document.createTextNode(" " + value.text);
+                                labelElement.appendChild(optionLabelTextNode);
+                            }
                         }
                     }
                     optionDivElement.appendChild(labelElement);
@@ -470,6 +483,23 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let labelTextNode = document.createTextNode(option.label + ": ");
 
                     let labelElement = document.createElement("label");
+                    labelElement.id = fullOptionName + "_label";
+
+                    labelElement.appendChild(labelTextNode);
+                    labelElement.appendChild(optionElement);
+                    optionDivElement.appendChild(labelElement);
+                } else if (option.type == "text") {
+                    optionElement = document.createElement("input");
+                    optionElement.type = "text";
+                    // optionElement.className = "optionNumber";
+                    if (option.defaultValue) {
+                        optionElement.value = option.defaultValue;
+                    }
+
+                    let labelTextNode = document.createTextNode(option.label + ": ");
+
+                    let labelElement = document.createElement("label");
+                    labelElement.id = fullOptionName + "_label";
 
                     labelElement.appendChild(labelTextNode);
                     labelElement.appendChild(optionElement);
@@ -482,6 +512,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let labelTextNode = document.createTextNode(option.label + ": ");
 
                     let labelElement = document.createElement("label");
+                    labelElement.id = fullOptionName + "_label";
 
                     labelElement.appendChild(labelTextNode);
                     labelElement.appendChild(optionElement);
@@ -574,7 +605,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 thisType = thisSettingObj.type;
                 if (thisType == "checkbox") {
                     thisVal = thisSettingObj.checked;
-                } else if (thisType == "number") {
+                } else if (thisType == "number" || thisType == "text") {
                     thisVal = thisSettingObj.value;
                 } else if (thisType == "select-one") {
                     thisVal = thisSettingObj.value;

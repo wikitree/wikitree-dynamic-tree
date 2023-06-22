@@ -284,13 +284,13 @@
                     subsections: [{ name: "Colours", label: "Colour options for repeat ancestors     " }],
                     comment: "These options apply to the colours applied to Repeat or Common Ancestors.",
                 },
-                // {
-                //     name: "places",
-                //     label: "Places",
-                //     hideSelect: true,
-                //     subsections: [{ name: "WebsPlaces", label: "PLACES of events     " }],
-                //     comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
-                // },
+                {
+                    name: "lines",
+                    label: "Lines",
+                    hideSelect: true,
+                    subsections: [{ name: "Lines", label: "Connecting lines" }],
+                    comment: "These options apply to the Lines connecting repeat ancestors to their descendants.",
+                },
                 {
                     name: "paths",
                     label: "Multi-Paths",
@@ -429,6 +429,59 @@
                         // },
                     ],
                 },
+
+                {
+                    tab: "lines",
+                    subsection: "Lines",
+                    category: "line",
+                    subcategory: "options",
+                    options: [
+                        { optionName: "sect1", comment: "Line Thickness:", type: "br" },
+                        {
+                            optionName: "thickness",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                { value: "1", text: "thin" },
+                                // { value: "br" },
+                                { value: "2", text: "medium" },
+                                // { value: "br" },
+                                { value: "3", text: "thick" },
+                                { value: "br", text: "SVG" },
+                            ],
+                            defaultValue: "2",
+                        },
+                        { optionName: "sect2", comment: "Connecting lines to a single ancestor:", type: "br" },
+                        {
+                            optionName: "singleMRCA",
+                            type: "radio",
+                            label: "",
+                            values: [
+                                // { value: "br" },
+                                {
+                                    value: "T",
+                                    text: "IMG:views/webs/websSingleMRCA-T.png",
+                                    width:100
+                                    // text: "use 90 degree vertical-horizontal lines (to minimize criss-crossing lines)",
+                                },
+                                {
+                                    value: "V",
+                                    text: "IMG:views/webs/websSingleMRCA-V.png",
+                                    // text: "use direct connection (will create lines on an angle from Single Ancestor to Children)",
+                                    width:100
+                                },
+                            ],
+                            defaultValue: "T",
+                        },
+
+                        // {
+                        //     optionName: "showCouple",
+                        //     label: "Show the Ancestral Couple at the top, if descendant of both",
+                        //     type: "checkbox",
+                        //     defaultValue: false,
+                        // },
+                    ],
+                },
                 {
                     tab: "paths",
                     subsection: "WebsPaths",
@@ -517,17 +570,17 @@
                 //WebsView.PeopleList = thePeopleList;
                 condLog("PeopleList:", WebsView.PeopleList);
                 for (const key in WebsView.PeopleList) {
-                //     if (Object.hasOwnProperty.call(object, key)) {
-                //         const element = object[key];
-                //     }
-                // }
-                // for (let index = 0; index < WebsView.PeopleList.length; index++) {
+                    //     if (Object.hasOwnProperty.call(object, key)) {
+                    //         const element = object[key];
+                    //     }
+                    // }
+                    // for (let index = 0; index < WebsView.PeopleList.length; index++) {
                     let element = WebsView.PeopleList[key];
                     if (element._data.theClr > "") {
                         element._data.theClr = "";
-                        condLog("found and wiped out Clr for # ",key);
+                        condLog("found and wiped out Clr for # ", key);
                     } else {
-                        condLog("did NOT find theClr",element);
+                        condLog("did NOT find theClr", element);
                     }
                     if (element._data.fontClr > "") {
                         element._data.fontClr = "";
@@ -548,7 +601,6 @@
         };
 
         WebsView.reallyRemovePerson = function () {
-            
             condLog("REALLY removing PERSON # 2 ");
             WebsView.cancelAddNewPopup();
 
@@ -564,24 +616,23 @@
             while (WebsView.listOfAhnentafels.length > 1) {
                 WebsView.listOfAhnentafels.pop();
             }
-            
+
             // PROBABLY ALSO NEED TO REMOVE ANY LINES DRAWN FOR PERSON TWO !!!
             const pp = 1;
-             condLog("SHOULD HIDE PRIME PERSON # ", pp, " and ALL THEIR LINES");
-             for (let index = 0; index < 2 ** (WebsView.numGens2Display - 1); index++) {
-                 const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
-                 if (elementPa) {
-                     elementPa.setAttribute("display", "none");
-                 }
-                 const elementMa = document.getElementById("lineForPerson" + index + "p" + pp + "Ma");
-                 if (elementMa) {
-                     elementMa.setAttribute("display", "none");
-                 }
-             }
+            condLog("SHOULD HIDE PRIME PERSON # ", pp, " and ALL THEIR LINES");
+            for (let index = 0; index < 2 ** (WebsView.numGens2Display - 1); index++) {
+                const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
+                if (elementPa) {
+                    elementPa.setAttribute("display", "none");
+                }
+                const elementMa = document.getElementById("lineForPerson" + index + "p" + pp + "Ma");
+                if (elementMa) {
+                    elementMa.setAttribute("display", "none");
+                }
+            }
 
             WebsView.changePrimePerson(0);
             WebsView.redraw();
-            
         };
 
         WebsView.addNewPersonStart = function () {
@@ -600,11 +651,13 @@
             condLog("same primer person?", thePeopleList[WebsView.listOfPrimePersons[0]]);
 
             condLog(getFirstLNAB(thePeopleList[WebsView.listOfPrimePersons[0]]));
-            
-            if (WebsView.listOfPrimePersons.length > 1){
+
+            if (WebsView.listOfPrimePersons.length > 1) {
                 theHTML =
                     theX +
-                "<H3>Remove Person</H3>Currently this app only supports TWO primary persons.<BR>A future update will allow a 3rd primary person to be added.<BR><BR>Use the REMOVE PERSON button to swap out the second primary person for another.<BR><button class=small onclick='WebsView.reallyRemovePerson();'>Remove " + getFirstLNAB(thePeopleList[WebsView.listOfPrimePersons[1]]) + "</button><br>";
+                    "<H3>Remove Person</H3>Currently this app only supports TWO primary persons.<BR>A future update will allow a 3rd primary person to be added.<BR><BR>Use the REMOVE PERSON button to swap out the second primary person for another.<BR><button class=small onclick='WebsView.reallyRemovePerson();'>Remove " +
+                    getFirstLNAB(thePeopleList[WebsView.listOfPrimePersons[1]]) +
+                    "</button><br>";
             }
             if (theDIV.style.display == "block") {
                 theDIV.style.display = "none";
@@ -686,7 +739,7 @@
                 // Create  Empty Lines, hidden, to be used later
                 // One to the person's Pa (Father) and the other to their Ma (Mother)
                 g.append("polyline").attrs({
-                    id: "lineForPerson" + index + "p" + pp +"Pa",
+                    id: "lineForPerson" + index + "p" + pp + "Pa",
                     display: "none",
                     points: "0,0 0,0",
                     style: "fill:none; stroke: black; stroke-width: 1;",
@@ -700,12 +753,57 @@
             }
         }
 
-
         self.load(startId);
 
         WebsView.websSettingsOptionsObject.buildPage();
         WebsView.websSettingsOptionsObject.setActiveTab("names");
         WebsView.currentSettings = WebsView.websSettingsOptionsObject.getDefaultOptions();
+
+        // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        // let SVG4MRCAoption1 = document.getElementById("line_options_singleMRCA_SVG1");
+        // let SVG4MRCAoption2 = document.getElementById("line_options_singleMRCA_SVG2");
+        // // let strokeWidthSetting = WebsView.currentSettings["line_options_thickness"];
+        // // condLog("bkgdClrSelector", bkgdClrSelector);
+
+        // document.getElementById("line_options_thickness_radio1").setAttribute("onchange", "WebsView.optionElementJustChanged();");
+        // document.getElementById("line_options_thickness_radio2").setAttribute("onchange", "WebsView.optionElementJustChanged();");
+        // document.getElementById("line_options_thickness_radio3").setAttribute("onchange", "WebsView.optionElementJustChanged();");
+        
+        // SVG4MRCAoption1.setAttribute("width", "50px");
+        // SVG4MRCAoption1.setAttribute("height", "50px");
+        // SVG4MRCAoption1.style.display = "inline-block";
+        // SVG4MRCAoption2.setAttribute("width", "50px");
+        // SVG4MRCAoption2.setAttribute("height", "50px");
+        // SVG4MRCAoption2.style.display = "inline-block";
+        
+        // SVG4MRCAoption1.innerHTML = "<rect width=20px height=20px rx=4px ry=4px x=10 y=10  />";
+        // SVG4MRCAoption2.innerHTML =
+        //     "<rect width=20 height=20  rx=4px ry=4px x=10 y=10 style='fill:pink;stroke:black;stroke-width:1;opacity:1' />";
+    };
+    // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+    WebsView.optionElementJustChanged = function () {
+        // let strokeWidthSelector1 = document.getElementById("line_options_thickness_radio1");
+        // let strokeWidthSelector2 = document.getElementById("line_options_thickness_radio2");
+        // let strokeWidthSelector3 = document.getElementById("line_options_thickness_radio3");
+        // let strokeWidthSetting = (strokeWidthSelector1.checked ? 1 : strokeWidthSelector3.checked ? 3 : 2);
+        // let SVG4MRCAoption1 = document.getElementById("line_options_singleMRCA_SVG1");
+        // let SVG4MRCAoption2 = document.getElementById("line_options_singleMRCA_SVG2");
+        // condLog("optionElementJustChanged !!!!!", SVG4MRCAoption1.innerHTML, strokeWidthSetting);
+        // //line_options_singleMRCA_radio1
+
+        
+
+        //   SVG4MRCAoption1.setAttribute("width", "50px");
+        //   SVG4MRCAoption1.setAttribute("height", "50px");
+        //   SVG4MRCAoption1.style.display = "inline-block";
+        //   SVG4MRCAoption2.setAttribute("width", "50px");
+        //   SVG4MRCAoption2.setAttribute("height", "50px");
+        //   SVG4MRCAoption2.style.display = "inline-block";
+
+        // //   SVG4MRCAoption1.innerHTML = "<rect width=20px height=20px rx=4px ry=4px x=10 y=10  />";
+        //   SVG4MRCAoption1.innerHTML = "<img src='views/webs/tree.gif'  />";
+        //   SVG4MRCAoption2.innerHTML =
+        //       "<rect width=20 height=20  rx=4px ry=4px x=10 y=10 style='fill:pink;stroke:black;stroke-width:1;opacity:1' />";
     };
 
     function findMatchingNodeByAhnNum(ahnNum, theNodes, primeNum = 0) {
@@ -724,12 +822,34 @@
             return initClr;    
         }
         let theClr = initClr;
+        const clrIdx0 = LineColourArray.indexOf(initClr);
+        if (clrIdx0 > -1) {
+            return initClr;
+        }
         const clrIdx = ColourArray.indexOf(initClr);
         if (clrIdx > -1) {
             theClr = LineColourArray[clrIdx];
         }
         return theClr;
     }
+
+    function isNotOnlyChild(theNode, theParentObj) {
+        // let useStepsNow = false;
+        // condLog("Compare",theNode, theParentObj) ;
+        let theChildID = theNode.person._data.Id;
+        for (let index = 0; index < theParentObj.AhnNums.length; index++) {
+            const parentAhnNum = theParentObj.AhnNums[index];
+            const thisChildsAhnNum = Math.floor(parentAhnNum/2);
+            const thisChildsID = WebsView.myAhnentafel.list[thisChildsAhnNum];
+            if (theChildID != thisChildsID) {
+                // as soon as we find one mismatch, then we know the theParentObj has a DIFFERENT child, not matching theNode person in question
+                // condLog("Compare", theChildID, "vs", thisChildsID, "@", thisChildsAhnNum);
+                return true; // Immediately return value of true (it is TRUE that this Node is NOT the only child of theParentObj)
+            }
+        }
+        return false; // ELSE - if we've made it all the way through the for loop without triggering the IF condition, then it's the same person as the only child, possibly showing up multiple times in the family tree.
+    }
+
     WebsView.drawLines = function (theNodes) {
         // condLog("DRAWING LINES stuff should go here");
         let numSpotsMaxGen = 2 ** (WebsView.numGens2Display - 1);
@@ -741,6 +861,14 @@
         let nameSettings = WebsView.currentSettings["name_options_multiNameFormat"];
         let bkgdColourSetting = WebsView.currentSettings["colour_options_background"];
         let fontColourSetting = WebsView.currentSettings["colour_options_numColours"];
+        let strokeWidthSetting = WebsView.currentSettings["line_options_thickness"];
+        let singleMRCASetting = WebsView.currentSettings["line_options_singleMRCA"];
+
+        let strokeWidthStyle = "stroke-width: " + strokeWidthSetting + "px;";
+        let defaultUseStepsValue = false;
+        if (singleMRCASetting == "T") {
+            defaultUseStepsValue = true;
+        }
 
         if (WebsView.viewMode == "Singles") { 
             nameSettings = WebsView.currentSettings["name_options_indiNameFormat"];
@@ -868,7 +996,18 @@
                     }
 
                     const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
-                    let useSteps = false; // flag to determine whether to use STEPS to get from child to Pa  (or Ma) - versus a straight (diagonal) line to connect them
+                    let useSteps = defaultUseStepsValue; // flag to determine whether to use STEPS to get from child to Pa  (or Ma) - versus a straight (diagonal) line to connect them
+                    let useSteps4Pa = false;
+                    let useSteps4Ma = false;
+
+                    let thePaObjInRepeatList = false; 
+                    if (theNode && theNode.person && theNode.person._data.Father) {
+                        thePaObjInRepeatList = findElementInRepeatAncestorsListByID(theNode.person._data.Father);
+                    }
+                    let theMaObjInRepeatList = false; 
+                    if (theNode && theNode.person && theNode.person._data.Mother) {
+                        theMaObjInRepeatList = findElementInRepeatAncestorsListByID(theNode.person._data.Mother);
+                    }
                     if (elementPa) {
                         theNodePa = findMatchingNodeByAhnNum(2 * index, theNodes, pp);
                         if (
@@ -895,9 +1034,7 @@
                                     // );
                                 }
 
-                                let thePaObjInRepeatList = findElementInRepeatAncestorsListByID(
-                                    theNode.person._data.Father
-                                );
+                                
                                 if (
                                     thePaObjInRepeatList &&
                                     thePaObjInRepeatList.AhnNums &&
@@ -926,7 +1063,7 @@
                             } else {
                                 condLog("theNodePa.person._data.theClr DOES NOT EXIST");
                             }
-                            elementPa.setAttribute("style", "fill:none; stroke:" + acceptableDarkLineClr(theClr));
+                            elementPa.setAttribute("style", "fill:none;" + strokeWidthStyle + " stroke:" + acceptableDarkLineClr(theClr));
                             // if (repeatAncestorTracker && )
                             // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
                             if (theNodePa && theNodePa["newY"] && theNodePa["newY"] > 0) {
@@ -965,9 +1102,7 @@
                                     // useSteps = true;
                                 }
 
-                                let theMaObjInRepeatList = findElementInRepeatAncestorsListByID(
-                                    theNode.person._data.Mother
-                                );
+                               
                                 if (
                                     theMaObjInRepeatList &&
                                     theMaObjInRepeatList.AhnNums &&
@@ -985,7 +1120,10 @@
                                     //  elementPa.setAttribute("style", "fill:none;stroke:" + theLineClr);
                                 }
                             }
-                            elementMa.setAttribute("style", "fill:none;stroke:" + acceptableDarkLineClr(theClr));
+                            elementMa.setAttribute(
+                                "style",
+                                "fill:none;" + strokeWidthStyle + " stroke:" + acceptableDarkLineClr(theClr)
+                            );
                             if (theNodeMa && theNodeMa["newY"] && theNodeMa["newY"] > 0) {
                                 condLog("Found newY for Ma: ", theNodeMa["newY"]);
                                 if (
@@ -1041,7 +1179,14 @@
                         useSteps = false;
                     } else {
                         if (useNodePa && theNodePa && useNodeMa && theNodeMa) {
-                            condLog("theNode", theNode);
+                            condLog(
+                                "theNode - both parents using",
+                                theNode,
+                                useSteps,
+                                defaultUseStepsValue,
+                                thePaObjInRepeatList,
+                                theMaObjInRepeatList
+                            );
                             if (
                                 theNode &&
                                 theNode.person &&
@@ -1050,9 +1195,42 @@
                             ) {
                                 useSteps = true;
                             } else {
-                                useSteps = false;
+                                 if (
+                                     (thePaObjInRepeatList.id > 0) ||
+                                     (theMaObjInRepeatList.id > 0)
+                                 ) {
+                                     useSteps = false;// &&  defaultUseStepsValue;
+                                     useSteps4Pa = isNotOnlyChild(theNode, thePaObjInRepeatList);
+                                     useSteps4Ma = isNotOnlyChild(theNode, theMaObjInRepeatList);
+                                 } else {
+                                     useSteps = false;
+                                 }  
                             }
+                            condLog("theNode - parent -->", useSteps);
+                        } else if (defaultUseStepsValue == true && ((useNodePa && theNodePa) ||  (useNodeMa && theNodeMa))) {
+                            condLog("theNode - only one parent using", theNode, useSteps, defaultUseStepsValue, "pa", useNodePa,thePaObjInRepeatList, "ma", useNodeMa,theMaObjInRepeatList);
+                            if (
+                                theNode &&
+                                theNode.person &&
+                                theNode.person._data.theSiblings &&
+                                theNode.person._data.theSiblings.length > 1
+                            ) {
+                                useSteps = true;
+                            } else {
+                                if ((useNodePa && theNodePa && thePaObjInRepeatList.id > 0) ){ 
+                                    useSteps4Pa = defaultUseStepsValue;
+                                    useSteps = false;
+
+                                } else if ( (useNodeMa && theNodeMa && theMaObjInRepeatList.id > 0) ){ 
+                                    useSteps4Ma = defaultUseStepsValue;
+                                    useSteps = false;
+                                } else {
+                                    useSteps = false;
+                                }
+                            }
+                            condLog("theNode - parent -->", useSteps, useSteps4Pa, useSteps4Ma);
                         } else {
+                            // condLog("theNode - NO STEPS EVER", theNode, useSteps, defaultUseStepsValue);
                             useSteps = false;
                         }
                     }
@@ -1089,6 +1267,7 @@
                         alreadyConnected.push(thisNodesID);
                     }
 
+                    // condLog("Compare useSteps:", useSteps, useSteps4Pa, useSteps4Ma);
                     if (elementPa) {
                         elementPa.setAttribute(
                             "points",
@@ -1096,7 +1275,7 @@
                         );
                     }
 
-                    if (useSteps == true && elementPa.getAttribute("display") == "block") {
+                    if ((useSteps == true || useSteps4Pa == true) && elementPa.getAttribute("display") == "block") {
                         // NOTE:  Can't get closer than Ypa + 25
 
                         // THIS IS THE PLACE WHERE I THINK WE NEED TO CHECK FOR ELEMENT PA + ELEMENT MA BEING VISIBLE / USEABLE
@@ -1115,10 +1294,14 @@
                                     LineColourArray.length
                             ];
                         condLog(
-                            "Connecting something with Ps ?? : ",
+                            "Connecting something with Ps ?? : ", thisNodesID, 
                             thePeopleList[thisNodesID]._data.thePs,
                             theLineClr
                         );
+
+                        if (theLineClr == undefined) {
+                            theLineClr = LineColourArray[thisNodesID % LineColourArray.length];
+                        }
                         if (isAlreadyConnected) {
                             // do NOTHING
                             elementPa.setAttribute(
@@ -1127,12 +1310,18 @@
                             );
                         } else {
                             // DO ADD THE POINTS AND CONNECTOR
-                            if (elementMa.getAttribute("display") == "block") {
+                            if (elementMa.getAttribute("display") == "block" && useSteps == true) {
                                 // CREATE PARENTAL CONNECTOR TO JOIN BOTH
                                 // NOTE:  WILL HAVE TO ADD LOGIC HERE TO ONLY DO THIS IF FIRST SIDE_BY_EACH COUPLE IN CASE OF MULTIPLE MARRIAGES
-                                theLineClr = acceptableDarkLineClr(theLineClr);
-                                elementPa.setAttribute("style", "fill:none;stroke:" + theLineClr);
-                                elementMa.setAttribute("style", "fill:none;stroke:" + theLineClr);
+                                // theLineClr = acceptableDarkLineClr(theLineClr);
+                                elementPa.setAttribute(
+                                    "style",
+                                    "fill:none;" + strokeWidthStyle + " stroke:" + theLineClr
+                                );
+                                elementMa.setAttribute(
+                                    "style",
+                                    "fill:none;" + strokeWidthStyle + " stroke:" + theLineClr
+                                );
 
                                 elementPa.setAttribute(
                                     "points",
@@ -1165,7 +1354,7 @@
                                     theLineClr: theLineClr,
                                 });
                             } else {
-                                theLineClr = acceptableDarkLineClr(theLineClr);
+                                // theLineClr = acceptableDarkLineClr(theLineClr);
                                 elementPa.setAttribute(
                                     "points",
                                     theXmultiplier * X -
@@ -1202,15 +1391,15 @@
                                     if (repeatAncestorLineTracker.indexOf(theNodePa.person._data.Id) == -1) {
                                         repeatAncestorLineTracker.push(theNodePa.person._data.Id);
                                     }
-                                    let theLineClr =
-                                        LineColourArray[
-                                            repeatAncestorLineTracker.indexOf(theNodePa.person._data.Id) %
-                                                LineColourArray.length
-                                        ];
-                                    theClr = theLineClr;
+                                    // let theLineClr =
+                                    //     LineColourArray[
+                                    //         repeatAncestorLineTracker.indexOf(theNodePa.person._data.Id) %
+                                    //             LineColourArray.length
+                                    //     ];
+                                    // theClr = theLineClr;
                                     elementPa.setAttribute(
                                         "style",
-                                        "fill:none;stroke:" + acceptableDarkLineClr(theLineClr)
+                                        "fill:none;" + strokeWidthStyle + " stroke:" + acceptableDarkLineClr(theLineClr)
                                     );
                                 }
                             }
@@ -1225,15 +1414,27 @@
                             theXmultiplier * X + "," + Y + " " + theXmultiplier * Xma + "," + Yma
                         );
                     }
-                    if (useSteps == true && elementMa.getAttribute("display") == "block") {
+                    if ((useSteps == true || useSteps4Ma == true) && elementMa.getAttribute("display") == "block") {
+                        // let theLineClr = "White";
+                        // if (!theLineClr) {
+                            theLineClr =
+                                LineColourArray[
+                                    repeatAncestorLineTracker.indexOf(thePeopleList[thisNodesID]._data.thePs) %
+                                        LineColourArray.length
+                                ];
+                        // }
                         // NOTE:  Can't get closer than Yma + 25
-                        if (elementPa.getAttribute("display") == "block") {
+                        if (elementPa.getAttribute("display") == "block" && useSteps == true) {
                             // DO NOTHING about CONNECTORS
                             // BUT ... add the link between Ma and Pa
                             elementMa.setAttribute(
                                 "points",
                                 theXmultiplier * Xpa + "," + Ypa + " " + theXmultiplier * Xma + "," + Yma
                             );
+                             elementMa.setAttribute(
+                                 "style",
+                                 "fill:none;" + strokeWidthStyle + " stroke:" + (theLineClr)
+                             );
                         } else {
                             elementMa.setAttribute(
                                 "points",
@@ -2197,6 +2398,91 @@
         WebsView.redraw();
     };
 
+    function getNameToSortBy ( id ) {
+        let sortName = "";
+        if (thePeopleList[id] && thePeopleList[id]._data.LastNameAtBirth) {
+            sortName = thePeopleList[id]._data.LastNameAtBirth + ", ";
+        }
+        if (thePeopleList[id] && thePeopleList[id]._data.FirstName) {
+            sortName += thePeopleList[id]._data.FirstName;
+        } else {
+            sortName += thePeopleList[id]._data.RealName;
+        }
+        return sortName;
+    };
+
+    function getSuffixNoteForDropDown ( ahnNums , ahnNums2 = []) {
+        let suffix = "";
+        let gens = [];
+        let kidID = -1;
+        let addSTARS = false;
+
+        let thisAhnentafel = WebsView.myAhnentafel;
+        if (ahnNums2.length > 0) {
+            thisAhnentafel = WebsView.listOfAhnentafels[0];
+        }
+        for (let index = 0; index < ahnNums.length; index++) {
+            const thisGen = Math.floor(Math.log2(ahnNums[index]));
+            const thisChildAhnNum = Math.floor((ahnNums[index])/2);
+            if (gens.length == 0 || (gens.length > 0 && gens.indexOf(thisGen) == -1)) {
+                gens.push(thisGen);
+            }
+            if (kidID == -1) {
+                kidID = thePeopleList[ thisAhnentafel.list[thisChildAhnNum]]._data.Id;
+            } else if (thisAhnentafel.list[thisChildAhnNum] && thePeopleList[thisAhnentafel.list[thisChildAhnNum]]) {
+                let newKidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
+                if (newKidID != kidID) {
+                    addSTARS = true;
+                }
+            }
+        }
+        if (ahnNums2.length > 0) {
+            thisAhnentafel = WebsView.listOfAhnentafels[1];
+            let index = 0;
+            const thisGen = Math.floor(Math.log2(ahnNums2[index]));
+                
+            gens = [gens[0], thisGen];
+            addSTARS = (ahnNums.length > 1 || ahnNums2.length > 1)
+        }
+        
+        // for (let index = 0; index < ahnNums2.length; index++) {
+        //     const thisGen = Math.floor(Math.log2(ahnNums2[index]));
+        //     const thisChildAhnNum = Math.floor((ahnNums2[index])/2);
+        //     if (gens.length == 0 || (gens.length > 0 && gens.indexOf(thisGen) == -1)) {
+        //         gens.push(thisGen);
+        //     }
+        //     if (kidID == -1) {
+        //         kidID = thePeopleList[ WebsView.myAhnentafel.list[thisChildAhnNum]]._data.Id;
+        //     } else {
+        //         let newKidID = thePeopleList[WebsView.myAhnentafel.list[thisChildAhnNum]]._data.Id;
+        //         if (newKidID != kidID) {
+        //             addSTARS = true;
+        //         }
+        //     }
+        // }
+
+        if (ahnNums2.length== 0) {
+            gens.sort();
+        }
+
+        for (let index = 0; index < gens.length; index++) {
+            if (suffix == "") {
+                suffix = "(";
+            } else {
+                suffix += ", ";
+            }
+            suffix += gens[index];
+        }
+        suffix += ")";
+
+        if (addSTARS == true) {
+            suffix += " **";
+        }
+
+        return suffix;
+
+    };
+
     /**
      * Draw/redraw the tree
      */
@@ -2249,20 +2535,30 @@
 
             if (WebsView.viewMode == "Indi") {
                 // SET UP the special sub-heading for Individual Ancestor web
+                let allOptions = [];
                 let repeatSelector =
                     "<select style='cursor:pointer;' class=selectSimpleDropDown  id=selectRepeatAnc4IndiSELECT  onchange='WebsView.switchRepeatAnc();'>";
                 for (let r = 0; r < WebsView.listOfRepeatAncestors.length; r++) {
                     const element = WebsView.listOfRepeatAncestors[r];
+                    condLog("Select:", element);
                     let isSelected = "";
                     if (WebsView.repeatAncestorNum - 1 == r) {
                         isSelected = " selected ";
                     }
                     if (element.id && thePeopleList[element.id]) {
-                        repeatSelector += "<option value=" + r + isSelected + ">";
-                        repeatSelector += thePeopleList[element.id].getDisplayName();
-                        repeatSelector += "</option>";
+                        let thisOption =  "<option value=" + r + isSelected + ">";
+                        // repeatSelector += thePeopleList[element.id].getDisplayName();
+                        let thisOptionEntry = getNameToSortBy(element.id) + " " + getSuffixNoteForDropDown(element.AhnNums);
+                        thisOption += thisOptionEntry;
+                        thisOption += "</option>";
+                        allOptions.push([thisOptionEntry, thisOption]);
                     }
                 }
+                allOptions.sort();
+                for (let index = 0; index < allOptions.length; index++) {
+                    repeatSelector += allOptions[index][1];
+                }
+                
                 repeatSelector += "</select>";
                 document.getElementById("IndiRepeaterName").innerHTML = repeatSelector;
                 // document.getElementById("IndiRepeaterName").textContent =
@@ -2305,12 +2601,12 @@
 
                 nodes = newNodes;
                 condLog("AFter USE THIS loopage : ", nodes);
-                for (let n = 0; n < nodes.length; n++) {
-                    const element = nodes[n];
-                    if (element){
-                        condLog(element.p, element.ahnNum, element._data);
-                    }
-                }
+                // for (let n = 0; n < nodes.length; n++) {
+                //     const element = nodes[n];
+                //     if (element){
+                //         // condLog(element.p, element.ahnNum, element._data);
+                //     }
+                // }
             }
 
             if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
@@ -2318,10 +2614,12 @@
                 let numOfLegitCommonAncs = 0;
                 WebsView.listOfLegitCommonAncestors = [];
                 WebsView.listOfLegitCommonIDs = [];
+                let allOptions = [];
                 let repeatSelector =
                     "<select style='cursor:pointer;' class=selectSimpleDropDown  id=selectRepeatAnc4IndiSELECT  onchange='WebsView.switchCommonAnc();'>";
                 for (let r = 0; r < WebsView.listOfCommonAncestors.length; r++) {
                     const element = WebsView.listOfCommonAncestors[r];
+                    condLog(element);
 
                     if (element.max <= 2 ** WebsView.numGens2Display) {
                         numOfLegitCommonAncs++;
@@ -2332,11 +2630,27 @@
                             isSelected = " selected ";
                         }
 
-                        repeatSelector += "<option value=" + (numOfLegitCommonAncs - 1) + isSelected + ">";
-                        repeatSelector += thePeopleList[element.Id].getDisplayName();
-                        repeatSelector += "</option>";
+                        // repeatSelector += "<option value=" + (numOfLegitCommonAncs - 1) + isSelected + ">";
+                        // repeatSelector += thePeopleList[element.Id].getDisplayName();
+                        // repeatSelector += "</option>";
+
+                        let thisOption = "<option value=" + (numOfLegitCommonAncs - 1) + isSelected + ">";
+                        // repeatSelector += thePeopleList[element.id].getDisplayName();
+                        let thisOptionEntry =
+                            getNameToSortBy(element.Id) + " " + getSuffixNoteForDropDown(element.Ahns0, element.Ahns1);
+                        thisOption += thisOptionEntry;
+                        thisOption += "</option>";
+
+                        allOptions.push([thisOptionEntry, thisOption]);
+
                     }
                 }
+
+                allOptions.sort();
+                for (let index = 0; index < allOptions.length; index++) {
+                    repeatSelector += allOptions[index][1];
+                }
+
                 repeatSelector += "</select>";
                 WebsView.commonAncestorNum = Math.min(Math.max(1, WebsView.commonAncestorNum), numOfLegitCommonAncs);
                 WebsView.numOfLegitCommonAncs = numOfLegitCommonAncs;
@@ -3121,7 +3435,7 @@
             const element = nodes[index];
             if (element && element.ahnNum) {
                 if (element.ahnNum == thisAhnNum) {
-                    condLog("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
+                    // condLog("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
                     if (whichPrime >= 0 && element.p != whichPrime) {
                         // do nothing
                         // condLog("do NOthing ", whichPrime, element.p, element.ahnNum);
@@ -3520,14 +3834,14 @@
 
                 // LET's ENSURE THAT THE NEW PERCENTILE IS BETWEEN COUPLES and NOT in the MIDDLE of a COUPLE (at the highest GEN)
                 let closestPosNum = Math.ceil( ((2 ** (maxGenNum + 2) ) * (newPercentile  -  1.0 * WebsView.currentPrimeNum)  - 1) /2  ) ;
-                condLog("CLOSEST POS NUM @ gen ", maxGenNum, " is ", closestPosNum);
+                // condLog("CLOSEST POS NUM @ gen ", maxGenNum, " is ", closestPosNum);
                 // ROUND to nearest multiple of 8 (to make it directly above an empty space from below)
                 closestPosNum = 8 * Math.max(1, Math.round( closestPosNum / 8 )) ;
                 // while (closestPosNumArray.length > 0 && closestPosNumArray.indexOf(closestPosNum) > -1) {
                 //     closestPosNum += 2;
                 // }
                 closestPosNumArray.push(closestPosNum);
-                condLog("==> ", closestPosNum + " / " + (2 ** (maxGenNum + 1) ));
+                // condLog("==> ", closestPosNum + " / " + (2 ** (maxGenNum + 1) ));
                 if (element.AhnNums[0] % 2 == 0 ) {
                     closestPosNum -= 0.5;
                     if (WebsView.viewMode == "Indi") {
@@ -3688,7 +4002,7 @@
                     let theDudPerson = thePeopleList[element.id];
                     if (theDudPerson){
                         theDudPerson._data.theClr = "#B0B0B0";
-                        condLog("dud", theDudPerson);
+                        // condLog("dud", theDudPerson);
                     }
 
                     // for (let d = 0; d < element.AhnNums.length; d++) {
