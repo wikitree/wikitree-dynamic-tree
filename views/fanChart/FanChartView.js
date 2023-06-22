@@ -783,6 +783,7 @@
                                 { value: "DNAinheritance", text: "X/Y/mt DNA inheritance" },
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "-", text: "-" },
+                                { value: "bioText", text: "Biography" },
                                 { value: "cat", text: "Category" },
                                 // { value: "review", text: "Profiles needing review" },
                             ],
@@ -812,6 +813,12 @@
                                 // { value: "numSpouses", text: "number of spouses" },
                             ],
                             defaultValue: "Unsourced",
+                        },
+                        {
+                            optionName: "bioText",
+                            type: "text",
+                            label: "Search text",
+                            defaultValue: "",
                         },
                     ],
                 },
@@ -1179,6 +1186,11 @@
         catNameSelector.style.display = "none";
         catNameSelectorLabel.style.display = "none";
         
+        let bioTextSelector = document.getElementById("highlight_options_bioText");
+        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
+        bioTextSelector.style.display = "none";
+        bioTextSelectorLabel.style.display = "none";
+        
 
         condLog("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
         // FanChartView.showFandokuLink = theCheckIn;
@@ -1217,6 +1229,9 @@
         let howDNAlinksRadiosBR = document.getElementById("highlight_options_howDNAlinks_BR");
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+        
+        let bioTextSelector = document.getElementById("highlight_options_bioText");
+        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
         
         condLog("VALUES:", bkgdClrSelector.value, highlightSelector.value);
       
@@ -1260,11 +1275,23 @@
             howDNAlinksRadiosBR.parentNode.style.display = "none";
             catNameSelector.style.display = "inline-block";
             catNameSelectorLabel.style.display = "inline-block";
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
+        } else if (highlightSelector.value == "bioText") {
+            break4DNASelector.parentNode.style.display = "none";
+            howDNAlinksRadiosBR.parentNode.style.display = "none";
+            bioTextSelector.style.display = "inline-block";
+            bioTextSelectorLabel.style.display = "inline-block";
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
+
         } else {
             break4DNASelector.parentNode.style.display = "block";
             howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
             catNameSelector.style.display = "none";
             catNameSelectorLabel.style.display = "none";
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
         }
     };
 
@@ -1889,6 +1916,7 @@
         recalcAndDisplayNumGens();
         redoWedgesForFanChart();
         FanChartView.myAncestorTree.draw();
+        findCategoriesOfAncestors();
     };
 
     FanChartView.cancelSettings = function () {
@@ -4652,6 +4680,34 @@
                  return true;
              }
 
+             let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births", "Estimated Date"];
+             for (let index = 0; index < acceptedStickers.length; index++) {
+                const element = acceptedStickers[index];
+                if (catNameSelector.value.indexOf(element) > -1) {
+                     if (
+                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
+                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                             "{{" + catNameSelector.value
+                         ) > -1
+                     ) {
+                         return true;                     
+                     }
+                }
+                
+             }
+
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+            let bioTextSelector = document.getElementById("highlight_options_bioText");
+            condLog("Looking for BIOs that Have the following: ", bioTextSelector.value);
+             if (
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio && 
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.toUpperCase().indexOf(bioTextSelector.value.toUpperCase() ) > -1
+             ) {
+                 return true;
+             }
+
         }
 
         return false;
@@ -4710,7 +4766,7 @@
         condLog("findCategoriesOfAncestors");
         categoryList = [];
         stickerList = [];
-        for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
+        for (let index = 1; index < 2 ** FanChartView.numGens2Display; index++) {
             const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
             if (thisPerp) {
                 if (thisPerp._data.bio) {
@@ -4740,7 +4796,7 @@
     }
 
 
-        function parseThisBio(bio) {
+    function parseThisBio(bio) {
 
         let catBeginBrackets = bio.indexOf("[[Category:");
         while (catBeginBrackets > -1) {
