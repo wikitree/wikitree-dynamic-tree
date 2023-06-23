@@ -2,6 +2,7 @@ import { AncestorTree } from "./ancestor_tree.js";
 import { showTree } from "./display.js";
 
 export class AncestorLinesExplorer {
+    static #COOKIE_NAME = "wt_ale_options";
     static #helpText = `
         <xx>[ x ]</xx>
         <h2 style="text-align: center">About Ancestor Line Explorer</h2>
@@ -28,6 +29,9 @@ export class AncestorLinesExplorer {
                 You can collapse (hide) branches of the tree by clicking on any circle that is coloured in white.
             </li><li>
                 You can expand the tree by clicking on any circle that is coloured in steel-blue.
+            </li><li>
+                If you shift-click on a steel-blue circle in the highest generation of the tree, it will expand that branch
+                to the full extent of the available data.
             </li><li>
                 Click on the name of a person to open a new tab with that person's Wikitree Profile.
             </li><li>
@@ -81,6 +85,11 @@ export class AncestorLinesExplorer {
                 'All',the complete tree will be shown (subject to the setting of the other parameters).
             </li>
         </ul>
+        <p>
+            If the tree extends to beyond the right of the screen and you need a scroll bar in order to scroll, scroll down
+            untill you see the scroll bar at the bottom (hopefully this will not be necessary in the near future).
+            Alternatively you can drag the tree left and right.
+        </p>
         <p>
             If you find problems with this app or have suggestions for improvements, please
             <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641" , target="_blank"
@@ -212,12 +221,12 @@ export class AncestorLinesExplorer {
                     </td>
                     <td>
                       <input
-                        id="labels"
+                        id="labelsLeft"
                         type="checkbox"
                         checked
                         title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right." />
                       <label
-                        for="labels"
+                        for="labelsLeft"
                         title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right."
                         class="right">
                         Labels left only</label
@@ -266,7 +275,9 @@ export class AncestorLinesExplorer {
         AncestorTree.init();
 
         $("#generation").on("change", function () {
-            AncestorLinesExplorer.setGetPeopleButtonText($("#generation").val());
+            const maxGen = $("#generation").val();
+            AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
+            AncestorLinesExplorer.updateMaxLevelSelection(maxGen, $("#maxLevel").val());
         });
         $("#getAncestorsButton").on("click", AncestorLinesExplorer.getAncestorsAndPaint);
         $("#drawTreeButton").on("click", AncestorLinesExplorer.findPathsAndDrawTree);
@@ -299,6 +310,7 @@ export class AncestorLinesExplorer {
             $("#drawTreeButton").click();
         });
         AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
+        AncestorLinesExplorer.retrieveOptionsFromCookie();
 
         const container = $("#theSvg");
         container.draggable({ axis: "x" });
@@ -357,16 +369,17 @@ export class AncestorLinesExplorer {
     }
 
     static findPathsAndDrawTree(event) {
-        const selectedMaxLevel = Math.min(document.getElementById("maxLevel").value, AncestorTree.maxGeneration);
-        AncestorLinesExplorer.updateMaxLevelSelection(AncestorTree.maxGeneration, selectedMaxLevel);
+        const validSelectedMaxLevel = Math.min(document.getElementById("maxLevel").value, AncestorTree.maxGeneration);
+        AncestorLinesExplorer.updateMaxLevelSelection(AncestorTree.maxGeneration, validSelectedMaxLevel);
         if (event.shiftKey) {
             AncestorLinesExplorer.setEarlySaAfricaIndiaIds();
         }
+        AncestorLinesExplorer.saveOptionCookies();
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
         const connectors = document.getElementById("connectors").checked;
         const hideTreeHeader = document.getElementById("hideTreeHeader").checked;
-        const labelsLeftOnly = document.getElementById("labels").checked;
+        const labelsLeftOnly = document.getElementById("labelsLeft").checked;
         let fullTreelevel = document.getElementById("maxLevel").value;
         if (fullTreelevel == 0) fullTreelevel = Number.MAX_SAFE_INTEGER;
         AncestorLinesExplorer.clearDisplay();
@@ -491,6 +504,49 @@ export class AncestorLinesExplorer {
 
     static hideShakingTree() {
         $("#tree").slideUp();
+    }
+
+    static getCookie(name) {
+        return WikiTreeAPI.cookie(name) || null;
+    }
+
+    static setCookie(cookieName, value) {
+        return WikiTreeAPI.cookie(cookieName, value, { expires: 365 });
+    }
+
+    static saveOptionCookies() {
+        const options = {
+            expandPaths: document.getElementById("expandPaths").checked,
+            onlyPaths: document.getElementById("onlyPaths").checked,
+            connectors: document.getElementById("connectors").checked,
+            labelsLeftOnly: document.getElementById("labelsLeft").checked,
+            hideTreeHeader: document.getElementById("hideTreeHeader").checked,
+            brickWallColour: document.getElementById("aleBrickWallColour").value,
+            edgeFactor: document.getElementById("edgeFactor").value,
+            heightFactor: document.getElementById("tHFactor").value,
+            maxLevel: document.getElementById("maxLevel").value,
+            otherWtIds: document.getElementById("otherWtIds").value,
+        };
+        // console.log(`Saving options ${JSON.stringify(options)}`);
+        AncestorLinesExplorer.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
+    }
+
+    static retrieveOptionsFromCookie() {
+        const optionsJson = AncestorLinesExplorer.getCookie(AncestorLinesExplorer.#COOKIE_NAME);
+        // console.log(`Retrieved options ${optionsJson}`);
+        if (optionsJson) {
+            const opt = JSON.parse(optionsJson);
+            $("#expandPaths").attr("checked", opt.expandPaths);
+            $("#onlyPaths").attr("checked", opt.onlyPaths);
+            $("#connectors").attr("checked", opt.connectors);
+            $("#labelsLeft").attr("checked", opt.labelsLeftOnly);
+            $("#hideTreeHeader").attr("checked", opt.hideTreeHeader);
+            $("#aleBrickWallColour").val(opt.brickWallColour);
+            $("#edgeFactor").val(opt.edgeFactor);
+            $("#tHFactor").val(opt.heightFactor);
+            $("#maxLevel").val(opt.maxLevel);
+            $("#otherWtIds").val(opt.otherWtIds);
+        }
     }
 
     static setEarlySaAfricaIndiaIds() {
