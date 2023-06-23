@@ -2780,6 +2780,9 @@
                     )}</div>
 						</div>
 					</div>
+                    <div class="box centered" id=mDateFor${
+                        ancestorObject.ahnNum
+                    } style="background-color: white ; border:0; ">m.<br/>28 Aug<br/>1987</div>
                     `;
                 }
             });
