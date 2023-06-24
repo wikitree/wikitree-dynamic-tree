@@ -86,9 +86,8 @@ export class AncestorLinesExplorer {
             </li>
         </ul>
         <p>
-            If the tree extends to beyond the right of the screen and you need a scroll bar in order to scroll, scroll down
-            untill you see the scroll bar at the bottom (hopefully this will not be necessary in the near future).
-            Alternatively you can drag the tree left and right.
+            In addition to being able to scroll the tree left and right if it extends beyound the screen limits, you can
+            also drag it left and right. Currently you can only scroll it up and down, not drag it.
         </p>
         <p>
             If you find problems with this app or have suggestions for improvements, please
@@ -314,6 +313,7 @@ export class AncestorLinesExplorer {
 
         const container = $("#theSvg");
         container.draggable({ axis: "x" });
+        container.floatingScroll();
 
         // Add click action to help button
         const helpButton = document.getElementById("help-button");
@@ -405,6 +405,7 @@ export class AncestorLinesExplorer {
             hideTreeHeader,
             labelsLeftOnly
         );
+        $("#theSvg").floatingScroll("update");
     }
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {
