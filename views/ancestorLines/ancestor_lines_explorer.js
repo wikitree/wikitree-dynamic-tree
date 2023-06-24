@@ -86,10 +86,6 @@ export class AncestorLinesExplorer {
             </li>
         </ul>
         <p>
-            In addition to being able to scroll the tree left and right if it extends beyound the screen limits, you can
-            also drag it left and right. Currently you can only scroll it up and down, not drag it.
-        </p>
-        <p>
             If you find problems with this app or have suggestions for improvements, please
             <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641" , target="_blank"
             >let me know</a>.
@@ -138,15 +134,19 @@ export class AncestorLinesExplorer {
               <br />
               <fieldset>
                 <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
-                <label for="otherWtIds" title="Identify people of interest that need to be highlighted in the tree."
-                >People of Interest:</label>
-                <input
-                  id="otherWtIds"
-                  type="text"
-                  placeholder="(Optional) Enter comma-separated WikiTree IDs"
-                  size="110"
-                  title="Identify people of interest that need to be highlighted in the tree." />
                 <table id="optionsTbl">
+                  <tr>
+                    <td colspan="5">
+                      <label for="otherWtIds" title="Identify people of interest that need to be highlighted in the tree.">
+                        People of Interest:</label
+                      ><input
+                        id="otherWtIds"
+                        type="text"
+                        placeholder="(Optional) Enter comma-separated WikiTree IDs"
+                        size="110"
+                        title="Identify people of interest that need to be highlighted in the tree." />
+                    </td>
+                  </tr>
                   <tr>
                     <td>
                       <input
@@ -264,6 +264,10 @@ export class AncestorLinesExplorer {
                 </table>
               </fieldset>
             </div>
+            <div class="floating-button-div" style="position: fixed; bottom: 20px; left: 20px;">
+                <button id="slideLeft" title="Scroll left" class="small button">&larr;</button>
+                <button id="slideRight" title="Scroll right" class="small button">&rarr;</button>
+            </div>
             <div id="svgContainer">
               <section id="theSvg"></section>
             </div>
@@ -312,8 +316,25 @@ export class AncestorLinesExplorer {
         AncestorLinesExplorer.retrieveOptionsFromCookie();
 
         const container = $("#theSvg");
-        container.draggable({ axis: "x" });
         container.floatingScroll();
+        $("#slideLeft").on("click", function (event) {
+            event.preventDefault();
+            container.animate(
+                {
+                    scrollLeft: "-=300px",
+                },
+                "slow"
+            );
+        });
+        $("#slideRight").on("click", function (event) {
+            event.preventDefault();
+            container.animate(
+                {
+                    scrollLeft: "+=300px",
+                },
+                "slow"
+            );
+        });
 
         // Add click action to help button
         const helpButton = document.getElementById("help-button");

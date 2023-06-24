@@ -40,7 +40,7 @@ export function showTree(
     }
 
     function calculateTreeWidth() {
-        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : edgeFactor * 2);
+        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : 2 * edgeFactor);
         // console.log(
         //     `treeWidth: currentMaxShowDepth:${currentMaxShowDepth} * eF:${edgeFactor} + ${
         //         labelsLeftOnly ? 0 : edgeFactor * 2
@@ -50,9 +50,7 @@ export function showTree(
     }
 
     function calculateSvgWidth(tWidth) {
-        const fudgeFactor = edgeFactor;
-        const w = tWidth + margin.right + margin.left + fudgeFactor;
-        // console.log(`svg width = w:${tWidth} + r:${margin.right} + l:${margin.left} + fudge:${fudgeFactor} = ${w}`);
+        const w = tWidth + margin.right + margin.left;
         return w;
     }
 
@@ -130,11 +128,7 @@ export function showTree(
         const wtId = n.data.getWtId();
 
         if (showOnlyLOIs) {
-            if (
-                loiNodes.has(wtId) &&
-                !loiEndpoints.includes(wtId) &&
-                (expandLOIs || n.data.isBelowGeneration(maxGenToShow))
-            ) {
+            if (loiNodes.has(wtId) && !loiEndpoints.includes(wtId) && (expandLOIs || n.depth < maxGenToShow - 1)) {
                 if (n.children) {
                     for (const c of n.children) {
                         q.push(c);
@@ -144,10 +138,7 @@ export function showTree(
                 collapseSubtree(n);
             }
         } else {
-            if (
-                n.data.isBelowGeneration(maxGenToShow) ||
-                (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))
-            ) {
+            if (n.depth < maxGenToShow - 1 || (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))) {
                 if (n.children) {
                     for (const c of n.children) {
                         q.push(c);
