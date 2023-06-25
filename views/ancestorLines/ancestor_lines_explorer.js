@@ -96,7 +96,7 @@ export class AncestorLinesExplorer {
     constructor(selector, startId) {
         this.selector = selector;
         $(selector).html(`<div id="aleContainer" class="ale">
-            <div id="controlBlock">
+            <div id="controlBlock" class="ale-not-printable">
               <label for="generation"  title="The number of generations to fetch from WikiTree">Max Generations:</label
               ><select id="generation" title="The number of generations to fetch from WikiTree">
                 <option value="2">2</option>
@@ -263,12 +263,12 @@ export class AncestorLinesExplorer {
                   </tr>
                 </table>
               </fieldset>
-            </div>
-            <div class="floating-button-div" style="position: fixed; bottom: 20px; left: 20px;">
+              <div class="floating-button-div" style="position: fixed; bottom: 20px; left: 20px;">
                 <button id="slideLeft" title="Scroll left" class="small button">&larr;</button>
                 <button id="slideRight" title="Scroll right" class="small button">&rarr;</button>
+              </div>
             </div>
-            <div id="svgContainer">
+            <div id="svgContainer" class="ale-printable">
               <section id="theSvg"></section>
             </div>
         </div>`);
@@ -323,7 +323,7 @@ export class AncestorLinesExplorer {
                 {
                     scrollLeft: "-=300px",
                 },
-                "slow"
+                "fast"
             );
         });
         $("#slideRight").on("click", function (event) {
@@ -332,13 +332,24 @@ export class AncestorLinesExplorer {
                 {
                     scrollLeft: "+=300px",
                 },
-                "slow"
+                "fast"
             );
         });
+
+        if (typeof window.aleShowingInfo === "undefined") {
+            window.aleShowingInfo = true;
+        } else if (!window.aleShowingInfo) {
+            wtViewRegistry.hideInfoPanel();
+            window.aleShowingInfo = false;
+        }
 
         // Add click action to help button
         const helpButton = document.getElementById("help-button");
         helpButton.addEventListener("click", function () {
+            if (window.aleShowingInfo) {
+                wtViewRegistry.hideInfoPanel();
+                window.aleShowingInfo = false;
+            }
             $("#help-text").slideToggle();
         });
         $("#help-text").draggable();

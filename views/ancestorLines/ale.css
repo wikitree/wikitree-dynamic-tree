@@ -160,3 +160,9 @@ div.ale input {
 .ale #help-text:active {
   cursor: grabbing;
 }
+
+@media print {
+  .ale-not-printable {
+    display: none;
+  }
+}
