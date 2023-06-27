@@ -517,7 +517,7 @@ window.DescendantsView = class DescendantsView extends View {
 
         $("#view-container").css("overflow", "inherit");
     }
-}
+};
 
 function turnOffOtherButtons() {
     $("#xButton").addClass("off");
