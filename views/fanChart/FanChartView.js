@@ -1304,9 +1304,9 @@
         document.getElementById("WarningMessageBelowButtonBar").innerHTML = theMessage;
     }
 
-    function showTemporaryMessageBelowButtonBar(theMessage) {
+    function showTemporaryMessageBelowButtonBar(theMessage, delay=3000) {
         flashWarningMessageBelowButtonBar(theMessage);
-        setTimeout(clearMessageBelowButtonBar, 3000);
+        setTimeout(clearMessageBelowButtonBar, delay);
     }
 
     function clearMessageBelowButtonBar() {
@@ -1955,7 +1955,7 @@
      * Load and display a person
      */
     FanChartView.prototype.load = function (id) {
-        // condLog("FanChartView.prototype.load");
+        condLog("FanChartView.prototype.load - 1958", id);
         var self = this;
         
         self._load(id).then(function (person) {
@@ -2022,41 +2022,95 @@
                 }
             ).then(function (result) {
                 FanChartView.theAncestors = result[2];
-                condLog("theAncestors:", FanChartView.theAncestors);
-                // condLog("person with which to drawTree:", person);
+                let resultByKey = result[1];
+                let loadFather = -1;
+                let loadMother = -1;
 
-                // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
-               
-                // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                for (const ancNum in FanChartView.theAncestors) {
-                    let thePerson = FanChartView.theAncestors[ancNum];
-                    if (thePerson.Id < 0) {
-                        thePerson.Id = 100 - thePerson.Id;
-                        thePerson["Name"] = "Private-" + thePerson.Id;
-                        thePerson["FirstName"] = "Private";
-                        thePerson["LastNameAtBirth"] = "TBD!";
+                condLog("ORIGINAL Ancestors:", FanChartView.theAncestors);
+                // console.log(result);
+                // console.log(resultByKey[id]);
+                // console.log(resultByKey[id].Id);
+                // console.log(FanChartView.theAncestors[ resultByKey[id].Id ]);
+              
+                    // condLog("person with which to drawTree:", person);
+
+                    // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
+
+                    // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                    for (const ancNum in FanChartView.theAncestors) {
+                        let thePerson = FanChartView.theAncestors[ancNum];
+                        // console.log("ADDING ", thePerson);
+                        if (thePerson.Id < 0) {
+                            thePerson.Id = 100 - thePerson.Id;
+                            thePerson["Name"] = "Private-" + thePerson.Id;
+                            thePerson["FirstName"] = "Private";
+                            thePerson["LastNameAtBirth"] = "TBD!";
+                        }
+                        if (thePerson.Mother < 0) {
+                            thePerson.Mother = 100 - thePerson.Mother;
+                        }
+                        if (thePerson.Father < 0) {
+                            thePerson.Father = 100 - thePerson.Father;
+                        }
+                        thePeopleList.add(thePerson);
+                        // console.log("ADDED ", thePerson);
                     }
-                    if (thePerson.Mother < 0) {
-                        thePerson.Mother = 100 - thePerson.Mother;
-                    }
-                    if (thePerson.Father < 0) {
-                        thePerson.Father = 100 - thePerson.Father;
-                    }
-                    thePeopleList.add(thePerson);
-                    
-                }
                 
                 condLog("person:", person);
 
-                person._data.Father = FanChartView.theAncestors[id].Father;
-                person._data.Mother = FanChartView.theAncestors[id].Mother;
+                  if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
+                    //   console.log("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
+                      let privatePerson = FanChartView.theAncestors[-1];
+                    //   console.log(privatePerson);
+                    //   console.log(privatePerson.Id, privatePerson.Mother, privatePerson.Father);
+                    //   console.log(document.getElementById("wt-id-text").value);
+                      privatePerson["Name"] = document.getElementById("wt-id-text").value
+                      privatePerson["FirstName"] = "Private";
+                      privatePerson["LastNameAtBirth"] = "Person";
+                    //   privatePerson["Id"] = id;
+                      privatePerson["Gender"] = "";
+                    
+                    if (privatePerson["Father"] && privatePerson["Father"] > 0) {
+                        // excellent - a father already exists!
+                        loadFather = privatePerson["Father"];                        
+                    } else {
+                        privatePerson["Father"] = 102;
+                        thePeopleList.add({
+                            Id:102 , FirstName:"Private", Name:"Private-102", Gender:"Male", LastNameAtBirth:"Father"
+                        });
+                    } 
+                        
+                    if (privatePerson["Mother"] && privatePerson["Mother"] > 0) {
+                            // excellent - a Mother already exists!
+                            loadMother = privatePerson["Mother"];
+                    } else {     
+                        privatePerson["Mother"] = 103;
 
+                        thePeopleList.add({
+                          Id: 103,
+                          FirstName: "Private",
+                          Name: "Private-103",
+                          Gender: "Female", LastNameAtBirth:"Mother"
+                        
+                        });
+                    }
+
+
+                    person._data = privatePerson;
+
+                      
+                  } else {
+
+                      person._data.Father = FanChartView.theAncestors[id].Father;
+                      person._data.Mother = FanChartView.theAncestors[id].Mother;
+                    }
+                      
                 // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
                 FanChartView.myAhnentafel.update(person);
                 
                 let relativeName = [
                      "kid",
-                     "self",
+                     "Person",
                      "Father",
                      "Mother",
                      "Grandfather",
@@ -2077,7 +2131,7 @@
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
                     // condLog("Peep ",a, thisPeep);
-                    if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                    if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
                         
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
                         if (a % 2 == 0) {
@@ -2090,11 +2144,129 @@
                         // condLog("FOUND a TBD!", thisPeep);
                     }
                 }
+
+                // console.log("ALL PEOPLES WHO ON EARTH DO DWELL:");
+                // console.log(thePeopleList);
+
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
                 fillOutFamilyStatsLocsForAncestors();
-                loadBiosNow(id) ;
+                if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
+                    if (document.getElementById("wt-api-login").textContent.indexOf("Logged in") == -1) {
+                        showTemporaryMessageBelowButtonBar("This is a private profile, with private parents. <br/>Log into the APPS server and try again.", 8000);
+                    } else {
+                        showTemporaryMessageBelowButtonBar("This is a private profile, with private parents.", 5000);
+                    }
+
+                    if (loadFather > -1 || loadMother > -1) {
+                        // console.log("LOADING SOME PARENTS STUFF NOW!");
+                        let listOfIDs = [];
+                        if (loadFather > -1) {
+                            listOfIDs.push(loadFather);
+                        } 
+                        if (loadMother > -1) {
+                            listOfIDs.push(loadMother);
+                        } 
+
+                        WikiTreeAPI.getPeople(
+                        // (appId, IDs, fields, options = {}) 
+                        APP_ID , listOfIDs,
+                    
+                        [
+                            "Id",
+                            "Derived.BirthName",
+                            "Derived.BirthNamePrivate",
+                            "FirstName",
+                            "MiddleInitial",
+                            "MiddleName",
+                            "RealName",
+                            // "Bio",
+                            "IsLiving",
+                            "Nicknames",
+                            "Prefix",
+                            "Suffix",
+                            "LastNameAtBirth",
+                            "LastNameCurrent",
+                            "BirthDate",
+                            "BirthLocation",
+                            "DeathDate",
+                            "DeathLocation",
+                            "Mother",
+                            "Father",
+                            "Children",
+                            "Parents",
+                            "Spouses",
+                            "Siblings",
+                            "Photo",
+                            "Name",
+                            "Gender",
+                            "Privacy",
+                            "DataStatus"
+                        ],
+                        {
+                            ancestors:4
+                        }
+                    ).then(function (result2) {
+                        FanChartView.theAncestors = result2[2];
+                        let resultByKey = result2[1];
+
+                        // console.log(result2);
+
+                        for (const ancNum in FanChartView.theAncestors) {
+                            let thePerson = FanChartView.theAncestors[ancNum];
+                            // console.log("ADDING ", thePerson);
+                            if (thePerson.Id < 0) {
+                                thePerson.Id = 110 - thePerson.Id;
+                                thePerson["Name"] = "Private-" + thePerson.Id;
+                                thePerson["FirstName"] = "Private";
+                                thePerson["LastNameAtBirth"] = "TBD!";
+                            }
+                            if (thePerson.Mother < 0) {
+                                thePerson.Mother = 110 - thePerson.Mother;
+                            }
+                            if (thePerson.Father < 0) {
+                                thePerson.Father = 110 - thePerson.Father;
+                            }
+                            thePeopleList.add(thePerson);
+                            // console.log("ADDED ", thePerson);
+                        }
+
+                        FanChartView.myAhnentafel.update(person);
+
+                        // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                        for (var a = 1; a < 16; a++) {
+                            let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
+                            // condLog("Peep ",a, thisPeep);
+                            if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                                thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                                if (a % 2 == 0) {
+                                    thisPeep._data["Gender"] = "Male";
+                                } else {
+                                    thisPeep._data["Gender"] = "Female";
+                                }
+                                // condLog("FOUND a TBD!", thisPeep);
+                            }
+                        }
+
+                        self.drawTree(person);
+                        clearMessageBelowButtonBar();
+                        populateXAncestorList(1);
+                        fillOutFamilyStatsLocsForAncestors();
+
+                        loadBiosNow(listOfIDs);
+
+                        
+                        showTemporaryMessageBelowButtonBar("The central person has a private profile.", 5000);
+                    });
+                }
+                     
+                } else {
+                    loadBiosNow(id);
+                }
+
+                
+
             });
         });
     };
@@ -2159,7 +2331,7 @@
      * Testing username change ...
      */
     FanChartView.prototype._load = function (id) {
-        // condLog("INITIAL _load - line:118", id) ;
+        condLog("INITIAL _load - line:118", id) ;
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -2191,7 +2363,7 @@
             "Privacy",
             "DataStatus",
         ]);
-        // condLog("_load PersonObj:",thePersonObject);
+        condLog("_load PersonObj:",thePersonObject);
         return thePersonObject;
     };
 
@@ -3028,7 +3200,11 @@
                     if (!photoUrl && FanChartView.currentSettings["photo_options_useSilhouette"] == false) {
                         thePhotoDIV.style.display = "none";
                         theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                    } else if (!photoUrl && FanChartView.currentSettings["photo_options_useSilhouette"] == true && d._data.Gender == "") {
+                        thePhotoDIV.style.display = "none";
+                        theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
                     } else {
+
                         thePhotoDIV.style.display = "inline-block";
                     }
                 } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {

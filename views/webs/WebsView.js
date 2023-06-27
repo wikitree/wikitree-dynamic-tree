@@ -2237,7 +2237,7 @@
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
                     // condLog("Peep ",a, thisPeep);
-                    if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                    if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
                         if (a % 2 == 0) {
                             thisPeep._data["Gender"] = "Male";
@@ -5216,7 +5216,7 @@
                         for (var a = 1; a < 16 && passNum == 1; a++) {
                             let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
                             // condLog("Peep ",a, thisPeep);
-                            if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                            if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
                                 thisPeep._data["LastNameAtBirth"] = relativeName[a];
                                 if (a % 2 == 0) {
                                     thisPeep._data["Gender"] = "Male";
