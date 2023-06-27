@@ -60,3 +60,13 @@ button.load-more {
   float: right;
   margin: 0.2em;
 }
+
+#seeUpTo {
+  margin: 0.2em;
+}
+#generationSelect {
+  margin: 0.2em;
+  padding: 0.3em 0 0.3em 0.5em;
+  width: 6em !important;
+  min-width: 6em;
+}

@@ -10,7 +10,9 @@ class DescendantsView extends View {
     init(container_selector, person_id) {
         $(`<div id='descendantsButtons'>
         <button class='small' id='remove'></button>
-        <button class='small' id='showHideAll'>Show All</button>
+        <button class='small' id='showHideAll'>Expand All</button>
+        <button class='small' id="seeUpTo">Show to Generation:</button>
+        <select id="generationSelect"></select>
         </div>`).appendTo($(container_selector));
         // Attach click event listener to 'li' elements
         $(container_selector).on("click", "li", function (e) {
@@ -23,7 +25,7 @@ class DescendantsView extends View {
         $(container_selector).append(
             $("<img src='https://apps.wikitree.com/apps/beacall6/images/tree.gif' id='shakyTree'>")
         );
-        fetchDescendants(person_id);
+        fetchDescendants(person_id, 1);
         $("#shakyTree").show();
 
         $(document).on("click", ".profileLink", function (e) {
@@ -39,12 +41,34 @@ class DescendantsView extends View {
                 $(this).closest("li").trigger("click");
             }
             let person_id = $(this).parent().data("id");
-            fetchDescendants(person_id);
+            let generation = $(this).parent().children("ul").data("generation");
+            fetchDescendants(person_id, generation);
+        });
+        $(container_selector).on("change", "#generationSelect", function (e) {
+            showUpToGeneration();
+        });
+        $(container_selector).on("click", "#seeUpTo", function (e) {
+            showUpToGeneration();
         });
     }
 }
 
-async function fetchDescendants(person_id) {
+function showUpToGeneration() {
+    // Show all generations up to the selected generation and hide the rest
+    var selectedGeneration = $("#generationSelect").val();
+    $("#descendants ul").each(function () {
+        var generation = $(this).data("generation");
+        if (generation <= selectedGeneration) {
+            $(this).addClass("expanded");
+            $(this).closest("li").children(".arrow").addClass("rotated");
+        } else {
+            $(this).removeClass("expanded");
+            $(this).closest("li").children(".arrow").removeClass("rotated");
+        }
+    });
+}
+
+async function fetchDescendants(person_id, generation) {
     const fields = [
         "BirthDate",
         "BirthLocation",
@@ -76,8 +100,7 @@ async function fetchDescendants(person_id) {
     //log the number of keys in people[2]
     console.log(Object.keys(people[2]).length);
     $("#shakyTree").hide();
-    //getLinesOfDescent(person_id, people[2]);
-    breadthFirstDescent(person_id, people[2]);
+    breadthFirstDescent(person_id, people[2], generation);
     const rootPerson = people[2][Object.keys(people[1])[0]];
 }
 
@@ -119,14 +142,14 @@ function setUpRemoveButton() {
         });
         $("#showHideAll").on("click", function () {
             var btn = $(this);
-            if (btn.text() == "Show All") {
+            if (btn.text() == "Expand All") {
                 $("#descendants li ul").addClass("expanded");
                 $("#descendants li .arrow").addClass("rotated");
-                btn.text("Hide All");
+                btn.text("Collapse All");
             } else {
                 $("#descendants li ul").removeClass("expanded");
                 $("#descendants li .arrow").removeClass("rotated");
-                btn.text("Show All");
+                btn.text("Expand All");
             }
         });
 
@@ -136,24 +159,28 @@ function setUpRemoveButton() {
     }
 }
 
-function breadthFirstDescent(rootId, people) {
-    let toProcess = [rootId];
+function breadthFirstDescent(rootId, people, generation) {
+    // Add a generation property for each item in the toProcess queue
+    let toProcess = [{ id: rootId, generation: generation }];
     while (toProcess.length > 0) {
-        let currentId = toProcess.shift();
+        let currentItem = toProcess.shift();
+        let currentId = currentItem.id;
+        let currentGeneration = currentItem.generation;
         let person = people[currentId];
         if (person.HasChildren) {
             let children = Object.values(people).filter(
                 (child) => child.Father == currentId || child.Mother == currentId
             );
             for (let child of children) {
-                toProcess.push(child.Id);
+                // Add child to the queue with generation increased by 1
+                toProcess.push({ id: child.Id, generation: currentGeneration + 1 });
             }
         }
-        displayPerson(currentId, people);
+        displayPerson(currentId, people, currentGeneration);
     }
 }
 
-function displayPerson(id, people) {
+function displayPerson(id, people, generation) {
     const person = people[id];
     if (!person) {
         return;
@@ -177,34 +204,77 @@ function displayPerson(id, people) {
             deathYear = person.DeathDateDecade;
         }
         const theGender = person.Gender;
-        const nameLink = `<a class='profileLink' href='https://www.wikitree.com/wiki/${person.Id}' target='_blank'>${fullName}</a>`;
-        // Count the number of children in the current API results
+        const nameLink = `<a class='profileLink' href="https://www.wikitree.com/wiki/${person.Id}" target='_blank'>${fullName}</a>`;
         const numberOfChildren = Object.values(people).filter(
             (child) => child.Father == id || child.Mother == id
         ).length;
-
         const hasUnloadedChildren = person.HasChildren && numberOfChildren === 0;
-
         const loadMoreButton = hasUnloadedChildren ? "<button class='load-more small'>More</button>" : "";
         const listItemContent = `${nameLink} (${birthYear} ${person.BirthLocation} - ${deathYear} ${person.DeathLocation}) ${loadMoreButton}`;
         const parent = $("li[data-id='" + person.Father + "'], li[data-id='" + person.Mother + "']");
         const childIndicator = person.HasChildren ? "<span class='arrow'>▶</span>" : "";
+        const newItem = $(
+            `<li data-id='${person.Id}' data-birth-year="${birthYear}" data-gender='${person.Gender}' class='${theGender}'>${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='collapsed'></ul></li>`
+        );
 
         if (parent.length == 0) {
-            $("#descendants").append(
-                `<li data-id='${person.Id}' data-gender='${person.Gender}' class='${theGender}'>${childIndicator} ${listItemContent}<ul class='collapsed'></ul></li>`
-            );
+            $("#descendants").append(newItem);
             setUpRemoveButton();
         } else if (parent.children("ul").length == 0) {
-            parent.append(
-                `<ul><li data-id='${person.Id}' data-gender='${person.Gender}' class='${theGender}'>${childIndicator} ${listItemContent}<ul class='collapsed'></ul></li></ul>`
-            );
+            parent.append($("<ul></ul>").append(newItem));
         } else {
-            parent
-                .children("ul")
-                .append(
-                    `<li data-id='${person.Id}' data-gender='${person.Gender}' class='${theGender}'>${childIndicator} ${listItemContent}<ul class='collapsed'></ul></li>`
-                );
+            let siblings = parent.children("ul").children("li");
+            let inserted = false;
+            for (let i = 0; i < siblings.length; i++) {
+                let siblingBirthYear = $(siblings[i]).data("birth-year");
+                siblingBirthYear = siblingBirthYear.toString().endsWith("s")
+                    ? parseInt(siblingBirthYear.replace("s", "")) + 5
+                    : parseInt(siblingBirthYear);
+
+                let comparisonBirthYear = birthYear.toString().endsWith("s")
+                    ? parseInt(birthYear.replace("s", "")) + 5
+                    : parseInt(birthYear);
+
+                if (siblingBirthYear > comparisonBirthYear) {
+                    newItem.insertBefore(siblings[i]);
+                    inserted = true;
+                    break;
+                }
+            }
+
+            if (!inserted) {
+                parent.children("ul").append(newItem);
+            }
         }
     }
+    fillUpToGenerationSelect();
+}
+
+function findHighestGeneration() {
+    let highestGeneration = 0;
+    $("#descendants ul").each(function () {
+        let generation = parseInt($(this).attr("data-generation"));
+        if (generation > highestGeneration) {
+            highestGeneration = generation;
+        }
+    });
+    return highestGeneration - 1;
+}
+
+function fillUpToGenerationSelect() {
+    const highestGeneration = findHighestGeneration();
+    // Fill up to generation select
+    // If an option is in the box, don't add it again
+    const generationSelect = $("#generationSelect");
+    for (let i = 1; i <= highestGeneration; i++) {
+        if (generationSelect.find(`option[value='${i}']`).length == 0) {
+            generationSelect.append(`<option value='${i}'>${i}</option>`);
+        }
+    }
+    // Remove any that are higher than the highest generation
+    generationSelect.find("option").each(function () {
+        if (parseInt($(this).val()) > highestGeneration) {
+            $(this).remove();
+        }
+    });
 }
