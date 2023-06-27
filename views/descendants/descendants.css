@@ -1,0 +1,62 @@
+#descendants li {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #ddd;
+  margin-bottom: -1px;
+  background-color: #f6f6f6;
+  padding: 10px;
+  cursor: pointer;
+  overflow: auto;
+}
+#descendants {
+  margin-left: 0;
+}
+#descendants ul {
+  display: none; /* Hide the list by default */
+}
+
+#descendants ul.expanded {
+  display: block; /* Show the list when it has the class 'expanded' */
+}
+
+.expanded {
+  display: block !important;
+}
+#descendants li > .arrow {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+#descendants li > .arrow.rotated {
+  transform: rotate(90deg);
+}
+
+#descendants li.Male {
+  background-color: #eef;
+}
+#descendants li.Female {
+  background-color: #fee;
+}
+#shakyTree {
+  height: 7em;
+  width: 7em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -3.5em;
+  margin-left: -3.5em;
+  border: 3px solid forestgreen;
+  border-radius: 50%;
+  display: none;
+}
+
+#descendantsButtons {
+  margin: 0.2em;
+  display: none;
+}
+
+button.load-more {
+  float: right;
+  margin: 0.2em;
+}
