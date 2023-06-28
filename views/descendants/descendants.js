@@ -109,9 +109,11 @@ function showUpToGeneration() {
 
 const fields = [
     "BirthDate",
+    "BirthDateDecade",
     "BirthLocation",
     "DataStatus",
     "DeathDate",
+    "DeathDateDecade",
     "DeathLocation",
     "Derived.BirthName",
     "Derived.BirthNamePrivate",
@@ -217,6 +219,7 @@ function breadthFirstDescent(rootId, people, generation) {
                 toProcess.push({ id: child.Id, generation: currentGeneration + 1 });
             }
         }
+        console.log(currentId, people, currentGeneration);
         displayPerson(currentId, people, currentGeneration);
     }
 }
@@ -233,19 +236,22 @@ function displayPerson(id, people, generation) {
         const personName = new PersonName(person);
         const fullName = personName.withParts(["FullName"]);
         let birthYear = "";
-        if (person.BirthDate && person.BirthDate != "0000-00-00") {
+        if (person.BirthDate && !["0000-00-00", "unknown"].includes(person.BirthDate)) {
             birthYear = person.BirthDate.split("-")[0];
-        } else if (person.BirthDateDecade) {
+        } else if (person.BirthDateDecade && person.BirthDateDecade != "unknown") {
             birthYear = person.BirthDateDecade;
         }
         let deathYear = "";
-        if (person.DeathDate && person.DeathDate != "0000-00-00") {
+        if (person.DeathDate && !["0000-00-00", "unknown"].includes(person.DeathDate)) {
             deathYear = person.DeathDate.split("-")[0];
-        } else if (person.DeathDateDecade) {
+        } else if (person.DeathDateDecade && person.DeathDateDecade != "unknown") {
             deathYear = person.DeathDateDecade;
         }
         const theGender = person.Gender;
-        const nameLink = `<a class='profileLink' href="https://www.wikitree.com/wiki/${person.Id}" target='_blank'>${fullName}</a>`;
+        let nameLink = `<a class='profileLink' href="https://www.wikitree.com/wiki/${person.Id}" target='_blank'>${fullName}</a>`;
+        if (person.Id < 0) {
+            nameLink = `<a class="profileLink">Private</a>`;
+        }
         const numberOfChildren = Object.values(people).filter(
             (child) => child.Father == id || child.Mother == id
         ).length;
@@ -254,7 +260,9 @@ function displayPerson(id, people, generation) {
             ? "<button class='load-more small'><img src='https://www.wikitree.com/images/icons/descendant-link.gif'></button>"
             : "";
         const moreDetailsEye = '<span data-name="' + person.Name + '" class="moreDetailsEye">👁</span>';
-        const listItemContent = `${nameLink} ${moreDetailsEye} (${birthYear} ${person.BirthLocation} – ${deathYear} ${person.DeathLocation}) ${loadMoreButton}`;
+        const listItemContent = `${nameLink} ${moreDetailsEye} (${birthYear} ${
+            person.BirthLocation || ""
+        } – ${deathYear} ${person.DeathLocation || ""}) ${loadMoreButton}`;
         const parent = $("li[data-id='" + person.Father + "'], li[data-id='" + person.Mother + "']");
         let childIndicator = person.HasChildren ? "<span class='arrow'>▶</span>" : "";
         let ulState = "";
@@ -267,6 +275,8 @@ function displayPerson(id, people, generation) {
         const newItem = $(
             `<li data-id='${person.Id}' data-birth-year="${birthYear}" data-gender='${person.Gender}' class='${theGender}'>${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='${ulState}'></ul></li>`
         );
+
+        console.log(newItem);
 
         if (parent.length == 0) {
             $("#descendants").append(newItem);
