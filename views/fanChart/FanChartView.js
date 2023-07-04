@@ -309,6 +309,7 @@
     var categoryList = [];
     var stickerList = [];
     var currentBadges = [];
+    var currentHighlightCategory = ""; 
 
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
@@ -981,28 +982,7 @@
             badgesHTML +
             "</div>";
 
-        // condLog("SETTINGS:",settingsHTML);
-
-        // '<ul class="profile-tabs">' +
-        //     '<li id=general-tab>General</li>' +
-        //     '<li id=names-tab>Names</li>' +
-        //     '<li id=dates-tab>Dates</li>' +
-        //     '<li id=places-tab>Places</li>' +
-        //     '<li id=photos-tab>Photos</li>' +
-        //     '<li id=colours-tab>Colours</li>' +
-        //     '<li id=highlights-tab>Highlights</li>' +
-        // '</ul>' +
-        // '<div id=general-panel></div>' +
-        // '<div id=names-panel></div>' +
-        // '<div id=dates-panel></div>' +
-        // '<div id=places-panel></div>' +
-        // '<div id=photos-panel></div>' +
-        // '<div id=colours-panel></div>' +
-        // '<div id=highlights-panel></div>' +
-
-        //     '<br />    <div align="center">      <div id="status"></div>      <button id="save" class="saveButton">Save changes (all tabs)</button>'
-        // '</div>';
-
+        
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML + legendHTML + settingsHTML;
 
@@ -1098,6 +1078,7 @@
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
                     let catNameSelector = document.getElementById("highlight_options_catName");
                     let rawValue = catNameSelector.value.trim();
+                    currentHighlightCategory = rawValue;
                     document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
                     let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
@@ -4234,7 +4215,9 @@
             // there's no need for doing any parsing --> just return the whole kit and caboodle
             return locString;
         }
-
+        if (!locString) {
+            return "";
+        }
         var parts = locString.split(",");
         if (parts.length == 1) {
             // there's no way to reformat/parse a single item location
@@ -4885,7 +4868,7 @@
      */
     function getSettingsName(person) {
         const maxLength = 50;
-condLog("IXes : ", person._data.Prefix, person._data.Suffix);
+        condLog("IXes : ", person._data.Prefix, person._data.Suffix);
         let theName = "";
         // condLog(
         //     "Prefix check: ",
@@ -5695,6 +5678,9 @@ condLog("IXes : ", person._data.Prefix, person._data.Suffix);
             let spacelessValue = catNameSelector.value.trim().replace(/ /g, "_");
             let searchPrefix = "[[Category:";
             condLog("Looking for BIOs that Have the following: ", rawValue, "or", spacelessValue);
+            if (rawValue.length == 0) {
+                return false;
+            }
             if (
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
@@ -5858,10 +5844,15 @@ condLog("IXes : ", person._data.Prefix, person._data.Suffix);
         let innerCatHTML = '<option selected value="">Pick one:</option>';
         for (let i = 0; i < categoryList.length; i++) {
             const cat = categoryList[i];
-            innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
+            let selectedText = "";
+            if (currentHighlightCategory > "" && cat.indexOf(currentHighlightCategory) > -1) {
+                selectedText = " selected ";
+                condLog("SELECTED !!!");
+            }
+            innerCatHTML += '<option value="' + cat + '" '+ selectedText +'>' + cat + "</option>";
             stickerInnerHTML += '<option value="' + i + '">' + cat + "</option>";
         }
-        condLog("UPDATING & REDOING the BADGES DROP DOWNS @ 5854")
+        condLog("UPDATING & REDOING the BADGES DROP DOWNS @ 5854");
         if (stickerList.length > 0) {
             stickerInnerHTML += "<option>STICKERS:</option>";
             innerCatHTML += '<option value="Sticker">STICKERS:</option>';
@@ -5872,9 +5863,9 @@ condLog("IXes : ", person._data.Prefix, person._data.Suffix);
             }
         }
         catNameSelector.innerHTML = innerCatHTML;
-        for (i = 1; i <= 4; i++){
+        for (i = 1; i <= 4; i++) {
             document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace("#666#", i);
-            condLog("Updating and checking : Badge # " , i , ":", currentBadges[i]);
+            condLog("Updating and checking : Badge # ", i, ":", currentBadges[i]);
             if (currentBadges[i]) {
                 condLog(
                     "updating and finding index:",
@@ -5888,15 +5879,24 @@ condLog("IXes : ", person._data.Prefix, person._data.Suffix);
                     );
                     FanChartView.updateBadgesToShow(i);
                 } else if (stickerList.indexOf(currentBadges[i]) > -1) {
-                    document.getElementById("stickerCategoryDropDownList" + i).value = categoryList.length + stickerList.indexOf(
-                        currentBadges[i]
-                    );
+                    document.getElementById("stickerCategoryDropDownList" + i).value =
+                        categoryList.length + stickerList.indexOf(currentBadges[i]);
                     FanChartView.updateBadgesToShow(i);
                 }
             }
-
         }
 
+        // Look again to see if the current outer ring needs its peeps highlighted or not
+        if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
+            for (let pos = 0; pos < 2 ** (FanChartView.numGens2Display - 1); pos++) {
+                let ahnNum = 2 ** (FanChartView.numGens2Display - 1) + pos;
+                let doIt = doHighlightFor(FanChartView.numGens2Display, pos, ahnNum);
+                if (doIt == true) {
+                    let theInfoBox = document.getElementById("wedgeBoxFor" + ahnNum);
+                    theInfoBox.setAttribute("style", "background-color: " + "yellow");
+                }
+            }
+        }
     }
 
 
