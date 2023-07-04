@@ -444,6 +444,20 @@
                             defaultValue: "SansSerif",
                         },
                         { optionName: "break0", type: "br" },
+                        // {
+                        //     optionName: "boxWidth",
+                        //     type: "radio",
+                        //     label: "Box Width",
+                        //     values: [
+                        //         { value: "340", text: "narrow" },
+                        //         { value: "400", text: "default" },
+                        //         { value: "500", text: "large" },
+                        //         { value: "600", text: "extra large" },
+                        //         { value: "800", text: "double wide" },
+                        //     ],
+                        //     defaultValue: "400",
+                        // },
+                        // { optionName: "break0.5", type: "br" },
                         {
                             optionName: "extraInfo",
                             type: "radio",
@@ -990,6 +1004,7 @@
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 condLog("NEW settings are:", FractalView.currentSettings);
                 let showBadges = FractalView.currentSettings["general_options_showBadges"];
+                // let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
                 let colourBy = FractalView.currentSettings["colour_options_colourBy"];
                 let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
                 let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
@@ -1001,6 +1016,12 @@
                 let legendToggle = document.getElementById("legendASCII");
                 let innerLegend = document.getElementById("innerLegend");
                 let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
+
+                // console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+                // if (newBoxWidth != boxWidth) {
+                //     boxWidth = newBoxWidth;
+                //     nodeWidth = boxWidth * 1.5;
+                // }
 
                 if (showBadges || colourBy == "Family" || colourBy == "Location") {
                     legendDIV.style.display = "block";
@@ -2259,6 +2280,21 @@
                     // borderColor = "rgba(204, 102, 102, .5)";
                 }
 
+                // EXTRA INFO  (ahnNum or WikiTreeID or nothing)
+                let extraInfoForThisAnc = "";
+                let extraBR = "";
+                condLog("extraInfo setting:", FractalView.currentSettings["general_options_extraInfo"]);
+                if (FractalView.currentSettings["general_options_extraInfo"] == "ahnNum") {
+                    //FractalView.currentSettings["general_options_colourizeRepeats"] == false) {
+                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
+                    extraBR = "<br/>";
+                } else if (FractalView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
+                    extraInfoForThisAnc = ancestorObject.Name;
+                    extraBR = "<br/>";
+                }
+
+
+
                 let theClr = "white";
                 // SETUP the repeatAncestorTracker
                 if (FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
@@ -2338,7 +2374,8 @@
                 return `<div class="top-info centered" id=wedgeInfoFor${
                     ancestorObject.ahnNum
                 } style="background-color: ${theClr} ; padding:5, border-color:black; border:2;">
-                     <div class="vital-info"  id=vital${ancestorObject.ahnNum}>
+                <div class="vital-info"  id=vital${ancestorObject.ahnNum}>
+                <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
 						<div class="image-box" id=photoDivFor${
                             ancestorObject.ahnNum
                         } style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
@@ -2622,9 +2659,26 @@
 
             // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
             // setTimeout(function () {
-                showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, 0); // nameAngle = 0 ... taken from FanChart ... leaving here JUST IN CASE we turn the boxes on their side
-                showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, 0);
+            showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, 0); // nameAngle = 0 ... taken from FanChart ... leaving here JUST IN CASE we turn the boxes on their side
+            showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, 0);
             // }, 200);
+
+            // LET'S UPDATE THOSE EXTRAS TOO ... OK ?
+            let theExtraDIV = document.getElementById("extraInfoFor" + ancestorObject.ahnNum);
+            let extraInfoForThisAnc = "";
+            let extraBR = "";
+            condLog("extraInfo setting:", FractalView.currentSettings["general_options_extraInfo"]);
+            if (FractalView.currentSettings["general_options_extraInfo"] == "ahnNum") {
+                //FractalView.currentSettings["general_options_colourizeRepeats"] == false) {
+                extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
+                extraBR = "<br/>";
+            } else if (FractalView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
+                extraInfoForThisAnc = d._data.Name;
+                extraBR = "<br/>";
+            }
+            if (theExtraDIV) {
+                theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
+            }
 
             // FINALLY ... we return the transformation statement back - the translation based on our  calculations
             return "translate(" + newX + "," + newY + ")";
