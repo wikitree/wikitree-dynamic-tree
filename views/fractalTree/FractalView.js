@@ -74,6 +74,7 @@
     var stickerList = [];
     var currentBadges = [];
     var currentHighlightCategory = "";
+    var currentMaxHeight4Box = 200;
 
 
     var ColourArray = [
@@ -444,20 +445,31 @@
                             defaultValue: "SansSerif",
                         },
                         { optionName: "break0", type: "br" },
-                        // {
-                        //     optionName: "boxWidth",
-                        //     type: "radio",
-                        //     label: "Box Width",
-                        //     values: [
-                        //         { value: "340", text: "narrow" },
-                        //         { value: "400", text: "default" },
-                        //         { value: "500", text: "large" },
-                        //         { value: "600", text: "extra large" },
-                        //         { value: "800", text: "double wide" },
-                        //     ],
-                        //     defaultValue: "400",
-                        // },
-                        // { optionName: "break0.5", type: "br" },
+                        {
+                            optionName: "boxWidth",
+                            type: "radio",
+                            label: "Box Width",
+                            values: [
+                                { value: "340", text: "narrow" },
+                                { value: "400", text: "default" },
+                                { value: "500", text: "large" },
+                                { value: "600", text: "extra large" },
+                                { value: "800", text: "double wide" },
+                            ],
+                            defaultValue: "400",
+                        },
+                        {
+                            optionName: "tightness",
+                            type: "radio",
+                            label: "Spacing",
+                            values: [
+                                { value: "0", text: "tight" },
+                                { value: "1", text: "normal" },
+                                
+                            ],
+                            defaultValue: "1",
+                        },
+                        { optionName: "break0.5", type: "br" },
                         {
                             optionName: "extraInfo",
                             type: "radio",
@@ -1004,7 +1016,7 @@
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 condLog("NEW settings are:", FractalView.currentSettings);
                 let showBadges = FractalView.currentSettings["general_options_showBadges"];
-                // let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
+                let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
                 let colourBy = FractalView.currentSettings["colour_options_colourBy"];
                 let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
                 let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
@@ -1017,11 +1029,11 @@
                 let innerLegend = document.getElementById("innerLegend");
                 let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
 
-                // console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
-                // if (newBoxWidth != boxWidth) {
-                //     boxWidth = newBoxWidth;
-                //     nodeWidth = boxWidth * 1.5;
-                // }
+                condLog("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+                if (newBoxWidth != boxWidth) {
+                    boxWidth = newBoxWidth;
+                    nodeWidth = boxWidth * 1.5;
+                }
 
                 if (showBadges || colourBy == "Family" || colourBy == "Location") {
                     legendDIV.style.display = "block";
@@ -1137,6 +1149,7 @@
 
                 FractalView.myAncestorTree.draw();
                 updateFontsIfNeeded();
+                adjustHeightsIfNeeded();
             } else {
                 condLog("NOTHING happened according to SETTINGS OBJ");
             }
@@ -1581,47 +1594,52 @@
             let j = i * 2;
             let k = i * 2 + 1;
 
+            let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
+            let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
+            // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
+            let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+
             for (let g = 1; g <= thisGenNum + 1; g++) {
                 if (g % 2 == 1) {
                     if (g <= thisGenNum) {
                         X +=
                             0 +
-                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] -
-                            1 * FractalView.maxDiamPerGen[g];
+                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * xScaleFactor -
+                            1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
                     }
 
                     Xj +=
                         0 +
                         ((j & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g] -
-                        1 * FractalView.maxDiamPerGen[g];
+                            FractalView.maxDiamPerGen[g]  * xScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g]  * xScaleFactor;
                     Xk +=
                         0 +
                         ((k & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g] -
-                        1 * FractalView.maxDiamPerGen[g];
+                            FractalView.maxDiamPerGen[g]  * xScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g]  * xScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
                 } else {
                     if (g <= thisGenNum) {
                         Y +=
                             0 +
-                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] -
-                            1 * FractalView.maxDiamPerGen[g];
+                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * yScaleFactor -
+                            1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     }
                     Yj +=
                         0 +
                         ((j & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g] -
-                        1 * FractalView.maxDiamPerGen[g];
+                            FractalView.maxDiamPerGen[g] * yScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     Yk +=
                         0 +
                         ((k & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g] -
-                        1 * FractalView.maxDiamPerGen[g];
+                            FractalView.maxDiamPerGen[g] * yScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
 
@@ -1833,6 +1851,91 @@
         }
     }
 
+    // CYCLE through all the Person Boxes in the Fractal Tree to find a Max Height, and then reposition if needed
+    function adjustHeightsIfNeeded() {
+        let maxHt = 0;
+        let maxVitalHt = 0;
+        let originalMaxHt = currentMaxHeight4Box;
+        for (let ahnNum = 1; ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
+            const elem = document.getElementById("wedgeInfoFor" + ahnNum);
+            const vital = document.getElementById("vital" + ahnNum);
+            if (elem){
+                const rect = elem.getBoundingClientRect();
+                if (elem) {
+                    condLog("ELEM Ht = ", rect.height);
+                    maxHt = Math.max(maxHt, rect.height);
+                }
+            }
+            if (vital) {
+                condLog("vital Ht = ", vital.offsetHeight);
+                maxVitalHt = Math.max(maxVitalHt, vital.offsetHeight);
+            }
+        }
+        condLog("TALLEST Box = ", maxHt);
+        condLog("TALLEST VITAL Box = ", maxVitalHt);
+
+        const primePerp = document.getElementById("vital1");
+        condLog(primePerp)
+        for (const prop in primePerp) {
+            // if (Object.hasOwnProperty.call(primePerp, prop)) {
+                const val = primePerp[prop];
+                // condLog(prop, val);
+            // }
+        }
+        
+
+        const doAdjust = (maxVitalHt != currentMaxHeight4Box);
+        currentMaxHeight4Box = maxVitalHt;
+
+        let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
+
+
+        for (let ahnNum = 1; doAdjust && ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
+            const elem = document.getElementById("wedgeInfoFor" + ahnNum);
+            if (elem) {
+                let X = 0;
+                let Y = 0;
+                let i = ahnNum;
+                let thisGenNum = Math.floor(Math.log2(ahnNum));
+                let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
+                // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
+                // let yScaleFactor = (maxVitalHt - 80 + theBoxTightness * 80) / 200;
+                let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+                for (g = 1; g <= thisGenNum; g++) {
+                    if (g % 2 == 1) {
+                        X +=
+                            0 +
+                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                                2 *
+                                FractalView.maxDiamPerGen[g] *
+                                xScaleFactor -
+                            1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
+                        // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
+                    } else {
+                        Y +=
+                            0 +
+                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                                2 *
+                                FractalView.maxDiamPerGen[g] *
+                                yScaleFactor -
+                            1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
+                        // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
+                    }
+                }
+                condLog("translate(" + X + "," + Y + ")");
+                if (elem.parentNode.parentNode.parentNode) {
+                    elem.parentNode.parentNode.parentNode.setAttribute("transform", "translate(" + X + "," + Y + ")");
+                }
+            }
+        }
+
+        if (doAdjust) {
+            FractalView.drawLines();
+        }
+        
+        // condLog( ancestorObject.ahnNum, thisGenNum, thisPosNum, ancestorObject.person._data.FirstName, ancestorObject.person._data.Name , X , Y);
+    }
+
     /** FUNCTION used to force a redraw of the Fractal Tree, used when called from Button Bar after a parameter has been changed */
 
     FractalView.redraw = function () {
@@ -1843,6 +1946,7 @@
         redoWedgesForFractal();
         FractalView.myAncestorTree.draw();
         findCategoriesOfAncestors();
+        adjustHeightsIfNeeded();
     };
 
     FractalView.cancelSettings = function () {
@@ -2254,7 +2358,7 @@
             .attr("class", "person " + this.selector);
 
         // condLog("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
-
+        condLog("Adding new node with boxWidth = ", boxWidth);
         // Draw the person boxes
         nodeEnter
             .append("foreignObject")
@@ -2462,8 +2566,8 @@
 
                 // CENTER the DIV and SET its width to 300px
                 theInfoBox.parentNode.parentNode.setAttribute("y", -100);
-                theInfoBox.parentNode.parentNode.setAttribute("x", -150);
-                theInfoBox.parentNode.parentNode.setAttribute("width", 300);
+                theInfoBox.parentNode.parentNode.setAttribute("x", 0 - (boxWidth * 3) / 8); // was initially hardcoded as -150, when default boxWidth = 400
+                theInfoBox.parentNode.parentNode.setAttribute("width", (boxWidth * 3) / 4); //// was initially hardcoded as 300
 
                 // CHECK for LOCATION SPECIFIC DOUBLE-COLOURS SETTINGS
                 if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
@@ -2567,21 +2671,30 @@
                 }
             }
 
+            let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
             let X = 0;
             let Y = 0;
             let i = ancestorObject.ahnNum;
+            let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
+            let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+            // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
+            if (currentMaxHeight4Box == 0) {
+                xScaleFactor = 1;
+                yScaleFactor = 1;
+            }
+            // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
             for (g = 1; g <= thisGenNum; g++) {
                 if (g % 2 == 1) {
                     X +=
                         0 +
-                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] -
-                        1 * FractalView.maxDiamPerGen[g];
+                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * xScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
                 } else {
                     Y +=
                         0 +
-                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] -
-                        1 * FractalView.maxDiamPerGen[g];
+                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * yScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
             }
@@ -4305,7 +4418,7 @@
             //     )} , heightParent: ${rectParent.height} , ParentY: ${elemParent.getAttribute("y")} , thisY: ${thisY} ,`
             // );
             // condLog(rect);
-            // condLog(rectParent);
+            // condLog("rectParent", rectParent, rect);
             const line1 = document.getElementById("line1ForPerson" + ahnNum);
             const line2 = document.getElementById("line2ForPerson" + ahnNum);
             if (line1) {
