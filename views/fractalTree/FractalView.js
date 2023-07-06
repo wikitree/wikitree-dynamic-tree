@@ -461,23 +461,39 @@
                         {
                             optionName: "tightness",
                             type: "radio",
-                            label: "Spacing",
+                            label: "Horizontal Spacing",
                             values: [
                                 { value: "0", text: "tight" },
                                 { value: "1", text: "normal" },
-                                
                             ],
                             defaultValue: "1",
                         },
+                        {
+                            optionName: "vBoxHeight",
+                            type: "radio",
+                            label: "Vertical Spacing",
+                            values: [
+                                { value: "0", text: "auto" },
+                                { value: "1", text: "fixed spacing:" },
+                                // { value: "80", text: "80" },
+                                // { value: "120", text: "120" },
+                                // { value: "160", text: "160" },
+                                // { value: "200", text: "200" },
+                                // { value: "240", text: "240" },
+                            ],
+                            defaultValue: "0",
+                        },
+                        { optionName: "vSpacing", label: "Adjust ∆y (from 1 to 10)", type: "number", defaultValue: 7 },
                         { optionName: "break0.5", type: "br" },
                         {
                             optionName: "extraInfo",
                             type: "radio",
-                            label: "Extras",
+                            label: "Extras on top",
                             values: [
                                 { value: "none", text: "none" },
                                 { value: "ahnNum", text: "Ahnentafel number" },
                                 { value: "WikiTreeID", text: "WikiTree ID" },
+                                { value: "both", text: "both" },
                             ],
                             defaultValue: "none",
                         },
@@ -491,7 +507,7 @@
                         { optionName: "break2", type: "br" },
                         {
                             optionName: "showBadges",
-                            label: "Add Badges to ancestors",
+                            label: "Add Badges to Ancestors",
                             type: "checkbox",
                             defaultValue: false,
                         },
@@ -1431,8 +1447,16 @@
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
+        
+        let vBoxHeightSelector1 = document.getElementById("general_options_vBoxHeight_radio1");
+        let vBoxHeightSelector2 = document.getElementById("general_options_vBoxHeight_radio2");
+        document.getElementById("general_options_vSpacing_label").style.display = "none";
+        document.getElementById("general_options_vSpacing").style.display = "none";
         // condLog("bkgdClrSelector", bkgdClrSelector);
+        
         bkgdClrSelector.setAttribute("onchange", "FractalView.optionElementJustChanged();");
+        vBoxHeightSelector1.setAttribute("onchange", "FractalView.optionElementJustChanged();");
+        vBoxHeightSelector2.setAttribute("onchange", "FractalView.optionElementJustChanged();");
         let specFamSelector = document.getElementById("colour_options_specifyByFamily");
         let specLocSelector = document.getElementById("colour_options_specifyByLocation");
         let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
@@ -1497,6 +1521,9 @@
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
         let legendASCIIspan = document.getElementById("legendASCII");
         let showBadges = FractalView.currentSettings["general_options_showBadges"];
+        let vBoxHeightUseVSpacing = document.getElementById("general_options_vBoxHeight_radio2").checked;
+        let vSpacingSelector = document.getElementById("general_options_vSpacing");
+        let vSpacingSelectorLabel = document.getElementById("general_options_vSpacing_label");
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
@@ -1517,6 +1544,17 @@
         aliveDDSelector.parentNode.style.display = "none";
 
         condLog("VALUE:", bkgdClrSelector.value);
+        condLog("vBoxHeight VALUE:", vBoxHeightUseVSpacing, vSpacingSelector, vSpacingSelectorLabel);
+
+        if (vBoxHeightUseVSpacing === true) {
+            vSpacingSelector.style.display = "inline-block";
+            vSpacingSelectorLabel.style.display = "inline-block";
+
+        } else {
+            vSpacingSelector.style.display = "none";
+            vSpacingSelectorLabel.style.display = "none";
+        }
+
         if (bkgdClrSelector.value == "Family") {
             specFamSelector.style.display = "inline-block";
             legendASCIIspan.style.display = "inline-block";
@@ -1579,6 +1617,7 @@
         condLog("DRAWING LINES stuff should go here");
         for (let index = 0; index < 2 ** (FractalView.numGens2Display - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
+            const vitalDIV = document.getElementById("vital" + index);
             element.setAttribute("display", "block");
             element.style.display = "block";
 
@@ -1595,11 +1634,48 @@
             let k = i * 2 + 1;
 
             let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
+            let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
             let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
             // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
             let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+            
+            let vSpacing = FractalView.currentSettings["general_options_vSpacing"];
+
+             if (vBoxHeight > 0) {
+                 vSpacing = Math.max(1, Math.min(10, vSpacing));
+                 currentMaxHeight4Box = 20 + vSpacing * 20;
+                 yScaleFactor = currentMaxHeight4Box / 153;
+             }
+
+             // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
+             for (g = 1; g <= thisGenNum; g++) {
+                 if (g % 2 == 1) {
+                     X +=
+                         0 +
+                         ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                             2 *
+                             FractalView.maxDiamPerGen[g] *
+                             xScaleFactor -
+                         1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
+                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
+                 } else {
+                     Y +=
+                         0 +
+                         ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                             2 *
+                             FractalView.maxDiamPerGen[g] *
+                             yScaleFactor -
+                         1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
+                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
+                 }
+             }
+
+             condLog (index, thisGenNum, "X,Y (initially) = ", X, Y);
 
             for (let g = 1; g <= thisGenNum + 1; g++) {
+                // if (vBoxHeight > 0) {
+                //     yScaleFactor = vBoxHeight / FractalView.maxDiamPerGen[g];
+                // }
                 if (g % 2 == 1) {
                     if (g <= thisGenNum) {
                         X +=
@@ -1642,7 +1718,28 @@
                         1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
+            }
+                if (vitalDIV && vitalDIV.parentNode && vitalDIV.parentNode.parentNode && vitalDIV.parentNode.parentNode.parentNode) {
+                    const vital_Y = vitalDIV.parentNode.parentNode.parentNode.getAttribute("y");
+                    const vitalDY = 0 - vital_Y - vitalDIV.offsetHeight/2 - 15; // extra 15 is for margin buffer fudge factor
+                    if (vitalDY > 0 || vitalDY < 0) {
 
+                        Yj -= vitalDY;
+                        Yk -= vitalDY;
+                        Y -= vitalDY;
+                    }
+                    condLog(
+                        "New Y values = Y, Yj, Yk = { ",
+                        Y,
+                        Yj,
+                        Yk,
+                        "}",
+                        " vital.y = ",
+                        vital_Y,
+                        "offsetHt:",
+                        vitalDIV.offsetHeight
+                        , "DY:", vitalDY);
+                    }
                 if (!FractalView.myAhnentafel.list[j]) {
                     Xj = X;
                     Yj = Y;
@@ -1655,7 +1752,6 @@
                 element.setAttribute("y1", Yj);
                 element.setAttribute("x2", Xk);
                 element.setAttribute("y2", Yk);
-            }
         }
         for (let index = 2 ** (FractalView.numGens2Display - 1); index < 2 ** (FractalView.maxNumGens - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
@@ -1884,12 +1980,22 @@
         }
         
 
-        const doAdjust = (maxVitalHt != currentMaxHeight4Box);
+        let doAdjust = (maxVitalHt != currentMaxHeight4Box);
         currentMaxHeight4Box = maxVitalHt;
 
         let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
 
+        let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
+        let vSpacing = FractalView.currentSettings["general_options_vSpacing"];
 
+        if (vBoxHeight > 0) {
+            vSpacing = Math.max(1, Math.min(10, vSpacing));
+            doAdjust = ((20 + vSpacing*20) != currentMaxHeight4Box);
+            currentMaxHeight4Box = (20 + vSpacing*20);            
+        }
+        condLog("vBoxHeight",vBoxHeight)
+        condLog("FractalView.maxDiamPerGen",FractalView.maxDiamPerGen)
+        
         for (let ahnNum = 1; doAdjust && ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
             const elem = document.getElementById("wedgeInfoFor" + ahnNum);
             if (elem) {
@@ -1901,6 +2007,9 @@
                 // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
                 // let yScaleFactor = (maxVitalHt - 80 + theBoxTightness * 80) / 200;
                 let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+                if (vBoxHeight > 0) {
+                    yScaleFactor = currentMaxHeight4Box / 153;
+                }
                 for (g = 1; g <= thisGenNum; g++) {
                     if (g % 2 == 1) {
                         X +=
@@ -1922,7 +2031,7 @@
                         // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                     }
                 }
-                condLog("translate(" + X + "," + Y + ")");
+                condLog(ahnNum  , "translate(" + X + "," + Y + ")");
                 if (elem.parentNode.parentNode.parentNode) {
                     elem.parentNode.parentNode.parentNode.setAttribute("transform", "translate(" + X + "," + Y + ")");
                 }
@@ -2395,6 +2504,9 @@
                 } else if (FractalView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
                     extraInfoForThisAnc = ancestorObject.Name;
                     extraBR = "<br/>";
+                } else if (FractalView.currentSettings["general_options_extraInfo"] == "both") {
+                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]<br/>" + ancestorObject.Name;
+                    extraBR = "<br/>";
                 }
 
 
@@ -2682,6 +2794,12 @@
                 xScaleFactor = 1;
                 yScaleFactor = 1;
             }
+                        
+            let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
+            if (vBoxHeight > 0) {
+                yScaleFactor = currentMaxHeight4Box / 153;
+            }
+
             // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
             for (g = 1; g <= thisGenNum; g++) {
                 if (g % 2 == 1) {
@@ -2788,7 +2906,11 @@
             } else if (FractalView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
                 extraInfoForThisAnc = d._data.Name;
                 extraBR = "<br/>";
+            } else if (FractalView.currentSettings["general_options_extraInfo"] == "both") {
+                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]<br/>" + d._data.Name;
+                    extraBR = "<br/>";
             }
+
             if (theExtraDIV) {
                 theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
             }
