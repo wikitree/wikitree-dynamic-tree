@@ -74,7 +74,7 @@
     var stickerList = [];
     var currentBadges = [];
     var currentHighlightCategory = "";
-    var currentMaxHeight4Box = 200;
+    var currentMaxHeight4Box = 180;
 
 
     var ColourArray = [
@@ -1641,14 +1641,15 @@
             
             let vSpacing = FractalView.currentSettings["general_options_vSpacing"];
 
-             if (vBoxHeight > 0) {
+            if (vBoxHeight > 0) {
                  vSpacing = Math.max(1, Math.min(10, vSpacing));
                  currentMaxHeight4Box = 20 + vSpacing * 20;
-                 yScaleFactor = currentMaxHeight4Box / 153;
-             }
+            }
 
-             // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
-             for (g = 1; g <= thisGenNum; g++) {
+            yScaleFactor = currentMaxHeight4Box / 153;
+            condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(drawlines)");
+            // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
+            for (g = 1; g <= thisGenNum; g++) {
                  if (g % 2 == 1) {
                      X +=
                          0 +
@@ -1979,20 +1980,27 @@
             // }
         }
         
-
-        let doAdjust = (maxVitalHt != currentMaxHeight4Box);
-        currentMaxHeight4Box = maxVitalHt;
+        
 
         let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
 
         let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
         let vSpacing = FractalView.currentSettings["general_options_vSpacing"];
 
+        
+        let prevCurrentMax = currentMaxHeight4Box;
+        let doAdjust = false;
         if (vBoxHeight > 0) {
             vSpacing = Math.max(1, Math.min(10, vSpacing));
             doAdjust = ((20 + vSpacing*20) != currentMaxHeight4Box);
-            currentMaxHeight4Box = (20 + vSpacing*20);            
+            currentMaxHeight4Box = (20 + vSpacing*20);      
+            doAdjust = true;      
+        } else {
+            currentMaxHeight4Box = Math.max(60,maxVitalHt - 70) + theBoxTightness * 20;
+            doAdjust = (prevCurrentMax != currentMaxHeight4Box);
         }
+        let yScaleFactor = currentMaxHeight4Box / 153;
+        condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(adjustHeightsIfNeeded)");
         condLog("vBoxHeight",vBoxHeight)
         condLog("FractalView.maxDiamPerGen",FractalView.maxDiamPerGen)
         
@@ -2006,10 +2014,10 @@
                 let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
                 // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
                 // let yScaleFactor = (maxVitalHt - 80 + theBoxTightness * 80) / 200;
-                let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
-                if (vBoxHeight > 0) {
-                    yScaleFactor = currentMaxHeight4Box / 153;
-                }
+                // let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+                // if (vBoxHeight > 0) {
+                //     yScaleFactor = currentMaxHeight4Box / 153;
+                // }
                 for (g = 1; g <= thisGenNum; g++) {
                     if (g % 2 == 1) {
                         X +=
@@ -2788,17 +2796,21 @@
             let Y = 0;
             let i = ancestorObject.ahnNum;
             let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
-            let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+            let yScaleFactor = 1 ;//(currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
             // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
             if (currentMaxHeight4Box == 0) {
                 xScaleFactor = 1;
                 yScaleFactor = 1;
-            }
-                        
-            let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
-            if (vBoxHeight > 0) {
+            } else  {
                 yScaleFactor = currentMaxHeight4Box / 153;
             }
+
+            condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(transform)");
+                        
+            // let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
+            // if (vBoxHeight > 0) {
+            //     yScaleFactor = currentMaxHeight4Box / 153;
+            // }
 
             // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
             for (g = 1; g <= thisGenNum; g++) {
