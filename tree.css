@@ -328,6 +328,23 @@ main {
   padding: 3px;
 }
 
+.mDateBox {
+    background-color: white;
+    border-top: 2px red solid;
+    border-bottom: 3px red solid;
+    width: 55px;
+}
+.mDateBox2 {
+    background-color: white;
+    border-left: 2px red solid;
+    border-right: 3px red solid;
+    width: 110px;
+}
+
+.quarterEmBottomMargin {
+  margin-bottom: 0.25em;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
