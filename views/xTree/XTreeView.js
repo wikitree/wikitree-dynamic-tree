@@ -8,7 +8,7 @@ window.XTreeView = class XTreeView extends View {
     static APP_ID = "XTree";
     meta() {
         return {
-            title: "X Chrome Family Tree",
+            title: "X Family Tree",
 
             // Note that we have some placeholder "#replaceme" text here. This gets filled with links and text built from the starting
             // profile data, after that data is loaded.
