@@ -5,7 +5,6 @@ export class Person {
             this._data = data;
         } else {
             this._data = {};
-            //condLog(`<--New person data: for ${data.Id} ${name}`, data);
 
             let x = Object.entries(data);
             for (const [key, value] of x) {
@@ -16,8 +15,6 @@ export class Person {
         }
         this.generations = new Map();
         this.marked = false;
-
-        //condLog(`>--New person done: for ${this.getId()} ${name}`, this);
     }
 
     // Since a person can appear in more than one generation and more than once in a generation,
@@ -93,6 +90,9 @@ export class Person {
     isDuplicate() {
         return this.generations.size > 1 || this.generations.values().next().value > 1;
     }
+    isLiving() {
+        return this._data.IsLiving;
+    }
     isMarked() {
         return this.isMarked;
     }
@@ -137,19 +137,17 @@ export class Person {
     }
 
     toString() {
-        return `${this.getId()} ${this.getDisplayName()}`;
+        return `${this.getWtId()} (${this.getId()}) ${this.getDisplayName()}`;
     }
 }
 
 export class LinkToPerson extends Person {
     constructor(p) {
-        super({
-            Id: p.getId(),
-            Name: p.getWtId(),
-            BirthName: `See ${p.getDisplayName()}`,
-            DataStatus: { Spouse: "" },
-        });
+        super(p._data, true);
         this.generations = p.generations;
         this.nrOlderGenerations = 0;
+    }
+    getDisplayName() {
+        return "See " + super.getDisplayName();
     }
 }

@@ -28,10 +28,11 @@ export function showTree(
     const edgeFactor = +$("#edgeFactor").val() || 180;
     const heightFactor = +$("#tHFactor").val() || 34;
     const brickWallColour = $("#aleBrickWallColour").val() || "#ff0000";
-    var currentMaxShowDepth = Math.max(
-        Math.min(theTree.maxGeneration, maxGenToShow),
-        expandLOIs ? genCountsInLOI.length : 0
-    );
+    var currentMaxShowDepth = initialMaxShowDepth();
+
+    function initialMaxShowDepth() {
+        return Math.max(Math.min(theTree.maxGeneration, maxGenToShow), expandLOIs ? genCountsInLOI.length : 0);
+    }
 
     function calculateWidths() {
         const tWith = calculateTreeWidth();
@@ -39,7 +40,7 @@ export function showTree(
     }
 
     function calculateTreeWidth() {
-        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : edgeFactor * 2);
+        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : 2 * edgeFactor);
         // console.log(
         //     `treeWidth: currentMaxShowDepth:${currentMaxShowDepth} * eF:${edgeFactor} + ${
         //         labelsLeftOnly ? 0 : edgeFactor * 2
@@ -49,30 +50,16 @@ export function showTree(
     }
 
     function calculateSvgWidth(tWidth) {
-        const fudgeFactor = edgeFactor;
-        const w = tWidth + margin.right + margin.left + fudgeFactor;
-        // console.log(`svg width = w:${tWidth} + r:${margin.right} + l:${margin.left} + fudge:${fudgeFactor} = ${w}`);
+        const w = tWidth + margin.right + margin.left;
         return w;
     }
 
-    function calculateTreeHeight() {
+    function calculateTreeHeight(theGenerationCounts) {
         const hf = showOnlyLOIs ? heightFactor * 1.75 : heightFactor;
-        return getSizeOfLargestGenToShow() * hf - margin.top - margin.bottom;
-    }
-
-    function getSizeOfLargestGenToShow() {
-        // find the generation (in the part of the tree to be displayed) with the most people
-        const theCounts = showOnlyLOIs ? genCountsInLOI : theTree.genCounts;
-        const [largestGenSize, largestGen] = maxAndIndex(theCounts);
-        let largestGenSizeToShow = largestGenSize;
-        if (maxGenToShow > 0 && maxGenToShow < theTree.maxGeneration) {
-            largestGenSizeToShow = largestGen <= maxGenToShow ? largestGenSize : theCounts[maxGenToShow];
-        }
-        // console.log(`theCounts=${theCounts}`);
-        // console.log(
-        //     `largestGen = ${largestGen}, largestGenSize=${largestGenSize}, maxGenToShow=${maxGenToShow}, largestGenSizeToShow=${largestGenSizeToShow}`
-        // );
-        return largestGenSizeToShow;
+        const [largestGeneration] = maxAndIndex(theGenerationCounts);
+        // console.log(`theGenCounts=${theGenerationCounts}`);
+        // console.log(`largestGeneration = ${largestGeneration}`);
+        return largestGeneration * hf - margin.top - margin.bottom;
     }
 
     function maxAndIndex(arr) {
@@ -87,7 +74,7 @@ export function showTree(
         return [maxSize, idx];
     }
 
-    const treeHeight = calculateTreeHeight();
+    const treeHeight = calculateTreeHeight(showOnlyLOIs ? genCountsInLOI : theTree.genCounts);
     const [treeWidth, svgWidth] = calculateWidths();
 
     // append the svg object to the body of the page
@@ -132,25 +119,18 @@ export function showTree(
     });
     root.x0 = treeHeight / 2;
     root.y0 = 0;
-    root.depth = 0;
     // console.log("root", root);
 
     // Collapse after the maxGen level
-    // and add depth numbers
     const q = [root];
     while (q.length > 0) {
         const n = q.shift();
         const wtId = n.data.getWtId();
 
         if (showOnlyLOIs) {
-            if (
-                loiNodes.has(wtId) &&
-                !loiEndpoints.includes(wtId) &&
-                (expandLOIs || n.data.isBelowGeneration(maxGenToShow))
-            ) {
+            if (loiNodes.has(wtId) && !loiEndpoints.includes(wtId) && (expandLOIs || n.depth < maxGenToShow - 1)) {
                 if (n.children) {
                     for (const c of n.children) {
-                        c.depth = n.depth + 1;
                         q.push(c);
                     }
                 }
@@ -158,13 +138,9 @@ export function showTree(
                 collapseSubtree(n);
             }
         } else {
-            if (
-                n.data.isBelowGeneration(maxGenToShow) ||
-                (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))
-            ) {
+            if (n.depth < maxGenToShow - 1 || (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))) {
                 if (n.children) {
                     for (const c of n.children) {
-                        c.depth = n.depth + 1;
                         q.push(c);
                     }
                 }
@@ -219,22 +195,56 @@ export function showTree(
         if (d.children) {
             d._children = d.children;
             d._children.forEach((c) => {
-                c.depth = d.depth + 1;
                 collapseSubtree(c);
             });
             d.children = null;
         }
     }
 
-    function update(source) {
+    function expandSubtree(d) {
+        if (d._children) {
+            d.children = d._children;
+            d.children.forEach((c) => {
+                expandSubtree(c);
+            });
+            d._children = null;
+        }
+    }
+
+    function generationOf(d) {
+        return d.depth + 1;
+    }
+
+    function getDisplayableGenerationCounts(d, counts) {
+        const gen = generationOf(d);
+        if (counts[gen]) {
+            counts[gen] += 1;
+        } else {
+            counts[gen] = 1;
+        }
+        if (d.children) {
+            d.children.forEach((c) => {
+                getDisplayableGenerationCounts(c, counts);
+            });
+        }
+        return counts;
+    }
+
+    function update(srcNode) {
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
 
-        // Assigns the x and y position for the nodes
+        //TODO: we can opimise this by only recalculating it when required, but for now we're lazy
+        // and calculate it every time - seems to be fast enough and less error=prone
+        const displayGenCounts = getDisplayableGenerationCounts(root, []);
+        const treeHeight = calculateTreeHeight(displayGenCounts);
         const [treeWidth, svgWidth] = calculateWidths();
-        // console.log(`Update: treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`);
-        d3.select("#theSvg svg").attr("width", svgWidth);
+        // console.log(`Update: treeHeight=${treeHeight}, treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`);
+        d3.select("#theSvg svg")
+            .attr("width", svgWidth)
+            .attr("height", treeHeight + margin.top + margin.bottom);
 
+        // Assigns the x and y position for the nodes
         treemap = treemap.size([treeHeight, treeWidth]);
         const treeData = treemap(root);
         //console.log("treeData", treeData);
@@ -245,7 +255,6 @@ export function showTree(
 
         // Normalize for fixed-depth.
         nodes.forEach(function (d) {
-            // d.y = d.depth * (onlyPaths ? 90 : 180);
             d.y = d.depth * edgeFactor;
         });
 
@@ -262,7 +271,7 @@ export function showTree(
             .append("g")
             .attr("class", "node")
             .attr("transform", function (d) {
-                return "translate(" + source.y0 + "," + source.x0 + ")";
+                return "translate(" + srcNode.y0 + "," + srcNode.x0 + ")";
             });
 
         // Add Circle for the nodes
@@ -318,8 +327,7 @@ export function showTree(
                 return d.data.getDisplayName();
             })
             .style("fill", (d) => {
-                // we go via Ancestor Tree here in case d.data is a connector
-                return AncestorTree.get(d.data.getId()).hasAParent() ? "inherit" : brickWallColour;
+                return d.data.hasAParent() ? "inherit" : brickWallColour;
             })
             .append("title")
             .text(function (d) {
@@ -361,7 +369,7 @@ export function showTree(
             .transition()
             .duration(duration)
             .attr("transform", function (d) {
-                return "translate(" + source.y + "," + source.x + ")";
+                return "translate(" + srcNode.y + "," + srcNode.x + ")";
             })
             .remove();
 
@@ -391,7 +399,7 @@ export function showTree(
                 return klass;
             })
             .attr("d", function (d) {
-                var o = { x: source.x0, y: source.y0 };
+                const o = { x: srcNode.x0, y: srcNode.y0 };
                 return diagonal(o, o);
             })
             .attr("lnk", function (d) {
@@ -414,7 +422,7 @@ export function showTree(
             .transition()
             .duration(duration)
             .attr("d", function (d) {
-                const o = { x: source.x, y: source.y };
+                const o = { x: srcNode.x, y: srcNode.y };
                 return diagonal(o, o);
             })
             .remove();
@@ -425,7 +433,7 @@ export function showTree(
             d.y0 = d.y;
         });
 
-        // Creates a curved (diagonal) path from parent to the child nodes
+        // Creates a curved diagonal path from parent to the child nodes
         function diagonal(s, d) {
             return `M ${s.y} ${s.x}
             C ${(s.y + d.y) / 2} ${s.x},
@@ -435,11 +443,15 @@ export function showTree(
 
         // Toggle children on click.
         function toggleChildren(event, d) {
-            if (event.shiftKey) {
-                console.log(d.data.toString(), d.data);
+            if (event.altKey) {
+                console.log(d.data.toString(), d);
                 return;
             }
-            if (d.children) {
+            if (event.shiftKey) {
+                expandSubtree(d);
+                const newDepth = d.depth + d.data.getNrOlderGenerations();
+                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDepth);
+            } else if (d.children) {
                 // contract
                 d._children = d.children;
                 d.children = null;
@@ -455,7 +467,6 @@ export function showTree(
 
         // Toggle duplicate highlight on click.
         function toggleDuplicate(event, d) {
-            // console.log("toggleDuplicate d", d);
             const id = d.data.getId();
             // find all the paths to this person
             const setMarked = d.data.toggleMarked();
@@ -562,20 +573,46 @@ export const ColourArray = [
  * Generate text that display when and where the person was born
  */
 function birthString(person) {
-    const date = humanDate(person.getBirthDate()),
-        place = person.getBirthLocation();
+    const date = humanDate(person.getBirthDate());
+    const place = person.getBirthLocation();
+    return `Born: ${date ? `${datePrefix(person._data.DataStatus?.BirthDate)}${date}` : "[date unknown]"} ${
+        place ? `in ${place}` : "[location unknown]"
+    }.`;
+}
 
-    return `Born: ${date ? `${date}` : "[date unknown]"} ${place ? `in ${place}` : "[location unknown]"}.`;
+function datePrefix(dateStatus) {
+    if (dateStatus) {
+        switch (dateStatus) {
+            case "":
+            case "blank":
+            case "certain":
+                return "";
+            case "guess":
+                return "About ";
+            case "after":
+                return "After ";
+            case "before":
+                return "Before ";
+            default:
+                return "";
+        }
+    } else {
+        return "";
+    }
 }
 
 /**
  * Generate text that display when and where the person died
  */
 function deathString(person) {
-    const date = humanDate(person.getDeathDate()),
-        place = person.getDeathLocation();
-
-    return `Died: ${date ? `${date}` : "[date unknown]"} ${place ? `in ${place}` : "[location unknown]"}.`;
+    const date = humanDate(person.getDeathDate());
+    const place = person.getDeathLocation();
+    if (person.isLiving()) {
+        return "Still living";
+    }
+    return `Died: ${date ? `${datePrefix(person._data.DataStatus?.DeathDate)}${date}` : "[date unknown]"} ${
+        place ? `in ${place}` : "[location unknown]"
+    }.`;
 }
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
