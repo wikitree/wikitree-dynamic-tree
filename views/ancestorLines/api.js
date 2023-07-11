@@ -15,6 +15,7 @@ export class API {
         "Gender",
         "HasChildren",
         "Id",
+        "IsLiving",
         "LastNameAtBirth",
         "LastNameCurrent",
         "LastNameOther",

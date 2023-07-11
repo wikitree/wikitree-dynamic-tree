@@ -1,0 +1,12 @@
+{
+  "name": "biocheck-api",
+  "version": "1.6.4",
+  "description": "Bio Check API",
+  "main": "index.js",
+  "scripts": {
+    "docs": "documentation build --markdown-toc-max-depth=2  src/*.js  -f  md > biocheck-api.md && cat readme-base.md biocheck-api.md > README.md"
+  },
+  "keywords": ["WikiTree", "BioCheck"],
+  "author": "",
+  "license": "MIT"
+}
