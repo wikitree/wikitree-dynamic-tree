@@ -2,6 +2,7 @@ import { AncestorTree } from "./ancestor_tree.js";
 import { showTree } from "./display.js";
 
 export class AncestorLinesExplorer {
+    static #COOKIE_NAME = "wt_ale_options";
     static #helpText = `
         <xx>[ x ]</xx>
         <h2 style="text-align: center">About Ancestor Line Explorer</h2>
@@ -28,6 +29,9 @@ export class AncestorLinesExplorer {
                 You can collapse (hide) branches of the tree by clicking on any circle that is coloured in white.
             </li><li>
                 You can expand the tree by clicking on any circle that is coloured in steel-blue.
+            </li><li>
+                If you shift-click on a steel-blue circle in the highest generation of the tree, it will expand that branch
+                to the full extent of the available data.
             </li><li>
                 Click on the name of a person to open a new tab with that person's Wikitree Profile.
             </li><li>
@@ -92,7 +96,7 @@ export class AncestorLinesExplorer {
     constructor(selector, startId) {
         this.selector = selector;
         $(selector).html(`<div id="aleContainer" class="ale">
-            <div id="controlBlock">
+            <div id="controlBlock" class="ale-not-printable">
               <label for="generation"  title="The number of generations to fetch from WikiTree">Max Generations:</label
               ><select id="generation" title="The number of generations to fetch from WikiTree">
                 <option value="2">2</option>
@@ -130,15 +134,19 @@ export class AncestorLinesExplorer {
               <br />
               <fieldset>
                 <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
-                <label for="otherWtIds" title="Identify people of interest that need to be highlighted in the tree."
-                >People of Interest:</label>
-                <input
-                  id="otherWtIds"
-                  type="text"
-                  placeholder="(Optional) Enter comma-separated WikiTree IDs"
-                  size="110"
-                  title="Identify people of interest that need to be highlighted in the tree." />
                 <table id="optionsTbl">
+                  <tr>
+                    <td colspan="5">
+                      <label for="otherWtIds" title="Identify people of interest that need to be highlighted in the tree.">
+                        People of Interest:</label
+                      ><input
+                        id="otherWtIds"
+                        type="text"
+                        placeholder="(Optional) Enter comma-separated WikiTree IDs"
+                        size="110"
+                        title="Identify people of interest that need to be highlighted in the tree." />
+                    </td>
+                  </tr>
                   <tr>
                     <td>
                       <input
@@ -212,12 +220,12 @@ export class AncestorLinesExplorer {
                     </td>
                     <td>
                       <input
-                        id="labels"
+                        id="labelsLeft"
                         type="checkbox"
                         checked
                         title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right." />
                       <label
-                        for="labels"
+                        for="labelsLeft"
                         title="Place people's names only to the left of the circle representing them. Otherwise people with no ancestors to show have their names to the right."
                         class="right">
                         Labels left only</label
@@ -255,8 +263,12 @@ export class AncestorLinesExplorer {
                   </tr>
                 </table>
               </fieldset>
+              <div class="floating-button-div" style="position: fixed; bottom: 20px; left: 20px;">
+                <button id="slideLeft" title="Scroll left" class="small button">&larr;</button>
+                <button id="slideRight" title="Scroll right" class="small button">&rarr;</button>
+              </div>
             </div>
-            <div id="svgContainer">
+            <div id="svgContainer" class="ale-printable">
               <section id="theSvg"></section>
             </div>
         </div>`);
@@ -266,7 +278,9 @@ export class AncestorLinesExplorer {
         AncestorTree.init();
 
         $("#generation").on("change", function () {
-            AncestorLinesExplorer.setGetPeopleButtonText($("#generation").val());
+            const maxGen = $("#generation").val();
+            AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
+            AncestorLinesExplorer.updateMaxLevelSelection(maxGen, $("#maxLevel").val());
         });
         $("#getAncestorsButton").on("click", AncestorLinesExplorer.getAncestorsAndPaint);
         $("#drawTreeButton").on("click", AncestorLinesExplorer.findPathsAndDrawTree);
@@ -299,13 +313,43 @@ export class AncestorLinesExplorer {
             $("#drawTreeButton").click();
         });
         AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
+        AncestorLinesExplorer.retrieveOptionsFromCookie();
 
         const container = $("#theSvg");
-        container.draggable({ axis: "x" });
+        container.floatingScroll();
+        $("#slideLeft").on("click", function (event) {
+            event.preventDefault();
+            container.animate(
+                {
+                    scrollLeft: "-=300px",
+                },
+                "fast"
+            );
+        });
+        $("#slideRight").on("click", function (event) {
+            event.preventDefault();
+            container.animate(
+                {
+                    scrollLeft: "+=300px",
+                },
+                "fast"
+            );
+        });
+
+        if (typeof window.aleShowingInfo === "undefined") {
+            window.aleShowingInfo = true;
+        } else if (!window.aleShowingInfo) {
+            wtViewRegistry.hideInfoPanel();
+            window.aleShowingInfo = false;
+        }
 
         // Add click action to help button
         const helpButton = document.getElementById("help-button");
         helpButton.addEventListener("click", function () {
+            if (window.aleShowingInfo) {
+                wtViewRegistry.hideInfoPanel();
+                window.aleShowingInfo = false;
+            }
             $("#help-text").slideToggle();
         });
         $("#help-text").draggable();
@@ -357,16 +401,17 @@ export class AncestorLinesExplorer {
     }
 
     static findPathsAndDrawTree(event) {
-        const selectedMaxLevel = Math.min(document.getElementById("maxLevel").value, AncestorTree.maxGeneration);
-        AncestorLinesExplorer.updateMaxLevelSelection(AncestorTree.maxGeneration, selectedMaxLevel);
+        const validSelectedMaxLevel = Math.min(document.getElementById("maxLevel").value, AncestorTree.maxGeneration);
+        AncestorLinesExplorer.updateMaxLevelSelection(AncestorTree.maxGeneration, validSelectedMaxLevel);
         if (event.shiftKey) {
             AncestorLinesExplorer.setEarlySaAfricaIndiaIds();
         }
+        AncestorLinesExplorer.saveOptionCookies();
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
         const connectors = document.getElementById("connectors").checked;
         const hideTreeHeader = document.getElementById("hideTreeHeader").checked;
-        const labelsLeftOnly = document.getElementById("labels").checked;
+        const labelsLeftOnly = document.getElementById("labelsLeft").checked;
         let fullTreelevel = document.getElementById("maxLevel").value;
         if (fullTreelevel == 0) fullTreelevel = Number.MAX_SAFE_INTEGER;
         AncestorLinesExplorer.clearDisplay();
@@ -392,6 +437,7 @@ export class AncestorLinesExplorer {
             hideTreeHeader,
             labelsLeftOnly
         );
+        $("#theSvg").floatingScroll("update");
     }
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {
@@ -491,6 +537,49 @@ export class AncestorLinesExplorer {
 
     static hideShakingTree() {
         $("#tree").slideUp();
+    }
+
+    static getCookie(name) {
+        return WikiTreeAPI.cookie(name) || null;
+    }
+
+    static setCookie(cookieName, value) {
+        return WikiTreeAPI.cookie(cookieName, value, { expires: 365 });
+    }
+
+    static saveOptionCookies() {
+        const options = {
+            expandPaths: document.getElementById("expandPaths").checked,
+            onlyPaths: document.getElementById("onlyPaths").checked,
+            connectors: document.getElementById("connectors").checked,
+            labelsLeftOnly: document.getElementById("labelsLeft").checked,
+            hideTreeHeader: document.getElementById("hideTreeHeader").checked,
+            brickWallColour: document.getElementById("aleBrickWallColour").value,
+            edgeFactor: document.getElementById("edgeFactor").value,
+            heightFactor: document.getElementById("tHFactor").value,
+            maxLevel: document.getElementById("maxLevel").value,
+            otherWtIds: document.getElementById("otherWtIds").value,
+        };
+        // console.log(`Saving options ${JSON.stringify(options)}`);
+        AncestorLinesExplorer.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
+    }
+
+    static retrieveOptionsFromCookie() {
+        const optionsJson = AncestorLinesExplorer.getCookie(AncestorLinesExplorer.#COOKIE_NAME);
+        // console.log(`Retrieved options ${optionsJson}`);
+        if (optionsJson) {
+            const opt = JSON.parse(optionsJson);
+            $("#expandPaths").attr("checked", opt.expandPaths);
+            $("#onlyPaths").attr("checked", opt.onlyPaths);
+            $("#connectors").attr("checked", opt.connectors);
+            $("#labelsLeft").attr("checked", opt.labelsLeftOnly);
+            $("#hideTreeHeader").attr("checked", opt.hideTreeHeader);
+            $("#aleBrickWallColour").val(opt.brickWallColour);
+            $("#edgeFactor").val(opt.edgeFactor);
+            $("#tHFactor").val(opt.heightFactor);
+            $("#maxLevel").val(opt.maxLevel);
+            $("#otherWtIds").val(opt.otherWtIds);
+        }
     }
 
     static setEarlySaAfricaIndiaIds() {

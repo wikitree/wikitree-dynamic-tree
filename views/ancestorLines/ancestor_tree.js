@@ -42,23 +42,26 @@ export class AncestorTree {
         let remainingDepth = depth;
         let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
         let start = 0;
-        let [resultByKey, parentsNotLoaded] = await AncestorTree.makePagedCallAndAddPeople(
+        let privateIdOffset = 0;
+        let [resultByKey, parentsNotLoaded, nrPrivateIds] = await AncestorTree.makePagedCallAndAddPeople(
             [wtId],
             reqDepth,
             start,
-            API.GET_PERSON_LIMIT
+            API.GET_PERSON_LIMIT,
+            privateIdOffset
         );
         if (!resultByKey) return [AncestorTree.root, performance.now() - starttime];
         const rootId = resultByKey[wtId].Id;
 
         remainingDepth -= reqDepth;
-        // const profilesToLoad = AncestorTree.parentsNotLoaded(AncestorTree.#people.get(rootId));
         while (parentsNotLoaded.size > 0 && remainingDepth > 0) {
             console.log(`Levels remaining:${remainingDepth}. Found ${parentsNotLoaded.size} more to load`);
             const chunkSize = 100;
             const idsToGet = [...parentsNotLoaded];
             parentsNotLoaded.clear();
             reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
+
+            // Request parentsNotLoaded in chunks of chunkSize
             for (let s = 0; s <= idsToGet.length; s += chunkSize) {
                 const chunkedIds = idsToGet.slice(s, s + chunkSize);
 
@@ -70,18 +73,22 @@ export class AncestorTree {
                         idsToGet.length
                     } people and their ancestors.`
                 );
-
-                const [, subtreeNotLoaded] = await AncestorTree.makePagedCallAndAddPeople(
+                privateIdOffset += nrPrivateIds;
+                let subtreeNotLoaded;
+                [, subtreeNotLoaded, nrPrivateIds] = await AncestorTree.makePagedCallAndAddPeople(
                     chunkedIds,
                     reqDepth,
                     start,
-                    API.GET_PERSON_LIMIT
+                    API.GET_PERSON_LIMIT,
+                    privateIdOffset
                 );
                 const newTreeSize = AncestorTree.#people.size;
                 console.log(
                     `Levels remaining:${remainingDepth}. #keys in original request:${reqSize}, profiles added:${
                         newTreeSize - oldTreeSize
-                    }, new tree size:${newTreeSize}, found to load:${subtreeNotLoaded.size}`
+                    }, of which ${nrPrivateIds} were private. New tree size:${newTreeSize}, found to load:${
+                        subtreeNotLoaded.size
+                    }`
                 );
                 for (const elm of subtreeNotLoaded) {
                     parentsNotLoaded.add(elm);
@@ -93,18 +100,27 @@ export class AncestorTree {
         return [AncestorTree.root, performance.now() - starttime];
     }
 
-    static async makePagedCallAndAddPeople(reqIds, depth, start, limit) {
+    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
         const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
         console.log(`Received ${profiles.length} profiles`);
         const notLoaded = new Set();
 
+        let nrPrivateIds = 0;
         while (profiles.length > 0) {
             // Note: the root returned here, might not in fact be the root, because getPeople does not guarantee return order
             let nrAdded = 0;
             for (const item of profiles) {
-                const id = +item.Id;
+                let id = +item.Id;
+                if (id < 0) {
+                    // WT returns negative ids for private profiles, but they seem to be unique only
+                    // within the result returned by the call (i.e. per page). However, since they are
+                    // different people, we give them uniq ids.
+                    // console.log(`Private id ${id} replaced with ${id - privateIdOffset}`);
+                    id += -privateIdOffset;
+                    ++nrPrivateIds;
+                }
                 if (!AncestorTree.#people.has(id)) {
                     // This is a new person, add them to the tree
                     const person = new Person(item);
@@ -134,7 +150,7 @@ export class AncestorTree {
             profiles = Object.values(ancestor_json);
             console.log(`Received ${profiles.length} profiles`);
         }
-        return [resultByKey, notLoaded];
+        return [resultByKey, notLoaded, nrPrivateIds];
     }
 
     // Validate that the tree is acyclic while filling in the generation data for each person in the tree.
@@ -199,37 +215,6 @@ export class AncestorTree {
 
     static get(id) {
         return AncestorTree.#people.get(+id);
-    }
-
-    // Find profiles that do have one or more parent profiles which have not been downloaded yet.
-    static parentsNotLoaded(subTreeRoot) {
-        return AncestorTree.#findParentsNotLoaded(subTreeRoot, new Set());
-    }
-
-    static #findParentsNotLoaded(person, notLoaded) {
-        if (person.isDeadEnd()) {
-            return notLoaded;
-        }
-        const fatherId = person.getFatherId();
-        const motherId = person.getMotherId();
-        if (AncestorTree.hasRemote(fatherId)) {
-            notLoaded.add(fatherId);
-        }
-        if (AncestorTree.hasRemote(motherId)) {
-            notLoaded.add(motherId);
-        }
-        if (AncestorTree.#people.has(+fatherId)) {
-            notLoaded = AncestorTree.#findParentsNotLoaded(AncestorTree.#people.get(+fatherId), notLoaded);
-        }
-        if (AncestorTree.#people.has(+motherId)) {
-            notLoaded = AncestorTree.#findParentsNotLoaded(AncestorTree.#people.get(+motherId), notLoaded);
-        }
-        return notLoaded;
-    }
-
-    // This is a valid id, but the profile is not present in our cache
-    static hasRemote(id) {
-        return id && !AncestorTree.#people.has(+id);
     }
 
     static rootId() {
