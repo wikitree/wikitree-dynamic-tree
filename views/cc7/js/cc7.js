@@ -1547,7 +1547,7 @@ export class CC7 {
                         if ($(a).data(sorter) == "") {
                             return true;
                         }
-                        return $(b).data(sorter).localeCompare($(a).data(sorter));
+                        return $(b).data(sorter).toString().localeCompare($(a).data(sorter));
                     });
                     el.attr("data-order", "desc");
                 } else {
@@ -1555,7 +1555,7 @@ export class CC7 {
                         if ($(b).data(sorter) == "") {
                             return true;
                         }
-                        return $(a).data(sorter).localeCompare($(b).data(sorter));
+                        return $(a).data(sorter).toString().localeCompare($(b).data(sorter));
                     });
                     el.attr("data-order", "asc");
                 }
@@ -1609,6 +1609,7 @@ export class CC7 {
                 `<th data-order='' id='deathdate' ${sortTitle}>Death date</th>` +
                 `<th data-order='' id='deathlocation' ${sortTitle}>Death place</th>` +
                 ageAtDeathCol +
+                `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
                 touchedTH +
                 "</tr></thead><tbody></tbody></table>"
@@ -1734,31 +1735,46 @@ export class CC7 {
 
             const privacyLevel = mPerson.Privacy;
 
-            let privacy = "";
+            let privacy = null;
             let privacyTitle = "";
-            if (mPerson.Privacy_IsOpen == true || privacyLevel == 60) {
-                privacy = "./views/cc7/images/privacy_open.png";
-                privacyTitle = "Open";
-            }
-            if (mPerson.Privacy_IsPublic == true) {
-                privacy = "./views/cc7/images/privacy_public.png";
-                privacyTitle = "Public";
-            }
-            if (mPerson.Privacy_IsSemiPrivate == true || privacyLevel == 40) {
-                privacy = "./views/cc7/images/privacy_public-tree.png";
-                privacyTitle = "Private with Public Bio and Tree";
-            }
-            if (privacyLevel == 35) {
-                privacy = "./views/cc7/images/privacy_privacy35.png";
-                privacyTitle = "Private with Public Tree";
-            }
-            if (mPerson.Privacy_IsSemiPrivateBio == true || privacyLevel == 30) {
-                privacy = "./views/cc7/images/privacy_public-bio.png";
-                privacyTitle = "Public Bio";
-            }
-            if (privacyLevel == 20) {
-                privacy = "./views/cc7/images/privacy_private.png";
-                privacyTitle = "Private";
+            // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
+            // Privacy_IsPrivate            True if Privacy = 20
+            // Privacy_IsPublic             True if Privacy = 50
+            // Privacy_IsOpen               True if Privacy = 60
+            // Privacy_IsAtLeastPublic      True if Privacy >= 50
+            // Privacy_IsSemiPrivate        True if Privacy = 30-40
+            // Privacy_IsSemiPrivateBio     True if Privacy = 30
+            switch (privacyLevel) {
+                case 60:
+                    privacy = "./views/cc7/images/privacy_open.png";
+                    privacyTitle = "Open";
+                    break;
+                case 50:
+                    privacy = "./views/cc7/images/privacy_public.png";
+                    privacyTitle = "Public";
+                    break;
+                case 40:
+                    privacy = "./views/cc7/images/privacy_public-tree.png";
+                    privacyTitle = "Private with Public Bio and Tree";
+                    break;
+                case 35:
+                    privacy = "./views/cc7/images/privacy_privacy35.png";
+                    privacyTitle = "Private with Public Tree";
+                    break;
+                case 30:
+                    privacy = "./views/cc7/images/privacy_public-bio.png";
+                    privacyTitle = "Public Bio";
+                    break;
+                case 20:
+                    privacy = "./views/cc7/images/privacy_private.png";
+                    privacyTitle = "Private";
+                    break;
+                case 10:
+                    privacy = "./views/cc7/images/privacy_unlisted.png";
+                    privacyTitle = "Unlisted";
+                    break;
+                default:
+                    break;
             }
             let firstName = mPerson.FirstName;
             if (mPerson.MiddleName) {
@@ -1803,12 +1819,26 @@ export class CC7 {
                     mPerson.LastNameAtBirth = "Private";
                 }
             }
-            const oLink =
-                "<a target='_blank' href='https://www.wikitree.com/wiki/" +
-                CC7.htmlEntities(mPerson.Name) +
-                "'>" +
-                firstName +
-                "</a>";
+
+            function profileLink(wtid, text) {
+                return "<a target='_blank' href='https://www.wikitree.com/wiki/" + wtid + "'>" + text + "</a>";
+            }
+
+            const oLink = profileLink(mPerson.Name, firstName);
+            let managerLink;
+            let dManager;
+            if (mPerson.Manager) {
+                const mgrProfile = window.people.get(+mPerson.Manager);
+                if (mgrProfile && mgrProfile.Name) {
+                    dManager = CC7.htmlEntities(mgrProfile.Name);
+                } else {
+                    dManager = `${mPerson.Manager}`;
+                }
+                managerLink = profileLink(dManager, dManager);
+            } else {
+                managerLink = "Orphaned";
+                dManager = managerLink;
+            }
 
             let degreeCell = "";
             let touched = "";
@@ -1958,13 +1988,13 @@ export class CC7 {
                     CC7.htmlEntities(deathLocation) +
                     "' data-deathlocation-reversed='" +
                     CC7.htmlEntities(deathLocationReversed) +
+                    "' data-manager='" +
+                    dManager +
                     "' class='" +
                     gender +
-                    "'><td><img class='privacyImage' src='" +
-                    privacy +
-                    "' title='" +
-                    privacyTitle +
-                    `'></td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
+                    "'><td>" +
+                    (privacy ? "<img class='privacyImage' src='" + privacy + "' title='" + privacyTitle + "'>" : "") +
+                    `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
                     relNums["Parent_cell"] +
@@ -1993,6 +2023,9 @@ export class CC7 {
                     CC7.htmlEntities(deathLocation) +
                     "</td>" +
                     ageAtDeathCell +
+                    "<td class='managerCell'>" +
+                    managerLink +
+                    "</td>" +
                     created +
                     touched +
                     "</tr>"
