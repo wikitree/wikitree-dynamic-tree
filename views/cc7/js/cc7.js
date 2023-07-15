@@ -3192,8 +3192,7 @@ export class CC7 {
                     maxDegree = aPerson.Degree;
                 }
             }
-            CC7.buildDegreeTableData(degreeCounts, maxDegree);
-            CC7.handleDegreeChange(maxDegree);
+            CC7.hideShakingTree();
             CC7.addPeopleTable(
                 `CC${Math.min(maxDegree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`
             );
@@ -3202,7 +3201,8 @@ export class CC7 {
                     "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
-            CC7.hideShakingTree();
+            CC7.buildDegreeTableData(degreeCounts, maxDegree);
+            CC7.handleDegreeChange(maxDegree);
         };
 
         try {
