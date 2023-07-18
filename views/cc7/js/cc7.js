@@ -1902,11 +1902,14 @@ export class CC7 {
                 }
 
                 relNums = {};
-                const rArr = ["Parent", "Sibling", "Spouse", "Child"];
+                const rArr = ["Sibling", "Spouse", "Child"];
                 rArr.forEach(function (aR) {
                     let cellClass = "class='number'";
-                    if (mPerson[aR].length) {
-                        relNums[aR] = mPerson[aR].length;
+                    // For spouse count we check the Spouses arrays since it contains everyone, not just
+                    // those present in the returned data
+                    const realAr = aR == "Spouse" ? "Spouses" : aR;
+                    if (mPerson[realAr].length) {
+                        relNums[aR] = mPerson[realAr].length;
                     } else {
                         relNums[aR] = "";
                     }
@@ -1929,11 +1932,21 @@ export class CC7 {
                 });
 
                 if (!mPerson.Father && !mPerson.Mother) {
+                    relNums["Parent"] = 0;
+                    relNums["Parent_data"] = "data-Parent='0'";
                     relNums["Parent_cell"] = "<td class='noParents number' title='missing parents'>0</td>";
                 } else if (!mPerson.Father) {
+                    relNums["Parent"] = 1;
+                    relNums["Parent_data"] = "data-Parent='1'";
                     relNums["Parent_cell"] = "<td class='noFather number' title='missing father'>1</td>";
                 } else if (!mPerson.Mother) {
+                    relNums["Parent"] = 1;
+                    relNums["Parent_data"] = "data-Parent='1'";
                     relNums["Parent_cell"] = "<td class='noMother number' title='missing mother'>1</td>";
+                } else {
+                    relNums["Parent"] = 0;
+                    relNums["Parent_data"] = "data-Parent='0'";
+                    relNums["Parent_cell"] = "<td class='number' title='Parents'>2</td>";
                 }
             }
 
@@ -2040,6 +2053,14 @@ export class CC7 {
             });
         }
 
+        // Provide a way to examine the data record of a specific person
+        $("img.privacyImage").click(function (event) {
+            if (event.altKey) {
+                const id = $(this).closest("tr").attr("data-id");
+                const p = window.people.get(+id);
+                console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
+            }
+        });
         $("img.familyHome").click(function () {
             CC7.showFamilySheet($(this));
         });
@@ -2815,6 +2836,7 @@ export class CC7 {
                     performance.now() - starttime
                 }ms`
             );
+            CC7.populateRelativeArrays();
             const root = CC7.hideShakingTree();
             CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
         }
@@ -2869,23 +2891,29 @@ export class CC7 {
         CC7.getConnections(theDegree);
     }
 
-    static async getConnections(maxWantedDegree) {
-        CC7.showShakingTree();
-        const wtId = wtViewRegistry.getCurrentWtId();
-        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree);
-        window.rootId = +resultByKey[wtId]?.Id;
+    static populateRelativeArrays() {
+        const offDegreeParents = new Map();
 
-        // add Parent, Child, and Spouse arrays
         for (const pers of window.people.values()) {
+            // Add Parent and Child arrays
             for (const pId of pers.Parents) {
                 if (pId) {
-                    const parent = window.people.get(+pId);
+                    let parent = window.people.get(+pId);
                     if (parent) {
                         pers.Parent.push(parent);
                         parent.Child.push(pers);
+                    } else {
+                        parent = offDegreeParents.get(+pId);
+                        if (parent) {
+                            parent.Child.push(pers);
+                        } else {
+                            offDegreeParents.set(+pId, { Id: pId, Child: [pers] });
+                        }
                     }
                 }
             }
+
+            // Add Spouse and coresponding Marriage arrays
             for (const sp of pers.Spouses) {
                 const spouse = window.people.get(+sp.Id);
                 if (spouse) {
@@ -2905,9 +2933,9 @@ export class CC7 {
             }
         }
         // Now that all child arrays are complete, add Sibling arrays
-        for (const pers of window.people.values()) {
+        for (const pers of [...window.people.values(), ...offDegreeParents.values()]) {
             if (pers.Child.length) {
-                // Add this person's children as siblings to each of his children
+                // Add this person's children as siblings to each of his/her children
                 for (const child of pers.Child) {
                     // Exclude this child from the sibling list
                     const siblings = pers.Child.filter((c) => c.Id != child.Id);
@@ -2921,7 +2949,16 @@ export class CC7 {
                 }
             }
         }
-        // Finally, calculate and assign degrees
+    }
+
+    static async getConnections(maxWantedDegree) {
+        CC7.showShakingTree();
+        const wtId = wtViewRegistry.getCurrentWtId();
+        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree);
+        window.rootId = +resultByKey[wtId]?.Id;
+        CC7.populateRelativeArrays();
+
+        // Calculate and assign degrees
         const degreeCounts = {};
         const root = window.people.get(window.rootId);
         root.Degree = 0;

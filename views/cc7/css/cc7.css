@@ -133,6 +133,9 @@ th.tlBioAge {
   font-weight: bold;
   cursor: pointer;
 }
+.familySheet .self {
+  font-weight: bold;
+}
 .timelineTable .BioPerson,
 .timelineTable .marriage {
   font-weight: bold;
