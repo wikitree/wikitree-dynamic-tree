@@ -1641,7 +1641,8 @@ export class CC7 {
                 });
         }
 
-        for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+        for (let [id, degree, birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+            if (degree > window.cc7Degree) break;
             const mPerson = window.people.get(id);
 
             let deathDate = CC7.ymdFix(mPerson.DeathDate);
@@ -2954,7 +2955,7 @@ export class CC7 {
     static async getConnections(maxWantedDegree) {
         CC7.showShakingTree();
         const wtId = wtViewRegistry.getCurrentWtId();
-        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree);
+        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], +maxWantedDegree + 1);
         window.rootId = +resultByKey[wtId]?.Id;
         CC7.populateRelativeArrays();
 
@@ -3003,6 +3004,7 @@ export class CC7 {
                 }
             }
         }
+        window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
         CC7.hideShakingTree();
         if ($("#degreesTable").length != 0) {
             $("#degreesTable").remove();
@@ -3012,14 +3014,10 @@ export class CC7 {
                 "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
             )
         );
-        CC7.buildDegreeTableData(degreeCounts, actualMaxDegree);
+        CC7.buildDegreeTableData(degreeCounts, maxWantedDegree);
         const aName = new PersonName(window.people.get(window.rootId));
 
-        CC7.addPeopleTable(
-            `CC${Math.min(maxWantedDegree, actualMaxDegree)} for ${new PersonName(root).withParts(
-                CC7.WANTED_NAME_PARTS
-            )}`
-        );
+        CC7.addPeopleTable(`CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`);
     }
 
     static getIdsOf(arrayOfPeople) {
@@ -3157,10 +3155,7 @@ export class CC7 {
         try {
             CC7.collapsePeople();
             const fileName = CC7.makeFilename();
-            CC7.downloadArray(
-                [[window.rootId, window.people.get(window.rootId)], ...window.people.entries()],
-                fileName
-            );
+            CC7.downloadArray([[window.rootId, window.cc7Degree], ...window.people.entries()], fileName);
         } finally {
             this.expandPeople(window.people);
         }
@@ -3207,8 +3202,10 @@ export class CC7 {
             const contents = e.target.result;
             try {
                 const peeps = JSON.parse(contents);
-                window.rootId = peeps[0][0];
+                const [r, x] = peeps.shift();
                 window.people = CC7.expandPeople(new Map(peeps));
+                window.rootId = r;
+                window.cc7Degree = Number.isFinite(x) ? (window.cc7Degree = x) : 0;
             } catch (error) {
                 CC7.hideShakingTree();
                 wtViewRegistry.showError(`The input file is not valid: ${error}`);
@@ -3229,17 +3226,20 @@ export class CC7 {
                     maxDegree = aPerson.Degree;
                 }
             }
+            if (window.cc7Degree == 0) window.cc7Degree = Math.min(CC7.MAX_DEGREE, maxDegree);
             CC7.hideShakingTree();
             CC7.addPeopleTable(
-                `CC${Math.min(maxDegree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`
+                `CC${Math.min(window.cc7Degree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(
+                    CC7.WANTED_NAME_PARTS
+                )}`
             );
             $("#cc7Container #hierarchyViewButton").before(
                 $(
                     "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
-            CC7.buildDegreeTableData(degreeCounts, maxDegree);
-            CC7.handleDegreeChange(maxDegree);
+            CC7.buildDegreeTableData(degreeCounts, window.cc7Degree);
+            CC7.handleDegreeChange(window.cc7Degree);
         };
 
         try {
