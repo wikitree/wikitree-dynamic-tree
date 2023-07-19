@@ -10,85 +10,103 @@ export class CC7 {
     static APP_ID = "CC7";
     static #helpText = `
         <x>[ x ]</x>
-        <h2 style="text-align: center">About The CC7 Table</h2>
-        <p>This tool allows you to retrieve the list of people that are connected to someone within 7 degrees.</p>
+        <h2 style="text-align: center">About CC7 Views</h2>
+        <p>
+            CC7 Views allows you to retrieve the list of people connected to a profile within 7 degrees.
+            This guide explains how to use it.
+        </p>
+        <h3>Loading the Data</h3>
+        <p>
+            Depending on the number of connections, the data can take over two minutes to load fully.
+            To reduce loading time, you can:
+        </p>
+        <ul>
+            <li>Load fewer than the full 7 degrees.</li>
+            <li>Load only one degree at a time.</li>
+            <li>Save the data to a file for faster loading next time.</li>
+        </ul>
+        <p>The Table view will always load first. This shows the most data.</p>
+        <h3>Calculating Degree of Separation</h4>
+        <p>
+            The app shows the degree of separation between the focal person and each person on the list.
+            Here is how it works:
+        </p>
         <ul>
             <li>
-                Depending on the size of the CC7 (the connection count to the 7th degree), the data can take a
-                long time to load (maybe five minutes or so).
+                The WikiTree API provides a list of connected people up to the requested number of degrees,
+                such as 5 degrees.
             </li>
-            <li>To avoid the long waiting time, you can load only one degree at a time.</li>
-            <li>Also to reduce the loading time, you can save the data to a file for faster loading next time.</li>
-            <li>The Table view will always load first. This shows the most data.</li>
-            <li>The Hierarchy view may also be useful.</li>
-            <li>You need to log in to the apps server to get your private and unlisted profiles.</li>
+            <li>The app calculates the degrees by linking parents to children.</li>
             <li>
-                We can't get the connections to the private and unlisted profiles that you're not on the Trusted
-                List for (or the connections that go through that person).
+                The app cannot always connect people perfectly as some profiles are private or unlisted,
+                with limited information returned by the API.
+            </li>
+            <li>The degree shown will sometimes be higher than the actual shortest path.</li>
+            <li>Results for CC5, for example, may show someone at 6 degrees although they are actually at 5 or less.</li>
+        </ul>
+        <p>The Table View, which shows the most data, will always load first.</p>
+        <h3>Table View</h3>
+        <p>Here are some tips:</p>
+        <h4>Sorting the Table</h4>
+        <ul>
+            <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
+            <li>
+                Sort by Created/Modified to see new additions. (Due to a bug in the API, the Created column is
+                currently empty. We hope this will be fixed soon.)
             </li>
             <li>
-                Due to the previous point, the numbers shown in the degrees table will be less than those you see
-                elsewhere on WikiTree.
-            </li>
-
-            <li>Double-clicking this 'About' box will close it.</li>
-            <li>
-                If you find problems with this page or have suggestions for improvements,
-                <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Beacall-6"
-                    >let me know</a
-                >.
+                The location column sort toggles between sorting Town &rarr; Country or Country &rarr; Town on each click
+                on location header.
             </li>
         </ul>
-        <h3>Table</h3>
+        <h4>Scrolling the Wide Table</h4>
+        <ul>
+            <li>Drag the table left/right or two-finger drag on a trackpad.</li>
+        </ul>
+        <h4>And...</h4>
         <ul>
             <li>
-                You can sort the table by any of the columns by clicking on the column heading. Clicking a second
-                time, reverses the sort order.
-            </li>
-            <li>
-                The location columns can be sorted by Town &rarr; Country or Country &rarr; Town. Clicking on a
-                location heading will toggle between the two. Locations can't be ordered in reverse.
-            </li>
-            <li>
-                Sorting by Created or Modified dates may help you find profiles that are new to your list (maybe
-                added by other people).
-            </li>
-            <li>
-                The 'Died Young' images are for people who died under 16 years of age. Their spouse and children
-                boxes are greyed out as we can assume they didn't have any of these.
-            </li>
-            <li>
-                With the 'Wide table', grab and drag the table to scroll left and right, or use a two-finger drag
-                on the track-pad.
+                The Died Young image <img src="./views/cc7/images/diedYoung.png"> is used to flag people who died under
+                16 years of age. Their spouse and children boxes are greyed out as we can assume they didn't have any
+                of these.
             </li>
         </ul>
         <ul id="key" class="key">
-            <li><img src="./views/cc7/images/blue_bricks_small.jpg" /> missing father</li>
-            <li><img src="./views/cc7/images/pink_bricks_small.jpg" /> missing mother</li>
-            <li><img src="./views/cc7/images/purple_bricks_small.jpg" /> both parents missing</li>
+            <li><img src="./views/cc7/images/blue_bricks_small.jpg"> missing father</li>
+            <li><img src="./views/cc7/images/pink_bricks_small.jpg"> missing mother</li>
+            <li><img src="./views/cc7/images/purple_bricks_small.jpg"> both parents missing</li>
             <li>
-                <span><span class="none"></span> 'No more spouses/children' box is checked or Died Young</span>
+                <span><span class="none"></span> the 'No more spouses/children' box is checked, or Died Young</span>
             </li>
         </ul>
-        <h3>Hierarchy</h3>
+        <h3>Hierarchy View</h3>
         <ul>
-            <li>The number in the first box next to a person's name shows how many profiles are 'hidden' below them.</li>
+            <li>Numbers show the number of hidden profiles below each person.</li>
             <li>
-                The icons in the box at the end of the line show the number of hidden people with missing parents
-                (blue and pink bricks for fathers and mothers respectively), possible missing spouses
-                (the couple icon), and children (the child icon).
+                Icons show missing parents (blue and pink bricks for fathers and mothers, respectively), and potentially missing
+                spouses and/or children.
             </li>
-            <li>Reveal more people by clicking the '+' buttons to the left of the names.</li>
-            <li>The big '+' and '−' buttons expand and collapse the list by one degree at a time.</li>
+            <li>Click '+' to reveal more people.</li>
         </ul>
-        <h3>List</h3>
+        <h4>Expanding and Collapsing the Hierarchy</h4>
         <ul>
+            <li>Big '+' and '-' buttons expand and collapse by degree.</li>
+        </ul>
+        <h3>List View</h3>
+        <ul>
+            <li>Click a surname to show only those people.</li>
+            <li>Click again to show all.</li>
+        </ul>
+        <p>We hope these tips help you get the most out of the CC7 tool! Let us know if you have any other questions.</p>
+        <h3>Other points</h3>
+        <ul>
+            <li>Double-clicking this 'About' box, or clicking the red X in its top right corner will close it.</li>
             <li>
-                Clicking a surname in the heading shows only the people with that surname in the same column in the
-                table below.
+                If you find problems with this page or have suggestions for improvements, let
+                <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641">Riël</a> or
+                <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Beacall-6">Ian</a>
+                know about it.
             </li>
-            <li>Click the surname again to show all the people in the list.</li>
-            <li>The lists are ordered alphabetically.</li>
         </ul>`;
 
     static PROFILE_FIELDS = [
@@ -113,6 +131,7 @@ export class CC7 {
         "LastNameCurrent",
         "LastNameOther",
         "Manager",
+        "Managers",
         "MiddleName",
         "Mother",
         "Name",
@@ -128,6 +147,7 @@ export class CC7 {
     static GET_PEOPLE_FIELDS = CC7.PROFILE_FIELDS + ",Spouses";
     static GET_PEOPLE_LIMIT = 1000;
     static MAX_DEGREE = 7;
+    static HIDE = true;
 
     static WANTED_NAME_PARTS = [
         "Prefix",
@@ -826,7 +846,7 @@ export class CC7 {
                 fNames = tPerson.FirstName + " and " + aFact.firstName;
                 relation = "";
             }
-            const tlFirstName = "<a href='https://www.wikitree.com/wiki/" + aFact.wtId + "'>" + fNames + "</a>";
+            const tlFirstName = CC7.profileLink(aFact.wtId, fNames);
             const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
 
             if (aPersonBD.Approx == true) {
@@ -942,8 +962,7 @@ export class CC7 {
                 disName = disName.replace(personOfInterest.MiddleName + " ", "");
             }
         }
-        const captionHTML =
-            "<a href='https://www.wikitree.com/wiki/" + CC7.htmlEntities(kPeople[0].Name) + "'>" + disName + "</a>";
+        const captionHTML = CC7.profileLink(CC7.htmlEntities(kPeople[0].Name), disName);
         const kTable = $(
             `<div class='familySheet'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
                 "<thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead>" +
@@ -1024,10 +1043,8 @@ export class CC7 {
                         kPers.Gender +
                         "'><td>" +
                         kPers.RelationShow +
-                        "</td><td><a  target='_blank'  href='https://www.wikitree.com/wiki/" +
-                        linkName +
-                        "'>" +
-                        oName +
+                        "</td><td>" +
+                        CC7.profileLink(linkName, oName) +
                         "</td><td class='aDate'>" +
                         oBDate +
                         "</td><td>" +
@@ -1579,6 +1596,12 @@ export class CC7 {
         });
     }
 
+    static profileLink(wtRef, text) {
+        return wtRef.startsWith("Private")
+            ? text
+            : `<a target='_blank' href='https://www.wikitree.com/wiki/${wtRef}'>${text}</a>`;
+    }
+
     static async addPeopleTable(caption) {
         $("#savePeople").show();
         const sortTitle = "title='Click to sort'";
@@ -1642,8 +1665,8 @@ export class CC7 {
         }
 
         for (let [id, degree, birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
-            if (degree > window.cc7Degree) break;
             const mPerson = window.people.get(id);
+            if (mPerson.Hide) continue;
 
             let deathDate = CC7.ymdFix(mPerson.DeathDate);
             if (deathDate == "") {
@@ -1821,23 +1844,15 @@ export class CC7 {
                 }
             }
 
-            function profileLink(wtid, text) {
-                return "<a target='_blank' href='https://www.wikitree.com/wiki/" + wtid + "'>" + text + "</a>";
-            }
-
-            const oLink = profileLink(mPerson.Name, firstName);
+            const oLink = CC7.profileLink(mPerson.Name, firstName);
             let managerLink;
             let dManager;
             if (mPerson.Manager) {
-                const mgrProfile = window.people.get(+mPerson.Manager);
-                if (mgrProfile && mgrProfile.Name) {
-                    dManager = CC7.htmlEntities(mgrProfile.Name);
-                } else {
-                    dManager = `${mPerson.Manager}`;
-                }
-                managerLink = profileLink(dManager, dManager);
+                const mgrWtId = mPerson.Managers.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
+                dManager = CC7.htmlEntities(mgrWtId);
+                managerLink = CC7.profileLink(dManager, dManager);
             } else {
-                managerLink = "Orphaned";
+                managerLink = mPerson.Name.startsWith("Private") ? "Unknown" : "Orphaned";
                 dManager = managerLink;
             }
 
@@ -2019,11 +2034,15 @@ export class CC7 {
                     diedYoungClass +
                     "' >" +
                     oLink +
-                    "</td><td class='lnab'><a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
-                    CC7.htmlEntities(mPerson.LastNameAtBirth) +
-                    "'>" +
-                    mPerson.LastNameAtBirth +
-                    "</a></td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
+                    "</td><td class='lnab'>" +
+                    (mPerson.LastNameAtBirth.startsWith("Private")
+                        ? mPerson.LastNameAtBirth
+                        : "<a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
+                          CC7.htmlEntities(mPerson.LastNameAtBirth) +
+                          "'>" +
+                          mPerson.LastNameAtBirth +
+                          "</a>") +
+                    "</td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
                     CC7.htmlEntities(mPerson.LastNameCurrent) +
                     "'>" +
                     mPerson.LastNameCurrent +
@@ -2127,7 +2146,6 @@ export class CC7 {
                 const rows = $(".peopleTable tbody tr");
                 const locations = $("#spLocationFilter").val().split(",");
                 const locationsT = locations.map((string) => string.trim());
-                //oLocations = [];
 
                 rows.each(function () {
                     let keepIt = false;
@@ -2335,6 +2353,12 @@ export class CC7 {
         CC7.secondarySort3(aList, "lnab", "first-name", 1);
     }
 
+    static formDisplayName(aPerson, aName) {
+        return aPerson.Name.startsWith("Private")
+            ? aPerson.LastNameAtBirth || "Private"
+            : aName.withParts(CC7.WANTED_NAME_PARTS);
+    }
+
     static async lanceView() {
         $("#peopleTable").hide();
         if (!window.surnames) {
@@ -2368,11 +2392,11 @@ export class CC7 {
 
         for (let aPerson of window.people.values()) {
             if (!aPerson.Missing) {
-                aPerson = CC7.missingBits(aPerson);
+                CC7.addMissingBits(aPerson);
             }
             const theDegree = aPerson.Degree;
             const aName = new PersonName(aPerson);
-            const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+            const theName = CC7.formDisplayName(aPerson, aName);
             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
             const theLNAB = theParts.get("LastNameAtBirth");
             const theFirstName = theParts.get("FirstName");
@@ -2431,11 +2455,9 @@ export class CC7 {
                         theLNAB +
                         "' data-name=\"" +
                         aPerson.Name +
-                        "\"><a target='_blank' href='https://www.wikitree.com/wiki/" +
-                        linkName +
-                        "'>" +
-                        theName +
-                        "</a> " +
+                        '">' +
+                        CC7.profileLink(linkName, theName) +
+                        " " +
                         missing.missingIcons +
                         "</li>"
                 );
@@ -2450,7 +2472,7 @@ export class CC7 {
         });
     }
 
-    static missingBits(aPerson) {
+    static addMissingBits(aPerson) {
         aPerson.Missing = [];
         if (!aPerson.Father) {
             aPerson.Missing.push("Father");
@@ -2473,7 +2495,6 @@ export class CC7 {
                 aPerson.Missing.push("Children");
             }
         }
-        return aPerson;
     }
 
     static missingThings(aPerson) {
@@ -2512,13 +2533,13 @@ export class CC7 {
                 const familyMembers = [].concat(aPerson.Parent, aPerson.Sibling, aPerson.Spouse, aPerson.Child);
 
                 familyMembers.forEach(function (aMember) {
-                    aMember = CC7.missingBits(aMember);
+                    CC7.addMissingBits(aMember);
 
                     if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
                         const theDegree = aMember.Degree;
                         if (theDegree > aPerson.Degree) {
                             const aName = new PersonName(aMember);
-                            const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+                            const theName = CC7.formDisplayName(aMember, aName);
                             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
                             const theLNAB = theParts.get("LastNameAtBirth");
                             const theFirstName = theParts.get("FirstName");
@@ -2545,8 +2566,8 @@ export class CC7 {
                                     `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Degree}' ` +
                                     `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Degree}° ` +
                                     `<span class='relation ${relation}'>${relation}</span>: ` +
-                                    `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a> ` +
-                                    `<span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
+                                    CC7.profileLink(linkName, theName) +
+                                    ` <span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
                             );
                             thisLI.children("ul").append(anLi);
                         }
@@ -2568,7 +2589,7 @@ export class CC7 {
 
         const aPerson = window.people.get(window.rootId);
         const aName = new PersonName(aPerson);
-        const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+        const theName = CC7.formDisplayName(aPerson, aName);
         const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
         const theLNAB = theParts.get("LastNameAtBirth");
         const theFirstName = theParts.get("FirstName");
@@ -2576,7 +2597,8 @@ export class CC7 {
         const anLi = $(
             `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Degree}' ` +
                 `data-name=\"${aPerson.Name}\" data-first-name='${theFirstName}'>${aPerson.Degree}° ` +
-                `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a><ul></ul></li>`
+                CC7.profileLink(linkName, theName) +
+                "<ul></ul></li>"
         );
         hierarchySection.children("ul").append(anLi);
         for (let i = 0; i < CC7.MAX_DEGREE; i++) {
@@ -2727,36 +2749,36 @@ export class CC7 {
                 if (missingFathers) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with missing father'>" +
                                 missingFathers +
-                                "<img title='people with missing father' class='missingFatherCount missingCountIcon' src='./views/cc7/images/blue_bricks_small.jpg'></span>"
+                                "<img class='missingFatherCount missingCountIcon' src='./views/cc7/images/blue_bricks_small.jpg'></span>"
                         )
                     );
                 }
                 if (missingMothers) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with missing mother'>" +
                                 missingMothers +
-                                "<img title='people with missing mother' class='missingMotherCount missingCountIcon' src='./views/cc7/images/pink_bricks_small.jpg'></span>"
+                                "<img class='missingMotherCount missingCountIcon' src='./views/cc7/images/pink_bricks_small.jpg'></span>"
                         )
                     );
                 }
                 if (missingSpouses) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with possible missing spouse'>" +
                                 missingSpouses +
-                                "<img title='people with possible missing spouse' class='missingSpouseCount missingCountIcon' src='./views/cc7/images/spouse_bricks_small.png'></span>"
+                                "<img class='missingSpouseCount missingCountIcon' src='./views/cc7/images/spouse_bricks_small.png'></span>"
                         )
                     );
                 }
                 if (missingChildren) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with posiible missing children'>" +
                                 missingChildren +
-                                "<img title='people with posiible missing children' class='missingChildrenCount missingCountIcon' src='./views/cc7/images/baby_bricks_small.png'></span>"
+                                "<img class='missingChildrenCount missingCountIcon' src='./views/cc7/images/baby_bricks_small.png'></span>"
                         )
                     );
                 }
@@ -2792,83 +2814,112 @@ export class CC7 {
         wtViewRegistry.clearStatus();
         window.people = new Map();
         window.rootId = null;
+        window.cc7MinPrivateId = 0;
         event.preventDefault();
         const wtId = wtViewRegistry.getCurrentWtId();
         if (wtId.match(/.+\-.+/)) {
             CC7.clearDisplay();
             CC7.showShakingTree();
             $("#cc7Container").addClass("degreeView");
-            const theDegree = $("#cc7Degree").val();
-            let start = 0;
-            const limit = CC7.GET_PEOPLE_LIMIT;
-            console.log(
-                `Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, limit:${limit}`
-            );
+            const theDegree = +$("#cc7Degree").val();
+
+            // We get two more degrees than necessary to ensure we can calculate the relative counts
+            // correctly. We make separate (async) calls for each degree in order to be able to identify
+            // the extra degrees so we can hide them from the display and not include them in the degree counts.
             const starttime = performance.now();
-            const [resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            const [[resultByKeyAtD, countAtD], [, countAtDm1], [, countAtDp1]] = await Promise.all([
+                CC7.collectPeopelAtNthDegree(wtId, theDegree),
+                CC7.collectPeopelAtNthDegree(wtId, theDegree - 1, CC7.HIDE),
+                CC7.collectPeopelAtNthDegree(wtId, theDegree + 1, CC7.HIDE),
+            ]);
+            console.log(
+                `Retrieved ${countAtD}, ${countAtDm1}, ${countAtDp1} profiles at degrees ${
+                    theDegree - 1
+                }, ${theDegree}, ${theDegree + 1} in ${performance.now() - starttime}ms`
+            );
+
             $("#oneDegreeList").remove();
             const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
             $("#cc7Container").append(oneDegreeList);
-            if (peopleData === null) {
+            if (countAtD == 0) {
                 CC7.hideShakingTree();
                 return;
             }
-            window.rootId = +resultByKey[wtId].Id;
-            let profiles = peopleData ? Object.values(peopleData) : [];
-            console.log(`Received ${profiles.length} profiles`);
-
-            while (profiles.length > 0) {
-                CC7.addPeople(profiles, start, theDegree);
-
-                // Check if we're done
-                if (profiles.length < limit) break;
-
-                // We have more paged profiles to fetch
-                start += limit;
-                console.log(
-                    `Retrieving getPeople result page. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
-                );
-                const [, ancestor_json] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
-                profiles = Object.values(ancestor_json);
-                console.log(`Received ${profiles.length} profiles`);
-            }
-            console.log(
-                `Retrieved ${window.people.size} unique profiles at CC${theDegree} in ${
-                    performance.now() - starttime
-                }ms`
-            );
+            window.rootId = +resultByKeyAtD[wtId].Id;
             CC7.populateRelativeArrays();
-            const root = CC7.hideShakingTree();
+            CC7.hideShakingTree();
             CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
         }
     }
 
-    static addPeople(profiles, start = 0, degree = -1) {
+    static async collectPeopelAtNthDegree(wtId, theDegree, hide = !CC7.HIDE) {
+        let start = 0;
+        const limit = CC7.GET_PEOPLE_LIMIT;
+        console.log(`Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, hide:${hide}`);
+        let callNr = 1;
+        const starttime = performance.now();
+        const [resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+        let profiles = peopleData ? Object.values(peopleData) : [];
+        console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+        let resultByKeyReturned = {};
+        let profileCount = 0;
+
+        while (profiles.length > 0) {
+            profileCount += profiles.length;
+            CC7.addPeople(profiles, theDegree, hide);
+            Object.assign(resultByKeyReturned, resultByKey);
+
+            // Check if we're done
+            if (profiles.length < limit) break;
+
+            // We have more paged profiles to fetch
+            ++callNr;
+            start += limit;
+            console.log(
+                `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
+            );
+            const [, ancestor_json] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            profiles = ancestor_json ? Object.values(ancestor_json) : [];
+            console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+        }
+        console.log(
+            `Retrieved ${profileCount} degree ${theDegree} profiles with ${callNr} API call(s) in ${
+                performance.now() - starttime
+            }ms`
+        );
+        return [resultByKeyReturned, profileCount];
+    }
+
+    static addPeople(profiles, theDegree = -1, hide = !CC7.HIDE) {
         let nrAdded = 0;
         for (const person of profiles) {
             let id = +person.Id;
             if (id < 0) {
+                // This is a private profile
                 // WT returns negative ids for private profiles, but they seem to be unique only
                 // within the result returned by the call (i.e. per page). However, since they are
                 // different people, we give them uniq ids.
-                id += -start;
+                if (window.people.has(id)) {
+                    id = window.cc7MinPrivateId - 1;
+                }
+                person.Id = id;
+                person.Name = `Private${id}`;
+                person.DataStatus = { Spouse: "", Gender: "" };
             }
             if (!window.people.has(id)) {
+                if (id < 0) {
+                    window.cc7MinPrivateId = Math.min(id, window.cc7MinPrivateId);
+                }
                 // This is a new person, add them to the tree
                 person.Parents = [person.Father, person.Mother];
-                if (id < 0) {
-                    // This is a private profile
-                    person.Id = id;
-                    person.Name = `Private${id}`;
-                    person.DataStatus = { Spouse: "", Gender: "" };
-                }
+                person.Degree = theDegree;
+                person.Hide = hide;
                 // To be filled later
                 person.Parent = [];
                 person.Spouse = [];
                 person.Sibling = [];
                 person.Child = [];
                 person.Marriage = {};
-                person.Degree = degree;
 
                 window.people.set(id, person);
                 ++nrAdded;
@@ -2882,12 +2933,13 @@ export class CC7 {
 
     static async getConnectionsAction(event) {
         wtViewRegistry.clearStatus();
-        const theDegree = $("#cc7Degree").val();
+        const theDegree = +$("#cc7Degree").val();
         const wtId = wtViewRegistry.getCurrentWtId();
         event.preventDefault();
         $("#cc7Container").removeClass("degreeView");
         window.people = new Map();
         window.rootId = 0;
+        window.cc7MinPrivateId = 0;
         CC7.clearDisplay();
         CC7.getConnections(theDegree);
     }
@@ -2955,7 +3007,20 @@ export class CC7 {
     static async getConnections(maxWantedDegree) {
         CC7.showShakingTree();
         const wtId = wtViewRegistry.getCurrentWtId();
-        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], +maxWantedDegree + 1);
+        const starttime = performance.now();
+        // We get one more degree than necessary to ensure we can calculate the relative counts
+        // correctly. We make a separate (async) call in order to be able to identify the extra
+        // degree so we can hide them from the display and not include them in the degree counts.
+        const [resultByKey, [,]] = await Promise.all([
+            CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree),
+            CC7.collectPeopelAtNthDegree(wtId, maxWantedDegree + 1, CC7.HIDE),
+        ]);
+        console.log(
+            `Retrieved a total of ${window.people.size} unique CC${maxWantedDegree + 1} profiles in ${
+                performance.now() - starttime
+            }ms`
+        );
+
         window.rootId = +resultByKey[wtId]?.Id;
         CC7.populateRelativeArrays();
 
@@ -3004,6 +3069,14 @@ export class CC7 {
                 }
             }
         }
+        // Count unknown degree profiles
+        const nrUknownDegrees = [...window.people.values()].reduce(
+            (acc, person) => (person.Degree < 0 ? ++acc : acc),
+            0
+        );
+        if (nrUknownDegrees > 0) {
+            degreeCounts[-1] = nrUknownDegrees;
+        }
         window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
         CC7.hideShakingTree();
         if ($("#degreesTable").length != 0) {
@@ -3014,9 +3087,7 @@ export class CC7 {
                 "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
             )
         );
-        CC7.buildDegreeTableData(degreeCounts, maxWantedDegree);
-        const aName = new PersonName(window.people.get(window.rootId));
-
+        CC7.buildDegreeTableData(degreeCounts, actualMaxDegree);
         CC7.addPeopleTable(`CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`);
     }
 
@@ -3054,7 +3125,7 @@ export class CC7 {
                 );
             } else {
                 console.log(
-                    `Retrieving getPeople result page. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Retrieving getPeople result page ${callNr}. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
                 );
             }
             const [keysResult, peopleData] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
@@ -3062,13 +3133,14 @@ export class CC7 {
                 resultByKey = keysResult;
             }
             const profiles = peopleData ? Object.values(peopleData) : [];
+            console.log(`Received ${profiles.length} CC${upToDegree} profiles for start:${start}`);
 
-            console.log(`Received ${profiles.length} profiles`);
+            // We're re-using the degrees table here to show response counts as a way of a progress bar
             const degTable = document.getElementById("degreesTable");
             degTable.rows[2].cells[callNr].innerHTML = profiles.length;
 
             // Note: getPeople does not guarantee return order
-            CC7.addPeople(profiles, start);
+            CC7.addPeople(profiles);
             degTable.rows[3].cells[callNr].innerHTML = window.people.size;
 
             start += limit;
@@ -3076,7 +3148,7 @@ export class CC7 {
             getMore = profiles.length == limit;
         }
         console.log(
-            `Retrieved ${window.people.size} unique CC${upToDegree} profiles with ${callNr} API calls in ${
+            `Retrieved ${window.people.size} unique CC${upToDegree} profiles with ${callNr} API call(s) in ${
                 performance.now() - starttime
             }ms`
         );
@@ -3217,6 +3289,7 @@ export class CC7 {
             const degreeCounts = {};
             let maxDegree = 0;
             for (const aPerson of window.people.values()) {
+                if (aPerson.Hide) continue;
                 if (degreeCounts[aPerson.Degree]) {
                     degreeCounts[aPerson.Degree] = degreeCounts[aPerson.Degree] + 1;
                 } else {
@@ -3226,7 +3299,7 @@ export class CC7 {
                     maxDegree = aPerson.Degree;
                 }
             }
-            if (window.cc7Degree == 0) window.cc7Degree = Math.min(CC7.MAX_DEGREE, maxDegree);
+            if (window.cc7Degree == 0) window.cc7Degree = maxDegree;
             CC7.hideShakingTree();
             CC7.addPeopleTable(
                 `CC${Math.min(window.cc7Degree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(
@@ -3238,7 +3311,7 @@ export class CC7 {
                     "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
-            CC7.buildDegreeTableData(degreeCounts, window.cc7Degree);
+            CC7.buildDegreeTableData(degreeCounts, maxDegree);
             CC7.handleDegreeChange(window.cc7Degree);
         };
 
@@ -3252,9 +3325,7 @@ export class CC7 {
     }
 
     static buildDegreeTableData(degreeCounts, maxDegree) {
-        let degreeSum = 0;
-        for (let i = 1; i <= maxDegree; ++i) {
-            degreeSum = degreeSum + degreeCounts[i];
+        function addTableCol(i, degreeSum) {
             $("#degreesTable tr")
                 .eq(0)
                 .append($(`<td>${i}</td>`));
@@ -3264,6 +3335,15 @@ export class CC7 {
             $("#degreesTable tr")
                 .eq(2)
                 .append($(`<td>${degreeSum}</td>`));
+        }
+        let degreeSum = 0;
+        for (let i = 1; i <= maxDegree; ++i) {
+            degreeSum = degreeSum + degreeCounts[i];
+            addTableCol(i, degreeSum);
+        }
+        if (degreeCounts[-1]) {
+            degreeSum = degreeSum + degreeCounts[-1];
+            addTableCol(-1, degreeSum);
         }
     }
 

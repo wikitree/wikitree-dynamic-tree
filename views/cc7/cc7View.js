@@ -2,9 +2,9 @@ import { CC7 } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
     static #DESCRIPTION =
-        "Loading 7 degrees may take a while (more than a minute) so the default is set to 3. Feel free to change it. " +
+        "Loading 7 degrees may take a while (it can be 2 minutes or more) so the default is set to 3. Feel free to change it. " +
         "Also, degrees of separation might be shown as larger than actual if there are private profiles in the mix. " +
-        "These private profiles may also result in it not being possible to determine the (correct) degree of separation " +
+        "These private profiles may also result in it not being possible to determine the degree of separation " +
         "of some profiles, so the latter will be shown with a negative degree.";
     meta() {
         return {

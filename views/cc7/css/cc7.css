@@ -281,6 +281,17 @@ div.cc7Table .timelineTable td {
   cursor: pointer;
   color: red;
 }
+.cc7Table #explanation h3 {
+  font-size: 1.3em;
+  margin-bottom: 0.5em;
+}
+.cc7Table #explanation h4 {
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+}
+.cc7Table #explanation ul {
+  margin-left: 35px;
+}
 
 div.cc7Table {
   background: white;
@@ -320,28 +331,28 @@ div.cc7Table img.familyHome {
 .relationCell {
   white-space: nowrap;
 }
-#cousinsLabel,
-#ancestorsLabel,
-#getPeopleButton {
-  margin-left: 1em;
-  white-space: nowrap;
-  margin-bottom: 1em;
-}
 #getPeopleButton {
   width: 7em;
   text-align: center;
+  margin-left: 1em;
+  margin-right: 0.5em;
+  white-space: nowrap;
+  margin-bottom: 1em;
 }
-#status #getPeopleButton.small.button {
+/* #status #getPeopleButton.small.button {
   width: 10em;
   text-align: center;
+} */
+#cc7Degree {
+  width: 2.5em;
+  min-width: 2.5em;
+  margin-right: 0.5em;
 }
-#loginForm {
-  margin-top: 1em;
-  margin-left: 0.5em;
-  display: inline-block;
+#cc7Degree option {
+  text-align: center;
 }
-#wtLogo {
-  float: left;
+#getDegreeButton {
+  margin-right: 20px;
 }
 
 div.cc7Table select,
@@ -631,17 +642,6 @@ button.viewButton.active {
   box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.1);
 }
 
-#cc7Degree {
-  width: 2.5em;
-  min-width: 2.5em;
-  margin-right: 2em;
-}
-#cc7Degree option {
-  text-align: center;
-}
-#getDegreeButton {
-  margin-right: 0.3em;
-}
 div.degreeView #hierarchyViewButton {
   visibility: hidden;
 }
