@@ -25,8 +25,7 @@ export class CC7 {
             <li>Load only one degree at a time.</li>
             <li>Save the data to a file for faster loading next time.</li>
         </ul>
-        <p>The Table view will always load first. This shows the most data.</p>
-        <h3>Calculating Degree of Separation</h4>
+        <h3>Calculating Degree of Separation</h3>
         <p>
             The app shows the degree of separation between the focal person and each person on the list.
             Here is how it works:
@@ -36,13 +35,13 @@ export class CC7 {
                 The WikiTree API provides a list of connected people up to the requested number of degrees,
                 such as 5 degrees.
             </li>
-            <li>The app calculates the degrees by linking parents to children.</li>
+            <li>The app calculates the degrees by linking parents to children and spouses to each other.</li>
             <li>
-                The app cannot always connect people perfectly as some profiles are private or unlisted,
-                with limited information returned by the API.
+                Because of the above, the app cannot always connect people perfectly as some profiles are private
+                or unlisted, with limited information returned by the API.
             </li>
-            <li>The degree shown will sometimes be higher than the actual shortest path.</li>
-            <li>Results for CC5, for example, may show someone at 6 degrees although they are actually at 5 or less.</li>
+            <li>The degree shown will therefore sometimes be higher than the actual shortest path. For example,
+                results for CC5 may show someone at 6 degrees although they are actually at 5 or less.</li>
         </ul>
         <p>The Table View, which shows the most data, will always load first.</p>
         <h3>Table View</h3>
@@ -66,15 +65,15 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young image <img src="./views/cc7/images/diedYoung.png"> is used to flag people who died under
+                The Died Young image <img src="./views/cc7/images/diedYoung.png" /> is used to flag people who died under
                 16 years of age. Their spouse and children boxes are greyed out as we can assume they didn't have any
                 of these.
             </li>
         </ul>
         <ul id="key" class="key">
-            <li><img src="./views/cc7/images/blue_bricks_small.jpg"> missing father</li>
-            <li><img src="./views/cc7/images/pink_bricks_small.jpg"> missing mother</li>
-            <li><img src="./views/cc7/images/purple_bricks_small.jpg"> both parents missing</li>
+            <li><img src="./views/cc7/images/blue_bricks_small.jpg" /> missing father</li>
+            <li><img src="./views/cc7/images/pink_bricks_small.jpg" /> missing mother</li>
+            <li><img src="./views/cc7/images/purple_bricks_small.jpg" /> both parents missing</li>
             <li>
                 <span><span class="none"></span> the 'No more spouses/children' box is checked, or Died Young</span>
             </li>
@@ -97,7 +96,6 @@ export class CC7 {
             <li>Click a surname to show only those people.</li>
             <li>Click again to show all.</li>
         </ul>
-        <p>We hope these tips help you get the most out of the CC7 tool! Let us know if you have any other questions.</p>
         <h3>Other points</h3>
         <ul>
             <li>Double-clicking this 'About' box, or clicking the red X in its top right corner will close it.</li>
