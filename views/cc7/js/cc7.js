@@ -1415,68 +1415,6 @@ export class CC7 {
         return [s2b, b2s];
     }
 
-    static USstatesObjArray = [
-        { name: "Alabama", abbreviation: "AL" },
-        { name: "Alaska", abbreviation: "AK" },
-        { name: "American Samoa", abbreviation: "AS" },
-        { name: "Arizona", abbreviation: "AZ" },
-        { name: "Arkansas", abbreviation: "AR" },
-        { name: "California", abbreviation: "CA" },
-        { name: "Colorado", abbreviation: "CO" },
-        { name: "Connecticut", abbreviation: "CT" },
-        { name: "Delaware", abbreviation: "DE" },
-        { name: "District Of Columbia", abbreviation: "DC" },
-        { name: "Federated States Of Micronesia", abbreviation: "FM" },
-        { name: "Florida", abbreviation: "FL" },
-        { name: "Georgia", abbreviation: "GA" },
-        { name: "Guam", abbreviation: "GU" },
-        { name: "Hawaii", abbreviation: "HI" },
-        { name: "Idaho", abbreviation: "ID" },
-        { name: "Illinois", abbreviation: "IL" },
-        { name: "Indiana", abbreviation: "IN" },
-        { name: "Iowa", abbreviation: "IA" },
-        { name: "Kansas", abbreviation: "KS" },
-        { name: "Kentucky", abbreviation: "KY" },
-        { name: "Louisiana", abbreviation: "LA" },
-        { name: "Maine", abbreviation: "ME" },
-        { name: "Marshall Islands", abbreviation: "MH" },
-        { name: "Maryland", abbreviation: "MD" },
-        { name: "Massachusetts", abbreviation: "MA" },
-        { name: "Michigan", abbreviation: "MI" },
-        { name: "Minnesota", abbreviation: "MN" },
-        { name: "Mississippi", abbreviation: "MS" },
-        { name: "Missouri", abbreviation: "MO" },
-        { name: "Montana", abbreviation: "MT" },
-        { name: "Nebraska", abbreviation: "NE" },
-        { name: "Nevada", abbreviation: "NV" },
-        { name: "New Hampshire", abbreviation: "NH" },
-        { name: "New Jersey", abbreviation: "NJ" },
-        { name: "New Mexico", abbreviation: "NM" },
-        { name: "New York", abbreviation: "NY" },
-        { name: "North Carolina", abbreviation: "NC" },
-        { name: "North Dakota", abbreviation: "ND" },
-        { name: "Northern Mariana Islands", abbreviation: "MP" },
-        { name: "Ohio", abbreviation: "OH" },
-        { name: "Oklahoma", abbreviation: "OK" },
-        { name: "Oregon", abbreviation: "OR" },
-        { name: "Palau", abbreviation: "PW" },
-        { name: "Pennsylvania", abbreviation: "PA" },
-        { name: "Puerto Rico", abbreviation: "PR" },
-        { name: "Rhode Island", abbreviation: "RI" },
-        { name: "South Carolina", abbreviation: "SC" },
-        { name: "South Dakota", abbreviation: "SD" },
-        { name: "Tennessee", abbreviation: "TN" },
-        { name: "Texas", abbreviation: "TX" },
-        { name: "Utah", abbreviation: "UT" },
-        { name: "Vermont", abbreviation: "VT" },
-        { name: "Virgin Islands", abbreviation: "VI" },
-        { name: "Virginia", abbreviation: "VA" },
-        { name: "Washington", abbreviation: "WA" },
-        { name: "West Virginia", abbreviation: "WV" },
-        { name: "Wisconsin", abbreviation: "WI" },
-        { name: "Wyoming", abbreviation: "WY" },
-    ];
-
     static secondarySort3(aList, dataThing1, dataThing2, isText = 0, reverse = 0) {
         let lastOne = "Me";
         let tempArr = [lastOne];
@@ -1691,70 +1629,6 @@ export class CC7 {
                 deathLocationReversed = dLocation2ways[1];
             }
 
-            function setLocations(mPerson) {
-                const oLocations = [];
-                const checkEm = [[mPerson], mPerson.Parent, mPerson.Spouse, mPerson.Sibling, mPerson.Child];
-
-                checkEm.forEach(function (anArr) {
-                    if (anArr) {
-                        anArr.forEach(function (aPers) {
-                            if (aPers.BirthLocation) {
-                                const bits = aPers.BirthLocation.split(",");
-                                bits.forEach(function (aBit) {
-                                    const bit = aBit.trim();
-                                    if (!oLocations.includes(bit)) {
-                                        oLocations.push(bit);
-                                    }
-                                    let isUS = false;
-                                    CC7.USstatesObjArray.forEach(function (obj) {
-                                        if (bit == obj.name) {
-                                            if (!oLocations.includes(obj.abbreviation)) {
-                                                oLocations.push(obj.abbreviation);
-                                            }
-                                            isUS = true;
-                                        }
-                                        if (bit == obj.abbreviation) {
-                                            if (!oLocations.includes(obj.name)) {
-                                                oLocations.push(obj.name);
-                                            }
-                                            isUS = true;
-                                        }
-                                    });
-                                });
-                            }
-                            if (aPers.DeathLocation) {
-                                const bits = aPers.DeathLocation.split(",");
-                                bits.forEach(function (aBit) {
-                                    const bit = aBit.trim();
-                                    if (!oLocations.includes(bit)) {
-                                        oLocations.push(bit);
-                                    }
-                                    let isUS = false;
-                                    CC7.USstatesObjArray.forEach(function (obj) {
-                                        if (bit == obj.name) {
-                                            if (!oLocations.includes(obj.abbreviation)) {
-                                                oLocations.push(obj.abbreviation);
-                                            }
-                                            isUS = true;
-                                        }
-                                        if (bit == obj.abbreviation) {
-                                            if (!oLocations.includes(obj.name)) {
-                                                oLocations.push(obj.name);
-                                            }
-                                            isUS = true;
-                                        }
-                                    });
-                                });
-                            }
-                        });
-                    }
-                });
-
-                return oLocations;
-            }
-
-            const oLocations = setLocations(mPerson).join(",");
-
             const privacyLevel = mPerson.Privacy;
 
             let privacy = null;
@@ -1948,15 +1822,15 @@ export class CC7 {
                 if (!mPerson.Father && !mPerson.Mother) {
                     relNums["Parent"] = 0;
                     relNums["Parent_data"] = "data-Parent='0'";
-                    relNums["Parent_cell"] = "<td class='noParents number' title='missing parents'>0</td>";
+                    relNums["Parent_cell"] = "<td class='noParents number' title='Missing parents'>0</td>";
                 } else if (!mPerson.Father) {
                     relNums["Parent"] = 1;
                     relNums["Parent_data"] = "data-Parent='1'";
-                    relNums["Parent_cell"] = "<td class='noFather number' title='missing father'>1</td>";
+                    relNums["Parent_cell"] = "<td class='noFather number' title='Missing father'>1</td>";
                 } else if (!mPerson.Mother) {
                     relNums["Parent"] = 1;
                     relNums["Parent_data"] = "data-Parent='1'";
-                    relNums["Parent_cell"] = "<td class='noMother number' title='missing mother'>1</td>";
+                    relNums["Parent_cell"] = "<td class='noMother number' title='Missing mother'>1</td>";
                 } else {
                     relNums["Parent"] = 0;
                     relNums["Parent_data"] = "data-Parent='0'";
@@ -1995,8 +1869,6 @@ export class CC7 {
                     mPerson.Id +
                     "' data-name='" +
                     CC7.htmlEntities(mPerson.Name) +
-                    "' data-locations='" +
-                    CC7.htmlEntities(oLocations) +
                     "' data-firstname='" +
                     CC7.htmlEntities(firstName) +
                     "' data-lnab='" +
@@ -2127,48 +1999,6 @@ export class CC7 {
             $("#hierarchyView,#lanceTable").hide().removeClass("active");
             $("#peopleTable").show();
             $("#wideTableButton").show();
-        });
-
-        const locationFilterSP = $(
-            "<label id='spLocationFilterLabel'><input type='text' id='spLocationFilter' title='Enter place names separated by commas and click the button; empty the textbox and click the button to remove the filter'><button class=' button small searchResultsButton' id='spLocationFilterButton'>Filter by Location</button></label>"
-        );
-        locationFilterSP.insertBefore($(".peopleTable"));
-        $("#moreSearchDetails").hide();
-        $("#spLocationFilterButton").click(function (e) {
-            e.preventDefault();
-            if ($(this).text() == "Remove Location Filter" || $("#spLocationFilter").val() == "") {
-                $(this).text("Filter By Location");
-                $("tr").removeClass("locationFilteredOut");
-            } else if ($("#spLocationFilter").val() != "") {
-                $(this).text("Remove Location Filter");
-                const rows = $(".peopleTable tbody tr");
-                const locations = $("#spLocationFilter").val().split(",");
-                const locationsT = locations.map((string) => string.trim());
-
-                rows.each(function () {
-                    let keepIt = false;
-
-                    const thisLocations = $(this).attr("data-locations");
-                    if (thisLocations != "") {
-                        const thisLocationsSplit = thisLocations.split(",");
-                        thisLocationsSplit.forEach(function (aLocation) {
-                            locationsT.forEach(function (aLocation2) {
-                                if (aLocation2.toLowerCase() == aLocation.toLowerCase()) {
-                                    keepIt = true;
-                                }
-                            });
-                        });
-                    }
-                    if (keepIt == false) {
-                        $(this).addClass("locationFilteredOut");
-                    }
-                });
-            }
-        });
-        $("#spLocationFilter").keypress(function (e) {
-            if (e.which == 13) {
-                $("#spLocationFilterButton").click();
-            }
         });
 
         CC7.hideShakingTree();
@@ -2502,19 +2332,19 @@ export class CC7 {
             missingBit += "data-missing-" + relation + "='1' ";
             if (relation == "Father") {
                 missingIcons +=
-                    "<img title='missing father' class='missingFather missingIcon' src='./views/cc7/images/blue_bricks_small.jpg'>";
+                    "<img title='Missing father' class='missingFather missingIcon' src='./views/cc7/images/blue_bricks_small.jpg'>";
             }
             if (relation == "Mother") {
                 missingIcons +=
-                    "<img title='missing mother' class='missingMother missingIcon' src='./views/cc7/images/pink_bricks_small.jpg'>";
+                    "<img title='Missing mother' class='missingMother missingIcon' src='./views/cc7/images/pink_bricks_small.jpg'>";
             }
             if (relation == "Spouse") {
                 missingIcons +=
-                    "<img title='possible missing spouse' class='missingSpouse missingIcon' src='./views/cc7/images/spouse_bricks_small.png'>";
+                    "<img title='Possible missing spouse' class='missingSpouse missingIcon' src='./views/cc7/images/spouse_bricks_small.png'>";
             }
             if (relation == "Children") {
                 missingIcons +=
-                    "<img title='possible missing children' class='missingChildren missingIcon' src='./views/cc7/images/baby_bricks_small.png'>";
+                    "<img title='Possible missing children' class='missingChildren missingIcon' src='./views/cc7/images/baby_bricks_small.png'>";
             }
         });
         return { missingBit: missingBit, missingIcons: missingIcons };
@@ -3211,7 +3041,6 @@ export class CC7 {
                 "#hierarchyView",
                 "#lanceTable",
                 "#peopleTable",
-                "#spLocationFilterLabel",
                 "#tableContainer",
                 ".tableContainer",
                 "#tooBig",

@@ -53,9 +53,6 @@ div.cc7Table #buttonBox button:active {
   background: lightgreen;
   box-shadow: 1px 1px 1px #ccc;
 }
-div.cc7Table #spLocationFilterLabel {
-  display: none;
-}
 div.cc7Table #tree {
   display: block;
   height: 5em;
@@ -339,10 +336,6 @@ div.cc7Table img.familyHome {
   white-space: nowrap;
   margin-bottom: 1em;
 }
-/* #status #getPeopleButton.small.button {
-  width: 10em;
-  text-align: center;
-} */
 #cc7Degree {
   width: 2.5em;
   min-width: 2.5em;
