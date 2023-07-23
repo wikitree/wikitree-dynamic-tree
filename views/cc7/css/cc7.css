@@ -45,14 +45,6 @@ img.timelineButton {
   cursor: pointer;
 }
 
-#peopleTable.wide {
-  white-space: nowrap;
-  table-layout: auto;
-}
-div.cc7Table #buttonBox button:active {
-  background: lightgreen;
-  box-shadow: 1px 1px 1px #ccc;
-}
 div.cc7Table #tree {
   display: block;
   height: 5em;
@@ -73,19 +65,6 @@ div.cc7Table #tree {
   padding: 1.5em 1em 1em;
   white-space: nowrap;
   z-index: 10000;
-}
-.peopleTable a:link,
-.peopleTable a:visited {
-  text-decoration: none;
-}
-#peopleTable td {
-  padding: 0.2em;
-}
-#peopleTable td.aDate {
-  white-space: nowrap;
-}
-#peopleTable th {
-  text-align: left;
 }
 .timeline.wrap,
 .familySheet.wrap {
@@ -155,6 +134,24 @@ div.cc7Table .timelineTable td {
 .cc7Table p {
   margin: 1em;
 }
+.cc7Table span.none {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background: #c6c6c6;
+  color: white;
+  border: 1px solid #ddd;
+}
+.cc7Table caption {
+  font-family: sans-serif;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: left;
+  padding: 0.5em;
+  background: white;
+  border-top: 1px solid forestgreen;
+  border-bottom: 1px solid forestgreen;
+}
 
 .cc7Table #degreesTable {
   margin: 1em;
@@ -163,6 +160,24 @@ div.cc7Table .timelineTable td {
 .cc7Table #degreesTable td,
 .cc7Table #degreesTable th {
   padding: 0.3em;
+}
+
+.cc7Table #peopleTable.wide {
+  white-space: nowrap;
+  table-layout: auto;
+}
+.cc7Table .peopleTable a:link,
+.cc7Table .peopleTable a:visited {
+  text-decoration: none;
+}
+.cc7Table #peopleTable td {
+  padding: 0.2em;
+}
+.cc7Table #peopleTable td.aDate {
+  white-space: nowrap;
+}
+.cc7Table #peopleTable th {
+  text-align: left;
 }
 .cc7Table #peopleTable td.none {
   background: #c6c6c6;
@@ -185,29 +200,12 @@ div.cc7Table .timelineTable td {
 .cc7Table #peopleTable td.age-at-death {
   text-align: right;
 }
-.cc7Table span.none {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  background: #c6c6c6;
-  color: white;
-  border: 1px solid #ddd;
-}
-.cc7Table caption {
-  font-family: sans-serif;
-  font-size: 1.2em;
-  font-weight: bold;
-  text-align: left;
-  padding: 0.5em;
-  background: white;
-  border-top: 1px solid forestgreen;
-  border-bottom: 1px solid forestgreen;
-}
 
 .cc7Table table#peopleTable {
   border-collapse: separate;
   border-spacing: 3px;
   margin-top: 1em;
+  background: white;
 }
 .cc7Table #peopleTable td {
   padding: 0.4em;
@@ -704,6 +702,44 @@ div.cc7Table #savePeople {
 
 #hierarchyView span.birthDeathDates {
   font-size: 0.8em;
+}
+
+table tr.cc7filter-row input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.1em;
+  border: 1px solid #aaa;
+  border-radius: 0.25em;
+  font-size: 1em;
+  line-height: 1.5em;
+  margin: 0;
+  background-color: #fff;
+  color: #000;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  -webkit-transition: border-color 0.2s ease-in-out;
+  -moz-transition: border-color 0.2s ease-in-out;
+  transition: border-color 0.2s ease-in-out;
+}
+#clearTableFiltersButton {
+  font-size: 0.8em;
+  padding: 7px 15px;
+  font-size: 0.9em;
+  text-align: center;
+  display: inline-block;
+}
+.cc7filter-row input.numeric-input {
+  width: 2em !important;
+  min-width: auto;
+}
+.cc7filter-row input.date-input {
+  width: 6em !important;
+  min-width: auto;
+}
+
+.cc7filter-row input.text-input {
+  width: 100%;
 }
 
 /* ---------------------------------------------------------

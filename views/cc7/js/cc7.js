@@ -62,6 +62,21 @@ export class CC7 {
         <ul>
             <li>Drag the table left/right or two-finger drag on a trackpad.</li>
         </ul>
+        <h4>Filtering Rows</h4>
+        <ul>
+            <li>
+                Limit the content of the table based on the content of columns by entering values in the filter
+                boxes just below the column headers.
+            </li>
+            <li>
+                The numberical columns (including the years) can be filtered with &gt; and &lt;.
+                For example, to see all people born after 1865, enter &gt;1865 in the birth year filter box.
+            </li>
+            <li>
+                Clear the filters by clicking on the CLEAR FILTERS button that appears as soon as you have an
+                active filter.
+            </li>
+        </ul>
         <h4>And...</h4>
         <ul>
             <li>
@@ -329,6 +344,12 @@ export class CC7 {
         $("#tree").slideUp("fast");
     }
 
+    static setOverflow(value) {
+        $("#view-container").css({
+            overflow: value,
+        });
+    }
+
     static async addWideTableButton() {
         $("#wideTableButton").show();
 
@@ -348,11 +369,10 @@ export class CC7 {
 
                 dTable = $(".peopleTable").eq(0);
                 if (CC7.getCookie("w_wideTable") == "1") {
+                    // Display a normal table
                     CC7.setCookie("w_wideTable", 0, { expires: 365 });
-
+                    CC7.setOverflow("visible");
                     dTable.removeClass("wide");
-                    dTable.insertBefore($("#tableContainer"));
-                    $("#buttonBox").hide();
                     $(this).text("Wide table");
                     $("#peopleTable").attr("title", "");
                     dTable.css({
@@ -362,17 +382,11 @@ export class CC7 {
                     });
                     dTable.draggable("disable");
                 } else {
+                    // Display a wide table
                     CC7.setCookie("w_wideTable", 1, { expires: 365 });
+                    CC7.setOverflow("auto");
                     $(this).text("Normal Table");
                     $("#peopleTable").attr("title", "Drag to scroll left or right");
-                    let container;
-                    if ($("#tableContainer").length) {
-                        container = $("#tableContainer");
-                    } else {
-                        container = $("<div id='tableContainer'></div>");
-                    }
-                    container.insertBefore(dTable);
-                    container.append(dTable);
                     dTable.addClass("wide");
                     dTable.find("th").each(function () {
                         $(this).data("width", $(this).css("width"));
@@ -394,35 +408,6 @@ export class CC7 {
                         }
                     }
                     dTable.draggable("enable");
-
-                    if ($("#buttonBox").length == 0) {
-                        let leftButton = $("<button id='leftButton'>&larr;</button>");
-                        let rightButton = $("<button id='rightButton'>&rarr;</button>");
-                        let buttonBox = $("<div id='buttonBox'></div>");
-                        buttonBox.append(leftButton, rightButton);
-                        container.before(buttonBox);
-                        buttonBox.hide();
-
-                        $("#rightButton").click(function (event) {
-                            event.preventDefault();
-                            container.animate(
-                                {
-                                    scrollLeft: "+=300px",
-                                },
-                                "slow"
-                            );
-                        });
-
-                        $("#leftButton").click(function (event) {
-                            event.preventDefault();
-                            container.animate(
-                                {
-                                    scrollLeft: "-=300px",
-                                },
-                                "slow"
-                            );
-                        });
-                    }
                 }
             });
         }
@@ -1937,6 +1922,11 @@ export class CC7 {
             aTable.find("tbody").append(aLine);
         }
 
+        if (CC7.getCookie("w_wideTable") == "0") {
+            CC7.setOverflow("visible");
+        } else {
+            CC7.setOverflow("auto");
+        }
         if ($("#cc7Container").length == 0) {
             $(".peopleTable caption").click(function () {
                 $(this).parent().find("thead,tbody").slideToggle();
@@ -2008,6 +1998,221 @@ export class CC7 {
         }
 
         CC7.cc7excelOut();
+        CC7.addFiltersToTable();
+        aTable.css({
+            "overflow-x": "auto",
+            "width": "100%",
+        });
+        aTable.floatingScroll();
+    }
+
+    static repositionFilterRow(table) {
+        const hasTbody = table.querySelector("tbody") !== null;
+        const hasThead = table.querySelector("thead") !== null;
+        const headerRow = hasThead
+            ? table.querySelector("thead tr:first-child")
+            : hasTbody
+            ? table.querySelector("tbody tr:first-child")
+            : table.querySelector("tr:first-child");
+        const filterRow = table.querySelector(".cc7filter-row");
+        if (filterRow) {
+            if (filterRow.nextSibling !== headerRow) {
+                headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
+            }
+        }
+    }
+
+    static addFiltersToTable(aTable = null) {
+        let tables;
+        if (aTable) {
+            tables = [aTable];
+        } else {
+            tables = document.querySelectorAll("#peopleTable");
+        }
+        tables.forEach((table) => {
+            const hasTbody = table.querySelector("tbody") !== null;
+            const hasThead = table.querySelector("thead") !== null;
+            const headerRow = hasThead
+                ? table.querySelector("thead tr:first-child")
+                : hasTbody
+                ? table.querySelector("tbody tr:first-child")
+                : table.querySelector("tr:first-child");
+
+            let headerCells = headerRow.querySelectorAll("th");
+            const originalHeaderCells = headerCells;
+            const isFirstRowHeader = headerCells.length > 0;
+            if (!isFirstRowHeader) {
+                const firstRowCells = headerRow.querySelectorAll("td");
+                const dummyHeaderRow = document.createElement("tr");
+                firstRowCells.forEach(() => {
+                    const emptyHeaderCell = document.createElement("th");
+                    dummyHeaderRow.appendChild(emptyHeaderCell);
+                });
+                headerRow.parentElement.insertBefore(dummyHeaderRow, headerRow);
+                headerCells = dummyHeaderRow.querySelectorAll("th");
+            }
+
+            const filterRow = document.createElement("tr");
+            filterRow.classList.add("cc7filter-row");
+
+            headerCells.forEach((headerCell, i) => {
+                const filterCell = document.createElement("th");
+                if (i == 0) {
+                    filterCell.colSpan = 3;
+                    filterCell.style.textAlign = "right";
+                    filterCell.innerHTML = "Filters:";
+                    filterCell.title =
+                        "Show only rows with these column values. > and < may be used for numerical columns.";
+                    filterRow.appendChild(filterCell);
+                }
+                const headerCellText = headerCell.textContent.trim();
+                const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
+                if (!["Pos."].includes(headerCellText) && !["Pos.", ""].includes(originalHeaderCellText)) {
+                    // console.log(headerCellText);
+                    filterCell.title = "Enter a column value to which to limit the rows";
+                    const filterInput = document.createElement("input");
+                    filterInput.type = "text";
+                    filterInput.classList.add("filter-input");
+
+                    // Check the length of the text in the first ten cells of the column
+                    let maxLength = 0;
+                    const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+                    for (let j = 1; j < Math.min(10, rows.length); j++) {
+                        const cellText = rows[j].children[i].textContent.trim();
+                        maxLength = Math.max(maxLength, cellText.length);
+                    }
+
+                    if (maxLength <= 2) {
+                        filterInput.classList.add("numeric-input");
+                    } else if (maxLength == 10) {
+                        filterInput.classList.add("date-input");
+                    } else {
+                        filterInput.classList.add("text-input");
+                    }
+
+                    filterCell.appendChild(filterInput);
+                }
+                if (i > 2) {
+                    filterRow.appendChild(filterCell);
+                }
+            });
+
+            if (isFirstRowHeader) {
+                headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
+            } else {
+                headerRow.parentElement.insertBefore(filterRow, headerRow);
+            }
+
+            const sortArrows = table.querySelectorAll(".sortheader");
+            sortArrows.forEach((arrow) => {
+                arrow.addEventListener("click", () => {
+                    setTimeout(() => {
+                        repositionFilterRow(table);
+                    }, 100);
+                });
+            });
+        });
+
+        const filterFunction = () => {
+            const table = tables[0];
+            const hasTbody = table.querySelector("tbody") !== null;
+            const hasThead = table.querySelector("thead") !== null;
+            const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+            const filterInputs = table.querySelectorAll(".filter-input");
+
+            rows.forEach((row, rowIndex) => {
+                // Skip first row only if there's no 'thead'
+                if (!hasThead && rowIndex === 0) {
+                    return;
+                }
+
+                // Skip if row is a filter-row or contains 'th' elements
+                if (row.classList.contains("cc7filter-row") || row.querySelector("th")) {
+                    return;
+                }
+
+                let displayRow = true;
+
+                filterInputs.forEach((input, inputIndex) => {
+                    let text = input.value.toLowerCase().replace("°", "");
+                    const columnIndex =
+                        Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 2;
+                    let cellText = row.children[columnIndex].textContent.toLowerCase().replace("°", "");
+                    const isDateColumn = input.classList.contains("date-input");
+                    const isNumericColumn = input.classList.contains("numeric-input");
+
+                    // If the column is numeric and the input is a number or a comparison, perform the appropriate check
+                    if (
+                        (isNumericColumn || (isDateColumn && text.length >= 4)) &&
+                        (text === "" || !isNaN(parseFloat(text)) || text[0] === ">" || text[0] === "<")
+                    ) {
+                        if (text !== "") {
+                            let operator = text[0];
+                            if (operator === ">" || operator === "<") {
+                                text = parseFloat(text.slice(1)); // Remove the operator from the text
+                            } else {
+                                operator = "=="; // Default to equality if there's no operator
+                                text = parseFloat(text);
+                            }
+                            if (isDateColumn) {
+                                let year = cellText.slice(0, 4); // Get the year part of the date
+                                if (year.endsWith("s")) {
+                                    year = year.slice(0, -1); // Remove the 's' for decade dates
+                                }
+                                cellText = parseFloat(year);
+                            } else {
+                                cellText = parseFloat(cellText);
+                            }
+                            if (!eval(cellText + operator + text)) {
+                                displayRow = false;
+                            }
+                        }
+                    } else {
+                        if (!cellText.includes(text)) {
+                            displayRow = false;
+                        }
+                    }
+                });
+
+                row.style.display = displayRow ? "" : "none";
+            });
+            $("#peopleTable").floatingScroll("update");
+        };
+
+        function updateClearFiltersButtonVisibility() {
+            const anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
+                (input) => input.value.trim() !== ""
+            );
+
+            clearFiltersButton.style.display = anyFilterHasText ? "inline-block" : "none";
+        }
+
+        document.querySelectorAll(".filter-input").forEach((input) => {
+            input.addEventListener("input", () => {
+                filterFunction();
+                updateClearFiltersButtonVisibility();
+            });
+        });
+
+        // Add Clear Filters button
+        const clearFiltersButton = document.createElement("button");
+        clearFiltersButton.textContent = "X";
+        clearFiltersButton.title = "Clear Filters";
+        clearFiltersButton.id = "clearTableFiltersButton";
+        //  clearFiltersButton.style.position = "absolute";
+        clearFiltersButton.addEventListener("click", () => {
+            document.querySelectorAll(".filter-input").forEach((input) => {
+                input.value = "";
+            });
+            filterFunction();
+            updateClearFiltersButtonVisibility();
+        });
+
+        $(clearFiltersButton).insertAfter($("#wideTableButton"));
+        clearFiltersButton.textContent = "Clear Filters";
+
+        // Initially hide the button
+        clearFiltersButton.style.display = "none";
     }
 
     static getApproxDate(theDate) {
@@ -3041,8 +3246,6 @@ export class CC7 {
                 "#hierarchyView",
                 "#lanceTable",
                 "#peopleTable",
-                "#tableContainer",
-                ".tableContainer",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
