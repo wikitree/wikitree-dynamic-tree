@@ -2075,16 +2075,37 @@ export class CC7 {
                     filterInput.classList.add("filter-input");
 
                     // Check the length of the text in the first ten cells of the column
-                    let maxLength = 0;
                     const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
-                    for (let j = 1; j < Math.min(10, rows.length); j++) {
-                        const cellText = rows[j].children[i].textContent.trim();
-                        maxLength = Math.max(maxLength, cellText.length);
+                    let isNumeric = 0;
+                    let isDate = 0;
+                    let isText = 0;
+                    for (let j = 1; j < Math.min(50, rows.length); j++) {
+                        if (rows[j]) {
+                            const cellText = rows[j].children[i].textContent.trim();
+                            const cellTextStripped = cellText.replace(/[<>~]?(\d+)°?/g, "$1");
+                            const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
+                            if (dateMatch) {
+                                isDate++;
+                            } else if (CC7.isNumeric(cellTextStripped)) {
+                                isNumeric++;
+                            } else if (cellText !== "") {
+                                isText++;
+                            }
+                        }
                     }
 
-                    if (maxLength <= 2) {
+                    let maxVal;
+                    if (isNumeric > isDate && isNumeric > isText) {
+                        maxVal = "isNumeric";
+                    } else if (isDate > isNumeric && isDate > isText) {
+                        maxVal = "isDate";
+                    } else {
+                        maxVal = "isText";
+                    }
+
+                    if (maxVal == "isNumeric") {
                         filterInput.classList.add("numeric-input");
-                    } else if (maxLength == 10) {
+                    } else if (maxVal == "isDate") {
                         filterInput.classList.add("date-input");
                     } else {
                         filterInput.classList.add("text-input");
@@ -2134,17 +2155,20 @@ export class CC7 {
                 let displayRow = true;
 
                 filterInputs.forEach((input, inputIndex) => {
-                    let text = input.value.toLowerCase().replace("°", "");
+                    let text = input.value.toLowerCase();
                     const columnIndex =
                         Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 2;
-                    let cellText = row.children[columnIndex].textContent.toLowerCase().replace("°", "");
+                    let cellText = row.children[columnIndex].textContent.toLowerCase();
                     const isDateColumn = input.classList.contains("date-input");
                     const isNumericColumn = input.classList.contains("numeric-input");
 
                     // If the column is numeric and the input is a number or a comparison, perform the appropriate check
                     if (
                         (isNumericColumn || (isDateColumn && text.length >= 4)) &&
-                        (text === "" || !isNaN(parseFloat(text)) || text[0] === ">" || text[0] === "<")
+                        (text === "" ||
+                            !isNaN(parseFloat(text.replace(/[<>~]/g, ""))) ||
+                            text[0] === ">" ||
+                            text[0] === "<")
                     ) {
                         if (text !== "") {
                             let operator = text[0];
@@ -2152,7 +2176,7 @@ export class CC7 {
                                 text = parseFloat(text.slice(1)); // Remove the operator from the text
                             } else {
                                 operator = "=="; // Default to equality if there's no operator
-                                text = parseFloat(text);
+                                text = parseFloat(text.replace(/[<>~]/g, ""));
                             }
                             if (isDateColumn) {
                                 let year = cellText.slice(0, 4); // Get the year part of the date
@@ -2161,7 +2185,7 @@ export class CC7 {
                                 }
                                 cellText = parseFloat(year);
                             } else {
-                                cellText = parseFloat(cellText);
+                                cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
                             }
                             if (!eval(cellText + operator + text)) {
                                 displayRow = false;
