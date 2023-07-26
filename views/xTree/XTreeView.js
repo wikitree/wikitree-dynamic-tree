@@ -21,8 +21,8 @@ window.XTreeView = class XTreeView extends View {
     }
 
     init(container_selector, person_id) {
-        let ahnen = new XTreeAncestorList(container_selector, person_id);
-        ahnen.displayAncestorList();
+        let xTree = new XTreeAncestorList(container_selector, person_id);
+        xTree.displayAncestorList();
     }
 };
 
@@ -382,7 +382,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right">' +
             ' <A style="cursor:pointer;" onclick="XTreeView.toggleSettings();"><font size=+2>' +
-            SETTINGS_GEAR +
+            // SETTINGS_GEAR +
             "</font></A>" +
             "&nbsp;&nbsp;</td>" +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;"></DIV>';
@@ -840,11 +840,11 @@ window.XTreeAncestorList = class XTreeAncestorList {
                     ahnNum +
                     " font-weight=bold x=1 y=27 fill='black'> " +
                     thisPerson._data.LastNameAtBirth +
-                    " (" +
-                    thisGenNum +
-                    "," +
-                    ahnNum +
-                    ")" +
+                    // " (" +
+                    // thisGenNum +
+                    // "," +
+                    // ahnNum +
+                    // ")" +
                     "</text>" +
                     "<SVG  id=Chr1for" +
                     ahnNum +
