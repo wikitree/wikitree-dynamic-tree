@@ -72,6 +72,8 @@ window.View = class View {
     init(container_selector, person_id) {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
+
+    close() {}
 };
 
 window.ViewError = class ViewError extends Error {
@@ -103,6 +105,7 @@ window.ViewRegistry = class ViewRegistry {
     constructor(views, session_manager) {
         this.views = views;
         this.session = session_manager;
+        this.currentView = undefined;
 
         // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
@@ -228,8 +231,19 @@ window.ViewRegistry = class ViewRegistry {
             this.session.saveCookies();
 
             this.clearStatus();
+            if (this.currentView && this.currentView.id != view.id) {
+                try {
+                    this.currentView.close();
+                } catch (err) {
+                    this.showError(
+                        `An error occurred when closing the prvious view. You can ignore this, or please report it in G2G): ${err.message}`
+                    );
+                    this.hideInfoPanel();
+                }
+            }
 
             try {
+                this.currentView = view;
                 view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
             } catch (err) {
                 // If we have an unhandleable error from a view, display the error message and hide away
