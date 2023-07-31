@@ -1817,8 +1817,8 @@ export class CC7 {
                     relNums["Parent_data"] = "data-Parent='1'";
                     relNums["Parent_cell"] = "<td class='noMother number' title='Missing mother'>1</td>";
                 } else {
-                    relNums["Parent"] = 0;
-                    relNums["Parent_data"] = "data-Parent='0'";
+                    relNums["Parent"] = 2;
+                    relNums["Parent_data"] = "data-Parent='2'";
                     relNums["Parent_cell"] = "<td class='number' title='Parents'>2</td>";
                 }
             }
