@@ -80,9 +80,10 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young image <img src="./views/cc7/images/diedYoung.png" /> is used to flag people who died under
-                16 years of age. Their spouse and children boxes are greyed out as we can assume they didn't have any
-                of these.
+                The Died Young images <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> are used to flag people
+                (in their Children column) who died under
+                5 and under 16 years of age, respectively, provided they had no children.
             </li>
         </ul>
         <ul id="key" class="key">
@@ -1722,6 +1723,8 @@ export class CC7 {
             let ageAtDeathCell = "";
             let dAgeAtDeath = "";
             let diedYoung = false;
+            let diedYoungClass = "";
+            let diedYoungTitle = "";
 
             let relNums = {
                 Parent_data: "",
@@ -1756,8 +1759,14 @@ export class CC7 {
                 if (mAgeAtDeathNum < 0) {
                     mAgeAtDeath = 0;
                 }
-                if (mAgeAtDeathNum < 16 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
+                if (mAgeAtDeathNum < 5 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
                     diedYoung = true;
+                    diedYoungClass = " diedYoung1";
+                    diedYoungTitle = "Died before age 5";
+                } else if (mAgeAtDeathNum < 16 && mAgeAtDeath != false) {
+                    diedYoung = true;
+                    diedYoungClass = " diedYoung2";
+                    diedYoungTitle = "Died before age 16";
                 }
 
                 ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
@@ -1790,14 +1799,17 @@ export class CC7 {
                     let word;
                     if (aR == "Child") {
                         word = "Children";
-                        if (mPerson.NoChildren == 1 || diedYoung == true) {
+                        if (diedYoung && relNums[aR] == "") {
+                            cellClass = `class='number${diedYoungClass}'`;
+                            word = diedYoungTitle;
+                        } else if (mPerson.NoChildren == 1) {
                             cellClass = "class='none number'";
                         }
                     } else {
                         word = aR + "s";
                     }
                     if (aR == "Spouse") {
-                        if (mPerson.DataStatus?.Spouse == "blank" || diedYoung == true) {
+                        if (mPerson.DataStatus?.Spouse == "blank" || (diedYoung && relNums[aR] == "")) {
                             cellClass = "class='none number'";
                         }
                     }
@@ -1821,11 +1833,6 @@ export class CC7 {
                     relNums["Parent_data"] = "data-Parent='2'";
                     relNums["Parent_cell"] = "<td class='number' title='Parents'>2</td>";
                 }
-            }
-
-            let diedYoungClass = "";
-            if (diedYoung == true) {
-                diedYoungClass = "diedYoung";
             }
 
             let gender = mPerson.Gender;
@@ -1885,9 +1892,7 @@ export class CC7 {
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
                     relNums["Child_cell"] +
-                    "<td class='connectionsName " +
-                    diedYoungClass +
-                    "' >" +
+                    "<td class='connectionsName >" +
                     oLink +
                     "</td><td class='lnab'>" +
                     (mPerson.LastNameAtBirth.startsWith("Private")

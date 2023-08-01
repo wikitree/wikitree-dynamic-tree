@@ -221,8 +221,13 @@ div.cc7Table .timelineTable td {
 .cc7Table #peopleTable img.diedYoungImg {
   float: right;
 }
-.cc7Table td.diedYoung {
-  background: url("../images/diedYoung.png") top right no-repeat;
+.cc7Table td.diedYoung1 {
+  background: url("../images/47px-RTC_-_Pictures.jpeg") center no-repeat;
+  background-size: 2em;
+}
+.cc7Table td.diedYoung2 {
+  background: url("../images/50px-Remember_the_Children-26.png") center no-repeat;
+  background-size: 2em;
 }
 .cc7Table ul#key {
   display: block;
