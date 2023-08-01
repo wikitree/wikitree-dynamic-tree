@@ -391,6 +391,8 @@ main {
     display: none;
   }
 
+  #WarningMessageBelowButtonBar,
+  #settingsDIV,
   #btnBarDIV {
     display: none;
   }
@@ -398,5 +400,21 @@ main {
   #view-container {
     border: none;
     min-height: initial;
+  }
+
+  #fanChartSVG {
+    /* fill a single page with the viewBox */
+    width: 100vw !important;
+    height: 99vh !important; /* 100vh seems to cause a second blank page */
+  }
+
+  #fanChartSVG g.popup {
+    /* don't print popup elements */
+    display: none !important;
+  }
+
+  #fanChartSVG > #SVGgraphics {
+    /* ignore the pan/zoom from the screen view */
+    transform: translate(0, 0) scale(1) !important;
   }
 }

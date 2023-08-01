@@ -10,56 +10,80 @@ export class CC7 {
     static APP_ID = "CC7";
     static #helpText = `
         <x>[ x ]</x>
-        <h2 style="text-align: center">About The CC7 Table</h2>
-        <p>This tool allows you to retrieve the list of people that are connected to someone within 7 degrees.</p>
+        <h2 style="text-align: center">About CC7 Views</h2>
+        <p>
+            CC7 Views allows you to retrieve the list of people connected to a profile within 7 degrees.
+            This guide explains how to use it.
+        </p>
+        <h3>Loading the Data</h3>
+        <p>
+            Depending on the number of connections, the data can take over two minutes to load fully.
+            To reduce loading time, you can:
+        </p>
+        <ul>
+            <li>Load fewer than the full 7 degrees.</li>
+            <li>Load only one degree at a time.</li>
+            <li>Save the data to a file for faster loading next time.</li>
+        </ul>
+        <h3>Calculating Degree of Separation</h3>
+        <p>
+            The app shows the degree of separation between the focal person and each person on the list.
+            Here is how it works:
+        </p>
         <ul>
             <li>
-                Depending on the size of the CC7 (the connection count to the 7th degree), the data can take a
-                long time to load (maybe five minutes or so).
+                The WikiTree API provides a list of connected people up to the requested number of degrees,
+                such as 5 degrees.
             </li>
-            <li>To avoid the long waiting time, you can load only one degree at a time.</li>
-            <li>Also to reduce the loading time, you can save the data to a file for faster loading next time.</li>
-            <li>The Table view will always load first. This shows the most data.</li>
-            <li>The Hierarchy view may also be useful.</li>
-            <li>You need to log in to the apps server to get your private and unlisted profiles.</li>
+            <li>The app calculates the degrees by linking parents to children and spouses to each other.</li>
             <li>
-                We can't get the connections to the private and unlisted profiles that you're not on the Trusted
-                List for (or the connections that go through that person).
+                Because of the above, the app cannot always connect people perfectly as some profiles are private
+                or unlisted, with limited information returned by the API.
+            </li>
+            <li>The degree shown will therefore sometimes be higher than the actual shortest path. For example,
+                results for CC5 may show someone at 6 degrees although they are actually at 5 or less.</li>
+        </ul>
+        <p>The Table View, which shows the most data, will always load first.</p>
+        <h3>Table View</h3>
+        <p>Here are some tips:</p>
+        <h4>Sorting the Table</h4>
+        <ul>
+            <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
+            <li>
+                Sort by Created/Modified to see new additions. (Due to a bug in the API, the Created column is
+                currently empty. We hope this will be fixed soon.)
             </li>
             <li>
-                Due to the previous point, the numbers shown in the degrees table will be less than those you see
-                elsewhere on WikiTree.
-            </li>
-
-            <li>Double-clicking this 'About' box will close it.</li>
-            <li>
-                If you find problems with this page or have suggestions for improvements,
-                <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Beacall-6"
-                    >let me know</a
-                >.
+                The location column sort toggles between sorting Town &rarr; Country or Country &rarr; Town on each click
+                on location header.
             </li>
         </ul>
-        <h3>Table</h3>
+        <h4>Scrolling the Wide Table</h4>
+        <ul>
+            <li>Drag the table left/right or two-finger drag on a trackpad.</li>
+        </ul>
+        <h4>Filtering Rows</h4>
         <ul>
             <li>
-                You can sort the table by any of the columns by clicking on the column heading. Clicking a second
-                time, reverses the sort order.
+                Limit the content of the table based on the content of columns by entering values in the filter
+                boxes just below the column headers.
             </li>
             <li>
-                The location columns can be sorted by Town &rarr; Country or Country &rarr; Town. Clicking on a
-                location heading will toggle between the two. Locations can't be ordered in reverse.
+                The numerical columns (including the years) can be filtered with &gt; and &lt;.
+                For example, to see all people born after 1865, enter &gt;1865 in the birth year filter box.
             </li>
             <li>
-                Sorting by Created or Modified dates may help you find profiles that are new to your list (maybe
-                added by other people).
+                Clear the filters by clicking on the CLEAR FILTERS button that appears as soon as you have an
+                active filter.
             </li>
+        </ul>
+        <h4>And...</h4>
+        <ul>
             <li>
-                The 'Died Young' images are for people who died under 16 years of age. Their spouse and children
-                boxes are greyed out as we can assume they didn't have any of these.
-            </li>
-            <li>
-                With the 'Wide table', grab and drag the table to scroll left and right, or use a two-finger drag
-                on the track-pad.
+                The Died Young images <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> are used to flag people
+                (in their Children column) who died under
+                5 and under 16 years of age, respectively, provided they had no children.
             </li>
         </ul>
         <ul id="key" class="key">
@@ -67,28 +91,36 @@ export class CC7 {
             <li><img src="./views/cc7/images/pink_bricks_small.jpg" /> missing mother</li>
             <li><img src="./views/cc7/images/purple_bricks_small.jpg" /> both parents missing</li>
             <li>
-                <span><span class="none"></span> 'No more spouses/children' box is checked or Died Young</span>
+                <span><span class="none"></span> the 'No more spouses/children' box is checked, or Died Young</span>
             </li>
         </ul>
-        <h3>Hierarchy</h3>
+        <h3>Hierarchy View</h3>
         <ul>
-            <li>The number in the first box next to a person's name shows how many profiles are 'hidden' below them.</li>
+            <li>Numbers show the number of hidden profiles below each person.</li>
             <li>
-                The icons in the box at the end of the line show the number of hidden people with missing parents
-                (blue and pink bricks for fathers and mothers respectively), possible missing spouses
-                (the couple icon), and children (the child icon).
+                Icons show missing parents (blue and pink bricks for fathers and mothers, respectively), and potentially missing
+                spouses and/or children.
             </li>
-            <li>Reveal more people by clicking the '+' buttons to the left of the names.</li>
-            <li>The big '+' and '−' buttons expand and collapse the list by one degree at a time.</li>
+            <li>Click '+' to reveal more people.</li>
         </ul>
-        <h3>List</h3>
+        <h4>Expanding and Collapsing the Hierarchy</h4>
         <ul>
+            <li>Big '+' and '-' buttons expand and collapse by degree.</li>
+        </ul>
+        <h3>List View</h3>
+        <ul>
+            <li>Click a surname to show only those people.</li>
+            <li>Click again to show all.</li>
+        </ul>
+        <h3>Other points</h3>
+        <ul>
+            <li>Double-clicking this 'About' box, or clicking the red X in its top right corner will close it.</li>
             <li>
-                Clicking a surname in the heading shows only the people with that surname in the same column in the
-                table below.
+                If you find problems with this page or have suggestions for improvements, let
+                <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641">Riël</a> or
+                <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Beacall-6">Ian</a>
+                know about it.
             </li>
-            <li>Click the surname again to show all the people in the list.</li>
-            <li>The lists are ordered alphabetically.</li>
         </ul>`;
 
     static PROFILE_FIELDS = [
@@ -113,6 +145,7 @@ export class CC7 {
         "LastNameCurrent",
         "LastNameOther",
         "Manager",
+        "Managers",
         "MiddleName",
         "Mother",
         "Name",
@@ -128,6 +161,7 @@ export class CC7 {
     static GET_PEOPLE_FIELDS = CC7.PROFILE_FIELDS + ",Spouses";
     static GET_PEOPLE_LIMIT = 1000;
     static MAX_DEGREE = 7;
+    static HIDE = true;
 
     static WANTED_NAME_PARTS = [
         "Prefix",
@@ -311,6 +345,12 @@ export class CC7 {
         $("#tree").slideUp("fast");
     }
 
+    static setOverflow(value) {
+        $("#view-container").css({
+            overflow: value,
+        });
+    }
+
     static async addWideTableButton() {
         $("#wideTableButton").show();
 
@@ -330,11 +370,10 @@ export class CC7 {
 
                 dTable = $(".peopleTable").eq(0);
                 if (CC7.getCookie("w_wideTable") == "1") {
+                    // Display a normal table
                     CC7.setCookie("w_wideTable", 0, { expires: 365 });
-
+                    CC7.setOverflow("visible");
                     dTable.removeClass("wide");
-                    dTable.insertBefore($("#tableContainer"));
-                    $("#buttonBox").hide();
                     $(this).text("Wide table");
                     $("#peopleTable").attr("title", "");
                     dTable.css({
@@ -344,17 +383,11 @@ export class CC7 {
                     });
                     dTable.draggable("disable");
                 } else {
+                    // Display a wide table
                     CC7.setCookie("w_wideTable", 1, { expires: 365 });
+                    CC7.setOverflow("auto");
                     $(this).text("Normal Table");
                     $("#peopleTable").attr("title", "Drag to scroll left or right");
-                    let container;
-                    if ($("#tableContainer").length) {
-                        container = $("#tableContainer");
-                    } else {
-                        container = $("<div id='tableContainer'></div>");
-                    }
-                    container.insertBefore(dTable);
-                    container.append(dTable);
                     dTable.addClass("wide");
                     dTable.find("th").each(function () {
                         $(this).data("width", $(this).css("width"));
@@ -376,35 +409,6 @@ export class CC7 {
                         }
                     }
                     dTable.draggable("enable");
-
-                    if ($("#buttonBox").length == 0) {
-                        let leftButton = $("<button id='leftButton'>&larr;</button>");
-                        let rightButton = $("<button id='rightButton'>&rarr;</button>");
-                        let buttonBox = $("<div id='buttonBox'></div>");
-                        buttonBox.append(leftButton, rightButton);
-                        container.before(buttonBox);
-                        buttonBox.hide();
-
-                        $("#rightButton").click(function (event) {
-                            event.preventDefault();
-                            container.animate(
-                                {
-                                    scrollLeft: "+=300px",
-                                },
-                                "slow"
-                            );
-                        });
-
-                        $("#leftButton").click(function (event) {
-                            event.preventDefault();
-                            container.animate(
-                                {
-                                    scrollLeft: "-=300px",
-                                },
-                                "slow"
-                            );
-                        });
-                    }
                 }
             });
         }
@@ -826,7 +830,7 @@ export class CC7 {
                 fNames = tPerson.FirstName + " and " + aFact.firstName;
                 relation = "";
             }
-            const tlFirstName = "<a href='https://www.wikitree.com/wiki/" + aFact.wtId + "'>" + fNames + "</a>";
+            const tlFirstName = CC7.profileLink(aFact.wtId, fNames);
             const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
 
             if (aPersonBD.Approx == true) {
@@ -942,8 +946,7 @@ export class CC7 {
                 disName = disName.replace(personOfInterest.MiddleName + " ", "");
             }
         }
-        const captionHTML =
-            "<a href='https://www.wikitree.com/wiki/" + CC7.htmlEntities(kPeople[0].Name) + "'>" + disName + "</a>";
+        const captionHTML = CC7.profileLink(CC7.htmlEntities(kPeople[0].Name), disName);
         const kTable = $(
             `<div class='familySheet'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
                 "<thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead>" +
@@ -1024,10 +1027,8 @@ export class CC7 {
                         kPers.Gender +
                         "'><td>" +
                         kPers.RelationShow +
-                        "</td><td><a  target='_blank'  href='https://www.wikitree.com/wiki/" +
-                        linkName +
-                        "'>" +
-                        oName +
+                        "</td><td>" +
+                        CC7.profileLink(linkName, oName) +
                         "</td><td class='aDate'>" +
                         oBDate +
                         "</td><td>" +
@@ -1400,68 +1401,6 @@ export class CC7 {
         return [s2b, b2s];
     }
 
-    static USstatesObjArray = [
-        { name: "Alabama", abbreviation: "AL" },
-        { name: "Alaska", abbreviation: "AK" },
-        { name: "American Samoa", abbreviation: "AS" },
-        { name: "Arizona", abbreviation: "AZ" },
-        { name: "Arkansas", abbreviation: "AR" },
-        { name: "California", abbreviation: "CA" },
-        { name: "Colorado", abbreviation: "CO" },
-        { name: "Connecticut", abbreviation: "CT" },
-        { name: "Delaware", abbreviation: "DE" },
-        { name: "District Of Columbia", abbreviation: "DC" },
-        { name: "Federated States Of Micronesia", abbreviation: "FM" },
-        { name: "Florida", abbreviation: "FL" },
-        { name: "Georgia", abbreviation: "GA" },
-        { name: "Guam", abbreviation: "GU" },
-        { name: "Hawaii", abbreviation: "HI" },
-        { name: "Idaho", abbreviation: "ID" },
-        { name: "Illinois", abbreviation: "IL" },
-        { name: "Indiana", abbreviation: "IN" },
-        { name: "Iowa", abbreviation: "IA" },
-        { name: "Kansas", abbreviation: "KS" },
-        { name: "Kentucky", abbreviation: "KY" },
-        { name: "Louisiana", abbreviation: "LA" },
-        { name: "Maine", abbreviation: "ME" },
-        { name: "Marshall Islands", abbreviation: "MH" },
-        { name: "Maryland", abbreviation: "MD" },
-        { name: "Massachusetts", abbreviation: "MA" },
-        { name: "Michigan", abbreviation: "MI" },
-        { name: "Minnesota", abbreviation: "MN" },
-        { name: "Mississippi", abbreviation: "MS" },
-        { name: "Missouri", abbreviation: "MO" },
-        { name: "Montana", abbreviation: "MT" },
-        { name: "Nebraska", abbreviation: "NE" },
-        { name: "Nevada", abbreviation: "NV" },
-        { name: "New Hampshire", abbreviation: "NH" },
-        { name: "New Jersey", abbreviation: "NJ" },
-        { name: "New Mexico", abbreviation: "NM" },
-        { name: "New York", abbreviation: "NY" },
-        { name: "North Carolina", abbreviation: "NC" },
-        { name: "North Dakota", abbreviation: "ND" },
-        { name: "Northern Mariana Islands", abbreviation: "MP" },
-        { name: "Ohio", abbreviation: "OH" },
-        { name: "Oklahoma", abbreviation: "OK" },
-        { name: "Oregon", abbreviation: "OR" },
-        { name: "Palau", abbreviation: "PW" },
-        { name: "Pennsylvania", abbreviation: "PA" },
-        { name: "Puerto Rico", abbreviation: "PR" },
-        { name: "Rhode Island", abbreviation: "RI" },
-        { name: "South Carolina", abbreviation: "SC" },
-        { name: "South Dakota", abbreviation: "SD" },
-        { name: "Tennessee", abbreviation: "TN" },
-        { name: "Texas", abbreviation: "TX" },
-        { name: "Utah", abbreviation: "UT" },
-        { name: "Vermont", abbreviation: "VT" },
-        { name: "Virgin Islands", abbreviation: "VI" },
-        { name: "Virginia", abbreviation: "VA" },
-        { name: "Washington", abbreviation: "WA" },
-        { name: "West Virginia", abbreviation: "WV" },
-        { name: "Wisconsin", abbreviation: "WI" },
-        { name: "Wyoming", abbreviation: "WY" },
-    ];
-
     static secondarySort3(aList, dataThing1, dataThing2, isText = 0, reverse = 0) {
         let lastOne = "Me";
         let tempArr = [lastOne];
@@ -1547,7 +1486,7 @@ export class CC7 {
                         if ($(a).data(sorter) == "") {
                             return true;
                         }
-                        return $(b).data(sorter).localeCompare($(a).data(sorter));
+                        return $(b).data(sorter).toString().localeCompare($(a).data(sorter));
                     });
                     el.attr("data-order", "desc");
                 } else {
@@ -1555,7 +1494,7 @@ export class CC7 {
                         if ($(b).data(sorter) == "") {
                             return true;
                         }
-                        return $(a).data(sorter).localeCompare($(b).data(sorter));
+                        return $(a).data(sorter).toString().localeCompare($(b).data(sorter));
                     });
                     el.attr("data-order", "asc");
                 }
@@ -1577,6 +1516,12 @@ export class CC7 {
             });
             aTable.find("tr.main").prependTo(aTable.find("tbody"));
         });
+    }
+
+    static profileLink(wtRef, text) {
+        return wtRef.startsWith("Private")
+            ? text
+            : `<a target='_blank' href='https://www.wikitree.com/wiki/${wtRef}'>${text}</a>`;
     }
 
     static async addPeopleTable(caption) {
@@ -1609,6 +1554,7 @@ export class CC7 {
                 `<th data-order='' id='deathdate' ${sortTitle}>Death date</th>` +
                 `<th data-order='' id='deathlocation' ${sortTitle}>Death place</th>` +
                 ageAtDeathCol +
+                `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
                 touchedTH +
                 "</tr></thead><tbody></tbody></table>"
@@ -1640,8 +1586,9 @@ export class CC7 {
                 });
         }
 
-        for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+        for (let [id, degree, birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
             const mPerson = window.people.get(id);
+            if (mPerson.Hide) continue;
 
             let deathDate = CC7.ymdFix(mPerson.DeathDate);
             if (deathDate == "") {
@@ -1668,97 +1615,48 @@ export class CC7 {
                 deathLocationReversed = dLocation2ways[1];
             }
 
-            function setLocations(mPerson) {
-                const oLocations = [];
-                const checkEm = [[mPerson], mPerson.Parent, mPerson.Spouse, mPerson.Sibling, mPerson.Child];
-
-                checkEm.forEach(function (anArr) {
-                    if (anArr) {
-                        anArr.forEach(function (aPers) {
-                            if (aPers.BirthLocation) {
-                                const bits = aPers.BirthLocation.split(",");
-                                bits.forEach(function (aBit) {
-                                    const bit = aBit.trim();
-                                    if (!oLocations.includes(bit)) {
-                                        oLocations.push(bit);
-                                    }
-                                    let isUS = false;
-                                    CC7.USstatesObjArray.forEach(function (obj) {
-                                        if (bit == obj.name) {
-                                            if (!oLocations.includes(obj.abbreviation)) {
-                                                oLocations.push(obj.abbreviation);
-                                            }
-                                            isUS = true;
-                                        }
-                                        if (bit == obj.abbreviation) {
-                                            if (!oLocations.includes(obj.name)) {
-                                                oLocations.push(obj.name);
-                                            }
-                                            isUS = true;
-                                        }
-                                    });
-                                });
-                            }
-                            if (aPers.DeathLocation) {
-                                const bits = aPers.DeathLocation.split(",");
-                                bits.forEach(function (aBit) {
-                                    const bit = aBit.trim();
-                                    if (!oLocations.includes(bit)) {
-                                        oLocations.push(bit);
-                                    }
-                                    let isUS = false;
-                                    CC7.USstatesObjArray.forEach(function (obj) {
-                                        if (bit == obj.name) {
-                                            if (!oLocations.includes(obj.abbreviation)) {
-                                                oLocations.push(obj.abbreviation);
-                                            }
-                                            isUS = true;
-                                        }
-                                        if (bit == obj.abbreviation) {
-                                            if (!oLocations.includes(obj.name)) {
-                                                oLocations.push(obj.name);
-                                            }
-                                            isUS = true;
-                                        }
-                                    });
-                                });
-                            }
-                        });
-                    }
-                });
-
-                return oLocations;
-            }
-
-            const oLocations = setLocations(mPerson).join(",");
-
             const privacyLevel = mPerson.Privacy;
 
-            let privacy = "";
+            let privacy = null;
             let privacyTitle = "";
-            if (mPerson.Privacy_IsOpen == true || privacyLevel == 60) {
-                privacy = "./views/cc7/images/privacy_open.png";
-                privacyTitle = "Open";
-            }
-            if (mPerson.Privacy_IsPublic == true) {
-                privacy = "./views/cc7/images/privacy_public.png";
-                privacyTitle = "Public";
-            }
-            if (mPerson.Privacy_IsSemiPrivate == true || privacyLevel == 40) {
-                privacy = "./views/cc7/images/privacy_public-tree.png";
-                privacyTitle = "Private with Public Bio and Tree";
-            }
-            if (privacyLevel == 35) {
-                privacy = "./views/cc7/images/privacy_privacy35.png";
-                privacyTitle = "Private with Public Tree";
-            }
-            if (mPerson.Privacy_IsSemiPrivateBio == true || privacyLevel == 30) {
-                privacy = "./views/cc7/images/privacy_public-bio.png";
-                privacyTitle = "Public Bio";
-            }
-            if (privacyLevel == 20) {
-                privacy = "./views/cc7/images/privacy_private.png";
-                privacyTitle = "Private";
+            // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
+            // Privacy_IsPrivate            True if Privacy = 20
+            // Privacy_IsPublic             True if Privacy = 50
+            // Privacy_IsOpen               True if Privacy = 60
+            // Privacy_IsAtLeastPublic      True if Privacy >= 50
+            // Privacy_IsSemiPrivate        True if Privacy = 30-40
+            // Privacy_IsSemiPrivateBio     True if Privacy = 30
+            switch (privacyLevel) {
+                case 60:
+                    privacy = "./views/cc7/images/privacy_open.png";
+                    privacyTitle = "Open";
+                    break;
+                case 50:
+                    privacy = "./views/cc7/images/privacy_public.png";
+                    privacyTitle = "Public";
+                    break;
+                case 40:
+                    privacy = "./views/cc7/images/privacy_public-tree.png";
+                    privacyTitle = "Private with Public Bio and Tree";
+                    break;
+                case 35:
+                    privacy = "./views/cc7/images/privacy_privacy35.png";
+                    privacyTitle = "Private with Public Tree";
+                    break;
+                case 30:
+                    privacy = "./views/cc7/images/privacy_public-bio.png";
+                    privacyTitle = "Public Bio";
+                    break;
+                case 20:
+                    privacy = "./views/cc7/images/privacy_private.png";
+                    privacyTitle = "Private";
+                    break;
+                case 10:
+                    privacy = "./views/cc7/images/privacy_unlisted.png";
+                    privacyTitle = "Unlisted";
+                    break;
+                default:
+                    break;
             }
             let firstName = mPerson.FirstName;
             if (mPerson.MiddleName) {
@@ -1803,12 +1701,18 @@ export class CC7 {
                     mPerson.LastNameAtBirth = "Private";
                 }
             }
-            const oLink =
-                "<a target='_blank' href='https://www.wikitree.com/wiki/" +
-                CC7.htmlEntities(mPerson.Name) +
-                "'>" +
-                firstName +
-                "</a>";
+
+            const oLink = CC7.profileLink(mPerson.Name, firstName);
+            let managerLink;
+            let dManager;
+            if (mPerson.Manager) {
+                const mgrWtId = mPerson.Managers.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
+                dManager = CC7.htmlEntities(mgrWtId);
+                managerLink = CC7.profileLink(dManager, dManager);
+            } else {
+                managerLink = mPerson.Name.startsWith("Private") ? "Unknown" : "Orphaned";
+                dManager = managerLink;
+            }
 
             let degreeCell = "";
             let touched = "";
@@ -1819,6 +1723,8 @@ export class CC7 {
             let ageAtDeathCell = "";
             let dAgeAtDeath = "";
             let diedYoung = false;
+            let diedYoungClass = "";
+            let diedYoungTitle = "";
 
             let relNums = {
                 Parent_data: "",
@@ -1853,8 +1759,14 @@ export class CC7 {
                 if (mAgeAtDeathNum < 0) {
                     mAgeAtDeath = 0;
                 }
-                if (mAgeAtDeathNum < 16 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
+                if (mAgeAtDeathNum < 5 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
                     diedYoung = true;
+                    diedYoungClass = " diedYoung1";
+                    diedYoungTitle = "Died before age 5";
+                } else if (mAgeAtDeathNum < 16 && mAgeAtDeath != false) {
+                    diedYoung = true;
+                    diedYoungClass = " diedYoung2";
+                    diedYoungTitle = "Died before age 16";
                 }
 
                 ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
@@ -1872,11 +1784,14 @@ export class CC7 {
                 }
 
                 relNums = {};
-                const rArr = ["Parent", "Sibling", "Spouse", "Child"];
+                const rArr = ["Sibling", "Spouse", "Child"];
                 rArr.forEach(function (aR) {
                     let cellClass = "class='number'";
-                    if (mPerson[aR].length) {
-                        relNums[aR] = mPerson[aR].length;
+                    // For spouse count we check the Spouses arrays since it contains everyone, not just
+                    // those present in the returned data
+                    const realAr = aR == "Spouse" ? "Spouses" : aR;
+                    if (mPerson[realAr].length) {
+                        relNums[aR] = mPerson[realAr].length;
                     } else {
                         relNums[aR] = "";
                     }
@@ -1884,14 +1799,17 @@ export class CC7 {
                     let word;
                     if (aR == "Child") {
                         word = "Children";
-                        if (mPerson.NoChildren == 1 || diedYoung == true) {
+                        if (diedYoung && relNums[aR] == "") {
+                            cellClass = `class='number${diedYoungClass}'`;
+                            word = diedYoungTitle;
+                        } else if (mPerson.NoChildren == 1) {
                             cellClass = "class='none number'";
                         }
                     } else {
                         word = aR + "s";
                     }
                     if (aR == "Spouse") {
-                        if (mPerson.DataStatus?.Spouse == "blank" || diedYoung == true) {
+                        if (mPerson.DataStatus?.Spouse == "blank" || (diedYoung && relNums[aR] == "")) {
                             cellClass = "class='none number'";
                         }
                     }
@@ -1899,17 +1817,22 @@ export class CC7 {
                 });
 
                 if (!mPerson.Father && !mPerson.Mother) {
-                    relNums["Parent_cell"] = "<td class='noParents number' title='missing parents'>0</td>";
+                    relNums["Parent"] = 0;
+                    relNums["Parent_data"] = "data-Parent='0'";
+                    relNums["Parent_cell"] = "<td class='noParents number' title='Missing parents'>0</td>";
                 } else if (!mPerson.Father) {
-                    relNums["Parent_cell"] = "<td class='noFather number' title='missing father'>1</td>";
+                    relNums["Parent"] = 1;
+                    relNums["Parent_data"] = "data-Parent='1'";
+                    relNums["Parent_cell"] = "<td class='noFather number' title='Missing father'>1</td>";
                 } else if (!mPerson.Mother) {
-                    relNums["Parent_cell"] = "<td class='noMother number' title='missing mother'>1</td>";
+                    relNums["Parent"] = 1;
+                    relNums["Parent_data"] = "data-Parent='1'";
+                    relNums["Parent_cell"] = "<td class='noMother number' title='Missing mother'>1</td>";
+                } else {
+                    relNums["Parent"] = 2;
+                    relNums["Parent_data"] = "data-Parent='2'";
+                    relNums["Parent_cell"] = "<td class='number' title='Parents'>2</td>";
                 }
-            }
-
-            let diedYoungClass = "";
-            if (diedYoung == true) {
-                diedYoungClass = "diedYoung";
             }
 
             let gender = mPerson.Gender;
@@ -1938,8 +1861,6 @@ export class CC7 {
                     mPerson.Id +
                     "' data-name='" +
                     CC7.htmlEntities(mPerson.Name) +
-                    "' data-locations='" +
-                    CC7.htmlEntities(oLocations) +
                     "' data-firstname='" +
                     CC7.htmlEntities(firstName) +
                     "' data-lnab='" +
@@ -1958,28 +1879,30 @@ export class CC7 {
                     CC7.htmlEntities(deathLocation) +
                     "' data-deathlocation-reversed='" +
                     CC7.htmlEntities(deathLocationReversed) +
+                    "' data-manager='" +
+                    dManager +
                     "' class='" +
                     gender +
-                    "'><td><img class='privacyImage' src='" +
-                    privacy +
-                    "' title='" +
-                    privacyTitle +
-                    `'></td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
+                    "'><td>" +
+                    (privacy ? "<img class='privacyImage' src='" + privacy + "' title='" + privacyTitle + "'>" : "") +
+                    `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
                     relNums["Parent_cell"] +
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
                     relNums["Child_cell"] +
-                    "<td class='connectionsName " +
-                    diedYoungClass +
-                    "' >" +
+                    "<td class='connectionsName >" +
                     oLink +
-                    "</td><td class='lnab'><a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
-                    CC7.htmlEntities(mPerson.LastNameAtBirth) +
-                    "'>" +
-                    mPerson.LastNameAtBirth +
-                    "</a></td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
+                    "</td><td class='lnab'>" +
+                    (mPerson.LastNameAtBirth.startsWith("Private")
+                        ? mPerson.LastNameAtBirth
+                        : "<a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
+                          CC7.htmlEntities(mPerson.LastNameAtBirth) +
+                          "'>" +
+                          mPerson.LastNameAtBirth +
+                          "</a>") +
+                    "</td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
                     CC7.htmlEntities(mPerson.LastNameCurrent) +
                     "'>" +
                     mPerson.LastNameCurrent +
@@ -1993,6 +1916,9 @@ export class CC7 {
                     CC7.htmlEntities(deathLocation) +
                     "</td>" +
                     ageAtDeathCell +
+                    "<td class='managerCell'>" +
+                    managerLink +
+                    "</td>" +
                     created +
                     touched +
                     "</tr>"
@@ -2001,12 +1927,25 @@ export class CC7 {
             aTable.find("tbody").append(aLine);
         }
 
+        if (CC7.getCookie("w_wideTable") == "0") {
+            CC7.setOverflow("visible");
+        } else {
+            CC7.setOverflow("auto");
+        }
         if ($("#cc7Container").length == 0) {
             $(".peopleTable caption").click(function () {
                 $(this).parent().find("thead,tbody").slideToggle();
             });
         }
 
+        // Provide a way to examine the data record of a specific person
+        $("img.privacyImage").click(function (event) {
+            if (event.altKey) {
+                const id = $(this).closest("tr").attr("data-id");
+                const p = window.people.get(+id);
+                console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
+            }
+        });
         $("img.familyHome").click(function () {
             CC7.showFamilySheet($(this));
         });
@@ -2057,49 +1996,6 @@ export class CC7 {
             $("#wideTableButton").show();
         });
 
-        const locationFilterSP = $(
-            "<label id='spLocationFilterLabel'><input type='text' id='spLocationFilter' title='Enter place names separated by commas and click the button; empty the textbox and click the button to remove the filter'><button class=' button small searchResultsButton' id='spLocationFilterButton'>Filter by Location</button></label>"
-        );
-        locationFilterSP.insertBefore($(".peopleTable"));
-        $("#moreSearchDetails").hide();
-        $("#spLocationFilterButton").click(function (e) {
-            e.preventDefault();
-            if ($(this).text() == "Remove Location Filter" || $("#spLocationFilter").val() == "") {
-                $(this).text("Filter By Location");
-                $("tr").removeClass("locationFilteredOut");
-            } else if ($("#spLocationFilter").val() != "") {
-                $(this).text("Remove Location Filter");
-                const rows = $(".peopleTable tbody tr");
-                const locations = $("#spLocationFilter").val().split(",");
-                const locationsT = locations.map((string) => string.trim());
-                //oLocations = [];
-
-                rows.each(function () {
-                    let keepIt = false;
-
-                    const thisLocations = $(this).attr("data-locations");
-                    if (thisLocations != "") {
-                        const thisLocationsSplit = thisLocations.split(",");
-                        thisLocationsSplit.forEach(function (aLocation) {
-                            locationsT.forEach(function (aLocation2) {
-                                if (aLocation2.toLowerCase() == aLocation.toLowerCase()) {
-                                    keepIt = true;
-                                }
-                            });
-                        });
-                    }
-                    if (keepIt == false) {
-                        $(this).addClass("locationFilteredOut");
-                    }
-                });
-            }
-        });
-        $("#spLocationFilter").keypress(function (e) {
-            if (e.which == 13) {
-                $("#spLocationFilterButton").click();
-            }
-        });
-
         CC7.hideShakingTree();
         $("#countdown").fadeOut();
         if ($("#cc7Container").length == 0) {
@@ -2107,6 +2003,245 @@ export class CC7 {
         }
 
         CC7.cc7excelOut();
+        CC7.addFiltersToTable();
+        aTable.css({
+            "overflow-x": "auto",
+            "width": "100%",
+        });
+        aTable.floatingScroll();
+    }
+
+    static repositionFilterRow(table) {
+        const hasTbody = table.querySelector("tbody") !== null;
+        const hasThead = table.querySelector("thead") !== null;
+        const headerRow = hasThead
+            ? table.querySelector("thead tr:first-child")
+            : hasTbody
+            ? table.querySelector("tbody tr:first-child")
+            : table.querySelector("tr:first-child");
+        const filterRow = table.querySelector(".cc7filter-row");
+        if (filterRow) {
+            if (filterRow.nextSibling !== headerRow) {
+                headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
+            }
+        }
+    }
+
+    static addFiltersToTable(aTable = null) {
+        let tables;
+        if (aTable) {
+            tables = [aTable];
+        } else {
+            tables = document.querySelectorAll("#peopleTable");
+        }
+        tables.forEach((table) => {
+            const hasTbody = table.querySelector("tbody") !== null;
+            const hasThead = table.querySelector("thead") !== null;
+            const headerRow = hasThead
+                ? table.querySelector("thead tr:first-child")
+                : hasTbody
+                ? table.querySelector("tbody tr:first-child")
+                : table.querySelector("tr:first-child");
+
+            let headerCells = headerRow.querySelectorAll("th");
+            const originalHeaderCells = headerCells;
+            const isFirstRowHeader = headerCells.length > 0;
+            if (!isFirstRowHeader) {
+                const firstRowCells = headerRow.querySelectorAll("td");
+                const dummyHeaderRow = document.createElement("tr");
+                firstRowCells.forEach(() => {
+                    const emptyHeaderCell = document.createElement("th");
+                    dummyHeaderRow.appendChild(emptyHeaderCell);
+                });
+                headerRow.parentElement.insertBefore(dummyHeaderRow, headerRow);
+                headerCells = dummyHeaderRow.querySelectorAll("th");
+            }
+
+            const filterRow = document.createElement("tr");
+            filterRow.classList.add("cc7filter-row");
+
+            headerCells.forEach((headerCell, i) => {
+                const filterCell = document.createElement("th");
+                if (i == 0) {
+                    filterCell.colSpan = 3;
+                    filterCell.style.textAlign = "right";
+                    filterCell.innerHTML = "Filters:";
+                    filterCell.title =
+                        "Show only rows with these column values. > and < may be used for numerical columns.";
+                    filterRow.appendChild(filterCell);
+                }
+                const headerCellText = headerCell.textContent.trim();
+                const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
+                if (!["Pos."].includes(headerCellText) && !["Pos.", ""].includes(originalHeaderCellText)) {
+                    // console.log(headerCellText);
+                    filterCell.title = "Enter a column value to which to limit the rows";
+                    const filterInput = document.createElement("input");
+                    filterInput.type = "text";
+                    filterInput.classList.add("filter-input");
+
+                    // Check the length of the text in the first ten cells of the column
+                    const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+                    let isNumeric = 0;
+                    let isDate = 0;
+                    let isText = 0;
+                    for (let j = 1; j < Math.min(50, rows.length); j++) {
+                        if (rows[j]) {
+                            const cellText = rows[j].children[i].textContent.trim();
+                            const cellTextStripped = cellText.replace(/[<>~]?(\d+)°?/g, "$1");
+                            const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
+                            if (dateMatch) {
+                                isDate++;
+                            } else if (CC7.isNumeric(cellTextStripped)) {
+                                isNumeric++;
+                            } else if (cellText !== "") {
+                                isText++;
+                            }
+                        }
+                    }
+
+                    let maxVal;
+                    if (isNumeric > isDate && isNumeric > isText) {
+                        maxVal = "isNumeric";
+                    } else if (isDate > isNumeric && isDate > isText) {
+                        maxVal = "isDate";
+                    } else {
+                        maxVal = "isText";
+                    }
+
+                    if (maxVal == "isNumeric") {
+                        filterInput.classList.add("numeric-input");
+                    } else if (maxVal == "isDate") {
+                        filterInput.classList.add("date-input");
+                    } else {
+                        filterInput.classList.add("text-input");
+                    }
+
+                    filterCell.appendChild(filterInput);
+                }
+                if (i > 2) {
+                    filterRow.appendChild(filterCell);
+                }
+            });
+
+            if (isFirstRowHeader) {
+                headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
+            } else {
+                headerRow.parentElement.insertBefore(filterRow, headerRow);
+            }
+
+            const sortArrows = table.querySelectorAll(".sortheader");
+            sortArrows.forEach((arrow) => {
+                arrow.addEventListener("click", () => {
+                    setTimeout(() => {
+                        repositionFilterRow(table);
+                    }, 100);
+                });
+            });
+        });
+
+        const filterFunction = () => {
+            const table = tables[0];
+            const hasTbody = table.querySelector("tbody") !== null;
+            const hasThead = table.querySelector("thead") !== null;
+            const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+            const filterInputs = table.querySelectorAll(".filter-input");
+
+            rows.forEach((row, rowIndex) => {
+                // Skip first row only if there's no 'thead'
+                if (!hasThead && rowIndex === 0) {
+                    return;
+                }
+
+                // Skip if row is a filter-row or contains 'th' elements
+                if (row.classList.contains("cc7filter-row") || row.querySelector("th")) {
+                    return;
+                }
+
+                let displayRow = true;
+
+                filterInputs.forEach((input, inputIndex) => {
+                    let text = input.value.toLowerCase();
+                    const columnIndex =
+                        Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 2;
+                    let cellText = row.children[columnIndex].textContent.toLowerCase();
+                    const isDateColumn = input.classList.contains("date-input");
+                    const isNumericColumn = input.classList.contains("numeric-input");
+
+                    // If the column is numeric and the input is a number or a comparison, perform the appropriate check
+                    if (
+                        (isNumericColumn || (isDateColumn && text.length >= 4)) &&
+                        (text === "" ||
+                            !isNaN(parseFloat(text.replace(/[<>~]/g, ""))) ||
+                            text[0] === ">" ||
+                            text[0] === "<")
+                    ) {
+                        if (text !== "") {
+                            let operator = text[0];
+                            if (operator === ">" || operator === "<") {
+                                text = parseFloat(text.slice(1)); // Remove the operator from the text
+                            } else {
+                                operator = "=="; // Default to equality if there's no operator
+                                text = parseFloat(text.replace(/[<>~]/g, ""));
+                            }
+                            if (isDateColumn) {
+                                let year = cellText.slice(0, 4); // Get the year part of the date
+                                if (year.endsWith("s")) {
+                                    year = year.slice(0, -1); // Remove the 's' for decade dates
+                                }
+                                cellText = parseFloat(year);
+                            } else {
+                                cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
+                            }
+                            if (!eval(cellText + operator + text)) {
+                                displayRow = false;
+                            }
+                        }
+                    } else {
+                        if (!cellText.includes(text)) {
+                            displayRow = false;
+                        }
+                    }
+                });
+
+                row.style.display = displayRow ? "" : "none";
+            });
+            $("#peopleTable").floatingScroll("update");
+        };
+
+        function updateClearFiltersButtonVisibility() {
+            const anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
+                (input) => input.value.trim() !== ""
+            );
+
+            clearFiltersButton.style.display = anyFilterHasText ? "inline-block" : "none";
+        }
+
+        document.querySelectorAll(".filter-input").forEach((input) => {
+            input.addEventListener("input", () => {
+                filterFunction();
+                updateClearFiltersButtonVisibility();
+            });
+        });
+
+        // Add Clear Filters button
+        const clearFiltersButton = document.createElement("button");
+        clearFiltersButton.textContent = "X";
+        clearFiltersButton.title = "Clear Filters";
+        clearFiltersButton.id = "clearTableFiltersButton";
+        //  clearFiltersButton.style.position = "absolute";
+        clearFiltersButton.addEventListener("click", () => {
+            document.querySelectorAll(".filter-input").forEach((input) => {
+                input.value = "";
+            });
+            filterFunction();
+            updateClearFiltersButtonVisibility();
+        });
+
+        $(clearFiltersButton).insertAfter($("#wideTableButton"));
+        clearFiltersButton.textContent = "Clear Filters";
+
+        // Initially hide the button
+        clearFiltersButton.style.display = "none";
     }
 
     static getApproxDate(theDate) {
@@ -2280,6 +2415,12 @@ export class CC7 {
         CC7.secondarySort3(aList, "lnab", "first-name", 1);
     }
 
+    static formDisplayName(aPerson, aName) {
+        return aPerson.Name.startsWith("Private")
+            ? aPerson.LastNameAtBirth || "Private"
+            : aName.withParts(CC7.WANTED_NAME_PARTS);
+    }
+
     static async lanceView() {
         $("#peopleTable").hide();
         if (!window.surnames) {
@@ -2313,11 +2454,11 @@ export class CC7 {
 
         for (let aPerson of window.people.values()) {
             if (!aPerson.Missing) {
-                aPerson = CC7.missingBits(aPerson);
+                CC7.addMissingBits(aPerson);
             }
             const theDegree = aPerson.Degree;
             const aName = new PersonName(aPerson);
-            const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+            const theName = CC7.formDisplayName(aPerson, aName);
             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
             const theLNAB = theParts.get("LastNameAtBirth");
             const theFirstName = theParts.get("FirstName");
@@ -2376,11 +2517,9 @@ export class CC7 {
                         theLNAB +
                         "' data-name=\"" +
                         aPerson.Name +
-                        "\"><a target='_blank' href='https://www.wikitree.com/wiki/" +
-                        linkName +
-                        "'>" +
-                        theName +
-                        "</a> " +
+                        '">' +
+                        CC7.profileLink(linkName, theName) +
+                        " " +
                         missing.missingIcons +
                         "</li>"
                 );
@@ -2395,7 +2534,7 @@ export class CC7 {
         });
     }
 
-    static missingBits(aPerson) {
+    static addMissingBits(aPerson) {
         aPerson.Missing = [];
         if (!aPerson.Father) {
             aPerson.Missing.push("Father");
@@ -2418,7 +2557,6 @@ export class CC7 {
                 aPerson.Missing.push("Children");
             }
         }
-        return aPerson;
     }
 
     static missingThings(aPerson) {
@@ -2428,19 +2566,19 @@ export class CC7 {
             missingBit += "data-missing-" + relation + "='1' ";
             if (relation == "Father") {
                 missingIcons +=
-                    "<img title='missing father' class='missingFather missingIcon' src='./views/cc7/images/blue_bricks_small.jpg'>";
+                    "<img title='Missing father' class='missingFather missingIcon' src='./views/cc7/images/blue_bricks_small.jpg'>";
             }
             if (relation == "Mother") {
                 missingIcons +=
-                    "<img title='missing mother' class='missingMother missingIcon' src='./views/cc7/images/pink_bricks_small.jpg'>";
+                    "<img title='Missing mother' class='missingMother missingIcon' src='./views/cc7/images/pink_bricks_small.jpg'>";
             }
             if (relation == "Spouse") {
                 missingIcons +=
-                    "<img title='possible missing spouse' class='missingSpouse missingIcon' src='./views/cc7/images/spouse_bricks_small.png'>";
+                    "<img title='Possible missing spouse' class='missingSpouse missingIcon' src='./views/cc7/images/spouse_bricks_small.png'>";
             }
             if (relation == "Children") {
                 missingIcons +=
-                    "<img title='possible missing children' class='missingChildren missingIcon' src='./views/cc7/images/baby_bricks_small.png'>";
+                    "<img title='Possible missing children' class='missingChildren missingIcon' src='./views/cc7/images/baby_bricks_small.png'>";
             }
         });
         return { missingBit: missingBit, missingIcons: missingIcons };
@@ -2457,13 +2595,13 @@ export class CC7 {
                 const familyMembers = [].concat(aPerson.Parent, aPerson.Sibling, aPerson.Spouse, aPerson.Child);
 
                 familyMembers.forEach(function (aMember) {
-                    aMember = CC7.missingBits(aMember);
+                    CC7.addMissingBits(aMember);
 
                     if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
                         const theDegree = aMember.Degree;
                         if (theDegree > aPerson.Degree) {
                             const aName = new PersonName(aMember);
-                            const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+                            const theName = CC7.formDisplayName(aMember, aName);
                             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
                             const theLNAB = theParts.get("LastNameAtBirth");
                             const theFirstName = theParts.get("FirstName");
@@ -2490,8 +2628,8 @@ export class CC7 {
                                     `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Degree}' ` +
                                     `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Degree}° ` +
                                     `<span class='relation ${relation}'>${relation}</span>: ` +
-                                    `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a> ` +
-                                    `<span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
+                                    CC7.profileLink(linkName, theName) +
+                                    ` <span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
                             );
                             thisLI.children("ul").append(anLi);
                         }
@@ -2513,7 +2651,7 @@ export class CC7 {
 
         const aPerson = window.people.get(window.rootId);
         const aName = new PersonName(aPerson);
-        const theName = aName.withParts(CC7.WANTED_NAME_PARTS);
+        const theName = CC7.formDisplayName(aPerson, aName);
         const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
         const theLNAB = theParts.get("LastNameAtBirth");
         const theFirstName = theParts.get("FirstName");
@@ -2521,7 +2659,8 @@ export class CC7 {
         const anLi = $(
             `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Degree}' ` +
                 `data-name=\"${aPerson.Name}\" data-first-name='${theFirstName}'>${aPerson.Degree}° ` +
-                `<a target='_blank' href='https://www.wikitree.com/wiki/${linkName}'>${theName}</a><ul></ul></li>`
+                CC7.profileLink(linkName, theName) +
+                "<ul></ul></li>"
         );
         hierarchySection.children("ul").append(anLi);
         for (let i = 0; i < CC7.MAX_DEGREE; i++) {
@@ -2672,36 +2811,36 @@ export class CC7 {
                 if (missingFathers) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with missing father'>" +
                                 missingFathers +
-                                "<img title='people with missing father' class='missingFatherCount missingCountIcon' src='./views/cc7/images/blue_bricks_small.jpg'></span>"
+                                "<img class='missingFatherCount missingCountIcon' src='./views/cc7/images/blue_bricks_small.jpg'></span>"
                         )
                     );
                 }
                 if (missingMothers) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with missing mother'>" +
                                 missingMothers +
-                                "<img title='people with missing mother' class='missingMotherCount missingCountIcon' src='./views/cc7/images/pink_bricks_small.jpg'></span>"
+                                "<img class='missingMotherCount missingCountIcon' src='./views/cc7/images/pink_bricks_small.jpg'></span>"
                         )
                     );
                 }
                 if (missingSpouses) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with possible missing spouse'>" +
                                 missingSpouses +
-                                "<img title='people with possible missing spouse' class='missingSpouseCount missingCountIcon' src='./views/cc7/images/spouse_bricks_small.png'></span>"
+                                "<img class='missingSpouseCount missingCountIcon' src='./views/cc7/images/spouse_bricks_small.png'></span>"
                         )
                     );
                 }
                 if (missingChildren) {
                     countBit.append(
                         $(
-                            "<span>" +
+                            "<span title='People with posiible missing children'>" +
                                 missingChildren +
-                                "<img title='people with posiible missing children' class='missingChildrenCount missingCountIcon' src='./views/cc7/images/baby_bricks_small.png'></span>"
+                                "<img class='missingChildrenCount missingCountIcon' src='./views/cc7/images/baby_bricks_small.png'></span>"
                         )
                     );
                 }
@@ -2721,15 +2860,10 @@ export class CC7 {
                 limit: limit,
                 fields: CC7.GET_PEOPLE_FIELDS,
             });
-            const people = result[0].people;
-            if (typeof people == "undefined" || people == "") {
-                wtViewRegistry.showError(`No results obtained when requesting relatives for ${key}`);
-                return null;
-            }
-            return [result[0].resultByKey, result[0].people];
+            return [result[0].status, result[0].resultByKey, result[0].people];
         } catch (error) {
             wtViewRegistry.showError(`Could not retrieve relatives for ${key}: ${error}`);
-            return null;
+            return [`${error}`, [], []];
         }
     }
 
@@ -2737,82 +2871,139 @@ export class CC7 {
         wtViewRegistry.clearStatus();
         window.people = new Map();
         window.rootId = null;
+        window.cc7MinPrivateId = 0;
         event.preventDefault();
         const wtId = wtViewRegistry.getCurrentWtId();
         if (wtId.match(/.+\-.+/)) {
             CC7.clearDisplay();
             CC7.showShakingTree();
             $("#cc7Container").addClass("degreeView");
-            const theDegree = $("#cc7Degree").val();
-            let start = 0;
-            const limit = CC7.GET_PEOPLE_LIMIT;
-            console.log(
-                `Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, limit:${limit}`
-            );
+            const theDegree = +$("#cc7Degree").val();
+
+            // We get two more degrees than necessary to ensure we can calculate the relative counts
+            // correctly. We make separate (async) calls for each degree in order to be able to identify
+            // the extra degrees so we can hide them from the display and not include them in the degree counts.
             const starttime = performance.now();
-            const [resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            const [[resultByKeyAtD, countAtD, dIsPartial], [, countAtDm1, m1IsPartial], [, countAtDp1, p1IsPartial]] =
+                await Promise.all([
+                    CC7.collectPeopelAtNthDegree(wtId, theDegree),
+                    CC7.collectPeopelAtNthDegree(wtId, theDegree - 1, CC7.HIDE),
+                    CC7.collectPeopelAtNthDegree(wtId, theDegree + 1, CC7.HIDE),
+                ]);
+            console.log(
+                `Retrieved ${countAtD}, ${countAtDm1}, ${countAtDp1} profiles at degrees ${
+                    theDegree - 1
+                }, ${theDegree}, ${theDegree + 1} in ${performance.now() - starttime}ms`
+            );
+            if (dIsPartial) {
+                wtViewRegistry.showWarning(
+                    `Due to limits imposed by the API, we could not retrieve all the people at degree ${theDegree}. Relative counts may therefore also be incorrect.`
+                );
+            } else if (m1IsPartial || p1IsPartial) {
+                wtViewRegistry.showWarning(
+                    `Due to limits imposed by the API, we could not retrieve all the required data, so relative counts may be incorrect.`
+                );
+            }
+
             $("#oneDegreeList").remove();
             const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
             $("#cc7Container").append(oneDegreeList);
-            if (peopleData === null) {
+            if (countAtD == 0) {
                 CC7.hideShakingTree();
                 return;
             }
-            window.rootId = +resultByKey[wtId].Id;
-            let profiles = peopleData ? Object.values(peopleData) : [];
-            console.log(`Received ${profiles.length} profiles`);
-
-            while (profiles.length > 0) {
-                CC7.addPeople(profiles, start, theDegree);
-
-                // Check if we're done
-                if (profiles.length < limit) break;
-
-                // We have more paged profiles to fetch
-                start += limit;
-                console.log(
-                    `Retrieving getPeople result page. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
-                );
-                const [, ancestor_json] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
-                profiles = Object.values(ancestor_json);
-                console.log(`Received ${profiles.length} profiles`);
-            }
-            console.log(
-                `Retrieved ${window.people.size} unique profiles at CC${theDegree} in ${
-                    performance.now() - starttime
-                }ms`
-            );
-            const root = CC7.hideShakingTree();
+            window.rootId = +resultByKeyAtD[wtId].Id;
+            CC7.populateRelativeArrays();
+            CC7.hideShakingTree();
             CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
         }
     }
 
-    static addPeople(profiles, start = 0, degree = -1) {
+    static async collectPeopelAtNthDegree(wtId, theDegree, hide = !CC7.HIDE) {
+        let start = 0;
+        let isPartial = false;
+        const limit = CC7.GET_PEOPLE_LIMIT;
+        console.log(`Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, hide:${hide}`);
+        let callNr = 1;
+        const starttime = performance.now();
+        const [status, resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+        let profiles;
+        if (status != "") {
+            console.warn(`A problem occurred while requesting relatives for ${wtId} at degree ${theDegree}: ${status}`);
+            profiles = [];
+            isPartial = true;
+        } else {
+            profiles = peopleData ? Object.values(peopleData) : [];
+        }
+        if (profiles.length == 0 && resultByKey[wtId]?.status) {
+            wtViewRegistry.showError(resultByKey[wtId]?.status);
+        }
+        console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+        let resultByKeyReturned = {};
+        let profileCount = 0;
+
+        while (profiles.length > 0) {
+            profileCount += profiles.length;
+            CC7.addPeople(profiles, theDegree, hide);
+            Object.assign(resultByKeyReturned, resultByKey);
+
+            // Check if we're done
+            if (profiles.length < limit) break;
+
+            // We have more paged profiles to fetch
+            ++callNr;
+            start += limit;
+            console.log(
+                `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
+            );
+            const [sstatus, , ancestorJson] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            if (sstatus != "") {
+                console.warn(`Partial results obtained when requesting relatives for ${wtId}: ${sstatus}`);
+                profiles = [];
+                isPartial = true;
+            } else {
+                profiles = ancestorJson ? Object.values(ancestorJson) : [];
+            }
+            console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+        }
+        console.log(
+            `Retrieved ${profileCount} degree ${theDegree} profiles with ${callNr} API call(s) in ${
+                performance.now() - starttime
+            }ms`
+        );
+        return [resultByKeyReturned, profileCount, isPartial];
+    }
+
+    static addPeople(profiles, theDegree = -1, hide = !CC7.HIDE) {
         let nrAdded = 0;
         for (const person of profiles) {
             let id = +person.Id;
             if (id < 0) {
+                // This is a private profile
                 // WT returns negative ids for private profiles, but they seem to be unique only
                 // within the result returned by the call (i.e. per page). However, since they are
                 // different people, we give them uniq ids.
-                id += -start;
+                if (window.people.has(id)) {
+                    id = window.cc7MinPrivateId - 1;
+                }
+                person.Id = id;
+                person.Name = `Private${id}`;
+                person.DataStatus = { Spouse: "", Gender: "" };
             }
             if (!window.people.has(id)) {
+                if (id < 0) {
+                    window.cc7MinPrivateId = Math.min(id, window.cc7MinPrivateId);
+                }
                 // This is a new person, add them to the tree
                 person.Parents = [person.Father, person.Mother];
-                if (id < 0) {
-                    // This is a private profile
-                    person.Id = id;
-                    person.Name = `Private${id}`;
-                    person.DataStatus = { Spouse: "", Gender: "" };
-                }
+                person.Degree = theDegree;
+                person.Hide = hide;
                 // To be filled later
                 person.Parent = [];
                 person.Spouse = [];
                 person.Sibling = [];
                 person.Child = [];
                 person.Marriage = {};
-                person.Degree = degree;
 
                 window.people.set(id, person);
                 ++nrAdded;
@@ -2826,33 +3017,40 @@ export class CC7 {
 
     static async getConnectionsAction(event) {
         wtViewRegistry.clearStatus();
-        const theDegree = $("#cc7Degree").val();
+        const theDegree = +$("#cc7Degree").val();
         const wtId = wtViewRegistry.getCurrentWtId();
         event.preventDefault();
         $("#cc7Container").removeClass("degreeView");
         window.people = new Map();
         window.rootId = 0;
+        window.cc7MinPrivateId = 0;
         CC7.clearDisplay();
         CC7.getConnections(theDegree);
     }
 
-    static async getConnections(maxWantedDegree) {
-        CC7.showShakingTree();
-        const wtId = wtViewRegistry.getCurrentWtId();
-        let resultByKey = await CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree);
-        window.rootId = +resultByKey[wtId]?.Id;
+    static populateRelativeArrays() {
+        const offDegreeParents = new Map();
 
-        // add Parent, Child, and Spouse arrays
         for (const pers of window.people.values()) {
+            // Add Parent and Child arrays
             for (const pId of pers.Parents) {
                 if (pId) {
-                    const parent = window.people.get(+pId);
+                    let parent = window.people.get(+pId);
                     if (parent) {
                         pers.Parent.push(parent);
                         parent.Child.push(pers);
+                    } else {
+                        parent = offDegreeParents.get(+pId);
+                        if (parent) {
+                            parent.Child.push(pers);
+                        } else {
+                            offDegreeParents.set(+pId, { Id: pId, Child: [pers] });
+                        }
                     }
                 }
             }
+
+            // Add Spouse and coresponding Marriage arrays
             for (const sp of pers.Spouses) {
                 const spouse = window.people.get(+sp.Id);
                 if (spouse) {
@@ -2872,9 +3070,9 @@ export class CC7 {
             }
         }
         // Now that all child arrays are complete, add Sibling arrays
-        for (const pers of window.people.values()) {
+        for (const pers of [...window.people.values(), ...offDegreeParents.values()]) {
             if (pers.Child.length) {
-                // Add this person's children as siblings to each of his children
+                // Add this person's children as siblings to each of his/her children
                 for (const child of pers.Child) {
                     // Exclude this child from the sibling list
                     const siblings = pers.Child.filter((c) => c.Id != child.Id);
@@ -2888,10 +3086,38 @@ export class CC7 {
                 }
             }
         }
-        // Finally, calculate and assign degrees
+    }
+
+    static async getConnections(maxWantedDegree) {
+        CC7.showShakingTree();
+        const wtId = wtViewRegistry.getCurrentWtId();
+        const starttime = performance.now();
+        // We get one more degree than necessary to ensure we can calculate the relative counts
+        // correctly. We make a separate (async) call in order to be able to identify the extra
+        // degree so we can hide them from the display and not include them in the degree counts.
+        const [resultByKey, [, , isPartial]] = await Promise.all([
+            CC7.makePagedCallAndAddPeople(wtId, maxWantedDegree),
+            CC7.collectPeopelAtNthDegree(wtId, maxWantedDegree + 1, CC7.HIDE),
+        ]);
+        console.log(
+            `Retrieved a total of ${window.people.size} unique CC${maxWantedDegree + 1} profiles in ${
+                performance.now() - starttime
+            }ms`
+        );
+        if (isPartial) {
+            wtViewRegistry.showWarning(
+                "Limits imposed by the API is causing relative counts of people at the highest degree of separation " +
+                    "to be incomplete."
+            );
+        }
+
+        window.rootId = +resultByKey[wtId]?.Id;
+        CC7.populateRelativeArrays();
+
+        // Calculate and assign degrees
         const degreeCounts = {};
         const root = window.people.get(window.rootId);
-        root.Degree = 0;
+        if (root) root.Degree = 0;
         let actualMaxDegree = 0;
         const q = [window.rootId];
         while (q.length > 0) {
@@ -2933,6 +3159,15 @@ export class CC7 {
                 }
             }
         }
+        // Count unknown degree profiles
+        const nrUknownDegrees = [...window.people.values()].reduce(
+            (acc, person) => (person.Degree < 0 ? ++acc : acc),
+            0
+        );
+        if (nrUknownDegrees > 0) {
+            degreeCounts[-1] = nrUknownDegrees;
+        }
+        window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
         CC7.hideShakingTree();
         if ($("#degreesTable").length != 0) {
             $("#degreesTable").remove();
@@ -2943,12 +3178,8 @@ export class CC7 {
             )
         );
         CC7.buildDegreeTableData(degreeCounts, actualMaxDegree);
-        const aName = new PersonName(window.people.get(window.rootId));
-
         CC7.addPeopleTable(
-            `CC${Math.min(maxWantedDegree, actualMaxDegree)} for ${new PersonName(root).withParts(
-                CC7.WANTED_NAME_PARTS
-            )}`
+            root ? `CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}` : ""
         );
     }
 
@@ -2956,7 +3187,7 @@ export class CC7 {
         return arrayOfPeople.map((p) => +p.Id);
     }
 
-    static async makePagedCallAndAddPeople(reqIds, upToDegree) {
+    static async makePagedCallAndAddPeople(reqId, upToDegree) {
         if ($("#degreesTable").length == 0) {
             $("#cc7Container").append(
                 $(
@@ -2982,25 +3213,29 @@ export class CC7 {
 
             if (callNr == 1) {
                 console.log(
-                    `Calling getPeople with keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Calling getPeople with keys:${reqId}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
                 );
             } else {
                 console.log(
-                    `Retrieving getPeople result page. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Retrieving getPeople result page ${callNr}. keys:${reqId}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
                 );
             }
-            const [keysResult, peopleData] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
+            const [keysResult, peopleData] = await CC7.getPeopleUpToDegree([reqId], upToDegree, start, limit);
+            if (peopleData.length == 0 && keysResult[reqId]?.status) {
+                wtViewRegistry.showError(keysResult[reqId]?.status);
+            }
             if (callNr == 1) {
                 resultByKey = keysResult;
             }
             const profiles = peopleData ? Object.values(peopleData) : [];
+            console.log(`Received ${profiles.length} CC${upToDegree} profiles for start:${start}`);
 
-            console.log(`Received ${profiles.length} profiles`);
+            // We're re-using the degrees table here to show response counts as a way of a progress bar
             const degTable = document.getElementById("degreesTable");
             degTable.rows[2].cells[callNr].innerHTML = profiles.length;
 
             // Note: getPeople does not guarantee return order
-            CC7.addPeople(profiles, start);
+            CC7.addPeople(profiles);
             degTable.rows[3].cells[callNr].innerHTML = window.people.size;
 
             start += limit;
@@ -3008,7 +3243,7 @@ export class CC7 {
             getMore = profiles.length == limit;
         }
         console.log(
-            `Retrieved ${window.people.size} unique CC${upToDegree} profiles with ${callNr} API calls in ${
+            `Retrieved ${window.people.size} unique CC${upToDegree} profiles with ${callNr} API call(s) in ${
                 performance.now() - starttime
             }ms`
         );
@@ -3073,9 +3308,6 @@ export class CC7 {
                 "#hierarchyView",
                 "#lanceTable",
                 "#peopleTable",
-                "#spLocationFilterLabel",
-                "#tableContainer",
-                ".tableContainer",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
@@ -3087,10 +3319,7 @@ export class CC7 {
         try {
             CC7.collapsePeople();
             const fileName = CC7.makeFilename();
-            CC7.downloadArray(
-                [[window.rootId, window.people.get(window.rootId)], ...window.people.entries()],
-                fileName
-            );
+            CC7.downloadArray([[window.rootId, window.cc7Degree], ...window.people.entries()], fileName);
         } finally {
             this.expandPeople(window.people);
         }
@@ -3137,8 +3366,10 @@ export class CC7 {
             const contents = e.target.result;
             try {
                 const peeps = JSON.parse(contents);
-                window.rootId = peeps[0][0];
+                const [r, x] = peeps.shift();
                 window.people = CC7.expandPeople(new Map(peeps));
+                window.rootId = r;
+                window.cc7Degree = Number.isFinite(x) ? (window.cc7Degree = x) : 0;
             } catch (error) {
                 CC7.hideShakingTree();
                 wtViewRegistry.showError(`The input file is not valid: ${error}`);
@@ -3150,6 +3381,7 @@ export class CC7 {
             const degreeCounts = {};
             let maxDegree = 0;
             for (const aPerson of window.people.values()) {
+                if (aPerson.Hide) continue;
                 if (degreeCounts[aPerson.Degree]) {
                     degreeCounts[aPerson.Degree] = degreeCounts[aPerson.Degree] + 1;
                 } else {
@@ -3159,17 +3391,20 @@ export class CC7 {
                     maxDegree = aPerson.Degree;
                 }
             }
-            CC7.buildDegreeTableData(degreeCounts, maxDegree);
-            CC7.handleDegreeChange(maxDegree);
+            if (window.cc7Degree == 0) window.cc7Degree = maxDegree;
+            CC7.hideShakingTree();
             CC7.addPeopleTable(
-                `CC${Math.min(maxDegree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`
+                `CC${Math.min(window.cc7Degree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(
+                    CC7.WANTED_NAME_PARTS
+                )}`
             );
             $("#cc7Container #hierarchyViewButton").before(
                 $(
                     "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
-            CC7.hideShakingTree();
+            CC7.buildDegreeTableData(degreeCounts, maxDegree);
+            CC7.handleDegreeChange(window.cc7Degree);
         };
 
         try {
@@ -3182,9 +3417,7 @@ export class CC7 {
     }
 
     static buildDegreeTableData(degreeCounts, maxDegree) {
-        let degreeSum = 0;
-        for (let i = 1; i <= maxDegree; ++i) {
-            degreeSum = degreeSum + degreeCounts[i];
+        function addTableCol(i, degreeSum) {
             $("#degreesTable tr")
                 .eq(0)
                 .append($(`<td>${i}</td>`));
@@ -3194,6 +3427,15 @@ export class CC7 {
             $("#degreesTable tr")
                 .eq(2)
                 .append($(`<td>${degreeSum}</td>`));
+        }
+        let degreeSum = 0;
+        for (let i = 1; i <= maxDegree; ++i) {
+            degreeSum = degreeSum + degreeCounts[i];
+            addTableCol(i, degreeSum);
+        }
+        if (degreeCounts[-1]) {
+            degreeSum = degreeSum + degreeCounts[-1];
+            addTableCol(-1, degreeSum);
         }
     }
 
