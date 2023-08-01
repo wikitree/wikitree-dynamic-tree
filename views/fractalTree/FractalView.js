@@ -1,3 +1,7 @@
+    const SVGbtnDOWN =
+        '<SVG width=18 height=14 ><polyline points="0,0 18,0 9,14 0,0" fill="blue" stroke="blue"/><polyline points="5,7 13,7" fill="none" stroke="white" stroke-width=2 /></SVG>';
+    const SVGbtnUP =
+        '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * Fractal Tree uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
@@ -13,6 +17,16 @@
  *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FractalView, then calls a redraw
  */
+
+import { BioCheckTemplateManager } from "../../lib/biocheck-api/src/BioCheckTemplateManager.js";
+import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
+import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
+import { Biography } from "../../lib/biocheck-api/src/Biography.js";
+
+// initialization - just once
+let bioCheckTemplateManager = new BioCheckTemplateManager();
+bioCheckTemplateManager.load();
+
 (function () {
     const APP_ID = "FractalTree";
     var originOffsetX = 500,
@@ -26,6 +40,79 @@
     const SETTINGS_GEAR = "&#x2699;";
     const LEGEND_CLIPBOARD = "&#x1F4CB;";
 
+    const FullAppName = "Fractal Tree app";
+    const AboutPreamble =
+        "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
+    const AboutUpdateDate = "30 July 2023";
+    const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
+    const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
+    const AboutAdditionalProgrammers =
+        "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
+    const AboutAssistants = "Rob Pavey & Kay Knight";
+    const AboutLatestG2G = "";// "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutHelpDoc = ""; // "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
+    const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
+
+    const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16.19 2H7.81C4.17 2 2 4.17 2 7.81V16.18C2 19.83 4.17 22 7.81 22H16.18C19.82 22 21.99 19.83 21.99 16.19V7.81C22 4.17 19.83 2 16.19 2ZM15.36 14.3C15.65 14.59 15.65 15.07 15.36 15.36C15.21 15.51 15.02 15.58 14.83 15.58C14.64 15.58 14.45 15.51 14.3 15.36L12 13.06L9.7 15.36C9.55 15.51 9.36 15.58 9.17 15.58C8.98 15.58 8.79 15.51 8.64 15.36C8.35 15.07 8.35 14.59 8.64 14.3L10.94 12L8.64 9.7C8.35 9.41 8.35 8.93 8.64 8.64C8.93 8.35 9.41 8.35 9.7 8.64L12 10.94L14.3 8.64C14.59 8.35 15.07 8.35 15.36 8.64C15.65 8.93 15.65 9.41 15.36 9.7L13.06 12L15.36 14.3Z" fill="red"/>
+        </svg>`;
+
+    const SVGbtnDOWN =
+        '<SVG width=18 height=14 ><polyline points="0,0 18,0 9,14 0,0" fill="blue" stroke="blue"/><polyline points="5,7 13,7" fill="none" stroke="white" stroke-width=2 /></SVG>';
+    const SVGbtnUP =
+        '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
+
+    const SVGbtnSETTINGS = `<svg height="16" width="16" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            viewBox="0 0 512 512"  xml:space="preserve">
+        <style type="text/css">
+            .st0{fill:#000000;}
+        </style>
+        <g>
+            <path class="st0" d="M499.453,210.004l-55.851-2.58c-5.102-0.23-9.608-3.395-11.546-8.103l-11.508-27.695
+                c-1.937-4.728-0.997-10.145,2.455-13.914l37.668-41.332c4.718-5.188,4.546-13.205-0.421-18.182l-46.434-46.443
+                c-4.986-4.967-13.003-5.159-18.2-0.412l-41.312,37.668c-3.778,3.443-9.206,4.402-13.924,2.436l-27.694-11.488
+                c-4.718-1.946-7.864-6.454-8.094-11.565l-2.589-55.831C301.675,5.534,295.883,0,288.864,0h-65.708
+                c-7.02,0-12.831,5.534-13.156,12.562l-2.571,55.831c-0.23,5.111-3.376,9.618-8.094,11.565L171.64,91.447
+                c-4.737,1.966-10.165,1.007-13.924-2.436l-41.331-37.668c-5.198-4.746-13.215-4.564-18.201,0.412L51.769,98.198
+                c-4.986,4.977-5.158,12.994-0.422,18.182l37.668,41.332c3.452,3.769,4.373,9.186,2.416,13.914l-11.469,27.695
+                c-1.956,4.708-6.444,7.873-11.564,8.103l-55.832,2.58c-7.019,0.316-12.562,6.118-12.562,13.147v65.699
+                c0,7.019,5.543,12.83,12.562,13.148l55.832,2.579c5.12,0.229,9.608,3.394,11.564,8.103l11.469,27.694
+                c1.957,4.728,1.036,10.146-2.416,13.914l-37.668,41.313c-4.756,5.217-4.564,13.224,0.403,18.201l46.471,46.443
+                c4.967,4.977,12.965,5.15,18.182,0.422l41.312-37.677c3.759-3.443,9.207-4.392,13.924-2.435l27.694,11.478
+                c4.719,1.956,7.864,6.464,8.094,11.575l2.571,55.831c0.325,7.02,6.136,12.562,13.156,12.562h65.708
+                c7.02,0,12.812-5.542,13.138-12.562l2.589-55.831c0.23-5.111,3.376-9.619,8.094-11.575l27.694-11.478
+                c4.718-1.957,10.146-1.008,13.924,2.435l41.312,37.677c5.198,4.728,13.215,4.555,18.2-0.422l46.434-46.443
+                c4.967-4.977,5.139-12.984,0.421-18.201l-37.668-41.313c-3.452-3.768-4.412-9.186-2.455-13.914l11.508-27.694
+                c1.937-4.709,6.444-7.874,11.546-8.103l55.851-2.579c7.019-0.318,12.542-6.129,12.542-13.148v-65.699
+                C511.995,216.122,506.472,210.32,499.453,210.004z M256.01,339.618c-46.164,0-83.622-37.438-83.622-83.612
+                c0-46.184,37.458-83.622,83.622-83.622s83.602,37.438,83.602,83.622C339.612,302.179,302.174,339.618,256.01,339.618z"/>
+        </g>
+        </svg>`;    
+        
+    const SVGbtnINFO = `<svg fill="#0000FF" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            width="16" height="16" viewBox="0 0 45.818 45.818"
+            xml:space="preserve">
+        <g>
+            <path d="M22.909,0C10.258,0,0,10.257,0,22.908c0,12.652,10.258,22.91,22.909,22.91s22.909-10.258,22.909-22.91
+                C45.818,10.257,35.561,0,22.909,0z M26.411,35.417c0,1.921-1.573,3.478-3.492,3.478c-1.92,0-3.492-1.557-3.492-3.478V20.201
+                c0-1.92,1.572-3.477,3.492-3.477c1.919,0,3.492,1.556,3.492,3.477V35.417z M22.909,13.851c-2.119,0-3.837-1.718-3.837-3.836
+                c0-2.12,1.718-3.836,3.837-3.836c2.118,0,3.837,1.716,3.837,3.836C26.746,12.133,25.027,13.851,22.909,13.851z"/>
+        </g>
+        </svg>`;
+    const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            width="16" height="16" viewBox="0 0 95.334 95.334"
+            xml:space="preserve">
+        <g>
+            <path d="M47.667,0C21.341,0,0.001,21.341,0.001,47.667s21.34,47.667,47.666,47.667s47.666-21.341,47.666-47.667S73.993,0,47.667,0z
+                M53.015,83.251c0,0.854-0.693,1.548-1.549,1.548h-7.611c-0.855,0-1.549-0.693-1.549-1.548v-6.838c0-0.854,0.693-1.548,1.549-1.548
+                h7.611c0.855,0,1.549,0.693,1.549,1.548V83.251z M61.342,50.376c-4.519,3.867-8.085,6.919-8.256,16.878
+                c-0.015,0.846-0.704,1.521-1.548,1.521h-7.742c-0.415,0-0.813-0.166-1.104-0.461c-0.291-0.297-0.451-0.696-0.445-1.11
+                c0.229-14.946,7.059-20.792,12.046-25.06c3.817-3.269,5.366-4.755,5.366-8.772c0-6.617-5.383-12-11.999-12
+                c-6.358,0-11.62,4.969-11.979,11.313c-0.047,0.819-0.726,1.46-1.546,1.46h-7.75c-0.421,0-0.822-0.17-1.114-0.473
+                c-0.292-0.303-0.448-0.71-0.434-1.13c0.444-12.341,10.47-22.008,22.823-22.008c12.593,0,22.837,10.245,22.837,22.837
+                C70.497,42.54,65.421,46.885,61.342,50.376z"/>
+        </g>
+        </svg>`;        
     /**
      * Constructor
      */
@@ -75,7 +162,6 @@
     var currentBadges = [];
     var currentHighlightCategory = "";
     var currentMaxHeight4Box = 180;
-
 
     var ColourArray = [
         "White",
@@ -340,6 +426,24 @@
             "#9ACD32",
         ],
     ];
+
+    var PastelsArray = []; // to be defined shortly
+    var RainbowArray = []; // to be defined shortly
+    var RainbowArrayLong = []; // to be defined shortly
+    var Rainbow8 = []; // to be defined shortly
+    var RainbowTweens = []; // to be defined shortly
+
+    // var AltBlues = []; // to be defined shortly
+    var AltBluesArray = []; // to be defined shortly
+    // var AltGreens = []; // to be defined shortly
+    var AltGreensArray = []; // to be defined shortly
+    var GreensArray = []; // to be defined shortly
+    var GreysArray = []; // to be defined shortly
+    var AltGreysArray = []; // to be defined shortly
+    var GreysArrayOrig = []; // to be defined shortly
+    var RedsArray = []; // to be defined shortly
+    var AltRedsArray = []; // to be defined shortly
+    var BluesArray = []; // to be defined shortly
 
     FractalView.prototype.meta = function () {
         return {
@@ -845,6 +949,8 @@
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "-", text: "-" },
                                 { value: "aliveDay", text: "Alive on this Day" },
+                                { value: "bioCheckOK", text: "BioCheck  ✔" },
+                                { value: "bioCheckFail", text: "BioCheck  X" },
                                 { value: "bioText", text: "Biography Text" },
                                 { value: "cat", text: "Category or Sticker" },
                             ],
@@ -979,17 +1085,61 @@
             "</font></A></span>" +
             "</td>" +
             '<td width="30%" align="center">' +
-            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display -=1; FractalView.redraw();"> -1 </A> ' +
+            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display -=1; FractalView.redraw();">' +
+            SVGbtnDOWN +
+            "</A> " +
             "[ <span id=numGensInBBar>3</span> generations ]" +
-            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display +=1; FractalView.redraw();"> +1 </A> ' +
+            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display +=1; FractalView.redraw();">' +
+            SVGbtnUP +
+            "</A> " +
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right">' +
             ' <A style="cursor:pointer;" onclick="FractalView.toggleSettings();"><font size=+2>' +
-            SETTINGS_GEAR +
+            SVGbtnSETTINGS +
             "</font></A>" +
+            "&nbsp;&nbsp;" +
+            "<A onclick=FractalView.toggleAbout();>" +
+            SVGbtnINFO +
+            "</A>" +
+            (AboutHelpDoc > ""
+                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fractal Tree is loading ...</DIV>';
+
+            var aboutHTML =
+                '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+                `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FractalView.toggleAbout();">` +
+                SVGbtnCLOSE +
+                "</a></span>" +
+                "<H3>About the " +
+                FullAppName +
+                "</H3>" +
+                AboutPreamble +
+                "<br>" +
+                "<br>Last updated: " +
+                AboutUpdateDate +
+                "<br>App Icon: " +
+                AboutAppIcon +
+                "<br>Original Author: " +
+                AboutOriginalAuthor +
+                (AboutAdditionalProgrammers > ""
+                    ? "<br>Additional Programming by: " + AboutAdditionalProgrammers
+                    : "") +
+                "<br>Assistance and Code borrowed from: " +
+                AboutAssistants +
+                "<br/>" +
+                (AboutLatestG2G > ""
+                    ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>"
+                    : "") +
+                (AboutHelpDoc > ""
+                    ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>"
+                    : "") +
+                (AboutOtherApps > ""
+                    ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
+                    : "") +
+                "</div>";
 
         var settingsHTML = "";
 
@@ -1015,17 +1165,32 @@
 
         var legendHTML =
             '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="FractalView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            `<span style="color:red; position:absolute; top:0.2em; left:0.6em; cursor:pointer;"><a onclick="FractalView.hideLegend();">` +
+            SVGbtnCLOSE +
+            "</a></span>" +
             highlightHTML +
             "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FractalView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
             badgesHTML +
             "</div>";
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + legendHTML + settingsHTML;
+        container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
+        
+        FractalView.toggleAbout = function () {
+            let aboutDIV = document.getElementById("aboutDIV");
+            let settingsDIV = document.getElementById("settingsDIV");
+            if (aboutDIV) {
+                if (aboutDIV.style.display == "none") {
+                    aboutDIV.style.display = "block";
+                    settingsDIV.style.display = "none";
+                } else {
+                    aboutDIV.style.display = "none";
+                }
+            }
+        };
 
         function settingsChanged(e) {
             if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
@@ -1126,6 +1291,12 @@
                     } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
                         document.getElementById("highlightPeepsDescriptor").textContent =
                             "Relationships confirmed by DNA";
+                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Profiles that pass the BioCheck";
+                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Profiles that fail the BioCheck";
                     } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
                         let catNameSelector = document.getElementById("highlight_options_catName");
                         let rawValue = catNameSelector.value.trim();
@@ -1174,7 +1345,7 @@
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
         const g = svg.append("g").attr("id", "SVGgraphics");
-        
+
         condLog("ADDING THE SVG BIG DADDY TAZ");
 
         // Setup zoom and pan
@@ -1218,8 +1389,8 @@
 
         */
 
-       condLog("ADDING THE PIECES FROM 0 to 2 ** FRACTAL VIEW maxNumGens", 2 ** FractalView.maxNumGens);
-       for (let index = 0; index < 2 ** FractalView.maxNumGens; index++) {
+        condLog("ADDING THE PIECES FROM 0 to 2 ** FRACTAL VIEW maxNumGens", 2 ** FractalView.maxNumGens);
+        for (let index = 0; index < 2 ** FractalView.maxNumGens; index++) {
             condLog("ADDING THE PIECES FOR ", index);
             // Create an Empty Line, hidden, to be used later
             g.append("line").attrs({
@@ -1400,7 +1571,7 @@
                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
-                condLog("ADDING THE BADGES RIGHT NOW TO THE SVG . g Model")                       ;
+                condLog("ADDING THE BADGES RIGHT NOW TO THE SVG . g Model");
                 for (let badgeCounter = 1; badgeCounter <= 4; badgeCounter++) {
                     const stickerPrefix = "badge" + badgeCounter + "-";
                     const ahnNum = index;
@@ -1435,7 +1606,6 @@
                                 "</text></svg>"
                         );
                 }
-
             }
         }
 
@@ -1447,13 +1617,13 @@
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-        
+
         let vBoxHeightSelector1 = document.getElementById("general_options_vBoxHeight_radio1");
         let vBoxHeightSelector2 = document.getElementById("general_options_vBoxHeight_radio2");
         document.getElementById("general_options_vSpacing_label").style.display = "none";
         document.getElementById("general_options_vSpacing").style.display = "none";
         // condLog("bkgdClrSelector", bkgdClrSelector);
-        
+
         bkgdClrSelector.setAttribute("onchange", "FractalView.optionElementJustChanged();");
         vBoxHeightSelector1.setAttribute("onchange", "FractalView.optionElementJustChanged();");
         vBoxHeightSelector2.setAttribute("onchange", "FractalView.optionElementJustChanged();");
@@ -1549,7 +1719,6 @@
         if (vBoxHeightUseVSpacing === true) {
             vSpacingSelector.style.display = "inline-block";
             vSpacingSelectorLabel.style.display = "inline-block";
-
         } else {
             vSpacingSelector.style.display = "none";
             vSpacingSelectorLabel.style.display = "none";
@@ -1638,40 +1807,40 @@
             let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
             // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
             let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
-            
+
             let vSpacing = FractalView.currentSettings["general_options_vSpacing"];
 
             if (vBoxHeight > 0) {
-                 vSpacing = Math.max(1, Math.min(10, vSpacing));
-                 currentMaxHeight4Box = 20 + vSpacing * 20;
+                vSpacing = Math.max(1, Math.min(10, vSpacing));
+                currentMaxHeight4Box = 20 + vSpacing * 20;
             }
 
             yScaleFactor = currentMaxHeight4Box / 153;
             condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(drawlines)");
             // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
-            for (g = 1; g <= thisGenNum; g++) {
-                 if (g % 2 == 1) {
-                     X +=
-                         0 +
-                         ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
-                             2 *
-                             FractalView.maxDiamPerGen[g] *
-                             xScaleFactor -
-                         1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
-                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
-                 } else {
-                     Y +=
-                         0 +
-                         ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
-                             2 *
-                             FractalView.maxDiamPerGen[g] *
-                             yScaleFactor -
-                         1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
-                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
-                 }
-             }
+            for (let g = 1; g <= thisGenNum; g++) {
+                if (g % 2 == 1) {
+                    X +=
+                        0 +
+                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                            2 *
+                            FractalView.maxDiamPerGen[g] *
+                            xScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
+                    // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
+                } else {
+                    Y +=
+                        0 +
+                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                            2 *
+                            FractalView.maxDiamPerGen[g] *
+                            yScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
+                    // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
+                }
+            }
 
-             condLog (index, thisGenNum, "X,Y (initially) = ", X, Y);
+            condLog(index, thisGenNum, "X,Y (initially) = ", X, Y);
 
             for (let g = 1; g <= thisGenNum + 1; g++) {
                 // if (vBoxHeight > 0) {
@@ -1681,7 +1850,10 @@
                     if (g <= thisGenNum) {
                         X +=
                             0 +
-                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * xScaleFactor -
+                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                                2 *
+                                FractalView.maxDiamPerGen[g] *
+                                xScaleFactor -
                             1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
                     }
 
@@ -1689,70 +1861,83 @@
                         0 +
                         ((j & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g]  * xScaleFactor -
-                        1 * FractalView.maxDiamPerGen[g]  * xScaleFactor;
+                            FractalView.maxDiamPerGen[g] *
+                            xScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
                     Xk +=
                         0 +
                         ((k & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g]  * xScaleFactor -
-                        1 * FractalView.maxDiamPerGen[g]  * xScaleFactor;
+                            FractalView.maxDiamPerGen[g] *
+                            xScaleFactor -
+                        1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
                 } else {
                     if (g <= thisGenNum) {
                         Y +=
                             0 +
-                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * yScaleFactor -
+                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                                2 *
+                                FractalView.maxDiamPerGen[g] *
+                                yScaleFactor -
                             1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     }
                     Yj +=
                         0 +
                         ((j & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g] * yScaleFactor -
+                            FractalView.maxDiamPerGen[g] *
+                            yScaleFactor -
                         1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     Yk +=
                         0 +
                         ((k & (2 ** (thisGenNum + 1 - g))) / 2 ** (thisGenNum + 1 - g)) *
                             2 *
-                            FractalView.maxDiamPerGen[g] * yScaleFactor -
+                            FractalView.maxDiamPerGen[g] *
+                            yScaleFactor -
                         1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
             }
-                if (vitalDIV && vitalDIV.parentNode && vitalDIV.parentNode.parentNode && vitalDIV.parentNode.parentNode.parentNode) {
-                    const vital_Y = vitalDIV.parentNode.parentNode.parentNode.getAttribute("y");
-                    const vitalDY = 0 - vital_Y - vitalDIV.offsetHeight/2 - 15; // extra 15 is for margin buffer fudge factor
-                    if (vitalDY > 0 || vitalDY < 0) {
-
-                        Yj -= vitalDY;
-                        Yk -= vitalDY;
-                        Y -= vitalDY;
-                    }
-                    condLog(
-                        "New Y values = Y, Yj, Yk = { ",
-                        Y,
-                        Yj,
-                        Yk,
-                        "}",
-                        " vital.y = ",
-                        vital_Y,
-                        "offsetHt:",
-                        vitalDIV.offsetHeight
-                        , "DY:", vitalDY);
-                    }
-                if (!FractalView.myAhnentafel.list[j]) {
-                    Xj = X;
-                    Yj = Y;
+            if (
+                vitalDIV &&
+                vitalDIV.parentNode &&
+                vitalDIV.parentNode.parentNode &&
+                vitalDIV.parentNode.parentNode.parentNode
+            ) {
+                const vital_Y = vitalDIV.parentNode.parentNode.parentNode.getAttribute("y");
+                const vitalDY = 0 - vital_Y - vitalDIV.offsetHeight / 2 - 15; // extra 15 is for margin buffer fudge factor
+                if (vitalDY > 0 || vitalDY < 0) {
+                    Yj -= vitalDY;
+                    Yk -= vitalDY;
+                    Y -= vitalDY;
                 }
-                if (!FractalView.myAhnentafel.list[k]) {
-                    Xk = X;
-                    Yk = Y;
-                }
-                element.setAttribute("x1", Xj);
-                element.setAttribute("y1", Yj);
-                element.setAttribute("x2", Xk);
-                element.setAttribute("y2", Yk);
+                condLog(
+                    "New Y values = Y, Yj, Yk = { ",
+                    Y,
+                    Yj,
+                    Yk,
+                    "}",
+                    " vital.y = ",
+                    vital_Y,
+                    "offsetHt:",
+                    vitalDIV.offsetHeight,
+                    "DY:",
+                    vitalDY
+                );
+            }
+            if (!FractalView.myAhnentafel.list[j]) {
+                Xj = X;
+                Yj = Y;
+            }
+            if (!FractalView.myAhnentafel.list[k]) {
+                Xk = X;
+                Yk = Y;
+            }
+            element.setAttribute("x1", Xj);
+            element.setAttribute("y1", Yj);
+            element.setAttribute("x2", Xk);
+            element.setAttribute("y2", Yk);
         }
         for (let index = 2 ** (FractalView.numGens2Display - 1); index < 2 ** (FractalView.maxNumGens - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
@@ -1869,6 +2054,10 @@
                     "Gender",
                     "Privacy",
                     "DataStatus",
+                    "Manager",
+                    "BirthDateDecade",
+                    "DeathDateDecade",
+                    "Bio",
                 ],
                 { ancestors: newLevel, minGeneration: newLevel }
             ).then(function (result) {
@@ -1879,13 +2068,36 @@
                     // condLog("person with which to drawTree:", person);
                     for (const index in FractalView.theAncestors) {
                         thePeopleList.add(FractalView.theAncestors[index]);
+
+                        let thePerson = new BioCheckPerson();
+                        let canUseThis = thePerson.canUse(FractalView.theAncestors[index], false, true, "Clarke-11007");
+                        let biography = new Biography(theSourceRules);
+                        biography.parse(thePerson.getBio(), thePerson, "");
+                        let hasSources = biography.validate();
+                        thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
+                        thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
+                        
+                        console.log(
+                            "async adding ",
+                            thePerson.getReportName(),
+                            canUseThis,
+                            hasSources,
+                            biography.getInlineRefCount(),
+                            biography.getPossibleSourcesLineCount(),
+                            biography.hasStyleIssues(),
+                            biography.isMissingSourcesHeading(),
+                            thePeopleList[thePerson.getProfileId()].biocheck
+                            );
+
+
                     }
                     FractalView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
 
                     clearMessageBelowButtonBar();
                     loadingTD.innerHTML = "&nbsp;";
-                    loadBiosNow(theListOfIDs, newLevel);
+                    // loadBiosNow(theListOfIDs, newLevel);
+                    findCategoriesOfAncestors();
                 }
             });
         }
@@ -1956,7 +2168,7 @@
         for (let ahnNum = 1; ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
             const elem = document.getElementById("wedgeInfoFor" + ahnNum);
             const vital = document.getElementById("vital" + ahnNum);
-            if (elem){
+            if (elem) {
                 const rect = elem.getBoundingClientRect();
                 if (elem) {
                     condLog("ELEM Ht = ", rect.height);
@@ -1972,38 +2184,35 @@
         condLog("TALLEST VITAL Box = ", maxVitalHt);
 
         const primePerp = document.getElementById("vital1");
-        condLog(primePerp)
+        condLog(primePerp);
         for (const prop in primePerp) {
             // if (Object.hasOwnProperty.call(primePerp, prop)) {
-                const val = primePerp[prop];
-                // condLog(prop, val);
+            const val = primePerp[prop];
+            // condLog(prop, val);
             // }
         }
-        
-        
 
         let theBoxTightness = FractalView.currentSettings["general_options_tightness"];
 
         let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
         let vSpacing = FractalView.currentSettings["general_options_vSpacing"];
 
-        
         let prevCurrentMax = currentMaxHeight4Box;
         let doAdjust = false;
         if (vBoxHeight > 0) {
             vSpacing = Math.max(1, Math.min(10, vSpacing));
-            doAdjust = ((20 + vSpacing*20) != currentMaxHeight4Box);
-            currentMaxHeight4Box = (20 + vSpacing*20);      
-            doAdjust = true;      
+            doAdjust = 20 + vSpacing * 20 != currentMaxHeight4Box;
+            currentMaxHeight4Box = 20 + vSpacing * 20;
+            doAdjust = true;
         } else {
-            currentMaxHeight4Box = Math.max(60,maxVitalHt - 70) + theBoxTightness * 20;
-            doAdjust = (prevCurrentMax != currentMaxHeight4Box);
+            currentMaxHeight4Box = Math.max(60, maxVitalHt - 70) + theBoxTightness * 20;
+            doAdjust = prevCurrentMax != currentMaxHeight4Box;
         }
         let yScaleFactor = currentMaxHeight4Box / 153;
         condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(adjustHeightsIfNeeded)");
-        condLog("vBoxHeight",vBoxHeight)
-        condLog("FractalView.maxDiamPerGen",FractalView.maxDiamPerGen)
-        
+        condLog("vBoxHeight", vBoxHeight);
+        condLog("FractalView.maxDiamPerGen", FractalView.maxDiamPerGen);
+
         for (let ahnNum = 1; doAdjust && ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
             const elem = document.getElementById("wedgeInfoFor" + ahnNum);
             if (elem) {
@@ -2018,7 +2227,7 @@
                 // if (vBoxHeight > 0) {
                 //     yScaleFactor = currentMaxHeight4Box / 153;
                 // }
-                for (g = 1; g <= thisGenNum; g++) {
+                for (let g = 1; g <= thisGenNum; g++) {
                     if (g % 2 == 1) {
                         X +=
                             0 +
@@ -2039,7 +2248,7 @@
                         // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                     }
                 }
-                condLog(ahnNum  , "translate(" + X + "," + Y + ")");
+                condLog(ahnNum, "translate(" + X + "," + Y + ")");
                 if (elem.parentNode.parentNode.parentNode) {
                     elem.parentNode.parentNode.parentNode.setAttribute("transform", "translate(" + X + "," + Y + ")");
                 }
@@ -2049,7 +2258,7 @@
         if (doAdjust) {
             FractalView.drawLines();
         }
-        
+
         // condLog( ancestorObject.ahnNum, thisGenNum, thisPosNum, ancestorObject.person._data.FirstName, ancestorObject.person._data.Name , X , Y);
     }
 
@@ -2078,6 +2287,8 @@
         condLog("SETTINGS ARE:", theDIV.style.display);
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
+            let aboutDIV = document.getElementById("aboutDIV");
+            aboutDIV.style.display = "none";
         } else {
             theDIV.style.display = "none";
         }
@@ -2163,6 +2374,10 @@
                     "Gender",
                     "Privacy",
                     "DataStatus",
+                    "Manager",
+                    "BirthDateDecade",
+                    "DeathDateDecade",
+                    "Bio",
                 ],
                 { ancestors: 3 }
             ).then(function (result) {
@@ -2184,6 +2399,25 @@
                         thePerson.Father = 100 - thePerson.Father;
                     }
                     thePeopleList.add(thePerson);
+
+                    let theBioPerson = new BioCheckPerson();
+                    let canUseThis = theBioPerson.canUse(thePerson, false, true, "Clarke-11007");
+                    let biography = new Biography(theSourceRules);
+                    biography.parse(theBioPerson.getBio(), theBioPerson, "");
+                    let hasSources = biography.validate();
+                    thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
+                    thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
+                    console.log(
+                        "async adding ",
+                        theBioPerson.getReportName(),
+                        canUseThis,
+                        hasSources,
+                        biography.getInlineRefCount(),
+                        biography.getPossibleSourcesLineCount(),
+                        biography.hasStyleIssues(),
+                        biography.isMissingSourcesHeading(),
+                        thePeopleList[theBioPerson.getProfileId()].biocheck
+                    );
                 }
 
                 person._data.Father = FractalView.theAncestors[id].Father;
@@ -2230,13 +2464,11 @@
                 populateXAncestorList(1);
                 fillOutFamilyStatsLocsForAncestors();
 
-                loadBiosNow(id);
-
+                // loadBiosNow(id);
+                findCategoriesOfAncestors();
             });
         });
     };
-
-   
 
     // This function will load Bios in the background
     function loadBiosNow(id, whichGen = 5) {
@@ -2266,7 +2498,6 @@
             findCategoriesOfAncestors();
         });
     }
-
 
     /**
      * Load more ancestors. Update existing data in place
@@ -2517,8 +2748,6 @@
                     extraBR = "<br/>";
                 }
 
-
-
                 let theClr = "white";
                 // SETUP the repeatAncestorTracker
                 if (FractalView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
@@ -2654,7 +2883,7 @@
             //			The KEY behind ALL of these calculations is the Ahnentafel numbers for each person in the Tree
             //			Each person in the data collection has an .AhnNum numeric property assigned, which uniquely determines where their name plate should be displayed.
 
-            d = ancestorObject.person; //thePeopleList[ person.id ];
+            let d = ancestorObject.person; //thePeopleList[ person.id ];
             condLog("node.attr.transform  - line:1989 (x,y) = ", d.x, d.y, d._data.Name);
 
             let thisRadius = 270; // NEED TO CHANGE THIS FROM BEING HARD CODED EVENTUALLY
@@ -2796,34 +3025,40 @@
             let Y = 0;
             let i = ancestorObject.ahnNum;
             let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
-            let yScaleFactor = 1 ;//(currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
+            let yScaleFactor = 1; //(currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
             // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
             if (currentMaxHeight4Box == 0) {
                 xScaleFactor = 1;
                 yScaleFactor = 1;
-            } else  {
+            } else {
                 yScaleFactor = currentMaxHeight4Box / 153;
             }
 
             condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(transform)");
-                        
+
             // let vBoxHeight = FractalView.currentSettings["general_options_vBoxHeight"];
             // if (vBoxHeight > 0) {
             //     yScaleFactor = currentMaxHeight4Box / 153;
             // }
 
             // let yScaleFactor = (currentMaxHeight4Box + 80 + theBoxTightness * 80)  / 200  ;
-            for (g = 1; g <= thisGenNum; g++) {
+            for (let g = 1; g <= thisGenNum; g++) {
                 if (g % 2 == 1) {
                     X +=
                         0 +
-                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * xScaleFactor -
+                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                            2 *
+                            FractalView.maxDiamPerGen[g] *
+                            xScaleFactor -
                         1 * FractalView.maxDiamPerGen[g] * xScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "X",X);
                 } else {
                     Y +=
                         0 +
-                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) * 2 * FractalView.maxDiamPerGen[g] * yScaleFactor -
+                        ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
+                            2 *
+                            FractalView.maxDiamPerGen[g] *
+                            yScaleFactor -
                         1 * FractalView.maxDiamPerGen[g] * yScaleFactor;
                     // condLog(i, g, Math.floor(g/2) , FractalView.maxDiamPerGen[g] , "Y",Y);
                 }
@@ -2919,8 +3154,8 @@
                 extraInfoForThisAnc = d._data.Name;
                 extraBR = "<br/>";
             } else if (FractalView.currentSettings["general_options_extraInfo"] == "both") {
-                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]<br/>" + d._data.Name;
-                    extraBR = "<br/>";
+                extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]<br/>" + d._data.Name;
+                extraBR = "<br/>";
             }
 
             if (theExtraDIV) {
@@ -2953,10 +3188,13 @@
             }
         }
 
+        let zoomFactor = Math.max(1, 1 / FractalView.currentScaleFactor);
+ 
+
         var popup = this.svg
             .append("g")
             .attr("class", "popup")
-            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")");
+            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ") scale(" + zoomFactor + ") ");
 
         let borderColor = "rgba(102, 204, 102, .5)";
         if (person.getGender() == "Male") {
@@ -3170,13 +3408,11 @@
         }
     }
 
-
     function findCategoriesOfAncestors() {
         condLog("findCategoriesOfAncestors");
         categoryList = [];
         stickerList = [];
-        stickerInnerHTML =
-            '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
+        let stickerInnerHTML = '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
         for (let index = 1; index < 2 ** FractalView.numGens2Display; index++) {
             const thisPerp = thePeopleList[FractalView.myAhnentafel.list[index]];
             if (thisPerp) {
@@ -3200,7 +3436,7 @@
                 selectedText = " selected ";
                 condLog("SELECTED !!!");
             }
-            innerCatHTML += '<option value="' + cat   + '" '+  selectedText + '>' + cat + "</option>";
+            innerCatHTML += '<option value="' + cat + '" ' + selectedText + ">" + cat + "</option>";
             stickerInnerHTML += '<option value="' + i + '">' + cat + "</option>";
         }
         condLog("UPDATING & REDOING the BADGES DROP DOWNS @ 5854");
@@ -3214,11 +3450,8 @@
             }
         }
         catNameSelector.innerHTML = innerCatHTML;
-        for (i = 1; i <= 4; i++) {
-            document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace(
-                "#666#",
-                i
-            );
+        for (let i = 1; i <= 4; i++) {
+            document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace("#666#", i);
             condLog("Updating and checking : Badge # ", i, ":", currentBadges[i]);
             if (currentBadges[i]) {
                 condLog(
@@ -3240,12 +3473,11 @@
             } else {
                 FractalView.updateBadgesToShow(i);
             }
-            
         }
 
         // HIDE BADGES beyond the numGens2Display
         for (let ahnNum = 2 ** FractalView.numGens2Display; ahnNum < 2 ** FractalView.maxNumGens; ahnNum++) {
-            for (i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const thisDIVid = "badge" + i + "-" + ahnNum + "svg";
                 let stickerDIV = document.getElementById(thisDIVid);
                 if (stickerDIV) {
@@ -3323,7 +3555,7 @@
             }
         }
     }
-    
+
     // GET and SET LOCATION info for Ancestors and PERP in question
 
     function fillOutFamilyStatsLocsForAncestors() {
@@ -3530,7 +3762,7 @@
                     return year;
                 }
                 if (month) {
-                    month2digits = month;
+                    let month2digits = month;
                     if (month < 10) {
                         month2digits = "0" + month;
                     }
@@ -3826,11 +4058,11 @@
             }
 
             if (settingForSpecifyByFamily == "age") {
-                clrSwatchUNK =
+                let clrSwatchUNK =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                     "white" +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
-                clrSwatchLIVING =
+                let clrSwatchLIVING =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                     "lime" +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
@@ -3877,7 +4109,7 @@
             revLocArray.sort();
             uniqueLocationsArray = reverseCommaArray(revLocArray, false);
 
-            clrSwatchUNK =
+            let clrSwatchUNK =
                 "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                 "white" +
                 ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
@@ -4195,40 +4427,39 @@
         }
     }
 
+    FractalView.updateBadgesToShow = function (num = 1) {
+        condLog("UPDATING BADGES NOW !!!!", num);
+        let showBadges = FractalView.currentSettings["general_options_showBadges"];
+        let theDropDown = document.getElementById("stickerCategoryDropDownList" + num);
+        let searchText = "Clarke";
+        let searchPrefix = "[[Category:";
+        if (theDropDown.value > -1) {
+            if (theDropDown.value && theDropDown.value < categoryList.length) {
+                searchText = categoryList[theDropDown.value];
+            } else {
+                searchText = stickerList[theDropDown.value - categoryList.length];
+                searchPrefix = "{{";
+            }
+        } else {
+            showBadges = false;
+        }
+        condLog("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText);
 
-     FractalView.updateBadgesToShow = function (num = 1) {
-         condLog("UPDATING BADGES NOW !!!!", num);
-         let showBadges = FractalView.currentSettings["general_options_showBadges"];
-         let theDropDown = document.getElementById("stickerCategoryDropDownList" + num);
-         let searchText = "Clarke";
-         let searchPrefix = "[[Category:";
-         if (theDropDown.value > -1) {
-             if (theDropDown.value && theDropDown.value < categoryList.length) {
-                 searchText = categoryList[theDropDown.value];
-             } else {
-                 searchText = stickerList[theDropDown.value - categoryList.length];
-                 searchPrefix = "{{";
-             }
-         } else {
-             showBadges = false;
-         }
-         condLog("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText);
+        let rawValue = searchText.trim();
+        let spacelessValue = searchText.trim().replace(/ /g, "_");
 
-         let rawValue = searchText.trim();
-         let spacelessValue = searchText.trim().replace(/ /g, "_");
+        currentBadges[num] = rawValue;
 
-         currentBadges[num] = rawValue;
-
-         for (let ahnNum = 1; ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
-             const thisDIVid = "badge" + num + "-" + ahnNum + "svg";
-             let stickerDIV = document.getElementById(thisDIVid);
+        for (let ahnNum = 1; ahnNum < 2 ** FractalView.numGens2Display; ahnNum++) {
+            const thisDIVid = "badge" + num + "-" + ahnNum + "svg";
+            let stickerDIV = document.getElementById(thisDIVid);
 
             let wedgeInfoDIV = document.getElementById("wedgeInfoFor" + ahnNum);
             let wedgeDIV = null;
             if (wedgeInfoDIV) {
                 wedgeDIV = wedgeInfoDIV.parentNode;
             }
-            if (stickerDIV ) {
+            if (stickerDIV) {
                 stickerDIV.parentNode.parentNode.style.display = "none";
             }
             // condLog(
@@ -4241,38 +4472,37 @@
             // );
 
             if (
-                 showBadges &&
-                 stickerDIV &&
-                 wedgeDIV &&
-                 thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
-                 thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio &&
-                 (thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
-                     -1 ||
-                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                         searchPrefix + " " + rawValue
-                     ) > -1 ||
-                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                         searchPrefix + spacelessValue
-                     ) > -1 ||
-                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                         searchPrefix + " " + spacelessValue
-                     ) > -1)
-             ) {
-                 //  SHOW THIS STICKER
-                 let SVGgraphicsDIV = document.getElementById("SVGgraphics");
+                showBadges &&
+                stickerDIV &&
+                wedgeDIV &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio &&
+                (thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) > -1 ||
+                    thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + " " + rawValue
+                    ) > -1 ||
+                    thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + spacelessValue
+                    ) > -1 ||
+                    thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + " " + spacelessValue
+                    ) > -1)
+            ) {
+                //  SHOW THIS STICKER
+                let SVGgraphicsDIV = document.getElementById("SVGgraphics");
                 //  SVGgraphicsDIV.append(stickerDIV.parentNode.parentNode);
                 //  stickerDIV.parentNode.parentNode.style.display = "block";
-                
-                 condLog(
-                     "Xs : ",
-                     wedgeDIV.getAttribute("x"),
-                     wedgeDIV.parentNode.getAttribute("x"),
-                     wedgeDIV.parentNode.parentNode.getAttribute("transform"),
-                     "||",
-                     stickerDIV.getAttribute("x"),
-                     stickerDIV.parentNode.getAttribute("x"),
-                     stickerDIV.parentNode.parentNode.getAttribute("x")
-                 );
+
+                condLog(
+                    "Xs : ",
+                    wedgeDIV.getAttribute("x"),
+                    wedgeDIV.parentNode.getAttribute("x"),
+                    wedgeDIV.parentNode.parentNode.getAttribute("transform"),
+                    "||",
+                    stickerDIV.getAttribute("x"),
+                    stickerDIV.parentNode.getAttribute("x"),
+                    stickerDIV.parentNode.parentNode.getAttribute("x")
+                );
 
                 if (wedgeDIV.parentNode.parentNode.getAttribute("transform").indexOf("translate") > -1) {
                     condLog("FOUND a TRANSLATION:");
@@ -4308,13 +4538,11 @@
                     //  stickerDIV.parentNode.parentNode.style.display = "none";
                 }
                 //  stickerDIV.parentNode.setAttribute("transform", wedgeDIV.parentNode.getAttribute("transform") );
-
-                 
-             } else {
-                 if (stickerDIV) {
-                     stickerDIV.parentNode.parentNode.style.display = "none";
-                 }
-             }         
+            } else {
+                if (stickerDIV) {
+                    stickerDIV.parentNode.parentNode.style.display = "none";
+                }
+            }
         }
 
         for (let ahnNum = 2 ** FractalView.numGens2Display; ahnNum < 2 ** FractalView.maxNumGens; ahnNum++) {
@@ -4324,20 +4552,19 @@
                 stickerDIV.parentNode.parentNode.style.display = "none";
             }
         }
-     };
+    };
 
-     function showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle = 0) {
-         const ahnNum = 2 ** thisGenNum + thisPosNum;
-         if (ahnNum == 1) {
-             condLog("SHOW BADGES FOR # 1 - NUMERO UNO !!!!");
-         } else {
+    function showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle = 0) {
+        const ahnNum = 2 ** thisGenNum + thisPosNum;
+        if (ahnNum == 1) {
+            condLog("SHOW BADGES FOR # 1 - NUMERO UNO !!!!");
+        } else {
             condLog("SHOW BADGES FOR # ", ahnNum);
-         }
-         let SVGgraphicsDIV = document.getElementById("SVGgraphics");
-         let showBadgesSetting = FractalView.currentSettings["general_options_showBadges"];
-         let elem = document.getElementById("wedgeInfoFor" + ahnNum).parentNode;
-         condLog("show:",elem.parentNode);
-
+        }
+        let SVGgraphicsDIV = document.getElementById("SVGgraphics");
+        let showBadgesSetting = FractalView.currentSettings["general_options_showBadges"];
+        let elem = document.getElementById("wedgeInfoFor" + ahnNum).parentNode;
+        condLog("show:", elem.parentNode);
 
         //  let dCompensation = 0;
         //  if (nameAngle > 550) {
@@ -4392,14 +4619,14 @@
         //  let dOrtho2 = dOrtho;
         //  let newR = thisRadius;
 
-         condLog("UPDATING the BADGES DROP DOWN here on line 5196");
-         // stickerPrefix + ahnNum + "svg",
-         for (let i = 1; i <= 4; i++) {
-             const thisDIVid = "badge" + i + "-" + ahnNum + "svg";
-             let stickerDIV = document.getElementById(thisDIVid);
+        condLog("UPDATING the BADGES DROP DOWN here on line 5196");
+        // stickerPrefix + ahnNum + "svg",
+        for (let i = 1; i <= 4; i++) {
+            const thisDIVid = "badge" + i + "-" + ahnNum + "svg";
+            let stickerDIV = document.getElementById(thisDIVid);
 
-             // dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
-             // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
+            // dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
+            // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
 
             //  if (ahnNum == 1) {
             //      newX = -20;
@@ -4413,23 +4640,23 @@
 
             //  stickerDIV.style.rotate = nameAngle + "deg";
 
-             let theDropDown = document.getElementById("stickerCategoryDropDownList" + i);
-             let searchText = "Clarke";
-             let showBadges = showBadgesSetting;
-             let searchPrefix = "[[Category:";
-             if (showBadges && theDropDown.value > -1) {
-                 if (theDropDown.value && theDropDown.value < categoryList.length) {
-                     searchText = categoryList[theDropDown.value];
-                 } else {
-                     searchText = stickerList[theDropDown.value - categoryList.length];
-                     searchPrefix = "{{";
-                 }
-             } else {
-                 showBadges = false;
-             }
+            let theDropDown = document.getElementById("stickerCategoryDropDownList" + i);
+            let searchText = "Clarke";
+            let showBadges = showBadgesSetting;
+            let searchPrefix = "[[Category:";
+            if (showBadges && theDropDown.value > -1) {
+                if (theDropDown.value && theDropDown.value < categoryList.length) {
+                    searchText = categoryList[theDropDown.value];
+                } else {
+                    searchText = stickerList[theDropDown.value - categoryList.length];
+                    searchPrefix = "{{";
+                }
+            } else {
+                showBadges = false;
+            }
 
-             let rawValue = searchText.trim();
-             let spacelessValue = searchText.trim().replace(/ /g, "_");
+            let rawValue = searchText.trim();
+            let spacelessValue = searchText.trim().replace(/ /g, "_");
 
             //  if (i == 1 || ahnNum == 1) {
             //      condLog(
@@ -4448,39 +4675,40 @@
             //      );
             //  }
 
-             if (
-                 showBadges &&
-                 thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
-                 thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio &&
-                 (thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
-                     -1 ||
-                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                         searchPrefix + " " + rawValue
-                     ) > -1 ||
-                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                         searchPrefix + spacelessValue
-                     ) > -1 ||
-                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                         searchPrefix + " " + spacelessValue
-                     ) > -1)
-             ) {
-                 //  SHOW THIS STICKER
+            if (
+                showBadges &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio &&
+                (thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) > -1 ||
+                    thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + " " + rawValue
+                    ) > -1 ||
+                    thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + spacelessValue
+                    ) > -1 ||
+                    thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + " " + spacelessValue
+                    ) > -1)
+            ) {
+                //  SHOW THIS STICKER
                 if (stickerDIV && stickerDIV.parentNode.parentNode) {
                     stickerDIV.parentNode.parentNode.style.display = "block";
                 }
                 //  SVGgraphicsDIV.append(stickerDIV.parentNode.parentNode);
                 //  stickerDIV.parentNode.parentNode.style.display = "none";
-             } else {
-                if (stickerDIV && stickerDIV.parentNode.parentNode) {stickerDIV.parentNode.parentNode.style.display = "none";}
-             }
-         }
+            } else {
+                if (stickerDIV && stickerDIV.parentNode.parentNode) {
+                    stickerDIV.parentNode.parentNode.style.display = "none";
+                }
+            }
+        }
 
-         // condLog(
-         //     "Sticker me THAT: ",
-         //     6 * Math.sqrt(13) * Math.cos(((nameAngle - 56) * Math.PI) / 180),
-         //     6 * Math.sqrt(13) * Math.sin(((nameAngle - 56) * Math.PI) / 180)
-         // );
-     }
+        // condLog(
+        //     "Sticker me THAT: ",
+        //     6 * Math.sqrt(13) * Math.cos(((nameAngle - 56) * Math.PI) / 180),
+        //     6 * Math.sqrt(13) * Math.sin(((nameAngle - 56) * Math.PI) / 180)
+        // );
+    }
 
     function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
         // condLog("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
@@ -4905,7 +5133,25 @@
             ) {
                 return true;
             }
-                } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+            // console.log("Check Bio:", ahnNum, thePeopleList[FractalView.myAhnentafel.list[ahnNum]].bioHasSources);
+            if (
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]].bioHasSources == true
+            ) {
+                return true;
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+            // console.log("Check Bio:", ahnNum, thePeopleList[FractalView.myAhnentafel.list[ahnNum]].bioHasSources);
+            if (
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck &&
+                thePeopleList[FractalView.myAhnentafel.list[ahnNum]].bioHasSources == false
+            ) {
+                return true;
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
             let catNameSelector = document.getElementById("highlight_options_catName");
             let rawValue = catNameSelector.value.trim();
             let spacelessValue = catNameSelector.value.trim().replace(/ /g, "_");
@@ -4924,8 +5170,7 @@
             if (
                 thePeopleList[FractalView.myAhnentafel.list[ahnNum]] &&
                 thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio &&
-                (thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
-                    -1 ||
+                (thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) > -1 ||
                     thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
                         searchPrefix + " " + rawValue
                     ) > -1 ||
@@ -4964,7 +5209,6 @@
                     }
                 }
             }
-        
         } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
             let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
             let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
