@@ -56,6 +56,8 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
 
         `init`: use your own implementation of view
 
+        `close`: (optional) called just before your view is going to be replaced by another, so if you change globel state that might influence other apps, you should restore it here
+
         e.g.
 
         ```js
