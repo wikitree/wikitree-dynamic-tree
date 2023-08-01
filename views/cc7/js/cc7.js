@@ -69,7 +69,7 @@ export class CC7 {
                 boxes just below the column headers.
             </li>
             <li>
-                The numberical columns (including the years) can be filtered with &gt; and &lt;.
+                The numerical columns (including the years) can be filtered with &gt; and &lt;.
                 For example, to see all people born after 1865, enter &gt;1865 in the birth year filter box.
             </li>
             <li>
@@ -80,9 +80,10 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young image <img src="./views/cc7/images/diedYoung.png" /> is used to flag people who died under
-                16 years of age. Their spouse and children boxes are greyed out as we can assume they didn't have any
-                of these.
+                The Died Young images <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> are used to flag people
+                (in their Children column) who died under
+                5 and under 16 years of age, respectively, provided they had no children.
             </li>
         </ul>
         <ul id="key" class="key">
@@ -1722,6 +1723,8 @@ export class CC7 {
             let ageAtDeathCell = "";
             let dAgeAtDeath = "";
             let diedYoung = false;
+            let diedYoungClass = "";
+            let diedYoungTitle = "";
 
             let relNums = {
                 Parent_data: "",
@@ -1756,8 +1759,14 @@ export class CC7 {
                 if (mAgeAtDeathNum < 0) {
                     mAgeAtDeath = 0;
                 }
-                if (mAgeAtDeathNum < 16 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
+                if (mAgeAtDeathNum < 5 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
                     diedYoung = true;
+                    diedYoungClass = " diedYoung1";
+                    diedYoungTitle = "Died before age 5";
+                } else if (mAgeAtDeathNum < 16 && mAgeAtDeath != false) {
+                    diedYoung = true;
+                    diedYoungClass = " diedYoung2";
+                    diedYoungTitle = "Died before age 16";
                 }
 
                 ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
@@ -1790,14 +1799,17 @@ export class CC7 {
                     let word;
                     if (aR == "Child") {
                         word = "Children";
-                        if (mPerson.NoChildren == 1 || diedYoung == true) {
+                        if (diedYoung && relNums[aR] == "") {
+                            cellClass = `class='number${diedYoungClass}'`;
+                            word = diedYoungTitle;
+                        } else if (mPerson.NoChildren == 1) {
                             cellClass = "class='none number'";
                         }
                     } else {
                         word = aR + "s";
                     }
                     if (aR == "Spouse") {
-                        if (mPerson.DataStatus?.Spouse == "blank" || diedYoung == true) {
+                        if (mPerson.DataStatus?.Spouse == "blank" || (diedYoung && relNums[aR] == "")) {
                             cellClass = "class='none number'";
                         }
                     }
@@ -1817,15 +1829,10 @@ export class CC7 {
                     relNums["Parent_data"] = "data-Parent='1'";
                     relNums["Parent_cell"] = "<td class='noMother number' title='Missing mother'>1</td>";
                 } else {
-                    relNums["Parent"] = 0;
-                    relNums["Parent_data"] = "data-Parent='0'";
+                    relNums["Parent"] = 2;
+                    relNums["Parent_data"] = "data-Parent='2'";
                     relNums["Parent_cell"] = "<td class='number' title='Parents'>2</td>";
                 }
-            }
-
-            let diedYoungClass = "";
-            if (diedYoung == true) {
-                diedYoungClass = "diedYoung";
             }
 
             let gender = mPerson.Gender;
@@ -1885,9 +1892,7 @@ export class CC7 {
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
                     relNums["Child_cell"] +
-                    "<td class='connectionsName " +
-                    diedYoungClass +
-                    "' >" +
+                    "<td class='connectionsName >" +
                     oLink +
                     "</td><td class='lnab'>" +
                     (mPerson.LastNameAtBirth.startsWith("Private")
@@ -2855,15 +2860,10 @@ export class CC7 {
                 limit: limit,
                 fields: CC7.GET_PEOPLE_FIELDS,
             });
-            const people = result[0].people;
-            if (typeof people == "undefined" || people == "") {
-                wtViewRegistry.showError(`No results obtained when requesting relatives for ${key}`);
-                return null;
-            }
-            return [result[0].resultByKey, result[0].people];
+            return [result[0].status, result[0].resultByKey, result[0].people];
         } catch (error) {
             wtViewRegistry.showError(`Could not retrieve relatives for ${key}: ${error}`);
-            return null;
+            return [`${error}`, [], []];
         }
     }
 
@@ -2884,16 +2884,26 @@ export class CC7 {
             // correctly. We make separate (async) calls for each degree in order to be able to identify
             // the extra degrees so we can hide them from the display and not include them in the degree counts.
             const starttime = performance.now();
-            const [[resultByKeyAtD, countAtD], [, countAtDm1], [, countAtDp1]] = await Promise.all([
-                CC7.collectPeopelAtNthDegree(wtId, theDegree),
-                CC7.collectPeopelAtNthDegree(wtId, theDegree - 1, CC7.HIDE),
-                CC7.collectPeopelAtNthDegree(wtId, theDegree + 1, CC7.HIDE),
-            ]);
+            const [[resultByKeyAtD, countAtD, dIsPartial], [, countAtDm1, m1IsPartial], [, countAtDp1, p1IsPartial]] =
+                await Promise.all([
+                    CC7.collectPeopelAtNthDegree(wtId, theDegree),
+                    CC7.collectPeopelAtNthDegree(wtId, theDegree - 1, CC7.HIDE),
+                    CC7.collectPeopelAtNthDegree(wtId, theDegree + 1, CC7.HIDE),
+                ]);
             console.log(
                 `Retrieved ${countAtD}, ${countAtDm1}, ${countAtDp1} profiles at degrees ${
                     theDegree - 1
                 }, ${theDegree}, ${theDegree + 1} in ${performance.now() - starttime}ms`
             );
+            if (dIsPartial) {
+                wtViewRegistry.showWarning(
+                    `Due to limits imposed by the API, we could not retrieve all the people at degree ${theDegree}. Relative counts may therefore also be incorrect.`
+                );
+            } else if (m1IsPartial || p1IsPartial) {
+                wtViewRegistry.showWarning(
+                    `Due to limits imposed by the API, we could not retrieve all the required data, so relative counts may be incorrect.`
+                );
+            }
 
             $("#oneDegreeList").remove();
             const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
@@ -2911,12 +2921,23 @@ export class CC7 {
 
     static async collectPeopelAtNthDegree(wtId, theDegree, hide = !CC7.HIDE) {
         let start = 0;
+        let isPartial = false;
         const limit = CC7.GET_PEOPLE_LIMIT;
         console.log(`Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, hide:${hide}`);
         let callNr = 1;
         const starttime = performance.now();
-        const [resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
-        let profiles = peopleData ? Object.values(peopleData) : [];
+        const [status, resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+        let profiles;
+        if (status != "") {
+            console.warn(`A problem occurred while requesting relatives for ${wtId} at degree ${theDegree}: ${status}`);
+            profiles = [];
+            isPartial = true;
+        } else {
+            profiles = peopleData ? Object.values(peopleData) : [];
+        }
+        if (profiles.length == 0 && resultByKey[wtId]?.status) {
+            wtViewRegistry.showError(resultByKey[wtId]?.status);
+        }
         console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
         let resultByKeyReturned = {};
         let profileCount = 0;
@@ -2935,8 +2956,14 @@ export class CC7 {
             console.log(
                 `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
             );
-            const [, ancestor_json] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
-            profiles = ancestor_json ? Object.values(ancestor_json) : [];
+            const [sstatus, , ancestorJson] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            if (sstatus != "") {
+                console.warn(`Partial results obtained when requesting relatives for ${wtId}: ${sstatus}`);
+                profiles = [];
+                isPartial = true;
+            } else {
+                profiles = ancestorJson ? Object.values(ancestorJson) : [];
+            }
             console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
         }
         console.log(
@@ -2944,7 +2971,7 @@ export class CC7 {
                 performance.now() - starttime
             }ms`
         );
-        return [resultByKeyReturned, profileCount];
+        return [resultByKeyReturned, profileCount, isPartial];
     }
 
     static addPeople(profiles, theDegree = -1, hide = !CC7.HIDE) {
@@ -3068,8 +3095,8 @@ export class CC7 {
         // We get one more degree than necessary to ensure we can calculate the relative counts
         // correctly. We make a separate (async) call in order to be able to identify the extra
         // degree so we can hide them from the display and not include them in the degree counts.
-        const [resultByKey, [,]] = await Promise.all([
-            CC7.makePagedCallAndAddPeople([wtId], maxWantedDegree),
+        const [resultByKey, [, , isPartial]] = await Promise.all([
+            CC7.makePagedCallAndAddPeople(wtId, maxWantedDegree),
             CC7.collectPeopelAtNthDegree(wtId, maxWantedDegree + 1, CC7.HIDE),
         ]);
         console.log(
@@ -3077,6 +3104,12 @@ export class CC7 {
                 performance.now() - starttime
             }ms`
         );
+        if (isPartial) {
+            wtViewRegistry.showWarning(
+                "Limits imposed by the API is causing relative counts of people at the highest degree of separation " +
+                    "to be incomplete."
+            );
+        }
 
         window.rootId = +resultByKey[wtId]?.Id;
         CC7.populateRelativeArrays();
@@ -3084,7 +3117,7 @@ export class CC7 {
         // Calculate and assign degrees
         const degreeCounts = {};
         const root = window.people.get(window.rootId);
-        root.Degree = 0;
+        if (root) root.Degree = 0;
         let actualMaxDegree = 0;
         const q = [window.rootId];
         while (q.length > 0) {
@@ -3145,14 +3178,16 @@ export class CC7 {
             )
         );
         CC7.buildDegreeTableData(degreeCounts, actualMaxDegree);
-        CC7.addPeopleTable(`CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`);
+        CC7.addPeopleTable(
+            root ? `CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}` : ""
+        );
     }
 
     static getIdsOf(arrayOfPeople) {
         return arrayOfPeople.map((p) => +p.Id);
     }
 
-    static async makePagedCallAndAddPeople(reqIds, upToDegree) {
+    static async makePagedCallAndAddPeople(reqId, upToDegree) {
         if ($("#degreesTable").length == 0) {
             $("#cc7Container").append(
                 $(
@@ -3178,14 +3213,17 @@ export class CC7 {
 
             if (callNr == 1) {
                 console.log(
-                    `Calling getPeople with keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Calling getPeople with keys:${reqId}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
                 );
             } else {
                 console.log(
-                    `Retrieving getPeople result page ${callNr}. keys:${reqIds}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Retrieving getPeople result page ${callNr}. keys:${reqId}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
                 );
             }
-            const [keysResult, peopleData] = await CC7.getPeopleUpToDegree(reqIds, upToDegree, start, limit);
+            const [keysResult, peopleData] = await CC7.getPeopleUpToDegree([reqId], upToDegree, start, limit);
+            if (peopleData.length == 0 && keysResult[reqId]?.status) {
+                wtViewRegistry.showError(keysResult[reqId]?.status);
+            }
             if (callNr == 1) {
                 resultByKey = keysResult;
             }
