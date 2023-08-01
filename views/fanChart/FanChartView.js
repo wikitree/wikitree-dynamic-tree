@@ -350,6 +350,14 @@
         };
     };
 
+    function onBeforePrint() {
+        FanChartView.setViewBox(true);
+    }
+
+    function onAfterPrint() {
+        FanChartView.setViewBox(false);
+    }
+
     FanChartView.prototype.init = function (selector, startId) {
         // condLog("FanChartView.js - line:18", selector) ;
         // let theCheckIn =  FanChartView.getCheckIn();
@@ -357,8 +365,8 @@
         // FanChartView.showFandokuLink = theCheckIn;
 
         var container = document.querySelector(selector),
-            width = container.offsetWidth,
-            height = container.offsetHeight;
+            width = container.offsetWidth - 2,
+            height = window.innerHeight - 2;
 
         var self = this;
         FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
@@ -1127,7 +1135,12 @@
         // NEXT STEPS : Return a True/False based on whether any changes were actually made --> THEN - call reDraw routine if needed
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
-        const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+        const svg = d3
+            .select(container)
+            .append("svg")
+            .attr("id", "fanChartSVG")
+            .attr("width", "100%")
+            .attr("height", height);
         const g = svg.append("g").attr("id","SVGgraphics");
 
         // Setup zoom and pan
@@ -1532,6 +1545,18 @@
                     condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
                 }
             }
+        }
+
+        if (window.addEventListener) {
+            window.addEventListener("beforeprint", onBeforePrint);
+            window.addEventListener("afterprint", onAfterPrint);
+        }
+    };
+
+    FanChartView.prototype.close = function () {
+        if (window.removeEventListener) {
+            window.removeEventListener("beforeprint", onBeforePrint);
+            window.removeEventListener("afterprint", onAfterPrint);
         }
     };
 
@@ -2331,6 +2356,30 @@
             }
         }
     }
+
+    /**
+     * Update (or clear) the SVG viewBox based on the content bounding box.
+     */
+    FanChartView.setViewBox = function (doSet) {
+        let svg = document.getElementById("fanChartSVG");
+        if (svg) {
+            if (doSet === undefined || doSet) {
+                let g = svg.firstElementChild;
+                if (g && g.getBBox) {
+                    let boundingBox = g.getBBox();
+                    if (boundingBox) {
+                        svg.setAttribute(
+                            "viewBox",
+                            `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
+                        );
+                    }
+                }
+            } else {
+                svg.removeAttribute("viewBox");
+            }
+        }
+    };
+
     /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
     FanChartView.redraw = function () {
         condLog("FanChartView.redraw");
