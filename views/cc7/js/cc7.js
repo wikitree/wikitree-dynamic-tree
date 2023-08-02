@@ -1892,7 +1892,7 @@ export class CC7 {
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
                     relNums["Child_cell"] +
-                    "<td class='connectionsName >" +
+                    "<td class='connectionsName' >" +
                     oLink +
                     "</td><td class='lnab'>" +
                     (mPerson.LastNameAtBirth.startsWith("Private")
@@ -3562,14 +3562,18 @@ export class CC7 {
 
         ws["!cols"] = wscols;
 
-        $("#cc7csv").click(function () {
-            var wbout = XLSX.write(wb, { bookType: "csv", type: "binary" });
-            saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + ".csv");
-        });
-        $("#cc7excel").click(function () {
-            var wbout = XLSX.write(wb, { bookType: "xlsx", type: "binary" });
-            saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + ".xlsx");
-        });
+        $("#cc7csv")
+            .off("click")
+            .click(function () {
+                var wbout = XLSX.write(wb, { bookType: "csv", type: "binary" });
+                saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + ".csv");
+            });
+        $("#cc7excel")
+            .off("click")
+            .click(function () {
+                var wbout = XLSX.write(wb, { bookType: "xlsx", type: "binary" });
+                saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + ".xlsx");
+            });
     }
 
     static assignGeneration(persons, person, generation) {
