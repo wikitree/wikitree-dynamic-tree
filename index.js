@@ -60,8 +60,8 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "nameTest": new NameTestView(),
         "cc7": new CC7View(),
         "ale": new ALEView(),
-        "xtree": new XTreeView(),
-        // "superbig": new SuperBigFamView(),
+        "xtree": new XTreeView(), 
+        
     };
 
     for (let key in views) {
@@ -74,3 +74,5 @@ window.addEventListener("DOMContentLoaded", (event) => {
     wtViewRegistry = new ViewRegistry(views, new SessionManager(WikiTreeAPI, loginManager));
     wtViewRegistry.render();
 });
+
+//// "superbig": new SuperBigFamView(),
