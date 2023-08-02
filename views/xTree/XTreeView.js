@@ -30,6 +30,79 @@ const PRINTER_ICON = "&#x1F4BE;";
 const SETTINGS_GEAR = "&#x2699;";
 const LEGEND_CLIPBOARD = "&#x1F4CB;";
 
+const FullAppName = "X Family Tree app";
+const AboutPreamble =
+    "The X Family Tree app is designed to show the inheritance of the X Chromosome through the generations.<br>It was created to live amongst the WikiTree family of Tree Apps in July 2023<br/>and is maintained by the original author plus other WikiTree developers.";
+const AboutUpdateDate = "30 July 2023";
+const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/XTree.png" />`;
+const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
+const AboutAdditionalProgrammers ="";//    "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
+const AboutAssistants = "Rob Pavey";
+const AboutLatestG2G = "https://www.wikitree.com/g2g/1613057/new-app-x-family-tree";
+const AboutHelpDoc = "";// "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
+const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
+
+const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16.19 2H7.81C4.17 2 2 4.17 2 7.81V16.18C2 19.83 4.17 22 7.81 22H16.18C19.82 22 21.99 19.83 21.99 16.19V7.81C22 4.17 19.83 2 16.19 2ZM15.36 14.3C15.65 14.59 15.65 15.07 15.36 15.36C15.21 15.51 15.02 15.58 14.83 15.58C14.64 15.58 14.45 15.51 14.3 15.36L12 13.06L9.7 15.36C9.55 15.51 9.36 15.58 9.17 15.58C8.98 15.58 8.79 15.51 8.64 15.36C8.35 15.07 8.35 14.59 8.64 14.3L10.94 12L8.64 9.7C8.35 9.41 8.35 8.93 8.64 8.64C8.93 8.35 9.41 8.35 9.7 8.64L12 10.94L14.3 8.64C14.59 8.35 15.07 8.35 15.36 8.64C15.65 8.93 15.65 9.41 15.36 9.7L13.06 12L15.36 14.3Z" fill="red"/>
+    </svg>`;
+
+const SVGbtnDOWN =
+    '<SVG width=18 height=14 ><polyline points="0,0 18,0 9,14 0,0" fill="blue" stroke="blue"/><polyline points="5,7 13,7" fill="none" stroke="white" stroke-width=2 /></SVG>';
+const SVGbtnUP =
+    '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
+
+const SVGbtnSETTINGS = `<svg height="16" width="16" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+        viewBox="0 0 512 512"  xml:space="preserve">
+    <style type="text/css">
+        .st0{fill:#000000;}
+    </style>
+    <g>
+        <path class="st0" d="M499.453,210.004l-55.851-2.58c-5.102-0.23-9.608-3.395-11.546-8.103l-11.508-27.695
+            c-1.937-4.728-0.997-10.145,2.455-13.914l37.668-41.332c4.718-5.188,4.546-13.205-0.421-18.182l-46.434-46.443
+            c-4.986-4.967-13.003-5.159-18.2-0.412l-41.312,37.668c-3.778,3.443-9.206,4.402-13.924,2.436l-27.694-11.488
+            c-4.718-1.946-7.864-6.454-8.094-11.565l-2.589-55.831C301.675,5.534,295.883,0,288.864,0h-65.708
+            c-7.02,0-12.831,5.534-13.156,12.562l-2.571,55.831c-0.23,5.111-3.376,9.618-8.094,11.565L171.64,91.447
+            c-4.737,1.966-10.165,1.007-13.924-2.436l-41.331-37.668c-5.198-4.746-13.215-4.564-18.201,0.412L51.769,98.198
+            c-4.986,4.977-5.158,12.994-0.422,18.182l37.668,41.332c3.452,3.769,4.373,9.186,2.416,13.914l-11.469,27.695
+            c-1.956,4.708-6.444,7.873-11.564,8.103l-55.832,2.58c-7.019,0.316-12.562,6.118-12.562,13.147v65.699
+            c0,7.019,5.543,12.83,12.562,13.148l55.832,2.579c5.12,0.229,9.608,3.394,11.564,8.103l11.469,27.694
+            c1.957,4.728,1.036,10.146-2.416,13.914l-37.668,41.313c-4.756,5.217-4.564,13.224,0.403,18.201l46.471,46.443
+            c4.967,4.977,12.965,5.15,18.182,0.422l41.312-37.677c3.759-3.443,9.207-4.392,13.924-2.435l27.694,11.478
+            c4.719,1.956,7.864,6.464,8.094,11.575l2.571,55.831c0.325,7.02,6.136,12.562,13.156,12.562h65.708
+            c7.02,0,12.812-5.542,13.138-12.562l2.589-55.831c0.23-5.111,3.376-9.619,8.094-11.575l27.694-11.478
+            c4.718-1.957,10.146-1.008,13.924,2.435l41.312,37.677c5.198,4.728,13.215,4.555,18.2-0.422l46.434-46.443
+            c4.967-4.977,5.139-12.984,0.421-18.201l-37.668-41.313c-3.452-3.768-4.412-9.186-2.455-13.914l11.508-27.694
+            c1.937-4.709,6.444-7.874,11.546-8.103l55.851-2.579c7.019-0.318,12.542-6.129,12.542-13.148v-65.699
+            C511.995,216.122,506.472,210.32,499.453,210.004z M256.01,339.618c-46.164,0-83.622-37.438-83.622-83.612
+            c0-46.184,37.458-83.622,83.622-83.622s83.602,37.438,83.602,83.622C339.612,302.179,302.174,339.618,256.01,339.618z"/>
+    </g>
+    </svg>`;    
+
+    const SVGbtnINFO = `<svg fill="#0000FF" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            width="16" height="16" viewBox="0 0 45.818 45.818"
+            xml:space="preserve">
+        <g>
+            <path d="M22.909,0C10.258,0,0,10.257,0,22.908c0,12.652,10.258,22.91,22.909,22.91s22.909-10.258,22.909-22.91
+                C45.818,10.257,35.561,0,22.909,0z M26.411,35.417c0,1.921-1.573,3.478-3.492,3.478c-1.92,0-3.492-1.557-3.492-3.478V20.201
+                c0-1.92,1.572-3.477,3.492-3.477c1.919,0,3.492,1.556,3.492,3.477V35.417z M22.909,13.851c-2.119,0-3.837-1.718-3.837-3.836
+                c0-2.12,1.718-3.836,3.837-3.836c2.118,0,3.837,1.716,3.837,3.836C26.746,12.133,25.027,13.851,22.909,13.851z"/>
+        </g>
+        </svg>`;
+    const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            width="16" height="16" viewBox="0 0 95.334 95.334"
+            xml:space="preserve">
+        <g>
+            <path d="M47.667,0C21.341,0,0.001,21.341,0.001,47.667s21.34,47.667,47.666,47.667s47.666-21.341,47.666-47.667S73.993,0,47.667,0z
+                M53.015,83.251c0,0.854-0.693,1.548-1.549,1.548h-7.611c-0.855,0-1.549-0.693-1.549-1.548v-6.838c0-0.854,0.693-1.548,1.549-1.548
+                h7.611c0.855,0,1.549,0.693,1.549,1.548V83.251z M61.342,50.376c-4.519,3.867-8.085,6.919-8.256,16.878
+                c-0.015,0.846-0.704,1.521-1.548,1.521h-7.742c-0.415,0-0.813-0.166-1.104-0.461c-0.291-0.297-0.451-0.696-0.445-1.11
+                c0.229-14.946,7.059-20.792,12.046-25.06c3.817-3.269,5.366-4.755,5.366-8.772c0-6.617-5.383-12-11.999-12
+                c-6.358,0-11.62,4.969-11.979,11.313c-0.047,0.819-0.726,1.46-1.546,1.46h-7.75c-0.421,0-0.822-0.17-1.114-0.473
+                c-0.292-0.303-0.448-0.71-0.434-1.13c0.444-12.341,10.47-22.008,22.823-22.008c12.593,0,22.837,10.245,22.837,22.837
+                C70.497,42.54,65.421,46.885,61.342,50.376z"/>
+        </g>
+        </svg>`;
+            
 /* Current Primary Individual */
 XTreeView.PrimaryPerson = null;
 
@@ -49,6 +122,8 @@ XTreeView.currClrNum = 0;
 XTreeView.clrs4AhnensArray = [];
 
 XTreeView.modeNum = 0; // 0 = Probability / 1 = Random / 2 = Edit
+
+XTreeView.currentScaleFactor = 1;
 
 XTreeView.ChromoColoursArray = [
         [1, "AliceBlue", "#F0F8FF"],
@@ -208,7 +283,8 @@ window.XTreeAncestorList = class XTreeAncestorList {
         // The data we want to retrieve for each profile. We need to get everything required to list the ancestor (in displayPerson())
         // as well as Mother and Father so we can go back more generations.
         this.profileFields =
-            "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother";
+            "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,PhotoData,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother,Derived.BirthName,Derived.BirthNamePrivate";
+
 
         // Store our ancestor profiles by ID, gathered in a group and then used to construct each generation.
         this.ancestors = new Object();
@@ -362,11 +438,39 @@ window.XTreeAncestorList = class XTreeAncestorList {
         wtViewRegistry.showInfoPanel();
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
+
+        var aboutHTML =
+            '<div id=aboutDIV style="display:none; position:inherit; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; width:fit-content;}">' +
+            `<span style="color:red; position:relative; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="XTreeView.toggleAbout();">` +
+            SVGbtnCLOSE +
+            "</a></span>" +
+            "<H3>About the " +
+            FullAppName +
+            "</H3>" +
+            AboutPreamble +
+            "<br>" +
+            "<br>Last updated: " +
+            AboutUpdateDate +
+            "<br>App Icon: " +
+            AboutAppIcon +
+            "<br>Original Author: " +
+            AboutOriginalAuthor +
+            (AboutAdditionalProgrammers > "" ? "<br>Additional Programming by: " + AboutAdditionalProgrammers : "") +
+            "<br>Assistance and Code borrowed from: " +
+            AboutAssistants +
+            "<br/>" +
+            (AboutLatestG2G > "" ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>" : "") +
+            (AboutHelpDoc > "" ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>" : "") +
+            (AboutOtherApps > ""
+                ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
+                : "") +
+            "</div>";
+            
         let btnBarHTML =
             '<table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%">' +
             "&nbsp;" +
-            "<input type=radio name=appMode checked value=Probability onclick='XTreeView.changeMode(0);'>Probability Tree&nbsp;&nbsp; <input type=radio name=appMode value=Random onclick='XTreeView.changeMode(1);'>Random Simulation&nbsp;&nbsp; "+
+            "<input type=radio name=appMode checked value=Probability onclick='XTreeView.changeMode(0);'>Probability Tree&nbsp;&nbsp; <input type=radio name=appMode value=Random onclick='XTreeView.changeMode(1);'>Random Simulation&nbsp;&nbsp; " +
             // "<input type=radio name=appMode value=Edit onclick='XTreeView.changeMode(2);'>Edit &nbsp;&nbsp;" +
             "</td>" +
             '<td width="5%">&nbsp;' +
@@ -375,27 +479,55 @@ window.XTreeAncestorList = class XTreeAncestorList {
             // "</font></A></span>" +
             "</td>" +
             '<td width="30%" align="center">' +
-            ' <A style="cursor:pointer;" onclick="XTreeView.numGens2Display -=1; XTreeView.redraw();"> -1 </A> ' +
+            ' <A style="cursor:pointer;" onclick="XTreeView.numGens2Display -=1; XTreeView.redraw();">' +
+            SVGbtnDOWN +
+            "</A> " +
             "[ <span id=numGensInBBar>5</span> generations ]" +
-            ' <A style="cursor:pointer;" onclick="XTreeView.numGens2Display +=1; XTreeView.redraw();"> +1 </A> ' +
+            ' <A style="cursor:pointer;" onclick="XTreeView.numGens2Display +=1; XTreeView.redraw();">' +
+            SVGbtnUP +
+            "</A> " +
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right">' +
             ' <A style="cursor:pointer;" onclick="XTreeView.toggleSettings();"><font size=+2>' +
-            // SETTINGS_GEAR +
+            // SVGbtnSETTINGS +
             "</font></A>" +
+            "&nbsp;&nbsp;" +
+            "<A onclick=XTreeView.toggleAbout();>" +
+            SVGbtnINFO +
+            "</A>" +
+            (AboutHelpDoc > ""
+                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                : "") +
             "&nbsp;&nbsp;</td>" +
-            '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;"></DIV>';
+            '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;"></DIV><DIV id="popupDIV" style="width:fit-content;" ></DIV>' + aboutHTML;
 
+            
+
+            
+                
         // Now clear out our tree view and start filling it recursively with generations.
         // $(this.selector).html(btnBarHTML  );
         $(this.selector).html(
-            btnBarHTML +
+            btnBarHTML  +
                 `<div id="XTreeTitle"></div>` +
                 `<div id="XTreeFamilyTree"></div>` +
                 `<div id="XTreeAncestorList" style="text-align:center;"></div>`
         );
 
+        XTreeView.toggleAbout = function () {
+            let aboutDIV = document.getElementById("aboutDIV");
+            let settingsDIV = document.getElementById("settingsDIV");
+            if (aboutDIV) {
+                if (aboutDIV.style.display == "none") {
+                    aboutDIV.style.display = "block";
+                    if (settingsDIV) {settingsDIV.style.display = "none";}
+                } else {
+                    aboutDIV.style.display = "none";
+                }
+            }
+        };
+        
         let resultsData = await WikiTreeAPI.postToAPI({
             appId: XTreeView.APP_ID,
             action: "getPeople",
@@ -431,7 +563,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
         // XTreeView.myAhnentafel.listOfAncestorsForFanChart();
         // Display each generation recursively, starting with our initial profile/person.
         // let people = new Array(p);
-        // this.displayGeneration(people);
+        
         document.getElementById("XTreeTitle").innerHTML = 
             `<H3 class='centered'>X-Chromosome Probability Tree<br>for<br/>` + this.displayPersonName(p) + `</H3>`;
 
@@ -476,6 +608,11 @@ window.XTreeAncestorList = class XTreeAncestorList {
         XTreeView.displayPersonName = this.displayPersonName;
         XTreeView.redraw = this.setupXAhnentafel;
         XTreeView.changeMode = this.changeMode;
+        XTreeView.personPopup = this.personPopup;
+        XTreeView.removePopups = this.removePopups;
+        XTreeView.birthString = this.birthString;
+        XTreeView.deathString = this.deathString;
+        XTreeView.humanDate = this.humanDate;
 
         XTreeView.calculateNewChromosome = this.calculateNewChromosome;
 
@@ -830,7 +967,9 @@ window.XTreeAncestorList = class XTreeAncestorList {
                     theTextLengthParameter = " textLength=130";
                 }
                 theList +=
-                    "<text id=FName" +
+                    "<a onclick=XTreeView.personPopup(" +
+                    ahnNum + 
+                    ");><text id=FName" +
                     ahnNum +
                     theTextLengthParameter +
                     " font-weight=bold x=1 y=17 fill='black'> " +
@@ -845,7 +984,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
                     // "," +
                     // ahnNum +
                     // ")" +
-                    "</text>" +
+                    "</text></a>" +
                     "<SVG  id=Chr1for" +
                     ahnNum +
                     " width=132 height=10>" +
@@ -1141,51 +1280,8 @@ window.XTreeAncestorList = class XTreeAncestorList {
         condLog(XTreeView.clrs4AhnensArray);
     }
 
-    // This is a recursive function.
-    // This adds a headline for the new Generation, runs through all of the given people to display them.
-    // Along the way it gathers the father/mother for those people as the set for the next generation.
-    // Finally, if we haven't maxed out our search, that new set of parents is used to build the next generation by re-calling this method.
-    async displayGeneration(people) {
-        $("#XTreeAncestorList").append(`<h2>Generation ${this.generation}` + this.generationTitle() + `</h2>\n`);
-
-        let nextPeople = new Array();
-        for (let i = 0; i < people.length; i++) {
-            this.displayPerson(people[i]);
-            this.ahnentafelNumber++;
-            nextPeople.push(await this.nextPerson(people[i].Father));
-            nextPeople.push(await this.nextPerson(people[i].Mother));
-        }
-
-        this.generation++;
-        if (this.generation <= this.maxGeneration) {
-            this.displayGeneration(nextPeople);
-        } else {
-            wtViewRegistry.clearStatus();
-        }
-    }
-
-    // Grab a parent profile for the next generation. If we don't have an id, we use a place-holder instead, so the
-    // display keeps going with an "Unknown" relative displayed.
-    async nextPerson(id) {
-        if (id > 0) {
-            // We used to get each profile individually.
-            // let data = await WikiTreeAPI.postToAPI({appId: XTreeView.APP_ID, action: "getPerson", key: id, fields: this.profileFields });
-            // if (data.length != 1) {
-            //     return this.blankPerson;
-            // } else {
-            //     return data[0].person;
-            // }
-
-            // Now, we gathered all of our ancestors in one swoop at init and stored them by id in this.ancestors.
-            if (this.ancestors[id] !== undefined) {
-                return this.ancestors[id];
-            } else {
-                return this.blankPerson;
-            }
-        }
-        return this.blankPerson;
-    }
-
+    
+     
     displayPersonName(person) {
         let html = "";
 
@@ -1213,111 +1309,140 @@ window.XTreeAncestorList = class XTreeAncestorList {
         return html;
     }
 
-    // This code takes the WikiTree API person data and renders it into HTML for appending to the view display container.
-    displayPerson(person) {
-        let html = `<p class="ahnentafelPerson" id="person_${this.ahnentafelNumber}">${this.ahnentafelNumber}. `;
+   
 
-        if (person.Id == 0) {
-            html += `[${this.unknownName()} Unknown]`;
-        } else {
-            if (!person.MiddleName) {
-                person.MiddleName = "";
-            }
-            if (this.generation == 1) {
-                html += "<b>";
-                html += `${person.FirstName} ${person.MiddleName} `;
-                if (person.Nicknames) {
-                    html += `"${person.Nicknames}" `;
-                }
-                if (person.LastNameCurrent != person.LastNameAtBirth) {
-                    html += ` (${person.LastNameAtBirth}) `;
-                }
-                html += `${person.LastNameCurrent}`;
-                if (person.Suffix) {
-                    html += ` ${person.Suffix}`;
-                }
-                html += "</b>";
-            } else {
-                html += `<a name="${this.ahnentafelNumber}"></a>`;
-                html += `<a href="https://www.wikitree.com/wiki/${person.Name}">`;
-                html += `${person.FirstName} ${person.MiddleName} `;
-                if (person.Nicknames) {
-                    html += `"${person.Nicknames}" `;
-                }
-                if (person.LastNameCurrent != person.LastNameAtBirth) {
-                    html += ` (${person.LastNameAtBirth}) `;
-                }
-                html += `${person.LastNameCurrent}`;
-                if (person.Suffix) {
-                    html += ` ${person.Suffix}`;
-                }
-                html += "</a>";
-            }
-            html += ": ";
 
-            if (person.DataStatus.BirthDate != "blank" || person.DataStatus.BirthLocation != "blank") {
-                html += "Born ";
-            }
-            if (person.BirthLocation && person.DataStatus.BirthLocation != "blank") {
-                html += ` ${person.BirthLocation}`;
-            }
-            if (person.BirthDate != "" && person.BirthDate != "0000-00-00" && person.DataStatus.BirthDate != "blank") {
-                if (person.DataStatus.BirthDate == "guess") {
-                    html += " about ";
-                }
-                if (person.DataStatus.BirthDate == "before") {
-                    html += " before ";
-                }
-                if (person.DataStatus.BirthDate == "after") {
-                    html += " after ";
-                }
-                html += ` ${this.formatDate(person.BirthDate)}`;
-            } else {
-                if (person.DataStatus.BirthDate != "blank") {
-                    html += " [date unknown]";
-                }
-            }
-            if (person.DataStatus.BirthDate != "blank" || person.DataStatus.BirthLocation != "blank") {
-                html += ". ";
-            }
+    /**
+     * Show a popup for the person.
+     */
+    personPopup(ahnNum) {
+        XTreeView.removePopups();
+        let person = null;
+        if (ahnNum > 0) {
+            person = thePeopleList[XTreeView.myAhnentafel.list[ahnNum]];
+        }
+        let thisPeep = thePeopleList[person._data.Id];
+        console.log("POPUP",person);
+        console.log("POPUP peep",thisPeep._data.Codes);
+        var photoUrl = person.getPhotoUrl(75),
+            treeUrl = window.location.pathname + "?id=" + person.getName();
 
-            if (
-                person.DataStatus.DeathDate != "blank" &&
-                ((person.DeathDate != "" && person.DeathDate != "0000-00-00") || person.DataStatus.DeathDate == "guess")
-            ) {
-                html += "Died ";
-                if (person.DeathLocation && person.DataStatus.DeathLocation != "blank") {
-                    html += ` ${person.DeathLocation}`;
+        
+        // Use generic gender photos if there is not profile photo available
+        if (!photoUrl) {
+            if (person._data.PhotoData && person._data.PhotoData["url"]) {
+                photoUrl = person._data.PhotoData["url"];
+            }
+            if (!photoUrl) {
+                if (person.getGender() === "Male") {
+                    photoUrl = "images/icons/male.gif";
+                } else {
+                    photoUrl = "images/icons/female.gif";
                 }
-                if (person.DataStatus.DeathDate == "guess") {
-                    html += " about ";
-                }
-                if (person.DataStatus.DeathDate == "before") {
-                    html += " before ";
-                }
-                if (person.DataStatus.DeathDate == "after") {
-                    html += " after ";
-                }
-                html += ` ${this.formatDate(person.DeathDate)}`;
-                html += ".";
             }
         }
 
-        if (this.generation > 1) {
-            let childA = Math.floor(this.ahnentafelNumber / 2);
-            html += ` ${this.genderAsParent(person.Gender)} of <a class="aLink" href="#${childA}">${childA}</a>.`;
-        }
-        if (this.generation < this.maxGeneration) {
-            let fatherA = this.ahnentafelNumber * 2;
-            let motherA = this.ahnentafelNumber * 2 + 1;
+        let displayName = person._data.BirthName ? person._data.BirthName : person._data.BirthNamePrivate;
+    
 
-            html += ` ${this.genderAsChild(
-                person.Gender
-            )} of <a class="aLink" href="#${fatherA}">${fatherA}</a> and <a class="aLink" href="#${motherA}">${motherA}</a>.`;
-        }
+        console.log("Photo", photoUrl);
 
-        html += "</p>\n";
+        let zoomFactor = Math.max(1, 1 / XTreeView.currentScaleFactor);
 
-        $("#XTreeAncestorList").append(html);
+        var popupDIV = document.getElementById("popupDIV");
+        let borderColor = 'green';
+        let thePopupHTML = `
+				<div class="popup-box" style="border-color: ${borderColor}">
+					<div class="top-info">
+						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
+						<div class="vital-info">
+						  <div class="name">
+						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${displayName}</a>
+						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
+						  </div>
+						  <div class="birth vital">${XTreeView.birthString(person)}</div>
+						  <div class="death vital">${XTreeView.deathString(person)}</div>
+						  
+						</div>
+					</div>
+
+				</div>
+			`;
+
+        popupDIV.innerHTML = thePopupHTML;
+
+        popupDIV.onclick =  function () {
+            condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
+             popupDIV.innerHTML = "";
+        };
+    };
+
+    /**
+     * Remove all popups. It will also remove
+     * any popups displayed by other trees on the
+     * page which is what we want. If later we
+     * decide we don't want that then we can just
+     * add the selector class to each popup and
+     * select on it, like we do with nodes and links.
+     */
+    removePopups() {
+        condLog("Tree.prototype - REMOVE POPUPS (plural) function");
+        d3.selectAll(".popup").remove();
+    };
+
+
+     /**
+     * Generate text that display when and where the person was born
+     */
+     birthString(person) {
+        var string = "",
+            date = XTreeView.humanDate(person.getBirthDate()),
+            place = person.getBirthLocation();
+
+        return `B. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${
+            place ? `in ${place}` : "[location unknown]"
+        }.`;
     }
+
+    /**
+     * Generate text that display when and where the person died
+     */
+     deathString(person) {
+        var string = "",
+            date = XTreeView.humanDate(person.getDeathDate()),
+            place = person.getDeathLocation();
+
+        return `D. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${
+            place ? `in ${place}` : "[location unknown]"
+        }.`;
+    }
+
+    
+    /**
+     * Turn a wikitree formatted date into a humanreadable date
+    */
+   humanDate(dateString) {
+         var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        if (dateString && /\d{4}-\d{2}-\d{2}/.test(dateString)) {
+            var parts = dateString.split("-"),
+                year = parseInt(parts[0], 10),
+                month = parseInt(parts[1], 10),
+                day = parseInt(parts[2], 10);
+            if (year) {
+                if (month) {
+                    if (day) {
+                        return `${day} ${monthNames[month - 1]} ${year}`;
+                    } else {
+                        return `${monthNames[month - 1]} ${year}`;
+                    }
+                } else {
+                    return year;
+                }
+            }
+        } else {
+            return dateString;
+        }
+    }
+
+
 };

@@ -345,6 +345,37 @@ main {
   margin-bottom: 0.25em;
 }
 
+.btnDec {
+  padding: 0;
+  font-size: 14px;
+  margin: 0px;
+  border-radius: 0px 0px 20px 20px;
+  background: blue;
+  width: 30px;
+  height: 15px;
+
+}
+.btnInc {
+  padding: 0;
+  font-size: 14px;
+  margin: 0px;
+  border-radius: 20px 20px 0px 0px;
+  background: red;
+  width: 30px;
+  height: 15px;
+}
+.btnSVG {
+  padding: 0;
+  margin: 0px;
+  border-radius: 0px;
+  background: none;
+  width: 20px;
+  height: 17px;
+}
+
+#btnBarDIV A {
+  cursor: pointer;
+}
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
