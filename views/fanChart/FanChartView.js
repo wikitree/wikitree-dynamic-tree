@@ -1715,7 +1715,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -1743,7 +1743,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
                         })
 
                         .style("overflow", "visible") // so the name will wrap
