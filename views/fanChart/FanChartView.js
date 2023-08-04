@@ -43,7 +43,7 @@
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 July 2023";
+    const AboutUpdateDate = "4 August 2023";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -588,17 +588,24 @@
                             values: [
                                 { value: "12345", text: "1 - 5   " },
                                 { value: "ABCDE", text: "A - E   " },
-                                { value: "custom", text: "Use custom label" },
+                                {
+                                    value: "custom",
+                                    text: "Custom label:",
+                                    addOtherTextField: true,
+                                    maxLength: 5,
+                                    // otherValue: "A2B*!",
+                                },
                             ],
                             defaultValue: "12345",
+                            defaultOtherValue: "WT15!",
                         },
-                        {
-                            optionName: "customBadgeLabels",
-                            type: "text",
-                            label: "Custom label",
-                            defaultValue: "*!@#^",
-                            maxLength : 5
-                        },
+                        // {
+                        //     optionName: "customBadgeLabels",
+                        //     type: "text",
+                        //     label: "Custom label",
+                        //     defaultValue: "*!@#^",
+                        //     maxLength : 5
+                        // },
                     ],
                 },
 
@@ -1166,7 +1173,7 @@
         function settingsChanged(e) {
             if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
                 // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                condLog("NEW settings are:", FanChartView.currentSettings);
+                // console.log("NEW settings are:", FanChartView.currentSettings);
 
                 let showBadges = FanChartView.currentSettings["general_options_showBadges"];
                 let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
@@ -1197,7 +1204,7 @@
                         badgeCharacters = " ABCDE";
                     } else if (badgeLabels == "custom") {
                         badgeCharacters =
-                            " " + FanChartView.currentSettings["general_options_customBadgeLabels"].trim() + "*!@#^";
+                            " " + FanChartView.currentSettings["general_options_badgeLabels_otherValue"].trim() + "*!@#^";
                     }
                     if (showBadges) {
                         updateBadgeLabels();
@@ -1271,6 +1278,10 @@
                     document.getElementById("highlightDescriptor").style.display = "block";
                     if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
                         document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
+                        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                            document.getElementById("highlightPeepsDescriptor").innerHTML = "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                        }
+                        
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
                         document.getElementById("highlightPeepsDescriptor").textContent =
                             "mitochondrial DNA (mtDNA) ancestors";
@@ -1280,6 +1291,10 @@
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
                         document.getElementById("highlightPeepsDescriptor").textContent =
                             "X, Y, mitochondrial DNA ancestors";
+                        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                            document.getElementById("highlightPeepsDescriptor").innerHTML =
+                                "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                        }
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
                         document.getElementById("highlightPeepsDescriptor").textContent =
                             "Relationships confirmed by DNA";
@@ -1700,7 +1715,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -1728,7 +1743,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -5522,8 +5537,12 @@
         // condLog("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
         let SVGgraphicsDIV = document.getElementById("SVGgraphics");
 
-       
-        let showX = false, showY = false, showMT = false, showDNAconf = false, showAs = false, showDs = false;
+        let showX = false,
+            showY = false,
+            showMT = false,
+            showDNAconf = false,
+            showAs = false,
+            showDs = false;
 
         let dFraction =
             (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
@@ -5531,11 +5550,10 @@
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
 
-       
         let ahnNum = 2 ** thisGenNum + thisPosNum;
         let gen = thisGenNum;
         let pos = thisPosNum;
-        let ext = "";  // IF the type of DNA being highlighted is exclusively one type (X, Y, MT), then do show EXTRA icons (for As and Ds) - and store the type in variable "ext"
+        let ext = ""; // IF the type of DNA being highlighted is exclusively one type (X, Y, MT), then do show EXTRA icons (for As and Ds) - and store the type in variable "ext"
         let showAllAs = false;
         let showAllDs = false;
 
@@ -5545,79 +5563,74 @@
                 dOrtho = 0;
                 if (pos == 0) {
                     if (ahnNum > 1) {
-                            showY = true;
-                            showDs = true;
-                            showAs = true;
-
+                        showY = true;
+                        showDs = true;
+                        showAs = true;
                     } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
-                            showY = true;
-                            showDs = true;
-                            showAs = true;                        
+                        showY = true;
+                        showDs = true;
+                        showAs = true;
                     }
                 }
                 if (pos % 2 == 0) {
                     showAllAs = true;
                     showAllDs = true;
                 }
-        
             } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
                 ext = "mt";
                 dOrtho = 0;
-                if (pos == 2 ** gen - 1) {                    
+                if (pos == 2 ** gen - 1) {
                     showMT = true;
                     showDs = true;
-                    showAs = true;                            
+                    showAs = true;
                 }
                 showAllAs = true;
                 if (pos % 2 == 1) {
                     showAllDs = true;
                 }
-
             } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
                 ext = "X";
                 dOrtho = 0;
-                if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {                    
+                if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
                     showX = true;
                     showDs = true;
-                    showAs = true;            
+                    showAs = true;
                 }
 
                 showAllAs = true;
                 showAllDs = true;
-
             } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
                 if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
                     // HIGHLIGHT by X-chromosome inheritance
-                        showX = true;                    
+                    showX = true;
                 }
                 if (pos == 2 ** gen - 1) {
-                    // AND/OR by mtDNA inheritance                    
-                        showMT = true;                    
+                    // AND/OR by mtDNA inheritance
+                    showMT = true;
                 }
                 if (pos == 0) {
                     // AND/OR by Y-DNA inheritance
                     if (ahnNum > 1) {
-                        showY = true;                    
+                        showY = true;
                     } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
-                        showY = true;                    
+                        showY = true;
                     }
                 }
             } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
                 if (ahnNum == 1) {
-                    condLog(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);                    
+                    condLog(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
                     showDNAconf = true;
-                    
                 } else {
                     let childAhnNum = Math.floor(ahnNum / 2);
                     if (ahnNum % 2 == 0) {
                         // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
                         if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
-                            showDNAconf = true;                    
+                            showDNAconf = true;
                         }
                     } else {
                         // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
                         if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
-                            showDNAconf = true;                                
+                            showDNAconf = true;
                         }
                     }
                 }
@@ -5625,20 +5638,25 @@
         }
 
         // OK - so by now we have all the showXXX variables set to TRUE or FALSE
-        // and also the ext variable may or may not have a specific type of DNA type as its value
+        // and also the ext variable may or may not have a specific type of DNA type as its value (used in IDs / Class names for created objects later on ... trust me ...)
         // AND ... if the current genNum / ahnNum person warrants display when the ALL LINKS is selected, then the showAllDs / showAllAs variables should also set to TRUE
 
+        // GENERIC Image Variables that will be sent into the addDNAbadge function
         let imgX = 0;
         let imgY = 0;
         let imgAngle = 0;
 
-        if (1 == 1 ) {
+        // EACH area used to be started with a complex IF statement -- leaving the structure because it chunks the code nicely visually, and for no other good reason
+
+        // SHOW THE X DNA BADGE (gray with X)
+        // ---- --- - --- -----  ---- ---- -
+        if (1 == 1) {
             imgX = newX * dFraction;
             imgY = newY * dFraction;
             imgAngle = nameAngle;
 
             if (thisGenNum == 0) {
-                imgY =  100;
+                imgY = 100;
             }
             if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 showX = false;
@@ -5647,22 +5665,24 @@
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllAs == true
             ) {
-                showX = true;                
+                showX = true;
             }
 
             if (showX) {
                 // console.log("SHOW THE [ X ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, ""); 
+                FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, "");
             }
-
         }
-        if (1 == 1 ) {
-            imgX =  newX * dFraction + dOrtho * newY;
-            imgY =  newY * dFraction - dOrtho * newX;
-            imgAngle = nameAngle ;
+
+        // SHOW THE Y DNA BADGE (blue with Y)
+        // ---- --- - --- -----  ---- ---- -
+        if (1 == 1) {
+            imgX = newX * dFraction + dOrtho * newY;
+            imgY = newY * dFraction - dOrtho * newX;
+            imgAngle = nameAngle;
             if (thisGenNum == 0) {
-                imgY =  100;
-                imgX =  0 - (35 * dOrtho) / 0.13;
+                imgY = 100;
+                imgX = 0 - (35 * dOrtho) / 0.13;
                 condLog("@GenNum == 0 ; dOrtho = ", dOrtho);
             }
             if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
@@ -5672,10 +5692,8 @@
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllAs == true
             ) {
-                showY = true;                
+                showY = true;
             }
-
-            
         }
         if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
             showY = false;
@@ -5684,7 +5702,23 @@
             FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
             showAllAs == true
         ) {
-            showY = true;            
+            showY = true;
+        }
+
+        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+            showY = false;
+            if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+                showDs = false;
+                showAs = false;
+            }
+
+            if (
+                FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
+                showAllAs == true  && thisGenNum > 0
+            ) {
+                showY = true;
+            }
         }
 
         if (showY) {
@@ -5692,11 +5726,12 @@
             FanChartView.addNewDNAbadge(imgX, imgY, "Y", imgAngle, "");
         }
 
-
-        if (1 == 1 ) {
+        // SHOW THE mt DNA BADGE (pink with red mt)
+        // ---- --- -- --- -----  ---- ---- --- --
+        if (1 == 1) {
             imgX = newX * dFraction - dOrtho * newY;
             imgY = newY * dFraction + dOrtho * newX;
-            imgAngle = nameAngle ;
+            imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
                 imgX = (35 * dOrtho) / 0.13;
@@ -5709,26 +5744,26 @@
                 showAllAs == true
             ) {
                 showMT = true;
-                
             }
 
             if (showMT) {
                 // console.log("SHOW THE [ MT ] image for DNA highlights");
                 FanChartView.addNewDNAbadge(imgX, imgY, "MT", imgAngle, "");
             }
-
         }
 
-        if (1 == 1 ) {
+        // SHOW THE Descendants Link icon  BADGE (green)
+        // ---- --- ----------- ---- ----  -----  -----
+        if (1 == 1) {
             let theLink =
-               
                 "https://www.wikitree.com/treewidget/" +
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
-                "/890#" + ext ;
+                "/890#" +
+                ext;
             // condLog(theLink);
             imgX = newX * dFraction - dOrtho2 * newY;
-            imgY = newY * dFraction + dOrtho2 * newX;            
-            imgAngle = nameAngle ;
+            imgY = newY * dFraction + dOrtho2 * newX;
+            imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
                 imgX = 35;
@@ -5741,7 +5776,12 @@
                 showAllDs == true
             ) {
                 showDs = true;
-             
+ 
+                if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" && thisGenNum == 0) {
+                    showDs = false;
+                    showAs = false;
+                }
+            
             }
 
             if (showDs) {
@@ -5750,21 +5790,22 @@
             }
         }
 
-        if (1 == 1 ) {
+        // SHOW THE Ancestors Link icon  BADGE (green)
+        // ---- --- ----------- ---- ----  -----  -----
+        if (1 == 1) {
             let theLink =
-                
                 "https://www.wikitree.com/treewidget/" +
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
                 "/89#" +
-                ext ;
-            imgX =  newX * dFraction + dOrtho2 * newY;
-            imgY =  newY * dFraction - dOrtho2 * newX;
-            imgAngle = nameAngle ;//- 90;
+                ext;
+            imgX = newX * dFraction + dOrtho2 * newY;
+            imgY = newY * dFraction - dOrtho2 * newX;
+            imgAngle = nameAngle; //- 90;
             if (thisGenNum == 0) {
-                imgY =  100;
-                imgX =  -35;
+                imgY = 100;
+                imgX = -35;
             }
-            
+
             if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 showAs = false;
             } else if (
@@ -5772,7 +5813,15 @@
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllAs == true
             ) {
-                showAs = true;                
+                showAs = true;
+                if (
+                    FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" &&
+                    thisGenNum == 0
+                ) {
+                    showDs = false;
+                    showAs = false;
+                }
             }
 
             if (showAs) {
@@ -5781,12 +5830,14 @@
             }
         }
 
-        if (1 == 1 ) {
+
+        // SHOW THE DNA Confirmation BADGE (orange)
+        // ---- --- ---------------- -----  ------
+        if (1 == 1) {
             let theLink =
-                
                 "https://www.wikitree.com/treewidget/" +
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
-                "/899" ;
+                "/899";
             imgX = newX * (gen > 5 ? (newR + 10) / newR : dFraction) + dOrtho * newY;
             imgY = newY * (gen > 5 ? (newR + 10) / newR : dFraction) - dOrtho * newX;
             imgAngle = nameAngle;
@@ -5794,7 +5845,6 @@
                 imgY = 100;
                 imgX = 0 - 37.5;
             }
-            
 
             if (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
                 showDNAconf = false;
@@ -5802,7 +5852,7 @@
                 FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed" &&
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll"
             ) {
-                showDNAconf = true;                
+                showDNAconf = true;
             }
 
             if (showDNAconf) {
@@ -5814,6 +5864,9 @@
 
     function doHighlightFor(gen, pos, ahnNum) {
         if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+            if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                return false;
+            }
             if (pos == 0) {
                 if (ahnNum > 1) {
                     return true;
@@ -5838,6 +5891,9 @@
                 return true;
             } else if (pos == 0) {
                 // OR by Y-DNA inheritance
+                if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                    return false;
+                }
                 if (ahnNum > 1) {
                     return true;
                 } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {

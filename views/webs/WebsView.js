@@ -75,7 +75,7 @@
     const FullAppName = "Ancestor Webs tree app";
     const AboutPreamble =
         "The Spider Webs app, originally created as a standalone WikiTree app, is the basis for this app.<br>The current Tree App version was renamed and created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 July 2023";
+    const AboutUpdateDate = "4 August 2023";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/ancWebs.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =""; //        "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
@@ -770,7 +770,7 @@
 
             let theDIV = document.getElementById("AddNewPersonDIV");
             let theX =
-                '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.cancelAddNewPopup();">[ <b><font color="red">x</font></b> ]</a></span>';
+                '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.cancelAddNewPopup();">' + SVGbtnCLOSE + '</a></span>';
             let theHTML =
                 theX +
                 "<H3>Enter WikiTree ID for New Person</H3><input id=newWikiTreeID>&nbsp;&nbsp;&nbsp;&nbsp;<button class=small onclick='WebsView.reallyAddPerson();'>Add New Person</button><br>";
@@ -4627,7 +4627,8 @@
 
             for (let index = 0; index < newOrder.length; index++) {
                 const newElement = newOrder[index];
-                const thisEsGen = newElement[5];  // was 2 ... but should be 5, adjusted Y value
+                condLog(index, newElement);
+                const thisEsGen = newElement[2];  // was 2 ... but should be 5, adjusted Y value
                 const thisElementID = newElement[4].person._data.Id;
                 if (!numsPerGen[thisEsGen]) {
                     numsPerGen[thisEsGen] = 0;

@@ -466,6 +466,32 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 let optionLabelTextNode = document.createTextNode(" " + value.text);
                                 labelElement.appendChild(optionLabelTextNode);
                             }
+
+                            if (value.addOtherTextField === true) {
+                                // console.log("ADD AN OTHER TEXT FIELD RIGHT HERE !!!");
+
+
+                                let otherElement = document.createElement("input");
+                                otherElement.type = "text";
+                                otherElement.id = fullOptionName + "_otherValue";
+                                // otherElement.className = "optionNumber";
+                                if (value.maxLength && value.maxLength > 0) {
+                                    otherElement.size = value.maxLength * 1.0 + 1;
+                                    otherElement.maxlength = value.maxLength;
+                                }
+                                if (option.defaultOtherValue) {
+                                    otherElement.value = option.defaultOtherValue;
+                                } else if (value.otherValue) {
+                                    otherElement.value = value.otherValue;
+                                }
+                                otherElement.style.padding = "2px";
+
+                                
+                                labelElement.appendChild(otherElement);
+                                
+
+
+                            }
                         }
                     }
                     optionDivElement.appendChild(labelElement);
@@ -660,6 +686,17 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                         }
                     }
                 }
+                // CHECK for OTHER VALUE text field trailing at the end of a set of Radio Button options
+                let thisSettingObjOtherValue = document.getElementById(setting + "_otherValue");
+                if (thisSettingObjOtherValue) {
+                    let otherVal = thisSettingObjOtherValue.value;
+                    if (theCurrentSettings[setting + "_otherValue"] != otherVal) {
+                        settingsChanged = true;
+                    }
+                    theCurrentSettings[setting + "_otherValue"] = otherVal;
+                }
+
+
             }
             if (thisVal != "?") {
                 if (theCurrentSettings[setting] != thisVal) {
