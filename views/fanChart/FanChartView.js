@@ -433,13 +433,6 @@
     };
 
     FanChartView.theSVG = null; // to be assigned shortly
-    function onBeforePrint() {
-        FanChartView.setViewBox(true);
-    }
-
-    function onAfterPrint() {
-        FanChartView.setViewBox(false);
-    }
 
     FanChartView.prototype.init = function (selector, startId) {
         // condLog("FanChartView.js - line:18", selector) ;
@@ -447,9 +440,7 @@
         // // condLog("theCheckIN:", theCheckIn);
         // FanChartView.showFandokuLink = theCheckIn;
 
-        var container = document.querySelector(selector),
-            width = container.offsetWidth - 2,
-            height = window.innerHeight - 2;
+        var container = document.querySelector(selector);
 
         var self = this;
         FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
@@ -1346,24 +1337,22 @@
         const svg = d3
             .select(container)
             .append("svg")
-            .attr("id", "fanChartSVG")
-            .attr("width", "100%")
-            .attr("height", height);
+            .attr("id", "fanChartSVG") //
+            .style("visibility", "hidden");
         const g = svg.append("g").attr("id", "SVGgraphics");
 
         FanChartView.theSVG = svg;
 
         // Setup zoom and pan
-        const zoom = d3
+        FanChartView.zoom = d3
             .zoom()
-            .scaleExtent([0.1, 1.5])
+            .scaleExtent([0.1, 3.0])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
                 FanChartView.currentScaleFactor = event.transform.k;
             });
-        svg.call(zoom);
-        // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
-        svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 560).scale(0.45));
+        svg.call(FanChartView.zoom);
+        // initialization of the viewport will be handled in resetView, which is called by drawWedgesForFanChart
 
         // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
@@ -1396,72 +1385,8 @@
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
 
-        for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
-            for (let index = 0; index < 2 ** genIndex; index++) {
-                if (genIndex <= 1) {
-                    // Use a SECTOR for the parents
-                    g.append("path").attrs(
-                        SVGfunctions.getSVGforSector(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
-                        )
-                    );
-                } else {
-                    // Use a WEDGE for ancestors further out
-                    g.append("path").attrs(
-                        SVGfunctions.getSVGforWedge(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            270 * (genIndex - 0.5),
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
-                        )
-                    );
-                }
-            }
-        }
-        // HIDE all the unused Wedges in the outer rims that we don't need yet
-        for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
-            for (let index = 0; index < 2 ** genIndex; index++) {
-                d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
-            }
-        }
-
-        // CREATE a CIRCLE for the Central Person to be drawn on top of
-        g.append("circle").attrs({
-            "cx": 0,
-            "cy": 0,
-            "r": 135,
-            "id": "ctrCirc",
-            "fill": "white",
-            "stroke": "black",
-            "stroke-width": "2",
-        });
-
+        drawWedgesForFanChart(g);
+        svg.style("visibility", null);
         self.load(startId);
         // condLog(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FanChartView.fanchartSettingsOptionsObject.buildPage();
@@ -1755,18 +1680,6 @@
                 }
             }
         }
-
-        if (window.addEventListener) {
-            window.addEventListener("beforeprint", onBeforePrint);
-            window.addEventListener("afterprint", onAfterPrint);
-        }
-    };
-
-    FanChartView.prototype.close = function () {
-        if (window.removeEventListener) {
-            window.removeEventListener("beforeprint", onBeforePrint);
-            window.removeEventListener("afterprint", onAfterPrint);
-        }
     };
 
     function showRefreshInLegend() {
@@ -2048,15 +1961,26 @@
             FanChartView.lastNumGens != FanChartView.numGens2Display
         ) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
-        for (let genIndex = FanChartView.numGens2Display - 1; genIndex >= 0; genIndex--) {
+            drawWedgesForFanChart();
+        }
+    }
+
+    // Draw the wedges for the fan chart
+    function drawWedgesForFanChart(g) {
+        for (
+            let genIndex = (g ? FanChartView.maxNumGens : FanChartView.numGens2Display) - 1;
+            genIndex >= 0;
+            genIndex--
+        ) {
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let SVGcode = "";
                 if (genIndex <= 1) {
+                    // Use a SECTOR for the parents
                     SVGcode = SVGfunctions.getSVGforSector(
                         0,
                         0,
                         270 * (genIndex + 0.5),
-                        (180 - FanChartView.maxAngle) / 2 +
+                        (180 - FanChartView.maxAngle) / 2 + //
                             90 +
                             90 +
                             (index * FanChartView.maxAngle) / 2 ** genIndex,
@@ -2070,12 +1994,13 @@
                         "white"
                     );
                 } else {
+                    // Use a WEDGE for ancestors further out
                     SVGcode = SVGfunctions.getSVGforWedge(
                         0,
                         0,
                         270 * (genIndex + 0.5),
                         270 * (genIndex - 0.5),
-                        (180 - FanChartView.maxAngle) / 2 +
+                        (180 - FanChartView.maxAngle) / 2 + //
                             90 +
                             90 +
                             (index * FanChartView.maxAngle) / 2 ** genIndex,
@@ -2090,13 +2015,18 @@
                     );
                 }
 
+                if (g) {
+                    g.append("path").attrs(SVGcode);
+                } else {
                     //  condLog(SVGcode.id);
                     d3.select("#" + SVGcode.id).attrs({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
 
                     let theWedge = d3.select("#" + SVGcode.id);
                     //  condLog( "theWedge:",theWedge[0][0] );
+                }
             }
         }
+
         // HIDE all the unused Wedges in the outer rims that we don't need yet
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
@@ -2107,6 +2037,7 @@
                 let dnaImgDs = document.getElementById("imgDNA-Ds-" + genIndex + "i" + index + "inner");
                 let dnaImgAs = document.getElementById("imgDNA-As-" + genIndex + "i" + index + "inner");
 
+                if (!g) {
                     // START out by HIDING them all !
                     if (dnaImgX) {
                         showX = false;
@@ -2123,11 +2054,26 @@
                     if (dnaImgDs) {
                         showDs = false;
                     }
+                }
             }
         }
+
+        if (g) {
+            // CREATE a CIRCLE for the Central Person to be drawn on top of
+            g.append("circle").attrs({
+                "cx": 0,
+                "cy": 0,
+                "r": 135,
+                "id": "ctrCirc",
+                "fill": "white",
+                "stroke": "black",
+                "stroke-width": "2",
+            });
+        }
+
         FanChartView.lastAngle = FanChartView.maxAngle;
         FanChartView.lastNumGens = FanChartView.numGens2Display;
-      }
+        window.setTimeout(FanChartView.resetView, 0); // use setTimeout to run in async mode so that the browser finishes rendering before calculating the bounding box
     }
 
     var thisTextColourArray = {};
@@ -2529,15 +2475,16 @@
     }
 
     /**
-     * Update (or clear) the SVG viewBox based on the content bounding box.
+     * Update the SVG viewBox based on the content bounding box.
      */
-    FanChartView.setViewBox = function (doSet) {
+    FanChartView.resetView = function () {
         let svg = document.getElementById("fanChartSVG");
         if (svg) {
-          if (doSet === undefined || doSet) {
             let g = svg.firstElementChild;
+            let h = 0;
             if (g && g.getBBox) {
                 let boundingBox = g.getBBox();
+                h = boundingBox.height;
                 if (boundingBox) {
                     svg.setAttribute(
                         "viewBox",
@@ -2545,9 +2492,7 @@
                     );
                 }
             }
-          } else {
-            svg.removeAttribute("viewBox");
-          }
+            d3.select(svg).call(FanChartView.zoom.transform, d3.zoomIdentity.translate(0, -h * 0.08).scale(0.8));
         }
     };
 

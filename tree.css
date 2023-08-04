@@ -405,8 +405,8 @@ main {
 
   #fanChartSVG {
     /* fill a single page with the viewBox */
-    width: 100vw !important;
-    height: 99vh !important; /* 100vh seems to cause a second blank page */
+    max-width: 100vw !important;
+    max-height: 99vh !important; /* 100vh seems to cause a second blank page */
   }
 
   #fanChartSVG g.popup {
