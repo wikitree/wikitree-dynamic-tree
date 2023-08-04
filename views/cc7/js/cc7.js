@@ -66,10 +66,21 @@ export class CC7 {
         <ul>
             <li>
                 Limit the content of the table based on the content of columns by entering values in the filter
-                boxes just below the column headers.
+                boxes just below the column headers. Partial matching is used in text and date columns, while
+                the complete numeric value is considered in numeric columns.
             </li>
             <li>
-                The numerical columns (including the years) can be filtered with &gt; and &lt;.
+                Empty values can be selected by using '?'. For example ? in the death date column would show only
+                people with no date of death.
+            </li>
+            <li>
+                Any column can be filtered with '!', meaning "not matching". For text and date columns, this works
+                on partial matches. For example !19 will exclude any date with 19 in it, including 1820-12-19. For
+                numeric columns, the numbers as a whole are considered. For example !8 in the age column will
+                exclude all 8 year olds.
+            </li>
+            <li>
+                Numeric columns (including the years in date columns) can be filtered with &gt; and &lt;.
                 For example, to see all people born after 1865, enter &gt;1865 in the birth year filter box.
             </li>
             <li>
@@ -162,6 +173,8 @@ export class CC7 {
     static GET_PEOPLE_LIMIT = 1000;
     static MAX_DEGREE = 7;
     static HIDE = true;
+    static EXCEL = "xlsx";
+    static CSV = "csv";
 
     static WANTED_NAME_PARTS = [
         "Prefix",
@@ -301,9 +314,6 @@ export class CC7 {
                     new Date(obDateBits[0], obDateBits[1], obDateBits[2]),
                     new Date(odDateBits[0], odDateBits[1], odDateBits[2])
                 );
-                if (person.Name == "Muller-10846") {
-                    console.log(person.Name, diedAged);
-                }
             } else {
                 diedAged = "";
             }
@@ -313,7 +323,6 @@ export class CC7 {
                 about = ">";
             }
         }
-        //console.log(diedAged);
         if (diedAged == "" && diedAged != "0") {
             return false;
         } else if (showStatus == false) {
@@ -354,21 +363,15 @@ export class CC7 {
     static async addWideTableButton() {
         $("#wideTableButton").show();
 
-        const wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
-        let dTable;
         if ($("#wideTableButton").length == 0) {
-            if ($(".peopleTable").length) {
-                dTable = $(".peopleTable");
-            } else {
-                dTable = $("#connectionsTable");
-            }
-
-            wideTableButton.insertBefore(dTable);
+            const pTable = $(".peopleTable");
+            const wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
+            wideTableButton.insertBefore(pTable);
 
             $("#wideTableButton").click(function (e) {
                 e.preventDefault();
 
-                dTable = $(".peopleTable").eq(0);
+                const dTable = $(".peopleTable").eq(0);
                 if (CC7.getCookie("w_wideTable") == "1") {
                     // Display a normal table
                     CC7.setCookie("w_wideTable", 0, { expires: 365 });
@@ -1546,13 +1549,13 @@ export class CC7 {
                 siblingsNum +
                 spousesNum +
                 childrenNum +
-                `<th data-order='' id='firstname' ${sortTitle}>Given name(s)</th>` +
-                `<th data-order='' id='lnab' ${sortTitle}>Last name at Birth</th>` +
+                `<th data-order='' id='firstname' ${sortTitle}>Given Name(s)</th>` +
+                `<th data-order='' id='lnab' ${sortTitle}>Last Name at Birth</th>` +
                 `<th data-order='' id='lnc' ${sortTitle}>Current Last Name</th>` +
-                `<th data-order='' id='birthdate' ${sortTitle}>Birth date</th>` +
-                `<th data-order='' id='birthlocation' ${sortTitle}>Birth place</th>` +
-                `<th data-order='' id='deathdate' ${sortTitle}>Death date</th>` +
-                `<th data-order='' id='deathlocation' ${sortTitle}>Death place</th>` +
+                `<th data-order='' id='birthdate' ${sortTitle}>Birth Date</th>` +
+                `<th data-order='' id='birthlocation' ${sortTitle}>Birth Place</th>` +
+                `<th data-order='' id='deathdate' ${sortTitle}>Death Date</th>` +
+                `<th data-order='' id='deathlocation' ${sortTitle}>Death Place</th>` +
                 ageAtDeathCol +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
@@ -1706,7 +1709,7 @@ export class CC7 {
             let managerLink;
             let dManager;
             if (mPerson.Manager) {
-                const mgrWtId = mPerson.Managers.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
+                const mgrWtId = mPerson.Managers?.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
                 dManager = CC7.htmlEntities(mgrWtId);
                 managerLink = CC7.profileLink(dManager, dManager);
             } else {
@@ -1892,7 +1895,7 @@ export class CC7 {
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
                     relNums["Child_cell"] +
-                    "<td class='connectionsName >" +
+                    "<td class='connectionsName' >" +
                     oLink +
                     "</td><td class='lnab'>" +
                     (mPerson.LastNameAtBirth.startsWith("Private")
@@ -2002,16 +2005,33 @@ export class CC7 {
             $("#birthdate").click();
         }
 
-        CC7.cc7excelOut();
-        CC7.addFiltersToTable();
+        CC7.addFiltersToPeopleTable();
         aTable.css({
             "overflow-x": "auto",
             "width": "100%",
         });
+
+        if ($("#cc7excel").length == 0) {
+            $(
+                '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
+            ).insertAfter($("#loadButton"));
+            $("#cc7excel").click(function () {
+                CC7.cc7excelOut(CC7.EXCEL);
+            });
+        }
+        if ($("#cc7csv").length == 0) {
+            $(
+                '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
+            ).insertAfter($("#loadButton"));
+            $("#cc7csv").click(function () {
+                CC7.cc7excelOut(CC7.CSV);
+            });
+        }
         aTable.floatingScroll();
     }
 
-    static repositionFilterRow(table) {
+    static addFiltersToPeopleTable() {
+        const table = document.querySelector("#peopleTable");
         const hasTbody = table.querySelector("tbody") !== null;
         const hasThead = table.querySelector("thead") !== null;
         const headerRow = hasThead
@@ -2019,208 +2039,96 @@ export class CC7 {
             : hasTbody
             ? table.querySelector("tbody tr:first-child")
             : table.querySelector("tr:first-child");
-        const filterRow = table.querySelector(".cc7filter-row");
-        if (filterRow) {
-            if (filterRow.nextSibling !== headerRow) {
-                headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
-            }
+
+        let headerCells = headerRow.querySelectorAll("th");
+        const originalHeaderCells = headerCells;
+        const isFirstRowHeader = headerCells.length > 0;
+        if (!isFirstRowHeader) {
+            const firstRowCells = headerRow.querySelectorAll("td");
+            const dummyHeaderRow = document.createElement("tr");
+            firstRowCells.forEach(() => {
+                const emptyHeaderCell = document.createElement("th");
+                dummyHeaderRow.appendChild(emptyHeaderCell);
+            });
+            headerRow.parentElement.insertBefore(dummyHeaderRow, headerRow);
+            headerCells = dummyHeaderRow.querySelectorAll("th");
         }
-    }
 
-    static addFiltersToTable(aTable = null) {
-        let tables;
-        if (aTable) {
-            tables = [aTable];
-        } else {
-            tables = document.querySelectorAll("#peopleTable");
-        }
-        tables.forEach((table) => {
-            const hasTbody = table.querySelector("tbody") !== null;
-            const hasThead = table.querySelector("thead") !== null;
-            const headerRow = hasThead
-                ? table.querySelector("thead tr:first-child")
-                : hasTbody
-                ? table.querySelector("tbody tr:first-child")
-                : table.querySelector("tr:first-child");
+        const filterRow = document.createElement("tr");
+        filterRow.classList.add("cc7filter-row");
 
-            let headerCells = headerRow.querySelectorAll("th");
-            const originalHeaderCells = headerCells;
-            const isFirstRowHeader = headerCells.length > 0;
-            if (!isFirstRowHeader) {
-                const firstRowCells = headerRow.querySelectorAll("td");
-                const dummyHeaderRow = document.createElement("tr");
-                firstRowCells.forEach(() => {
-                    const emptyHeaderCell = document.createElement("th");
-                    dummyHeaderRow.appendChild(emptyHeaderCell);
-                });
-                headerRow.parentElement.insertBefore(dummyHeaderRow, headerRow);
-                headerCells = dummyHeaderRow.querySelectorAll("th");
+        headerCells.forEach((headerCell, i) => {
+            const filterCell = document.createElement("th");
+            if (i == 0) {
+                filterCell.colSpan = 3;
+                filterCell.style.textAlign = "right";
+                filterCell.innerHTML = "Filters:";
+                filterCell.title =
+                    "Show only rows with these column values. > and < may be used for numerical columns.";
+                filterRow.appendChild(filterCell);
             }
+            const headerCellText = headerCell.textContent.trim();
+            const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
+            if (!["Pos."].includes(headerCellText) && !["Pos.", ""].includes(originalHeaderCellText)) {
+                // console.log(headerCellText);
+                filterCell.title = "Enter a column value to which to limit the rows";
+                const filterInput = document.createElement("input");
+                filterInput.type = "text";
+                filterInput.classList.add("filter-input");
 
-            const filterRow = document.createElement("tr");
-            filterRow.classList.add("cc7filter-row");
-
-            headerCells.forEach((headerCell, i) => {
-                const filterCell = document.createElement("th");
-                if (i == 0) {
-                    filterCell.colSpan = 3;
-                    filterCell.style.textAlign = "right";
-                    filterCell.innerHTML = "Filters:";
-                    filterCell.title =
-                        "Show only rows with these column values. > and < may be used for numerical columns.";
-                    filterRow.appendChild(filterCell);
-                }
-                const headerCellText = headerCell.textContent.trim();
-                const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
-                if (!["Pos."].includes(headerCellText) && !["Pos.", ""].includes(originalHeaderCellText)) {
-                    // console.log(headerCellText);
-                    filterCell.title = "Enter a column value to which to limit the rows";
-                    const filterInput = document.createElement("input");
-                    filterInput.type = "text";
-                    filterInput.classList.add("filter-input");
-
-                    // Check the length of the text in the first ten cells of the column
-                    const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
-                    let isNumeric = 0;
-                    let isDate = 0;
-                    let isText = 0;
-                    for (let j = 1; j < Math.min(50, rows.length); j++) {
-                        if (rows[j]) {
-                            const cellText = rows[j].children[i].textContent.trim();
-                            const cellTextStripped = cellText.replace(/[<>~]?(\d+)°?/g, "$1");
-                            const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
-                            if (dateMatch) {
-                                isDate++;
-                            } else if (CC7.isNumeric(cellTextStripped)) {
-                                isNumeric++;
-                            } else if (cellText !== "") {
-                                isText++;
-                            }
+                // Check the length of the text in the first ten cells of the column
+                const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+                let isNumeric = 0;
+                let isDate = 0;
+                let isText = 0;
+                for (let j = 1; j < Math.min(50, rows.length); j++) {
+                    if (rows[j]) {
+                        const cellText = rows[j].children[i].textContent.trim();
+                        const cellTextStripped = cellText.replace(/[<>~]?(\d+)°?/g, "$1");
+                        const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
+                        if (dateMatch) {
+                            isDate++;
+                        } else if (CC7.isNumeric(cellTextStripped)) {
+                            isNumeric++;
+                        } else if (cellText !== "") {
+                            isText++;
                         }
                     }
-
-                    let maxVal;
-                    if (isNumeric > isDate && isNumeric > isText) {
-                        maxVal = "isNumeric";
-                    } else if (isDate > isNumeric && isDate > isText) {
-                        maxVal = "isDate";
-                    } else {
-                        maxVal = "isText";
-                    }
-
-                    if (maxVal == "isNumeric") {
-                        filterInput.classList.add("numeric-input");
-                    } else if (maxVal == "isDate") {
-                        filterInput.classList.add("date-input");
-                    } else {
-                        filterInput.classList.add("text-input");
-                    }
-
-                    filterCell.appendChild(filterInput);
                 }
-                if (i > 2) {
-                    filterRow.appendChild(filterCell);
-                }
-            });
 
-            if (isFirstRowHeader) {
-                headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
-            } else {
-                headerRow.parentElement.insertBefore(filterRow, headerRow);
+                let maxVal;
+                if (isNumeric > isDate && isNumeric > isText) {
+                    maxVal = "isNumeric";
+                } else if (isDate > isNumeric && isDate > isText) {
+                    maxVal = "isDate";
+                } else {
+                    maxVal = "isText";
+                }
+
+                if (maxVal == "isNumeric") {
+                    filterInput.classList.add("numeric-input");
+                } else if (maxVal == "isDate") {
+                    filterInput.classList.add("date-input");
+                } else {
+                    filterInput.classList.add("text-input");
+                    filterInput.addEventListener("input", CC7.stripLtGt);
+                }
+
+                filterCell.appendChild(filterInput);
             }
-
-            const sortArrows = table.querySelectorAll(".sortheader");
-            sortArrows.forEach((arrow) => {
-                arrow.addEventListener("click", () => {
-                    setTimeout(() => {
-                        repositionFilterRow(table);
-                    }, 100);
-                });
-            });
+            if (i > 2) {
+                filterRow.appendChild(filterCell);
+            }
         });
 
-        const filterFunction = () => {
-            const table = tables[0];
-            const hasTbody = table.querySelector("tbody") !== null;
-            const hasThead = table.querySelector("thead") !== null;
-            const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
-            const filterInputs = table.querySelectorAll(".filter-input");
-
-            rows.forEach((row, rowIndex) => {
-                // Skip first row only if there's no 'thead'
-                if (!hasThead && rowIndex === 0) {
-                    return;
-                }
-
-                // Skip if row is a filter-row or contains 'th' elements
-                if (row.classList.contains("cc7filter-row") || row.querySelector("th")) {
-                    return;
-                }
-
-                let displayRow = true;
-
-                filterInputs.forEach((input, inputIndex) => {
-                    let text = input.value.toLowerCase();
-                    const columnIndex =
-                        Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 2;
-                    let cellText = row.children[columnIndex].textContent.toLowerCase();
-                    const isDateColumn = input.classList.contains("date-input");
-                    const isNumericColumn = input.classList.contains("numeric-input");
-
-                    // If the column is numeric and the input is a number or a comparison, perform the appropriate check
-                    if (
-                        (isNumericColumn || (isDateColumn && text.length >= 4)) &&
-                        (text === "" ||
-                            !isNaN(parseFloat(text.replace(/[<>~]/g, ""))) ||
-                            text[0] === ">" ||
-                            text[0] === "<")
-                    ) {
-                        if (text !== "") {
-                            let operator = text[0];
-                            if (operator === ">" || operator === "<") {
-                                text = parseFloat(text.slice(1)); // Remove the operator from the text
-                            } else {
-                                operator = "=="; // Default to equality if there's no operator
-                                text = parseFloat(text.replace(/[<>~]/g, ""));
-                            }
-                            if (isDateColumn) {
-                                let year = cellText.slice(0, 4); // Get the year part of the date
-                                if (year.endsWith("s")) {
-                                    year = year.slice(0, -1); // Remove the 's' for decade dates
-                                }
-                                cellText = parseFloat(year);
-                            } else {
-                                cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
-                            }
-                            if (!eval(cellText + operator + text)) {
-                                displayRow = false;
-                            }
-                        }
-                    } else {
-                        if (!cellText.includes(text)) {
-                            displayRow = false;
-                        }
-                    }
-                });
-
-                row.style.display = displayRow ? "" : "none";
-            });
-            $("#peopleTable").floatingScroll("update");
-        };
-
-        function updateClearFiltersButtonVisibility() {
-            const anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
-                (input) => input.value.trim() !== ""
-            );
-
-            clearFiltersButton.style.display = anyFilterHasText ? "inline-block" : "none";
+        if (isFirstRowHeader) {
+            headerRow.parentElement.insertBefore(filterRow, headerRow.nextSibling);
+        } else {
+            headerRow.parentElement.insertBefore(filterRow, headerRow);
         }
 
         document.querySelectorAll(".filter-input").forEach((input) => {
-            input.addEventListener("input", () => {
-                filterFunction();
-                updateClearFiltersButtonVisibility();
-            });
+            input.addEventListener("input", CC7.filterListener);
         });
 
         // Add Clear Filters button
@@ -2229,19 +2137,130 @@ export class CC7 {
         clearFiltersButton.title = "Clear Filters";
         clearFiltersButton.id = "clearTableFiltersButton";
         //  clearFiltersButton.style.position = "absolute";
-        clearFiltersButton.addEventListener("click", () => {
-            document.querySelectorAll(".filter-input").forEach((input) => {
-                input.value = "";
-            });
-            filterFunction();
-            updateClearFiltersButtonVisibility();
-        });
+        clearFiltersButton.addEventListener("click", CC7.clearFilterClickListener);
 
         $(clearFiltersButton).insertAfter($("#wideTableButton"));
         clearFiltersButton.textContent = "Clear Filters";
 
         // Initially hide the button
         clearFiltersButton.style.display = "none";
+    }
+
+    static clearFilterClickListener() {
+        document.querySelectorAll(".filter-input").forEach((input) => {
+            input.value = "";
+        });
+        CC7.filterFunction();
+        CC7.updateClearFiltersButtonVisibility();
+    }
+
+    static filterFunction() {
+        const table = document.querySelector("#peopleTable");
+        const hasTbody = table.querySelector("tbody") !== null;
+        const hasThead = table.querySelector("thead") !== null;
+        const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+        const filterInputs = table.querySelectorAll(".filter-input");
+
+        rows.forEach((row, rowIndex) => {
+            // Skip first row only if there's no 'thead'
+            if (!hasThead && rowIndex === 0) {
+                return;
+            }
+
+            // Skip if row is a filter-row or contains 'th' elements
+            if (row.classList.contains("cc7filter-row") || row.querySelector("th")) {
+                return;
+            }
+
+            let displayRow = true;
+
+            filterInputs.forEach((input, inputIndex) => {
+                let filterText = input.value.toLowerCase();
+                if (filterText.length == 0) {
+                    return;
+                }
+                const columnIndex =
+                    Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 2;
+                let cellText = row.children[columnIndex].textContent.toLowerCase();
+                const isDateColumn = input.classList.contains("date-input");
+                const isNumericColumn = input.classList.contains("numeric-input");
+                let operator;
+                if (["<", ">", "!", "?"].includes(filterText[0])) {
+                    operator = filterText[0];
+                    if (operator == "!") operator = "!=";
+                    filterText = filterText.slice(1);
+                    if (filterText.length == 0 && operator != "?") {
+                        return;
+                    }
+                }
+
+                // Perform the appropriate checks
+                if (operator == "?") {
+                    // Select rows with an empty cell in this column
+                    displayRow = cellText == "";
+                } else if (
+                    (isNumericColumn && filterText != "~") ||
+                    (isDateColumn && (operator == ">" || operator == "<"))
+                ) {
+                    // Use the operator to do an actual comparison
+                    if (filterText.length > 0) {
+                        if (operator) {
+                            filterText = parseFloat(filterText);
+                        } else if (!operator && isNumericColumn) {
+                            operator = "=="; // Default to equality if there's no operator
+                            filterText = parseFloat(filterText.replace(/[<>~]/g, ""));
+                        } else {
+                            filterText = `"${filterText}"`;
+                        }
+                        if (isDateColumn) {
+                            let year = cellText.slice(0, 4); // Get the year part of the date
+                            if (year.endsWith("s")) {
+                                year = year.slice(0, -1); // Remove the 's' for decade dates
+                            }
+                            cellText = parseFloat(year);
+                        } else if (isNumericColumn) {
+                            cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
+                        } else {
+                            cellText = `"${cellText}"`;
+                        }
+                        if (!eval(cellText + operator + filterText)) {
+                            displayRow = false;
+                        }
+                    }
+                } else {
+                    // Perform partial matching
+                    if (!cellText.includes(filterText)) {
+                        displayRow = false;
+                    }
+                    // Flip the result for the not (!) operator
+                    if (operator == "!=") {
+                        displayRow = !displayRow;
+                    }
+                }
+            });
+
+            row.style.display = displayRow ? "" : "none";
+        });
+        $("#peopleTable").floatingScroll("update");
+    }
+
+    static updateClearFiltersButtonVisibility() {
+        const anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
+            (input) => input.value.trim() !== ""
+        );
+        const clearFiltersButton = document.querySelector("#clearTableFiltersButton");
+        clearFiltersButton.style.display = anyFilterHasText ? "inline-block" : "none";
+    }
+
+    static stripLtGt() {
+        if (this.value == ">" || this.value == "<") {
+            this.value = "";
+        }
+    }
+
+    static filterListener() {
+        CC7.filterFunction();
+        CC7.updateClearFiltersButtonVisibility();
     }
 
     static getApproxDate(theDate) {
@@ -3302,6 +3321,16 @@ export class CC7 {
     }
 
     static clearDisplay() {
+        // Remove the filter event listeners
+        document
+            .querySelector("#peopleTable")
+            ?.querySelectorAll(".filter-input")
+            .forEach((input, inputIndex) => {
+                input.removeEventListener("input", CC7.stripLtGt);
+                input.removeEventListener("input", CC7.filterListener);
+                input.removeEventListener("click", CC7.clearFilterClickListener);
+            });
+
         $(
             [
                 "#degreesTable",
@@ -3311,6 +3340,7 @@ export class CC7 {
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
+                "#clearTableFiltersButton",
             ].join(",")
         ).remove();
     }
@@ -3439,7 +3469,7 @@ export class CC7 {
         }
     }
 
-    static cc7excelOut() {
+    static cc7excelOut(fileType) {
         const sheetName = CC7.makeSheetname();
 
         const wb = XLSX.utils.book_new();
@@ -3467,6 +3497,7 @@ export class CC7 {
             "Death date",
             "Death place",
             "Age",
+            "Manager",
             "Created",
             "Modified",
         ];
@@ -3514,6 +3545,7 @@ export class CC7 {
                 deathdate,
                 deathplace,
                 deathAge,
+                row.data("manager"),
                 created,
                 touched,
             ];
@@ -3528,17 +3560,6 @@ export class CC7 {
             const view = new Uint8Array(buf);
             for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
             return buf;
-        }
-
-        if ($("#cc7excel").length == 0) {
-            $(
-                '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
-            ).insertAfter($("#loadButton"));
-        }
-        if ($("#cc7csv").length == 0) {
-            $(
-                '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
-            ).insertAfter($("#loadButton"));
         }
 
         const wscols = [
@@ -3562,14 +3583,8 @@ export class CC7 {
 
         ws["!cols"] = wscols;
 
-        $("#cc7csv").click(function () {
-            var wbout = XLSX.write(wb, { bookType: "csv", type: "binary" });
-            saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + ".csv");
-        });
-        $("#cc7excel").click(function () {
-            var wbout = XLSX.write(wb, { bookType: "xlsx", type: "binary" });
-            saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + ".xlsx");
-        });
+        const wbout = XLSX.write(wb, { bookType: fileType, type: "binary" });
+        saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), CC7.makeFilename() + "." + fileType);
     }
 
     static assignGeneration(persons, person, generation) {
