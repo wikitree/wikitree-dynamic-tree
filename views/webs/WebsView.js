@@ -770,7 +770,7 @@
 
             let theDIV = document.getElementById("AddNewPersonDIV");
             let theX =
-                '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.cancelAddNewPopup();">[ <b><font color="red">x</font></b> ]</a></span>';
+                '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.cancelAddNewPopup();">' + SVGbtnCLOSE + '</a></span>';
             let theHTML =
                 theX +
                 "<H3>Enter WikiTree ID for New Person</H3><input id=newWikiTreeID>&nbsp;&nbsp;&nbsp;&nbsp;<button class=small onclick='WebsView.reallyAddPerson();'>Add New Person</button><br>";
