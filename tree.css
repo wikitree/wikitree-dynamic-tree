@@ -387,6 +387,8 @@ main {
   }
 
   header,
+  #header,
+  #content,
   main {
     display: none;
   }
