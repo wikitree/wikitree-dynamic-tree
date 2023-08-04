@@ -33,8 +33,8 @@ const LEGEND_CLIPBOARD = "&#x1F4CB;";
 const FullAppName = "X Family Tree app";
 const AboutPreamble =
     "The X Family Tree app is designed to show the inheritance of the X Chromosome through the generations.<br>It was created to live amongst the WikiTree family of Tree Apps in July 2023<br/>and is maintained by the original author plus other WikiTree developers.";
-const AboutUpdateDate = "30 July 2023";
-const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/XTree.png" />`;
+const AboutUpdateDate = "2 Aug 2023";
+const AboutAppIcon = `<img height=33px src="https://apps.wikitree.com/apps/clarke11007/pix/XTreeV2.png" />`;
 const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
 const AboutAdditionalProgrammers ="";//    "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
 const AboutAssistants = "Rob Pavey";
