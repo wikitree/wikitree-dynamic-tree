@@ -4627,7 +4627,8 @@
 
             for (let index = 0; index < newOrder.length; index++) {
                 const newElement = newOrder[index];
-                const thisEsGen = newElement[5];  // was 2 ... but should be 5, adjusted Y value
+                condLog(index, newElement);
+                const thisEsGen = newElement[2];  // was 2 ... but should be 5, adjusted Y value
                 const thisElementID = newElement[4].person._data.Id;
                 if (!numsPerGen[thisEsGen]) {
                     numsPerGen[thisEsGen] = 0;
