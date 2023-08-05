@@ -201,3 +201,18 @@ a.profileLink {
   font-size: 1.2em;
   color: navy;
 }
+
+#descendants li img.dna {
+  margin-left: 0.5em;
+}
+#descendantsButtons button.on {
+  background-color: gold;
+  color: black;
+  border: 1px solid darkorange;
+}
+
+#descendantsButtons button.hideMales {
+  background-color: pink;
+  color: black;
+  border: 1px solid red;
+}
