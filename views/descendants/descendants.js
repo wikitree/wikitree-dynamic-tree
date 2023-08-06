@@ -1,3 +1,6 @@
+let descendantsDateFormat = localStorage.getItem("descendantsDateFormat") || "ISO";
+let descendantsDateDataStatusFormat = localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations";
+
 class DescendantsView extends View {
     meta() {
         return {
@@ -9,6 +12,34 @@ class DescendantsView extends View {
 
     init(container_selector, person_id) {
         $("body").addClass("descendants");
+        const help = $(
+            `<div id='descendantsHelp'>
+            <h2>Descendants</h2><button class="x small" id="closeHelp">x</button>
+            <ul>
+            <li>Descendants are loaded 4 generations at a time.</li>
+            <li>Click on the profile link to open the profile in a new tab.</li>
+            <li>Click on the arrow (▶) (or most of the rest of the box) to expand or collapse the descendants.  
+                No arrow means no children and therefore no descendants.</li>
+            <li><span class='button small'>Show to Generation:</span> [X] shows all the descendants who have been loaded up to that generation. 
+                You may need to expand a lot more lines to see all the descendants.</li>
+            <li>📝 shows the person's biography and sources.</li>
+            <li><span class='button small'>Get Descendants' Other Parents</span> adds the parents of any descendants who are missing parents.</li> 
+            <li><span class='button small'>X</span> shows only the descendants who may have an X chromosome from the primary person.</li>
+            <li id="yExplanation"><span class='button small'>Y</span> shows only the descendants who may have a Y chromosome from the primary person.</li>
+            <li id="mtExplanation"><span class='button small'>MT</span> shows only the descendants who may have mitochondrial DNA from the primary person. 
+            Clicking MT twice removes all deceased males.</li>
+            <li><span class='button small'>CSV</span> downloads a CSV file of the descendants.</li>
+            <li><span class='button small'>Hide Bios</span> hides any visible bios.</li>
+            <li><span class='button small'>Show Bios</span> shows any hidden bios which have been loaded (see 📝).</li>
+            <li><span class='button small'>Expand All</span> expands all the lists to show all profiles which have been loaded.</li>
+            <li><span class='button small'>Collapse All</span> collapses all the lists to show only the primary person.</li>
+
+            </ul>
+            </div>`
+        );
+
+        $(container_selector).append(help);
+        $("#descendantsHelp").draggable();
         $(`<div id='descendantsButtons'>
         <button class='small' id='remove' style='display:none'></button>
         <button class='small dna off' id='xButton'>X</button>
@@ -18,17 +49,34 @@ class DescendantsView extends View {
         <button class='small' id="seeUpTo">Show to Generation:</button>
         <select id="generationSelect"></select>
         <button class='small on' id='toggleBios'>Hide Bios</button>
-        <button class='small' id='getAllParents'>Get Missing Parents</button>
+        <button class='small' id='getAllParents'>Get Descendants' Other Parents</button>
         <button class='small' id='downloadCSV'>CSV</button>
+        <fieldset id="dateFormat"><label>Dates:</label>
+        <select id="dateDataStatusSelect">
+        <option value="abbreviations">bef., aft., abt.</option>
+        <option value="words">before, after, about</option>
+        </select>
+        <select id="dateFormatSelect">
+        <option value="ISO">1859-11-24</option>
+        <option value="MDY">November 24, 1859</option>
+        <option value="sMDY">Nov 24, 1859</option>
+        <option value="DMY">24 November 1859</option>
+        <option value="DsMY">24 Nov 1859</option>
+        </select>
+        </fieldset>
+        <button class='small' id='showHelp'>?</button>
         </div>`).appendTo($(container_selector));
         // Attach click event listener to 'li' elements
+        $(container_selector).on("click", "#showHelp,#closeHelp", function (e) {
+            $("#descendantsHelp").toggle();
+        });
         $(container_selector).on("click", "li", function (e) {
             e.stopImmediatePropagation(); // Stop the event from bubbling up to parent 'li' elements
-            var $childrenUl = $(this).children("ul");
+            const $childrenUl = $(this).children("ul.personList");
             if ($childrenUl.children().length == 0 && $(this).children(".load-more").length == 0) {
                 return;
             }
-            var $arrow = $(this).children(".arrow");
+            const $arrow = $(this).children(".arrow");
             $childrenUl.toggleClass("expanded");
             $arrow.toggleClass("rotated");
             if ($(this).children(".load-more").length > 0) {
@@ -83,6 +131,9 @@ class DescendantsView extends View {
                 showUpToGeneration();
             }
         });
+
+        $("#dateFormatSelect option[value='" + descendantsDateFormat + "']").prop("selected", true);
+        $("#dateDataStatusSelect option[value='" + descendantsDateDataStatusFormat + "']").prop("selected", true);
 
         function isAlive(person) {
             const currentYear = new Date().getFullYear();
@@ -151,15 +202,24 @@ class DescendantsView extends View {
             e.stopImmediatePropagation();
             makeCSVFile();
         });
+        $(container_selector).on("change", "#dateFormatSelect,#dateDataStatusSelect", function (e) {
+            e.stopImmediatePropagation();
+            localStorage.setItem("descendantsDateFormat", $("#dateFormatSelect").val());
+            localStorage.setItem("descendantsDateDataStatusFormat", $("#dateDataStatusSelect").val());
+            descendantsDateDataStatusFormat = $("#dateDataStatusSelect").val();
+            descendantsDateFormat = $("#dateFormatSelect").val();
+            changeDateFormat(descendantsDateFormat);
+        });
         $(container_selector).on("click", "#toggleBios", function (e) {
             e.preventDefault();
+            console.log($(this).hasClass("on"));
             if ($(this).hasClass("on")) {
                 $(this).removeClass("on");
-                $(".biography").slideUp();
+                $(".biography").hide();
                 $(this).text("Show Bios");
             } else {
                 $(this).addClass("on");
-                $(".biography").slideDown();
+                $(".biography").show();
                 $(this).text("Hide Bios");
             }
         });
@@ -170,6 +230,26 @@ class DescendantsView extends View {
             $("#descendantsButtons").addClass("test");
         }
     }
+}
+
+function changeDateFormat(format) {
+    $("span.birthDeathDetails").each(function () {
+        const theLi = $(this).closest("li");
+
+        const birthDateSpan = $(this).children("span.birthDate");
+        let newBirthDate = convertDate(theLi.data("birth-date"), format, theLi.data("birth-date-status")).trim();
+        if (newBirthDate == 0) {
+            newBirthDate = "";
+        }
+        birthDateSpan.text(newBirthDate);
+
+        const deathDateSpan = $(this).children("span.deathDate");
+        let newDeathDate = convertDate(theLi.data("death-date"), format, theLi.data("death-date-status")).trim();
+        if (newDeathDate == 0) {
+            newDeathDate = "";
+        }
+        deathDateSpan.text(newDeathDate);
+    });
 }
 
 function loadMore(e) {
@@ -189,14 +269,14 @@ function loadMore(e) {
         target.closest("li").trigger("click");
     }
     let person_id = target.parent().data("id");
-    let generation = target.parent().children("ul").data("generation");
+    let generation = target.parent().children("ul.personList").data("generation");
     fetchDescendants(person_id, generation);
 }
 
 function showUpToGeneration() {
     // Show all generations up to the selected generation and hide the rest
     var selectedGeneration = $("#generationSelect").val();
-    $("#descendants ul").each(function () {
+    $("#descendants ul.personList").each(function () {
         var generation = $(this).data("generation");
         if (generation <= selectedGeneration) {
             $(this).addClass("expanded");
@@ -253,7 +333,7 @@ function createParentTemplate(parentData) {
 function addParentToDOM(parent) {
     const $childLi = $(`li[data-father='${parent.Id}'],li[data-mother='${parent.Id}']`);
 
-    const $childUl = $childLi.closest("ul");
+    const $childUl = $childLi.closest("ul.personList");
 
     // Create DL
     const $dl = $('<dl class="bdDatesLocations spouse"></dl>');
@@ -271,20 +351,34 @@ function addParentToDOM(parent) {
     }
 }
 
+function getDataStatus(person) {
+    if (person.DataStatus) {
+        keys = Object.keys(person.DataStatus);
+        for (var i = 0; i < keys.length; i++) {
+            if (person.DataStatus[keys[i]] == "uncertain" || person.DataStatus[keys[i]] == "guess") {
+                person.DataStatus[keys[i]] = "~";
+            } else if (person.DataStatus[keys[i]] == "certain") {
+                person.DataStatus[keys[i]] = "";
+            } else if (person.DataStatus[keys[i]] == "before") {
+                person.DataStatus[keys[i]] = "<";
+            } else if (person.DataStatus[keys[i]] == "after") {
+                person.DataStatus[keys[i]] = ">";
+            }
+        }
+    }
+    return person.DataStatus;
+}
+
 function getDatesString(person) {
     let datesStr = "";
-
     const birthDate = getDatePart(person, "BirthDate");
     const deathDate = getDatePart(person, "DeathDate");
-
     if (birthDate) {
         datesStr += `(${birthDate}`;
     }
-
     if (deathDate) {
         datesStr += `–${deathDate})`;
     }
-
     return datesStr;
 }
 
@@ -371,8 +465,8 @@ function makeCSVFile() {
         const name = $li.data("name");
         const fullName = $li.find("a.profileLink").first().text().trim();
         const dates = "(" + $li.data("birth-year") + "–" + $li.data("death-year") + ")";
-        let generation = parseInt($li.closest("ul").data("generation"));
-        if ($li.closest("ul").prop("id") == "descendants") {
+        let generation = parseInt($li.closest("ul.personList").data("generation"));
+        if ($li.closest("ul.personList").prop("id") == "descendants") {
             generation = 0;
         }
 
@@ -399,7 +493,7 @@ function makeCSVFile() {
         rows.push(row);
 
         // Process children
-        $li.children("ul")
+        $li.children("ul.personList")
             .children("li")
             .each(function () {
                 const gender = $li.data("gender").toLowerCase().startsWith("m") ? "m" : "f";
@@ -488,7 +582,7 @@ function setUpRemoveButton() {
             $("#descendants li").each(function () {
                 var $arrow = $(this).children(".arrow");
                 const thisGender = $(this).data("gender");
-                const childUL = $(this).children("ul");
+                const childUL = $(this).children("ul.personList");
                 $arrow.hide();
                 childUL.children("li").each(function () {
                     if ($(this).hasClass(thisGender)) {
@@ -510,18 +604,18 @@ function setUpRemoveButton() {
         $("#showHideAll").on("click", function () {
             var btn = $(this);
             if (btn.text() == "Expand All") {
-                $("#descendants li ul").addClass("expanded");
+                $("#descendants li ul.personList").addClass("expanded");
                 $("#descendants li .arrow").addClass("rotated");
                 btn.text("Collapse All");
             } else {
-                $("#descendants li ul").removeClass("expanded");
+                $("#descendants li ul.personList").removeClass("expanded");
                 $("#descendants li .arrow").removeClass("rotated");
                 btn.text("Expand All");
             }
         });
 
         // Expand the root person's children and rotate the arrow on page load
-        $("#descendants > li > ul").addClass("expanded");
+        $("#descendants > li > ul.personList").addClass("expanded");
         $("#descendants > li > .arrow").addClass("rotated");
     }
 }
@@ -585,7 +679,7 @@ function displayPerson(id, people, generation) {
             ? "<button class='load-more small'><img src='https://www.wikitree.com/images/icons/descendant-link.gif'></button>"
             : "";
         let moreDetailsEye =
-            '<span data-name="' + person.Name + '" title="Show/hide biography" class="moreDetailsEye">👁</span>';
+            '<span data-name="' + person.Name + '" title="Show/hide biography" class="moreDetailsEye">📝</span>';
         // if person.Id is nan, it's a private profile
         if (isNaN(person.Id)) {
             nameLink = `<a class="profileLink">Private</a>`;
@@ -595,9 +689,30 @@ function displayPerson(id, people, generation) {
         if (person.DeathLocation) {
             deathLocation = " " + person.DeathLocation;
         }
-        const listItemContent = `${nameLink} ${moreDetailsEye} (${birthYear} ${
+        /*
+        const dataStatus = getDataStatus(person);
+        const birthStatus = dataStatus?.BirthDate || "";
+        const deathStatus = dataStatus?.DeathDate || "";
+        */
+        let birthDate = "";
+        if (person.BirthDate) {
+            birthDate =
+                convertDate(person.BirthDate, descendantsDateFormat, person?.DataStatus?.BirthDate).trim() || "";
+            if (birthDate == 0) {
+                birthDate = "";
+            }
+        }
+        let deathDate = "";
+        if (person.DeathDate) {
+            deathDate =
+                convertDate(person.DeathDate, descendantsDateFormat, person?.DataStatus?.DeathDate).trim() || "";
+            if (deathDate == 0) {
+                deathDate = "";
+            }
+        }
+        const listItemContent = `<span class="nameAndBio">${nameLink} ${moreDetailsEye}</span><span class='birthDeathDetails'><span class='birthDeathDate birthDate'>${birthDate}</span><span class='birthDeathLocation'>${
             person.BirthLocation || ""
-        } – ${deathYear}${deathLocation}) ${loadMoreButton}`;
+        }</span><span class='birthDeathDate deathDate'>${deathDate}</span><span class='birthDeathLocation'>${deathLocation}</span></span> ${loadMoreButton}`;
         const parent = $("li[data-id='" + person.Father + "'], li[data-id='" + person.Mother + "']");
         let childIndicator = person.HasChildren ? "<span class='arrow'>▶</span>" : "";
         let ulState = "";
@@ -608,7 +723,12 @@ function displayPerson(id, people, generation) {
             }
         }
         const newItem = $(
-            `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${person.Name}" data-birth-year="${birthYear}"  data-death-year="${deathYear}" data-gender='${person.Gender}' data-x='0' data-ydna='0' data-mtdna='0' class='${theGender}'>${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='${ulState}'></ul></li>`
+            `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${person.Name}" 
+            data-birth-year="${birthYear}"  data-death-year="${deathYear}" data-birth-date="${person.BirthDate}" 
+            data-birth-date-status="${person?.DataStatus?.BirthDate}" data-death-date="${person.DeathDate}" 
+            data-death-date-status="${person?.DataStatus?.DeathDate}" data-gender='${person.Gender}' data-x='0' data-ydna='0' data-mtdna='0' class='${theGender}'>
+            ${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='${ulState} personList'>
+            </ul></li>`
         );
 
         const ydnaImage = $("<img class='ydna dna' src='https://www.wikitree.com/images/icons/dna/Y.gif'>");
@@ -644,14 +764,14 @@ function displayPerson(id, people, generation) {
             $("#descendants").append(newItem);
             setUpRemoveButton();
             if (person.Gender == "Male") {
-                $("#mtButton").remove();
+                $("#mtButton,#mtExplanation").remove();
             } else {
-                $("#yButton").remove();
+                $("#yButton,#yExplanation").remove();
             }
-        } else if (parent.children("ul").length == 0) {
-            parent.append($("<ul></ul>").append(newItem));
+        } else if (parent.children("ul.personList").length == 0) {
+            parent.append($("<ul class='personList'></ul>").append(newItem));
         } else {
-            let siblings = parent.children("ul").children("li");
+            let siblings = parent.children("ul.personList").children("li");
             let inserted = false;
             for (let i = 0; i < siblings.length; i++) {
                 let siblingBirthYear = $(siblings[i]).data("birth-year");
@@ -671,7 +791,7 @@ function displayPerson(id, people, generation) {
             }
 
             if (!inserted) {
-                parent.children("ul").append(newItem);
+                parent.children("ul.personList").append(newItem);
             }
         }
     }
@@ -680,7 +800,7 @@ function displayPerson(id, people, generation) {
 
 function findHighestGeneration() {
     let highestGeneration = 0;
-    $("#descendants ul").each(function () {
+    $("#descendants ul.personList").each(function () {
         let generation = parseInt($(this).attr("data-generation"));
         if (generation > highestGeneration) {
             highestGeneration = generation;
@@ -750,7 +870,7 @@ async function addBio(id) {
             return;
         }
         $('li[data-id="' + person.Id + '"]')
-            .children("ul")
+            .children("ul.personList")
             .before(bioDiv);
         bioDiv.append($(person.bioHTML)).addClass("fullBiography");
 
@@ -1082,4 +1202,217 @@ function dateStatus(date, decade, type) {
     }
 
     return dateStatus;
+}
+
+function padNumberStart(number) {
+    // Add leading zeros to a single-digit number
+    return (number < 10 ? "0" : "") + number.toString();
+}
+
+function convertMonth(monthString, outputFormat = "short") {
+    // Convert a month string to a numeric month value
+    var shortNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    var longNames = [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+    ];
+    let index;
+    if (!isNaN(monthString)) {
+        index = monthString - 1;
+        let month = shortNames[index];
+        if (outputFormat == "long") {
+            month = longNames[index];
+        }
+        return capitalizeFirstLetter(month);
+    } else {
+        index = shortNames.indexOf(monthString.toLowerCase());
+        if (index == -1) {
+            index = longNames.indexOf(monthString.toLowerCase());
+        }
+        return index + 1;
+    }
+}
+
+function capitalizeFirstLetter(string) {
+    return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
+}
+
+/**
+ * Converts a date string from various formats to the specified output format.
+ *
+ * @param {string} dateString - The date string to be converted. Supported formats include year-only (e.g. "2023"), short month and year (e.g. "Jul 2023"), long month and year (e.g. "July 2023"), long month, day, and year (e.g. "July 23, 2023"), and more.
+ * @param {string} outputFormat - The desired output format. Supported values include: "Y", "MY", "MDY", "DMY", "sMDY", "DsMY", "YMD", and "ISO".
+ * @param {string} [status=""] - An optional status that provides context to the date (e.g. "before", "after", "guess", "certain", etc.).
+ *
+ * @returns {string|null} The converted date string in the specified output format or null if there's an error or invalid format.
+ *
+ * @throws Will log an error if there's an issue during the conversion process.
+ */
+function convertDate(dateString, outputFormat, status = "") {
+    dateString = dateString.replaceAll(/-00/g, "");
+    // Split the input date string into components
+    if (!dateString) {
+        return "";
+    }
+    let components = dateString.split(/[\s,-]+/);
+
+    // Determine the format of the input date string
+    let inputFormat;
+    if (components.length == 1 && /^\d{4}$/.test(components[0])) {
+        // Year-only format (e.g. "2023")
+        inputFormat = "Y";
+    } else if (components.length == 2 && /^[A-Za-z]{3}$/.test(components[0]) && !/^[A-Za-z]{4,}$/.test(components[0])) {
+        // Short month and year format (e.g. "Jul 2023")
+        inputFormat = "MY";
+    } else if (components.length == 2 && /^[A-Za-z]+/.test(components[0])) {
+        // Long month and year format (e.g. "July 2023")
+        inputFormat = "MDY";
+    } else if (components.length == 3 && /^[A-Za-z]+/.test(components[0])) {
+        // Long month, day, and year format (e.g. "July 23, 2023")
+        inputFormat = "MDY";
+    } else if (components.length == 3 && /^[A-Za-z]{3}$/.test(components[1]) && !/^[A-Za-z]{4,}$/.test(components[1])) {
+        // Short month, day, and year format (e.g. "23 Jul 2023")
+        inputFormat = "DMY";
+    } else if (components.length == 3 && /^[A-Za-z]+/.test(components[1])) {
+        // Day, long month, and year format (e.g. "10 July 1936")
+        inputFormat = "DMY";
+    } else if (components.length == 3 && /^\d{2}$/.test(components[1]) && /^\d{2}$/.test(components[2])) {
+        // ISO format with no day (e.g. "2023-07-23")
+        inputFormat = "ISO";
+    } else if (components.length == 2 && /^\d{4}$/.test(components[0]) && /^\d{2}$/.test(components[1])) {
+        // NEW: Year and month format with no day (e.g. "1910-10")
+        inputFormat = "ISO";
+        components.push("00");
+    } else {
+        // Invalid input format
+        return null;
+    }
+
+    // Convert the input date components to a standard format (YYYY-MM-DD)
+    let year,
+        month = 0,
+        day = 0;
+    try {
+        if (inputFormat == "Y") {
+            year = parseInt(components[0]);
+            outputFormat = "Y";
+        } else if (inputFormat == "MY") {
+            year = parseInt(components[1]);
+            month = convertMonth(components[0]);
+            if (!outputFormat) {
+                outputFormat = "MY";
+            }
+        } else if (inputFormat == "MDY") {
+            year = parseInt(components[components.length - 1]);
+            month = convertMonth(components[0]);
+            day = parseInt(components[1]);
+        } else if (inputFormat == "DMY") {
+            year = parseInt(components[2]);
+            month = convertMonth(components[1]);
+            day = parseInt(components[0]);
+        } else if (inputFormat == "ISO") {
+            year = parseInt(components[0]);
+            month = parseInt(components[1]);
+            day = parseInt(components[2]);
+        }
+    } catch (err) {
+        console.error("Error during conversion:", err);
+        return null;
+    }
+
+    // Convert the date components to the output format
+    let outputDate;
+
+    const ISOdate = year.toString() + "-" + padNumberStart(month || 0) + "-" + padNumberStart(day || 0);
+
+    if (outputFormat == "Y") {
+        outputDate = year.toString();
+    } else if (outputFormat == "MY") {
+        outputDate = convertMonth(month) + " " + year.toString();
+    } else if (outputFormat == "MDY") {
+        outputDate = convertMonth(month, "long") + " " + day + ", " + year.toString();
+    } else if (outputFormat == "DMY") {
+        outputDate = day + " " + convertMonth(month, "long") + " " + year.toString();
+    } else if (outputFormat == "sMDY") {
+        outputDate = convertMonth(month, "short");
+        if (day !== 0) {
+            outputDate += " " + day + ",";
+        }
+        outputDate += " " + year.toString();
+    } else if (outputFormat == "DsMY") {
+        outputDate = day + " " + convertMonth(month).slice(0, 3) + " " + year.toString();
+    } else if (outputFormat == "YMD" || outputFormat == "ISO") {
+        outputDate = ISOdate;
+    } else {
+        // Invalid output format
+        return null;
+    }
+
+    if (status) {
+        let onlyYears = false;
+        if (outputFormat == "Y") {
+            onlyYears = true;
+        }
+        let statusOut = "";
+        try {
+            statusOut = dataStatusWord(status, ISOdate, { needInOn: false, onlyYears: onlyYears });
+            // Check if the statusOut is a symbol, and if so, don't add space
+        } catch (error) {
+            console.log("dataStatusWord error:", error);
+        }
+        if (["<", ">", "~"].includes(statusOut.trim())) {
+            outputDate = statusOut + outputDate.trim();
+        } else {
+            outputDate = statusOut + " " + outputDate;
+        }
+    }
+
+    outputDate = outputDate.replace(/\s?\b00/, ""); // Remove 00 as a day or month
+    outputDate = outputDate.replace(/(\w+),/, "$1"); // Remove comma if there's a month but no day
+    //outputDate = outputDate.replace(/^,/, ""); // Remove random comma at the beginning
+
+    return outputDate;
+}
+
+function dataStatusWord(status, ISOdate) {
+    const day = ISOdate.slice(8, 10);
+
+    let statusOut = "";
+    switch (status) {
+        case "before":
+            statusOut = "before";
+            break;
+        case "after":
+            statusOut = "after";
+            break;
+        case "guess":
+            statusOut = "about";
+            break;
+        case "certain":
+        case "on":
+        case undefined:
+        case "":
+            statusOut = day !== "00" ? "" : ""; // If you want a default value when status is "certain", "on", undefined, or "", you can set it here.
+            break;
+    }
+
+    const statusFormat = descendantsDateDataStatusFormat || "abbreviations";
+
+    if (statusFormat === "abbreviations") {
+        statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
+    } else if (statusFormat === "symbols") {
+        statusOut = statusOut.replace("before", "<").replace("after", ">").replace("about", "~");
+    }
+
+    return statusOut;
 }
