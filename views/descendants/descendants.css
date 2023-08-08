@@ -85,6 +85,10 @@ body.descendants #dateDataStatusSelect {
   width: 14em !important;
 }
 
+body.descendants #generationSelect {
+  width: 18em !important;
+}
+
 #descendants .load-more img {
   width: 1em;
   height: 1em;
@@ -227,8 +231,10 @@ a.profileLink {
 #descendants .load-more {
   display: none;
 }
-#descendantsButtons #showHelp {
+#descendantsButtons #showHelp,
+#descendantsButtons button.download {
   float: right;
+  margin-left: 0.2em;
 }
 #descendantsHelp {
   display: none;
@@ -241,6 +247,7 @@ a.profileLink {
   padding: 1em;
   z-index: 100;
   box-shadow: 0 0 1em #ddd;
+  cursor: move;
 }
 
 body.descendants #closeHelp {
@@ -270,27 +277,90 @@ body.descendants span.birthDeathDate {
   font-family: "Courier New", Courier, monospace;
 }
 
-#descendantsButtons #dateFormat label {
+#descendantsButtons #dateFormat {
+  display: inline-block;
+}
+
+#descendantsButtons label,
+#descendantsHelp label {
   background-color: #f6f6f6;
   border: 1px solid #ddd;
   padding: 0.3em;
+  display: inline-block;
 }
 
 #descendants .birthDeathDetails {
   display: grid;
-  grid-template-columns: 15em 1fr 15em 1fr;
+  grid-template-columns: 17em 1fr 17em 1fr;
   gap: 0.2em; /* Spacing between grid items */
   margin-left: 1em;
 }
 
 #descendants .birthDeathDate,
 #descendants .birthDeathLocation {
-  padding: 4px; /* Some padding for better visual appearance */
+  padding: 2px;
 }
 
-#descendants .birthDate:not(:empty)::before {
+#descendants .birthDate:not(:empty, .datesOnly .birthDate)::before {
   content: "b. ";
 }
-#descendants .deathDate:not(:empty)::before {
+#descendants .deathDate:not(:empty, .datesOnly .deathDate)::before {
   content: "d. ";
+}
+
+#descendants li.person.highlighted {
+  background-color: lightgreen;
+}
+
+#descendants button.collapse {
+  height: 0.8em;
+  width: 2em;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+#descendants li.person.collapsed {
+  height: 0.1em;
+  overflow: hidden;
+}
+#descendants li.person.collapsed *:not(.collapse) {
+  display: none;
+}
+
+body.descendants button {
+  margin-right: 0;
+}
+
+#descendants li.person.hidden {
+  display: none;
+}
+
+#descendants li.person .wtid {
+  font-size: 0.8em;
+  font-weight: normal;
+  color: #666;
+}
+
+#descendants li.person .datesOnly {
+  display: none;
+}
+
+#descendants li.person .aboville {
+  float: right;
+  margin-right: 2em;
+  font-size: 0.8em;
+  font-weight: normal;
+  color: #666;
+  background-color: #f6f6f6;
+  border-radius: 1em;
+  padding: 0 0.5em;
+}
+
+#descendants a.mapsLink {
+  display: inline-block;
+  margin-left: 0.1em;
+  border: 0;
+  width: 12px;
+  height: 11px;
 }
