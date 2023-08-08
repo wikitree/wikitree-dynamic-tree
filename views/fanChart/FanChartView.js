@@ -86,6 +86,8 @@
         "Orange",
     ];
 
+    let stickerClr = ["white", "red", "green", "blue", "orange"];
+
     var FullColoursArray = [
         [1, "AliceBlue", "#F0F8FF"],
         [1, "AntiqueWhite", "#FAEBD7"],
@@ -306,6 +308,8 @@
 
     var categoryList = [];
     var stickerList = [];
+    var currentBadges = [];
+    var currentHighlightCategory = ""; 
 
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
@@ -476,6 +480,13 @@
                             type: "checkbox",
                             defaultValue: true,
                         },
+                        { optionName: "break2", type: "br" },
+                        {
+                            optionName: "showBadges",
+                            label: "Add Badges to ancestors",
+                            type: "checkbox",
+                            defaultValue: false,
+                        },
                     ],
                 },
 
@@ -550,6 +561,26 @@
                         { optionName: "break0", comment: "Full Dates details:", type: "br" },
                         { optionName: "showBirth", label: "Show Birth Date", type: "checkbox", defaultValue: true },
                         { optionName: "showDeath", label: "Show Death Date", type: "checkbox", defaultValue: true },
+                        {
+                            optionName: "showMarriage",
+                            label: "Show Marriage Date",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        {
+                            optionName: "marriageBlend",
+                            label: "Blend in Marriage Date box (use background colour of husband)",
+                            type: "checkbox",
+                            defaultValue: false,
+                            indent: 3,
+                        },
+                        {
+                            optionName: "marriageAtTopEarlyGens",
+                            label: "Slide Marriage Date box to top (for first 5 generations)",
+                            type: "checkbox",
+                            defaultValue: false,
+                            indent: 3,
+                        },
                         // {
                         //     optionName: "showLifeSpan",
                         //     label: "Show LifeSpan (replaces birth & death dates)",
@@ -783,13 +814,87 @@
                                 { value: "DNAinheritance", text: "X/Y/mt DNA inheritance" },
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "-", text: "-" },
-                                { value: "bioText", text: "Biography" },
-                                { value: "cat", text: "Category" },
+                                { value: "aliveDay", text: "Alive on this Day" },
+                                { value: "bioText", text: "Biography Text" },
+                                { value: "cat", text: "Category or Sticker" },
                                 // { value: "review", text: "Profiles needing review" },
                             ],
                             defaultValue: "DNAinheritance",
                         },
                         { optionName: "break4DNA", comment: "For WikiTree DNA pages:", type: "br" },
+                        {
+                            optionName: "aliveYYYY",
+                            type: "text",
+                            label: "Year",
+                            defaultValue: "1950",
+                        },
+                        {
+                            optionName: "aliveMMM",
+                            type: "select",
+                            label: "Month",
+                            values: [
+                                // { value: "00", text: "MMM" },
+                                { value: "01", text: "Jan" },
+                                { value: "02", text: "Feb" },
+                                { value: "03", text: "Mar" },
+                                { value: "04", text: "Apr" },
+                                { value: "05", text: "May" },
+                                { value: "06", text: "Jun" },
+                                { value: "07", text: "Jul" },
+                                { value: "08", text: "Aug" },
+                                { value: "09", text: "Sep" },
+                                { value: "10", text: "Oct" },
+                                { value: "11", text: "Nov" },
+                                { value: "12", text: "Dec" },
+
+                                // { value: "review", text: "Profiles needing review" },
+                            ],
+                            defaultValue: "01",
+                        },
+
+                        {
+                            optionName: "aliveDD",
+                            type: "select",
+                            label: "Day ",
+                            values: [
+                                // { value: "00", text: "DD" },
+                                { value: "01", text: "01" },
+                                { value: "02", text: "02" },
+                                { value: "03", text: "03" },
+                                { value: "04", text: "04" },
+                                { value: "05", text: "05" },
+                                { value: "06", text: "06" },
+                                { value: "07", text: "07" },
+                                { value: "08", text: "08" },
+                                { value: "09", text: "09" },
+                                { value: "10", text: "10" },
+                                { value: "11", text: "11" },
+                                { value: "12", text: "12" },
+                                { value: "13", text: "13" },
+                                { value: "14", text: "14" },
+                                { value: "15", text: "15" },
+                                { value: "16", text: "16" },
+                                { value: "17", text: "17" },
+                                { value: "18", text: "18" },
+                                { value: "19", text: "19" },
+                                { value: "20", text: "20" },
+                                { value: "21", text: "21" },
+                                { value: "22", text: "22" },
+                                { value: "23", text: "23" },
+                                { value: "24", text: "24" },
+                                { value: "25", text: "25" },
+                                { value: "26", text: "26" },
+                                { value: "27", text: "27" },
+                                { value: "28", text: "28" },
+                                { value: "29", text: "29" },
+                                { value: "30", text: "30" },
+                                { value: "31", text: "31" },
+
+                                // { value: "review", text: "Profiles needing review" },
+                            ],
+                            defaultValue: "01",
+                        },
+
                         {
                             optionName: "howDNAlinks",
                             type: "radio",
@@ -851,47 +956,170 @@
         var settingsHTML = "";
         settingsHTML += FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV; // +
 
+        var badgesHTML =
+            "<div id=BRbetweenLegendAndStickers><br/></div><div id=stickerLegend><H3 class=quarterEmBottomMargin>Badges</H3>";
+        var stickerCatNameSelectorHTML =
+            "<select id='stickerCategoryDropDownList1' class='optionSelect selectSimpleDropDown' onchange='FanChartView.updateBadgesToShow(1);'><option value=-999>Do not use Badge 1</option></select><br/>";
+        for (let i = 1; i <= 4; i++) {
+            
+            badgesHTML +=
+                "<svg width=24 height=24><rect width=24 height=24 rx=12 ry=12 style='fill:" +
+                stickerClr[i] +
+                ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=7 y=17 fill='white'>" +
+                i +
+                "</text></svg>" +
+                stickerCatNameSelectorHTML.replace(/1/g,i);
+        }
+        
+        badgesHTML +=  "</div>";
+        let highlightHTML =
+            "<div id=highlightDescriptor><br/><span class='fontBold selectedMenuBarOption'>HIGHLIGHT people</span> = <span id=highlightPeepsDescriptor>Thirty-somethings...</span><br/><br/></div>";
+
         var legendHTML =
             '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="FanChartView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
-            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>";
+            '<span style="color:red; align:left"><A onclick="FanChartView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' + highlightHTML +
+            "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
+            badgesHTML +
+            "</div>";
 
-        // condLog("SETTINGS:",settingsHTML);
-
-        // '<ul class="profile-tabs">' +
-        //     '<li id=general-tab>General</li>' +
-        //     '<li id=names-tab>Names</li>' +
-        //     '<li id=dates-tab>Dates</li>' +
-        //     '<li id=places-tab>Places</li>' +
-        //     '<li id=photos-tab>Photos</li>' +
-        //     '<li id=colours-tab>Colours</li>' +
-        //     '<li id=highlights-tab>Highlights</li>' +
-        // '</ul>' +
-        // '<div id=general-panel></div>' +
-        // '<div id=names-panel></div>' +
-        // '<div id=dates-panel></div>' +
-        // '<div id=places-panel></div>' +
-        // '<div id=photos-panel></div>' +
-        // '<div id=colours-panel></div>' +
-        // '<div id=highlights-panel></div>' +
-
-        //     '<br />    <div align="center">      <div id="status"></div>      <button id="save" class="saveButton">Save changes (all tabs)</button>'
-        // '</div>';
-
+        
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         container.innerHTML = btnBarHTML + legendHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
-
+        
         function settingsChanged(e) {
             if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
                 // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 condLog("NEW settings are:", FanChartView.currentSettings);
+
+                let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+                let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
+                let colour_options_specifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
+                let colour_options_specifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
+
+                let legendDIV = document.getElementById("legendDIV");
+                let LegendTitle = document.getElementById("LegendTitle");
+                let LegendTitleH3 = document.getElementById("LegendTitleH3");
+                let stickerLegend = document.getElementById("stickerLegend");
+                let legendToggle = document.getElementById("legendASCII");
+                let innerLegend = document.getElementById("innerLegend");
+                let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
+
+                if (showBadges || colourBy == "Family" || colourBy == "Location") {
+                    legendDIV.style.display = "block";
+                    stickerLegend.style.display = "block";
+                    legendToggle.style.display = "inline-block";
+                    if (colourBy == "Family" || colourBy == "Location") {
+                        BRbetweenLegendAndStickers.style.display = "block";
+                        LegendTitleH3.style.display = "block";
+                        condLog(
+                            "NEW UPDATE SETTINGS: ",
+                            colourBy,
+                            colour_options_specifyByFamily,
+                            colour_options_specifyByLocation
+                        );
+                        if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
+                            LegendTitle.textContent = "Age at death";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
+                            LegendTitle.textContent = "Birth Country";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
+                            LegendTitle.textContent = "Birth Region";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("BirthTown") > -1) {
+                            LegendTitle.textContent = "Birth Town";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
+                            LegendTitle.textContent = "Country of Death";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
+                            LegendTitle.textContent = "Region of Death";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("DeathTown") > -1) {
+                            LegendTitle.textContent = "Town of Death";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
+                            LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
+                            LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+                        };
+                    } else {
+                        BRbetweenLegendAndStickers.style.display = "none";
+                        LegendTitleH3.style.display = "none";
+                        innerLegend.innerHTML = "";
+                    }
+
+                    if (!showBadges) {
+                        stickerLegend.style.display = "none";
+                    }
+                } else {
+                    // if (colourBy == "Family" || colourBy == "Location") {
+                    // } else {
+                    // }
+                    legendDIV.style.display = "none";
+                    stickerLegend.style.display = "none";
+                    legendToggle.style.display = "none";
+                }
+
+
+            if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
+                legendDIV.style.display = "block";
+                legendToggle.style.display = "inline-block";
+
+                document.getElementById("highlightDescriptor").style.display = "block";
+                if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "mitochondrial DNA (mtDNA) ancestors";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "X, Y, mitochondrial DNA ancestors";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Relationships confirmed by DNA";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
+                    let catNameSelector = document.getElementById("highlight_options_catName");
+                    let rawValue = catNameSelector.value.trim();
+                    currentHighlightCategory = rawValue;
+                    document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
+                    let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+                    let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+                    let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+                    if (aliveYYYYSelector.value > 1) {
+
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Alive on " +
+                            aliveDDSelector.value +
+                            " " +
+                            monthNames[aliveMMMSelector.value - 1] +
+                            " " +
+                            aliveYYYYSelector.value;
+                    } else {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Alive on " +
+                            aliveDDSelector.value +
+                            " " +
+                            monthNames[aliveMMMSelector.value - 1] +
+                            " " +
+                            1950;
+                    }
+                        
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+                    let bioTextSelector = document.getElementById("highlight_options_bioText");
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
+                } else {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
+                }
+            } else {
+                document.getElementById("highlightDescriptor").style.display = "none";
+            }
+
                 FanChartView.myAncestorTree.draw();
             } else {
                 // condLog("NOTHING happened according to SETTINGS OBJ");
             }
+
+
         }
 
         // NEXT STEPS : Assign thisVal to actual currentSetting object
@@ -900,7 +1128,7 @@
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
-        const g = svg.append("g");
+        const g = svg.append("g").attr("id","SVGgraphics");
 
         // Setup zoom and pan
         const zoom = d3
@@ -1010,12 +1238,67 @@
             "stroke-width": "2",
         });
 
-        // BEFORE we go further ... let's add the DNA objects we might need later
+        self.load(startId);
+        // condLog(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
+        FanChartView.fanchartSettingsOptionsObject.buildPage();
+        FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
+        FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
+
+        // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let bkgdClrSelector = document.getElementById("colour_options_colourBy");
+        let showMarriageSelector = document.getElementById("date_options_showMarriage");
+
+        // condLog("bkgdClrSelector", bkgdClrSelector);
+        bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+        showMarriageSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+        specLocSelector.style.display = "none";
+        specFamSelector.style.display = "none";
+        specLocSelectorLabel.style.display = "none";
+        specFamSelectorLabel.style.display = "none";
+        specLocSelectorBR.style.display = "none";
+        specFamSelectorBR.style.display = "none";
+
+        // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let highlightSelector = document.getElementById("highlight_options_highlightBy");
+        highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+        catNameSelector.style.display = "none";
+        catNameSelectorLabel.style.display = "none";
+
+        let bioTextSelector = document.getElementById("highlight_options_bioText");
+        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
+        bioTextSelector.style.display = "none";
+        bioTextSelectorLabel.style.display = "none";
+
+        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+        
+        aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+        aliveMMMSelector.parentNode.style.display = "none";
+        aliveDDSelector.parentNode.style.display = "none";
+        
+
+        condLog("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
+        // FanChartView.showFandokuLink = theCheckIn;
+
+        // BEFORE we go further ... let's add the DNA objects, Stickers, and MarriageDateDIVs we might need later
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
+                let ahnNum = index + 2 ** genIndex;
                 g.append("g")
                     .attrs({
                         id: "imgDNA-x-" + genIndex + "i" + index,
+                        class : "floatAbove"
                     })
                     .append("foreignObject")
                     .attrs({
@@ -1039,6 +1322,7 @@
                 g.append("g")
                     .attrs({
                         id: "imgDNA-y-" + genIndex + "i" + index,
+                        class: "floatAbove",
                     })
                     .append("foreignObject")
                     .attrs({
@@ -1062,6 +1346,7 @@
                 g.append("g")
                     .attrs({
                         id: "imgDNA-mt-" + genIndex + "i" + index,
+                        class: "floatAbove",
                     })
                     .append("foreignObject")
                     .attrs({
@@ -1085,6 +1370,7 @@
                 g.append("g")
                     .attrs({
                         id: "imgDNA-Ds-" + genIndex + "i" + index,
+                        class: "floatAbove",
                     })
                     .append("foreignObject")
                     .attrs({
@@ -1108,6 +1394,7 @@
                 g.append("g")
                     .attrs({
                         id: "imgDNA-As-" + genIndex + "i" + index,
+                        class: "floatAbove",
                     })
                     .append("foreignObject")
                     .attrs({
@@ -1131,6 +1418,7 @@
                 g.append("g")
                     .attrs({
                         id: "imgDNA-Confirmed-" + genIndex + "i" + index,
+                        class: "floatAbove",
                     })
                     .append("foreignObject")
                     .attrs({
@@ -1150,50 +1438,101 @@
                         id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
                     })
                     .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
+                
+                for (let stickerCounter = 1; stickerCounter <= 4; stickerCounter++) {
+                    const stickerPrefix = "badge" + stickerCounter + "-";
+
+                    g.append("g")
+                        .attrs({
+                            id: stickerPrefix + ahnNum,
+                            class: "floatAbove",
+                        })
+                        .append("foreignObject")
+                        .attrs({
+                            id: stickerPrefix + ahnNum + "inner",
+                            class: "centered",
+                            width: "20px",
+                            height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                            x: 25 * index,
+                            y: 30 * genIndex + stickerCounter * 300,
+                            //
+                            style: "display:none;",
+                        })
+
+                        .style("overflow", "visible") // so the name will wrap
+                        .append("xhtml:div")
+                        .attrs({
+                            id: stickerPrefix + ahnNum + "svg",
+                        })
+                        .html(
+                            "<svg width=24 height=24><rect width=24 height=24 rx=12 ry=12 style='fill:" +
+                                stickerClr[stickerCounter] +
+                                ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=7 y=17 fill='white'>" +
+                                stickerCounter +
+                                "</text></svg>"
+                        );
+                }
+
+                if (ahnNum % 2 == 0 && ahnNum < 32) {
+                    // "Portrait-ish" if you're looking at it from the spokes from the centre perspective
+                    g.append("g")
+                        .attrs({
+                            id: "mDateFor-" + ahnNum,
+                            class: "floatAbove",
+                        })
+                        .append("foreignObject")
+                        .attrs({
+                            id: "mDateFor-" + ahnNum + "inner",
+                            class: "centered mDateBox",
+                            width: "20px",
+                            height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                            // x: 25 * index,
+                            // y: 30 * genIndex + 5 * 300,
+                            //
+                            style: "display:none;",
+                        })
+
+                        .style("overflow", "visible") // so the name will wrap
+                        .append("xhtml:div")
+                        .attrs({
+                            id: "mDateFor-" + ahnNum + "-date",
+                            class: "centered mDateBox",
+                        })
+                        .html("m.<br/>28 Aug<br/>1987");
+
+                    // condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
+
+                } else if (ahnNum % 2 == 0 && ahnNum >= 32) {
+                    // "Landscape-ish" if you're looking at it from the spokes from the centre perspective, ie, text is sideways
+                    g.append("g")
+                        .attrs({
+                            id: "mDateFor-" + ahnNum,
+                            class: "floatAbove",
+                        })
+                        .append("foreignObject")
+                        .attrs({
+                            id: "mDateFor-" + ahnNum + "inner",
+                            class: "centered mDateBox2",
+                            width: "20px",
+                            height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                            // x: 25 * index,
+                            // y: 30 * genIndex + 5 * 300,
+                            //
+                            style: "display:none;",
+                        })
+
+                        .style("overflow", "visible") // so the name will wrap
+                        .append("xhtml:div")
+                        .attrs({
+                            id: "mDateFor-" + ahnNum + "-date",
+                            class: "centered mDateBox2",
+                        })
+                        .html("m. 28 Aug 1987");
+
+                    condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
+                }
             }
         }
-
-        self.load(startId);
-        // condLog(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
-        FanChartView.fanchartSettingsOptionsObject.buildPage();
-        FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
-        FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
-
-        // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
-        let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-        // condLog("bkgdClrSelector", bkgdClrSelector);
-        bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
-        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
-        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
-        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
-        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
-        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
-        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-        specLocSelector.style.display = "none";
-        specFamSelector.style.display = "none";
-        specLocSelectorLabel.style.display = "none";
-        specFamSelectorLabel.style.display = "none";
-        specLocSelectorBR.style.display = "none";
-        specFamSelectorBR.style.display = "none";
-
-        // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
-        let highlightSelector = document.getElementById("highlight_options_highlightBy");
-        highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
-        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
-        let catNameSelector = document.getElementById("highlight_options_catName");
-        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
-        catNameSelector.style.display = "none";
-        catNameSelectorLabel.style.display = "none";
-        
-        let bioTextSelector = document.getElementById("highlight_options_bioText");
-        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
-        bioTextSelector.style.display = "none";
-        bioTextSelectorLabel.style.display = "none";
-        
-
-        condLog("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
-        // FanChartView.showFandokuLink = theCheckIn;
     };
 
     function showRefreshInLegend() {
@@ -1222,6 +1561,9 @@
         let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
         let legendASCIIspan = document.getElementById("legendASCII");
+        let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+        let showMarriage = document.getElementById("date_options_showMarriage").checked;
+
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
@@ -1233,21 +1575,41 @@
         let bioTextSelector = document.getElementById("highlight_options_bioText");
         let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
         
-        condLog("VALUES:", bkgdClrSelector.value, highlightSelector.value);
-      
+        let marriageBlendSelector = document.getElementById("date_options_marriageBlend");
+        let marriageAtTopEarlyGensSelector = document.getElementById("date_options_marriageAtTopEarlyGens");
+        let marriageBlendSelectorLabel = document.getElementById("date_options_marriageBlend_label");
+        let marriageAtTopEarlyGensSelectorLabel = document.getElementById("date_options_marriageAtTopEarlyGens_label");
+        marriageBlendSelector.parentNode.style.display = "none";
+        marriageAtTopEarlyGensSelector.parentNode.style.display = "none";
+
+        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+        
+        aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+        aliveMMMSelector.parentNode.style.display = "none";
+        aliveDDSelector.parentNode.style.display = "none";
+        
+
+        condLog("VALUES:", bkgdClrSelector.value, highlightSelector.value, "showMarriage", showMarriage);
+        if (showMarriage) {
+            marriageBlendSelector.parentNode.style.display = "inline-block";
+            marriageAtTopEarlyGensSelector.parentNode.style.display = "inline-block";
+        }
+
         if (bkgdClrSelector.value == "Family") {
             specFamSelector.style.display = "inline-block";
-            legendASCIIspan.style.display = "inline-block";
+            // legendASCIIspan.style.display = "inline-block";
             specLocSelector.style.display = "none";
-            specFamSelectorLabel.style.display = "inline-block";
             specLocSelectorLabel.style.display = "none";
-            specFamSelectorBR.style.display = "inline-block";
             specLocSelectorBR.style.display = "none";
+            specFamSelectorLabel.style.display = "inline-block";
+            specFamSelectorBR.style.display = "inline-block";
             clrPaletteSelector.style.display = "inline-block";
             clrPaletteSelectorLabel.style.display = "inline-block";
         } else if (bkgdClrSelector.value == "Location") {
             specLocSelector.style.display = "inline-block";
-            legendASCIIspan.style.display = "inline-block";
+            // legendASCIIspan.style.display = "inline-block";
             specFamSelector.style.display = "none";
             specLocSelectorLabel.style.display = "inline-block";
             specFamSelectorLabel.style.display = "none";
@@ -1262,36 +1624,58 @@
             specFamSelectorLabel.style.display = "none";
             specLocSelectorBR.style.display = "none";
             specFamSelectorBR.style.display = "none";
-            legendASCIIspan.style.display = "none";
+            // legendASCIIspan.style.display = "none";
             clrPaletteSelector.style.display = "inline-block";
             clrPaletteSelectorLabel.style.display = "inline-block";
 
             let theDIV = document.getElementById("legendDIV");
-            theDIV.style.display = "none";
+            let LegendTitle = document.getElementById("LegendTitle");
+            let LegendTitleH3 = document.getElementById("LegendTitleH3");
+
+            if (showBadges == false) {
+                // theDIV.style.display = "none";
+                // legendASCIIspan.style.display = "none";
+            } else {
+                // theDIV.style.display = "block";
+                // legendASCIIspan.style.display = "inline-block";
+            }
         }
 
+        break4DNASelector.parentNode.style.display = "none";
+        howDNAlinksRadiosBR.parentNode.style.display = "none";
+        bioTextSelector.style.display = "none";
+        bioTextSelectorLabel.style.display = "none";
+        catNameSelector.style.display = "none";
+        catNameSelectorLabel.style.display = "none";
+
         if (highlightSelector.value == "cat") {
-            break4DNASelector.parentNode.style.display = "none";
-            howDNAlinksRadiosBR.parentNode.style.display = "none";
+            // break4DNASelector.parentNode.style.display = "none";
+            // howDNAlinksRadiosBR.parentNode.style.display = "none";
+            // bioTextSelector.style.display = "none";
+            // bioTextSelectorLabel.style.display = "none";
             catNameSelector.style.display = "inline-block";
             catNameSelectorLabel.style.display = "inline-block";
-            bioTextSelector.style.display = "none";
-            bioTextSelectorLabel.style.display = "none";
+        } else if (highlightSelector.value == "aliveDay") {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "block";
+            aliveMMMSelector.parentNode.style.display = "block";
+            aliveDDSelector.parentNode.style.display = "block";
+        
+
         } else if (highlightSelector.value == "bioText") {
-            break4DNASelector.parentNode.style.display = "none";
-            howDNAlinksRadiosBR.parentNode.style.display = "none";
+            // break4DNASelector.parentNode.style.display = "none";
+            // howDNAlinksRadiosBR.parentNode.style.display = "none";
             bioTextSelector.style.display = "inline-block";
             bioTextSelectorLabel.style.display = "inline-block";
-            catNameSelector.style.display = "none";
-            catNameSelectorLabel.style.display = "none";
+            // catNameSelector.style.display = "none";
+            // catNameSelectorLabel.style.display = "none";
 
         } else {
             break4DNASelector.parentNode.style.display = "block";
             howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
-            catNameSelector.style.display = "none";
-            catNameSelectorLabel.style.display = "none";
-            bioTextSelector.style.display = "none";
-            bioTextSelectorLabel.style.display = "none";
+            // catNameSelector.style.display = "none";
+            // catNameSelectorLabel.style.display = "none";
+            // bioTextSelector.style.display = "none";
+            // bioTextSelectorLabel.style.display = "none";
         }
     };
 
@@ -1304,9 +1688,9 @@
         document.getElementById("WarningMessageBelowButtonBar").innerHTML = theMessage;
     }
 
-    function showTemporaryMessageBelowButtonBar(theMessage) {
+    function showTemporaryMessageBelowButtonBar(theMessage, delay=3000) {
         flashWarningMessageBelowButtonBar(theMessage);
-        setTimeout(clearMessageBelowButtonBar, 3000);
+        setTimeout(clearMessageBelowButtonBar, delay);
     }
 
     function clearMessageBelowButtonBar() {
@@ -1350,6 +1734,7 @@
             // condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+            updateMyAhentafelMarriages();
             FanChartView.numGensRetrieved++;
             FanChartView.workingMaxNumGens = Math.min(FanChartView.maxNumGens, FanChartView.numGensRetrieved + 1);
         } else {
@@ -1405,6 +1790,7 @@
                         thePeopleList.add(FanChartView.theAncestors[index]);
                     }
                     FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
+                    updateMyAhentafelMarriages();
                     FanChartView.workingMaxNumGens = Math.min(
                         FanChartView.maxNumGens,
                         FanChartView.numGensRetrieved + 1
@@ -1515,6 +1901,8 @@
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
         let legendDIV = document.getElementById("legendDIV");
+        let LegendTitle = document.getElementById("LegendTitle");
+        let LegendTitleH3 = document.getElementById("LegendTitleH3");
         let innerLegendDIV = document.getElementById("innerLegend");
 
         let fontList = [
@@ -1572,7 +1960,8 @@
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
                 innerCode = clrSwatchUNK + " age unknown <br/>" + clrSwatchLIVING + " still living";
                 for (let index = 0; index < 10; index++) {
-                    innerCode += "<br/>" + clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
+                    if (index > 0) { innerCode += "<br/>"}
+                    innerCode +=  clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
             }
@@ -1585,7 +1974,7 @@
             let innerCode = "";
             // LET's FIRST setup the ARRAY of UNIQUE LOCATIONS
             uniqueLocationsArray = [];
-            for (let index = 1; index < 2 ** FanChartView.maxNumGens; index++) {
+            for (let index = 1; index < 2 ** FanChartView.numGens2Display; index++) {
                 const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
                 if (thisPerp) {
                     if (
@@ -1624,7 +2013,7 @@
             // condLog("RGB = ", fractionToHexChar(rgbArray[1]) );
             // condLog("RGB = ", fractionToHexChar(rgbArray[2]) );
 
-            innerCode += "<br/>" + clrSwatchUNK + " unknown";
+            innerCode += /* "<br/>" + */ clrSwatchUNK + " unknown";
 
             for (let index = 0; index < uniqueLocationsArray.length; index++) {
                 let hue = Math.round((360 * index) / uniqueLocationsArray.length);
@@ -1680,6 +2069,7 @@
                 //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                 //     thisColourArray[index % thisColourArray.length] +
                 //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                
                 innerCode += "<br/>" + clrSwatch + " " + uniqueLocationsArray[index];
                 //  +
                 // " H:" +
@@ -1906,6 +2296,41 @@
     //     return null;
     // }
 
+    function updateMyAhentafelMarriages() {
+        if (FanChartView.myAhnentafel.marriageList) {
+            // OK - no problem - this exists!
+        } else {
+            FanChartView.myAhnentafel.marriageList = [];
+        }
+
+        for (index in FanChartView.myAhnentafel.list) {
+            if (index % 2 == 0 && index > 0) {
+                const GuyIndex = index * 1.0;
+                const GalIndex = GuyIndex + 1;
+                const Guy = FanChartView.myAhnentafel.list[GuyIndex];
+                const Gal = FanChartView.myAhnentafel.list[GalIndex];
+                let stillLookingForMarriage = true;
+                let thisMarriage = "";
+                if (Guy && Gal && thePeopleList[Guy] && thePeopleList[Gal] && thePeopleList[Guy]._data.Spouses) {
+                    for (
+                        let mNum = 0;
+                        mNum < thePeopleList[Guy]._data.Spouses.length && stillLookingForMarriage;
+                        mNum++
+                    ) {
+                        thisMarriage = thePeopleList[Guy]._data.Spouses[mNum];
+                        if (thisMarriage.Id == Gal) {
+                            // HURRAY  - we found it!!!
+                            FanChartView.myAhnentafel.marriageList[GuyIndex] = thisMarriage;
+                            FanChartView.myAhnentafel.marriageList[GalIndex] = thisMarriage;
+                            stillLookingForMarriage = false;
+                        }
+                    }
+                    // thePeopleList[Guy]._data.Spouses;
+                }
+                condLog("Marriage from updateMyAhentafelMarriages: #", index, "has", Guy, Gal, thisMarriage.MarriageDate, thisMarriage.MarriageLocation);
+            }
+        }
+    }
     /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
     FanChartView.redraw = function () {
         condLog("FanChartView.redraw");
@@ -1955,7 +2380,7 @@
      * Load and display a person
      */
     FanChartView.prototype.load = function (id) {
-        // condLog("FanChartView.prototype.load");
+        condLog("FanChartView.prototype.load - 1958", id);
         var self = this;
         
         self._load(id).then(function (person) {
@@ -2022,41 +2447,95 @@
                 }
             ).then(function (result) {
                 FanChartView.theAncestors = result[2];
-                condLog("theAncestors:", FanChartView.theAncestors);
-                // condLog("person with which to drawTree:", person);
+                let resultByKey = result[1];
+                let loadFather = -1;
+                let loadMother = -1;
 
-                // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
-               
-                // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                for (const ancNum in FanChartView.theAncestors) {
-                    let thePerson = FanChartView.theAncestors[ancNum];
-                    if (thePerson.Id < 0) {
-                        thePerson.Id = 100 - thePerson.Id;
-                        thePerson["Name"] = "Private-" + thePerson.Id;
-                        thePerson["FirstName"] = "Private";
-                        thePerson["LastNameAtBirth"] = "TBD!";
+                condLog("ORIGINAL Ancestors:", FanChartView.theAncestors);
+                // condLog(result);
+                // condLog(resultByKey[id]);
+                // condLog(resultByKey[id].Id);
+                // condLog(FanChartView.theAncestors[ resultByKey[id].Id ]);
+              
+                    // condLog("person with which to drawTree:", person);
+
+                    // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
+
+                    // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
+                    for (const ancNum in FanChartView.theAncestors) {
+                        let thePerson = FanChartView.theAncestors[ancNum];
+                        // condLog("ADDING ", thePerson);
+                        if (thePerson.Id < 0) {
+                            thePerson.Id = 100 - thePerson.Id;
+                            thePerson["Name"] = "Private-" + thePerson.Id;
+                            thePerson["FirstName"] = "Private";
+                            thePerson["LastNameAtBirth"] = "TBD!";
+                        }
+                        if (thePerson.Mother < 0) {
+                            thePerson.Mother = 100 - thePerson.Mother;
+                        }
+                        if (thePerson.Father < 0) {
+                            thePerson.Father = 100 - thePerson.Father;
+                        }
+                        thePeopleList.add(thePerson);
+                        // condLog("ADDED ", thePerson);
                     }
-                    if (thePerson.Mother < 0) {
-                        thePerson.Mother = 100 - thePerson.Mother;
-                    }
-                    if (thePerson.Father < 0) {
-                        thePerson.Father = 100 - thePerson.Father;
-                    }
-                    thePeopleList.add(thePerson);
-                    
-                }
                 
                 condLog("person:", person);
 
-                person._data.Father = FanChartView.theAncestors[id].Father;
-                person._data.Mother = FanChartView.theAncestors[id].Mother;
+                  if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
+                    //   condLog("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
+                      let privatePerson = FanChartView.theAncestors[-1];
+                    //   condLog(privatePerson);
+                    //   condLog(privatePerson.Id, privatePerson.Mother, privatePerson.Father);
+                    //   condLog(document.getElementById("wt-id-text").value);
+                      privatePerson["Name"] = document.getElementById("wt-id-text").value
+                      privatePerson["FirstName"] = "Private";
+                      privatePerson["LastNameAtBirth"] = "Person";
+                    //   privatePerson["Id"] = id;
+                      privatePerson["Gender"] = "";
+                    
+                    if (privatePerson["Father"] && privatePerson["Father"] > 0) {
+                        // excellent - a father already exists!
+                        loadFather = privatePerson["Father"];                        
+                    } else {
+                        privatePerson["Father"] = 102;
+                        thePeopleList.add({
+                            Id:102 , FirstName:"Private", Name:"Private-102", Gender:"Male", LastNameAtBirth:"Father"
+                        });
+                    } 
+                        
+                    if (privatePerson["Mother"] && privatePerson["Mother"] > 0) {
+                            // excellent - a Mother already exists!
+                            loadMother = privatePerson["Mother"];
+                    } else {     
+                        privatePerson["Mother"] = 103;
 
+                        thePeopleList.add({
+                          Id: 103,
+                          FirstName: "Private",
+                          Name: "Private-103",
+                          Gender: "Female", LastNameAtBirth:"Mother"
+                        
+                        });
+                    }
+
+
+                    person._data = privatePerson;
+
+                      
+                  } else {
+
+                      person._data.Father = FanChartView.theAncestors[id].Father;
+                      person._data.Mother = FanChartView.theAncestors[id].Mother;
+                    }
+                      
                 // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
                 FanChartView.myAhnentafel.update(person);
                 
                 let relativeName = [
                      "kid",
-                     "self",
+                     "Person",
                      "Father",
                      "Mother",
                      "Grandfather",
@@ -2077,7 +2556,7 @@
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
                     // condLog("Peep ",a, thisPeep);
-                    if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                    if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
                         
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
                         if (a % 2 == 0) {
@@ -2090,11 +2569,130 @@
                         // condLog("FOUND a TBD!", thisPeep);
                     }
                 }
+
+                // condLog("ALL PEOPLES WHO ON EARTH DO DWELL:");
+                // condLog(thePeopleList);
+
+                updateMyAhentafelMarriages();
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
                 fillOutFamilyStatsLocsForAncestors();
-                loadBiosNow(id) ;
+                if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
+                    if (document.getElementById("wt-api-login").textContent.indexOf("Logged in") == -1) {
+                        showTemporaryMessageBelowButtonBar("This is a private profile, with private parents. <br/>Log into the APPS server and try again.", 8000);
+                    } else {
+                        showTemporaryMessageBelowButtonBar("This is a private profile, with private parents.", 5000);
+                    }
+
+                    if (loadFather > -1 || loadMother > -1) {
+                        // condLog("LOADING SOME PARENTS STUFF NOW!");
+                        let listOfIDs = [];
+                        if (loadFather > -1) {
+                            listOfIDs.push(loadFather);
+                        } 
+                        if (loadMother > -1) {
+                            listOfIDs.push(loadMother);
+                        } 
+
+                        WikiTreeAPI.getPeople(
+                        // (appId, IDs, fields, options = {}) 
+                        APP_ID , listOfIDs,
+                    
+                        [
+                            "Id",
+                            "Derived.BirthName",
+                            "Derived.BirthNamePrivate",
+                            "FirstName",
+                            "MiddleInitial",
+                            "MiddleName",
+                            "RealName",
+                            // "Bio",
+                            "IsLiving",
+                            "Nicknames",
+                            "Prefix",
+                            "Suffix",
+                            "LastNameAtBirth",
+                            "LastNameCurrent",
+                            "BirthDate",
+                            "BirthLocation",
+                            "DeathDate",
+                            "DeathLocation",
+                            "Mother",
+                            "Father",
+                            "Children",
+                            "Parents",
+                            "Spouses",
+                            "Siblings",
+                            "Photo",
+                            "Name",
+                            "Gender",
+                            "Privacy",
+                            "DataStatus"
+                        ],
+                        {
+                            ancestors:4
+                        }
+                    ).then(function (result2) {
+                        FanChartView.theAncestors = result2[2];
+                        let resultByKey = result2[1];
+
+                        // condLog(result2);
+
+                        for (const ancNum in FanChartView.theAncestors) {
+                            let thePerson = FanChartView.theAncestors[ancNum];
+                            // condLog("ADDING ", thePerson);
+                            if (thePerson.Id < 0) {
+                                thePerson.Id = 110 - thePerson.Id;
+                                thePerson["Name"] = "Private-" + thePerson.Id;
+                                thePerson["FirstName"] = "Private";
+                                thePerson["LastNameAtBirth"] = "TBD!";
+                            }
+                            if (thePerson.Mother < 0) {
+                                thePerson.Mother = 110 - thePerson.Mother;
+                            }
+                            if (thePerson.Father < 0) {
+                                thePerson.Father = 110 - thePerson.Father;
+                            }
+                            thePeopleList.add(thePerson);
+                            // condLog("ADDED ", thePerson);
+                        }
+
+                        FanChartView.myAhnentafel.update(person);
+                        updateMyAhentafelMarriages();
+                        // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                        for (var a = 1; a < 16; a++) {
+                            let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
+                            // condLog("Peep ",a, thisPeep);
+                            if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                                thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                                if (a % 2 == 0) {
+                                    thisPeep._data["Gender"] = "Male";
+                                } else {
+                                    thisPeep._data["Gender"] = "Female";
+                                }
+                                // condLog("FOUND a TBD!", thisPeep);
+                            }
+                        }
+
+                        self.drawTree(person);
+                        clearMessageBelowButtonBar();
+                        populateXAncestorList(1);
+                        fillOutFamilyStatsLocsForAncestors();
+
+                        loadBiosNow(listOfIDs);
+
+                        
+                        showTemporaryMessageBelowButtonBar("The central person has a private profile.", 5000);
+                    });
+                }
+                     
+                } else {
+                    loadBiosNow(id);
+                }
+
+                
+
             });
         });
     };
@@ -2159,7 +2757,7 @@
      * Testing username change ...
      */
     FanChartView.prototype._load = function (id) {
-        // condLog("INITIAL _load - line:118", id) ;
+        condLog("INITIAL _load - line:118", id) ;
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -2191,7 +2789,7 @@
             "Privacy",
             "DataStatus",
         ]);
-        // condLog("_load PersonObj:",thePersonObject);
+        condLog("_load PersonObj:",thePersonObject);
         return thePersonObject;
     };
 
@@ -2280,6 +2878,7 @@
             updateLegendIfNeeded();
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
+            hideMDateDIVs();
             updateFontsIfNeeded();
         } else {
             throw new Error("Missing root");
@@ -2574,6 +3173,10 @@
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
+                    let mDateDIV = '';
+                    // if (ancestorObject.ahnNum % 2 == 0) {
+                    //     mDateDIV =  '<div class="centered mDateBox" id=mDateFor${ancestorObject.ahnNum}>m.<br/>28 Aug<br/>1987</div>';
+                    // }
                     // Use generic gender photos if there is not profile photo available
                     if (!photoUrl) {
                         if (person.getGender() === "Male") {
@@ -2607,7 +3210,7 @@
                         "D"
                     )}</div>
 						</div>
-					</div>
+					</div>${mDateDIV}           
                     `;
                 }
             });
@@ -2660,6 +3263,8 @@
             let thisBkgdClr = "white";
             let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
             let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
+            let theMDateDIV = false; // the marriage date DIV for in between spouses
+            let SVGgraphicsDIV = document.getElementById("SVGgraphics");
 
             // LET'S START WITH COLOURIZING THE WEDGES - IF NEEDED
             if (ancestorObject.ahnNum == 1) {
@@ -2673,6 +3278,13 @@
                 let thisPersonsWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                 let theWedgeInfoForBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
+                
+                if (thisPosNum % 2 == 0) {
+                    theMDateDIV = document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
+                    if (theMDateDIV) {
+                        condLog("theMDateDIV:", theMDateDIV);
+                    }
+                }
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                     thisBkgdClr = thisPersonsWedge.style.fill;
@@ -2878,6 +3490,7 @@
                 }
                 //  theInfoBox.style.backgroundColor = "orange";
             } else {
+                theNameDIV.innerHTML = getShortName(d);
                 theInfoBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                 theInfoBox.parentNode.parentNode.setAttribute("width", 266);
                 theInfoBox.parentNode.parentNode.setAttribute("x", -133);
@@ -3028,7 +3641,11 @@
                     if (!photoUrl && FanChartView.currentSettings["photo_options_useSilhouette"] == false) {
                         thePhotoDIV.style.display = "none";
                         theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
+                    } else if (!photoUrl && FanChartView.currentSettings["photo_options_useSilhouette"] == true && d._data.Gender == "") {
+                        thePhotoDIV.style.display = "none";
+                        theInfoBox.parentNode.parentNode.setAttribute("y", -60); // adjust down the contents of the InfoBox
                     } else {
+
                         thePhotoDIV.style.display = "inline-block";
                     }
                 } else if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == false) {
@@ -3059,6 +3676,8 @@
 
             // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
             showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle);
+            // AND the stickers !
+            showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle);
 
             // LET'S UPDATE THOSE EXTRAS TOO ... OK ?
             let theExtraDIV = document.getElementById("extraInfoFor" + ancestorObject.ahnNum);
@@ -3074,7 +3693,83 @@
                 extraBR = "<br/>";
             }
             if (theExtraDIV) {theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;}
+            if (theMDateDIV) {
+                // condLog("Marriage", d._data.Spouses);
+                let mDateAngle = nameAngle + (FanChartView.maxAngle / 2) / numSpotsThisGen;
+                let tweakAngle = (Math.atan(30 / (thisGenNum * thisRadius)) * 180) / Math.PI;
+                let dGenNum = 0; // variable that should be 0 if marriage date is in the middle of the cell, but a percentage if it's shifted to the top (for gens <= 5)
+                if (FanChartView.currentSettings["date_options_marriageAtTopEarlyGens"] == true) {
+                    dGenNum = 0.35;
+                }
+                let mDateX = (thisGenNum + dGenNum) * thisRadius * Math.cos(((mDateAngle - tweakAngle - 90) * Math.PI) / 180);
+                let mDateY = (thisGenNum + dGenNum) * thisRadius * Math.sin(((mDateAngle - tweakAngle - 90) * Math.PI) / 180);
+                if (ancestorObject.ahnNum >= 32) {
+                    tweakAngle = (Math.atan(10 / (thisGenNum * thisRadius)) * 180) / Math.PI;
+                    if (thisPosNum < numSpotsThisGen / 2) {
+                        mDateX = (thisGenNum * thisRadius + 60) * Math.cos(((mDateAngle - 180 + tweakAngle) * Math.PI) / 180) ;
+                        mDateY =
+                            (thisGenNum * thisRadius + 60) *
+                            Math.sin(((mDateAngle - 180 + tweakAngle) * Math.PI) / 180);
+                    } else {
+                        mDateX = (thisGenNum * thisRadius - 60) * Math.cos(((mDateAngle - tweakAngle - 0) * Math.PI) / 180);
+                        mDateY = (thisGenNum * thisRadius - 60) * Math.sin(((mDateAngle - tweakAngle - 0) * Math.PI) / 180);
+                    }
+                }                
+                let dateStyle = "Full";
+                if (
+                    FanChartView.currentSettings["date_options_showMarriage"] == false ||
+                    FanChartView.currentSettings["date_options_dateTypes"] == "none" || thisGenNum >= 8 || 
+                    
+                    (FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum] &&
+                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate && FanChartView
+                            .myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate == "0000-00-00")
+                ) {
+                    theMDateDIV.parentNode.style.display = "none";
+                } else {
+                    if (FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum] && FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate){
+                        condLog(
+                            "mDateDIV display:",
+                            theMDateDIV.parentNode.style.display,
+                            FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate
+                        );
+                        theMDateDIV.parentNode.style.display = "block";
 
+                        if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
+                            dateStyle = "YYYY";
+                        }
+                        let mDotBreak = "m.<br/>";
+                        if (ancestorObject.ahnNum >= 32) {
+                            mDotBreak = " m. ";
+                            // if (thisPosNum < numSpotsThisGen / 2) {
+                            //     mDateAngle == 90;
+                            // } else {
+                            //     mDateAngle += 90;
+                            // }
+                        }
+                        theMDateDIV.innerHTML =
+                            mDotBreak +
+                            getCleanDateString(
+                                FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate,
+                                dateStyle
+                            ).replace(",", " ") + (ancestorObject.ahnNum >= 32 ? " ":"");
+                        // .replace(/\-/g, " "); // On second thought - leave the dashes in, if that's the format chosen
+
+                        theMDateDIV.parentNode.style.transform =
+                            "translate(" + mDateX + "px," + mDateY + "px)" + " " + "rotate(" + mDateAngle + "deg)";
+                        if (FanChartView.currentSettings["date_options_marriageBlend"] == true){
+                            theMDateDIV.style.backgroundColor = thisBkgdClr;                            
+                        } else {
+                            theMDateDIV.style.backgroundColor = "White";                           
+                        }
+                        
+                        // theMDateDIV.parentNode.style.display = "none";
+
+                        SVGgraphicsDIV.append(theMDateDIV.parentNode); // move the MDateDiv to the end of the line  - basically putting it on the top of the stack to be most visible by everybody!
+                    } else {
+                        theMDateDIV.parentNode.style.display = "none";
+                    }
+                }
+            };
             // FINALLY ... we return the transformation statement back - the translation based on our Trig calculations, and the rotation based on the nameAngle
             return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
@@ -3520,7 +4215,9 @@
             // there's no need for doing any parsing --> just return the whole kit and caboodle
             return locString;
         }
-
+        if (!locString) {
+            return "";
+        }
         var parts = locString.split(",");
         if (parts.length == 1) {
             // there's no way to reformat/parse a single item location
@@ -4171,22 +4868,33 @@
      */
     function getSettingsName(person) {
         const maxLength = 50;
-
+        condLog("IXes : ", person._data.Prefix, person._data.Suffix);
         let theName = "";
+        // condLog(
+        //     "Prefix check: ",
+        //     FanChartView.currentSettings["name_options_prefix"], person._data
+        // );
+        if (
+            FanChartView.currentSettings["name_options_prefix"] == true 
+            && person._data.Prefix && person._data.Prefix > ""
+        ) {
+            theName = person._data.Prefix + " ";
+            // theName = "PRE ";
+        }
 
         if (FanChartView.currentSettings["name_options_firstName"] == "FirstNameAtBirth") {
             if (person._data.FirstName) {
-                theName = person._data.FirstName;
+                theName += person._data.FirstName;
             } else if (person._data.RealName) {
-                theName = person._data.RealName;
+                theName += person._data.RealName;
             } else {
-                theName = "Private";
+                theName += "Private";
             }
         } else {
             if (person._data.RealName) {
-                theName = person._data.RealName;
+                theName += person._data.RealName;
             } else {
-                theName = "Private";
+                theName += "Private";
             }
         }
 
@@ -4195,7 +4903,7 @@
                 theName += " " + person._data.MiddleName;
             }
         } else if (FanChartView.currentSettings["name_options_middleInitial"] == true) {
-            if (person._data.MiddleInitial > "") {
+            if (person._data.MiddleInitial > "" && person._data.MiddleInitial != ".") {
                 theName += " " + person._data.MiddleInitial;
             }
         }
@@ -4210,6 +4918,15 @@
             theName += " " + person._data.LastNameAtBirth;
         } else {
             theName += " " + person._data.LastNameCurrent;
+        }
+
+        if (
+            FanChartView.currentSettings["name_options_suffix"] == true &&
+            person._data.Suffix &&
+            person._data.Suffix > ""
+        ) {
+            theName += " " + person._data.Suffix ;
+            // theName += " Suf";
         }
 
         return theName;
@@ -4244,14 +4961,35 @@
         const middleInitialName = `${person._data.FirstName} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
         const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
 
+        let thePrefix = "";
+        let theSuffix = "";
+
+         if (
+             FanChartView.currentSettings["name_options_prefix"] == true &&
+             person._data.Prefix &&
+             person._data.Prefix > ""
+         ) {
+             thePrefix = person._data.Prefix + " ";
+            }
+            
+         if (
+             FanChartView.currentSettings["name_options_suffix"] == true &&
+             person._data.Suffix &&
+             person._data.Suffix > ""
+         ) {
+            theSuffix = " " + person._data.Suffix;
+        }
+        
+        condLog("IXes : ", person._data.Prefix, person._data.Suffix);
+
         if (birthName.length < maxLength) {
-            return birthName;
+            return thePrefix +  birthName + theSuffix;
         } else if (middleInitialName.length < maxLength) {
-            return middleInitialName;
+            return thePrefix +  middleInitialName + theSuffix;
         } else if (noMiddleInitialName.length < maxLength) {
-            return noMiddleInitialName;
+            return thePrefix +  noMiddleInitialName + theSuffix;
         } else {
-            return `${person._data.FirstName.substring(0, 1)}. ${person._data.LastNameAtBirth}`;
+            return thePrefix +  `${person._data.FirstName.substring(0, 1)}. ${person._data.LastNameAtBirth}` + theSuffix;
         }
     }
 
@@ -4299,8 +5037,247 @@
         }
     }
 
+    function hideMDateDIVs() {
+        for (let ahnNum = 2 ** FanChartView.numGens2Display; ahnNum < 2 ** FanChartView.maxNumGens; ahnNum++) {
+            const mDateDIV = document.getElementById("mDateFor-" + ahnNum + "inner");
+            if (mDateDIV) {
+                mDateDIV.style.display = "none";
+            }
+            for (let b = 1; b <= 4; b++) {
+                const badgeDIVid = "badge" + b + "-" + ahnNum + "svg";
+                let badgeDIV = document.getElementById(badgeDIVid);
+
+                badgeDIV.parentNode.style.display = "none";
+                
+            }
+        }        
+    }
+
+    //  let catNameSelector = document.getElementById("highlight_options_catName");
+    //         let rawValue = catNameSelector.value.trim();
+    //         let spacelessValue = catNameSelector.value.trim().replace(/ /g, "_");
+    //         condLog("Looking for BIOs that Have the following: ", rawValue, "or", spacelessValue);
+    //          if (
+    //              thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+    //              thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio && 
+    //              (
+    //                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) > -1 ||
+    //                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + " " + rawValue) > -1 ||
+    //                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + spacelessValue) > -1 ||
+    //                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + " " + spacelessValue) > -1 
+    //              )
+    //          ) {
+    //              return true;
+             
+
+     FanChartView.updateBadgesToShow = function (num = 1) {
+        condLog("UPDATING BADGES NOW !!!!");
+         let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+         let theDropDown = document.getElementById("stickerCategoryDropDownList" + num);
+         let searchText = "Clarke";
+         let searchPrefix = "[[Category:";
+         if ( theDropDown.value  > -1 ) {
+
+             if (theDropDown.value && theDropDown.value < categoryList.length) {
+                searchText = categoryList[theDropDown.value];
+            } else {
+                searchText = stickerList[theDropDown.value - categoryList.length];
+                searchPrefix = "{{";
+            }
+        } else {
+            showBadges = false;
+         } 
+         condLog("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText);
+
+        
+        let rawValue = searchText.trim();
+        let spacelessValue = searchText.trim().replace(/ /g, "_");
+
+        currentBadges[num] = rawValue;
+
+        for (let ahnNum = 1; ahnNum < 2 ** FanChartView.numGens2Display; ahnNum++) {
+             const thisDIVid = "badge" + num + "-" + ahnNum + "svg";
+             let stickerDIV = document.getElementById(thisDIVid);
+
+             if (
+                 showBadges &&
+                 stickerDIV &&
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
+                 (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
+                     -1 ||
+                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                         searchPrefix + " " + rawValue
+                     ) > -1 ||
+                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                         searchPrefix + spacelessValue
+                     ) > -1 ||
+                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                         searchPrefix + " " + spacelessValue
+                     ) > -1)
+             ) {
+                 //  SHOW THIS STICKER
+                 let SVGgraphicsDIV = document.getElementById("SVGgraphics");
+                 stickerDIV.parentNode.style.display = "block";
+                 SVGgraphicsDIV.append(stickerDIV.parentNode);
+             } else {
+                 stickerDIV.parentNode.style.display = "none";
+             }
+         }
+     };
+
+    function showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
+        const ahnNum = 2**thisGenNum + thisPosNum;
+        if (ahnNum == 1) { condLog("SHOW BADGES FOR # 1 - NUMERO UNO !!!!")}
+        let SVGgraphicsDIV = document.getElementById("SVGgraphics");
+        let showBadgesSetting = FanChartView.currentSettings["general_options_showBadges"];
+        
+
+        let dCompensation = 0;
+        if (nameAngle > 550) {
+            dCompensation = -36;
+        } else if (nameAngle > 540) {
+            dCompensation = -36;
+        } else if (nameAngle > 530) {
+            dCompensation = -36;
+        } else if (nameAngle > 520) {
+            dCompensation = -36;
+        } else if (nameAngle > 510) {
+            dCompensation = -36;
+        } else if (nameAngle > 500) {
+            dCompensation = -36;
+        } else if (nameAngle > 490) {
+            dCompensation = -36;
+        } else if (nameAngle > 480) {
+            dCompensation = -34;
+        } else if (nameAngle > 470) {
+            dCompensation = -34;
+        } else if (nameAngle > 450) {
+            dCompensation = -32;
+        } else if (nameAngle > 435) {
+            dCompensation = -26;
+        } else if (nameAngle > 420) {
+            dCompensation = -24;
+        } else if (nameAngle > 400) {
+            dCompensation = -14;
+        } else if (nameAngle > 380) {
+            dCompensation = -10;
+        } else if (nameAngle > 360) {
+            dCompensation = -6;
+        } else if (nameAngle > 320) {
+            dCompensation = 0;
+        } else if (nameAngle > 270) {
+            dCompensation = -6;
+        } else if (nameAngle > 240) {
+            dCompensation = -18;
+        } else if (nameAngle > 220) {
+            dCompensation = -24;
+        } else if (nameAngle > 200) {
+            dCompensation = -32;
+        } else if (nameAngle > 190) {
+            dCompensation = -36;
+        } else if (nameAngle > 170) {
+            dCompensation = -36;
+        }
+        let dFraction =
+            ((thisGenNum + 1 / 2) * thisRadius - 2 * 0  - 0 * (thisGenNum < 5 ? 100 : 80) + dCompensation) /
+            (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho2 = dOrtho;
+        let newR = thisRadius;
+
+        condLog("UPDATING the BADGES DROP DOWN here on line 5196");
+        // stickerPrefix + ahnNum + "svg",
+        for (let i = 1; i <= 4; i++) {
+           
+            const thisDIVid = "badge" + i + "-" + ahnNum + "svg";
+            let stickerDIV = document.getElementById(thisDIVid);
+
+            // dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
+            // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
+            
+             if (ahnNum == 1) {
+                 newX = -20;
+                 newY = 0 - thisRadius + Math.abs(i - 2.5) * 10 * 2;
+                 stickerDIV.parentNode.setAttribute("x", newX * dFraction + (2.5 - i) * dOrtho * newY);
+                 stickerDIV.parentNode.setAttribute("y", newY * dFraction -  dOrtho * newX);
+             } else {
+                 stickerDIV.parentNode.setAttribute("x", newX * dFraction + (2.5 - i)  * dOrtho * newY);
+                 stickerDIV.parentNode.setAttribute("y", newY * dFraction - (2.5 - i)  * dOrtho * newX);
+             }
+
+            stickerDIV.style.rotate = nameAngle + "deg";
+
+            let theDropDown = document.getElementById("stickerCategoryDropDownList" + i);
+            let searchText = "Clarke";
+            let showBadges = showBadgesSetting;
+            let searchPrefix = "[[Category:";
+            if (theDropDown.value > -1) {
+                if (theDropDown.value && theDropDown.value < categoryList.length) {
+                    searchText = categoryList[theDropDown.value];
+                } else {
+                    searchText = stickerList[theDropDown.value - categoryList.length];
+                    searchPrefix = "{{";
+                }
+            } else {
+                showBadges = false;
+            } 
+           
+            let rawValue = searchText.trim();
+            let spacelessValue = searchText.trim().replace(/ /g, "_");
+
+            
+            if (i==1 || ahnNum == 1) {
+                condLog(
+                    "Sticker me this: i=",i,
+                    thisGenNum,
+                    thisPosNum,ahnNum,
+                    nameAngle,
+                    "deg",
+                    dCompensation,
+                    newX,
+                    newY,
+                    dOrtho,
+                    (Math.atan(-18 / 12) * 180) / Math.PI
+                );
+            }
+
+             if (
+                 showBadges &&
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
+                 (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
+                     -1 ||
+                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                         searchPrefix + " " + rawValue
+                     ) > -1 ||
+                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                         searchPrefix + spacelessValue
+                     ) > -1 ||
+                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                         searchPrefix + " " + spacelessValue
+                     ) > -1)
+             ) {
+                 //  SHOW THIS STICKER
+                 stickerDIV.parentNode.style.display = "block";
+                 SVGgraphicsDIV.append(stickerDIV.parentNode);
+             } else {
+                 stickerDIV.parentNode.style.display = "none";
+             }
+
+        }
+
+        // condLog(
+        //     "Sticker me THAT: ",
+        //     6 * Math.sqrt(13) * Math.cos(((nameAngle - 56) * Math.PI) / 180),
+        //     6 * Math.sqrt(13) * Math.sin(((nameAngle - 56) * Math.PI) / 180)
+        // );
+
+    }
+
     function showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
-        // condLog("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");
+        // condLog("showDNAiconsIfNeeded(" , newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle,")");        
+        let SVGgraphicsDIV = document.getElementById("SVGgraphics");
 
         // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
         let dnaImgX = document.getElementById("imgDNA-x-" + thisGenNum + "i" + thisPosNum + "inner");
@@ -4357,22 +5334,28 @@
                     if (ahnNum > 1) {
                         if (dnaImgY) {
                             dnaImgY.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgY.parentNode);
                         }
                         if (dnaImgDs) {
                             dnaImgDs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgDs.parentNode);
                         }
                         if (dnaImgAs) {
                             dnaImgAs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgAs.parentNode);
                         }
                     } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         if (dnaImgY) {
                             dnaImgY.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgY.parentNode);
                         }
                         if (dnaImgDs) {
                             dnaImgDs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgDs.parentNode);
                         }
                         if (dnaImgAs) {
                             dnaImgAs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgAs.parentNode);
                         }
                     }
                 }
@@ -4386,11 +5369,14 @@
                 if (pos == 2 ** gen - 1) {
                     if (dnaImgMT) {
                         dnaImgMT.style.display = "block";
+                        SVGgraphicsDIV.append(dnaImgMT.parentNode);
                         if (dnaImgDs) {
                             dnaImgDs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgDs.parentNode);
                         }
                         if (dnaImgAs) {
                             dnaImgAs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgAs.parentNode);
                         }
                     }
                 }
@@ -4404,11 +5390,14 @@
                 if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
                     if (dnaImgX) {
                         dnaImgX.style.display = "block";
+                        SVGgraphicsDIV.append(dnaImgX.parentNode);
                         if (dnaImgDs) {
                             dnaImgDs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgDs.parentNode);
                         }
                         if (dnaImgAs) {
                             dnaImgAs.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgAs.parentNode);
                         }
                     }
                 }
@@ -4420,12 +5409,14 @@
                     // HIGHLIGHT by X-chromosome inheritance
                     if (dnaImgX) {
                         dnaImgX.style.display = "block";
+                        SVGgraphicsDIV.append(dnaImgX.parentNode);
                     }
                 }
                 if (pos == 2 ** gen - 1) {
                     // AND/OR by mtDNA inheritance
                     if (dnaImgMT) {
                         dnaImgMT.style.display = "block";
+                        SVGgraphicsDIV.append(dnaImgMT.parentNode);
                     }
                 }
                 if (pos == 0) {
@@ -4433,10 +5424,12 @@
                     if (ahnNum > 1) {
                         if (dnaImgY) {
                             dnaImgY.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgY.parentNode);
                         }
                     } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         if (dnaImgY) {
                             dnaImgY.style.display = "block";
+                            SVGgraphicsDIV.append(dnaImgY.parentNode);
                         }
                     }
                 }
@@ -4445,6 +5438,7 @@
                     condLog(thePeopleList[FanChartView.myAhnentafel.list[1]]._data);
                     if (dnaImgConfirmed) {
                         dnaImgConfirmed.style.display = "block";
+                        SVGgraphicsDIV.append(dnaImgConfirmed.parentNode);
                     }
                 } else {
                     let childAhnNum = Math.floor(ahnNum / 2);
@@ -4453,6 +5447,7 @@
                         if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
                             if (dnaImgConfirmed) {
                                 dnaImgConfirmed.style.display = "block";
+                                SVGgraphicsDIV.append(dnaImgConfirmed.parentNode);
                             }
                         }
                     } else {
@@ -4460,6 +5455,7 @@
                         if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
                             if (dnaImgConfirmed) {
                                 dnaImgConfirmed.style.display = "block";
+                                SVGgraphicsDIV.append(dnaImgConfirmed.parentNode);
                             }
                         }
                     }
@@ -4482,6 +5478,7 @@
                 showAllAs == true
             ) {
                 dnaImgX.style.display = "block";
+                SVGgraphicsDIV.append(dnaImgX.parentNode);
             }
         }
         if (dnaImgY) {
@@ -4501,6 +5498,7 @@
                 showAllAs == true
             ) {
                 dnaImgY.style.display = "block";
+                SVGgraphicsDIV.append(dnaImgY.parentNode);
             }
         }
         if (ext > "" && FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Hide") {
@@ -4511,6 +5509,7 @@
             showAllAs == true
         ) {
             dnaImgY.style.display = "block";
+            SVGgraphicsDIV.append(dnaImgY.parentNode);
         }
         if (dnaImgMT) {
             dnaImgMT.setAttribute("x", newX * dFraction - dOrtho * newY);
@@ -4528,6 +5527,7 @@
                 showAllAs == true
             ) {
                 dnaImgMT.style.display = "block";
+                SVGgraphicsDIV.append(dnaImgMT.parentNode);
             }
         }
 
@@ -4558,6 +5558,7 @@
                 showAllDs == true
             ) {
                 dnaImgDs.style.display = "block";
+                SVGgraphicsDIV.append(dnaImgDs.parentNode);
             }
         }
 
@@ -4587,6 +5588,7 @@
                 showAllAs == true
             ) {
                 dnaImgAs.style.display = "block";
+                SVGgraphicsDIV.append(dnaImgAs.parentNode);
             }
         }
 
@@ -4615,6 +5617,7 @@
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll"
             ) {
                 dnaImgConfirmed.style.display = "block";
+                SVGgraphicsDIV.append(dnaImgConfirmed.parentNode);
             }
         }
     }
@@ -4671,42 +5674,99 @@
             }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
             let catNameSelector = document.getElementById("highlight_options_catName");
-            condLog("Looking for BIOs that Have the following: ", catNameSelector.value);
-             if (
-                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio && 
-                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf("[[Category:" + catNameSelector.value) > -1
-             ) {
-                 return true;
-             }
+            let rawValue = catNameSelector.value.trim();
+            let spacelessValue = catNameSelector.value.trim().replace(/ /g, "_");
+            let searchPrefix = "[[Category:";
+            condLog("Looking for BIOs that Have the following: ", rawValue, "or", spacelessValue);
+            if (rawValue.length == 0) {
+                return false;
+            }
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
+                (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
+                    -1 ||
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + " " + rawValue
+                    ) > -1 ||
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + spacelessValue
+                    ) > -1 ||
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        searchPrefix + " " + spacelessValue
+                    ) > -1)
+            ) {
+                return true;
+            }
 
-             let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births", "Estimated Date"];
-             for (let index = 0; index < acceptedStickers.length; index++) {
+            let acceptedStickers = [
+                "Sticker",
+                "Adopted Child",
+                "Died Young",
+                "Multiple Births",
+                "Estimated Date",
+                "Unsourced",
+            ];
+            for (let index = 0; index < acceptedStickers.length; index++) {
                 const element = acceptedStickers[index];
                 if (catNameSelector.value.indexOf(element) > -1) {
-                     if (
-                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
-                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
-                             "{{" + catNameSelector.value
-                         ) > -1
-                     ) {
-                         return true;                     
-                     }
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
+                        (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                            "{{" + catNameSelector.value
+                        ) > -1 ||
+                            thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                                "{{ " + catNameSelector.value
+                            ) > -1)
+                    ) {
+                        return true;
+                    }
                 }
-                
-             }
-
+            }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioText") {
             let bioTextSelector = document.getElementById("highlight_options_bioText");
             condLog("Looking for BIOs that Have the following: ", bioTextSelector.value);
-             if (
-                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio && 
-                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.toUpperCase().indexOf(bioTextSelector.value.toUpperCase() ) > -1
-             ) {
-                 return true;
-             }
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio
+                    .toUpperCase()
+                    .indexOf(bioTextSelector.value.toUpperCase()) > -1
+            ) {
+                return true;
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
+            let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+            let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+            let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+
+            let bornByDate = "";
+            let deadByDate = "";
+
+            let inputDate = 1950 + "-" + aliveMMMSelector.value + "-" + aliveDDSelector;
+            if (aliveYYYYSelector.value > 1){
+                inputDate = aliveYYYYSelector.value + "-" + aliveMMMSelector.value + "-" + aliveDDSelector;
+            }
+
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == false &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > inputDate
+            ) {
+                return true;
+            } else if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == true
+            ) {
+                return true;
+            
+            }
 
         }
 
@@ -4766,6 +5826,7 @@
         condLog("findCategoriesOfAncestors");
         categoryList = [];
         stickerList = [];
+        stickerInnerHTML = '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
         for (let index = 1; index < 2 ** FanChartView.numGens2Display; index++) {
             const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
             if (thisPerp) {
@@ -4778,48 +5839,95 @@
         condLog("ALL STICKERS:\n", stickerList);
         categoryList.sort();
         stickerList.sort();
-        
+
         let catNameSelector = document.getElementById("highlight_options_catName");
-        let innerCatHTML = '<option selected value="Unsourced">Unsourced</option>';
+        let innerCatHTML = '<option selected value="">Pick one:</option>';
         for (let i = 0; i < categoryList.length; i++) {
             const cat = categoryList[i];
-            innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
+            let selectedText = "";
+            if (currentHighlightCategory > "" && cat.indexOf(currentHighlightCategory) > -1) {
+                selectedText = " selected ";
+                condLog("SELECTED !!!");
+            }
+            innerCatHTML += '<option value="' + cat + '" '+ selectedText +'>' + cat + "</option>";
+            stickerInnerHTML += '<option value="' + i + '">' + cat + "</option>";
         }
+        condLog("UPDATING & REDOING the BADGES DROP DOWNS @ 5854");
         if (stickerList.length > 0) {
+            stickerInnerHTML += "<option>STICKERS:</option>";
             innerCatHTML += '<option value="Sticker">STICKERS:</option>';
             for (let i = 0; i < stickerList.length; i++) {
                 const cat = stickerList[i];
                 innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
+                stickerInnerHTML += '<option value="' + (i + categoryList.length) + '">' + cat + "</option>";
             }
         }
         catNameSelector.innerHTML = innerCatHTML;
+        for (i = 1; i <= 4; i++) {
+            document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace("#666#", i);
+            condLog("Updating and checking : Badge # ", i, ":", currentBadges[i]);
+            if (currentBadges[i]) {
+                condLog(
+                    "updating and finding index:",
+                    categoryList.indexOf(currentBadges[i]),
+                    stickerList.indexOf(currentBadges[i])
+                );
+
+                if (categoryList.indexOf(currentBadges[i]) > -1) {
+                    document.getElementById("stickerCategoryDropDownList" + i).value = categoryList.indexOf(
+                        currentBadges[i]
+                    );
+                    FanChartView.updateBadgesToShow(i);
+                } else if (stickerList.indexOf(currentBadges[i]) > -1) {
+                    document.getElementById("stickerCategoryDropDownList" + i).value =
+                        categoryList.length + stickerList.indexOf(currentBadges[i]);
+                    FanChartView.updateBadgesToShow(i);
+                }
+            }
+        }
+
+        // Look again to see if the current outer ring needs its peeps highlighted or not
+        if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
+            for (let pos = 0; pos < 2 ** (FanChartView.numGens2Display - 1); pos++) {
+                let ahnNum = 2 ** (FanChartView.numGens2Display - 1) + pos;
+                let doIt = doHighlightFor(FanChartView.numGens2Display, pos, ahnNum);
+                if (doIt == true) {
+                    let theInfoBox = document.getElementById("wedgeBoxFor" + ahnNum);
+                    theInfoBox.setAttribute("style", "background-color: " + "yellow");
+                }
+            }
+        }
     }
 
 
     function parseThisBio(bio) {
-
-        let catBeginBrackets = bio.indexOf("[[Category:");
+        let searchPrefix = "[[Category:";
+        let catBeginBrackets = bio.indexOf(searchPrefix);
         while (catBeginBrackets > -1) {
             let catEndBrackets = bio.indexOf("]]", catBeginBrackets);
             if (catEndBrackets > -1) {
                 condLog(bio.substring(catBeginBrackets, catEndBrackets));
-                let thisCatName = bio.substring(catBeginBrackets + 11, catEndBrackets);
+                let thisCatName = bio.substring(catBeginBrackets + 11, catEndBrackets).trim();
                 if (categoryList.indexOf(thisCatName) == -1){
                     categoryList.push(thisCatName);
                 }
-                catBeginBrackets = bio.indexOf("[[Category:", catEndBrackets);
+                catBeginBrackets = bio.indexOf(searchPrefix, catEndBrackets);
             } else {
                 catBeginBrackets = -2;
             }
         }
         
         let stickBeginBrackets = bio.indexOf("{{");
-        let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births", "Estimated Date"];
+        let acceptedStickers = ["Sticker", "Adopted Child", "Died Young", "Multiple Births", "Estimated Date", "Unsourced"];
         while (stickBeginBrackets > -1) {
             let stickEndBrackets = bio.indexOf("}}", stickBeginBrackets);
+            let stickPipe = bio.indexOf("|", stickBeginBrackets);
             if (stickEndBrackets > -1) {
+                if (stickPipe > stickBeginBrackets && stickPipe < stickEndBrackets) {
+                    stickEndBrackets = stickPipe;
+                }
                 condLog(bio.substring(stickBeginBrackets, stickEndBrackets));
-                let thisStickName = bio.substring(stickBeginBrackets + 2, stickEndBrackets);
+                let thisStickName = bio.substring(stickBeginBrackets + 2, stickEndBrackets).trim();
                 if (stickerList.indexOf(thisStickName) == -1){
                     let OK2UseThisSticker = false;
                     for (let index = 0; index < acceptedStickers.length && !OK2UseThisSticker; index++) {
@@ -5382,10 +6490,7 @@
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
 
         let settingForPalette = FanChartView.currentSettings["colour_options_palette"];
-
-        if (settingForColourBy == "None") {
-            return "White";
-        }
+        
 
         let thisColourArray = getColourArray();
 
@@ -5395,6 +6500,10 @@
         }
         if (overRideByHighlight == true) {
             return "yellow";
+        }
+
+        if (settingForColourBy == "None") {
+            return "White";
         }
 
         if (ahnNum == 1 && settingForColourBy != "Location" && settingForColourBy != "Family") {

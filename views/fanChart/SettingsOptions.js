@@ -387,10 +387,26 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let labelTextNode = document.createTextNode(" " + option.label);
 
                     let labelElement = document.createElement("label");
+
+                    if (option.indent && option.indent > 0) {
+                        let indentText = "";
+                        for (let indent = 0; indent < option.indent; indent++) {
+                            indentText += "_";
+                        }
+                        let indentTextNode = document.createElement("label");
+                        indentTextNode.innerText = (indentText);
+                        indentTextNode.style.color = "aliceblue";
+                        labelElement.append(indentTextNode);                        
+                    }
+
+
                     labelElement.appendChild(optionElement);
                     labelElement.appendChild(labelTextNode);
 
                     optionDivElement.appendChild(labelElement);
+                    
+                    
+
                 } else if (option.type == "radio") {
                     optionElement = document.createElement("radio");
 

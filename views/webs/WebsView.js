@@ -2237,7 +2237,7 @@
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
                     // condLog("Peep ",a, thisPeep);
-                    if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                    if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
                         if (a % 2 == 0) {
                             thisPeep._data["Gender"] = "Male";
@@ -3812,16 +3812,18 @@
             let shortListOfRepeatAncs = [];
             for (let index = 0; index < WebsView.listOfRepeatAncestors.length; index++) {
                 const element = WebsView.listOfRepeatAncestors[index];
-                // condLog("ELEMENT IN LOOP:", element);
+                condLog("ELEMENT IN LOOP:", element);
                 let sumOfX = 0;
                 let sumOfY = 0;
                 let numOfX = 0;
+                let maxGenNum4This = 0;
                 //let lastAhnNum = 0;
                 for (let innerIndex = 0; innerIndex < element.AhnNums.length; innerIndex++) {
                     const anAhnNum = element.AhnNums[innerIndex];
                     if (anAhnNum <= maxAhnNum) {
                         sumOfX += findPercentileForAhnNum(anAhnNum, orderedNodes, WebsView.currentPrimeNum);
                         let thisOnesGenNum = Math.floor(Math.log2(anAhnNum));
+                        maxGenNum4This = thisOnesGenNum;
                         sumOfY += thisOnesGenNum;
                         minGenNum = Math.min(minGenNum, thisOnesGenNum);
                         maxGenNum = Math.max(maxGenNum, thisOnesGenNum);
@@ -3830,7 +3832,7 @@
                     }
                 }
                 let newPercentile = sumOfX / numOfX;
-                let avgGenNum = sumOfY / numOfX;
+                let avgGenNum = maxGenNum4This; // sumOfY / numOfX;
 
                 // LET's ENSURE THAT THE NEW PERCENTILE IS BETWEEN COUPLES and NOT in the MIDDLE of a COUPLE (at the highest GEN)
                 let closestPosNum = Math.ceil( ((2 ** (maxGenNum + 2) ) * (newPercentile  -  1.0 * WebsView.currentPrimeNum)  - 1) /2  ) ;
@@ -3851,7 +3853,7 @@
                     }
 
                 } else if (WebsView.viewMode == "Indi") {
-                    shortListOfRepeatAncs.push(index); /// add the INDEX from the LIST OF REPEAT ANCESTORS to this SHORT LIST - then - we will come back to him
+                    // shortListOfRepeatAncs.push(index); /// add the INDEX from the LIST OF REPEAT ANCESTORS to this SHORT LIST - then - we will come back to him
                 } else {
                     closestPosNum += 0.5;
                 }
@@ -3882,14 +3884,14 @@
                 }
             }
             WebsView.repeatsStartAtGenNum = minGenNum;
-
+            condLog("shortListOfRepeatAncs", shortListOfRepeatAncs);
             // OK - now LET'S REVISIT some of those REPEAT ANCESTORS and RELOCATE THEIR LOVED ONES (WIVES & ANCESTORS OF THEM AND THEIR WIVES)
             for (let ii = 0; ii < shortListOfRepeatAncs.length; ii++) {
                 let index = shortListOfRepeatAncs[ii];
                 const element = WebsView.listOfRepeatAncestors[index];
-                // condLog("ELEMENT IN LOOP:", element);
                 // condLog("LET'S CHECK FOR # OF UNIQUE KIDS, THEN SHOULD  TRY AND RELOCATE THE WIFE AND PARENTS OF ", index, element);
                 let listOfUniqueKids = findListOfUniqueKidsIDs (element, nodes, WebsView.currentPrimeNum);
+                condLog("ELEMENT IN LOOP / listOfUniqueKids:", element, listOfUniqueKids, thePeopleList[element.id]);
 
                 // for (let innerIndex = 0; innerIndex < element.AhnNums.length; innerIndex++) {
                 //     const anAhnNum = element.AhnNums[innerIndex];
@@ -4288,6 +4290,7 @@
         }
 
         if (WebsView.viewMode == "Indi" && WebsView.currentSettings["path_options_multiPathFormat"] == "smooth") {
+            condLog("SMOOTHING things out ..");
             let numsPerGen = [];
             let XsPerGen = [];
             let AhnsPerGen = [];
@@ -4296,11 +4299,13 @@
 
             let theAncestorAtTop = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
             condLog("Ancestor AT TOP: ", getNameAsPerSettings(thePeopleList[theAncestorAtTop.id]));
+            condLog("ahn #s", uniqueListById[theAncestorAtTop.id].ahnNums );
+            // FIND  THE ANCESTOR AT TOP'S AHNENNUMS  ... then ... COMPARE THEM LATER ON in the THIS ES GEN section and increase to +1 more than # of GensToBeDisplayed
             condLog(
                 "CurrentPrime: ",
                 getNameAsPerSettings(thePeopleList[WebsView.listOfPrimePersons[WebsView.currentPrimeNum]])
             );
-
+            condLog("NewOrder inside SMOOTH if stmt:", newOrder);
             maxWidth =
                 24 *
                 Math.max(
@@ -4309,7 +4314,15 @@
                 );
             for (let index = 0; index < newOrder.length; index++) {
                 const newElement = newOrder[index];
-                const thisEsGen = newElement[2];
+                let thisEsGen = newElement[5];
+                if (thisEsGen == 0) {
+                    thisEsGen = Math.floor(Math.log2(newElement[1]));
+                } else if (uniqueListById[theAncestorAtTop.id].ahnNums.indexOf(newElement[1]) > -1) {
+                    condLog("Found a Boss @ #", newElement[1]);
+                    newElement[5]++;
+                    thisEsGen++;
+                }
+
                 if (!numsPerGen[thisEsGen]) {
                     numsPerGen[thisEsGen] = 0;
                     XsPerGen[thisEsGen] = [];
@@ -4331,12 +4344,12 @@
 
             for (const key in numsPerGen) {
                 if (Object.hasOwnProperty.call(numsPerGen, key)) {
-                    const element = numsPerGen[key];
+                    const numPerGenRow = numsPerGen[key];
                     condLog(
                         "Number me this: PLACE ",
                         key,
                         "nums:",
-                        element,
+                        numPerGenRow,
                         "Xs:",
                         XsPerGen[key],
                         "Ahns:",
@@ -4345,9 +4358,9 @@
                         IndexPerGen[key]
                     );
 
-                    if (element == 1) {
+                    if (numPerGenRow == 1) {
                         newOrder[IndexPerGen[key][0]][4]["newX"] = 0;
-                    } else if (element == 2) {
+                    } else if (numPerGenRow == 2) {
                         if (newOrder[IndexPerGen[key][0]][4]["newX"] == newOrder[IndexPerGen[key][1]][4]["newX"]) {
                             // IF both x coordinates are at the same location, then this is a repeat of the same person, so put them in the middle
                             newOrder[IndexPerGen[key][0]][4]["newX"] = 0;
@@ -4371,7 +4384,7 @@
                                 newOrder[IndexPerGen[key][1]][4]["newX"] = 0;
                             }
                         }
-                    } else if (element > 2) {
+                    } else if (numPerGenRow > 2) {
                         // OKAY - first thing we have to do is to figure out how many discrete newX values we have, (numDvalues)
                         let discreteXs = [];
                         let indexOfDiscretes = [];
@@ -4391,7 +4404,7 @@
                             "There are ",
                             numDiscrete,
                             " discrete X-values out of ",
-                            element,
+                            numPerGenRow,
                             " entries",
                             discreteXs,
                             indexOfDiscretes
@@ -4443,6 +4456,7 @@
                             const thisSubElement = IndexPerGen[key][index];
                             if (theAncestorAtTop.AhnNums.indexOf(AhnsPerGen[key][index]) > -1) {
                                 newOrder[thisSubElement][4]["newX"] = 0;
+                                newOrder[thisSubElement][4]["newY"] = newOrder[thisSubElement][5];
                             }
                         }
                     }
@@ -4480,7 +4494,7 @@
 
             for (let index = 0; index < newOrder.length; index++) {
                 const newElement = newOrder[index];
-                const thisEsGen = newElement[2];
+                const thisEsGen = newElement[5];  // was 2 ... but should be 5, adjusted Y value
                 const thisElementID = newElement[4].person._data.Id;
                 if (!numsPerGen[thisEsGen]) {
                     numsPerGen[thisEsGen] = 0;
@@ -5216,7 +5230,7 @@
                         for (var a = 1; a < 16 && passNum == 1; a++) {
                             let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
                             // condLog("Peep ",a, thisPeep);
-                            if (thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                            if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
                                 thisPeep._data["LastNameAtBirth"] = relativeName[a];
                                 if (a % 2 == 0) {
                                     thisPeep._data["Gender"] = "Male";
