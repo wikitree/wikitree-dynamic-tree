@@ -1,13 +1,19 @@
+body.descendants #view-container {
+  background: #fcb76e;
+  min-height: auto;
+}
+
 #descendants li {
   list-style-type: none;
   margin: 0;
-  padding: 0;
   border: 1px solid #ddd;
   margin-bottom: -1px;
   background-color: #f6f6f6;
-  padding: 10px;
+  padding: 5px 0 5px 5px;
   cursor: pointer;
   overflow: auto;
+  position: relative;
+  border-right: 0;
 }
 #descendants {
   margin-left: 0;
@@ -26,6 +32,7 @@
 #descendants li > .arrow {
   display: inline-block;
   transition: transform 0.3s ease;
+  position: absolute;
 }
 
 #descendants li > .arrow.rotated {
@@ -56,7 +63,156 @@
   display: none;
 }
 
-button.load-more {
+#descendants button.load-more {
   float: right;
   margin: 0.2em;
+}
+
+#seeUpTo {
+  margin: 0.2em;
+}
+#generationSelect {
+  margin: 0.2em;
+  padding: 0.3em 0 0.3em 0.5em;
+  width: 6em !important;
+  min-width: 6em;
+}
+
+#descendants .load-more img {
+  width: 1em;
+  height: 1em;
+  margin: 0;
+  padding: 0;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  vertical-align: middle;
+}
+a.profileLink {
+  margin-left: 1em;
+}
+
+#descendants.hide-Male li.Male {
+  display: none;
+}
+
+#descendants.hide-Female li.Female {
+  display: none;
+}
+#descendants ul {
+  margin-left: 1em !important;
+}
+
+#descendants div.biography {
+  margin: 1em;
+  padding: 1em;
+  border-left: 1px solid #ddd;
+  background-color: #f6f6f6;
+}
+#descendants div.fullBiography {
+  cursor: default;
+}
+
+#descendants dl.bdDatesLocations {
+  font-weight: normal;
+  font-size: 1em;
+  margin: 0.1em;
+}
+
+#descendants dl.bdDatesLocations {
+  display: grid;
+  grid-template-areas:
+    "birthDate birthLocation "
+    "deathDate deathLocation ";
+  grid-template-columns: 8em 1fr;
+  margin: 0.5em 0.5em 1em 0.5em;
+  padding: 0.5em;
+  border: 1px solid #ddd;
+}
+
+#descendants .bdDatesLocations dd {
+  margin-left: 0;
+}
+
+#descendants .bdDatesLocations dt.fullBirthDate {
+  grid-area: birthDate;
+}
+
+#descendants .bdDatesLocations dt.fullBirthDate:before {
+  content: "b. ";
+}
+
+#descendants .bdDatesLocations dd.birthLocation {
+  grid-area: birthLocation;
+}
+
+#descendants .bdDatesLocations dt.fullDeathDate {
+  grid-area: deathDate;
+}
+
+#descendants .bdDatesLocations dt.fullDeathDate:before {
+  content: "d. ";
+}
+
+#descendants .bdDatesLocations dd.deathLocation {
+  grid-area: deathLocation;
+}
+
+#descendants .moreDetailsEye:hover {
+  font-weight: bold;
+  cursor: pointer;
+  color: forestgreen;
+}
+#descendants .moreDetailsEye:active {
+  font-weight: normal;
+  cursor: pointer;
+  color: orange;
+}
+
+#descendants .aContents {
+  display: none;
+}
+
+#descendantsButtons #toggleBios {
+  display: none;
+}
+
+#descendants .profilePicture {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 1em;
+  background-color: #f6f6f6;
+  border: 1px solid #ddd;
+  float: left;
+}
+
+#descendants dl.bdDatesLocations:has(a[data-gender="Female"]) {
+  background-color: #fee;
+}
+#descendants dl.bdDatesLocations:has(a[data-gender="Male"]) {
+  background-color: #eef;
+}
+
+#descendants dl a.switch {
+  margin-left: 2em;
+  font-weight: bold;
+  font-size: 1.2em;
+  color: navy;
+}
+
+#descendants li img.dna {
+  margin-left: 0.5em;
+}
+#descendantsButtons button.on {
+  background-color: gold;
+  color: black;
+  border: 1px solid darkorange;
+}
+
+#descendantsButtons button.hideMales {
+  background-color: pink;
+  color: black;
+  border: 1px solid red;
 }
