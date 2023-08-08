@@ -33,6 +33,7 @@ body.descendants #view-container {
   display: inline-block;
   transition: transform 0.3s ease;
   position: absolute;
+  margin-left: -0.3em;
 }
 
 #descendants li > .arrow.rotated {
@@ -233,9 +234,13 @@ a.profileLink {
 }
 #descendantsButtons #showHelp,
 #descendantsButtons button.download {
-  float: right;
   margin-left: 0.2em;
 }
+
+#descendantsButtons #helpEtc {
+  float: right;
+}
+
 #descendantsHelp {
   display: none;
   position: absolute;
@@ -363,4 +368,19 @@ body.descendants button {
   border: 0;
   width: 12px;
   height: 11px;
+}
+/*
+#descendantsButtons button:hover {
+  background-color: #25422d;
+  color: white;
+}
+*/
+
+#descendantsButtons button:active {
+  padding-bottom: 6px;
+}
+
+#descendantsButtons fieldset {
+  display: inline-block;
+  margin-bottom: 0.2em;
 }

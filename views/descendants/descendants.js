@@ -58,7 +58,12 @@ class DescendantsView extends View {
         $descendantsHelp.draggable();
 
         $(`<div id='descendantsButtons'>
+        <fieldset id="helpEtc">
+        <button class='small download' id='downloadCSV' title="Download data as CSV">CSV</button>
+        <button class='small download' id='excelOut' title="Download data as Excel">Excel</button>
         <button class='small' id='showHelp' title="Show help">?</button>
+        </fieldset>
+
         <button class='small' id='remove' style='display:none' title="Remove selected item"></button>
         <button class='small dna off' id='xButton' title="Toggle X chromosome data">X</button>
         <button class='small dna off' id='yButton' title="Toggle Y chromosome data">Y</button>
@@ -67,8 +72,6 @@ class DescendantsView extends View {
         <button class='small on' id='toggleBios' title="Toggle bios">Show Bios</button>
         <button class='small' id='getAllParents' title="Get the descendants' other parents">Get Parents</button>
         <button class='small' id='hideChildless' title="Hide people without children">Hide Childless</button>
-        <button class='small download' id='downloadCSV' title="Download data as CSV">CSV</button>
-        <button class='small download' id='excelOut' title="Download data as Excel">Excel</button>
 
         <fieldset id="dateFormat" title="Date format settings"><label>Dates:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
@@ -85,10 +88,11 @@ class DescendantsView extends View {
             </select>
         </fieldset>
 
-        <label><input type="checkbox" id="showPlaces" title="Show birth and death places">Places</label>
-        <label><input type="checkbox" id="showWTID" title="Show WikiTree IDs">WT ID</label>
-        <label><input type="checkbox" id="showAboville" title="Show Aboville numbers">Aboville #</label>
-
+        <fieldset id="showHide" title="Show or hide data">
+            <label><input type="checkbox" id="showPlaces" title="Show birth and death places">Places</label>
+            <label><input type="checkbox" id="showWTID" title="Show WikiTree IDs">WT ID</label>
+            <label><input type="checkbox" id="showAboville" title="Show Aboville numbers">Aboville #</label>
+        </fieldset>
         </div>`).appendTo($(container_selector));
 
         if (descendantsShowWTID == "true") {
