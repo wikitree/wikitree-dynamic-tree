@@ -17,6 +17,7 @@ window.CalendarView = class CalendarView extends View {
             siblings: 1,
             fields: "Derived.LongName,BirthDate,DeathDate,Name",
         }).then(function (data) {
+            $('#view-container').fullCalendar().fullCalendar('destroy');
             console.log(data)
             // Define an error message for permission denial
             const errorMessage = "Ancestor/Descendant permission denied.";
@@ -27,16 +28,14 @@ window.CalendarView = class CalendarView extends View {
                 data[0].resultByKey[person_id] &&
                 data[0].resultByKey[person_id].status === errorMessage
             ) {
-                // Display the error message in the container
-                $("#view-container").html(`
-                    <div style="text-align: center;">
-                        <h3>Private Profile: ${errorMessage}</h3>
-                        <p>
-                            Tech Details: The <a href="https://github.com/wikitree/wikitree-api/blob/main/getPeople.md" target="_blank">getPeople()</a> action currently doesn't permit utilizing a private individual as the starting point for generating the tree of ancestors or descendants.
-                        </p>
-                    </div>
-                `);
-
+                let err = `The starting profile data could not be retrieved.`;
+                if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
+                    err += ` You may need to be added to the starting profile's Trusted List.`;
+                } else {
+                    err += ` Try the Apps login.`;
+                }
+                wtViewRegistry.showError(err);
+                wtViewRegistry.hideInfoPanel();
             } else {
                 // Extract the people data from the API response
                 const peopleData = data[0].people;
