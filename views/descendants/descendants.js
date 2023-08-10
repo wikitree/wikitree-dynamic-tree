@@ -882,7 +882,7 @@ function displayPerson(id, people, generation) {
         } else if (person.deathDateDecade) {
             deathDate = person.DeathDateDecade;
         }
-        const wtidSpan = `<span class='wtid'>(${person.Name})</span>`;
+        const wtidSpan = person.Name ? `<span class='wtid'>(${person.Name})</span>` : "";
         const datesOnly = `<span class='datesOnly'>(<span class="birthDeathDate birthDate">${birthDate}</span> – <span class="birthDeathDate deathDate">${deathDate}</span>)</span>`;
         const highlightCheckbox = `<input type='checkbox' class='highlightCheckbox' data-id='${person.Id}' title='Highlight this person' />`;
         const abovilleSpan = `<span class='aboville'></span>`;
@@ -1109,10 +1109,50 @@ async function addBio(id) {
             sections.push(aSection);
             bioDiv.append(sections);
             bioDiv.find("a:link").each(function () {
-                // ... [Rest of the code for handling links]
+                if ($(this).attr("href").match("http") == null) {
+                    if ($(this).parent().hasClass("reference")) {
+                        $(this).attr(
+                            "href",
+                            $(this)
+                                .attr("href")
+                                .replace("#", "#_" + person.Id + "_")
+                        );
+                        $(this)
+                            .parent()
+                            .prop("id", "_" + person.Id + "_" + $(this).parent().prop("id"));
+                        $(this).on("click", function (e) {
+                            e.preventDefault();
+                            const element = document.querySelector($(this).attr("href"));
+                            element.scrollIntoView({ behavior: "smooth" });
+                        });
+                    } else if ($(this).attr("href").match("#_ref")) {
+                        $(this).attr(
+                            "href",
+                            $(this)
+                                .attr("href")
+                                .replace("#", "#_" + person.Id + "_")
+                        );
+                        $(this)
+                            .parent()
+                            .prop("id", "_" + person.Id + "_" + $(this).parent().prop("id"));
+                        $(this).on("click", function (e) {
+                            e.preventDefault();
+                            const element = document.querySelector($(this).attr("href"));
+                            element.scrollIntoView({ behavior: "smooth" });
+                        });
+                    } else {
+                        $(this).attr("href", "https://www.wikitree.com" + $(this).attr("href"));
+                    }
+                }
+                $(this).attr("target", "_blank");
             });
             bioDiv.find("img").each(function () {
-                // ... [Rest of the code for handling images]
+                if (
+                    $(this).attr("src").match("https://www.") == null &&
+                    $(this).closest(".bdDatesLocations").length == 0
+                ) {
+                    $(this).attr("src", "https://www.wikitree.com" + $(this).attr("src"));
+                }
             });
             bioDiv.find("a[name]").remove();
         }
@@ -1129,10 +1169,22 @@ async function addBio(id) {
             )
             .remove();
         bioDiv.find("div.SMALL").each(function () {
-            // ... [Rest of the code for handling small divs]
+            if ($(this).parent().css("width") == "250px") {
+                $(this).parent().addClass("sticker");
+                $("#toggleStickers").removeClass("hidden");
+            }
         });
         bioDiv.find("a[href$='gif'].external.free").each(function () {
-            // ... [Rest of the code for handling GIFs]
+            if (
+                $(this)
+                    .text()
+                    .match(/^http.*gif$/) &&
+                !$(this).hasClass("hidden")
+            ) {
+                let gif = $("<img src='" + $(this).text() + "' class='gif'>");
+                $(this).after(gif);
+                $(this).addClass("hidden");
+            }
         });
         addSpouses(person);
         bioDiv.find(".aSources h2").on("click", function () {
