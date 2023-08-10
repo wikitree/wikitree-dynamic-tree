@@ -232,15 +232,15 @@ window.ViewRegistry = class ViewRegistry {
 
             this.clearStatus();
             if (this.currentView && this.currentView.id != view.id) {
-                try {
-                    if (typeof this.currentView.close === "function") {
+                if (typeof this.currentView.close === "function") {
+                    try {
                         this.currentView.close();
+                    } catch (err) {
+                        this.showError(
+                            `An error occurred when closing the previous view (${this.currentView.id}). You can ignore this, or please report it in G2G): ${err.message}`
+                        );
+                        this.hideInfoPanel();
                     }
-                } catch (err) {
-                    this.showError(
-                        `An error occurred when closing the previous view. You can ignore this, or please report it in G2G): ${err.message}`
-                    );
-                    this.hideInfoPanel();
                 }
             }
 
