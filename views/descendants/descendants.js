@@ -870,6 +870,8 @@ function displayPerson(id, people, generation) {
             if (birthDate) {
                 birthDate = birthDate.trim();
             }
+        } else if (person.BirthDateDecade) {
+            birthDate = person.BirthDateDecade;
         }
         let deathDate = "";
         if (person.DeathDate) {
@@ -877,6 +879,8 @@ function displayPerson(id, people, generation) {
             if (deathDate) {
                 deathDate = deathDate.trim();
             }
+        } else if (person.deathDateDecade) {
+            deathDate = person.DeathDateDecade;
         }
         const wtidSpan = `<span class='wtid'>(${person.Name})</span>`;
         const datesOnly = `<span class='datesOnly'>(<span class="birthDeathDate birthDate">${birthDate}</span> – <span class="birthDeathDate deathDate">${deathDate}</span>)</span>`;
@@ -891,7 +895,8 @@ function displayPerson(id, people, generation) {
             : "";
 
         // New item
-        const listItemContent = `<span class="nameAndBio">${nameLink} ${datesOnly} ${wtidSpan} ${moreDetailsEye} ${highlightCheckbox} ${abovilleSpan}</span><span class='birthDeathDetails'><span class='birthDeathDate birthDate'>${birthDate}</span><span class='birthDeathPlace birthPlace'>${
+        const listItemContent = `<span class="nameAndBio">${nameLink} ${wtidSpan} 
+        ${datesOnly} ${moreDetailsEye} ${highlightCheckbox} ${abovilleSpan}</span><span class='birthDeathDetails'><span class='birthDeathDate birthDate'>${birthDate}</span><span class='birthDeathPlace birthPlace'>${
             person.BirthLocation || ""
         } ${birthPin}</span><span class='birthDeathDate deathDate'>${deathDate}</span><span class='birthDeathPlace deathPlace'>${deathLocation} ${deathPin}</span></span> ${loadMoreButton}`;
         const parent = $("li[data-id='" + person.Father + "'], li[data-id='" + person.Mother + "']");
@@ -918,7 +923,7 @@ function displayPerson(id, people, generation) {
         const ydnaImage = $("<img class='ydna dna' src='https://www.wikitree.com/images/icons/dna/Y.gif'>");
         if ((parent.data("ydna") == 1 || parent.attr("ydna") == 1 || parent.length == 0) && person.Gender == "Male") {
             newItem.data("ydna", 1).attr("data-ydna", 1);
-            newItem.find(".profileLink").after(ydnaImage);
+            newItem.find(".datesOnly").after(ydnaImage);
         }
 
         const mtdnaImage = $("<img class='mtdna dna' src='https://www.wikitree.com/images/icons/dna/mt.gif'>");
@@ -928,7 +933,7 @@ function displayPerson(id, people, generation) {
             (parent.length == 0 && person.Gender == "Female")
         ) {
             newItem.data("mtdna", 1).attr("data-mtdna", 1);
-            newItem.find(".profileLink").after(mtdnaImage);
+            newItem.find(".datesOnly").after(mtdnaImage);
         }
 
         const xImage = $("<img class='x dna' src='https://www.wikitree.com/images/icons/dna/X.gif'>");
@@ -941,7 +946,7 @@ function displayPerson(id, people, generation) {
             parent.length == 0
         ) {
             newItem.data("x", 1).attr("data-x", 1);
-            newItem.find(".profileLink").after(xImage);
+            newItem.find(".datesOnly").after(xImage);
         }
 
         if (parent.length == 0) {

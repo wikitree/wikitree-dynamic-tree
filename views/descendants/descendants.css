@@ -99,8 +99,15 @@ body.descendants #generationSelect {
   margin-right: 0.5em;
   vertical-align: middle;
 }
-a.profileLink {
+body.descendants a.profileLink {
   margin-left: 1em;
+  font-size: 1.2em;
+  /*font-weight: bold; */
+  color: navy;
+}
+
+body.descendants a.profileLink:visited {
+  color: navy;
 }
 
 #descendants.hide-Male li.Male {
@@ -276,11 +283,11 @@ body.descendants #closeHelp {
 #descendantsHelp h2 {
   text-align: center;
 }
-
+/*
 body.descendants span.birthDeathDate {
-  color: navy;
-  font-family: "Courier New", Courier, monospace;
+  font-weight: 600;
 }
+*/
 
 #descendantsButtons #dateFormat {
   display: inline-block;
