@@ -12,7 +12,7 @@
  * they are each basically at the end of the day a <g class"person ancestor" highlight_options_showHighlights
  *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FanChartView, then calls a redraw
- * 
+ *
  * Some SVG button icons from SVG Repo - open-licencesed SVG Vector and Icons website:  https://www.svgrepo.com/
  */
 (function () {
@@ -114,11 +114,8 @@
         </g>
         </svg>`;
 
-    
-
     var uniqueLocationsArray = [];
     var theSortedLocationsArray = [];
-    
 
     var ColourArray = [
         "White",
@@ -408,7 +405,7 @@
     FanChartView.numGens2Display = 5;
     FanChartView.lastNumGens = 5;
     FanChartView.numGensRetrieved = 5;
-    FanChartView.maxNumGens = 10 ;
+    FanChartView.maxNumGens = 10;
     FanChartView.workingMaxNumGens = 6;
 
     FanChartView.currentScaleFactor = 1;
@@ -436,13 +433,6 @@
     };
 
     FanChartView.theSVG = null; // to be assigned shortly
-    function onBeforePrint() {
-        FanChartView.setViewBox(true);
-    }
-
-    function onAfterPrint() {
-        FanChartView.setViewBox(false);
-    }
 
     FanChartView.prototype.init = function (selector, startId) {
         // condLog("FanChartView.js - line:18", selector) ;
@@ -450,9 +440,7 @@
         // // condLog("theCheckIN:", theCheckIn);
         // FanChartView.showFandokuLink = theCheckIn;
 
-        var container = document.querySelector(selector),
-            width = container.offsetWidth - 2,
-            height = window.innerHeight - 2;
+        var container = document.querySelector(selector);
 
         var self = this;
         FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
@@ -1079,7 +1067,7 @@
             "</A>" +
             (AboutHelpDoc > ""
                 ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
-                : "") +            
+                : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
@@ -1093,8 +1081,11 @@
         for (let i = 1; i <= numOfBadges; i++) {
             badgesHTML +=
                 "<svg width=24 height=24><rect width=24 height=24 rx=8 ry=8 style='fill:" +
-                badgeClr[i] + ";stroke:black;stroke-width:2;opacity:1' />"+
-                "<text id=badgeCharacter" + i + " font-weight=bold x=8 y=17 fill='white'>" +                
+                badgeClr[i] +
+                ";stroke:black;stroke-width:2;opacity:1' />" +
+                "<text id=badgeCharacter" +
+                i +
+                " font-weight=bold x=8 y=17 fill='white'>" +
                 badgeCharacters[i] +
                 "</text></svg>" +
                 stickerCatNameSelectorHTML.replace(/1/g, i);
@@ -1160,14 +1151,11 @@
             }
         };
 
-
-        function updateBadgeLabels(){
+        function updateBadgeLabels() {
             for (let b = 1; b <= numOfBadges; b++) {
                 let badgeCharTxt = document.getElementById("badgeCharacter" + b);
                 badgeCharTxt.textContent = badgeCharacters[b];
             }
-            
-
         }
 
         function settingsChanged(e) {
@@ -1188,14 +1176,12 @@
                 let innerLegend = document.getElementById("innerLegend");
                 let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
 
-
                 // showBadges;
                 // badgeLabels;
                 // customBadgeLabels;
 
-                
                 FanChartView.removeBadges("DNA");
-                
+
                 if (showBadges || colourBy == "Family" || colourBy == "Location") {
                     let badgeLabels = FanChartView.currentSettings["general_options_badgeLabels"];
                     if (badgeLabels == "12345") {
@@ -1204,7 +1190,9 @@
                         badgeCharacters = " ABCDE";
                     } else if (badgeLabels == "custom") {
                         badgeCharacters =
-                            " " + FanChartView.currentSettings["general_options_badgeLabels_otherValue"].trim() + "*!@#^";
+                            " " +
+                            FanChartView.currentSettings["general_options_badgeLabels_otherValue"].trim() +
+                            "*!@#^";
                     }
                     if (showBadges) {
                         updateBadgeLabels();
@@ -1267,7 +1255,7 @@
                     legendToggle.style.display = "none";
                 }
 
-                if (!showBadges){
+                if (!showBadges) {
                     FanChartView.removeBadges();
                 }
 
@@ -1279,9 +1267,9 @@
                     if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
                         document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
                         if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
-                            document.getElementById("highlightPeepsDescriptor").innerHTML = "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                            document.getElementById("highlightPeepsDescriptor").innerHTML =
+                                "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
                         }
-                        
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
                         document.getElementById("highlightPeepsDescriptor").textContent =
                             "mitochondrial DNA (mtDNA) ancestors";
@@ -1349,24 +1337,22 @@
         const svg = d3
             .select(container)
             .append("svg")
-            .attr("id", "fanChartSVG")
-            .attr("width", "100%")
-            .attr("height", height);
-        const g = svg.append("g").attr("id","SVGgraphics");
+            .attr("id", "fanChartSVG") //
+            .style("visibility", "hidden");
+        const g = svg.append("g").attr("id", "SVGgraphics");
 
         FanChartView.theSVG = svg;
 
         // Setup zoom and pan
-        const zoom = d3
+        FanChartView.zoom = d3
             .zoom()
-            .scaleExtent([0.1, 1.5])
+            .scaleExtent([0.1, 3.0])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
                 FanChartView.currentScaleFactor = event.transform.k;
             });
-        svg.call(zoom);
-        // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
-        svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 560).scale(0.45));
+        svg.call(FanChartView.zoom);
+        // initialization of the viewport will be handled in resetView, which is called by drawWedgesForFanChart
 
         // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Fan Chart
@@ -1399,72 +1385,8 @@
             * Ending with 2 Sectors for the penultimate pair  - the parents of the central circular superhero
         */
 
-        for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
-            for (let index = 0; index < 2 ** genIndex; index++) {
-                if (genIndex <= 1) {
-                    // Use a SECTOR for the parents
-                    g.append("path").attrs(
-                        SVGfunctions.getSVGforSector(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
-                        )
-                    );
-                } else {
-                    // Use a WEDGE for ancestors further out
-                    g.append("path").attrs(
-                        SVGfunctions.getSVGforWedge(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            270 * (genIndex - 0.5),
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
-                        )
-                    );
-                }
-            }
-        }
-        // HIDE all the unused Wedges in the outer rims that we don't need yet
-        for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
-            for (let index = 0; index < 2 ** genIndex; index++) {
-                d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
-            }
-        }
-
-        // CREATE a CIRCLE for the Central Person to be drawn on top of
-        g.append("circle").attrs({
-            "cx": 0,
-            "cy": 0,
-            "r": 135,
-            "id": "ctrCirc",
-            "fill": "white",
-            "stroke": "black",
-            "stroke-width": "2",
-        });
-
+        drawWedgesForFanChart(g);
+        svg.style("visibility", null);
         self.load(startId);
         // condLog(FanChartView.fanchartSettingsOptionsObject.createdSettingsDIV);
         FanChartView.fanchartSettingsOptionsObject.buildPage();
@@ -1521,186 +1443,186 @@
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let ahnNum = index + 2 ** genIndex;
-        //         g.append("g")
-        //             .attrs({
-        //                 id: "imgDNA-x-" + genIndex + "i" + index,
-        //                 class: "floatAbove",
-        //             })
-        //             .append("foreignObject")
-        //             .attrs({
-        //                 id: "imgDNA-x-" + genIndex + "i" + index + "inner",
-        //                 class: "centered",
-        //                 width: "20px",
-        //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //                 x: 25 * index,
-        //                 y: 30 * genIndex,
-        //                 //
-        //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //             })
+                //         g.append("g")
+                //             .attrs({
+                //                 id: "imgDNA-x-" + genIndex + "i" + index,
+                //                 class: "floatAbove",
+                //             })
+                //             .append("foreignObject")
+                //             .attrs({
+                //                 id: "imgDNA-x-" + genIndex + "i" + index + "inner",
+                //                 class: "centered",
+                //                 width: "20px",
+                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //                 x: 25 * index,
+                //                 y: 30 * genIndex,
+                //                 //
+                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //             })
 
-        //             .style("overflow", "visible") // so the name will wrap
-        //             .append("xhtml:div")
-        //             .attrs({
-        //                 id: "imgDNA-x-" + genIndex + "i" + index + "img",
-        //             })
-        //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
+                //             .style("overflow", "visible") // so the name will wrap
+                //             .append("xhtml:div")
+                //             .attrs({
+                //                 id: "imgDNA-x-" + genIndex + "i" + index + "img",
+                //             })
+                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
 
-        //         g.append("g")
-        //             .attrs({
-        //                 id: "imgDNA-y-" + genIndex + "i" + index,
-        //                 class: "floatAbove",
-        //             })
-        //             .append("foreignObject")
-        //             .attrs({
-        //                 id: "imgDNA-y-" + genIndex + "i" + index + "inner",
-        //                 class: "centered",
-        //                 width: "20px",
-        //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //                 x: 25 * index,
-        //                 y: 30 * genIndex,
-        //                 //
-        //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //             })
+                //         g.append("g")
+                //             .attrs({
+                //                 id: "imgDNA-y-" + genIndex + "i" + index,
+                //                 class: "floatAbove",
+                //             })
+                //             .append("foreignObject")
+                //             .attrs({
+                //                 id: "imgDNA-y-" + genIndex + "i" + index + "inner",
+                //                 class: "centered",
+                //                 width: "20px",
+                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //                 x: 25 * index,
+                //                 y: 30 * genIndex,
+                //                 //
+                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //             })
 
-        //             .style("overflow", "visible") // so the name will wrap
-        //             .append("xhtml:div")
-        //             .attrs({
-        //                 id: "imgDNA-y-" + genIndex + "i" + index + "img",
-        //             })
-        //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");
+                //             .style("overflow", "visible") // so the name will wrap
+                //             .append("xhtml:div")
+                //             .attrs({
+                //                 id: "imgDNA-y-" + genIndex + "i" + index + "img",
+                //             })
+                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");
 
-        //         g.append("g")
-        //             .attrs({
-        //                 id: "imgDNA-mt-" + genIndex + "i" + index,
-        //                 class: "floatAbove",
-        //             })
-        //             .append("foreignObject")
-        //             .attrs({
-        //                 id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
-        //                 class: "centered",
-        //                 width: "20px",
-        //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //                 x: 25 * index,
-        //                 y: 30 * genIndex,
-        //                 //
-        //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //             })
+                //         g.append("g")
+                //             .attrs({
+                //                 id: "imgDNA-mt-" + genIndex + "i" + index,
+                //                 class: "floatAbove",
+                //             })
+                //             .append("foreignObject")
+                //             .attrs({
+                //                 id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
+                //                 class: "centered",
+                //                 width: "20px",
+                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //                 x: 25 * index,
+                //                 y: 30 * genIndex,
+                //                 //
+                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //             })
 
-        //             .style("overflow", "visible") // so the name will wrap
-        //             .append("xhtml:div")
-        //             .attrs({
-        //                 id: "imgDNA-mt-" + genIndex + "i" + index + "img",
-        //             })
-        //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
+                //             .style("overflow", "visible") // so the name will wrap
+                //             .append("xhtml:div")
+                //             .attrs({
+                //                 id: "imgDNA-mt-" + genIndex + "i" + index + "img",
+                //             })
+                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
 
-        //         g.append("g")
-        //             .attrs({
-        //                 id: "imgDNA-Ds-" + genIndex + "i" + index,
-        //                 class: "floatAbove",
-        //             })
-        //             .append("foreignObject")
-        //             .attrs({
-        //                 id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
-        //                 class: "centered",
-        //                 width: "20px",
-        //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //                 x: 25 * index,
-        //                 y: 30 * genIndex,
-        //                 //
-        //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //             })
+                //         g.append("g")
+                //             .attrs({
+                //                 id: "imgDNA-Ds-" + genIndex + "i" + index,
+                //                 class: "floatAbove",
+                //             })
+                //             .append("foreignObject")
+                //             .attrs({
+                //                 id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
+                //                 class: "centered",
+                //                 width: "20px",
+                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //                 x: 25 * index,
+                //                 y: 30 * genIndex,
+                //                 //
+                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //             })
 
-        //             .style("overflow", "visible") // so the name will wrap
-        //             .append("xhtml:div")
-        //             .attrs({
-        //                 id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
-        //             })
-        //             .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
+                //             .style("overflow", "visible") // so the name will wrap
+                //             .append("xhtml:div")
+                //             .attrs({
+                //                 id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
+                //             })
+                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
 
-        //         g.append("g")
-        //             .attrs({
-        //                 id: "imgDNA-As-" + genIndex + "i" + index,
-        //                 class: "floatAbove",
-        //             })
-        //             .append("foreignObject")
-        //             .attrs({
-        //                 id: "imgDNA-As-" + genIndex + "i" + index + "inner",
-        //                 class: "centered",
-        //                 width: "20px",
-        //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //                 x: 25 * index,
-        //                 y: 30 * genIndex,
-        //                 //
-        //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //             })
+                //         g.append("g")
+                //             .attrs({
+                //                 id: "imgDNA-As-" + genIndex + "i" + index,
+                //                 class: "floatAbove",
+                //             })
+                //             .append("foreignObject")
+                //             .attrs({
+                //                 id: "imgDNA-As-" + genIndex + "i" + index + "inner",
+                //                 class: "centered",
+                //                 width: "20px",
+                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //                 x: 25 * index,
+                //                 y: 30 * genIndex,
+                //                 //
+                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //             })
 
-        //             .style("overflow", "visible") // so the name will wrap
-        //             .append("xhtml:div")
-        //             .attrs({
-        //                 id: "imgDNA-As-" + genIndex + "i" + index + "img",
-        //             })
-        //             .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
+                //             .style("overflow", "visible") // so the name will wrap
+                //             .append("xhtml:div")
+                //             .attrs({
+                //                 id: "imgDNA-As-" + genIndex + "i" + index + "img",
+                //             })
+                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
 
-        //         g.append("g")
-        //             .attrs({
-        //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index,
-        //                 class: "floatAbove",
-        //             })
-        //             .append("foreignObject")
-        //             .attrs({
-        //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
-        //                 class: "centered",
-        //                 width: "20px",
-        //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //                 x: 25 * index,
-        //                 y: 30 * genIndex,
-        //                 //
-        //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //             })
+                //         g.append("g")
+                //             .attrs({
+                //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index,
+                //                 class: "floatAbove",
+                //             })
+                //             .append("foreignObject")
+                //             .attrs({
+                //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
+                //                 class: "centered",
+                //                 width: "20px",
+                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //                 x: 25 * index,
+                //                 y: 30 * genIndex,
+                //                 //
+                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //             })
 
-        //             .style("overflow", "visible") // so the name will wrap
-        //             .append("xhtml:div")
-        //             .attrs({
-        //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
-        //             })
-        //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
+                //             .style("overflow", "visible") // so the name will wrap
+                //             .append("xhtml:div")
+                //             .attrs({
+                //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
+                //             })
+                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
 
-        //         // for (let stickerCounter = 1; stickerCounter <= numOfBadges; stickerCounter++) {
-        //         //     const stickerPrefix = "badge" + stickerCounter + "-";
+                //         // for (let stickerCounter = 1; stickerCounter <= numOfBadges; stickerCounter++) {
+                //         //     const stickerPrefix = "badge" + stickerCounter + "-";
 
-        //         //     g.append("g")
-        //         //         .attrs({
-        //         //             id: stickerPrefix + ahnNum,
-        //         //             class: "floatAbove",
-        //         //         })
-        //         //         .append("foreignObject")
-        //         //         .attrs({
-        //         //             id: stickerPrefix + ahnNum + "inner",
-        //         //             class: "centered",
-        //         //             width: "20px",
-        //         //             height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-        //         //             x: 25 * index,
-        //         //             y: 30 * genIndex + stickerCounter * 300,
-        //         //             //
-        //         //             style: "display:block;", //  // CHANGED FOR BADGE TESTING
-        //         //         })
+                //         //     g.append("g")
+                //         //         .attrs({
+                //         //             id: stickerPrefix + ahnNum,
+                //         //             class: "floatAbove",
+                //         //         })
+                //         //         .append("foreignObject")
+                //         //         .attrs({
+                //         //             id: stickerPrefix + ahnNum + "inner",
+                //         //             class: "centered",
+                //         //             width: "20px",
+                //         //             height: "20px", // the foreignObject won't display in Firefox if it is 0 height
+                //         //             x: 25 * index,
+                //         //             y: 30 * genIndex + stickerCounter * 300,
+                //         //             //
+                //         //             style: "display:block;", //  // CHANGED FOR BADGE TESTING
+                //         //         })
 
-        //         //         .style("overflow", "visible") // so the name will wrap
-        //         //         .append("xhtml:div")
-        //         //         .attrs({
-        //         //             id: stickerPrefix + ahnNum + "svg",
-        //         //         })
-        //         //         .html(
-        //         //             "<svg width=24 height=24><rect width=24 height=24 rx=12 ry=12 style='fill:" +
-        //         //                 badgeClr[stickerCounter] +
-        //         //                 ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=7 y=17 fill='white'>" +
-        //         //                 stickerCounter +
-        //         //                 "</text></svg>"
-        //         //         );
-        //         // }
+                //         //         .style("overflow", "visible") // so the name will wrap
+                //         //         .append("xhtml:div")
+                //         //         .attrs({
+                //         //             id: stickerPrefix + ahnNum + "svg",
+                //         //         })
+                //         //         .html(
+                //         //             "<svg width=24 height=24><rect width=24 height=24 rx=12 ry=12 style='fill:" +
+                //         //                 badgeClr[stickerCounter] +
+                //         //                 ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=7 y=17 fill='white'>" +
+                //         //                 stickerCounter +
+                //         //                 "</text></svg>"
+                //         //         );
+                //         // }
 
                 if (ahnNum % 2 == 0 && ahnNum < 32) {
-        //             // "Portrait-ish" if you're looking at it from the spokes from the centre perspective
+                    //             // "Portrait-ish" if you're looking at it from the spokes from the centre perspective
                     g.append("g")
                         .attrs({
                             id: "mDateFor-" + ahnNum,
@@ -1726,9 +1648,9 @@
                         })
                         .html("m.<br/>28 Aug<br/>1987");
 
-        //             // condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
+                    //             // condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
                 } else if (ahnNum % 2 == 0 && ahnNum >= 32) {
-        //             // "Landscape-ish" if you're looking at it from the spokes from the centre perspective, ie, text is sideways
+                    //             // "Landscape-ish" if you're looking at it from the spokes from the centre perspective, ie, text is sideways
                     g.append("g")
                         .attrs({
                             id: "mDateFor-" + ahnNum,
@@ -1754,21 +1676,9 @@
                         })
                         .html("m. 28 Aug 1987");
 
-        //             condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
+                    //             condLog("Created ", document.getElementById("mDateFor-" + ahnNum));
                 }
             }
-        }
-
-        if (window.addEventListener) {
-            window.addEventListener("beforeprint", onBeforePrint);
-            window.addEventListener("afterprint", onAfterPrint);
-        }
-    };
-
-    FanChartView.prototype.close = function () {
-        if (window.removeEventListener) {
-            window.removeEventListener("beforeprint", onBeforePrint);
-            window.removeEventListener("afterprint", onAfterPrint);
         }
     };
 
@@ -1930,8 +1840,8 @@
     }
     // Make sure that the Button Bar displays the proper number of generations - and - adjust the max / min if needed because of over-zealous clicking
     function recalcAndDisplayNumGens() {
-        if (FanChartView.numGens2Display < 3 ) {            
-            FanChartView.numGens2Display = 3 ;
+        if (FanChartView.numGens2Display < 3) {
+            FanChartView.numGens2Display = 3;
             showTemporaryMessageBelowButtonBar("3 is the minimum number of generations you can display.");
         } else if (FanChartView.numGens2Display > FanChartView.workingMaxNumGens) {
             FanChartView.numGens2Display = FanChartView.workingMaxNumGens;
@@ -1986,7 +1896,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-                    
+
                     "Nicknames",
                     "Prefix",
                     "Suffix",
@@ -2051,48 +1961,63 @@
             FanChartView.lastNumGens != FanChartView.numGens2Display
         ) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that)
-            for (let genIndex = FanChartView.numGens2Display - 1; genIndex >= 0; genIndex--) {
-                for (let index = 0; index < 2 ** genIndex; index++) {
-                    let SVGcode = "";
-                    if (genIndex <= 1) {
-                        SVGcode = SVGfunctions.getSVGforSector(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
-                        );
-                    } else {
-                        SVGcode = SVGfunctions.getSVGforWedge(
-                            0,
-                            0,
-                            270 * (genIndex + 0.5),
-                            270 * (genIndex - 0.5),
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                (index * FanChartView.maxAngle) / 2 ** genIndex,
-                            (180 - FanChartView.maxAngle) / 2 +
-                                90 +
-                                90 +
-                                ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
-                            "wedge" + 2 ** genIndex + "n" + index,
-                            "black",
-                            2,
-                            "white"
-                        );
-                    }
+            drawWedgesForFanChart();
+        }
+    }
 
+    // Draw the wedges for the fan chart
+    function drawWedgesForFanChart(g) {
+        for (
+            let genIndex = (g ? FanChartView.maxNumGens : FanChartView.numGens2Display) - 1;
+            genIndex >= 0;
+            genIndex--
+        ) {
+            for (let index = 0; index < 2 ** genIndex; index++) {
+                let SVGcode = "";
+                if (genIndex <= 1) {
+                    // Use a SECTOR for the parents
+                    SVGcode = SVGfunctions.getSVGforSector(
+                        0,
+                        0,
+                        270 * (genIndex + 0.5),
+                        (180 - FanChartView.maxAngle) / 2 + //
+                            90 +
+                            90 +
+                            (index * FanChartView.maxAngle) / 2 ** genIndex,
+                        (180 - FanChartView.maxAngle) / 2 +
+                            90 +
+                            90 +
+                            ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
+                        "wedge" + 2 ** genIndex + "n" + index,
+                        "black",
+                        2,
+                        "white"
+                    );
+                } else {
+                    // Use a WEDGE for ancestors further out
+                    SVGcode = SVGfunctions.getSVGforWedge(
+                        0,
+                        0,
+                        270 * (genIndex + 0.5),
+                        270 * (genIndex - 0.5),
+                        (180 - FanChartView.maxAngle) / 2 + //
+                            90 +
+                            90 +
+                            (index * FanChartView.maxAngle) / 2 ** genIndex,
+                        (180 - FanChartView.maxAngle) / 2 +
+                            90 +
+                            90 +
+                            ((index + 1) * FanChartView.maxAngle) / 2 ** genIndex,
+                        "wedge" + 2 ** genIndex + "n" + index,
+                        "black",
+                        2,
+                        "white"
+                    );
+                }
+
+                if (g) {
+                    g.append("path").attrs(SVGcode);
+                } else {
                     //  condLog(SVGcode.id);
                     d3.select("#" + SVGcode.id).attrs({ d: SVGcode.d, display: "block" }); // CHANGE the drawing commands to adjust the wedge shape ("d"), and make sure the wedge is visible ("display:block")
 
@@ -2100,22 +2025,25 @@
                     //  condLog( "theWedge:",theWedge[0][0] );
                 }
             }
-            // HIDE all the unused Wedges in the outer rims that we don't need yet
-            for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
-                for (let index = 0; index < 2 ** genIndex; index++) {
-                    d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
-                    let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
-                    let dnaImgY = document.getElementById("imgDNA-y-" + genIndex + "i" + index + "inner");
-                    let dnaImgMT = document.getElementById("imgDNA-mt-" + genIndex + "i" + index + "inner");
-                    let dnaImgDs = document.getElementById("imgDNA-Ds-" + genIndex + "i" + index + "inner");
-                    let dnaImgAs = document.getElementById("imgDNA-As-" + genIndex + "i" + index + "inner");
+        }
 
+        // HIDE all the unused Wedges in the outer rims that we don't need yet
+        for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
+            for (let index = 0; index < 2 ** genIndex; index++) {
+                d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
+                let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
+                let dnaImgY = document.getElementById("imgDNA-y-" + genIndex + "i" + index + "inner");
+                let dnaImgMT = document.getElementById("imgDNA-mt-" + genIndex + "i" + index + "inner");
+                let dnaImgDs = document.getElementById("imgDNA-Ds-" + genIndex + "i" + index + "inner");
+                let dnaImgAs = document.getElementById("imgDNA-As-" + genIndex + "i" + index + "inner");
+
+                if (!g) {
                     // START out by HIDING them all !
                     if (dnaImgX) {
                         showX = false;
                     }
                     if (dnaImgY) {
-                        showY = false
+                        showY = false;
                     }
                     if (dnaImgMT) {
                         showMT = false;
@@ -2128,9 +2056,24 @@
                     }
                 }
             }
-            FanChartView.lastAngle = FanChartView.maxAngle;
-            FanChartView.lastNumGens = FanChartView.numGens2Display;
         }
+
+        if (g) {
+            // CREATE a CIRCLE for the Central Person to be drawn on top of
+            g.append("circle").attrs({
+                "cx": 0,
+                "cy": 0,
+                "r": 135,
+                "id": "ctrCirc",
+                "fill": "white",
+                "stroke": "black",
+                "stroke-width": "2",
+            });
+        }
+
+        FanChartView.lastAngle = FanChartView.maxAngle;
+        FanChartView.lastNumGens = FanChartView.numGens2Display;
+        window.setTimeout(FanChartView.resetView, 0); // use setTimeout to run in async mode so that the browser finishes rendering before calculating the bounding box
     }
 
     var thisTextColourArray = {};
@@ -2486,7 +2429,6 @@
             }
         }
     }
-     
 
     function updateMyAhentafelMarriages() {
         if (FanChartView.myAhnentafel.marriageList) {
@@ -2533,25 +2475,24 @@
     }
 
     /**
-     * Update (or clear) the SVG viewBox based on the content bounding box.
+     * Update the SVG viewBox based on the content bounding box.
      */
-    FanChartView.setViewBox = function (doSet) {
+    FanChartView.resetView = function () {
         let svg = document.getElementById("fanChartSVG");
         if (svg) {
-            if (doSet === undefined || doSet) {
-                let g = svg.firstElementChild;
-                if (g && g.getBBox) {
-                    let boundingBox = g.getBBox();
-                    if (boundingBox) {
-                        svg.setAttribute(
-                            "viewBox",
-                            `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
-                        );
-                    }
+            let g = svg.firstElementChild;
+            let h = 0;
+            if (g && g.getBBox) {
+                let boundingBox = g.getBBox();
+                h = boundingBox.height;
+                if (boundingBox) {
+                    svg.setAttribute(
+                        "viewBox",
+                        `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
+                    );
                 }
-            } else {
-                svg.removeAttribute("viewBox");
             }
+            d3.select(svg).call(FanChartView.zoom.transform, d3.zoomIdentity.translate(0, -h * 0.08).scale(0.8));
         }
     };
 
@@ -2648,7 +2589,7 @@
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-                    
+
                     "IsLiving",
                     "Nicknames",
                     "Prefix",
@@ -2842,7 +2783,7 @@
                                 "MiddleInitial",
                                 "MiddleName",
                                 "RealName",
-                                
+
                                 "IsLiving",
                                 "Nicknames",
                                 "Prefix",
@@ -3502,7 +3443,7 @@
             if (ancestorObject.ahnNum == 1) {
                 let thisPersonsWedge = document.getElementById("ctrCirc");
                 if (thisPersonsWedge) {
-                    thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum); 
+                    thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                     luminance = calcLuminance(thisPersonsWedge.style.fill);
                     thisBkgdClr = thisPersonsWedge.style.fill;
                 }
@@ -4202,7 +4143,7 @@
         FanChartView.numGens2Display = 5;
         FanChartView.lastNumGens = 5;
         FanChartView.numGensRetrieved = 5;
-        FanChartView.maxNumGens = 10 ;
+        FanChartView.maxNumGens = 10;
         numRepeatAncestors = 0;
         repeatAncestorTracker = new Object();
 
@@ -4897,8 +4838,6 @@
             return "";
         }
 
-        
-
         condLog("WARNING WARNING WILL ROBINSON ... RETURN DATE PLACE STRING HAS GONE PAST!");
 
         // remove leading commas (when it's locations only)
@@ -5320,7 +5259,6 @@
         }
         FanChartView.removeBadges(num);
         // console.log("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText);
-        
 
         let rawValue = searchText.trim();
         let spacelessValue = searchText.trim().replace(/ /g, "_");
@@ -5356,7 +5294,6 @@
                 // FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
                 let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                 FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
-                
             } else {
                 // stickerDIV.parentNode.style.display = "none";
             }
@@ -5374,8 +5311,7 @@
         let showBadgesSetting = FanChartView.currentSettings["general_options_showBadges"];
 
         let dCompensation = 0;
-        if (1==1) {
-
+        if (1 == 1) {
             if (nameAngle > 550) {
                 dCompensation = -36;
             } else if (nameAngle > 540) {
@@ -5448,16 +5384,14 @@
                 newX = -30;
                 newY = 0 - thisRadius + Math.abs(i - halfNumBadgesCenteringOffset) * 10 * 2;
 
-                theBadgeX =  newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
-                theBadgeY =  newY * dFraction - dOrtho * newX;
-            } else {                
-                theBadgeX =  newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
-                theBadgeY =  newY * dFraction - (halfNumBadgesCenteringOffset - i) * dOrtho * newX;
+                theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
+                theBadgeY = newY * dFraction - dOrtho * newX;
+            } else {
+                theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
+                theBadgeY = newY * dFraction - (halfNumBadgesCenteringOffset - i) * dOrtho * newX;
             }
 
             // stickerDIV.style.rotate = nameAngle + "deg";
-
-            
 
             let theDropDown = document.getElementById("stickerCategoryDropDownList" + i);
             let searchText = "Clarke";
@@ -5494,13 +5428,12 @@
                 );
             }
 
-             if (FanChartView.theBadgeTracker[ahnNum]) {
-                 FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
-             } else {
-                 FanChartView.theBadgeTracker[ahnNum] = [{}, {}, {}, {}, {}, {}];
-                 FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
-             }
-
+            if (FanChartView.theBadgeTracker[ahnNum]) {
+                FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
+            } else {
+                FanChartView.theBadgeTracker[ahnNum] = [{}, {}, {}, {}, {}, {}];
+                FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
+            }
 
             if (
                 showBadges &&
@@ -5519,8 +5452,7 @@
                     ) > -1)
             ) {
                 //  SHOW THIS STICKER
-                FanChartView.addNewBadge(theBadgeX, theBadgeY, i,  nameAngle);
-               
+                FanChartView.addNewBadge(theBadgeX, theBadgeY, i, nameAngle);
             } else {
                 // stickerDIV.parentNode.style.display = "none";
             }
@@ -5715,7 +5647,8 @@
             if (
                 FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
-                showAllAs == true  && thisGenNum > 0
+                showAllAs == true &&
+                thisGenNum > 0
             ) {
                 showY = true;
             }
@@ -5776,12 +5709,15 @@
                 showAllDs == true
             ) {
                 showDs = true;
- 
-                if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" && thisGenNum == 0) {
+
+                if (
+                    FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" &&
+                    thisGenNum == 0
+                ) {
                     showDs = false;
                     showAs = false;
                 }
-            
             }
 
             if (showDs) {
@@ -5829,7 +5765,6 @@
                 FanChartView.addNewDNAbadge(imgX, imgY, "As", imgAngle, theLink);
             }
         }
-
 
         // SHOW THE DNA Confirmation BADGE (orange)
         // ---- --- ---------------- -----  ------
@@ -7361,9 +7296,9 @@
         return element;
     }
 
-    FanChartView.addNewBadge = function (newX, newY, badgeNum,  nameAngle) {
+    FanChartView.addNewBadge = function (newX, newY, badgeNum, nameAngle) {
         let theSVG = FanChartView.theSVG;
-        
+
         // console.log(theSVG, newX, newY);
         // for (key in theSVG) {
         //     // console.log(": ", key, theSVG[key]);
@@ -7385,12 +7320,17 @@
             class: "badge badge" + badgeNum,
             transform: "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")",
         });
-        let thisRect = appendSVGChild("rect", thisBadge, { width: 30, height: 30, rx:10, ry:10 });
+        let thisRect = appendSVGChild("rect", thisBadge, { width: 30, height: 30, rx: 10, ry: 10 });
         thisRect.style.fill = badgeClr[badgeNum];
         thisRect.style.stroke = "black";
-        thisRect.style['stroke-width'] = 2;
+        thisRect.style["stroke-width"] = 2;
 
-        let thisLabel = appendSVGChild("text", thisBadge, { "font-weight": "bold", fill: "white", x:10, y:22, "font-size":20} , badgeCharacters[badgeNum]);
+        let thisLabel = appendSVGChild(
+            "text",
+            thisBadge,
+            { "font-weight": "bold", "fill": "white", "x": 10, "y": 22, "font-size": 20 },
+            badgeCharacters[badgeNum]
+        );
 
         // console.log("thisBadge:", thisRect, thisLabel,  thisBadge);
     };
@@ -7403,7 +7343,7 @@
     FanChartView.addNewDNAbadge = function (newX, newY, badgeType, nameAngle, link) {
         let theSVG = FanChartView.theSVG;
         let theSVG2 = theSVG.nodes()[0].firstChild;
-        let DNAbadgeClr = {"X":"green", "Y":"blue","MT":"red","As":"white","Ds":"white","DNAconf":"orange"};
+        let DNAbadgeClr = { X: "green", Y: "blue", MT: "red", As: "white", Ds: "white", DNAconf: "orange" };
         let DNAbadgeFill = {
             X: "lightgray",
             Y: "lightblue",
@@ -7412,8 +7352,15 @@
             Ds: "white",
             DNAconf: "#e9f1d1",
         };
-        let DNAbadgeStroke = {"X":"#111111", "Y":"blue","MT":"red","As":"darkgreen","Ds":"darkgreen","DNAconf":"orange"};
-        let DNAbadgeStrokeWidth = {"X":5, "Y":5,"MT":3,"As":2,"Ds":2,"DNAconf":4};
+        let DNAbadgeStroke = {
+            X: "#111111",
+            Y: "blue",
+            MT: "red",
+            As: "darkgreen",
+            Ds: "darkgreen",
+            DNAconf: "orange",
+        };
+        let DNAbadgeStrokeWidth = { X: 5, Y: 5, MT: 3, As: 2, Ds: 2, DNAconf: 4 };
 
         let DNAbadgeSVG = {
             X: "M 8 5 L 22 25 M 22 5 L 8 25",
@@ -7421,7 +7368,8 @@
             MT: "M 5 23 L 5 18 L 7 17 L 9 17 L 11 18 L 11 23 M 5 18 L 5 16 M 11 18 L 13 17 L 15 17 L 17 18 L 17 23 M 22 8 L 22 23 L 25 24 M 18 13 L 26 13",
             As: "M 3 15 L 12 15 M 26 5 L 19 5 L 19 13 L 26 13  M 26 17 L 19 17 L 19 25 L 26 25  M 19 9 L 12 9 L 12 21 L 19 21",
             Ds: "M 4 5 L 10 5 L 10 9 L 24 9 M 16 9 L 16 13 L 24 13 M 10 9 L 10 19 L 24 19 M 16 19 L 16 23 L 24 23 M 16 23 L 16 27 L 24 27",
-            DNAconf: "M 5 4 L 5 25 L 15 25 L 19 21 L 21 18 L 21 12 L 19 9 L 15 5 L 5 5  M 30 25 L 30 5 L 46 25 L 46 5 M 55 25 L 63 5 L 71 25 M 59 19 L 67 19",            
+            DNAconf:
+                "M 5 4 L 5 25 L 15 25 L 19 21 L 21 18 L 21 12 L 19 9 L 15 5 L 5 5  M 30 25 L 30 5 L 46 25 L 46 5 M 55 25 L 63 5 L 71 25 M 59 19 L 67 19",
         };
         // console.log("theSVG2 = ", theSVG2);
         let checkmarkSVG = "M 72 12 L 77 20 L 87 0";
@@ -7430,7 +7378,12 @@
             class: "badgeDNA badgeDNA-" + badgeType,
             transform: "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")",
         });
-        let thisRect = appendSVGChild("rect", thisBadge, { width: (badgeType == "DNAconf" ? 92 : 30), height: 30, rx: 10, ry: 10 });
+        let thisRect = appendSVGChild("rect", thisBadge, {
+            width: badgeType == "DNAconf" ? 92 : 30,
+            height: 30,
+            rx: 10,
+            ry: 10,
+        });
         thisRect.style.fill = DNAbadgeFill[badgeType];
         thisRect.style.stroke = DNAbadgeStroke[badgeType];
         thisRect.style["stroke-width"] = 1;
@@ -7442,24 +7395,22 @@
             "d": DNAbadgeSVG[badgeType],
         });
 
-        if ( badgeType == "DNAconf") {
+        if (badgeType == "DNAconf") {
             let checkmarkSVG = "M 72 12 L 77 20 L 87 0";
-             appendSVGChild("path", thisBadge, {
-                 "fill": "none",
-                 "stroke": "#07db07",
-                 "stroke-width": DNAbadgeStrokeWidth[badgeType],
-                 "d": checkmarkSVG,
-             });
+            appendSVGChild("path", thisBadge, {
+                "fill": "none",
+                "stroke": "#07db07",
+                "stroke-width": DNAbadgeStrokeWidth[badgeType],
+                "d": checkmarkSVG,
+            });
         }
-        
 
         if (link > "") {
             // console.log("Adding link:", link);
-            thisRect.setAttribute("onclick" , "location.assign('" + link + "')");
-            thisRect.setAttribute("cursor" , "pointer");
+            thisRect.setAttribute("onclick", "location.assign('" + link + "')");
+            thisRect.setAttribute("cursor", "pointer");
             thisPath.setAttribute("onclick", "location.assign('" + link + "')");
             thisPath.setAttribute("cursor", "pointer");
-            
         }
 
         // let thisImgHolder = appendSVGChild("foreignObject", thisBadge, { class:"centered imgHolder" , width:"40px", height:"40px" });
@@ -7468,17 +7419,14 @@
         // let thisBadgeImg = appendSVGChild(
         //     "img",
         //     thisImgDIV,
-        //     { height:24, "src": "https://www.wikitree.com/images/icons/dna/X.gif" }            
+        //     { height:24, "src": "https://www.wikitree.com/images/icons/dna/X.gif" }
         // );
 
         // console.log("thisBadge:",  thisBadge);
     };
 
-    
-
     FanChartView.removeBadges = function (badgeType = "") {
         // console.log("FanChartView.removeBadges function : ", badgeType);
         d3.selectAll(".badge" + badgeType).remove();
-    };    
-
+    };
 })();

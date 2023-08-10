@@ -17,7 +17,7 @@ header {
   padding: var(--content-padding);
 }
 
-header>* {
+header > * {
   margin: 0;
 }
 
@@ -41,7 +41,7 @@ header>* {
   padding: 10px 0;
 }
 
-#wt-api-login>* {
+#wt-api-login > * {
   margin: 0;
 }
 
@@ -59,11 +59,11 @@ main {
   margin: 0;
 }
 
-#info-panel>h2 {
+#info-panel > h2 {
   margin: 0;
 }
 
-#settingsDIV>ul>li {
+#settingsDIV > ul > li {
   cursor: pointer;
 }
 
@@ -237,11 +237,11 @@ main {
 }
 
 .fontSerif {
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 
 .fontSansSerif {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .fontBlack {
@@ -293,7 +293,7 @@ main {
 }
 
 .fontMono {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
 }
 
 .fontBold {
@@ -329,16 +329,16 @@ main {
 }
 
 .mDateBox {
-    background-color: white;
-    border-top: 2px red solid;
-    border-bottom: 3px red solid;
-    width: 55px;
+  background-color: white;
+  border-top: 2px red solid;
+  border-bottom: 3px red solid;
+  width: 55px;
 }
 .mDateBox2 {
-    background-color: white;
-    border-left: 2px red solid;
-    border-right: 3px red solid;
-    width: 110px;
+  background-color: white;
+  border-left: 2px red solid;
+  border-right: 3px red solid;
+  width: 110px;
 }
 
 .quarterEmBottomMargin {
@@ -353,7 +353,6 @@ main {
   background: blue;
   width: 30px;
   height: 15px;
-
 }
 .btnInc {
   padding: 0;
@@ -406,8 +405,8 @@ main {
 
   #fanChartSVG {
     /* fill a single page with the viewBox */
-    width: 100vw !important;
-    height: 99vh !important; /* 100vh seems to cause a second blank page */
+    max-width: 100vw !important;
+    max-height: 99vh !important; /* 100vh seems to cause a second blank page */
   }
 
   #fanChartSVG g.popup {
