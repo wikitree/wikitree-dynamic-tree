@@ -3,6 +3,7 @@ let descendantsDateDataStatusFormat = localStorage.getItem("descendantsDateDataS
 let descendantsShowWTID = localStorage.getItem("descendantsShowWTID") || false;
 let descendantsShowPlaces = localStorage.getItem("descendantsShowPlaces") || true;
 let descendantsShowAboville = localStorage.getItem("descendantsShowAboville") || false;
+let descendantsShowDates = localStorage.getItem("descendantsShowDates") || true;
 
 class DescendantsView extends View {
     meta() {
@@ -70,10 +71,11 @@ class DescendantsView extends View {
         <button class='small dna off' id='mtButton' title="Toggle Mitochondrial DNA data">MT</button>
         <select id="generationSelect" title="Select generation"></select>
         <button class='small on' id='toggleBios' title="Toggle bios">Show Bios</button>
+        <button class='small on' id='toggleSpouses' title="Toggle spouses">Show Spouses</button>
         <button class='small' id='getAllParents' title="Get the descendants' other parents">Get Parents</button>
         <button class='small' id='hideChildless' title="Hide people without children">Hide Childless</button>
 
-        <fieldset id="dateFormat" title="Date format settings"><label>Dates:</label>
+        <fieldset id="dateFormat" title="Date format settings"><label><input type="checkbox" id="showDates" title="Show dates">Dates:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
                 <option value="abbreviations">bef., aft., abt.</option>
                 <option value="words">before, after, about</option>
@@ -99,6 +101,11 @@ class DescendantsView extends View {
             $("#showWTID").prop("checked", true).addClass("on");
         }
         toggleVisibility("hideWTIDStyle", " .wtid", "showWTID");
+
+        if (descendantsShowDates == "true") {
+            $("#showDates").prop("checked", true).addClass("on");
+        }
+        toggleVisibility("hideDatesStyle", " .datesOnly, #descendants li.person .birthDeathDate", "showDates");
 
         if (descendantsShowAboville == "true") {
             $("#showAboville").prop("checked", true).addClass("on");
@@ -166,6 +173,12 @@ class DescendantsView extends View {
             toggleVisibility("hideAbovilleStyle", " .aboville", "showAboville");
             descendantsShowAboville = $(this).prop("checked");
             localStorage.setItem("descendantsShowAboville", descendantsShowAboville);
+        });
+
+        $(container_selector).on("click", "#showDates", function (e) {
+            toggleVisibility("hideDatesStyle", " .datesOnly, #descendants li.person .birthDeathDate", "showDates");
+            descendantsShowDates = $(this).prop("checked");
+            localStorage.setItem("descendantsShowDates", descendantsShowDates);
         });
 
         $(container_selector).on("click", "#showPlaces", function (e) {
@@ -279,6 +292,12 @@ class DescendantsView extends View {
             e.stopImmediatePropagation();
             getParents();
         });
+
+        $(container_selector).on("click", "#toggleSpouses", function (e) {
+            e.stopImmediatePropagation();
+            toggleSpouses();
+        });
+
         $(container_selector).on("click", "#downloadCSV", function (e) {
             e.stopImmediatePropagation();
             makeCSVFile();
@@ -329,6 +348,18 @@ function turnOffOtherButtons() {
     $("#yButton").removeClass("on");
     $("#mtButton").addClass("off");
     $("#mtButton").removeClass("on");
+}
+
+function toggleSpouses() {
+    if ($("#toggleSpouses").hasClass("off")) {
+        $("#toggleSpouses").removeClass("off");
+        $("#toggleSpouses").addClass("on");
+        $("dl.spouse").show();
+    } else {
+        $("#toggleSpouses").removeClass("on");
+        $("#toggleSpouses").addClass("off");
+        $("dl.spouse").hide();
+    }
 }
 
 function isAlive(person) {
@@ -517,6 +548,8 @@ function addParentToDOM(parent) {
     // Insert before UL
     if ($childUl.prop("id") != "descendants") {
         $childUl.before($dl);
+        $("#toggleSpouses").show();
+        $("#toggleSpouses").addClass("on").removeClass("off");
     }
 }
 
@@ -1157,10 +1190,6 @@ async function addBio(id) {
             bioDiv.find("a[name]").remove();
         }
 
-        if ($("#toggleBios.on").length == 0) {
-            bioDiv.find(".aBiography").addClass("hidden");
-        }
-
         bioDiv.find("div.status").addClass("hidden");
         bioDiv.find("p:contains( is empty. What can you add?)").remove();
         bioDiv
@@ -1249,7 +1278,9 @@ function addSpouses(mPerson) {
             let spouseNum = spouseKeys.length > 1 ? "spouse_" + (index + 1) : "";
             const title =
                 "Married " + getDateFormat(marriageDate, 1) + (marriageLocation ? " in " + marriageLocation : "");
-
+            const marriageLocationSpan = marriageLocation
+                ? `<span class="marriageLocation">in ${marriageLocation}</span>`
+                : "";
             const thisSpouseInfo = $(
                 `<dt class='marriageDate' title="${title}" data-marriage-location="${marriageLocation}" data-marriage-date='${marriageDate8}'>${getDateFormat(
                     marriageDate,
@@ -1265,7 +1296,7 @@ function addSpouses(mPerson) {
                     "_"
                 )}">${aSpouse.FullName.trim()}</a> <span class="spouseDates">${
                     aSpouse.Dates
-                }</span> <a class='switch' title='Switch to ${aSpouse.FirstName}' data-name="${
+                }</span> ${marriageLocationSpan} <a class='switch' title='Switch to ${aSpouse.FirstName}' data-name="${
                     aSpouse.Name
                 }">↔️</a></dd>`
             );
@@ -1295,6 +1326,8 @@ function addSpouses(mPerson) {
             if (!placed) {
                 bdDatesTable.append(thisSpouseInfo);
             }
+            $("#toggleSpouses").show();
+            $("#toggleSpouses").addClass("on").removeClass("off");
         });
 
         // If there are multiple spouses, adjust child classes based on the mother

@@ -391,3 +391,7 @@ body.descendants button {
   display: inline-block;
   margin-bottom: 0.2em;
 }
+
+#descendantsButtons #toggleSpouses {
+  display: none;
+}
