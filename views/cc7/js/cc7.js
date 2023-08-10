@@ -161,6 +161,7 @@ export class CC7 {
         "Mother",
         "Name",
         "Nicknames",
+        "NoChildren",
         "Prefix",
         "Privacy",
         "RealName",
@@ -1799,7 +1800,7 @@ export class CC7 {
                         relNums[aR] = "";
                     }
                     relNums[aR + "_data"] = "data-" + aR + "='" + relNums[aR] + "'";
-                    let word;
+                    let word = aR + "s";
                     if (aR == "Child") {
                         word = "Children";
                         if (diedYoung && relNums[aR] == "") {
@@ -1808,8 +1809,13 @@ export class CC7 {
                         } else if (mPerson.NoChildren == 1) {
                             cellClass = "class='none number'";
                         }
-                    } else {
-                        word = aR + "s";
+                    } else if (
+                        aR == "Sibling" &&
+                        mPerson.Parent.length == 2 &&
+                        mPerson.Parent[0].NoChildren &&
+                        mPerson.Parent[0].NoChildren
+                    ) {
+                        cellClass = "class='none number'";
                     }
                     if (aR == "Spouse") {
                         if (mPerson.DataStatus?.Spouse == "blank" || (diedYoung && relNums[aR] == "")) {
