@@ -114,7 +114,18 @@
         </g>
         </svg>`;
 
-    
+    const SVGbtnRESIZE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 8C21.4477 8 21 7.55228 21 7V4.41421L13.4142 12L21 19.5858V17C21 16.4477 21.4477 16 22 16C22.5523 16 23 16.4477 23 17V21C23 22.1046 22.1046 23 21 23H17C16.4477 23 16 22.5523 16 22C16 21.4477 16.4477 21 17 21H19.5858L12 13.4142L4.41421 21H7C7.55228 21 8 21.4477 8 22C8 22.5523 7.55228 23 7 23H3C1.89543 23 1 22.1046 1 21V17C1 16.4477 1.44772 16 2 16C2.55228 16 3 16.4477 3 17V19.5858L10.5858 12L3 4.41422V7C3 7.55228 2.55228 8 2 8C1.44772 8 1 7.55228 1 7V3C1 1.89543 1.89543 1 3 1H7C7.55228 1 8 1.44772 8 2C8 2.55228 7.55228 3 7 3H4.41421L12 10.5858L19.5858 3H17C16.4477 3 16 2.55228 16 2C16 1.44772 16.4477 1 17 1H21C22.1046 1 23 1.89543 23 3V7C23 7.55228 22.5523 8 22 8Z" 
+            fill="#0F0F0F"/>
+        </svg>`;
+
+    const SVGbtnRESIZE2 = `<svg width="16" height="16" viewBox="0 -0.5 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            class="si-glyph si-glyph-arrow-fullscreen-2">    
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <path d="M14.988,6.979 C15.547,6.979 16,6.527 16,5.97 L16,1.008 C16,0.45 15.547,-0.000999999989 14.988,-0.000999999989 L10.011,-0.000999999989 C9.452,-0.000999999989 8.999,0.45 8.999,1.008 L10.579,2.583 L8.009,5.153 L5.439,2.583 L7.019,1.008 C7.019,0.45 6.566,-0.000999999989 6.007,-0.000999999989 L1.03,-0.000999999989 C0.471,-0.000999999989 0.0179999999,0.45 0.0179999999,1.008 L0.0179999999,5.97 C0.0179999999,6.527 0.471,6.979 1.03,6.979 L2.62,5.394 L5.194,7.968 L2.598,10.565 L1.028,9 C0.471,9 0.0189999999,9.45 0.0189999999,10.006 L0.0189999999,14.952 C0.0189999999,15.507 0.471,15.958 1.028,15.958 L5.99,15.958 C6.548,15.958 6.999,15.507 6.999,14.952 L5.417,13.375 L8.009,10.783 L10.601,13.375 L9.019,14.952 C9.019,15.507 9.47,15.958 10.028,15.958 L14.99,15.958 C15.547,15.958 15.999,15.507 15.999,14.952 L15.999,10.006 C15.999,9.45 15.547,9 14.99,9 L13.42,10.565 L10.824,7.968 L13.398,5.394 L14.988,6.979 L14.988,6.979 Z" fill="#434343" class="si-glyph-fill">
+                </path>
+            </g>
+        </svg>`;
 
     var uniqueLocationsArray = [];
     var theSortedLocationsArray = [];
@@ -1069,8 +1080,12 @@
             SVGbtnUP +
             "</A> " +
             "</td>" +
-            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue"><A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();">' +
+            "</td>" +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
+            '<A onclick="FanChartView.reZoom();">' +
+            SVGbtnRESIZE2 +
+            "</A>&nbsp;&nbsp;" +
             ' <A onclick="FanChartView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>&nbsp;&nbsp;" +
@@ -1079,7 +1094,7 @@
             "</A>" +
             (AboutHelpDoc > ""
                 ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
-                : "") +            
+                : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
 
@@ -1715,7 +1730,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
+                            style: "display:none;", //  
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -1743,7 +1758,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
+                            style: "display:none;", //  
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -1784,6 +1799,36 @@
         updateLegendIfNeeded();
         FanChartView.redraw();
     };
+
+    FanChartView.reZoom = function () {
+        console.log("TIME to RE ZOOM now !", FanChartView.currentScaleFactor);
+        let svg = document.getElementById("fanChartSVG");
+        console.log(svg);
+
+        if (svg) {
+            
+                let g = svg.firstElementChild;
+                if (g && g.getBBox) {
+                    let boundingBox = g.getBBox();
+                    if (boundingBox) {
+                        console.log(g);
+                        console.log(boundingBox);
+                        // svg.setAttribute(
+                        //     "viewBox",
+                        //     `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
+                        // );
+                    }
+                }
+            // } else {
+            //     svg.removeAttribute("viewBox");
+            // }
+        }
+
+        // d3.select(svg).call(FanChartView.zoom.transform, 1 );
+        // svg.call(FanChartView.zoom);
+        // // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
+        // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 560).scale(0.45));
+    }
 
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
     FanChartView.optionElementJustChanged = function () {
@@ -2009,6 +2054,8 @@
                     "DataStatus",
 
                     "Manager",
+                    "Creator",
+                    "Created",
                     "BirthDateDecade",
                     "DeathDateDecade",
                     "Bio",
@@ -2672,6 +2719,8 @@
                     "DataStatus",
 
                     "Manager",
+                    "Creator",
+                    "Created",
                     "BirthDateDecade",
                     "DeathDateDecade",
                     "Bio",
@@ -2866,6 +2915,8 @@
                                 "DataStatus",
 
                                 "Manager",
+                                "Creator",
+                                "Created",
                                 "BirthDateDecade",
                                 "DeathDateDecade",
                                 "Bio",
@@ -5303,17 +5354,27 @@
     //              return true;
 
     FanChartView.updateBadgesToShow = function (num = 1) {
-        condLog("UPDATING BADGES NOW !!!!");
+        console.log("UPDATING BADGES NOW !!!!", num);
         let showBadges = FanChartView.currentSettings["general_options_showBadges"];
         let theDropDown = document.getElementById("stickerCategoryDropDownList" + num);
         let searchText = "Clarke";
         let searchPrefix = "[[Category:";
+        let specialDecoderRing = { '-5' : "DNA confirmed", '-10' : "Created by me", '-15' : "Managed by me"};
+        let otherBadgeType = "";
         if (theDropDown.value > -1) {
             if (theDropDown.value && theDropDown.value < categoryList.length) {
                 searchText = categoryList[theDropDown.value];
             } else {
                 searchText = stickerList[theDropDown.value - categoryList.length];
                 searchPrefix = "{{";
+            }
+        } else if (theDropDown.value < -1) {
+            console.log("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
+            if (specialDecoderRing[theDropDown.value] && specialDecoderRing[theDropDown.value] > "") {
+                // great
+                otherBadgeType = specialDecoderRing[theDropDown.value];
+            } else {
+                showBadges = false;
             }
         } else {
             showBadges = false;
@@ -5357,6 +5418,53 @@
                 let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                 FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
                 
+            } else if (
+                showBadges &&
+                otherBadgeType > "" 
+            ) {
+                //  SHOW THIS STICKER
+                // let SVGgraphicsDIV = document.getElementById("SVGgraphics");
+                // stickerDIV.parentNode.style.display = "block";
+                // SVGgraphicsDIV.append(stickerDIV.parentNode);
+
+                // FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
+                console.log(window.WTUser.id);
+                console.log(document.getElementById("wt-api-login").textContent.indexOf(":"));
+                console.log(window.wtViewRegistry.session.lm.user);
+                let myUserID = window.wtViewRegistry.session.lm.user.id; // WikiTree userID (#) for the person logged in
+                if (
+                    (otherBadgeType == "Managed by me" &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Manager == myUserID) ||
+                    (otherBadgeType == "Created by me" &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Creator == myUserID)
+                ) {
+                    let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
+                    FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
+                } else if (otherBadgeType == "DNA confirmed") {
+                    let childAhnNum = Math.floor(ahnNum / 2);
+                    let showDNAconf = false;
+                    if (ahnNum % 2 == 0) {
+                        // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+                        if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
+                            showDNAconf = true;
+                        }
+                    } else if (ahnNum > 1) {
+                        // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+                        if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
+                            showDNAconf = true;
+                        }
+                    } else if (ahnNum == 1) {
+                        // this primary person is confirmed by their own DNA to be themselves (a bit of a circuitous rationalization to make a nice neat pattern)
+                        showDNAconf = true;
+                    }
+                    
+                    
+                    if (showDNAconf == true) {
+                        let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
+                        FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
+                    }
+                }
+            
             } else {
                 // stickerDIV.parentNode.style.display = "none";
             }
@@ -6105,6 +6213,18 @@
                 stickerInnerHTML += '<option value="' + (i + categoryList.length) + '">' + cat + "</option>";
             }
         }
+
+        let otherList = ["DNA confirmed", "Created by me","Managed by Me"];
+        stickerInnerHTML += "<option>OTHERS:</option>";
+        innerCatHTML += '<option value="Other">OTHERS:</option>';
+        for (let i = 0; i < otherList.length; i++) {
+            const cat = otherList[i];
+            innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
+            stickerInnerHTML +=
+                '<option value="' + (0 - 5 - 5 * i) + '">' + cat + "</option>";
+        }
+
+
         catNameSelector.innerHTML = innerCatHTML;
         for (i = 1; i <= numOfBadges; i++) {
             document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace("#666#", i);
