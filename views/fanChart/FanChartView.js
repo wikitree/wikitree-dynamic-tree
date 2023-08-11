@@ -15,6 +15,16 @@
  *
  * Some SVG button icons from SVG Repo - open-licencesed SVG Vector and Icons website:  https://www.svgrepo.com/
  */
+
+import { BioCheckTemplateManager } from "../../lib/biocheck-api/src/BioCheckTemplateManager.js";
+import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
+import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
+import { Biography } from "../../lib/biocheck-api/src/Biography.js";
+
+// initialization - just once
+let bioCheckTemplateManager = new BioCheckTemplateManager();
+bioCheckTemplateManager.load();
+
 (function () {
     const APP_ID = "FanChart";
     var originOffsetX = 500,
@@ -23,8 +33,8 @@
         boxHeight = 50,
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
-    font4Name = "SansSerif";
-    font4Info = "SansSerif";
+    let font4Name = "SansSerif";
+    let font4Info = "SansSerif";
 
     const numOfBadges = 5;
     let badgeCharacters = " 12345";
@@ -114,11 +124,6 @@
         </g>
         </svg>`;
 
-    const SVGbtnRESIZE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 8C21.4477 8 21 7.55228 21 7V4.41421L13.4142 12L21 19.5858V17C21 16.4477 21.4477 16 22 16C22.5523 16 23 16.4477 23 17V21C23 22.1046 22.1046 23 21 23H17C16.4477 23 16 22.5523 16 22C16 21.4477 16.4477 21 17 21H19.5858L12 13.4142L4.41421 21H7C7.55228 21 8 21.4477 8 22C8 22.5523 7.55228 23 7 23H3C1.89543 23 1 22.1046 1 21V17C1 16.4477 1.44772 16 2 16C2.55228 16 3 16.4477 3 17V19.5858L10.5858 12L3 4.41422V7C3 7.55228 2.55228 8 2 8C1.44772 8 1 7.55228 1 7V3C1 1.89543 1.89543 1 3 1H7C7.55228 1 8 1.44772 8 2C8 2.55228 7.55228 3 7 3H4.41421L12 10.5858L19.5858 3H17C16.4477 3 16 2.55228 16 2C16 1.44772 16.4477 1 17 1H21C22.1046 1 23 1.89543 23 3V7C23 7.55228 22.5523 8 22 8Z" 
-            fill="#0F0F0F"/>
-        </svg>`;
-
     const SVGbtnRESIZE2 = `<svg width="16" height="16" viewBox="0 -0.5 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
             class="si-glyph si-glyph-arrow-fullscreen-2">    
             <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -129,6 +134,25 @@
 
     var uniqueLocationsArray = [];
     var theSortedLocationsArray = [];
+    var thisTextColourArray = {};
+
+    var PastelsArray = []; // to be defined shortly
+    var RainbowArray = []; // to be defined shortly
+    var RainbowArrayLong = []; // to be defined shortly
+    var Rainbow8 = []; // to be defined shortly
+    var RainbowTweens = []; // to be defined shortly
+
+    // var AltBlues = []; // to be defined shortly
+    var AltBluesArray = []; // to be defined shortly
+    // var AltGreens = []; // to be defined shortly
+    var AltGreensArray = []; // to be defined shortly
+    var GreensArray = []; // to be defined shortly
+    var GreysArray = []; // to be defined shortly
+    var AltGreysArray = []; // to be defined shortly
+    var GreysArrayOrig = []; // to be defined shortly
+    var RedsArray = []; // to be defined shortly
+    var AltRedsArray = []; // to be defined shortly
+    var BluesArray = []; // to be defined shortly
 
     var ColourArray = [
         "White",
@@ -422,6 +446,8 @@
     FanChartView.workingMaxNumGens = 6;
 
     FanChartView.currentScaleFactor = 1;
+    FanChartView.lastCustomScaleFactor = 0.9;
+    FanChartView.zoomCounter = 0;
 
     // FanChartView.showFandokuLink = "No";
 
@@ -464,6 +490,7 @@
                     label: "General",
                     hideSelect: true,
                     subsections: [{ name: "FanChartGeneral", label: "General settings" }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#General",
                     comment:
                         "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
                 },
@@ -472,6 +499,7 @@
                     label: "Names",
                     hideSelect: true,
                     subsections: [{ name: "FanChartNames", label: "NAMES format" }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Names",
                     comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
                 },
                 {
@@ -479,6 +507,7 @@
                     label: "Dates",
                     hideSelect: true,
                     subsections: [{ name: "FanChartDates", label: "DATES of events     " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Dates",
                     comment: "These options apply to the Date format to use for birth, marriages, & deaths.",
                 },
                 {
@@ -486,6 +515,7 @@
                     label: "Places",
                     hideSelect: true,
                     subsections: [{ name: "FanChartPlaces", label: "PLACES of events     " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Places",
                     comment: "These options apply to the Places displayed for birth, marriages, & deaths.",
                 },
                 {
@@ -493,6 +523,7 @@
                     label: "Photos",
                     hideSelect: true,
                     subsections: [{ name: "FanChartPhotos", label: "PHOTOS    " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Photos",
                     comment: "These options determine if photos are displayed or not.",
                 },
                 {
@@ -500,6 +531,7 @@
                     label: "Colours",
                     hideSelect: true,
                     subsections: [{ name: "FanChartColours", label: "COLOURS   " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Colours",
                     comment: "These options apply to the colours in the Fan Chart cells.",
                 },
                 {
@@ -507,6 +539,7 @@
                     label: "Highlights",
                     hideSelect: true,
                     subsections: [{ name: "FanChartHighlights", label: "HIGHLIGHTING   " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Highlights",
                     comment:
                         "These options determine which, if any, cells should be highlighted (in order to stand out). ",
                 },
@@ -825,6 +858,14 @@
                     subcategory: "options",
                     options: [
                         {
+                            optionName: "colourizeRepeats",
+                            label: "Colourize Repeat Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                            comment: "(will supersede background colouring for repeat ancestors)",
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
                             optionName: "colourBy",
                             type: "select",
                             label: "Background Colour cells by",
@@ -836,6 +877,7 @@
                                 { value: "GGrand", text: "Great-Grandparent" },
                                 { value: "GGGrand", text: "2x Great Grandparent" },
                                 { value: "GGGGrand", text: "3x Great Grandparent" },
+                                { value: "BioCheck", text: "Bio Check status" },
                                 { value: "Family", text: "Family Stats" },
                                 { value: "Location", text: "Location" },
                                 // { value: "Town", text: "Place name" },
@@ -918,6 +960,14 @@
                     subcategory: "options",
                     options: [
                         {
+                            optionName: "colourizeRepeats",
+                            label: "Colourize Repeat Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
+                            comment: "(will supersede highlight colouring)",
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
                             optionName: "showHighlights",
                             label: "Highlight cells based on option chosen below",
                             type: "checkbox",
@@ -935,6 +985,8 @@
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "-", text: "-" },
                                 { value: "aliveDay", text: "Alive on this Day" },
+                                { value: "bioCheckOK", text: "Bio Check ✔ - has sources" },
+                                { value: "bioCheckFail", text: "Bio Check X - no sources" },
                                 { value: "bioText", text: "Biography Text" },
                                 { value: "cat", text: "Category or Sticker" },
                                 // { value: "review", text: "Profiles needing review" },
@@ -1070,8 +1122,7 @@
             SVGbtnUP +
             "</A> " +
             "</td>" +
-            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue"><A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();">' +
-            "</td>" +
+            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
             '<A onclick="FanChartView.reZoom();">' +
             SVGbtnRESIZE2 +
@@ -1168,7 +1219,91 @@
             }
         };
 
+        FanChartView.reZoom = function () {
+            // console.log("TIME to RE ZOOM now !", FanChartView.currentScaleFactor);
+            let newScaleFactor = 0.8;
+           
+            let svg = document.getElementById("fanChartSVG");
+            let makeFitZoomFactor = 1;
+            // return;
+
+             
+
+
+            if (svg) {
+                let g = svg.firstElementChild;
+                let h = 0;
+                let boundingBox = {};
+                if (g && g.getBBox) {
+                    boundingBox = g.getBBox();
+                    h = boundingBox.height;
+                    if (boundingBox) {
+                        svg.setAttribute(
+                            "viewBox",
+                            `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
+                        );
+
+                        if (window.innerWidth * h / boundingBox.width > (window.innerHeight - 30)) {
+                            makeFitZoomFactor = (window.innerHeight - 30) / ((window.innerWidth * h) / boundingBox.width);
+                        }
+                    }
+                }
+                // console.log(
+                //     makeFitZoomFactor,
+                //     FanChartView.currentScaleFactor,
+                //     FanChartView.lastCustomScaleFactor,
+                //     0.8 * makeFitZoomFactor,
+                
+                // );
+
+                if (
+                    FanChartView.currentScaleFactor != 0.8 * makeFitZoomFactor &&
+                    FanChartView.currentScaleFactor != 1.0 * makeFitZoomFactor &&
+                    FanChartView.lastCustomScaleFactor != FanChartView.currentScaleFactor
+                ) {
+                    FanChartView.lastCustomScaleFactor = FanChartView.currentScaleFactor;
+                    FanChartView.zoomCounter = 2;
+                }
+
+                FanChartView.zoomCounter = (FanChartView.zoomCounter + 1) % 3;
+
+                if (FanChartView.zoomCounter == 0) {
+                    newScaleFactor = 0.8 * makeFitZoomFactor;
+                } else if (FanChartView.zoomCounter == 1) {
+                    newScaleFactor = 1.0 * makeFitZoomFactor;
+                } else if (FanChartView.zoomCounter == 2) {
+                    newScaleFactor = FanChartView.lastCustomScaleFactor;
+                }
+
+                let overHead = 0;
+                if ((newScaleFactor * window.innerWidth * h) / boundingBox.width < window.innerHeight) {
+                    overHead = Math.max(0, window.innerHeight - newScaleFactor * window.innerHeight);
+                }
+                // console.log(
+                //     "z",
+                //     FanChartView.zoomCounter,
+                //     "overHead:",
+                //     overHead,
+                //     "newScaleFactor:",
+                //     newScaleFactor,
+                //     "bounding:",
+                //     boundingBox.width + " x " + boundingBox.height,
+                //     "in app:",
+
+                //     newScaleFactor  * window.innerWidth +
+                //         " x " +
+                //         newScaleFactor * window.innerHeight
+                // );    
+
+                d3.select(svg).call(
+                    FanChartView.zoom.transform,
+                    d3.zoomIdentity.translate(0, 0 - overHead).scale(newScaleFactor) /// translation used to be -h * 0.08
+                );
+            }
+        };
+
         function updateBadgeLabels() {
+            console.log("Update Badge Labels");
             for (let b = 1; b <= numOfBadges; b++) {
                 let badgeCharTxt = document.getElementById("badgeCharacter" + b);
                 badgeCharTxt.textContent = badgeCharacters[b];
@@ -1183,7 +1318,8 @@
                 let showBadges = FanChartView.currentSettings["general_options_showBadges"];
                 let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
                 let colour_options_specifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
-                let colour_options_specifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
+                let colour_options_specifyByLocation =
+                    FanChartView.currentSettings["colour_options_specifyByLocation"];
 
                 let legendDIV = document.getElementById("legendDIV");
                 let LegendTitle = document.getElementById("LegendTitle");
@@ -1199,7 +1335,7 @@
 
                 FanChartView.removeBadges("DNA");
 
-                if (showBadges || colourBy == "Family" || colourBy == "Location") {
+                if (showBadges || colourBy == "Family" || colourBy == "Location" || colourBy == "BioCheck") {
                     let badgeLabels = FanChartView.currentSettings["general_options_badgeLabels"];
                     if (badgeLabels == "12345") {
                         badgeCharacters = " 12345";
@@ -1213,6 +1349,9 @@
                     }
                     if (showBadges) {
                         updateBadgeLabels();
+                        for (let b = 1; b <= numOfBadges; b++) {
+                            FanChartView.updateBadgesToShow(b);
+                        }
                     } else {
                         FanChartView.removeBadges();
                     }
@@ -1220,7 +1359,7 @@
                     legendDIV.style.display = "block";
                     stickerLegend.style.display = "block";
                     legendToggle.style.display = "inline-block";
-                    if (colourBy == "Family" || colourBy == "Location") {
+                    if (colourBy == "Family" || colourBy == "Location" || colourBy == "BioCheck") {
                         BRbetweenLegendAndStickers.style.display = "block";
                         LegendTitleH3.style.display = "block";
                         condLog(
@@ -1253,6 +1392,8 @@
                             LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
                         } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
                             LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+                        } else if (colourBy == "BioCheck") {
+                            LegendTitle.textContent = "Bio Check status";
                         }
                     } else {
                         BRbetweenLegendAndStickers.style.display = "none";
@@ -1308,6 +1449,12 @@
                         let rawValue = catNameSelector.value.trim();
                         currentHighlightCategory = rawValue;
                         document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
+                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Profiles that pass the Bio Check : have sources";
+                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Profiles that fail the Bio Check : no sources";
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
                         let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
                         let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
@@ -1413,6 +1560,13 @@
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         let showMarriageSelector = document.getElementById("date_options_showMarriage");
+
+        let colourizeColoursTab = document.getElementById("colour_options_colourizeRepeats");
+        let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
+        let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
+        colourizeColoursTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('colour');");
+        colourizeGeneralTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('general');");
+        colourizeHighlightTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('highlight');");
 
         // condLog("bkgdClrSelector", bkgdClrSelector);
         bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
@@ -1654,7 +1808,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:none;", //  
+                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -1682,7 +1836,7 @@
                             // x: 25 * index,
                             // y: 30 * genIndex + 5 * 300,
                             //
-                            style: "display:none;", //  
+                            style: "display:none;", //  // CHANGED FOR BADGE TESTING
                         })
 
                         .style("overflow", "visible") // so the name will wrap
@@ -1712,35 +1866,17 @@
         FanChartView.redraw();
     };
 
-    FanChartView.reZoom = function () {
-        console.log("TIME to RE ZOOM now !", FanChartView.currentScaleFactor);
-        let svg = document.getElementById("fanChartSVG");
-        console.log(svg);
-
-        if (svg) {
-            
-                let g = svg.firstElementChild;
-                if (g && g.getBBox) {
-                    let boundingBox = g.getBBox();
-                    if (boundingBox) {
-                        console.log(g);
-                        console.log(boundingBox);
-                        // svg.setAttribute(
-                        //     "viewBox",
-                        //     `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
-                        // );
-                    }
-                }
-            // } else {
-            //     svg.removeAttribute("viewBox");
-            // }
-        }
-
-        // d3.select(svg).call(FanChartView.zoom.transform, 1 );
-        // svg.call(FanChartView.zoom);
-        // // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
-        // svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 560).scale(0.45));
-    }
+    // this function will keep the two COLOURIZE REPEATS settings in sync - ideally!
+    FanChartView.colourizeJustChanged = function (which) {
+        let colourizeColoursTab = document.getElementById("colour_options_colourizeRepeats");
+        let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
+        let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
+        let newSetting = document.getElementById(which + "_options_colourizeRepeats").checked;
+        // console.log("COLOURIZE REPEATS - just changed in Tab: ", which, newSetting);
+        colourizeColoursTab.checked = newSetting;
+        colourizeGeneralTab.checked = newSetting;
+        colourizeHighlightTab.checked = newSetting;
+    };
 
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
     FanChartView.optionElementJustChanged = function () {
@@ -1983,9 +2119,19 @@
                     condLog("theAncestors:", FanChartView.theAncestors);
                     // condLog("person with which to drawTree:", person);
                     // for (let index = 0; index < FanChartView.theAncestors.length; index++) {
+                    let myWTuserID = window.wtViewRegistry.session.lm.user.name;
                     for (const index in FanChartView.theAncestors) {
                         thePeopleList.add(FanChartView.theAncestors[index]);
+
+                        let thePerson = new BioCheckPerson();
+                        let canUseThis = thePerson.canUse(FanChartView.theAncestors[index], false, true, myWTuserID);
+                        let biography = new Biography(theSourceRules);
+                        biography.parse(thePerson.getBio(), thePerson, "");
+                        let hasSources = biography.validate();
+                        thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
+                        thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
                     }
+
                     FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     updateMyAhentafelMarriages();
                     FanChartView.workingMaxNumGens = Math.min(
@@ -2125,9 +2271,8 @@
         window.setTimeout(FanChartView.resetView, 0); // use setTimeout to run in async mode so that the browser finishes rendering before calculating the bounding box
     }
 
-    var thisTextColourArray = {};
     function updateLegendIfNeeded() {
-        condLog("DOING updateLegendIfNeeded");
+        // console.log("DOING updateLegendIfNeeded");
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -2135,7 +2280,9 @@
         let LegendTitle = document.getElementById("LegendTitle");
         let LegendTitleH3 = document.getElementById("LegendTitleH3");
         let innerLegendDIV = document.getElementById("innerLegend");
-
+        let clrSwatchUNK = "";
+        let clrSwatchLIVING = "";
+        let innerCode = "";
         let fontList = [
             "Black",
             "DarkGreen",
@@ -2149,15 +2296,16 @@
             "Cyan",
         ];
         let txtClrSetting = FanChartView.currentSettings["colour_options_textColour"];
+        let clrSwatchArray = [];
 
-        thisTextColourArray = {};
+        let thisTextColourArray = {};
         let thisColourArray = getColourArray();
-
-        if (settingForColourBy == "Family") {
+        // console.log("settingForColourBy", settingForColourBy);
+        if (settingForColourBy == "Family" || settingForColourBy == "BioCheck") {
             // condLog("TextClrSetting = ", txtClrSetting);
-
+            console.log(thisColourArray.length, thisColourArray);
             let innerCode = "";
-            let clrSwatchArray = [];
+
             for (let index = 0; index < 12; index++) {
                 let theTextFontClr = "Black";
                 let luminance = calcLuminance(thisColourArray[index]);
@@ -2180,7 +2328,16 @@
                 );
             }
 
-            if (settingForSpecifyByFamily == "age") {
+            //push one more swatch - bright lime - to be used for BioCheck Pass
+            clrSwatchArray.push(
+                "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "#00FF00" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" +
+                    "#000000" +
+                    "'>A</text></svg>"
+            );
+
+            if (settingForColourBy == "Family" && settingForSpecifyByFamily == "age") {
                 clrSwatchUNK =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                     "white" +
@@ -2191,13 +2348,38 @@
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
                 innerCode = clrSwatchUNK + " age unknown <br/>" + clrSwatchLIVING + " still living";
                 for (let index = 0; index < 10; index++) {
-                    if (index > 0) {
-                        innerCode += "<br/>";
-                    }
+                    innerCode += "<br/>";
                     innerCode += clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
+            } else if (settingForColourBy == "BioCheck") {
+                clrSwatchUNK =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "white" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+
+                innerCode = clrSwatchUNK + " Bio Check status unknown"; // <br/>" +  clrSwatchLIVING + " still living";
+
+                let BioStatuses = [
+                    "No birth nor death dates",
+                    "Marked Unsourced",
+                    "==Sources== or &lt;references/> ?",
+                    "No sources found",
+                    "Style issues",
+                    "Bio Check Pass: has sources",
+                ];
+
+                for (let index = 0; index < BioStatuses.length; index++) {
+                    innerCode += "<br/>";
+                    if (index == BioStatuses.length - 1) {
+                        innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + BioStatuses[index];
+                    } else {
+                        innerCode += clrSwatchArray[index + 1] + " " + BioStatuses[index];
+                    }
+                }
+                console.log("innerCode:", innerCode);
             }
+
             condLog("thisTextColourArray", thisTextColourArray);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
@@ -2486,7 +2668,7 @@
             FanChartView.myAhnentafel.marriageList = [];
         }
 
-        for (index in FanChartView.myAhnentafel.list) {
+        for (let index in FanChartView.myAhnentafel.list) {
             if (index % 2 == 0 && index > 0) {
                 const GuyIndex = index * 1.0;
                 const GalIndex = GuyIndex + 1;
@@ -2528,12 +2710,14 @@
      */
     FanChartView.resetView = function () {
         let svg = document.getElementById("fanChartSVG");
+        // return;
         if (svg) {
             let g = svg.firstElementChild;
             let h = 0;
             if (g && g.getBBox) {
                 let boundingBox = g.getBBox();
                 h = boundingBox.height;
+                console.log(boundingBox)
                 if (boundingBox) {
                     svg.setAttribute(
                         "viewBox",
@@ -2600,6 +2784,30 @@
     FanChartView.prototype.load = function (id) {
         condLog("FanChartView.prototype.load - 1958", id);
         var self = this;
+
+        console.log(
+            "Total width/height: " +
+                screen.width +
+                "/" +
+                screen.height +
+                ", " +
+                "Available width/height: " +
+                screen.availWidth +
+                "/" +
+                screen.availHeight +
+               
+                ", " +
+                "Inner width/height: " +
+                window.innerWidth +
+                "/" +
+                window.innerHeight +
+                "\n" +
+                "Color depth: " +
+                screen.colorDepth +
+                ", " +
+                "Color resolution: " +
+                screen.pixelDepth
+        );
 
         self._load(id).then(function (person) {
             // condLog("FanChartView.prototype.load : self._load(id) ");
@@ -2687,6 +2895,8 @@
 
                 // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
 
+                let myUserID = window.wtViewRegistry.session.lm.user.name;
+
                 // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
                 for (const ancNum in FanChartView.theAncestors) {
                     let thePerson = FanChartView.theAncestors[ancNum];
@@ -2704,6 +2914,15 @@
                         thePerson.Father = 100 - thePerson.Father;
                     }
                     thePeopleList.add(thePerson);
+
+                    let theBioPerson = new BioCheckPerson();
+                    let canUseThis = theBioPerson.canUse(FanChartView.theAncestors[ancNum], false, true, myUserID);
+                    let biography = new Biography(theSourceRules);
+                    biography.parse(theBioPerson.getBio(), theBioPerson, "");
+                    let hasSources = biography.validate();
+                    thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
+                    thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
+
                     // condLog("ADDED ", thePerson);
                 }
 
@@ -3491,6 +3710,7 @@
             let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
             let theMDateDIV = false; // the marriage date DIV for in between spouses
             let SVGgraphicsDIV = document.getElementById("SVGgraphics");
+            let theClr = "";
 
             // LET'S START WITH COLOURIZING THE WEDGES - IF NEEDED
             if (ancestorObject.ahnNum == 1) {
@@ -4066,6 +4286,7 @@
         return hex;
     }
     function calcLuminance(initBkgdClr) {
+        // console.log("calcLuminance: ", initBkgdClr);
         let rgbClrs = [80, 80, 80];
         if (initBkgdClr.indexOf("rgb") > -1) {
             initBkgdClr = initBkgdClr.replace("rgb(", "").replace(")", "");
@@ -4124,13 +4345,87 @@
             // condLog("Popup a poopy peep");
         }
 
-        let zoomFactor = Math.max(1, 1 / FanChartView.currentScaleFactor);
+        let bioCheckLink =
+            `<A target=_blank href="https://apps.wikitree.com/apps/sands1865/biocheck/?action=checkProfile&profileId=${person.getName()}">Bio Check</A>`;
+
+        let bbWidth = screen.innerWidth;
+        let SVGx = 0;
+        let svg = document.getElementById("fanChartSVG");
+        let boundingBox = { width: 100, height: 100, x: 0, y: 0 };
+        // return;
+        if (svg) {
+            let g = svg.firstElementChild;
+            if (g && g.getBBox) {
+                boundingBox = g.getBBox();
+                bbWidth = boundingBox.width;
+                console.log(boundingBox, g, svg);
+                console.log(g.transform.animVal[0].matrix.e);
+                SVGx = g.transform.animVal[0].matrix.e;
+            }
+        }
+
+        let Zfactor = bbWidth / window.innerWidth; // scale factor based on View Port restrictions compared to actual inner width of browser window
+
+        let zoomFactor = Math.max(1, (1 / FanChartView.currentScaleFactor) * Zfactor); // Using current Scale Factor of entire SVG in combination with the ViewPort scale factor to come up with the ACTUAL zoom factor
+        // but ... cap it at 1 because .... ???
+
         // console.log("THIS.SVG = ", this.svg);
+        console.log(
+            "FanChartView.currentScaleFactor = ",
+            FanChartView.currentScaleFactor,
+            "Width available / boundingBox = ",
+            screen.availWidth,
+            "/",
+            bbWidth,
+            "innerWidth = ",
+            window.innerWidth,
+            "Zfactor:" + Zfactor,
+            "zoomFactor:" + zoomFactor,
+            "actual width 1",
+            400 * FanChartView.currentScaleFactor * zoomFactor,
+            "actual width 2",
+            (400 / FanChartView.currentScaleFactor) * zoomFactor,
+            "translate(" + xy[0] + "," + xy[1] + ")"
+        );
+
+        if (400 > Math.min(window.innerWidth, window.innerHeight)) {
+            zoomFactor *= Math.min(window.innerWidth, window.innerHeight) / 400;
+            console.log("Had to adjust zoomFactor to", zoomFactor, "(inner dimension > 400)");
+        }
+
+        console.log(
+            "PP from ",
+            SVGx + xy[0],
+            " - ",
+            SVGx + xy[0] + 400,
+            ":",
+            SVGx + xy[0] + 400 / FanChartView.currentScaleFactor < boundingBox.width / 2 ? "IN" : "OUT"
+        );
+
+        let translateX = xy[0];
+
+        let maxX = 0 - SVGx + boundingBox.width / 2 - 400 * zoomFactor * FanChartView.currentScaleFactor;
+        let dX = 0;
+        if (SVGx + xy[0] + 400 / FanChartView.currentScaleFactor > boundingBox.width / 2) {
+            let W = boundingBox.width / 2 - (SVGx + xy[0]);
+            dX = 0 - (400 - W) * Zfactor;
+            console.log("dX to adjust is ", dX, "W = ", W);
+            console.log("New translation for popup SHOULD be : ", xy[0] * 1 + dX);
+        }
+
+        console.log("MAXX should be ", maxX, " compared to ", xy[0]);
+        if (maxX < xy[0]) {
+            translateX = maxX;
+        }
+        // if (400 * zoomFactor > window.innerHeight) {
+        //     // zoomFactor = window.innerHeight / 400;
+        //     console.log("Had to adjust zoomFactor to", window.innerHeight / 400, zoomFactor, "(too high)");
+        // }
 
         var popup = this.svg
             .append("g")
             .attr("class", "popup")
-            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ") scale(" + zoomFactor + ") ");
+            .attr("transform", "translate(" + translateX + "," + xy[1] + ") scale(" + zoomFactor + ") ");
 
         let borderColor = "rgba(102, 204, 102, .5)";
         if (person.getGender() == "Male") {
@@ -4140,6 +4435,7 @@
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
+        
         // console.log("popup  = ", popup);
         popup
             .append("foreignObject")
@@ -4160,7 +4456,8 @@
                             </div>
                             <div class="birth vital">${birthString(person)}</div>
                             <div class="death vital">${deathString(person)}</div>
-                            ${fandokuLink}
+                            ${fandokuLink} <br/>
+                            ${bioCheckLink}
 						</div>
 					</div>
 
@@ -4534,13 +4831,13 @@
                     return year;
                 }
                 if (month) {
-                    month2digits = month;
+                    let month2digits = month;
                     if (month < 10) {
                         month2digits = "0" + month;
                     }
                     if (day) {
                         if (formatString == "YYYYMMDD") {
-                            day2digits = day;
+                            let day2digits = day;
                             if (day < 10) {
                                 day2digits = "0" + day;
                             }
@@ -4580,6 +4877,7 @@
         let thisPlaceSimple = "";
         let thisPlaceMulti = "";
         let thisLifespan = "";
+        let thisPlace = "";
 
         let numLinesArrayObj = {
             180: [6, 6, 6, 6, 5, 3, 2, 1, 1, 1],
@@ -5298,22 +5596,31 @@
         console.log("UPDATING BADGES NOW !!!!", num);
         let showBadges = FanChartView.currentSettings["general_options_showBadges"];
         let theDropDown = document.getElementById("stickerCategoryDropDownList" + num);
-        let searchText = "Clarke";
+        let searchText = "nada";
         let searchPrefix = "[[Category:";
-        let specialDecoderRing = { '-5' : "DNA confirmed", '-10' : "Created by me", '-15' : "Managed by me"};
+        let specialDecoderRing = {
+            "-5": "DNA confirmed",
+            "-10": "Created by me",
+            "-15": "Managed by me",
+            "-20": "Bio Check: has sources",
+            "-25": "Bio Check: no sources",
+        };
         let otherBadgeType = "";
+        // console.log("Initial drop down value:", theDropDown.value);
         if (theDropDown.value > -1) {
             if (theDropDown.value && theDropDown.value < categoryList.length) {
                 searchText = categoryList[theDropDown.value];
-            } else {
+            } else if (theDropDown.value && theDropDown.value < categoryList.length + stickerList.length) {
                 searchText = stickerList[theDropDown.value - categoryList.length];
                 searchPrefix = "{{";
             }
         } else if (theDropDown.value < -1) {
-            console.log("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
+            // console.log("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
             if (specialDecoderRing[theDropDown.value] && specialDecoderRing[theDropDown.value] > "") {
                 // great
                 otherBadgeType = specialDecoderRing[theDropDown.value];
+
+                searchText = "" + otherBadgeType;
             } else {
                 showBadges = false;
             }
@@ -5321,8 +5628,8 @@
             showBadges = false;
         }
         FanChartView.removeBadges(num);
-        // console.log("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText);
-
+        // console.log("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText, "Other:" + otherBadgeType);
+        // console.log("searchText = ", searchText);
         let rawValue = searchText.trim();
         let spacelessValue = searchText.trim().replace(/ /g, "_");
 
@@ -5357,26 +5664,33 @@
                 // FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
                 let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                 FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
-                
-            } else if (
-                showBadges &&
-                otherBadgeType > "" 
-            ) {
+            } else if (showBadges && otherBadgeType > "") {
                 //  SHOW THIS STICKER
                 // let SVGgraphicsDIV = document.getElementById("SVGgraphics");
                 // stickerDIV.parentNode.style.display = "block";
                 // SVGgraphicsDIV.append(stickerDIV.parentNode);
 
                 // FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
-                console.log(window.WTUser.id);
-                console.log(document.getElementById("wt-api-login").textContent.indexOf(":"));
-                console.log(window.wtViewRegistry.session.lm.user);
+                // console.log(window.WTUser.id);
+                // console.log(document.getElementById("wt-api-login").textContent.indexOf(":"));
+                // console.log(window.wtViewRegistry.session.lm.user);
+                console.log("IF ...", otherBadgeType, ahnNum);
                 let myUserID = window.wtViewRegistry.session.lm.user.id; // WikiTree userID (#) for the person logged in
                 if (
                     (otherBadgeType == "Managed by me" &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Manager == myUserID) ||
                     (otherBadgeType == "Created by me" &&
-                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Creator == myUserID)
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Creator == myUserID) ||
+                    (otherBadgeType == "Bio Check: has sources" &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["bioHasSources"] == true) ||
+                    (otherBadgeType == "Bio Check: no sources" &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["bioHasSources"] == false)
                 ) {
                     let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                     FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
@@ -5385,26 +5699,30 @@
                     let showDNAconf = false;
                     if (ahnNum % 2 == 0) {
                         // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
-                        if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
+                        if (
+                            thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]] &&
+                            thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30
+                        ) {
                             showDNAconf = true;
                         }
                     } else if (ahnNum > 1) {
                         // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
-                        if (thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
+                        if (
+                            thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]] &&
+                            thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30
+                        ) {
                             showDNAconf = true;
                         }
                     } else if (ahnNum == 1) {
                         // this primary person is confirmed by their own DNA to be themselves (a bit of a circuitous rationalization to make a nice neat pattern)
                         showDNAconf = true;
                     }
-                    
-                    
+
                     if (showDNAconf == true) {
                         let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                         FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
                     }
                 }
-            
             } else {
                 // stickerDIV.parentNode.style.display = "none";
             }
@@ -5415,7 +5733,7 @@
 
     function showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
         const ahnNum = 2 ** thisGenNum + thisPosNum;
-        // console.log("SHOW BADGES FOR # 1 - NUMERO ",ahnNum);
+        // console.log("SHOW BADGES FOR #  ",ahnNum);
         if (ahnNum == 1) {
         }
         let SVGgraphicsDIV = document.getElementById("SVGgraphics");
@@ -5505,20 +5823,42 @@
             // stickerDIV.style.rotate = nameAngle + "deg";
 
             let theDropDown = document.getElementById("stickerCategoryDropDownList" + i);
-            let searchText = "Clarke";
+            let searchText = "nada";
             let showBadges = showBadgesSetting;
             let searchPrefix = "[[Category:";
+            let specialDecoderRing = {
+                "-5": "DNA confirmed",
+                "-10": "Created by me",
+                "-15": "Managed by me",
+                "-20": "Bio Check: has sources",
+                "-25": "Bio Check: no sources",
+            };
+            // console.log("Looking for ", i, " theDropDown.value ", theDropDown.value);
+
             if (theDropDown.value > -1) {
                 if (theDropDown.value && theDropDown.value < categoryList.length) {
                     searchText = categoryList[theDropDown.value];
-                } else {
+                } else if (theDropDown.value && theDropDown.value < categoryList.length + stickerList.length) {
                     searchText = stickerList[theDropDown.value - categoryList.length];
                     searchPrefix = "{{";
+
+                    // } else if (theDropDown.value && theDropDown.value < categoryList.length + stickerList.length) {
+                    //     searchText = otherList +  stickerList[theDropDown.value - categoryList.length];
+                    //     searchPrefix = "";
+                }
+            } else if (theDropDown.value < -1) {
+                // console.log("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
+                if (specialDecoderRing[theDropDown.value] && specialDecoderRing[theDropDown.value] > "") {
+                    // great
+                    searchText = specialDecoderRing[theDropDown.value];
+                    // searchText = "" +  otherBadgeType;
+                } else {
+                    showBadges = false;
                 }
             } else {
                 showBadges = false;
             }
-
+            // console.log("searchText = ", searchText);
             let rawValue = searchText.trim();
             let spacelessValue = searchText.trim().replace(/ /g, "_");
 
@@ -5558,11 +5898,13 @@
                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
                         searchPrefix + spacelessValue
                     ) > -1 ||
+                    // theDropDown.value < -1 ||
                     thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
                         searchPrefix + " " + spacelessValue
                     ) > -1)
             ) {
                 //  SHOW THIS STICKER
+                console.log(" ---> Add new badge ", i, ahnNum);
                 FanChartView.addNewBadge(theBadgeX, theBadgeY, i, nameAngle);
             } else {
                 // stickerDIV.parentNode.style.display = "none";
@@ -5609,7 +5951,10 @@
                         showY = true;
                         showDs = true;
                         showAs = true;
-                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    } else if (
+                        ahnNum == 1 &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                    ) {
                         showY = true;
                         showDs = true;
                         showAs = true;
@@ -5655,7 +6000,10 @@
                     // AND/OR by Y-DNA inheritance
                     if (ahnNum > 1) {
                         showY = true;
-                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    } else if (
+                        ahnNum == 1 &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                    ) {
                         showY = true;
                     }
                 }
@@ -6028,6 +6376,24 @@
             ) {
                 return true;
             }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+            // console.log("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources == true
+            ) {
+                return true;
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+            // console.log("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources == false
+            ) {
+                return true;
+            }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
             let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
             let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
@@ -6112,10 +6478,11 @@
     }
 
     function findCategoriesOfAncestors() {
-        condLog("findCategoriesOfAncestors");
+        // console.log("function findCategoriesOfAncestors");
         categoryList = [];
         stickerList = [];
-        stickerInnerHTML = '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
+        let stickerInnerHTML =
+            '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
         for (let index = 1; index < 2 ** FanChartView.numGens2Display; index++) {
             const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
             if (thisPerp) {
@@ -6152,21 +6519,25 @@
             }
         }
 
-        let otherList = ["DNA confirmed", "Created by me","Managed by Me"];
+        let otherList = [
+            "DNA confirmed",
+            "Created by me",
+            "Managed by me",
+            "Bio Check: has sources",
+            "Bio Check: no sources",
+        ];
         stickerInnerHTML += "<option>OTHERS:</option>";
-        innerCatHTML += '<option value="Other">OTHERS:</option>';
+        // innerCatHTML += '<option value="Other">OTHERS:</option>';
         for (let i = 0; i < otherList.length; i++) {
             const cat = otherList[i];
-            innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
-            stickerInnerHTML +=
-                '<option value="' + (0 - 5 - 5 * i) + '">' + cat + "</option>";
+            // innerCatHTML += '<option value="' + cat + '">' + cat + "</option>";
+            stickerInnerHTML += '<option value="' + (0 - 5 - 5 * i) + '">' + cat + "</option>";
         }
-
 
         catNameSelector.innerHTML = innerCatHTML;
         for (i = 1; i <= numOfBadges; i++) {
             document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace("#666#", i);
-            condLog("Updating and checking : Badge # ", i, ":", currentBadges[i]);
+            // console.log("Updating and checking : Badge # ", i, ":", currentBadges[i]);
             if (currentBadges[i]) {
                 condLog(
                     "updating and finding index:",
@@ -6182,6 +6553,10 @@
                 } else if (stickerList.indexOf(currentBadges[i]) > -1) {
                     document.getElementById("stickerCategoryDropDownList" + i).value =
                         categoryList.length + stickerList.indexOf(currentBadges[i]);
+                    FanChartView.updateBadgesToShow(i);
+                } else if (otherList.indexOf(currentBadges[i]) > -1) {
+                    document.getElementById("stickerCategoryDropDownList" + i).value =
+                        0 - 5 - 5 * otherList.indexOf(currentBadges[i]);
                     FanChartView.updateBadgesToShow(i);
                 }
             }
@@ -6916,6 +7291,43 @@
 
             // let clrIndex = uniqueLocationsArray.indexOf(locString);
             // return thisColourArray[clrIndex];
+        } else if (settingForColourBy == "BioCheck") {
+            let BioStatuses = [
+                "No birth nor death dates",
+                "Marked Unsourced",
+                "==Sources== or &lt;references/> ?",
+                "No sources found",
+                "Style issues",
+                "Bio Check Pass: has sources",
+            ];
+            if (!thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck) {
+                return thisColourArray[0];
+            }
+            let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
+            // let theStyles = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck.styles;
+            let hasSources = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources;
+            console.log(theBioCheck);
+
+            // if (theBioCheck.isEmpty() ) {
+            //     return thisColourArray[1];
+            // } else
+            if (theBioCheck.isUndated()) {
+                return thisColourArray[1];
+            } else if (theBioCheck.isMarkedUnsourced()) {
+                return thisColourArray[2];
+            } else if (theBioCheck.isMissingReferencesTag()) {
+                return thisColourArray[3];
+            } else if (theBioCheck.isMissingSourcesHeading()) {
+                return thisColourArray[3];
+            } else if (hasSources == false) {
+                return thisColourArray[4];
+            } else if (theBioCheck.hasStyleIssues()) {
+                return thisColourArray[5];
+            } else if (hasSources == true) {
+                return "lime";
+            } else {
+                return thisColourArray[0];
+            }
         } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];
         }
@@ -7460,6 +7872,7 @@
 
     FanChartView.removeBadges = function (badgeNum = "") {
         // condLog("Tree.prototype - REMOVE POPUPS (plural) function");
+        // console.log("Remove Badges # ", badgeNum);
         d3.selectAll(".badge" + badgeNum).remove();
     };
 
@@ -7548,8 +7961,8 @@
         // console.log("thisBadge:",  thisBadge);
     };
 
-    FanChartView.removeBadges = function (badgeType = "") {
-        // console.log("FanChartView.removeBadges function : ", badgeType);
-        d3.selectAll(".badge" + badgeType).remove();
-    };
+    // FanChartView.removeBadges = function (badgeType = "") {
+    //     // console.log("FanChartView.removeBadges function : ", badgeType);
+    //     d3.selectAll(".badge" + badgeType).remove();
+    // };
 })();
