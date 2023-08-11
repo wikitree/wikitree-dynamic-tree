@@ -511,6 +511,7 @@ const fields = [
     "Prefix",
     "RealName",
     "Suffix",
+    "Spouses",
 ];
 
 // Parent template
@@ -1023,6 +1024,7 @@ function displayPerson(id, people, generation) {
                 }
             });
         }
+        addSpouses(person);
     }
     fillUpToGenerationSelect();
 }
@@ -1242,6 +1244,7 @@ function addClassToSection(aSection) {
 }
 
 function addSpouses(mPerson) {
+    console.log("addSpouses", mPerson);
     if (!mPerson.Spouses) return; // If no spouses, exit early
 
     const spouseKeys = Object.keys(mPerson.Spouses);
