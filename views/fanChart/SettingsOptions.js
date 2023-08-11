@@ -271,8 +271,40 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
                 let breakElement = document.createElement("br");
                 tabPanelElement.appendChild(breakElement);
-                let breakElement2 = document.createElement("br");
-                tabPanelElement.appendChild(breakElement2);
+
+                if (tab.help) {
+                    // add it right away
+                } else {
+                    // otherwise, add an extra line break here
+                    let breakElement2 = document.createElement("br");
+                    tabPanelElement.appendChild(breakElement2);
+                }
+            }
+
+            if (tab.help) {
+                const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+                    width="16" height="16" viewBox="0 0 95.334 95.334"
+                    xml:space="preserve">
+                <g>
+                    <path d="M47.667,0C21.341,0,0.001,21.341,0.001,47.667s21.34,47.667,47.666,47.667s47.666-21.341,47.666-47.667S73.993,0,47.667,0z
+                        M53.015,83.251c0,0.854-0.693,1.548-1.549,1.548h-7.611c-0.855,0-1.549-0.693-1.549-1.548v-6.838c0-0.854,0.693-1.548,1.549-1.548
+                        h7.611c0.855,0,1.549,0.693,1.549,1.548V83.251z M61.342,50.376c-4.519,3.867-8.085,6.919-8.256,16.878
+                        c-0.015,0.846-0.704,1.521-1.548,1.521h-7.742c-0.415,0-0.813-0.166-1.104-0.461c-0.291-0.297-0.451-0.696-0.445-1.11
+                        c0.229-14.946,7.059-20.792,12.046-25.06c3.817-3.269,5.366-4.755,5.366-8.772c0-6.617-5.383-12-11.999-12
+                        c-6.358,0-11.62,4.969-11.979,11.313c-0.047,0.819-0.726,1.46-1.546,1.46h-7.75c-0.421,0-0.822-0.17-1.114-0.473
+                        c-0.292-0.303-0.448-0.71-0.434-1.13c0.444-12.341,10.47-22.008,22.823-22.008c12.593,0,22.837,10.245,22.837,22.837
+                        C70.497,42.54,65.421,46.885,61.342,50.376z"/>
+                </g>
+                </svg>`;
+                let helpElement = document.createElement("div");
+                helpElement.innerHTML = "<A target='helpDoc' href='" + tab.help + "'>" + SVGbtnHELP + "</A>";
+                helpElement.className = "alignRight";
+                tabPanelElement.appendChild(helpElement);
+
+                // let breakElement = document.createElement("br");
+                // tabPanelElement.appendChild(breakElement);
+                // let breakElement2 = document.createElement("br");
+                // tabPanelElement.appendChild(breakElement2);
             }
 
             // Add select for the subsections, we do this even if there is only one subsection
