@@ -985,8 +985,9 @@ bioCheckTemplateManager.load();
                                 { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
                                 { value: "-", text: "-" },
                                 { value: "aliveDay", text: "Alive on this Day" },
-                                { value: "bioCheckOK", text: "Bio Check ✔ - has sources" },
+                                // { value: "bioCheckOK", text: "Bio Check ✔ - has sources" },
                                 { value: "bioCheckFail", text: "Bio Check X - no sources" },
+                                { value: "bioCheckStyle", text: "Bio Check ~ - style issues" },
                                 { value: "bioText", text: "Biography Text" },
                                 { value: "cat", text: "Category or Sticker" },
                                 // { value: "review", text: "Profiles needing review" },
@@ -1220,7 +1221,7 @@ bioCheckTemplateManager.load();
         };
 
         FanChartView.reZoom = function () {
-            // console.log("TIME to RE ZOOM now !", FanChartView.currentScaleFactor);
+            // condLog("TIME to RE ZOOM now !", FanChartView.currentScaleFactor);
             let newScaleFactor = 0.8;
            
             let svg = document.getElementById("fanChartSVG");
@@ -1248,7 +1249,7 @@ bioCheckTemplateManager.load();
                         }
                     }
                 }
-                // console.log(
+                // condLog(
                 //     makeFitZoomFactor,
                 //     FanChartView.currentScaleFactor,
                 //     FanChartView.lastCustomScaleFactor,
@@ -1279,7 +1280,7 @@ bioCheckTemplateManager.load();
                 if ((newScaleFactor * window.innerWidth * h) / boundingBox.width < window.innerHeight) {
                     overHead = Math.max(0, window.innerHeight - newScaleFactor * window.innerHeight);
                 }
-                // console.log(
+                // condLog(
                 //     "z",
                 //     FanChartView.zoomCounter,
                 //     "overHead:",
@@ -1303,7 +1304,7 @@ bioCheckTemplateManager.load();
         };
 
         function updateBadgeLabels() {
-            console.log("Update Badge Labels");
+            condLog("Update Badge Labels");
             for (let b = 1; b <= numOfBadges; b++) {
                 let badgeCharTxt = document.getElementById("badgeCharacter" + b);
                 badgeCharTxt.textContent = badgeCharacters[b];
@@ -1313,7 +1314,7 @@ bioCheckTemplateManager.load();
         function settingsChanged(e) {
             if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
                 // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                // console.log("NEW settings are:", FanChartView.currentSettings);
+                // condLog("NEW settings are:", FanChartView.currentSettings);
 
                 let showBadges = FanChartView.currentSettings["general_options_showBadges"];
                 let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
@@ -1455,6 +1456,9 @@ bioCheckTemplateManager.load();
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
                         document.getElementById("highlightPeepsDescriptor").textContent =
                             "Profiles that fail the Bio Check : no sources";
+                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckStyle") {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Profiles that the Bio Check app flagged : style issues";
                     } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
                         let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
                         let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
@@ -1872,7 +1876,7 @@ bioCheckTemplateManager.load();
         let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
         let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
         let newSetting = document.getElementById(which + "_options_colourizeRepeats").checked;
-        // console.log("COLOURIZE REPEATS - just changed in Tab: ", which, newSetting);
+        // condLog("COLOURIZE REPEATS - just changed in Tab: ", which, newSetting);
         colourizeColoursTab.checked = newSetting;
         colourizeGeneralTab.checked = newSetting;
         colourizeHighlightTab.checked = newSetting;
@@ -2272,7 +2276,7 @@ bioCheckTemplateManager.load();
     }
 
     function updateLegendIfNeeded() {
-        // console.log("DOING updateLegendIfNeeded");
+        // condLog("DOING updateLegendIfNeeded");
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -2300,10 +2304,10 @@ bioCheckTemplateManager.load();
 
         let thisTextColourArray = {};
         let thisColourArray = getColourArray();
-        // console.log("settingForColourBy", settingForColourBy);
+        // condLog("settingForColourBy", settingForColourBy);
         if (settingForColourBy == "Family" || settingForColourBy == "BioCheck") {
             // condLog("TextClrSetting = ", txtClrSetting);
-            console.log(thisColourArray.length, thisColourArray);
+            condLog(thisColourArray.length, thisColourArray);
             let innerCode = "";
 
             for (let index = 0; index < 12; index++) {
@@ -2362,9 +2366,7 @@ bioCheckTemplateManager.load();
 
                 let BioStatuses = [
                     "No birth nor death dates",
-                    "Marked Unsourced",
-                    "==Sources== or &lt;references/> ?",
-                    "No sources found",
+                    "Unsourced",
                     "Style issues",
                     "Bio Check Pass: has sources",
                 ];
@@ -2374,10 +2376,10 @@ bioCheckTemplateManager.load();
                     if (index == BioStatuses.length - 1) {
                         innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + BioStatuses[index];
                     } else {
-                        innerCode += clrSwatchArray[index + 1] + " " + BioStatuses[index];
+                        innerCode += clrSwatchArray[3*index + 2] + " " + BioStatuses[index];
                     }
                 }
-                console.log("innerCode:", innerCode);
+                condLog("innerCode:", innerCode);
             }
 
             condLog("thisTextColourArray", thisTextColourArray);
@@ -2717,7 +2719,7 @@ bioCheckTemplateManager.load();
             if (g && g.getBBox) {
                 let boundingBox = g.getBBox();
                 h = boundingBox.height;
-                console.log(boundingBox)
+                condLog(boundingBox)
                 if (boundingBox) {
                     svg.setAttribute(
                         "viewBox",
@@ -2785,7 +2787,7 @@ bioCheckTemplateManager.load();
         condLog("FanChartView.prototype.load - 1958", id);
         var self = this;
 
-        console.log(
+        condLog(
             "Total width/height: " +
                 screen.width +
                 "/" +
@@ -4286,7 +4288,7 @@ bioCheckTemplateManager.load();
         return hex;
     }
     function calcLuminance(initBkgdClr) {
-        // console.log("calcLuminance: ", initBkgdClr);
+        // condLog("calcLuminance: ", initBkgdClr);
         let rgbClrs = [80, 80, 80];
         if (initBkgdClr.indexOf("rgb") > -1) {
             initBkgdClr = initBkgdClr.replace("rgb(", "").replace(")", "");
@@ -4345,8 +4347,7 @@ bioCheckTemplateManager.load();
             // condLog("Popup a poopy peep");
         }
 
-        let bioCheckLink =
-            `<A target=_blank href="https://apps.wikitree.com/apps/sands1865/biocheck/?action=checkProfile&profileId=${person.getName()}">Bio Check</A>`;
+        let bioCheckLink = `<A target=_blank href="https://apps.wikitree.com/apps/sands1865/biocheck/?action=checkProfile&numAncestorGen=0&numDescendantGen=0&checkStart=auto&profileId=${person.getName()}">Bio Check</A>`;
 
         let bbWidth = screen.innerWidth;
         let SVGx = 0;
@@ -4358,8 +4359,8 @@ bioCheckTemplateManager.load();
             if (g && g.getBBox) {
                 boundingBox = g.getBBox();
                 bbWidth = boundingBox.width;
-                console.log(boundingBox, g, svg);
-                console.log(g.transform.animVal[0].matrix.e);
+                condLog(boundingBox, g, svg);
+                condLog(g.transform.animVal[0].matrix.e);
                 SVGx = g.transform.animVal[0].matrix.e;
             }
         }
@@ -4369,8 +4370,8 @@ bioCheckTemplateManager.load();
         let zoomFactor = Math.max(1, (1 / FanChartView.currentScaleFactor) * Zfactor); // Using current Scale Factor of entire SVG in combination with the ViewPort scale factor to come up with the ACTUAL zoom factor
         // but ... cap it at 1 because .... ???
 
-        // console.log("THIS.SVG = ", this.svg);
-        console.log(
+        // condLog("THIS.SVG = ", this.svg);
+        condLog(
             "FanChartView.currentScaleFactor = ",
             FanChartView.currentScaleFactor,
             "Width available / boundingBox = ",
@@ -4390,10 +4391,10 @@ bioCheckTemplateManager.load();
 
         if (400 > Math.min(window.innerWidth, window.innerHeight)) {
             zoomFactor *= Math.min(window.innerWidth, window.innerHeight) / 400;
-            console.log("Had to adjust zoomFactor to", zoomFactor, "(inner dimension > 400)");
+            condLog("Had to adjust zoomFactor to", zoomFactor, "(inner dimension > 400)");
         }
 
-        console.log(
+        condLog(
             "PP from ",
             SVGx + xy[0],
             " - ",
@@ -4409,17 +4410,17 @@ bioCheckTemplateManager.load();
         if (SVGx + xy[0] + 400 / FanChartView.currentScaleFactor > boundingBox.width / 2) {
             let W = boundingBox.width / 2 - (SVGx + xy[0]);
             dX = 0 - (400 - W) * Zfactor;
-            console.log("dX to adjust is ", dX, "W = ", W);
-            console.log("New translation for popup SHOULD be : ", xy[0] * 1 + dX);
+            condLog("dX to adjust is ", dX, "W = ", W);
+            condLog("New translation for popup SHOULD be : ", xy[0] * 1 + dX);
         }
 
-        console.log("MAXX should be ", maxX, " compared to ", xy[0]);
+        condLog("MAXX should be ", maxX, " compared to ", xy[0]);
         if (maxX < xy[0]) {
             translateX = maxX;
         }
         // if (400 * zoomFactor > window.innerHeight) {
         //     // zoomFactor = window.innerHeight / 400;
-        //     console.log("Had to adjust zoomFactor to", window.innerHeight / 400, zoomFactor, "(too high)");
+        //     condLog("Had to adjust zoomFactor to", window.innerHeight / 400, zoomFactor, "(too high)");
         // }
 
         var popup = this.svg
@@ -4436,7 +4437,7 @@ bioCheckTemplateManager.load();
         }
 
         
-        // console.log("popup  = ", popup);
+        // condLog("popup  = ", popup);
         popup
             .append("foreignObject")
             .attrs({
@@ -5480,7 +5481,7 @@ bioCheckTemplateManager.load();
         const birthName = person.getDisplayName();
         const middleInitialName = `${person._data.FirstName} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
         const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
-        // console.log("birthName = ", birthName);
+        // condLog("birthName = ", birthName);
         let thePrefix = "";
         let theSuffix = "";
 
@@ -5593,7 +5594,7 @@ bioCheckTemplateManager.load();
     //              return true;
 
     FanChartView.updateBadgesToShow = function (num = 1) {
-        console.log("UPDATING BADGES NOW !!!!", num);
+        condLog("UPDATING BADGES NOW !!!!", num);
         let showBadges = FanChartView.currentSettings["general_options_showBadges"];
         let theDropDown = document.getElementById("stickerCategoryDropDownList" + num);
         let searchText = "nada";
@@ -5602,11 +5603,11 @@ bioCheckTemplateManager.load();
             "-5": "DNA confirmed",
             "-10": "Created by me",
             "-15": "Managed by me",
-            "-20": "Bio Check: has sources",
+            "-20": "Bio Check: style issues",
             "-25": "Bio Check: no sources",
         };
         let otherBadgeType = "";
-        // console.log("Initial drop down value:", theDropDown.value);
+        // condLog("Initial drop down value:", theDropDown.value);
         if (theDropDown.value > -1) {
             if (theDropDown.value && theDropDown.value < categoryList.length) {
                 searchText = categoryList[theDropDown.value];
@@ -5615,7 +5616,7 @@ bioCheckTemplateManager.load();
                 searchPrefix = "{{";
             }
         } else if (theDropDown.value < -1) {
-            // console.log("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
+            // condLog("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
             if (specialDecoderRing[theDropDown.value] && specialDecoderRing[theDropDown.value] > "") {
                 // great
                 otherBadgeType = specialDecoderRing[theDropDown.value];
@@ -5628,8 +5629,8 @@ bioCheckTemplateManager.load();
             showBadges = false;
         }
         FanChartView.removeBadges(num);
-        // console.log("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText, "Other:" + otherBadgeType);
-        // console.log("searchText = ", searchText);
+        // condLog("UPDATING the STICKERS to show # ", num, theDropDown.value, searchText, "Other:" + otherBadgeType);
+        // condLog("searchText = ", searchText);
         let rawValue = searchText.trim();
         let spacelessValue = searchText.trim().replace(/ /g, "_");
 
@@ -5671,10 +5672,10 @@ bioCheckTemplateManager.load();
                 // SVGgraphicsDIV.append(stickerDIV.parentNode);
 
                 // FanChartView.theBadgeTracker[ahnNum][i] = { x: theBadgeX, y: theBadgeY, angle: nameAngle };
-                // console.log(window.WTUser.id);
-                // console.log(document.getElementById("wt-api-login").textContent.indexOf(":"));
-                // console.log(window.wtViewRegistry.session.lm.user);
-                console.log("IF ...", otherBadgeType, ahnNum);
+                // condLog(window.WTUser.id);
+                // condLog(document.getElementById("wt-api-login").textContent.indexOf(":"));
+                // condLog(window.wtViewRegistry.session.lm.user);
+                condLog("IF ...", otherBadgeType, ahnNum);
                 let myUserID = window.wtViewRegistry.session.lm.user.id; // WikiTree userID (#) for the person logged in
                 if (
                     (otherBadgeType == "Managed by me" &&
@@ -5683,14 +5684,15 @@ bioCheckTemplateManager.load();
                     (otherBadgeType == "Created by me" &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Creator == myUserID) ||
-                    (otherBadgeType == "Bio Check: has sources" &&
+                    (otherBadgeType == "Bio Check: style issues" &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"] &&
-                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["bioHasSources"] == true) ||
+                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"].hasStyleIssues()) ||
                     (otherBadgeType == "Bio Check: no sources" &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"] &&
-                        thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["bioHasSources"] == false)
+                        (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["bioHasSources"] == false ||
+                            thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"].isMarkedUnsourced() ))
                 ) {
                     let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                     FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
@@ -5733,7 +5735,7 @@ bioCheckTemplateManager.load();
 
     function showBadgesIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle) {
         const ahnNum = 2 ** thisGenNum + thisPosNum;
-        // console.log("SHOW BADGES FOR #  ",ahnNum);
+        // condLog("SHOW BADGES FOR #  ",ahnNum);
         if (ahnNum == 1) {
         }
         let SVGgraphicsDIV = document.getElementById("SVGgraphics");
@@ -5830,10 +5832,10 @@ bioCheckTemplateManager.load();
                 "-5": "DNA confirmed",
                 "-10": "Created by me",
                 "-15": "Managed by me",
-                "-20": "Bio Check: has sources",
+                "-20": "Bio Check: style issues",
                 "-25": "Bio Check: no sources",
             };
-            // console.log("Looking for ", i, " theDropDown.value ", theDropDown.value);
+            // condLog("Looking for ", i, " theDropDown.value ", theDropDown.value);
 
             if (theDropDown.value > -1) {
                 if (theDropDown.value && theDropDown.value < categoryList.length) {
@@ -5847,7 +5849,7 @@ bioCheckTemplateManager.load();
                     //     searchPrefix = "";
                 }
             } else if (theDropDown.value < -1) {
-                // console.log("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
+                // condLog("SPECIAL CASE HERE: ", specialDecoderRing[theDropDown.value]);
                 if (specialDecoderRing[theDropDown.value] && specialDecoderRing[theDropDown.value] > "") {
                     // great
                     searchText = specialDecoderRing[theDropDown.value];
@@ -5858,7 +5860,7 @@ bioCheckTemplateManager.load();
             } else {
                 showBadges = false;
             }
-            // console.log("searchText = ", searchText);
+            // condLog("searchText = ", searchText);
             let rawValue = searchText.trim();
             let spacelessValue = searchText.trim().replace(/ /g, "_");
 
@@ -5904,7 +5906,7 @@ bioCheckTemplateManager.load();
                     ) > -1)
             ) {
                 //  SHOW THIS STICKER
-                console.log(" ---> Add new badge ", i, ahnNum);
+                condLog(" ---> Add new badge ", i, ahnNum);
                 FanChartView.addNewBadge(theBadgeX, theBadgeY, i, nameAngle);
             } else {
                 // stickerDIV.parentNode.style.display = "none";
@@ -6060,7 +6062,7 @@ bioCheckTemplateManager.load();
             }
 
             if (showX) {
-                // console.log("SHOW THE [ X ] image for DNA highlights");
+                // condLog("SHOW THE [ X ] image for DNA highlights");
                 FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, "");
             }
         }
@@ -6114,7 +6116,7 @@ bioCheckTemplateManager.load();
         }
 
         if (showY) {
-            // console.log("SHOW THE [ Y ] image for DNA highlights");
+            // condLog("SHOW THE [ Y ] image for DNA highlights");
             FanChartView.addNewDNAbadge(imgX, imgY, "Y", imgAngle, "");
         }
 
@@ -6139,7 +6141,7 @@ bioCheckTemplateManager.load();
             }
 
             if (showMT) {
-                // console.log("SHOW THE [ MT ] image for DNA highlights");
+                // condLog("SHOW THE [ MT ] image for DNA highlights");
                 FanChartView.addNewDNAbadge(imgX, imgY, "MT", imgAngle, "");
             }
         }
@@ -6180,7 +6182,7 @@ bioCheckTemplateManager.load();
             }
 
             if (showDs) {
-                // console.log("SHOW THE [ Ds ] image for DNA highlights");
+                // condLog("SHOW THE [ Ds ] image for DNA highlights");
                 FanChartView.addNewDNAbadge(imgX, imgY, "Ds", imgAngle, theLink);
             }
         }
@@ -6220,7 +6222,7 @@ bioCheckTemplateManager.load();
             }
 
             if (showAs) {
-                // console.log("SHOW THE [ As ] image for DNA highlights");
+                // condLog("SHOW THE [ As ] image for DNA highlights");
                 FanChartView.addNewDNAbadge(imgX, imgY, "As", imgAngle, theLink);
             }
         }
@@ -6250,7 +6252,7 @@ bioCheckTemplateManager.load();
             }
 
             if (showDNAconf) {
-                // console.log("SHOW THE [ DNAconf ] image for DNA highlights");
+                // condLog("SHOW THE [ DNAconf ] image for DNA highlights");
                 FanChartView.addNewDNAbadge(imgX, imgY, "DNAconf", imgAngle, theLink);
             }
         }
@@ -6377,7 +6379,7 @@ bioCheckTemplateManager.load();
                 return true;
             }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
-            // console.log("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+            // condLog("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
             if (
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck &&
@@ -6386,11 +6388,28 @@ bioCheckTemplateManager.load();
                 return true;
             }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
-            // console.log("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+            // condLog("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+
+            let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
+            // isMarkedUnsourced;
+            // hasStyleIssues;
+
+
             if (
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources == false
+               ( thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources == false || theBioCheck.isMarkedUnsourced() )
+            ) {
+                return true;
+            }
+        } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckStyle") {
+            // condLog("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+            let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
+
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck &&
+                theBioCheck.hasStyleIssues()
             ) {
                 return true;
             }
@@ -6478,7 +6497,7 @@ bioCheckTemplateManager.load();
     }
 
     function findCategoriesOfAncestors() {
-        // console.log("function findCategoriesOfAncestors");
+        // condLog("function findCategoriesOfAncestors");
         categoryList = [];
         stickerList = [];
         let stickerInnerHTML =
@@ -6523,7 +6542,7 @@ bioCheckTemplateManager.load();
             "DNA confirmed",
             "Created by me",
             "Managed by me",
-            "Bio Check: has sources",
+            "Bio Check: style issues",
             "Bio Check: no sources",
         ];
         stickerInnerHTML += "<option>OTHERS:</option>";
@@ -6537,7 +6556,7 @@ bioCheckTemplateManager.load();
         catNameSelector.innerHTML = innerCatHTML;
         for (i = 1; i <= numOfBadges; i++) {
             document.getElementById("stickerCategoryDropDownList" + i).innerHTML = stickerInnerHTML.replace("#666#", i);
-            // console.log("Updating and checking : Badge # ", i, ":", currentBadges[i]);
+            // condLog("Updating and checking : Badge # ", i, ":", currentBadges[i]);
             if (currentBadges[i]) {
                 condLog(
                     "updating and finding index:",
@@ -7306,23 +7325,23 @@ bioCheckTemplateManager.load();
             let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
             // let theStyles = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck.styles;
             let hasSources = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources;
-            console.log(theBioCheck);
+            condLog(theBioCheck);
 
             // if (theBioCheck.isEmpty() ) {
             //     return thisColourArray[1];
             // } else
             if (theBioCheck.isUndated()) {
-                return thisColourArray[1];
-            } else if (theBioCheck.isMarkedUnsourced()) {
                 return thisColourArray[2];
-            } else if (theBioCheck.isMissingReferencesTag()) {
-                return thisColourArray[3];
-            } else if (theBioCheck.isMissingSourcesHeading()) {
-                return thisColourArray[3];
-            } else if (hasSources == false) {
-                return thisColourArray[4];
-            } else if (theBioCheck.hasStyleIssues()) {
+            } else if (theBioCheck.isMarkedUnsourced()) {
                 return thisColourArray[5];
+            } else if (hasSources == false) {
+                return thisColourArray[5];
+            } else if (theBioCheck.isMissingReferencesTag()) {
+                return thisColourArray[8];
+            } else if (theBioCheck.isMissingSourcesHeading()) {
+                return thisColourArray[8];
+            } else if (theBioCheck.hasStyleIssues()) {
+                return thisColourArray[8];
             } else if (hasSources == true) {
                 return "lime";
             } else {
@@ -7819,14 +7838,14 @@ bioCheckTemplateManager.load();
     }
 
     function appendSVGChild(elementType, target, attributes = {}, text = "") {
-        // console.log("appending SVG Child");
+        // condLog("appending SVG Child");
         const element = document.createElementNS("http://www.w3.org/2000/svg", elementType);
         Object.entries(attributes).map((a) => element.setAttribute(a[0], a[1]));
         if (text) {
             const textNode = document.createTextNode(text);
             element.appendChild(textNode);
         }
-        // console.log("element:", element);
+        // condLog("element:", element);
         target.appendChild(element);
         return element;
     }
@@ -7834,20 +7853,20 @@ bioCheckTemplateManager.load();
     FanChartView.addNewBadge = function (newX, newY, badgeNum, nameAngle) {
         let theSVG = FanChartView.theSVG;
 
-        // console.log(theSVG, newX, newY);
+        // condLog(theSVG, newX, newY);
         // for (key in theSVG) {
-        //     // console.log(": ", key, theSVG[key]);
+        //     // condLog(": ", key, theSVG[key]);
         // }
-        // console.log(theSVG.nodes());
-        // console.log(theSVG.nodes()[0]);
-        // console.log(theSVG.nodes()[0].firstChild);
-        // console.log(theGobj);
-        // console.log("ADD NEW BADGE !", theSVG);
+        // condLog(theSVG.nodes());
+        // condLog(theSVG.nodes()[0]);
+        // condLog(theSVG.nodes()[0].firstChild);
+        // condLog(theGobj);
+        // condLog("ADD NEW BADGE !", theSVG);
         // this.removePopups();
 
         let theSVG2 = theSVG.nodes()[0].firstChild;
 
-        // console.log("theSVG2 = ", theSVG2);
+        // condLog("theSVG2 = ", theSVG2);
 
         // var popup = theSVG2.append("<g><rect width=240 height=240></rect></g>").attr("class", "popup");
 
@@ -7867,12 +7886,12 @@ bioCheckTemplateManager.load();
             badgeCharacters[badgeNum]
         );
 
-        // console.log("thisBadge:", thisRect, thisLabel,  thisBadge);
+        // condLog("thisBadge:", thisRect, thisLabel,  thisBadge);
     };
 
     FanChartView.removeBadges = function (badgeNum = "") {
         // condLog("Tree.prototype - REMOVE POPUPS (plural) function");
-        // console.log("Remove Badges # ", badgeNum);
+        // condLog("Remove Badges # ", badgeNum);
         d3.selectAll(".badge" + badgeNum).remove();
     };
 
@@ -7907,7 +7926,7 @@ bioCheckTemplateManager.load();
             DNAconf:
                 "M 5 4 L 5 25 L 15 25 L 19 21 L 21 18 L 21 12 L 19 9 L 15 5 L 5 5  M 30 25 L 30 5 L 46 25 L 46 5 M 55 25 L 63 5 L 71 25 M 59 19 L 67 19",
         };
-        // console.log("theSVG2 = ", theSVG2);
+        // condLog("theSVG2 = ", theSVG2);
         let checkmarkSVG = "M 72 12 L 77 20 L 87 0";
 
         var thisBadge = appendSVGChild("g", theSVG2, {
@@ -7942,7 +7961,7 @@ bioCheckTemplateManager.load();
         }
 
         if (link > "") {
-            // console.log("Adding link:", link);
+            // condLog("Adding link:", link);
             thisRect.setAttribute("onclick", "location.assign('" + link + "')");
             thisRect.setAttribute("cursor", "pointer");
             thisPath.setAttribute("onclick", "location.assign('" + link + "')");
@@ -7958,11 +7977,11 @@ bioCheckTemplateManager.load();
         //     { height:24, "src": "https://www.wikitree.com/images/icons/dna/X.gif" }
         // );
 
-        // console.log("thisBadge:",  thisBadge);
+        // condLog("thisBadge:",  thisBadge);
     };
 
     // FanChartView.removeBadges = function (badgeType = "") {
-    //     // console.log("FanChartView.removeBadges function : ", badgeType);
+    //     // condLog("FanChartView.removeBadges function : ", badgeType);
     //     d3.selectAll(".badge" + badgeType).remove();
     // };
 })();
