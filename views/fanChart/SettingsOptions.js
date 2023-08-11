@@ -108,8 +108,8 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             data.viewClassName +
             '.cancelSettings();">'+ SVGbtnCLOSE +'</A></span>' +
             this.createULelements(data) +
-            '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>';
-        ("</div>");
+            '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>' +
+        "</div>";
 
         return theDIVhtml;
     }
