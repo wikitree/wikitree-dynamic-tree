@@ -51,6 +51,8 @@ class DescendantsView extends View {
                     <li>The small checkbox after the biography button highlights the person. 
                     This is useful when you're looking up and down the page and you're likely to forget which Jean or Marie you were looking at.</li>
                     <li>The small button in the top right of each person's box hides or shows that person and their line.</li>
+                    <li>The colour on the left border of each person shows which of their parent's spouses was their other parent.  
+                    1st: Green; 2nd: Red; 3rd: Gold; etc.</li>
                 </ul>
             </div>`
         );
@@ -112,7 +114,7 @@ class DescendantsView extends View {
             {
                 key: "Dates",
                 style: "hideDatesStyle",
-                selector: " .datesOnly, #descendants li.person .birthDeathDate",
+                selector: " .datesOnly, #descendants li.person .birthDeathDate, #descendants li.person .spouseDates",
                 variable: descendantsShowDates,
             },
             { key: "Spouses", style: "hideSpousesStyle", selector: " .spouse", variable: descendantsShowSpouses },
@@ -132,6 +134,9 @@ class DescendantsView extends View {
                 toggleVisibility(style, selector, `show${key}`);
                 window[`descendantsShow${key}`] = isChecked; // Update the actual variable value
                 localStorage.setItem(`descendantsShow${key}`, isChecked); // Store the value in local storage
+                if ($(this).prop("id") == "showDates") {
+                    toggleDateVisibility();
+                }
             });
         });
 
@@ -196,12 +201,33 @@ class DescendantsView extends View {
             if ($(this).hasClass("off")) {
                 turnOffOtherButtons();
                 $("li.person").addClass("hidden");
+
+                // Initialize and store the initial state of li.person elements
+                var initialXState = {};
+                $("li.person").each(function (i, el) {
+                    initialXState[i] = $(el).is(":visible");
+                });
+
                 $("[data-x='1']").show();
                 $("[data-x='0']").hide();
                 $(this).toggleClass("off");
                 $(this).toggleClass("on");
+
+                // Store the initial state in the button's data attribute
+                $(this).data("initialXState", initialXState);
             } else {
-                $("li.person").removeClass("hidden");
+                // Retrieve the initial state from the button's data attribute
+                var initialXState = $(this).data("initialXState");
+
+                // Restore the initial state of li.person elements
+                $("li.person").each(function (i, el) {
+                    if (initialXState[i]) {
+                        $(el).show();
+                    } else {
+                        $(el).hide();
+                    }
+                });
+
                 $("[data-x='1']").show();
                 $("[data-x='0']").show();
                 $(this).toggleClass("off");
@@ -209,16 +235,38 @@ class DescendantsView extends View {
                 showUpToGeneration();
             }
         });
+
         $(container_selector).on("click", "#yButton", function (e) {
             if ($(this).hasClass("off")) {
                 turnOffOtherButtons();
                 $("li.person").addClass("hidden");
+
+                // Initialize and store the initial state of li.person elements
+                var initialYState = {};
+                $("li.person").each(function (i, el) {
+                    initialYState[i] = $(el).is(":visible");
+                });
+
                 $("[data-ydna='1']").show();
                 $("[data-ydna='0']").hide();
                 $(this).toggleClass("off");
                 $(this).toggleClass("on");
+
+                // Store the initial state in the button's data attribute
+                $(this).data("initialYState", initialYState);
             } else {
-                $("li.person").removeClass("hidden");
+                // Retrieve the initial state from the button's data attribute
+                var initialYState = $(this).data("initialYState");
+
+                // Restore the initial state of li.person elements
+                $("li.person").each(function (i, el) {
+                    if (initialYState[i]) {
+                        $(el).show();
+                    } else {
+                        $(el).hide();
+                    }
+                });
+
                 $("[data-ydna='1']").show();
                 $("[data-ydna='0']").show();
                 $(this).toggleClass("off");
@@ -296,20 +344,8 @@ class DescendantsView extends View {
             } else {
                 addBio($(this).data("name"));
             }
-
-            /*
-            setTimeout(function () {
-                if (
-                    $(".biography").filter((i, el) => $(el).css("display") === "none").length === $(".biography").length
-                ) {
-                    // all have display:none
-                    $("#toggleBios").text("Show Bios").removeClass("on").addClass("off");
-                } else {
-                    $("#toggleBios").removeClass("off").addClass("on");
-                }
-            }, 1000);
-            */
         });
+
         $(container_selector).on("click", ".biography h2:contains('Biography')", function (e) {
             e.stopImmediatePropagation();
             $(this).closest("div.biography").slideUp();
@@ -445,19 +481,21 @@ function changeDateFormat(format) {
 
         // marriage date
         const marriageDateSpan = $(this).children("dt.marriageDate");
-        let marriageDate = marriageDateSpan.data("marriage-date") || "";
-        if (marriageDate) {
-            console.log(marriageDate);
-            marriageDate = marriageDate.toString().replace(/^(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
-            let newMarriageDate = convertDate(marriageDate, format, "");
-            if (newMarriageDate) {
-                newMarriageDate = newMarriageDate.trim();
+        marriageDateSpan.each(function () {
+            let marriageDate = $(this).data("marriage-date") || "";
+            if (marriageDate) {
+                console.log(marriageDate);
+                marriageDate = marriageDate.toString().replace(/^(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+                let newMarriageDate = convertDate(marriageDate, format, "");
+                if (newMarriageDate) {
+                    newMarriageDate = newMarriageDate.trim();
+                }
+                if (newMarriageDate == 0) {
+                    newMarriageDate = "";
+                }
+                $(this).text(newMarriageDate);
             }
-            if (newMarriageDate == 0) {
-                newMarriageDate = "";
-            }
-            marriageDateSpan.text(newMarriageDate);
-        }
+        });
         // death date
         const deathDateSpan = $(this).children("span.deathDate");
         const deathStatus = theLi.data("death-date-status") || "";
@@ -614,49 +652,6 @@ function getDatePart(person, part) {
 
     return "";
 }
-/*
-async function getParents() {
-    // Get all current people IDs
-    const currentPeople = new Set();
-
-    $("#descendants li,#descendants dd").each((i, li) => {
-        const Id = $(li).data("id");
-        if (Id) {
-            currentPeople.add(Id);
-        }
-    });
-
-    console.log(currentPeople);
-
-    // Find missing IDs
-    const missingParents = [];
-
-    $("#descendants li").each((i, li) => {
-        const fatherId = $(li).data("father");
-        const motherId = $(li).data("mother");
-
-        if (fatherId && !currentPeople.has(fatherId)) {
-            missingParents.push(fatherId);
-        }
-        if (motherId && !currentPeople.has(motherId)) {
-            missingParents.push(motherId);
-        }
-    });
-
-    const missingParentsList = missingParents.join(",");
-
-    // Fetch missing parents
-    //const fields = ["Id", "Name", "Gender", "BirthDate", "DeathDate", "BirthLocation", "DeathLocation"];
-    const missingPeople = await WikiTreeAPI.getPeople("test", missingParentsList, fields);
-    console.log("Fetched parents:", missingPeople);
-
-    const people = missingPeople[2];
-
-    for (let person of Object.values(people)) {
-        addParentToDOM(person);
-    }
-}
-*/
 
 function getLineage($li) {
     let lineage = "";
@@ -1028,7 +1023,13 @@ function displayPerson(id, people, generation) {
         );
 
         const ydnaImage = $("<img class='ydna dna' src='https://www.wikitree.com/images/icons/dna/Y.gif'>");
-        if ((parent.data("ydna") == 1 || parent.attr("ydna") == 1 || parent.length == 0) && person.Gender == "Male") {
+        if (
+            (parent.data("ydna") == 1 ||
+                parent.attr("ydna") == 1 ||
+                parent.length == 0 ||
+                $("li.person[data-id='" + person.Father + "']").data("ydna") == 1) &&
+            person.Gender == "Male"
+        ) {
             newItem.data("ydna", 1).attr("data-ydna", 1);
             newItem.find(".datesOnly").after(ydnaImage);
         }
@@ -1037,7 +1038,9 @@ function displayPerson(id, people, generation) {
         if (
             ((parent.data("gender") == "Female" || parent.attr("data-gender") == "Female") &&
                 (parent.data("mtdna") == 1 || parent.attr("data-mtdna") == 1)) ||
-            (parent.length == 0 && person.Gender == "Female")
+            (parent.length == 0 && person.Gender == "Female") ||
+            // Find mother
+            $("li.person[data-id='" + person.Mother + "']").data("mtdna") == 1
         ) {
             newItem.data("mtdna", 1).attr("data-mtdna", 1);
             newItem.find(".datesOnly").after(mtdnaImage);
@@ -1050,7 +1053,8 @@ function displayPerson(id, people, generation) {
                     parent.attr("data-gender") == "Female" ||
                     ((parent.data("gender") == "Male" || parent.attr("data-gender") == "Male") &&
                         person.Gender == "Female"))) ||
-            parent.length == 0
+            parent.length == 0 ||
+            $("li.person[data-id='" + person.Mother + "']").data("x") == 1
         ) {
             newItem.data("x", 1).attr("data-x", 1);
             newItem.find(".datesOnly").after(xImage);
@@ -1104,17 +1108,13 @@ function displayPerson(id, people, generation) {
     // Add child of class
     $(`li[data-id="${person.Id}"]`).each(function () {
         thisPerson = $(this);
-        if ($(this).data("id") == 23228150) {
-            const parentSpouses = thisPerson.closest("li").children("dl.spouse");
-            console.log(parentSpouses);
-            parentSpouses.children("dd").each(function (index) {
-                console.log($(this));
-                const thisSpouse = $(this);
-                if ([thisPerson.data("father"), thisPerson.data("mother")].includes(thisSpouse.data("id"))) {
-                    thisPerson.addClass("childOfSpouse_" + index);
-                }
-            });
-        }
+        const parentSpouses = thisPerson.parent().closest("li").children("dl.spouse");
+        parentSpouses.children("dd").each(function (index) {
+            const thisSpouse = $(this);
+            if ([thisPerson.data("father"), thisPerson.data("mother")].includes(thisSpouse.data("id"))) {
+                thisPerson.addClass("childOfSpouse_" + index);
+            }
+        });
     });
 
     fillUpToGenerationSelect();
@@ -1201,7 +1201,7 @@ async function addBio(id) {
 
         const bioDiv = $("<div class='biography'></div>");
         currentPersonElement.children("ul.personList").before(bioDiv);
-        bioDiv.append($(person.bioHTML)).addClass("fullBiography");
+        bioDiv.append($(person.bioHTML)).addClass("fullBiography").show();
 
         let aPhoto = "";
         if (person.PhotoData?.url) {
@@ -1333,111 +1333,6 @@ function addClassToSection(aSection) {
     }
     $("#showBios").show();
 }
-/*
-function addSpouses(mPerson) {
-    //console.log("addSpouses", mPerson);
-    if (!mPerson.Spouses) return; // If no spouses, exit early
-
-    const spouseKeys = Object.keys(mPerson.Spouses);
-    if (!spouseKeys.length) return; // If no spouse keys, exit early
-
-    // Find all instances of the person on the page
-    const personElements = $("li[data-id='" + mPerson.Id + "']");
-    // console.log(personElements);
-
-    personElements.each(function () {
-        const personElement = $(this);
-
-        spouseKeys.forEach(function (aKey, index) {
-            //  console.log(aKey);
-            const aSpouse = mPerson.Spouses[aKey];
-            aSpouse.FullName = new PersonName(aSpouse).withParts(["FullName"]);
-            aSpouse.Dates = displayDates(aSpouse);
-
-            aSpouse.LastNameAtBirth;
-            const bdDatesTable = $(`<dl class="bdDatesLocations spouse" data-id="${aSpouse.Id}"></dl>`);
-
-            if (personElement.find("dd[data-id='" + aSpouse.Id + "']").length == 0) {
-                personElement.children(".nameAndBio").after(bdDatesTable);
-            } else {
-                personElement
-                    .find("dd[data-id='" + aSpouse.Id + "']")
-                    .parent()
-                    .attr("data-id", aSpouse.Id);
-            }
-
-            // const marriageDate = aSpouse.marriage_date.split("-");
-            //   console.log(aSpouse.marriage_date);
-
-            const marriageDate = convertDate(aSpouse.marriage_date, descendantsDateFormat, "") || "";
-            const marriageLocation = aSpouse.marriage_location;
-            let marriageDate8 = aSpouse.marriage_date ? aSpouse.marriage_date.replaceAll(/\-/g, "") : "";
-            let spouseNum = spouseKeys.length > 1 ? "spouse_" + (index + 1) : "";
-            const title = "Married " + marriageDate + (marriageLocation ? " in " + marriageLocation : "");
-            const marriageLocationSpan = marriageLocation
-                ? `<span class="marriageLocation">in ${marriageLocation}</span>`
-                : "";
-            const thisSpouseInfo = $(
-                `<dt class='marriageDate birthDeathDate' title="${title}" data-marriage-location="${marriageLocation}" data-marriage-date='${marriageDate8}'>${marriageDate}</dt><dd data-dates="${
-                    aSpouse.Dates
-                }"  data-fullname="${aSpouse.FullName}" data-id='${aSpouse.Id}' data-name='${
-                    aSpouse.Name
-                }'  class='spouse ${spouseNum}'>m. <a class="spouseProfileLink" data-gender='${
-                    aSpouse.Gender
-                }' href="https://www.wikitree.com/wiki/${htmlEntities(aSpouse.Name).replaceAll(
-                    /\s/g,
-                    "_"
-                )}">${aSpouse.FullName.trim()}</a> <span class="spouseDates">${
-                    aSpouse.Dates
-                }</span> ${marriageLocationSpan} <a class='switch' title='Switch to ${aSpouse.FirstName}' data-name="${
-                    aSpouse.Name
-                }">↔️</a></dd>`
-            );
-
-            //  console.log(thisSpouseInfo);
-            //  console.log(bdDatesTable);
-
-            thisSpouseInfo.find("a.switch").on("click", function () {
-                $("#wt-id-text").val($(this).data("name"));
-                $("#show-btn").trigger("click");
-            });
-
-            let placed = false;
-
-            if (bdDatesTable.find("dt.marriageDate").length) {
-                bdDatesTable.find("dt.marriageDate").each(function () {
-                    const thisMD = $(this).data("marriage_date") == "00000000" ? "" : $(this).data("marriage_date");
-                    console.log(thisMD);
-                    console.log(marriageDate8);
-                    if (!placed && parseInt(thisMD) > parseInt(marriageDate8)) {
-                        $(this).before(thisSpouseInfo);
-                        placed = true;
-                    }
-                });
-            }
-
-
-            if (!placed) {
-                bdDatesTable.append(thisSpouseInfo);
-            }
-        });
-
-        // If there are multiple spouses, adjust child classes based on the mother
-        if (spouseKeys.length > 1) {
-            const oChildren = personElement.children("ol.children").children("li");
-            oChildren.each(function () {
-                let thisChild = $(this);
-                let oChild = window.allPeople[thisChild.data("id")];
-                spouseKeys.forEach(function (key, index) {
-                    if (window.allPeople[key].Id == oChild.Mother && oChild.Mother != 0) {
-                        thisChild.addClass("child_of_spouse_" + (index + 1));
-                    }
-                });
-            });
-        }
-    });
-}
-*/
 
 function addSpouses(mPerson) {
     if (!mPerson.Spouses) return; // If no spouses, exit early
@@ -1467,7 +1362,7 @@ function addSpouses(mPerson) {
             const marriageDate = convertDate(aSpouse.marriage_date, descendantsDateFormat, "") || "";
             const marriageLocation = aSpouse.marriage_location;
             let marriageDate8 = aSpouse.marriage_date ? aSpouse.marriage_date.replaceAll(/\-/g, "") : "";
-            let spouseNum = spouseKeys.length > 1 ? "spouse_" + (index + 1) : "";
+            // let spouseNum = spouseKeys.length > 1 ? "spouse_" + index : "";
             const title = "Married " + marriageDate + (marriageLocation ? " in " + marriageLocation : "");
             const marriageLocationSpan = marriageLocation
                 ? `<span class="marriageLocation">in ${marriageLocation}</span>`
@@ -1476,7 +1371,7 @@ function addSpouses(mPerson) {
             return {
                 date: marriageDate8,
                 info: $(
-                    `<dt class='marriageDate birthDeathDate ${spouseNum}' title="${title}" data-marriage-location="${marriageLocation}" data-marriage-date='${marriageDate8}'>${marriageDate}</dt>
+                    `<dt class='marriageDate birthDeathDate' title="${title}" data-marriage-location="${marriageLocation}" data-marriage-date='${marriageDate8}'>${marriageDate}</dt>
                     <dd data-dates="${aSpouse.Dates}"  data-fullname="${aSpouse.FullName}" data-id='${
                         aSpouse.Id
                     }' data-name='${aSpouse.Name}'>m. <a class="spouseProfileLink" data-gender='${
@@ -1496,44 +1391,13 @@ function addSpouses(mPerson) {
         // Sort by date
         spousesInfo.sort((a, b) => parseInt(a.date) - parseInt(b.date));
 
-        // Append to bdDatesTable
-        spousesInfo.forEach((spouse) => bdDatesTable.append(spouse.info));
+        // Append to bdDatesTable and assign classes
+        spousesInfo.forEach((spouse, index) => {
+            // Assign class "spouse_0", "spouse_1", etc.
+            spouse.info.filter("dt").addClass(`spouse_${index}`);
+            bdDatesTable.append(spouse.info);
+        });
     });
-}
-
-function getDateFormat(fbds) {
-    // dateFormat is an integer that indicates the level of detail of the date.
-    // 0: Day, Month, Year
-    // 1: Month, Year
-    // 2: Year
-    let dateFormat = 0;
-    const fullDateFormat = "M j, Y";
-    // Get the date from the fbds
-    let fbdsDate = "";
-    let fbd = "";
-    if (fbds[1] != "00" && fbds[2] != "00" && fbds[0] != "00") {
-        fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, fbds[2]);
-        fbd = fbdsDate.format("j M Y");
-        if (dateFormat > 0) {
-            fbd = fbdsDate.format(fullDateFormat);
-        }
-    } else if (fbds[1] != "00" && fbds[2] == "00" && fbds[0] != "00") {
-        fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
-        fbd = fbdsDate.format("M Y");
-        if (dateFormat > 1) {
-            fbd = fbdsDate.format("F Y");
-        }
-    } else if (fbds[1] != "00" && fbds[2] == "00") {
-        fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
-        fbd = fbdsDate.format("M Y");
-        if (dateFormat > 1) {
-            fbd = fbdsDate.format("F Y");
-        }
-    } else {
-        fbdsDate = new Date(fbds[0], 0, 1);
-        fbd = fbdsDate.format("Y");
-    }
-    return fbd;
 }
 
 function htmlEntities(str) {
@@ -1968,6 +1832,7 @@ function toggleVisibility(styleId, cssSelector, toggleClassId) {
         display: none !important;
     }
     `;
+
         $("#" + toggleClassId).addClass("on");
     } else {
         $("#" + styleId).remove();
@@ -1982,57 +1847,82 @@ function collapseThis(e) {
 
 function toggleDateVisibility() {
     const isShowPlacesChecked = $("#showPlaces").is(":checked");
+    const isShowDatesChecked = $("#showDates").is(":checked");
     const toggleElement = $("#toggleDateVisibility");
+    let rules;
+
+    let bdDatesLocationsRule = "";
+    if (!isShowDatesChecked) {
+        bdDatesLocationsRule = `
+            #descendants dl.bdDatesLocations.spouse {
+             display:block; 
+            }`;
+    }
 
     if (isShowPlacesChecked) {
+        let birthDeathDetailsStyle = "grid-template-columns: 17em 1fr 17em 1fr; display: grid;";
+        let hideDates = ``;
+
+        // If #showPlaces is checked but #showDates isn't, change the CSS
+        if (!isShowDatesChecked) {
+            birthDeathDetailsStyle = "grid-template-columns: 1fr 1fr; display: grid;";
+            hideDates = `#descendants li.person span.birthDate,
+            #descendants li.person span.deathDate{
+                display:none;
+            }
+            #descendants .birthPlace:not(:empty, .datesOnly .birthDate)::before {
+                content: "b. ";
+            }
+            #descendants .deathPlace:not(:empty, .datesOnly .deathDate)::before {
+                content: "d. ";
+            }
+            `;
+        }
+
+        rules = `
+        #descendants li.person span.datesOnly {
+            display: none;
+        }
+        #descendants li.person span.birthDeathDetails {
+            ${birthDeathDetailsStyle}
+        }
+        ${bdDatesLocationsRule}
+        ${hideDates}
+    `;
+
         // If #showPlaces is checked, hide 'datesOnly' and show 'birthDeathDetails'
         if ($("#toggleDateVisibilityStyle").length === 0) {
             const style = document.createElement("style");
             style.id = "toggleDateVisibilityStyle";
-            style.innerHTML = `
-                #descendants li.person span.datesOnly {
-                    display: none;
-                }
-                #descendants li.person span.birthDeathDetails {
-                    display: grid;
-                }
-            `;
+            style.innerHTML = rules;
             document.head.appendChild(style);
         } else {
-            $("#toggleDateVisibilityStyle").html(`
-                #descendants li.person span.datesOnly {
-                    display: none;
-                }
-                #descendants li.person span.birthDeathDetails {
-                    display: grid;
-                }
-            `);
+            $("#toggleDateVisibilityStyle").html(rules);
         }
         toggleElement.addClass("on");
     } else {
         // If #showPlaces is not checked, hide 'birthDeathDetails' and show 'datesOnly'
+
+        rules = `
+        #descendants li.person span.birthDeathDetails, 
+        #descendants li.person span.marriageLocation {
+            display: none;
+        }
+        #descendants li.person span.datesOnly {
+            display: inline;
+        }
+        ${bdDatesLocationsRule}
+    `;
+
         if ($("#toggleDateVisibilityStyle").length === 0) {
             const style = document.createElement("style");
             style.id = "toggleDateVisibilityStyle";
-            style.innerHTML = `
-                #descendants li.person span.birthDeathDetails {
-                    display: none;
-                }
-                #descendants li.person span.datesOnly {
-                    display: inline;
-                }
-            `;
+            style.innerHTML = rules;
             document.head.appendChild(style);
         } else {
-            $("#toggleDateVisibilityStyle").html(`
-                #descendants li.person span.birthDeathDetails {
-                    display: none;
-                }
-                #descendants li.person span.datesOnly {
-                    display: inline;
-                }
-            `);
+            $("#toggleDateVisibilityStyle").html(rules);
         }
+
         toggleElement.removeClass("on");
     }
 }
