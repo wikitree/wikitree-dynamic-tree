@@ -8,6 +8,7 @@
  */
 export class CC7 {
     static APP_ID = "CC7";
+    static SETTINGS_GEAR = "&#x2699;";
     static #helpText = `
         <x>[ x ]</x>
         <h2 style="text-align: center">About CC7 Views</h2>
@@ -91,10 +92,12 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young images <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
-                <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> are used to flag people
-                (in their Children column) who died under
-                5 and under 16 years of age, respectively, provided they had no children.
+                The Died Young images, <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> by default, are used to flag people
+                (in their Children column) who died under age 5 and under age 16, respectively, provided they had
+                no children. You can change the image by clicking on the settings gear,
+                <img width=16px src="./views/cc7/images/setting-icon.png" />
+                at the top right, and selecting the images you want to use.
             </li>
         </ul>
         <ul id="key" class="key">
@@ -189,8 +192,134 @@ export class CC7 {
         "LastNameOther",
     ];
 
+    // These images were obtained from either https://www.wikitree.com/wiki/Space:RTC_-_Resources
+    // or https://uxwing.com/. The latter states: "Exclusive collection of free icons download for
+    // commercial projects without attribution"
+    static dyIcons = [
+        {
+            value: "47px-RTC_-_Pictures.jpeg",
+            text: "IMG:views/cc7/images/47px-RTC_-_Pictures.jpeg",
+            width: 30,
+        },
+        {
+            value: "diedYoung.png",
+            text: "IMG:views/cc7/images/diedYoung.png",
+            width: 30,
+        },
+        {
+            value: "RTC_-_Pictures-6.png",
+            text: "IMG:views/cc7/images/RTC_-_Pictures-6.png",
+            width: 30,
+        },
+        { value: "br" },
+        {
+            value: "50px-Remember_the_Children-26.png",
+            text: "IMG:views/cc7/images/50px-Remember_the_Children-26.png",
+            width: 30,
+        },
+        {
+            value: "Remember_the_Children-21.png",
+            text: "IMG:views/cc7/images/Remember_the_Children-21.png",
+            width: 30,
+        },
+        {
+            value: "Remember_the_Children-27.png",
+            text: "IMG:views/cc7/images/Remember_the_Children-27.png",
+            width: 30,
+        },
+        { value: "br" },
+        {
+            value: "butterfly-icon.png",
+            text: "IMG:views/cc7/images/butterfly-icon.png",
+            width: 30,
+        },
+        {
+            value: "flower-plant-icon.png",
+            text: "IMG:views/cc7/images/flower-plant-icon.png",
+            width: 30,
+        },
+        {
+            value: "candle-light-icon.png",
+            text: "IMG:views/cc7/images/candle-light-icon.png",
+            width: 15,
+        },
+        { value: "br" },
+        {
+            value: "flower-rose-icon.png",
+            text: "IMG:views/cc7/images/flower-rose-icon.png",
+            width: 30,
+        },
+        {
+            value: "aids-ribbon-icon.png",
+            text: "IMG:views/cc7/images/aids-ribbon-icon.png",
+            width: 30,
+        },
+        {
+            value: "candle-light-color-icon.png",
+            text: "IMG:views/cc7/images/candle-light-color-icon.png",
+            width: 15,
+        },
+    ];
+
+    static optionsDef = {
+        viewClassName: "CC7View",
+        tabs: [
+            {
+                name: "icons",
+                label: "Died Young Icons",
+                hideSelect: true,
+                subsections: [{ name: "DiedYoungIcons", label: "Died young icons" }],
+                // comment: "",
+            },
+        ],
+        optionsGroups: [
+            {
+                tab: "icons",
+                subsection: "DiedYoungIcons",
+                category: "icons",
+                subcategory: "options",
+                options: [
+                    {
+                        optionName: "sect1",
+                        comment: "Icon to use for a child that died before age 5:",
+                        type: "br",
+                    },
+                    {
+                        optionName: "veryYoung",
+                        type: "radio",
+                        label: "",
+                        values: CC7.dyIcons,
+                        defaultValue: "47px-RTC_-_Pictures.jpeg",
+                    },
+                    {
+                        optionName: "sect2",
+                        comment: "Icon to use for a child that died before age 16:",
+                        type: "br",
+                    },
+                    {
+                        optionName: "young",
+                        type: "radio",
+                        label: "",
+                        values: CC7.dyIcons,
+                        defaultValue: "50px-Remember_the_Children-26.png",
+                    },
+                ],
+            },
+        ],
+    };
+    static settingOptionsObj;
+    static currentSettings = {};
+
     constructor(selector, startId) {
         this.selector = selector;
+        const optionsJson = CC7.getCookie("w_diedYoung");
+        // console.log(`Retrieved options ${optionsJson}`);
+        if (optionsJson) {
+            const opt = JSON.parse(optionsJson);
+            CC7.optionsDef.optionsGroups[0].options[1].defaultValue = opt["icons_options_veryYoung"];
+            CC7.optionsDef.optionsGroups[0].options[3].defaultValue = opt["icons_options_young"];
+        }
+        CC7.settingOptionsObj = new SettingsOptions.SettingsOptionsObject(CC7.optionsDef);
         $(selector).html(
             `<div id="cc7Container" class="cc7Table">
             <button
@@ -212,7 +341,11 @@ export class CC7 {
                 Save</button
             ><button class="small button" id="loadButton" title="Load a previously saved data file.">Load A File</button
             ><input type="file" id="fileInput" style="display: none"/>
+            <span id="adminButtons">
+            <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
             <span id="help" title="About this">?</span>
+            </span>
+            ${CC7.settingOptionsObj.createdSettingsDIV}
             <div id="explanation">${CC7.#helpText}</div>
             </div>`
         );
@@ -239,6 +372,19 @@ export class CC7 {
         });
         $("#explanation").draggable();
 
+        $("#settingsButton").click(CC7.toggleSettings);
+        $("#saveSettingsChanges").html("Apply Changes").addClass("small button").click(CC7.settingsChanged);
+        $("#settingsDIV")
+            .css("width", "285")
+            .dblclick(function () {
+                CC7.toggleSettings();
+            });
+        $("#settingsDIV").draggable();
+
+        CC7.settingOptionsObj.buildPage();
+        CC7.settingOptionsObj.setActiveTab("icons");
+        CC7.currentSettings = CC7.settingOptionsObj.getDefaultOptions();
+
         $("#getDegreeButton").on("click", CC7.getDegreeAction);
 
         $("#savePeople").click(function (e) {
@@ -250,6 +396,37 @@ export class CC7 {
             $("#fileInput").click();
         });
         $("#getPeopleButton").click();
+    }
+
+    static toggleSettings() {
+        const theDIV = document.getElementById("settingsDIV");
+        if (theDIV.style.display == "none") {
+            theDIV.style.display = "block";
+        } else {
+            theDIV.style.display = "none";
+        }
+    }
+
+    static settingsChanged(e) {
+        // console.log("current settings:", CC7.currentSettings);
+        if (CC7.settingOptionsObj.hasSettingsChanged(CC7.currentSettings)) {
+            // console.log(`new settings: ${String(CC7.currentSettings)}`, CC7.currentSettings);
+            const veryYoungImg = CC7.imagePath(CC7.currentSettings["icons_options_veryYoung"]);
+            const youngImg = CC7.imagePath(CC7.currentSettings["icons_options_young"]);
+            $("img.diedVeryYoungImg").each(function () {
+                const it = $(this);
+                it.attr("src", veryYoungImg);
+            });
+            $("img.diedYoungImg").each(function () {
+                $(this).attr("src", youngImg);
+            });
+            CC7.setCookie("w_diedYoung", JSON.stringify(CC7.currentSettings), { expires: 365 });
+        }
+        CC7View.cancelSettings();
+    }
+
+    static imagePath(fileName) {
+        return `./views/cc7/images/${fileName}`;
     }
 
     static handleDegreeChange(wantedDegree) {
@@ -1727,7 +1904,8 @@ export class CC7 {
             let ageAtDeathCell = "";
             let dAgeAtDeath = "";
             let diedYoung = false;
-            let diedYoungClass = "";
+            let diedVeryYoung = false;
+            let diedYoungIcon = "";
             let diedYoungTitle = "";
 
             let relNums = {
@@ -1765,17 +1943,18 @@ export class CC7 {
                 }
                 if (mAgeAtDeathNum < 5 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
                     diedYoung = true;
-                    diedYoungClass = " diedYoung1";
+                    diedVeryYoung = true;
+                    diedYoungIcon = CC7.currentSettings["icons_options_veryYoung"];
                     diedYoungTitle = "Died before age 5";
                 } else if (mAgeAtDeathNum < 16 && mAgeAtDeath != false) {
                     diedYoung = true;
-                    diedYoungClass = " diedYoung2";
+                    diedYoungIcon = CC7.currentSettings["icons_options_young"];
                     diedYoungTitle = "Died before age 16";
                 }
 
                 ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
                 dAgeAtDeath = "data-age-at-death='" + mAgeAtDeathNum + "'";
-                //	}
+
                 if (mPerson.Touched) {
                     touched =
                         "<td class='touched aDate'>" +
@@ -1804,7 +1983,9 @@ export class CC7 {
                     if (aR == "Child") {
                         word = "Children";
                         if (diedYoung && relNums[aR] == "") {
-                            cellClass = `class='number${diedYoungClass}'`;
+                            const imgClass = diedVeryYoung ? "diedVeryYoungImg" : "diedYoungImg";
+                            relNums[aR] = `<img class="${imgClass}" src="${CC7.imagePath(diedYoungIcon)}" />`;
+                            cellClass = "class='number diedYoung'";
                             word = diedYoungTitle;
                         } else if (mPerson.NoChildren == 1) {
                             cellClass = "class='none number'";

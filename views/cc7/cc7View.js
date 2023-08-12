@@ -41,3 +41,8 @@ window.CC7View = class CC7View extends View {
         this.overflow = undefined;
     }
 };
+
+CC7View.cancelSettings = function () {
+    let theDIV = document.getElementById("settingsDIV");
+    theDIV.style.display = "none";
+};

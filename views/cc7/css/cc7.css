@@ -207,9 +207,6 @@ div.cc7Table .timelineTable td {
   margin-top: 1em;
   background: white;
 }
-.cc7Table #peopleTable td {
-  padding: 0.4em;
-}
 .cc7Table #peopleTable td.number {
   text-align: center;
 }
@@ -218,16 +215,12 @@ div.cc7Table .timelineTable td {
   top: 0;
   background: white;
 }
-.cc7Table #peopleTable img.diedYoungImg {
-  float: right;
+.cc7Table #peopleTable td.diedYoung {
+  padding: 0;
 }
-.cc7Table td.diedYoung1 {
-  background: url("../images/47px-RTC_-_Pictures.jpeg") center no-repeat;
-  background-size: 2em;
-}
-.cc7Table td.diedYoung2 {
-  background: url("../images/50px-Remember_the_Children-26.png") center no-repeat;
-  background-size: 2em;
+.cc7Table #peopleTable td.diedYoung img {
+  height: 1.8em;
+  vertical-align: middle;
 }
 .cc7Table ul#key {
   display: block;
@@ -236,6 +229,10 @@ div.cc7Table .timelineTable td {
 .cc7Table ul#key li {
   width: auto;
   cursor: default;
+}
+
+.cc7Table #settingsDIV {
+  z-index: 11000;
 }
 
 .cc7Table #explanation {
@@ -355,9 +352,11 @@ div.cc7Table select,
 div.cc7Table input {
   padding: 0.3em;
   width: auto;
-  min-width: 90px;
   padding-right: 1em;
   background-size: 1em 2em;
+}
+div.cc7Table #settingsDIV input[type="radio"] {
+  min-width: 40px;
 }
 #peopleList {
   margin-left: 0.5em;
@@ -383,20 +382,24 @@ td.actions img,
 #wideTableButton {
   margin-left: 0.5em;
 }
-#help {
-  background: #393a3c;
-  color: #fff;
-  font-size: 0.8em;
-  padding: 0.1em 0.5em;
-  border: 0.2em;
-  border-radius: 50%;
+.cc7Table #adminButtons {
   float: right;
-  font-weight: bold;
+}
+.cc7Table #settingsButton img {
+  width: 1.5em;
+  vertical-align: middle;
   cursor: pointer;
 }
-section#formThings {
-  max-width: 45em;
-  margin: 0.5em auto;
+.cc7Table #help {
+  background: #393a3c;
+  color: #fff;
+  font-size: 12pt;
+  font-weight: bold;
+  vertical-align: middle;
+  padding: 1.6pt 5pt;
+  border: 0.2em;
+  border-radius: 50%;
+  cursor: pointer;
 }
 label.missingLabel {
   margin-left: 1em;
@@ -487,9 +490,6 @@ img.missingImg:active {
 td.degree {
   text-align: center;
   cursor: default;
-}
-div#status {
-  padding: 1em;
 }
 div.cc7Table td {
   border-top: 1px solid gray;
@@ -630,7 +630,6 @@ button.viewButton {
 }
 
 button.viewButton.active {
-  /*background-color: #3c54e1;*/
   background-color: #faae1a;
   color: #25422d;
   font-weight: bold;
