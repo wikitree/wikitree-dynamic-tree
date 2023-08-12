@@ -407,7 +407,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
         // If the profile is private and the viewing user is not on the Trusted List, we still might not be able to continue.
         let p = data[0].person;
         XTreeView.PrimaryPerson = p;
-        console.log(p);
+        // console.log(p);
 
         if (!p?.Name) {
             let err = `The starting profile data could not be retrieved.`;
@@ -1373,8 +1373,8 @@ window.XTreeAncestorList = class XTreeAncestorList {
             person = thePeopleList[XTreeView.myAhnentafel.list[ahnNum]];
         }
         let thisPeep = thePeopleList[person._data.Id];
-        console.log("POPUP",person);
-        console.log("POPUP peep",thisPeep._data.Codes);
+        // console.log("POPUP",person);
+        // console.log("POPUP peep",thisPeep._data.Codes);
         var photoUrl = person.getPhotoUrl(75),
             treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -1396,7 +1396,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
         let displayName = person._data.BirthName ? person._data.BirthName : person._data.BirthNamePrivate;
     
 
-        console.log("Photo", photoUrl);
+        // console.log("Photo", photoUrl);
 
         let zoomFactor = Math.max(1, 1 / XTreeView.currentScaleFactor);
 
