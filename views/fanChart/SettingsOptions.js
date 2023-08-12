@@ -106,10 +106,12 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
-            '.cancelSettings();">'+ SVGbtnCLOSE +'</A></span>' +
+            '.cancelSettings();">' +
+            SVGbtnCLOSE +
+            "</A></span>" +
             this.createULelements(data) +
             '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>' +
-        "</div>";
+            "</div></div>";
 
         return theDIVhtml;
     }
