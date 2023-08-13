@@ -2107,6 +2107,7 @@ bioCheckTemplateManager.load();
 
                     "Manager",
                     "Creator",
+                    "IsMember",
                     "Created",
                     "BirthDateDecade",
                     "DeathDateDecade",
@@ -2873,6 +2874,7 @@ bioCheckTemplateManager.load();
 
                     "Manager",
                     "Creator",
+                    "IsMember",
                     "Created",
                     "BirthDateDecade",
                     "DeathDateDecade",
@@ -3080,6 +3082,7 @@ bioCheckTemplateManager.load();
 
                                 "Manager",
                                 "Creator",
+                                "IsMember",
                                 "Created",
                                 "BirthDateDecade",
                                 "DeathDateDecade",
