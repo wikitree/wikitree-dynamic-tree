@@ -110,7 +110,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             SVGbtnCLOSE +
             "</A></span>" +
             this.createULelements(data) +
-            '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>' +
+            '<br />    <div align="center">     <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>' +
             "</div></div>";
 
         return theDIVhtml;
@@ -698,9 +698,9 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
             } else {
                 // radio buttons each have their own unique ID, so they are numbered
-                // NOTE:  Currently there is a hard cap of 10 on # of radio button options
+                // NOTE:  Currently there is a hard cap of 12 on # of radio button options
                 // This arbitrary number might need to be adjusted
-                // - but - one wonders if you need more than 10 options, you may need to rethink your parameters
+                // - but - one wonders if you need more than 12 options, you may need to rethink your parameters
                 thisSettingObj = document.getElementById(setting + "_radio1");
 
                 let currCounter = 1;
@@ -709,7 +709,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     if (thisSettingObj.checked == true) {
                         thisVal = thisSettingObj.value;
                     } else {
-                        while (currCounter < 10 && thisVal == "?") {
+                        while (currCounter < 12 && thisVal == "?") {
                             currCounter++;
                             thisSettingObj = document.getElementById(setting + "_radio" + currCounter);
                             if (thisSettingObj) {
