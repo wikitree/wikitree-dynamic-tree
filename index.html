@@ -33,8 +33,11 @@
     <script src="views/fanChart/SettingsOptions.js"></script>
     <script src="views/fanChart/FanChartView.js"></script>
     <script src="views/fandoku/FandokuView.js"></script>
-    <script src="views/fractalTree/FractalView.js"></script>
+    <script src="views/fractalTree/FractalView.js" type="module"></script>
     <script src="views/webs/WebsView.js"></script>
+
+    <script src="views/xTree/XTreeView.js"></script>
+    <!-- <script src="views/superBigFamTree/SuperBigFamView.js" type="module"></script> -->
 
     <script src="views/printerFriendly/PrinterFriendlyView.js"></script>
     <link rel="stylesheet" href="views/printerFriendly/printerFriendly.css" />
@@ -54,6 +57,9 @@
      It has been created at https://jqueryui.com/download/ to only contain draggable and its
      dependencies. -->
     <script src="views/cc7/js/jquery-ui.min.js"></script>
+    <!-- floatingScroll comes with gratitude from https://github.com/Amphiluke/floating-scroll/
+    and is also used by Ancestor Line Explorer-->
+    <script type="module" src="views/ancestorLines/jquery.floatingscroll.es6.min.js"></script>
     <script type="module" src="views/couplesTree/cached_person.js"></script>
     <script type="module" src="views/couplesTree/cache_loader.js"></script>
     <script type="module" src="views/couplesTree/people_cache.js"></script>
@@ -67,7 +73,7 @@
     <script type="module" src="views/cc7/cc7View.js"></script>
     <link rel="stylesheet" href="views/cc7/css/cc7.css" />
 
-    <!-- Beware, Ancestor Line Explorer uses FileSaver and jquery-ui.min above-->
+    <!-- Beware, Ancestor Line Explorer uses FileSaver and floatingscroll above-->
     <script type="module" src="views/ancestorLines/api.js"></script>
     <script type="module" src="views/ancestorLines/person.js"></script>
     <script type="module" src="views/ancestorLines/ancestor_tree.js"></script>

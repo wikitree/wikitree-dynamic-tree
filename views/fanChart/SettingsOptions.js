@@ -97,11 +97,16 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // returns the HTML necessary to create the Settings DIV that matches the SettingsOptionsObject that was just created
     // input --> data is the object passed through from the Dynamic View that needs the settings
     createSettingsDIV(data) {
+        const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16.19 2H7.81C4.17 2 2 4.17 2 7.81V16.18C2 19.83 4.17 22 7.81 22H16.18C19.82 22 21.99 19.83 21.99 16.19V7.81C22 4.17 19.83 2 16.19 2ZM15.36 14.3C15.65 14.59 15.65 15.07 15.36 15.36C15.21 15.51 15.02 15.58 14.83 15.58C14.64 15.58 14.45 15.51 14.3 15.36L12 13.06L9.7 15.36C9.55 15.51 9.36 15.58 9.17 15.58C8.98 15.58 8.79 15.51 8.64 15.36C8.35 15.07 8.35 14.59 8.64 14.3L10.94 12L8.64 9.7C8.35 9.41 8.35 8.93 8.64 8.64C8.93 8.35 9.41 8.35 9.7 8.64L12 10.94L14.3 8.64C14.59 8.35 15.07 8.35 15.36 8.64C15.65 8.93 15.65 9.41 15.36 9.7L13.06 12L15.36 14.3Z" fill="red"/>
+        </svg>`;
+        // ORIGINAL FILL COLOUR AT END OF PATH:  #292D32
+
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
-            '.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '.cancelSettings();">'+ SVGbtnCLOSE +'</A></span>' +
             this.createULelements(data) +
             '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>';
         ("</div>");
@@ -461,6 +466,32 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 let optionLabelTextNode = document.createTextNode(" " + value.text);
                                 labelElement.appendChild(optionLabelTextNode);
                             }
+
+                            if (value.addOtherTextField === true) {
+                                // console.log("ADD AN OTHER TEXT FIELD RIGHT HERE !!!");
+
+
+                                let otherElement = document.createElement("input");
+                                otherElement.type = "text";
+                                otherElement.id = fullOptionName + "_otherValue";
+                                // otherElement.className = "optionNumber";
+                                if (value.maxLength && value.maxLength > 0) {
+                                    otherElement.size = value.maxLength * 1.0 + 1;
+                                    otherElement.maxlength = value.maxLength;
+                                }
+                                if (option.defaultOtherValue) {
+                                    otherElement.value = option.defaultOtherValue;
+                                } else if (value.otherValue) {
+                                    otherElement.value = value.otherValue;
+                                }
+                                otherElement.style.padding = "2px";
+
+                                
+                                labelElement.appendChild(otherElement);
+                                
+
+
+                            }
                         }
                     }
                     optionDivElement.appendChild(labelElement);
@@ -508,9 +539,14 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     optionElement = document.createElement("input");
                     optionElement.type = "text";
                     // optionElement.className = "optionNumber";
+                    if (option.maxLength && option.maxLength > 0) {
+                        optionElement.size = (option.maxLength * 1.0 + 1);
+                        optionElement.maxlength = option.maxLength;
+                    }
                     if (option.defaultValue) {
                         optionElement.value = option.defaultValue;
                     }
+                    optionElement.style.padding = "2px";
 
                     let labelTextNode = document.createTextNode(option.label + ": ");
 
@@ -650,6 +686,17 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                         }
                     }
                 }
+                // CHECK for OTHER VALUE text field trailing at the end of a set of Radio Button options
+                let thisSettingObjOtherValue = document.getElementById(setting + "_otherValue");
+                if (thisSettingObjOtherValue) {
+                    let otherVal = thisSettingObjOtherValue.value;
+                    if (theCurrentSettings[setting + "_otherValue"] != otherVal) {
+                        settingsChanged = true;
+                    }
+                    theCurrentSettings[setting + "_otherValue"] = otherVal;
+                }
+
+
             }
             if (thisVal != "?") {
                 if (theCurrentSettings[setting] != thisVal) {

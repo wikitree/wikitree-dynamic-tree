@@ -61,6 +61,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "cc7": new CC7View(),
         "ale": new ALEView(),
         "descendants": new DescendantsView(),
+        "xtree": new XTreeView(),
     };
 
     for (let key in views) {
@@ -73,3 +74,5 @@ window.addEventListener("DOMContentLoaded", (event) => {
     wtViewRegistry = new ViewRegistry(views, new SessionManager(WikiTreeAPI, loginManager));
     wtViewRegistry.render();
 });
+
+//// "superbig": new SuperBigFamView(),
