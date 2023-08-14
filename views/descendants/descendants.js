@@ -99,7 +99,11 @@ class DescendantsView extends View {
         <select id="generationSelect" title="Select generation"></select>
         <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
         <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
-
+        <fieldset id="showHide">
+            <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
+            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
+            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
+        </fieldset>
         <fieldset id="dateFormat">
         <label><input type="checkbox" id="showDates" title="Show dates">Dates:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
@@ -115,13 +119,8 @@ class DescendantsView extends View {
                 <option value="Y">1859</option>
             </select>
         </fieldset>
+        <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
 
-        <fieldset id="showHide">
-            <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
-            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
-            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
-            <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
-        </fieldset>
         </div>`).appendTo($(container_selector));
 
         //Set up the checkboxes
