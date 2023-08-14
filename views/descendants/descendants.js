@@ -68,9 +68,8 @@ class DescendantsView extends View {
                     <li><span class='button small'>CSV</span> downloads a CSV file of the descendants. This is formatted in a special way.</li>
                     <li><span class='button small'>Excel</span> downloads an Excel file of the descendants. 
                     This lists each of the currently loaded descendants in the order shown on this page, 
-                    with their Aboville number and spouse data (if the spouse has been loaded).</li>
-                    <li>📝 shows the person's biography and sources. It also fetches the person's spouse data.
-                    This reveals the <label><input type="checkbox">Biographies</label> checkbox. This can show or hide all bios which have been loaded.</li>
+                    with their Aboville number and spouse data.</li>
+                    <li>📝 shows the person's biography and sources. This reveals the <label><input type="checkbox">Biographies</label> checkbox. This can show or hide all bios which have been loaded.</li>
                     <li>The small checkbox after the biography button highlights the person. 
                     This is useful when you're looking up and down the page and you're likely to forget which Jean or Marie you were looking at.</li>
                     <li>The small button in the top right of each person's box hides or shows that person and their line.</li>
