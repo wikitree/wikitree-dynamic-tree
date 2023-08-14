@@ -41,8 +41,6 @@ class DescendantsView extends View {
                     : true,
         };
 
-        console.log(window.descendantsSettings);
-
         $("body").addClass("descendants");
         const help = $(
             `<div id='descendantsHelp'>
@@ -197,8 +195,8 @@ class DescendantsView extends View {
                 $(".biography").removeClass("visible");
             }
             $(this).removeClass("half-checked");
-            window.descendantsSettings.showBios = isChecked; // Update the actual variable value
-            localStorage.setItem("descendantsShowBios", isChecked); // Store the value in local storage
+            window.descendantsSettings.showBios = $(this).prop("checked"); // Update the actual variable value
+            localStorage.setItem("descendantsShowBios", $(this).prop("checked")); // Store the value in local storage
         });
 
         $(container_selector).off("click", "#checkboxIndicator");
@@ -580,7 +578,6 @@ function changeDateFormat(format) {
         marriageDateSpan.each(function () {
             let marriageDate = $(this).data("marriage-date") || "";
             if (marriageDate) {
-                console.log(marriageDate);
                 marriageDate = marriageDate.toString().replace(/^(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
                 let newMarriageDate = convertDate(marriageDate, format, "");
                 if (newMarriageDate) {
@@ -792,9 +789,7 @@ function makeCSVFile() {
         let row = generation + "; " + lineageSpaces + ` [${name}|${fullName} ${dates}]`;
 
         // Check for spouse
-        // console.log($li);
         const $spouse = $li.children("dl").children("dd").first();
-        //  console.log($spouse);
         if ($spouse.length) {
             const spouseId = $spouse.data("id");
             const spouseName = $spouse.data("name");
@@ -884,7 +879,6 @@ async function fetchDescendants(person_id, generation) {
         resolveRedirect: 1,
     });
 
-    console.log(people);
     /* If a person has a negative key, store their negative key temporarily.
      Replace the key and Id with person_id+_${negativeId} so that the negative keys/Ids are unique.
      Find any Father or Mother Ids that match the negative Ids and replace them with the new Ids.
@@ -913,12 +907,7 @@ async function fetchDescendants(person_id, generation) {
         }
     }
 
-    //log the number of keys in people[2]
-    console.log(Object.keys(people[2]).length);
     $("#shakyTree").hide();
-
-    // Usage example
-
     obj = await mergeSpouseDetails(people, fields);
     breadthFirstDescent(person_id, obj, generation);
 }
@@ -944,7 +933,6 @@ function setUpRemoveButton() {
                 genderToRemove = "Female";
             }
             $("#descendants").toggleClass("hide-" + genderToRemove);
-            //$("#descendants li." + genderToRemove).toggle();
 
             // Toggle arrow visibility
             $("#descendants li").each(function () {
@@ -1074,7 +1062,6 @@ function displayPerson(id, people, generation) {
         const datesOnly = `<span class='datesOnly'>(<span class="birthDeathDate birthDate">${birthDate}</span> – <span class="birthDeathDate deathDate">${deathDate}</span>)</span>`;
         const highlightCheckbox = `<input type='checkbox' class='highlightCheckbox' data-id='${person.Id}' title='Highlight this person' />`;
         const abovilleSpan = `<span class='aboville'></span>`;
-        // <a href="https://maps.google.com/maps?q=Hodnet, Shropshire, England" target="_map" title="Google Maps"><img src="/images/icons/map.gif.pagespeed.ce.dRGS_qcAFb.gif" border="0" width="12" height="11" alt="map"></a>
         const birthPin = person.BirthLocation
             ? `<a href="https://maps.google.com/maps?q=${person.BirthLocation}" class="mapsLink" target="_map" title="Google Maps"><img src="https://www.wikitree.com/images/icons/map.gif" alt="map"></a>`
             : "";
@@ -1097,7 +1084,7 @@ function displayPerson(id, people, generation) {
             }
         }
 
-        const collapseButton = `<button class='collapse small'></button>`;
+        const collapseButton = `<button title="Hide this person and their descendants" class='collapse small'></button>`;
         const newItem = $(
             `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${person.Name}" 
             data-birth-year="${birthYear}"  data-death-year="${deathYear}" data-birth-date="${person.BirthDate}" 
@@ -1108,7 +1095,9 @@ function displayPerson(id, people, generation) {
             </ul>${collapseButton}</li>`
         );
 
-        const ydnaImage = $("<img class='ydna dna' src='https://www.wikitree.com/images/icons/dna/Y.gif'>");
+        const ydnaImage = $(
+            "<img class='ydna dna' title='Inherited a Y chromosome from the primary person' src='https://www.wikitree.com/images/icons/dna/Y.gif'>"
+        );
         if (
             (parent.data("ydna") == 1 ||
                 parent.attr("ydna") == 1 ||
@@ -1120,7 +1109,9 @@ function displayPerson(id, people, generation) {
             newItem.find(".datesOnly").after(ydnaImage);
         }
 
-        const mtdnaImage = $("<img class='mtdna dna' src='https://www.wikitree.com/images/icons/dna/mt.gif'>");
+        const mtdnaImage = $(
+            "<img class='mtdna dna' title='Inherited mitochondrial DNA from the primary person.' src='https://www.wikitree.com/images/icons/dna/mt.gif'>"
+        );
         if (
             ((parent.data("gender") == "Female" || parent.attr("data-gender") == "Female") &&
                 (parent.data("mtdna") == 1 || parent.attr("data-mtdna") == 1)) ||
@@ -1132,7 +1123,9 @@ function displayPerson(id, people, generation) {
             newItem.find(".datesOnly").after(mtdnaImage);
         }
 
-        const xImage = $("<img class='x dna' src='https://www.wikitree.com/images/icons/dna/X.gif'>");
+        const xImage = $(
+            `<img class='x dna' title="Inherited portions of the X chromosome from the primary person" src='https://www.wikitree.com/images/icons/dna/X.gif'>`
+        );
         if (
             ((parent.data("x") == 1 || parent.attr("data-x") == 1) &&
                 (parent.data("gender") == "Female" ||
@@ -1254,7 +1247,7 @@ async function getMoreDetails(wtid) {
                 bioFormat: "html",
             },
             success: function (data) {
-                console.log(data);
+                // console.log(data);
             },
         });
         return result;
@@ -1295,7 +1288,6 @@ async function addBio(id) {
         }
         bioDiv.prepend(aPhoto);
 
-        // Rest of the code
         let sections = [];
         count = 1;
         if (bioDiv.find("section").length == 0) {
@@ -1398,7 +1390,6 @@ async function addBio(id) {
             $(this).attr("title", "Click to show/hide sources");
             $(this).siblings().toggleClass("hidden");
         });
-        //bioDiv.show();
     });
     $("#showBiosLabel").css("visibility", "visible");
 }
@@ -1449,7 +1440,6 @@ function addSpouses(mPerson) {
             const marriageDate = convertDate(aSpouse.marriage_date, window.descendantsSettings.dateFormat, "") || "";
             const marriageLocation = aSpouse.marriage_location;
             let marriageDate8 = aSpouse.marriage_date ? aSpouse.marriage_date.replaceAll(/\-/g, "") : "";
-            // let spouseNum = spouseKeys.length > 1 ? "spouse_" + index : "";
             const title = "Married " + marriageDate + (marriageLocation ? " in " + marriageLocation : "");
             const marriageLocationSpan = marriageLocation
                 ? `<span class="marriageLocation">in ${marriageLocation}</span>`
@@ -1743,7 +1733,7 @@ function dataStatusWord(status, ISOdate) {
         case "on":
         case undefined:
         case "":
-            statusOut = day !== "00" ? "" : ""; // If you want a default value when status is "certain", "on", undefined, or "", you can set it here.
+            statusOut = day !== "00" ? "" : "";
             break;
     }
 
@@ -1863,7 +1853,6 @@ function descendantsExcelOut() {
     };
     wb.SheetNames.push(sheetName);
     const ws_data = [];
-    // id, wtid, name, birthDate, deathDate, birthPlace, deathPlace, spouseText
     const headings = ["Aboville", "ID", "Name", "Birth Date", "Birth Place", "Death Date", "Death Place", "Spouses"];
     ws_data.push(headings, []);
     rows.forEach((row) => {
@@ -1916,7 +1905,7 @@ function toggleVisibility(styleId, cssSelector, toggleClassId) {
     if ($("#" + toggleClassId).prop("checked") == false || $("#" + toggleClassId).hasClass("on") == false) {
         style.innerHTML = `
     #descendants li.person${cssSelector} {
-        display: none;
+        display: none !important;
     }
     `;
 
@@ -1928,8 +1917,12 @@ function toggleVisibility(styleId, cssSelector, toggleClassId) {
 }
 
 function collapseThis(e) {
-    // console.log(e);
     $(e.target).parent().toggleClass("collapsed");
+    if ($(e.target).parent().hasClass("collapsed")) {
+        e.target.setAttribute("title", "Show this person and their descendants");
+    } else {
+        e.target.setAttribute("title", "Hide this person and their descendants");
+    }
 }
 
 function toggleDateVisibility() {
@@ -2015,31 +2008,17 @@ function toggleDateVisibility() {
 }
 
 function updateShowBiosState() {
-    // setTimeout(function () {
     const $biographies = $(".biography");
     const visibleCount = $biographies.filter(".visible").length;
-
-    // logging
-    console.log("visibleCount: " + visibleCount);
-    console.log("$biographies.length: " + $biographies.length);
-
     const $mainCheckbox = $("#showBios");
 
     if (visibleCount === 0) {
-        if ($mainCheckbox.prop("checked")) {
-            $mainCheckbox.addClass("half-checked");
-        } else {
-            $mainCheckbox.removeClass("half-checked");
-        }
+        $mainCheckbox.prop("checked", false);
+        $mainCheckbox.removeClass("half-checked");
     } else if (visibleCount === $biographies.length) {
-        if (!$mainCheckbox.prop("checked")) {
-            $mainCheckbox.addClass("half-checked");
-        } else {
-            $mainCheckbox.removeClass("half-checked");
-        }
+        $mainCheckbox.prop("checked", true);
+        $mainCheckbox.removeClass("half-checked");
     } else {
-        // $mainCheckbox.prop("checked", false);
         $mainCheckbox.addClass("half-checked");
     }
-    //}, 500);
 }
