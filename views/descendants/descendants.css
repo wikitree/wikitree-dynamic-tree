@@ -282,11 +282,6 @@ body.descendants #closeHelp {
 #descendantsHelp h2 {
   text-align: center;
 }
-/*
-body.descendants span.birthDeathDate {
-  font-weight: 600;
-}
-*/
 
 #descendantsButtons #dateFormat {
   display: inline-block;
@@ -612,24 +607,6 @@ body.descendants button {
   margin-top: 0.3em;
   background-color: lightgray;
 }
-/*
-#descendantsButtons #checkboxIndicator:before {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background-color: #333;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  visibility: hidden;
-}
-
-
-#descendantsButtons #showBios:checked + #checkboxIndicator {
-  background-color: lightgray;
-}
-*/
 
 #descendantsButtons #showBios + #checkboxIndicator {
   visibility: hidden;

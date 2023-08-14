@@ -1073,7 +1073,9 @@ function displayPerson(id, people, generation) {
         const listItemContent = `<span class="nameAndBio">${nameLink} ${wtidSpan} 
         ${datesOnly} ${moreDetailsEye} ${highlightCheckbox} ${abovilleSpan}</span><span class='birthDeathDetails'><span class='birthDeathDate birthDate'>${birthDate}</span><span class='birthDeathPlace birthPlace'>${
             person.BirthLocation || ""
-        } ${birthPin}</span><span class='birthDeathDate deathDate'>${deathDate}</span><span class='birthDeathPlace deathPlace'>${deathLocation} ${deathPin}</span></span> ${loadMoreButton}`;
+        } ${birthPin}</span><span class='birthDeathDate deathDate'>${deathDate}</span><span class='birthDeathPlace deathPlace'>${
+            deathLocation || ""
+        } ${deathPin}</span></span> ${loadMoreButton}`;
         const parent = $("li[data-id='" + person.Father + "'], li[data-id='" + person.Mother + "']");
         let childIndicator = person.HasChildren ? "<span class='arrow'>▶</span>" : "";
         let ulState = "";
@@ -1182,6 +1184,12 @@ function displayPerson(id, people, generation) {
         }
 
         addSpouses(person);
+
+        $("#descendants .birthPlace, #descendants .deathPlace").each(function () {
+            if ($(this).text().trim() === "") {
+                $(this).addClass("is-empty");
+            }
+        });
     }
 
     // Add child of class
@@ -1950,10 +1958,10 @@ function toggleDateVisibility() {
             #descendants li.person span.deathDate{
                 display:none;
             }
-            #descendants .birthPlace:not(:empty, .datesOnly .birthDate)::before {
+            #descendants .birthPlace:not(.is-empty)::before {
                 content: "b. ";
             }
-            #descendants .deathPlace:not(:empty, .datesOnly .deathDate)::before {
+            #descendants .deathPlace:not(.is-empty)::before {
                 content: "d. ";
             }
             `;
