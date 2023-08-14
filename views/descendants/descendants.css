@@ -26,7 +26,7 @@ body.descendants #view-container {
   display: block; /* Show the list when it has the class 'expanded' */
 }
 
-.expanded {
+#descendants .expanded {
   display: block !important;
 }
 #descendants li > .arrow {
@@ -600,4 +600,49 @@ body.descendants button {
 #descendants li.person.childOfSpouse_51,
 #descendants dl.spouse dt.spouse_51 {
   border-left: 3px solid #4b088a;
+}
+
+#descendantsButtons #checkboxIndicator {
+  width: 0.7em;
+  height: 0.7em;
+  display: inline-block;
+  border: 1px solid #ccc;
+  position: absolute;
+  margin-left: -1.1em;
+  margin-top: 0.3em;
+  background-color: lightgray;
+}
+/*
+#descendantsButtons #checkboxIndicator:before {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #333;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  visibility: hidden;
+}
+
+
+#descendantsButtons #showBios:checked + #checkboxIndicator {
+  background-color: lightgray;
+}
+*/
+
+#descendantsButtons #showBios + #checkboxIndicator {
+  visibility: hidden;
+}
+
+#descendantsButtons #showBios.half-checked + #checkboxIndicator {
+  visibility: visible;
+}
+
+#descendants .biography {
+  display: none;
+}
+
+#descendants .biography.visible {
+  display: block;
 }

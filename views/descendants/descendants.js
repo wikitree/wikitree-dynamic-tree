@@ -1,13 +1,3 @@
-let descendantsDateFormat = localStorage.getItem("descendantsDateFormat") || "ISO";
-let descendantsDateDataStatusFormat = localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations";
-let descendantsShowWTID = localStorage.getItem("descendantsShowWTID") || false;
-let descendantsShowPlaces = localStorage.getItem("descendantsShowPlaces") || true;
-let descendantsShowAboville = localStorage.getItem("descendantsShowAboville") || false;
-let descendantsShowDates = localStorage.getItem("descendantsShowDates") || true;
-let descendantsShowSpouses = localStorage.getItem("descendantsShowSpouses") || false;
-let descendantsShowChildless = localStorage.getItem("descendantsShowChildless") || true;
-let descendantsShowBios = localStorage.getItem("descendantsShowBios") || true;
-
 class DescendantsView extends View {
     meta() {
         return {
@@ -18,6 +8,41 @@ class DescendantsView extends View {
     }
 
     init(container_selector, person_id) {
+        window.descendantsSettings = {
+            dateFormat: localStorage.getItem("descendantsDateFormat") || "ISO",
+            dateDataStatusFormat: localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations",
+            showWTID:
+                localStorage.getItem("descendantsShowWTID") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowWTID"))
+                    : false,
+            showPlaces:
+                localStorage.getItem("descendantsShowPlaces") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowPlaces"))
+                    : true,
+            showAboville:
+                localStorage.getItem("descendantsShowAboville") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowAboville"))
+                    : false,
+            showDates:
+                localStorage.getItem("descendantsShowDates") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowDates"))
+                    : true,
+            showSpouses:
+                localStorage.getItem("descendantsShowSpouses") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowSpouses"))
+                    : false,
+            showChildless:
+                localStorage.getItem("descendantsShowChildless") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowChildless"))
+                    : true,
+            showBios:
+                localStorage.getItem("descendantsShowBios") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowBios"))
+                    : true,
+        };
+
+        console.log(window.descendantsSettings);
+
         $("body").addClass("descendants");
         const help = $(
             `<div id='descendantsHelp'>
@@ -40,7 +65,7 @@ class DescendantsView extends View {
                     <li>The two dropdown boxes after the Dates checkbox control the date format.</li>
                     <li><label><input type="checkbox">Places</label> shows or hides birth and death places.</li>
                     <li><label><input type="checkbox">WT ID</label> shows or hides WikiTree IDs.</li>
-                    <li><label><input type="checkbox">#</label> shows or hides Aboville numbers. <br>
+                    <li><label><input type="checkbox">Aboville #</label> shows or hides Aboville numbers. <br>
                     e.g. 1.3.4 = primary person's 1st child's 3rd child's 4th child.</li>
                     <li><span class='button small'>CSV</span> downloads a CSV file of the descendants. This is formatted in a special way.</li>
                     <li><span class='button small'>Excel</span> downloads an Excel file of the descendants. 
@@ -71,14 +96,15 @@ class DescendantsView extends View {
         </fieldset>
 
         <button class='small' id='remove' style='display:none' title="Remove selected item"></button>
-        <button class='small dna off' id='xButton' title="Toggle X chromosome data">X</button>
-        <button class='small dna off' id='yButton' title="Toggle Y chromosome data">Y</button>
-        <button class='small dna off' id='mtButton' title="Toggle Mitochondrial DNA data">MT</button>
+        <button class='small dna off' id='xButton' title="Toggle people with a possible X chromosome from the primary person">X</button>
+        <button class='small dna off' id='yButton' title="Toggle people with a Y chromosome from the primary person">Y</button>
+        <button class='small dna off' id='mtButton' title="Click to show only descendants with mtDNA from the primary person">MT</button>
         <select id="generationSelect" title="Select generation"></select>
-        <label><input type="checkbox" id="showSpouses" title="Show spouses">Spouses</label>
-        <label><input type="checkbox" id="showChildless" title="Show childless">Childless</label>
+        <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
+        <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
 
-        <fieldset id="dateFormat" title="Date format settings"><label><input type="checkbox" id="showDates" title="Show dates">Dates:</label>
+        <fieldset id="dateFormat">
+        <label><input type="checkbox" id="showDates" title="Show dates">Dates:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
                 <option value="abbreviations">bef., aft., abt.</option>
                 <option value="words">before, after, about</option>
@@ -93,11 +119,11 @@ class DescendantsView extends View {
             </select>
         </fieldset>
 
-        <fieldset id="showHide" title="Show or hide data">
-            <label><input type="checkbox" id="showPlaces" title="Show birth and death places">Places</label>
-            <label><input type="checkbox" id="showWTID" title="Show WikiTree IDs">WT ID</label>
-            <label><input type="checkbox" id="showAboville" title="Show Aboville numbers">Aboville #</label>
-            <label id="showBiosLabel"><input type="checkbox" id="showBios" title="Show biographies">Biographies</label>
+        <fieldset id="showHide">
+            <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
+            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
+            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
+            <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
         </fieldset>
         </div>`).appendTo($(container_selector));
 
@@ -107,32 +133,47 @@ class DescendantsView extends View {
                 key: "Childless",
                 style: "hideChildlessStyle",
                 selector: '[data-haschildren="0"]',
-                variable: descendantsShowChildless,
+                variable: window.descendantsSettings.showChildless,
             },
-            { key: "WTID", style: "hideWTIDStyle", selector: " .wtid", variable: descendantsShowWTID },
-            { key: "Aboville", style: "hideAbovilleStyle", selector: " .aboville", variable: descendantsShowAboville },
+            {
+                key: "WTID",
+                style: "hideWTIDStyle",
+                selector: " .wtid",
+                variable: window.descendantsSettings.showWTID,
+            },
+            {
+                key: "Aboville",
+                style: "hideAbovilleStyle",
+                selector: " .aboville",
+                variable: window.descendantsSettings.showAboville,
+            },
             {
                 key: "Dates",
                 style: "hideDatesStyle",
                 selector: " .datesOnly, #descendants li.person .birthDeathDate, #descendants li.person .spouseDates",
-                variable: descendantsShowDates,
+                variable: window.descendantsSettings.showDates,
             },
-            { key: "Spouses", style: "hideSpousesStyle", selector: " .spouse", variable: descendantsShowSpouses },
-            { key: "Bios", style: "hideBiosStyle", selector: " .biography", variable: descendantsShowBios },
+            {
+                key: "Spouses",
+                style: "hideSpousesStyle",
+                selector: " .spouse",
+                variable: window.descendantsSettings.showSpouses,
+            },
         ];
 
         settings.forEach(({ key, style, selector, variable }) => {
             // Initialize visibility toggle
-            if (variable === "true") {
+            if (variable == true) {
                 $(`#show${key}`).prop("checked", true).addClass("on");
             }
             toggleVisibility(style, selector, `show${key}`);
 
             // Register click handler
+            $(container_selector).off("click", `#show${key}`);
             $(container_selector).on("click", `#show${key}`, function (e) {
                 const isChecked = $(this).prop("checked");
                 toggleVisibility(style, selector, `show${key}`);
-                window[`descendantsShow${key}`] = isChecked; // Update the actual variable value
+                window.descendantsSettings[`show${key}`] = isChecked; // Update the actual variable value
                 localStorage.setItem(`descendantsShow${key}`, isChecked); // Store the value in local storage
                 if ($(this).prop("id") == "showDates") {
                     toggleDateVisibility();
@@ -140,15 +181,57 @@ class DescendantsView extends View {
             });
         });
 
-        if (descendantsShowPlaces == "true") {
+        // Initialize visibility toggle for biographies
+        if (window.descendantsSettings.showBios == true) {
+            $("#showBios").prop("checked", true);
+        } else {
+            $("#showBios").prop("checked", false);
+        }
+
+        $(container_selector).off("click", "#showBios");
+        $(container_selector).on("click", "#showBios", function (e) {
+            // If this is checked, show all bios; if unchecked, hide all bios
+            if ($(this).prop("checked")) {
+                $(".biography").addClass("visible");
+            } else {
+                $(".biography").removeClass("visible");
+            }
+            $(this).removeClass("half-checked");
+            window.descendantsSettings.showBios = isChecked; // Update the actual variable value
+            localStorage.setItem("descendantsShowBios", isChecked); // Store the value in local storage
+        });
+
+        $(container_selector).off("click", "#checkboxIndicator");
+        // Initialize visibility toggle for biographies
+        $(container_selector).on("click", "#checkboxIndicator", function (e) {
+            const $checkbox = $(this).prev("#showBios");
+            const isChecked = $checkbox.prop("checked");
+            const isHalfChecked = $checkbox.hasClass("half-checked");
+
+            if (isHalfChecked || isChecked) {
+                $checkbox.prop("checked", false);
+            } else {
+                $checkbox.prop("checked", true);
+            }
+
+            $checkbox.removeClass("half-checked");
+
+            // Trigger the original checkbox's click event
+            $checkbox.click();
+        });
+
+        if (window.descendantsSettings.showPlaces == true) {
             $("#showPlaces").prop("checked", true).addClass("on");
         }
         toggleDateVisibility();
+
+        $(container_selector).off("click", "#showHelp,#closeHelp");
         $(container_selector).on("click", "#showHelp,#closeHelp", function (e) {
             $("#descendantsHelp").toggle();
         });
 
         // Attach click event listener to 'li' elements
+        $(container_selector).off("click", "li");
         $(container_selector).on("click", "li", function (e) {
             e.stopImmediatePropagation(); // Stop the event from bubbling up to parent 'li' elements
             const $childrenUl = $(this).children("ul.personList");
@@ -168,35 +251,52 @@ class DescendantsView extends View {
         fetchDescendants(person_id, 1);
         $("#shakyTree").show();
 
+        $(document).off("click", ".profileLink");
         $(document).on("click", ".profileLink", function (e) {
             e.preventDefault();
             e.stopPropagation();
             window.open($(this).attr("href"), "_blank");
         });
 
+        $(container_selector).off("click", ".load-more");
         $(container_selector).on("click", ".load-more", function (e) {
             loadMore(e);
         });
 
+        $(container_selector).off("change click", "#generationSelect");
         $(container_selector).on("change click", "#generationSelect", function (e) {
             showUpToGeneration();
         });
 
+        $(container_selector).off("click", "#excelOut");
         $(container_selector).on("click", "#excelOut", function (e) {
             descendantsExcelOut();
         });
 
+        $(container_selector).off("click", "#showPlaces");
         $(container_selector).on("click", "#showPlaces", function (e) {
             localStorage.setItem("descendantsShowPlaces", $(this).prop("checked"));
             toggleDateVisibility();
         });
 
+        $(container_selector).off("click", ".collapse");
         $(container_selector).on("click", ".collapse", function (e) {
             e.preventDefault();
             e.stopPropagation();
             collapseThis(e);
         });
 
+        $(container_selector).off("click", "a.switch");
+        $(container_selector).on("click", "a.switch", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Open the link in a new tab
+            // The link is window.location.href with #name=[wtid] changed to #name=${$this).data("name")}
+            const link = window.location.href.replace(/#name=.*?&/, `#name=${$(this).data("name")}&`);
+            window.open(link, "_blank");
+        });
+
+        $(container_selector).off("click", "#xButton");
         $(container_selector).on("click", "#xButton", function (e) {
             if ($(this).hasClass("off")) {
                 turnOffOtherButtons();
@@ -236,6 +336,7 @@ class DescendantsView extends View {
             }
         });
 
+        $(container_selector).off("click", "#yButton");
         $(container_selector).on("click", "#yButton", function (e) {
             if ($(this).hasClass("off")) {
                 turnOffOtherButtons();
@@ -275,12 +376,16 @@ class DescendantsView extends View {
             }
         });
 
-        $("#dateFormatSelect option[value='" + descendantsDateFormat + "']").prop("selected", true);
-        $("#dateDataStatusSelect option[value='" + descendantsDateDataStatusFormat + "']").prop("selected", true);
+        $("#dateFormatSelect option[value='" + window.descendantsSettings.dateFormat + "']").prop("selected", true);
+        $("#dateDataStatusSelect option[value='" + window.descendantsSettings.dateDataStatusFormat + "']").prop(
+            "selected",
+            true
+        );
 
         // Variable to keep track of the initial state of ul.personList elements
         let initialPersonListState = {};
 
+        $(container_selector).off("click", "#mtButton");
         $(container_selector).on("click", "#mtButton", function () {
             $("#shakyTree").show();
             if ($(this).hasClass("off")) {
@@ -305,6 +410,7 @@ class DescendantsView extends View {
 
                 $("#mtButton").removeClass("off");
                 $("#mtButton").addClass("on");
+                $("#mtButton").attr("title", "Click again to remove deceased males");
             } else if ($(this).hasClass("on")) {
                 // hide dead males
                 $("[data-mtdna='1']").each((i, el) => {
@@ -316,6 +422,7 @@ class DescendantsView extends View {
                 });
                 $("#mtButton").addClass("hideMales");
                 $("#mtButton").removeClass("on");
+                $("#mtButton").attr("title", "Click again to return to the former state");
             } else {
                 $("li.person").removeClass("hidden");
                 $("[data-mtdna='1']").show();
@@ -333,32 +440,32 @@ class DescendantsView extends View {
                 $("#mtButton").addClass("off");
                 $("#mtButton").removeClass("hideMales");
                 showUpToGeneration();
+                $("#mtButton").attr("title", "Click to show only descendants with mtDNA from the primary person");
             }
             $("#shakyTree").hide();
         });
 
+        $(container_selector).off("click", ".moreDetailsEye");
         $(container_selector).on("click", ".moreDetailsEye", function (e) {
             e.stopImmediatePropagation();
-            if ($(this).closest("li").children(".biography").length > 0) {
-                $(this).closest("li").children(".biography").toggle();
+            const $biography = $(this).closest("li").children(".biography");
+            if ($biography.length > 0) {
+                $biography.toggleClass("visible");
+                updateShowBiosState();
             } else {
-                addBio($(this).data("name"));
+                addBio($(this).data("name")).then(() => {
+                    updateShowBiosState();
+                });
             }
         });
 
-        $(container_selector).on("click", ".biography h2:contains('Biography')", function (e) {
-            e.stopImmediatePropagation();
-            $(this).closest("div.biography").slideUp();
-        });
-        $(container_selector).on("click", ".biography", function (e) {
-            e.stopImmediatePropagation();
-        });
-
+        $(container_selector).off("click", "#downloadCSV");
         $(container_selector).on("click", "#downloadCSV", function (e) {
             e.stopImmediatePropagation();
             makeCSVFile();
         });
 
+        $(container_selector).off("click", ".highlightCheckbox");
         $(container_selector).on("click", ".highlightCheckbox", function (e) {
             e.stopImmediatePropagation();
             if ($(this).is(":checked")) {
@@ -368,16 +475,19 @@ class DescendantsView extends View {
             }
         });
 
+        $(container_selector).off("change", "#dateFormatSelect,#dateDataStatusSelect");
         $(container_selector).on("change", "#dateFormatSelect,#dateDataStatusSelect", function (e) {
             e.stopImmediatePropagation();
             localStorage.setItem("descendantsDateFormat", $("#dateFormatSelect").val());
             localStorage.setItem("descendantsDateDataStatusFormat", $("#dateDataStatusSelect").val());
-            descendantsDateDataStatusFormat = $("#dateDataStatusSelect").val();
-            descendantsDateFormat = $("#dateFormatSelect").val();
-            changeDateFormat(descendantsDateFormat);
+            window.descendantsSettings.dateDataStatusFormat = $("#dateDataStatusSelect").val();
+            window.descendantsSettings.dateFormat = $("#dateFormatSelect").val();
+            changeDateFormat(window.descendantsSettings.dateFormat);
         });
 
         $("#view-container").css("overflow", "inherit");
+
+        $(container_selector).off("change", "#view-select");
         $("#view-select").on("change", function (e) {
             $("#view-container").css("overflow", "auto");
         });
@@ -392,20 +502,6 @@ function turnOffOtherButtons() {
     $("#mtButton").addClass("off");
     $("#mtButton").removeClass("on");
 }
-
-/*
-function toggleSpouses() {
-    if ($("#toggleSpouses").hasClass("off")) {
-        $("#toggleSpouses").removeClass("off");
-        $("#toggleSpouses").addClass("on");
-        $("dl.spouse").show();
-    } else {
-        $("#toggleSpouses").removeClass("on");
-        $("#toggleSpouses").addClass("off");
-        $("dl.spouse").hide();
-    }
-}
-*/
 
 function isAlive(person) {
     const currentYear = new Date().getFullYear();
@@ -578,7 +674,7 @@ const fields = [
 
 // Parent template
 function createParentTemplate(parentData) {
-    let marriageDate = convertDate(parentData.marriage_date, descendantsDateFormat) || "";
+    let marriageDate = convertDate(parentData.marriage_date, window.descendantsSettings.dateFormat) || "";
     return `
     <dt class='marriageDate'>${marriageDate}</dt>
     <dd data-id='${parentData.Id}' data-name="${parentData.Name}" data-fullname="${parentData.FullName}" data-dates="${parentData.Dates}">
@@ -873,20 +969,6 @@ function setUpRemoveButton() {
                 ? btn.text("Show Males")
                 : btn.text("Hide Males");
         });
-        /*
-        $("#showHideAll").on("click", function () {
-            var btn = $(this);
-            if (btn.text() == "Expand All") {
-                $("#descendants li ul.personList").addClass("expanded");
-                $("#descendants li .arrow").addClass("rotated");
-                btn.text("Collapse All").attr("title", "Collapse All");
-            } else {
-                $("#descendants li ul.personList").removeClass("expanded");
-                $("#descendants li .arrow").removeClass("rotated");
-                btn.text("Expand All").title("Show all of the descendants currently loaded.");
-            }
-        });
-        */
 
         // Expand the root person's children and rotate the arrow on page load
         $("#descendants > li > ul.personList").addClass("expanded");
@@ -968,7 +1050,9 @@ function displayPerson(id, people, generation) {
 
         let birthDate = "";
         if (person.BirthDate) {
-            birthDate = convertDate(person.BirthDate, descendantsDateFormat, person?.DataStatus?.BirthDate) || "";
+            birthDate =
+                convertDate(person.BirthDate, window.descendantsSettings.dateFormat, person?.DataStatus?.BirthDate) ||
+                "";
             if (birthDate) {
                 birthDate = birthDate.trim();
             }
@@ -977,7 +1061,9 @@ function displayPerson(id, people, generation) {
         }
         let deathDate = "";
         if (person.DeathDate) {
-            deathDate = convertDate(person.DeathDate, descendantsDateFormat, person?.DataStatus?.DeathDate) || "";
+            deathDate =
+                convertDate(person.DeathDate, window.descendantsSettings.dateFormat, person?.DataStatus?.DeathDate) ||
+                "";
             if (deathDate) {
                 deathDate = deathDate.trim();
             }
@@ -1199,9 +1285,9 @@ async function addBio(id) {
             return true; // Continue to the next iteration
         }
 
-        const bioDiv = $("<div class='biography'></div>");
+        const bioDiv = $("<div class='biography visible'></div>");
         currentPersonElement.children("ul.personList").before(bioDiv);
-        bioDiv.append($(person.bioHTML)).addClass("fullBiography").show();
+        bioDiv.append($(person.bioHTML)).addClass("biography");
 
         let aPhoto = "";
         if (person.PhotoData?.url) {
@@ -1312,6 +1398,7 @@ async function addBio(id) {
             $(this).attr("title", "Click to show/hide sources");
             $(this).siblings().toggleClass("hidden");
         });
+        //bioDiv.show();
     });
     $("#showBiosLabel").css("visibility", "visible");
 }
@@ -1359,7 +1446,7 @@ function addSpouses(mPerson) {
             aSpouse.FullName = new PersonName(aSpouse).withParts(["FullName"]);
             aSpouse.Dates = displayDates(aSpouse);
 
-            const marriageDate = convertDate(aSpouse.marriage_date, descendantsDateFormat, "") || "";
+            const marriageDate = convertDate(aSpouse.marriage_date, window.descendantsSettings.dateFormat, "") || "";
             const marriageLocation = aSpouse.marriage_location;
             let marriageDate8 = aSpouse.marriage_date ? aSpouse.marriage_date.replaceAll(/\-/g, "") : "";
             // let spouseNum = spouseKeys.length > 1 ? "spouse_" + index : "";
@@ -1660,7 +1747,7 @@ function dataStatusWord(status, ISOdate) {
             break;
     }
 
-    const statusFormat = descendantsDateDataStatusFormat || "abbreviations";
+    const statusFormat = window.descendantsSettings.dateDataStatusFormat || "abbreviations";
 
     if (statusFormat === "abbreviations") {
         statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
@@ -1829,7 +1916,7 @@ function toggleVisibility(styleId, cssSelector, toggleClassId) {
     if ($("#" + toggleClassId).prop("checked") == false || $("#" + toggleClassId).hasClass("on") == false) {
         style.innerHTML = `
     #descendants li.person${cssSelector} {
-        display: none !important;
+        display: none;
     }
     `;
 
@@ -1925,4 +2012,34 @@ function toggleDateVisibility() {
 
         toggleElement.removeClass("on");
     }
+}
+
+function updateShowBiosState() {
+    // setTimeout(function () {
+    const $biographies = $(".biography");
+    const visibleCount = $biographies.filter(".visible").length;
+
+    // logging
+    console.log("visibleCount: " + visibleCount);
+    console.log("$biographies.length: " + $biographies.length);
+
+    const $mainCheckbox = $("#showBios");
+
+    if (visibleCount === 0) {
+        if ($mainCheckbox.prop("checked")) {
+            $mainCheckbox.addClass("half-checked");
+        } else {
+            $mainCheckbox.removeClass("half-checked");
+        }
+    } else if (visibleCount === $biographies.length) {
+        if (!$mainCheckbox.prop("checked")) {
+            $mainCheckbox.addClass("half-checked");
+        } else {
+            $mainCheckbox.removeClass("half-checked");
+        }
+    } else {
+        // $mainCheckbox.prop("checked", false);
+        $mainCheckbox.addClass("half-checked");
+    }
+    //}, 500);
 }
