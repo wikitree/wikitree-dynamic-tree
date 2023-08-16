@@ -14,7 +14,8 @@ Could be a profile obtained via the API in the app
 or could be a profile in the WikiTree Browser Extension.
 Only contains a subset of the complete set of data available.
 Expects the profile to contain the following fields from the API:
-Id,Name,IsLiving,Privacy,Manager,BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
+Id,Name,IsLiving,Privacy,Manager,IsMember,
+BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
 FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 
 ### canUse
@@ -77,6 +78,12 @@ Returns **[String][7]** manager Id
 Get WikiTree link
 
 Returns **[String][7]** link to the WikiTree person
+
+### isMember
+
+Is profile for a member
+
+Returns **[Boolean][6]** true if profile for a member
 
 ### getPrivacy
 
@@ -341,6 +348,12 @@ does bio have acknowledgements before sources
 
 Returns **[Boolean][6]** true if bio has acknowledgements before sources
 
+### hasSectionAfterAdvanceDirective
+
+does bio have section after advance directive
+
+Returns **[Boolean][6]** true if bio has section heading after advance directive
+
 ### hasUnknownSection
 
 does bio have unknown section headings
@@ -433,6 +446,16 @@ Determine if a line is a valid acknowledgements heading
 *   `line` **[String][7]** to test
 
 Returns **[Boolean][6]** true if acknowledgements heading else false
+
+### isAdvanceDirective
+
+Determine if a line is a valid advance directive heading
+
+#### Parameters
+
+*   `line` **[String][7]** to test
+
+Returns **[Boolean][6]** true if advance directive heading else false
 
 ### isResearchNoteBox
 
