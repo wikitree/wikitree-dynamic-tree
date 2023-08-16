@@ -62,8 +62,8 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "nameTest": new NameTestView(),
         "cc7": new CC7View(),
         "ale": new ALEView(),
-        "xtree": new XTreeView(), 
-        
+        "descendants": new DescendantsView(),
+        "xtree": new XTreeView(),
     };
 
     for (let key in views) {
