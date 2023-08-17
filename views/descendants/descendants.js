@@ -486,6 +486,7 @@ class DescendantsView extends View {
         $(container_selector).off("change", "#view-select");
         $("#view-select").on("change", function (e) {
             $("#view-container").css("overflow", "auto");
+            $("body").removeClass("descendants");
         });
     }
 }
