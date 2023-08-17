@@ -163,6 +163,9 @@ bioCheckTemplateManager.load();
     var currentHighlightCategory = "";
     var currentMaxHeight4Box = 180;
 
+    let font4Name = "Arial";
+    let font4Info = "SansSerif";
+
     var ColourArray = [
         "White",
 
