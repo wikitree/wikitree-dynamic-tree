@@ -284,7 +284,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             }
 
             if (tab.help) {
-                const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+                const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                     width="16" height="16" viewBox="0 0 95.334 95.334"
                     xml:space="preserve">
                 <g>
@@ -433,19 +433,15 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             indentText += "_";
                         }
                         let indentTextNode = document.createElement("label");
-                        indentTextNode.innerText = (indentText);
+                        indentTextNode.innerText = indentText;
                         indentTextNode.style.color = "aliceblue";
-                        labelElement.append(indentTextNode);                        
+                        labelElement.append(indentTextNode);
                     }
-
 
                     labelElement.appendChild(optionElement);
                     labelElement.appendChild(labelTextNode);
 
                     optionDivElement.appendChild(labelElement);
-                    
-                    
-
                 } else if (option.type == "radio") {
                     optionElement = document.createElement("radio");
 
@@ -504,7 +500,6 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             if (value.addOtherTextField === true) {
                                 // console.log("ADD AN OTHER TEXT FIELD RIGHT HERE !!!");
 
-
                                 let otherElement = document.createElement("input");
                                 otherElement.type = "text";
                                 otherElement.id = fullOptionName + "_otherValue";
@@ -520,11 +515,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 }
                                 otherElement.style.padding = "2px";
 
-                                
                                 labelElement.appendChild(otherElement);
-                                
-
-
                             }
                         }
                     }
@@ -574,7 +565,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     optionElement.type = "text";
                     // optionElement.className = "optionNumber";
                     if (option.maxLength && option.maxLength > 0) {
-                        optionElement.size = (option.maxLength * 1.0 + 1);
+                        optionElement.size = option.maxLength * 1.0 + 1;
                         optionElement.maxlength = option.maxLength;
                     }
                     if (option.defaultValue) {
@@ -729,8 +720,6 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     }
                     theCurrentSettings[setting + "_otherValue"] = otherVal;
                 }
-
-
             }
             if (thisVal != "?") {
                 if (theCurrentSettings[setting] != thisVal) {
