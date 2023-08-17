@@ -883,6 +883,7 @@ bioCheckTemplateManager.load();
                                 // { value: "Town", text: "Place name" },
                                 // { value: "Region", text: "Region (Province/State)" },
                                 // { value: "Country", text: "Country" },
+                                { value: "DNAstatus", text: "Parental status" },
                                 { value: "random", text: "random chaos" },
                             ],
                             defaultValue: "Generation",
@@ -986,8 +987,8 @@ bioCheckTemplateManager.load();
                                 { value: "-", text: "-" },
                                 { value: "aliveDay", text: "Alive on this Day" },
                                 // { value: "bioCheckOK", text: "Bio Check ✔ - has sources" },
-                                { value: "bioCheckFail", text: "Bio Check X - no sources" },
-                                { value: "bioCheckStyle", text: "Bio Check ~ - style issues" },
+                                { value: "bioCheckFail", text: "Bio Check - no sources" },
+                                { value: "bioCheckStyle", text: "Bio Check - style issues" },
                                 { value: "bioText", text: "Biography Text" },
                                 { value: "cat", text: "Category or Sticker" },
                                 // { value: "review", text: "Profiles needing review" },
@@ -1336,7 +1337,13 @@ bioCheckTemplateManager.load();
 
                 FanChartView.removeBadges("DNA");
 
-                if (showBadges || colourBy == "Family" || colourBy == "Location" || colourBy == "BioCheck") {
+                if (
+                    showBadges ||
+                    colourBy == "Family" ||
+                    colourBy == "Location" ||
+                    colourBy == "BioCheck" ||
+                    colourBy == "DNAstatus"
+                ) {
                     let badgeLabels = FanChartView.currentSettings["general_options_badgeLabels"];
                     if (badgeLabels == "12345") {
                         badgeCharacters = " 12345";
@@ -1360,7 +1367,12 @@ bioCheckTemplateManager.load();
                     legendDIV.style.display = "block";
                     stickerLegend.style.display = "block";
                     legendToggle.style.display = "inline-block";
-                    if (colourBy == "Family" || colourBy == "Location" || colourBy == "BioCheck") {
+                    if (
+                        colourBy == "Family" ||
+                        colourBy == "Location" ||
+                        colourBy == "BioCheck" ||
+                        colourBy == "DNAstatus"
+                    ) {
                         BRbetweenLegendAndStickers.style.display = "block";
                         LegendTitleH3.style.display = "block";
                         condLog(
@@ -1395,6 +1407,8 @@ bioCheckTemplateManager.load();
                             LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
                         } else if (colourBy == "BioCheck") {
                             LegendTitle.textContent = "Bio Check status";
+                        } else if (colourBy == "DNAstatus") {
+                            LegendTitle.textContent = "Parental status";
                         }
                     } else {
                         BRbetweenLegendAndStickers.style.display = "none";
@@ -2306,7 +2320,7 @@ bioCheckTemplateManager.load();
         let thisTextColourArray = {};
         let thisColourArray = getColourArray();
         // condLog("settingForColourBy", settingForColourBy);
-        if (settingForColourBy == "Family" || settingForColourBy == "BioCheck") {
+        if (settingForColourBy == "Family" || settingForColourBy == "BioCheck" || settingForColourBy == "DNAstatus") {
             // condLog("TextClrSetting = ", txtClrSetting);
             condLog(thisColourArray.length, thisColourArray);
             let innerCode = "";
@@ -2377,8 +2391,33 @@ bioCheckTemplateManager.load();
                     if (index == BioStatuses.length - 1) {
                         innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + BioStatuses[index];
                     } else {
-                        innerCode += clrSwatchArray[3*index + 2] + " " + BioStatuses[index];
+                        innerCode += clrSwatchArray[3 * index + 2] + " " + BioStatuses[index];
                     }
+                }
+                condLog("innerCode:", innerCode);
+
+            } else if (settingForColourBy == "DNAstatus") {
+                clrSwatchUNK =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "white" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+
+                innerCode = clrSwatchUNK + " status unknown"; // <br/>" +  clrSwatchLIVING + " still living";
+
+                let DNAStatuses = [
+                    "Confirmed with DNA",
+                    "Confident",
+                    "Uncertain",
+                    "Non-biological",
+                ];
+
+                for (let index = 0; index < DNAStatuses.length; index++) {
+                    innerCode += "<br/>";
+                    // if (index == DNAStatuses.length - 1) {
+                    //     innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + DNAStatuses[index];
+                    // } else {
+                        innerCode += clrSwatchArray[3 * index + 1] +  " "  + DNAStatuses[index];
+                    // }
                 }
                 condLog("innerCode:", innerCode);
             }
@@ -4278,6 +4317,7 @@ bioCheckTemplateManager.load();
     function hexify(clr) {
         let hex = "#";
         let trans = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+        let rgbClrs = [80, 80, 80];
         if (clr.indexOf("rgb") > -1) {
             clr = clr.replace("rgb(", "").replace(")", "");
             rgbClrs = clr.split(",");
@@ -4439,6 +4479,9 @@ bioCheckTemplateManager.load();
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
+         const SVGbtnDESC = `<svg width="30" height="30" viewBox="0 0 30 30" stroke="#25422d" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 4 5 L 10 5 L 10 9 L 24 9 M 16 9 L 16 13 L 24 13 M 10 9 L 10 19 L 24 19 M 16 19 L 16 23 L 24 23 M 16 23 L 16 27 L 24 27" fill="none" />
+        </svg>`;
         
         // condLog("popup  = ", popup);
         popup
@@ -4455,7 +4498,8 @@ bioCheckTemplateManager.load();
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}&view=fanchart"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}&view=descendants">${SVGbtnDESC}</a></span>
 
                             </div>
                             <div class="birth vital">${birthString(person)}</div>
@@ -7349,6 +7393,58 @@ bioCheckTemplateManager.load();
                 return "lime";
             } else {
                 return thisColourArray[0];
+            }
+        } else if (settingForColourBy == "DNAstatus") {
+            let DNAStatuses = [
+                "unknown",
+                "Confirmed by DNA",
+                "Confident",
+                "Uncertain",
+                "Non-biological",
+            ];
+            
+            if (ahnNum == 1) {
+                return "white";
+            }
+            let childAhnNum = Math.floor(ahnNum / 2);
+            let theStatusNum = 0;
+
+            if (ahnNum % 2 == 0) {
+                // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+                if (
+                    thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father
+                ) {
+                    theStatusNum = thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father;
+                } else {
+                    return "white";
+                }
+            } else if (ahnNum > 1) {
+                // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+                if (
+                    thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother 
+                ) {
+                    theStatusNum = thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother
+                } else {
+                    return "white";
+                }
+            }
+
+                
+        //    console.log("Status For ", ahnNum, " is ", theStatusNum) ;
+
+            
+            if (theStatusNum == 30 ) {
+                return thisColourArray[1];
+            } else if (theStatusNum == 20) {
+                return thisColourArray[4];
+            } else if (theStatusNum == 10) {
+                return thisColourArray[7];
+            } else if (theStatusNum == 5) {
+                return thisColourArray[10];
+            } else {
+                return "white";
             }
         } else if (settingForColourBy == "random") {
             return thisColourArray[Math.floor(Math.random() * thisColourArray.length)];

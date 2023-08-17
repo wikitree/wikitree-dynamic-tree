@@ -420,7 +420,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
             wtViewRegistry.hideInfoPanel();
             return;
         }
-        if (p.Privacy < 50/*  && !p.Gender */) {
+        if (p.Privacy < 30/*  && !p.Gender */) {
             wtViewRegistry.showError(
                 `<p>Sorry, this HERE profile is <a href="/wiki/Privacy">Private</a> ` + p.Privacy  + " " + p.Gender + ` and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
             );
@@ -562,6 +562,9 @@ window.XTreeAncestorList = class XTreeAncestorList {
             if (thePerson.Father < 0) {
                 thePerson.Father = 100 - thePerson.Father;
             }
+            if (!thePerson["FirstName"]) {
+                thePerson["FirstName"] = thePerson["RealName"];
+            } 
             thePeopleList.add(thePerson);
         }
         // if (!ancestorData || !ancestorData[0]["ancestors"] || ancestorData[0]["ancestors"].length <= 0) {
@@ -1341,6 +1344,10 @@ window.XTreeAncestorList = class XTreeAncestorList {
         } else {
             if (!person.MiddleName) {
                 person.MiddleName = "";
+            }
+            
+            if (!person.FirstName) {
+                person.FirstName = person.RealName;
             }
 
             html += "<b>";
