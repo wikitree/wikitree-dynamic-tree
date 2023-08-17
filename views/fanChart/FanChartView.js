@@ -4439,6 +4439,9 @@ bioCheckTemplateManager.load();
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
+         const SVGbtnDESC = `<svg width="30" height="30" viewBox="0 0 30 30" stroke="#25422d" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 4 5 L 10 5 L 10 9 L 24 9 M 16 9 L 16 13 L 24 13 M 10 9 L 10 19 L 24 19 M 16 19 L 16 23 L 24 23 M 16 23 L 16 27 L 24 27" fill="none" />
+        </svg>`;
         
         // condLog("popup  = ", popup);
         popup
@@ -4455,7 +4458,8 @@ bioCheckTemplateManager.load();
 						<div class="vital-info">
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
-						    <span class="tree-links"><a href="#name=${person.getName()}"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}&view=fanchart"><img style="width:30px; height:24px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}&view=descendants">${SVGbtnDESC}</a></span>
 
                             </div>
                             <div class="birth vital">${birthString(person)}</div>
