@@ -18,41 +18,37 @@ export class CC7 {
         </p>
         <h3>Loading the Data</h3>
         <p>
-            Depending on the number of connections, the data can take over two minutes to load fully.
+            Depending on the number of connections, the data can take over two minutes to load fully,
+            sometimes more than 5 minutes. Furthermore, WikiTree currently has a limit of about 10000
+            profiles that can be retrieved, so for anyone with large numbers of connections, not all
+            connections can be retrieved.
             To reduce loading time, you can:
         </p>
         <ul>
             <li>Load fewer than the full 7 degrees.</li>
-            <li>Load only one degree at a time.</li>
+            <li>Load only one degree at a time, but be aware that, in order to provide the correct relative
+                counts, we have to load degree N-1 and N+1 when loading degree N.</li>
             <li>Save the data to a file for faster loading next time.</li>
         </ul>
-        <h3>Calculating Degree of Separation</h3>
+        <h3>Views</h3>
         <p>
-            The app shows the degree of separation between the focal person and each person on the list.
-            Here is how it works:
+            Three different views of the data are available:
         </p>
         <ul>
             <li>
-                The WikiTree API provides a list of connected people up to the requested number of degrees,
-                such as 5 degrees.
+                The <b>Table View</b> shows the most data and will always load first. It shows, amongst other things,
+                the degree of separation between the focal person and each person on the list.
             </li>
-            <li>The app calculates the degrees by linking parents to children and spouses to each other.</li>
-            <li>
-                Because of the above, the app cannot always connect people perfectly as some profiles are private
-                or unlisted, with limited information returned by the API.
-            </li>
-            <li>The degree shown will therefore sometimes be higher than the actual shortest path. For example,
-                results for CC5 may show someone at 6 degrees although they are actually at 5 or less.</li>
+            <li>The <b>Hiearchy View</b> shows the hierarchial relationships between the people in the list.</li>
+            <li>The <b>List View</b> provides a way by which you can look at particular surnames amongst your relatives.</li>
         </ul>
-        <p>The Table View, which shows the most data, will always load first.</p>
+        <p>Below are some tips related to each view.</p>
         <h3>Table View</h3>
-        <p>Here are some tips:</p>
         <h4>Sorting the Table</h4>
         <ul>
             <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
             <li>
-                Sort by Created/Modified to see new additions. (Due to a bug in the API, the Created column is
-                currently empty. We hope this will be fixed soon.)
+                Sort by Created/Modified to see new additions.
             </li>
             <li>
                 The location column sort toggles between sorting Town &rarr; Country or Country &rarr; Town on each click
@@ -137,7 +133,7 @@ export class CC7 {
             </li>
         </ul>`;
 
-    static PROFILE_FIELDS = [
+    static GET_PEOPLE_FIELDS = [
         "BirthDate",
         "BirthDateDecade",
         "BirthLocation",
@@ -160,6 +156,7 @@ export class CC7 {
         "LastNameOther",
         "Manager",
         "Managers",
+        "Meta",
         "MiddleName",
         "Mother",
         "Name",
@@ -169,11 +166,11 @@ export class CC7 {
         "Privacy",
         "RealName",
         "ShortName",
+        "Spouses",
         "Suffix",
         "Touched",
     ].join(",");
 
-    static GET_PEOPLE_FIELDS = CC7.PROFILE_FIELDS + ",Spouses";
     static GET_PEOPLE_LIMIT = 1000;
     static MAX_DEGREE = 7;
     static HIDE = true;
@@ -1756,7 +1753,8 @@ export class CC7 {
                     if (birthDate == "" && mPerson.BirthDateDecade) {
                         birthDate = mPerson.BirthDateDecade || "";
                     }
-                    return [k, mPerson.Degree < 0 ? 100 : mPerson.Degree, birthDate];
+                    const degree = +mPerson.Meta.Degrees;
+                    return [+k, degree < 0 ? 100 : degree, birthDate];
                 })
                 .sort((a, b) => {
                     if (a[1] == b[1]) {
@@ -1767,7 +1765,7 @@ export class CC7 {
                 });
         }
 
-        for (let [id, degree, birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+        for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
             const mPerson = window.people.get(id);
             if (mPerson.Hide) continue;
 
@@ -1920,8 +1918,8 @@ export class CC7 {
             };
 
             if ($("#cc7Container").length) {
-                degreeCell = "<td class='degree'>" + mPerson.Degree + "°</td>";
-                ddegree = "data-degree='" + mPerson.Degree + "'";
+                degreeCell = "<td class='degree'>" + mPerson.Meta.Degrees + "°</td>";
+                ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
                 if (mPerson.Created) {
                     created =
                         "<td class='created aDate'>" +
@@ -2662,7 +2660,7 @@ export class CC7 {
             if (!aPerson.Missing) {
                 CC7.addMissingBits(aPerson);
             }
-            const theDegree = aPerson.Degree;
+            const theDegree = aPerson.Meta.Degrees;
             const aName = new PersonName(aPerson);
             const theName = CC7.formDisplayName(aPerson, aName);
             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
@@ -2804,8 +2802,8 @@ export class CC7 {
                     CC7.addMissingBits(aMember);
 
                     if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
-                        const theDegree = aMember.Degree;
-                        if (theDegree > aPerson.Degree) {
+                        const theDegree = aMember.Meta.Degrees;
+                        if (theDegree > aPerson.Meta.Degrees) {
                             const aName = new PersonName(aMember);
                             const theName = CC7.formDisplayName(aMember, aName);
                             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
@@ -2831,8 +2829,8 @@ export class CC7 {
                             const anLi = $(
                                 `<li data-birth-date='${aMember.BirthDate}' data-father='${aMember.Father}' ` +
                                     `data-mother='${aMember.Mother}' data-id='${aMember.Id}' data-relation='${relation}' ` +
-                                    `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Degree}' ` +
-                                    `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Degree}° ` +
+                                    `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Meta.Degrees}' ` +
+                                    `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Meta.Degrees}° ` +
                                     `<span class='relation ${relation}'>${relation}</span>: ` +
                                     CC7.profileLink(linkName, theName) +
                                     ` <span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
@@ -2863,8 +2861,8 @@ export class CC7 {
         const theFirstName = theParts.get("FirstName");
         const linkName = CC7.htmlEntities(aPerson.Name);
         const anLi = $(
-            `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Degree}' ` +
-                `data-name=\"${aPerson.Name}\" data-first-name='${theFirstName}'>${aPerson.Degree}° ` +
+            `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Meta.Degrees}' ` +
+                `data-name=\"${aPerson.Name}\" data-first-name='${theFirstName}'>${aPerson.Meta.Degrees}° ` +
                 CC7.profileLink(linkName, theName) +
                 "<ul></ul></li>"
         );
@@ -3054,25 +3052,6 @@ export class CC7 {
         }
     }
 
-    static async getPeopleAtNthDegree(key, degree, start, limit) {
-        try {
-            const result = await WikiTreeAPI.postToAPI({
-                appId: CC7.APP_ID,
-                action: "getPeople",
-                keys: key,
-                nuclear: degree,
-                minGeneration: degree,
-                start: start,
-                limit: limit,
-                fields: CC7.GET_PEOPLE_FIELDS,
-            });
-            return [result[0].status, result[0].resultByKey, result[0].people];
-        } catch (error) {
-            wtViewRegistry.showError(`Could not retrieve relatives for ${key}: ${error}`);
-            return [`${error}`, [], []];
-        }
-    }
-
     static async getDegreeAction(event) {
         wtViewRegistry.clearStatus();
         window.people = new Map();
@@ -3085,35 +3064,25 @@ export class CC7 {
             CC7.showShakingTree();
             $("#cc7Container").addClass("degreeView");
             const theDegree = +$("#cc7Degree").val();
+            const degreeCounts = []; // currently this is being ignored
 
-            // We get two more degrees than necessary to ensure we can calculate the relative counts
-            // correctly. We make separate (async) calls for each degree in order to be able to identify
-            // the extra degrees so we can hide them from the display and not include them in the degree counts.
             const starttime = performance.now();
-            const [[resultByKeyAtD, countAtD, dIsPartial], [, countAtDm1, m1IsPartial], [, countAtDp1, p1IsPartial]] =
-                await Promise.all([
-                    CC7.collectPeopelAtNthDegree(wtId, theDegree),
-                    CC7.collectPeopelAtNthDegree(wtId, theDegree - 1, CC7.HIDE),
-                    CC7.collectPeopelAtNthDegree(wtId, theDegree + 1, CC7.HIDE),
-                ]);
+            const [resultByKeyAtD, countAtD, dIsPartial] = await CC7.collectPeopelAtNthDegree(
+                wtId,
+                theDegree,
+                degreeCounts
+            );
             console.log(
-                `Retrieved ${countAtD}, ${countAtDm1}, ${countAtDp1} profiles at degrees ${
-                    theDegree - 1
-                }, ${theDegree}, ${theDegree + 1} in ${performance.now() - starttime}ms`
+                `Retrieved ${countAtD} profiles at degrees ${theDegree - 1} to ${theDegree + 1} in ${
+                    performance.now() - starttime
+                }ms`
             );
             if (dIsPartial) {
                 wtViewRegistry.showWarning(
-                    `Due to limits imposed by the API, we could not retrieve all the people at degree ${theDegree}. Relative counts may therefore also be incorrect.`
-                );
-            } else if (m1IsPartial || p1IsPartial) {
-                wtViewRegistry.showWarning(
-                    `Due to limits imposed by the API, we could not retrieve all the required data, so relative counts may be incorrect.`
+                    `Due to limits imposed by the API, we could not retrieve all required data. Relative counts may also be incorrect.`
                 );
             }
 
-            $("#oneDegreeList").remove();
-            const oneDegreeList = $("<ol id='oneDegreeList'></ol>");
-            $("#cc7Container").append(oneDegreeList);
             if (countAtD == 0) {
                 CC7.hideShakingTree();
                 return;
@@ -3121,36 +3090,43 @@ export class CC7 {
             window.rootId = +resultByKeyAtD[wtId].Id;
             CC7.populateRelativeArrays();
             CC7.hideShakingTree();
+            $("#degreesTable").remove();
+            $("#cc7Container").append(
+                $("<table id='degreesTable'><tr><th>Degree</th></tr><tr><th>Connections</th></tr></table>")
+            );
+            CC7.buildDegreeTableData(degreeCounts, theDegree, theDegree);
             CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
         }
     }
 
-    static async collectPeopelAtNthDegree(wtId, theDegree, hide = !CC7.HIDE) {
+    // Not only get people at degree 'theDegree' from 'wtid', but also those at degree (theDegree - 1) and
+    // (theDgree + 1), but flag the additional people as hidden. We get the extra degrees so that we can calculate
+    // the relatives counts correctly for the theDegree people.
+    static async collectPeopelAtNthDegree(wtId, theDegree, degreeCounts) {
         let start = 0;
         let isPartial = false;
         const limit = CC7.GET_PEOPLE_LIMIT;
-        console.log(`Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}, hide:${hide}`);
+        console.log(`Calling getPeople at Nth degree, key:${wtId}, degree:${theDegree}, start:${start}`);
         let callNr = 1;
         const starttime = performance.now();
-        const [status, resultByKey, peopleData] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
-        let profiles;
-        if (status != "") {
-            console.warn(`A problem occurred while requesting relatives for ${wtId} at degree ${theDegree}: ${status}`);
-            profiles = [];
+        const [status, resultByKey, peopleData] = await CC7.getPeopleForNthDegree(wtId, theDegree, start, limit);
+        if (status != "" && peopleData && peopleData.length > 0) {
             isPartial = true;
-        } else {
-            profiles = peopleData ? Object.values(peopleData) : [];
         }
-        if (profiles.length == 0 && resultByKey[wtId]?.status) {
-            wtViewRegistry.showError(resultByKey[wtId]?.status);
+        let profiles = peopleData ? Object.values(peopleData) : [];
+        if (profiles.length == 0) {
+            const reason = resultByKey[wtId]?.status || status;
+            wtViewRegistry.showError(`Could not retrieve relatives for ${wtId}. Reason: ${reason}`);
         }
-        console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+        console.log(
+            `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
+        );
         let resultByKeyReturned = {};
         let profileCount = 0;
 
         while (profiles.length > 0) {
             profileCount += profiles.length;
-            CC7.addPeople(profiles, theDegree, hide);
+            CC7.addPeople(profiles, degreeCounts, theDegree, theDegree);
             Object.assign(resultByKeyReturned, resultByKey);
 
             // Check if we're done
@@ -3162,15 +3138,15 @@ export class CC7 {
             console.log(
                 `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
             );
-            const [sstatus, , ancestorJson] = await CC7.getPeopleAtNthDegree(wtId, theDegree, start, limit);
+            const [sstatus, , ancestorJson] = await CC7.getPeopleForNthDegree(wtId, theDegree, start, limit);
             if (sstatus != "") {
                 console.warn(`Partial results obtained when requesting relatives for ${wtId}: ${sstatus}`);
-                profiles = [];
                 isPartial = true;
-            } else {
-                profiles = ancestorJson ? Object.values(ancestorJson) : [];
             }
-            console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+            profiles = ancestorJson ? Object.values(ancestorJson) : [];
+            console.log(
+                `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
+            );
         }
         console.log(
             `Retrieved ${profileCount} degree ${theDegree} profiles with ${callNr} API call(s) in ${
@@ -3180,15 +3156,37 @@ export class CC7 {
         return [resultByKeyReturned, profileCount, isPartial];
     }
 
-    static addPeople(profiles, theDegree = -1, hide = !CC7.HIDE) {
+    static async getPeopleForNthDegree(key, degree, start, limit) {
+        // We get two more degrees than necessary to ensure we can calculate the relative counts
+        // correctly.
+        try {
+            const result = await WikiTreeAPI.postToAPI({
+                appId: CC7.APP_ID,
+                action: "getPeople",
+                keys: key,
+                nuclear: degree + 1,
+                minGeneration: degree - 1,
+                start: start,
+                limit: limit,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            });
+            return [result[0].status, result[0].resultByKey, result[0].people];
+        } catch (error) {
+            console.warn(`Could not retrieve relatives at degrees ${degree - 1} to ${degree + 1} for ${key}: ${error}`);
+            return [`${error}`, [], []];
+        }
+    }
+
+    static addPeople(profiles, degreeCounts, minDegree, maxDegree) {
         let nrAdded = 0;
+        let maxDegreeFound = -1;
         for (const person of profiles) {
             let id = +person.Id;
             if (id < 0) {
                 // This is a private profile
                 // WT returns negative ids for private profiles, but they seem to be unique only
                 // within the result returned by the call (i.e. per page). However, since they are
-                // different people, we give them uniq ids.
+                // different people, we give them unique ids.
                 if (window.people.has(id)) {
                     id = window.cc7MinPrivateId - 1;
                 }
@@ -3202,8 +3200,8 @@ export class CC7 {
                 }
                 // This is a new person, add them to the tree
                 person.Parents = [person.Father, person.Mother];
-                person.Degree = theDegree;
-                person.Hide = hide;
+                const personDegree = typeof person.Meta?.Degrees === "undefined" ? -1 : +person.Meta.Degrees;
+                person.Hide = personDegree < minDegree || personDegree > maxDegree;
                 // To be filled later
                 person.Parent = [];
                 person.Spouse = [];
@@ -3213,12 +3211,22 @@ export class CC7 {
 
                 window.people.set(id, person);
                 ++nrAdded;
+
+                // Update the degree counts
+                if (degreeCounts[personDegree]) {
+                    degreeCounts[personDegree] = degreeCounts[personDegree] + 1;
+                } else {
+                    degreeCounts[personDegree] = 1;
+                }
+                if (personDegree > maxDegreeFound) {
+                    maxDegreeFound = personDegree;
+                }
             } else {
                 console.log(`${person.Name} (${id}) not added since they are already present`);
             }
         }
         console.log(`Added ${nrAdded} people to the tree`);
-        return nrAdded;
+        return [nrAdded, maxDegreeFound];
     }
 
     static async getConnectionsAction(event) {
@@ -3297,18 +3305,11 @@ export class CC7 {
     static async getConnections(maxWantedDegree) {
         CC7.showShakingTree();
         const wtId = wtViewRegistry.getCurrentWtId();
-        const starttime = performance.now();
-        // We get one more degree than necessary to ensure we can calculate the relative counts
-        // correctly. We make a separate (async) call in order to be able to identify the extra
-        // degree so we can hide them from the display and not include them in the degree counts.
-        const [resultByKey, [, , isPartial]] = await Promise.all([
-            CC7.makePagedCallAndAddPeople(wtId, maxWantedDegree),
-            CC7.collectPeopelAtNthDegree(wtId, maxWantedDegree + 1, CC7.HIDE),
-        ]);
-        console.log(
-            `Retrieved a total of ${window.people.size} unique CC${maxWantedDegree + 1} profiles in ${
-                performance.now() - starttime
-            }ms`
+        const degreeCounts = {};
+        const [resultByKey, isPartial, actualMaxDegree] = await CC7.makePagedCallAndAddPeople(
+            wtId,
+            maxWantedDegree,
+            degreeCounts
         );
         if (isPartial) {
             wtViewRegistry.showWarning(
@@ -3320,59 +3321,6 @@ export class CC7 {
         window.rootId = +resultByKey[wtId]?.Id;
         CC7.populateRelativeArrays();
 
-        // Calculate and assign degrees
-        const degreeCounts = {};
-        const root = window.people.get(window.rootId);
-        if (root) root.Degree = 0;
-        let actualMaxDegree = 0;
-        const q = [window.rootId];
-        while (q.length > 0) {
-            const pId = q.shift();
-            const p = window.people.get(+pId);
-            if (p) {
-                const newDegree = p.Degree + 1;
-                if (newDegree <= 0) {
-                    console.error(
-                        `This should be impossible. Person ${p.Name} found with no degree number on the degree q`
-                    );
-                    continue;
-                }
-                // Add the next degree people from this person to the queue only if they don't
-                // already have a degree
-                for (const relation of ["Parent", "Spouse", "Child", "Sibling"]) {
-                    const relIds = CC7.getIdsOf(p[relation]);
-                    //console.log(`Checking ${relIds.length} ${relation}s of ${p.Name} (${p.Id})`);
-                    for (const relId of relIds) {
-                        const relative = window.people.get(relId);
-                        if (relative && relative.Degree < 0) {
-                            // the relative exists and doesn't have a degree
-                            // Assign them a degree and add them to the queue so their relatives can be inspected
-                            if (newDegree > actualMaxDegree) {
-                                actualMaxDegree = newDegree;
-                            }
-                            relative.Degree = newDegree;
-                            q.push(relId);
-
-                            // Update the degree counts
-                            if (degreeCounts[newDegree]) {
-                                degreeCounts[newDegree] = degreeCounts[newDegree] + 1;
-                            } else {
-                                degreeCounts[newDegree] = 1;
-                            }
-                            //console.log(`Assigned ${relative.Name} (${relative.Id}) degree ${degree}`);
-                        }
-                    }
-                }
-            }
-        }
-        // Count unknown degree profiles
-        const nrUknownDegrees = [...window.people.values()].reduce(
-            (acc, person) => (person.Degree < 0 ? ++acc : acc),
-            0
-        );
-        if (nrUknownDegrees > 0) {
-            degreeCounts[-1] = nrUknownDegrees;
-        }
         window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
         CC7.hideShakingTree();
         if ($("#degreesTable").length != 0) {
@@ -3383,7 +3331,8 @@ export class CC7 {
                 "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
             )
         );
-        CC7.buildDegreeTableData(degreeCounts, actualMaxDegree);
+        CC7.buildDegreeTableData(degreeCounts, 1, window.cc7Degree);
+        const root = window.people.get(window.rootId);
         CC7.addPeopleTable(
             root ? `CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}` : ""
         );
@@ -3393,7 +3342,10 @@ export class CC7 {
         return arrayOfPeople.map((p) => +p.Id);
     }
 
-    static async makePagedCallAndAddPeople(reqId, upToDegree) {
+    static async makePagedCallAndAddPeople(reqId, upToDegree, degreeCounts) {
+        // We get one more degree than necessary to ensure we can calculate the relative counts
+        // correctly.
+        const upToDegreeToGet = upToDegree + 1;
         if ($("#degreesTable").length == 0) {
             $("#cc7Container").append(
                 $(
@@ -3406,6 +3358,8 @@ export class CC7 {
         let callNr = 0;
         const limit = CC7.GET_PEOPLE_LIMIT;
         let resultByKey = {};
+        let maxDegree = -1;
+        let isPartial = false;
 
         const starttime = performance.now();
         let getMore = true;
@@ -3419,29 +3373,43 @@ export class CC7 {
 
             if (callNr == 1) {
                 console.log(
-                    `Calling getPeople with keys:${reqId}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Calling getPeople with key:${reqId}, nuclear:${upToDegreeToGet}, start:${start}, limit:${limit}`
                 );
             } else {
                 console.log(
-                    `Retrieving getPeople result page ${callNr}. keys:${reqId}, nuclear:${upToDegree}, start:${start}, limit:${limit}`
+                    `Retrieving getPeople result page ${callNr}. keys:${reqId}, nuclear:${upToDegreeToGet}, start:${start}, limit:${limit}`
                 );
             }
-            const [keysResult, peopleData] = await CC7.getPeopleUpToDegree([reqId], upToDegree, start, limit);
-            if (peopleData.length == 0 && keysResult[reqId]?.status) {
-                wtViewRegistry.showError(keysResult[reqId]?.status);
+            const starttime = performance.now();
+            const [status, keysResult, peopleData] = await CC7.getPeopleUpToDegree(
+                [reqId],
+                upToDegreeToGet,
+                start,
+                limit
+            );
+            const callTime = performance.now() - starttime;
+            if (status != "" && peopleData && peopleData.length > 0) {
+                isPartial = true;
             }
+            const profiles = peopleData ? Object.values(peopleData) : [];
+            if (profiles.length == 0) {
+                const reason = keysResult[reqId]?.status || status;
+                wtViewRegistry.showError(`Could not retrieve relatives for ${reqId}. Reason: ${reason}`);
+            }
+            console.log(
+                `Received ${profiles.length} CC${upToDegreeToGet} profiles for start:${start} in ${callTime}ms`
+            );
             if (callNr == 1) {
                 resultByKey = keysResult;
             }
-            const profiles = peopleData ? Object.values(peopleData) : [];
-            console.log(`Received ${profiles.length} CC${upToDegree} profiles for start:${start}`);
 
             // We're re-using the degrees table here to show response counts as a way of a progress bar
             const degTable = document.getElementById("degreesTable");
             degTable.rows[2].cells[callNr].innerHTML = profiles.length;
 
             // Note: getPeople does not guarantee return order
-            CC7.addPeople(profiles);
+            const [nrAdded, largestDegree] = CC7.addPeople(profiles, degreeCounts, 0, upToDegree);
+            maxDegree = Math.max(maxDegree, largestDegree);
             degTable.rows[3].cells[callNr].innerHTML = window.people.size;
 
             start += limit;
@@ -3449,31 +3417,29 @@ export class CC7 {
             getMore = profiles.length == limit;
         }
         console.log(
-            `Retrieved ${window.people.size} unique CC${upToDegree} profiles with ${callNr} API call(s) in ${
+            `Retrieved ${window.people.size} unique CC${upToDegreeToGet} profiles with ${callNr} API call(s) in ${
                 performance.now() - starttime
             }ms`
         );
-        return resultByKey;
+        return [resultByKey, isPartial, maxDegree];
     }
 
     static async getPeopleUpToDegree(ids, depth, start = 0, limit = CC7.GET_PEOPLE_LIMIT) {
-        const result = await WikiTreeAPI.postToAPI({
-            appId: CC7.APP_ID,
-            action: "getPeople",
-            keys: ids.join(","),
-            start: start,
-            limit: limit,
-            nuclear: depth,
-            fields: CC7.GET_PEOPLE_FIELDS,
-        });
-        const status = result[0]["status"];
-        if (status != "") {
-            console.warn(`getpeople returned status: ${status}`);
+        try {
+            const result = await WikiTreeAPI.postToAPI({
+                appId: CC7.APP_ID,
+                action: "getPeople",
+                keys: ids.join(","),
+                start: start,
+                limit: limit,
+                nuclear: depth,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            });
+            return [result[0]["status"], result[0]["resultByKey"], result[0]["people"]];
+        } catch (error) {
+            console.warn(`Could not retrieve relatives up to degree ${depth} for ${key}: ${error}`);
+            return [`${error}`, [], []];
         }
-        const resultByKey = result[0]["resultByKey"];
-        const people = result[0]["people"];
-
-        return [resultByKey, people];
     }
 
     static makeFilename() {
@@ -3538,7 +3504,7 @@ export class CC7 {
             const fileName = CC7.makeFilename();
             CC7.downloadArray([[window.rootId, window.cc7Degree], ...window.people.entries()], fileName);
         } finally {
-            this.expandPeople(window.people);
+            CC7.expandPeople(window.people);
         }
     }
 
@@ -3556,7 +3522,16 @@ export class CC7 {
 
     static expandPeople(peopleMap) {
         // Replace ids with people objects
+        let oldFormat = false;
         for (const person of peopleMap.values()) {
+            if (typeof person.Meta === "undefined") {
+                // This is an old format file (before Meta was present)
+                oldFormat = true;
+                if (typeof person.Degree != "undefined") {
+                    person.Meta = { Degrees: person.Degree };
+                }
+                delete person.Degree;
+            }
             for (const relation of ["Parent", "Sibling", "Spouse", "Child"]) {
                 if (person[relation]) {
                     const peeps = [];
@@ -3568,7 +3543,7 @@ export class CC7 {
                 }
             }
         }
-        return peopleMap;
+        return [peopleMap, oldFormat];
     }
 
     static handleFileUpload(event) {
@@ -3582,11 +3557,18 @@ export class CC7 {
         reader.onload = async function (e) {
             const contents = e.target.result;
             try {
+                let oldFormat = false;
                 const peeps = JSON.parse(contents);
                 const [r, x] = peeps.shift();
-                window.people = CC7.expandPeople(new Map(peeps));
+                [window.people, oldFormat] = CC7.expandPeople(new Map(peeps));
                 window.rootId = r;
                 window.cc7Degree = Number.isFinite(x) ? (window.cc7Degree = x) : 0;
+                if (oldFormat) {
+                    wtViewRegistry.showNotice(
+                        "This file is still in an old format. It is recommended that you regenerate it " +
+                            "after reloading profiles from WikiTree."
+                    );
+                }
             } catch (error) {
                 CC7.hideShakingTree();
                 wtViewRegistry.showError(`The input file is not valid: ${error}`);
@@ -3599,28 +3581,25 @@ export class CC7 {
             let maxDegree = 0;
             for (const aPerson of window.people.values()) {
                 if (aPerson.Hide) continue;
-                if (degreeCounts[aPerson.Degree]) {
-                    degreeCounts[aPerson.Degree] = degreeCounts[aPerson.Degree] + 1;
+                if (degreeCounts[aPerson.Meta.Degrees]) {
+                    degreeCounts[aPerson.Meta.Degrees] = degreeCounts[aPerson.Meta.Degrees] + 1;
                 } else {
-                    degreeCounts[aPerson.Degree] = 1;
+                    degreeCounts[aPerson.Meta.Degrees] = 1;
                 }
-                if (aPerson.Degree > maxDegree) {
-                    maxDegree = aPerson.Degree;
+                if (aPerson.Meta.Degrees > maxDegree) {
+                    maxDegree = aPerson.Meta.Degrees;
                 }
             }
             if (window.cc7Degree == 0) window.cc7Degree = maxDegree;
+            const theDegree = Math.min(window.cc7Degree, CC7.MAX_DEGREE);
             CC7.hideShakingTree();
-            CC7.addPeopleTable(
-                `CC${Math.min(window.cc7Degree, CC7.MAX_DEGREE)} for ${new PersonName(root).withParts(
-                    CC7.WANTED_NAME_PARTS
-                )}`
-            );
+            CC7.addPeopleTable(`CC${theDegree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}`);
             $("#cc7Container #hierarchyViewButton").before(
                 $(
                     "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
                 )
             );
-            CC7.buildDegreeTableData(degreeCounts, maxDegree);
+            CC7.buildDegreeTableData(degreeCounts, 1, theDegree);
             CC7.handleDegreeChange(window.cc7Degree);
         };
 
@@ -3633,7 +3612,7 @@ export class CC7 {
         }
     }
 
-    static buildDegreeTableData(degreeCounts, maxDegree) {
+    static buildDegreeTableData(degreeCounts, fromDegree, toDegree) {
         function addTableCol(i, degreeSum) {
             $("#degreesTable tr")
                 .eq(0)
@@ -3641,12 +3620,14 @@ export class CC7 {
             $("#degreesTable tr")
                 .eq(1)
                 .append($(`<td>${degreeCounts[i]}</td>`));
-            $("#degreesTable tr")
-                .eq(2)
-                .append($(`<td>${degreeSum}</td>`));
+            if (fromDegree == 1) {
+                $("#degreesTable tr")
+                    .eq(2)
+                    .append($(`<td>${degreeSum}</td>`));
+            }
         }
         let degreeSum = 0;
-        for (let i = 1; i <= maxDegree; ++i) {
+        for (let i = fromDegree; i <= toDegree; ++i) {
             degreeSum = degreeSum + degreeCounts[i];
             addTableCol(i, degreeSum);
         }
