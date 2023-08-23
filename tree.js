@@ -231,7 +231,7 @@ window.ViewRegistry = class ViewRegistry {
             this.session.saveCookies();
 
             this.clearStatus();
-            if (this.currentView && this.currentView.id != view.id) {
+            if (this.currentView && this.currentView.id != view.id && this.currentView.close) {
                 if (typeof this.currentView.close === "function") {
                     try {
                         this.currentView.close();

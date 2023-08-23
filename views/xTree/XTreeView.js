@@ -407,6 +407,8 @@ window.XTreeAncestorList = class XTreeAncestorList {
         // If the profile is private and the viewing user is not on the Trusted List, we still might not be able to continue.
         let p = data[0].person;
         XTreeView.PrimaryPerson = p;
+        // console.log(p);
+
         if (!p?.Name) {
             let err = `The starting profile data could not be retrieved.`;
             if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
@@ -418,9 +420,9 @@ window.XTreeAncestorList = class XTreeAncestorList {
             wtViewRegistry.hideInfoPanel();
             return;
         }
-        if (p.Privacy < 50 && !p.Gender) {
+        if (p.Privacy < 30/*  && !p.Gender */) {
             wtViewRegistry.showError(
-                `<p>Sorry, this profile is <a href="/wiki/Privacy">Private</a> and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
+                `<p>Sorry, this HERE profile is <a href="/wiki/Privacy">Private</a> ` + p.Privacy  + " " + p.Gender + ` and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
             );
             wtViewRegistry.hideInfoPanel();
             return;
@@ -547,7 +549,23 @@ window.XTreeAncestorList = class XTreeAncestorList {
         }
 
         for (const index in ancestorData) {
-            thePeopleList.add(ancestorData[index]);
+            let thePerson = ancestorData[index];
+            if (thePerson.Id < 0) {
+                thePerson.Id = 100 - thePerson.Id;
+                thePerson["Name"] = "Private-" + thePerson.Id;
+                thePerson["FirstName"] = "Private";
+                thePerson["LastNameAtBirth"] = "TBD!";
+            }
+            if (thePerson.Mother < 0) {
+                thePerson.Mother = 100 - thePerson.Mother;
+            }
+            if (thePerson.Father < 0) {
+                thePerson.Father = 100 - thePerson.Father;
+            }
+            if (!thePerson["FirstName"]) {
+                thePerson["FirstName"] = thePerson["RealName"];
+            } 
+            thePeopleList.add(thePerson);
         }
         // if (!ancestorData || !ancestorData[0]["ancestors"] || ancestorData[0]["ancestors"].length <= 0) {
         //     wtViewRegistry.showError(`Error: No ancestors found for ${p.Name}`);
@@ -560,6 +578,42 @@ window.XTreeAncestorList = class XTreeAncestorList {
         // }
 
         XTreeView.myAhnentafel.update(thePeopleList[p.Id]);
+
+         let relativeName = [
+             "kid",
+             "self",
+             "Father",
+             "Mother",
+             "Grandfather",
+             "Grandmother",
+             "Grandfather",
+             "Grandmother",
+             "Great-Grandfather",
+             "Great-Grandmother",
+             "Great-Grandfather",
+             "Great-Grandmother",
+             "Great-Grandfather",
+             "Great-Grandmother",
+             "Great-Grandfather",
+             "Great-Grandmother",
+         ];
+
+         // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+         for (var a = 1; a < 16; a++) {
+             let thisPeep = thePeopleList[XTreeView.myAhnentafel.list[a]];
+             // condLog("Peep ",a, thisPeep);
+             if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                 thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                 if (a % 2 == 0) {
+                     thisPeep._data["Gender"] = "Male";
+                 } else {
+                     thisPeep._data["Gender"] = "Female";
+                 }
+                 // condLog("FOUND a TBD!", thisPeep);
+             }
+         }
+
+
         // XTreeView.myAhnentafel.listOfAncestorsForFanChart();
         // Display each generation recursively, starting with our initial profile/person.
         // let people = new Array(p);
@@ -1291,6 +1345,10 @@ window.XTreeAncestorList = class XTreeAncestorList {
             if (!person.MiddleName) {
                 person.MiddleName = "";
             }
+            
+            if (!person.FirstName) {
+                person.FirstName = person.RealName;
+            }
 
             html += "<b>";
             html += `${person.FirstName} ${person.MiddleName} `;
@@ -1322,8 +1380,8 @@ window.XTreeAncestorList = class XTreeAncestorList {
             person = thePeopleList[XTreeView.myAhnentafel.list[ahnNum]];
         }
         let thisPeep = thePeopleList[person._data.Id];
-        console.log("POPUP",person);
-        console.log("POPUP peep",thisPeep._data.Codes);
+        // console.log("POPUP",person);
+        // console.log("POPUP peep",thisPeep._data.Codes);
         var photoUrl = person.getPhotoUrl(75),
             treeUrl = window.location.pathname + "?id=" + person.getName();
 
@@ -1345,7 +1403,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
         let displayName = person._data.BirthName ? person._data.BirthName : person._data.BirthNamePrivate;
     
 
-        console.log("Photo", photoUrl);
+        // console.log("Photo", photoUrl);
 
         let zoomFactor = Math.max(1, 1 / XTreeView.currentScaleFactor);
 

@@ -1,4 +1,4 @@
-class DescendantsView extends View {
+window.DescendantsView = class DescendantsView extends View {
     meta() {
         return {
             title: "Descendants",
