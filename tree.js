@@ -256,7 +256,12 @@ window.ViewRegistry = class ViewRegistry {
         } else {
             infoPanel.classList.add("hidden");
             if (wtID) {
-                this.showError(`Person not found for WikiTree ID ${wtID}.`);
+                const status = data[0]["status"];
+                if (status == "Illegal WikiTree ID") {
+                    this.showError(`Person not found for WikiTree ID ${wtID}.`);
+                } else {
+                    this.showError(`An unexpected error occurred: ${status}. Refreshing the page might help.`);
+                }
             } else {
                 this.showError("Please enter a WikiTree ID.");
             }
