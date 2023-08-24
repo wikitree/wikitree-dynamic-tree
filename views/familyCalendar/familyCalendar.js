@@ -159,6 +159,7 @@ window.CalendarView = class CalendarView extends View {
                                 $('#view-container').fullCalendar('changeView', 'listDay');
                                 $('.fc-customButton').removeClass('active-view-button');
                                 $('.fc-listDay-button').addClass('active-view-button');
+                                $("td.fc-list-item-time").css("display", "none");
                             }
                         },
                         listWeek: {
@@ -167,6 +168,7 @@ window.CalendarView = class CalendarView extends View {
                                 $('#view-container').fullCalendar('changeView', 'listWeek');
                                 $('.fc-customButton').removeClass('active-view-button');
                                 $('.fc-listWeek-button').addClass('active-view-button');
+                                $("td.fc-list-item-time").css("display", "none");
                             }
                         },
                         defaultView: { // Add this new button
