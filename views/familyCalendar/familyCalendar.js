@@ -15,10 +15,9 @@ window.CalendarView = class CalendarView extends View {
             keys: person_id,
             ancestors: 10,
             siblings: 1,
-            fields: "Derived.LongName,BirthDate,DeathDate,Name",
+            fields: "Derived.ShortName,BirthDate,DeathDate,Name",
         }).then(function (data) {
             $('#view-container').fullCalendar().fullCalendar('destroy');
-            console.log(data)
             // Define an error message for permission denial
             const errorMessage = "Ancestor/Descendant permission denied.";
 
@@ -37,6 +36,7 @@ window.CalendarView = class CalendarView extends View {
                 wtViewRegistry.showError(err);
                 wtViewRegistry.hideInfoPanel();
             } else {
+                const wtIdTextValue = $('#wt-id-text').val();
                 // Extract the people data from the API response
                 const peopleData = data[0].people;
                 // Create an array to store all events
@@ -50,10 +50,11 @@ window.CalendarView = class CalendarView extends View {
                     }
 
                     // Create an event object for birth date
+                    var birthyear = new Date(person.BirthDate).getFullYear();
                     const eventBirth = {
-                        title: `${person.LongName} - Birth`,
+                        title: `${person.ShortName} - Birth ${birthyear}`,
                         start: person.BirthDate,
-                        url: `https://www.wikitree.com/wiki/${person.Name}`
+                        url: `https://www.wikitree.com/index.php?title=Special:Relationship&action=calculate&person1Name=${wtIdTextValue}&person2Name=${person.Name}`
                     };
 
                     // Push the event object to the events array
@@ -61,11 +62,11 @@ window.CalendarView = class CalendarView extends View {
 
                     // Check if DeathDate exists and is not "0000-00-00", then create event for death date
                     if (person.DeathDate && person.DeathDate !== '0000-00-00') {
+                        var deathyear = new Date(person.DeathDate).getFullYear();
                         const eventDeath = {
-                            title: `${person.LongName} - Death`,
+                            title: `${person.ShortName} - Death ${deathyear}`,
                             start: person.DeathDate,
-                            url: `https://www.wikitree.com/wiki/${person.Name}`,
-                            color: '#000000'
+                            url: `https://www.wikitree.com/index.php?title=Special:Relationship&action=calculate&person1Name=${wtIdTextValue}&person2Name=${person.Name}`
                         };
                         allEvents.push(eventDeath);
                     }
@@ -78,11 +79,13 @@ window.CalendarView = class CalendarView extends View {
                 // Initialize FullCalendar inside the .then() block
                 $('#view-container').fullCalendar({
                     events: allEvents,
-                    eventClick: function (info) {
-                        if (info.event.url) {
-                            window.open(info.event.url);
-                            return false;
-                        }
+                    eventRender: function (event, element) {
+                        element.on('mouseenter', function () {
+                            $(this).css('background-color', '#25422d');
+                        });
+                        element.on('mouseleave', function () {
+                            $(this).css('background-color', '');
+                        });
                     },
                     showNonCurrentDates: false,
                     fixedWeekCount: false,
@@ -117,6 +120,11 @@ window.CalendarView = class CalendarView extends View {
 
                         // Add the events for the current view to the calendar
                         $('#view-container').fullCalendar('addEventSource', eventsToShow);
+
+                        // Remove the active class from all buttons
+                        $('.fc-customButton').removeClass('active-view-button');
+                        // Add the active class to the default button (month view)
+                        $('.fc-defaultView-button').addClass('active-view-button');
                     },
                     customButtons: {
                         printCalendar: {
@@ -144,19 +152,46 @@ window.CalendarView = class CalendarView extends View {
                                     originalHeaderRight.style.display = '';
                                 });
                             }
+                        },
+                        listDay: {
+                            text: 'day',
+                            click: function () {
+                                $('#view-container').fullCalendar('changeView', 'listDay');
+                                $('.fc-customButton').removeClass('active-view-button');
+                                $('.fc-listDay-button').addClass('active-view-button');
+                            }
+                        },
+                        listWeek: {
+                            text: 'week',
+                            click: function () {
+                                $('#view-container').fullCalendar('changeView', 'listWeek');
+                                $('.fc-customButton').removeClass('active-view-button');
+                                $('.fc-listWeek-button').addClass('active-view-button');
+                            }
+                        },
+                        defaultView: { // Add this new button
+                            text: 'month',
+                            click: function () {
+                                $('#view-container').fullCalendar('changeView', 'month');
+                                $('.fc-customButton').removeClass('active-view-button');
+                                $('.fc-defaultView-button').addClass('active-view-button');
+                            }
                         }
                     },
                     header: {
-                        left: 'printCalendar',
+                        left: 'defaultView,listWeek,listDay',
                         center: 'title',
-                        right: 'today prev,next'
+                        right: 'today prev,next printCalendar',
                     }
                 });
 
+                $(document).ready(function () {
+                    $(".fc-day-number").css("font-size", "large");
+                    $("a").css("text-decoration", "none");
+                    $("td.fc-today").css("background-color", "#FFC");
+                    $("body").css("background", "#FFF");
+                });
             }
-            $(document).ready(function () {
-                $(".fc-day-number").css("font-size", "large");
-            });
         });
     }
 };
