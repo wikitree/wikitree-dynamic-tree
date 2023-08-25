@@ -17,7 +17,8 @@ window.CalendarView = class CalendarView extends View {
             siblings: 1,
             fields: "Derived.ShortName,BirthDate,DeathDate,Name",
         }).then(function (data) {
-            $('#view-container').fullCalendar().fullCalendar('destroy');
+            $('#view-container').append($("<div id='cal-container'>"));
+            $('#cal-container').fullCalendar().fullCalendar('destroy');
             // Define an error message for permission denial
             const errorMessage = "Ancestor/Descendant permission denied.";
 
@@ -77,7 +78,7 @@ window.CalendarView = class CalendarView extends View {
                 var currentMonth;
                 var currentYear;
                 // Initialize FullCalendar inside the .then() block
-                $('#view-container').fullCalendar({
+                $('#cal-container').fullCalendar({
                     events: allEvents,
                     eventRender: function (event, element) {
                         element.on('mouseenter', function () {
@@ -95,7 +96,7 @@ window.CalendarView = class CalendarView extends View {
                         // Get the current start and end dates being displayed in the current view
                         const startDate = view.start;
                         const endDate = view.end;
-                        var currentDate = $('#view-container').fullCalendar('getDate');
+                        var currentDate = $('#cal-container').fullCalendar('getDate');
                         currentMonth = currentDate.format('MMM');
                         currentYear = currentDate.year();
                         // Create an array to store the events for the current view
@@ -116,10 +117,10 @@ window.CalendarView = class CalendarView extends View {
                         }
 
                         // Clear the existing events on the calendar
-                        $('#view-container').fullCalendar('removeEvents');
+                        $('#cal-container').fullCalendar('removeEvents');
 
                         // Add the events for the current view to the calendar
-                        $('#view-container').fullCalendar('addEventSource', eventsToShow);
+                        $('#cal-container').fullCalendar('addEventSource', eventsToShow);
 
                         // Remove the active class from all buttons
                         $('.fc-customButton').removeClass('active-view-button');
@@ -156,7 +157,7 @@ window.CalendarView = class CalendarView extends View {
                         listDay: {
                             text: 'day',
                             click: function () {
-                                $('#view-container').fullCalendar('changeView', 'listDay');
+                                $('#cal-container').fullCalendar('changeView', 'listDay');
                                 $('.fc-customButton').removeClass('active-view-button');
                                 $('.fc-listDay-button').addClass('active-view-button');
                             }
@@ -164,7 +165,7 @@ window.CalendarView = class CalendarView extends View {
                         listWeek: {
                             text: 'week',
                             click: function () {
-                                $('#view-container').fullCalendar('changeView', 'listWeek');
+                                $('#cal-container').fullCalendar('changeView', 'listWeek');
                                 $('.fc-customButton').removeClass('active-view-button');
                                 $('.fc-listWeek-button').addClass('active-view-button');
                             }
@@ -172,7 +173,7 @@ window.CalendarView = class CalendarView extends View {
                         defaultView: { // Add this new button
                             text: 'month',
                             click: function () {
-                                $('#view-container').fullCalendar('changeView', 'month');
+                                $('#cal-container').fullCalendar('changeView', 'month');
                                 $('.fc-customButton').removeClass('active-view-button');
                                 $('.fc-defaultView-button').addClass('active-view-button');
                             }
