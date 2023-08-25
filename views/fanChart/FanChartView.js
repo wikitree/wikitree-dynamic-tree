@@ -53,7 +53,7 @@ bioCheckTemplateManager.load();
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "11 August 2023";
+    const AboutUpdateDate = "25 August 2023";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -897,7 +897,7 @@ bioCheckTemplateManager.load();
                                 // { value: "numChildren", text: "number of children" },
                                 // { value: "numSiblings", text: "number of all siblings" },
                                 // { value: "numFullSiblings", text: "number of full siblings only" },
-                                // { value: "numSpouses", text: "number of spouses" },
+                                { value: "numSpouses", text: "number of spouses" },
                             ],
                             defaultValue: "age",
                         },
@@ -1383,6 +1383,8 @@ bioCheckTemplateManager.load();
                         );
                         if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
                             LegendTitle.textContent = "Age at death";
+                        } else if (colourBy == "Family" && colour_options_specifyByFamily == "numSpouses") {
+                            LegendTitle.textContent = "Number of spouses";
                         } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
                             LegendTitle.textContent = "Birth Country";
                         } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
@@ -2371,6 +2373,17 @@ bioCheckTemplateManager.load();
                     innerCode += clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
+            } else  if (settingForColourBy == "Family" && settingForSpecifyByFamily == "numSpouses") {
+                clrSwatchUNK =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "white" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                innerCode = clrSwatchUNK + " unknown <br/>" ;
+                for (let index = 0; index < 5; index++) {
+                    innerCode += "<br/>";
+                    innerCode += clrSwatchArray[index ] + " " + (index )  ;
+                }
+                innerCode += "<br/>" + clrSwatchArray[7] + " over 4";
             } else if (settingForColourBy == "BioCheck") {
                 clrSwatchUNK =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
@@ -2395,7 +2408,6 @@ bioCheckTemplateManager.load();
                     }
                 }
                 condLog("innerCode:", innerCode);
-
             } else if (settingForColourBy == "DNAstatus") {
                 clrSwatchUNK =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
@@ -2404,19 +2416,14 @@ bioCheckTemplateManager.load();
 
                 innerCode = clrSwatchUNK + " status unknown"; // <br/>" +  clrSwatchLIVING + " still living";
 
-                let DNAStatuses = [
-                    "Confirmed with DNA",
-                    "Confident",
-                    "Uncertain",
-                    "Non-biological",
-                ];
+                let DNAStatuses = ["Confirmed with DNA", "Confident", "Uncertain", "Non-biological"];
 
                 for (let index = 0; index < DNAStatuses.length; index++) {
                     innerCode += "<br/>";
                     // if (index == DNAStatuses.length - 1) {
                     //     innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + DNAStatuses[index];
                     // } else {
-                        innerCode += clrSwatchArray[3 * index + 1] +  " "  + DNAStatuses[index];
+                    innerCode += clrSwatchArray[3 * index + 1] + " " + DNAStatuses[index];
                     // }
                 }
                 condLog("innerCode:", innerCode);
@@ -7306,7 +7313,14 @@ bioCheckTemplateManager.load();
                     condLog("Age " + thisAge + " in Decade # " + thisDecade);
                     return thisColourArray[thisDecade];
                 }
-            } else if (settingForSpecifyByFamily == "spouses") {
+            } else if (settingForSpecifyByFamily == "numSpouses") {
+                let thePerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
+                if (thePerp && thePerp._data.Spouses && thePerp._data.Spouses.length >= 0) {
+                    return thisColourArray[thePerp._data.Spouses.length ];
+                } else {
+                    return "white";
+                }
+
             } else if (settingForSpecifyByFamily == "siblings") {
             }
         } else if (settingForColourBy == "Location") {
