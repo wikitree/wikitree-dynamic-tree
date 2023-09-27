@@ -1702,6 +1702,12 @@ export class CC7 {
             : `<a target='_blank' href='https://www.wikitree.com/wiki/${wtRef}'>${text}</a>`;
     }
 
+    static changesLink(wtRef, text) {
+        return wtRef.startsWith("Private")
+            ? text
+            : `<a target='_blank' href='https://www.wikitree.com/index.php?title=Special:NetworkFeed&who=${wtRef}'>${text}</a>`;
+    }
+
     static async addPeopleTable(caption) {
         $("#savePeople").show();
         const sortTitle = "title='Click to sort'";
@@ -1956,7 +1962,10 @@ export class CC7 {
                 if (mPerson.Touched) {
                     touched =
                         "<td class='touched aDate'>" +
-                        mPerson.Touched.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3") +
+                        CC7.changesLink(
+                            mPerson.Name,
+                            mPerson.Touched.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3")
+                        ) +
                         "</td>";
                     dtouched = "data-touched='" + mPerson.Touched + "'";
                 } else {
