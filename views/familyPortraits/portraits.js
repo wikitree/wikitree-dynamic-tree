@@ -1,5 +1,5 @@
 window.PortraitView = class PortraitView extends View {
-    static APP_ID = "Calendar";
+    static APP_ID = "Portraits";
     meta() {
         return {
             title: "Family Portraits",
