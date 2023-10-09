@@ -373,7 +373,7 @@ WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
  *          const statusText = result[0];
  *          const resultsByKey = result[1];
  *          const peopleList = result[2]; // NOTE:  This will be an object, not an array, traverse it using for..in structure
- * 
+ *
  *           // FUNCTION STUFF GOES HERE TO PROCESS THE ITEMS returned
  *           for (const thisID in  peopleList) {
  *               thePeopleList.add(peopleList[thisID]);
@@ -385,7 +385,7 @@ WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
  * result[0] = statusText (usually an empty string if nothing has gone wrong)
  * result[1] = an object containing the original Keys used in the initial API request, and the Id # for each  of those profiles
  * result[2] = an object of objects - each of the sub-objects is a WikiTree profile, with its ID # as the key to the object (Id pure number, not WikiTreeID of lastname-1234 format)
- * 
+ *
  * Each sub-object has a key which is the user_id, and the object is the person object (that contains the fields requested),
  * and inside that person object could be a Parents object, a Children object, a Siblings object and a Spouses object.
  * If there is a Parents object, then in the list of fields will be Mother and Father, even if they weren't originally
@@ -421,7 +421,7 @@ WikiTreeAPI.getPeople = async function (appId, IDs, fields, options = {}) {
         keys: theKeys,
         fields: fields.join(","),
     };
-    
+
     // go through the options object, and add any of those options to the getPeopleParameters
     for (const key in options) {
         if (Object.hasOwnProperty.call(options, key)) {
@@ -473,7 +473,7 @@ WikiTreeAPI.getWatchlist = async function (appId, limit, getPerson, getSpace, fi
  * @param {*} postData
  * @returns
  */
-WikiTreeAPI.postToAPI = async function (postData) {
+WikiTreeAPI.postToAPI = async function (postData, signal) {
     condLog(`>>>>> postToAPI ${postData.action} ${postData.key || postData.keys}`, postData);
 
     let formData = new FormData();
@@ -497,6 +497,9 @@ WikiTreeAPI.postToAPI = async function (postData) {
         },
         body: new URLSearchParams(formData),
     };
+    if (signal) {
+        options["signal"] = signal;
+    }
 
     const response = await fetch(API_URL, options);
     if (!response.ok) {
