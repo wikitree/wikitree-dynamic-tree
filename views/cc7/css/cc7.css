@@ -40,6 +40,7 @@ img.privacyImage,
 img.timelineButton {
   height: 1em;
 }
+.cc7Table .bioIssue,
 img.familyHome,
 img.timelineButton {
   cursor: pointer;
@@ -53,6 +54,7 @@ div.cc7Table #tree {
   width: 5em;
   margin: auto;
 }
+.cc7Table .bioReport,
 .cc7Table .familySheet,
 .cc7Table .timeline {
   background: white;
@@ -66,6 +68,7 @@ div.cc7Table #tree {
   white-space: nowrap;
   z-index: 10000;
 }
+.bioReport.wrap,
 .timeline.wrap,
 .familySheet.wrap {
   width: 80%;
@@ -92,6 +95,7 @@ th.tlBioAge {
 .tlDate {
   white-space: nowrap;
 }
+.bioReport x,
 .timeline x,
 .familySheet x {
   position: absolute;
@@ -101,6 +105,7 @@ th.tlBioAge {
   cursor: pointer;
   color: red;
 }
+.bioReport w,
 .timeline w,
 .familySheet w {
   position: absolute;
@@ -120,6 +125,7 @@ div.cc7Table .timelineTable {
   width: 98%;
   margin: auto;
 }
+div.cc7Table .bioReportTable td,
 div.cc7Table .timelineTable td {
   border-top: none;
   border-bottom: none;
@@ -199,6 +205,13 @@ div.cc7Table .timelineTable td {
 }
 .cc7Table #peopleTable td.age-at-death {
   text-align: right;
+}
+.cc7Table #peopleTable td.bioIssue {
+  border: 2px solid red;
+}
+.cc7Table #peopleTable td.privBio {
+  text-align: center;
+  vertical-align: middle;
 }
 
 .cc7Table table#peopleTable {

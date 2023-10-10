@@ -53,6 +53,12 @@
  *
  */
 
+// BioCheck initialization - just once
+import("./lib/biocheck-api/src/BioCheckTemplateManager.js").then((bio) => {
+    window.bioCheckTemplateManager = new bio.BioCheckTemplateManager();
+    window.bioCheckTemplateManager.load();
+});
+
 window.View = class View {
     constructor() {
         this.id = null;
