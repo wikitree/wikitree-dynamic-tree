@@ -427,3 +427,8 @@ main {
     transform: translate(0, 0) scale(1) !important;
   }
 }
+
+/* This hides the unnecessary time column for the familyCalendar view's day/week displays. */
+/* Any use of the fullcalendar.js code that needs this column would mean doing this hiding differently. */
+td.fc-list-item-time { display: none; } !important;
+
