@@ -64,6 +64,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "ale": new ALEView(),
         "descendants": new DescendantsView(),
         "xtree": new XTreeView(),
+        "superbig": new SuperBigFamView(),
     };
 
     for (let key in views) {
