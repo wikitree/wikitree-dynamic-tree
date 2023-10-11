@@ -14,7 +14,7 @@ Example use:
 ```
 import { BioCheckTemplateManager } from "./BioCheckTemplateManager";
 import { theSourceRules } from "./SourceRules.js";
-import { BioCheckPerson } from "./PersonDate.js";
+import { BioCheckPerson } from "./BioCheckPerson.js";
 import { Biography } from "./Biography.js";
 
   // initialization - just once
@@ -23,7 +23,7 @@ import { Biography } from "./Biography.js";
 
   // For each person. Get the bio text and dates to test
   let thePerson = new BioCheckPerson();
-  let canUseThis = thePerson.canUse(profileObj, openOnly, ignorePre1500, useId);
+  let canUseThis = thePerson.canUse(profileObj, openOnly, ignorePre1500, userId);
   let biography = new Biography(theSourceRules);
   biography.parse(bioString, thePerson, searchString);
   let hasSources = biography.validate(); 
@@ -215,6 +215,10 @@ along with information about the bio. Provides methods to parse and validate.
 
 *   `theSourceRules`  {SourceRules} source rules for validating sources
 
+### applyPre1700ToAll
+
+Treat all profiles as Pre-1700
+
 ### parse
 
 Parse contents of the bio.
@@ -233,9 +237,9 @@ Information about the biography style can be accessed via get methods.
 
 Validate contents of bio
 
-Returns **[Boolean][6]** true if sources found. Returns false for empty bio, a profile
-with no dates, or a profile that has an Unsourced Research Notes Box or is in
-an Unsourced category.
+Returns **[Boolean][6]** true if profile looks good, else false.
+Returns false a profile that appears unsourced (is ?), a profile with an empty bio, a profile with no dates,
+or a profile that has an Unsourced Research Notes Box or is in an Unsourced category.
 
 ### validateSourcesStr
 
