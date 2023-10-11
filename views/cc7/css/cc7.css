@@ -35,6 +35,10 @@ div.cc7Table ul {
   margin-bottom: 1em;
 }
 
+div.cc7Table button[disabled] {
+  background-color: gray;
+}
+
 img.familyHome,
 img.privacyImage,
 img.timelineButton {
