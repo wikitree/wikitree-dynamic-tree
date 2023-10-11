@@ -29,6 +29,8 @@ export class CC7 {
             <li>Load only one degree at a time, but be aware that, in order to provide the correct relative
                 counts, we have to load degree N-1 and N+1 when loading degree N.</li>
             <li>Save the data to a file for faster loading next time.</li>
+            <li>If it takes too long, or you entered the wrong degree, you can cancel the profile load via
+                the Cancel button that appears during a load.</li>
         </ul>
         <h3>Views</h3>
         <p>
@@ -306,6 +308,7 @@ export class CC7 {
     };
     static settingOptionsObj;
     static currentSettings = {};
+    static cancelLoadController;
 
     constructor(selector, startId) {
         this.selector = selector;
@@ -320,8 +323,8 @@ export class CC7 {
         $(selector).html(
             `<div id="cc7Container" class="cc7Table">
             <button
-                class="small button"
                 id="getPeopleButton"
+                class="small button"
                 title="Get a list of connected people up to this degree">
                 Get CC3</button
             ><select id="cc7Degree" title="Select the degree of connection">
@@ -332,11 +335,13 @@ export class CC7 {
                 <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="7">7</option></select
-            ><button class="small button" id="getDegreeButton" title="Get only people connected at the indicated degree">
+            ><button id="getDegreeButton" class="small button" title="Get only people connected at the indicated degree">
                 Get Degree 3 Only</button
+            ><button id="cancelLoad" title="Cancel the current loading of profiles." class="small button">
+                Cancel</button
             ><button id="savePeople" title="Save this data to a file for faster loading next time." class="small button">
                 Save</button
-            ><button class="small button" id="loadButton" title="Load a previously saved data file.">Load A File</button
+            ><button id="loadButton" class="small button" title="Load a previously saved data file.">Load A File</button
             ><input type="file" id="fileInput" style="display: none"/>
             <span id="adminButtons">
             <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
@@ -351,25 +356,33 @@ export class CC7 {
         if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
             CC7.handleDegreeChange(cc7Degree);
         }
-        $("#cc7Degree").on("change", function () {
-            const theDegree = $("#cc7Degree").val();
-            CC7.handleDegreeChange(theDegree);
-        });
-        $("#fileInput").on("change", CC7.handleFileUpload);
-        $("#getPeopleButton").on("click", CC7.getConnectionsAction);
+        $("#cc7Degree")
+            .off("change")
+            .on("change", function () {
+                const theDegree = $("#cc7Degree").val();
+                CC7.handleDegreeChange(theDegree);
+            });
+        $("#fileInput").off("change").on("change", CC7.handleFileUpload);
+        $("#getPeopleButton").off("click").on("click", CC7.getConnectionsAction);
 
-        $("#help").click(function () {
-            $("#explanation").slideToggle();
-        });
-        $("#explanation").dblclick(function () {
-            $(this).slideToggle();
-        });
-        $("#cc7Container #explanation x").click(function () {
-            $(this).parent().slideUp();
-        });
+        $("#help")
+            .off("click")
+            .on("click", function () {
+                $("#explanation").slideToggle();
+            });
+        $("#explanation")
+            .off("dblclick")
+            .on("dblclick", function () {
+                $(this).slideToggle();
+            });
+        $("#cc7Container #explanation x")
+            .off("click")
+            .on("click", function () {
+                $(this).parent().slideUp();
+            });
         $("#explanation").draggable();
 
-        $("#settingsButton").click(CC7.toggleSettings);
+        $("#settingsButton").off("click").on("click", CC7.toggleSettings);
         $("#saveSettingsChanges").html("Apply Changes").addClass("small button").click(CC7.settingsChanged);
         $("#settingsDIV")
             .css("width", "285")
@@ -382,17 +395,30 @@ export class CC7 {
         CC7.settingOptionsObj.setActiveTab("icons");
         CC7.currentSettings = CC7.settingOptionsObj.getDefaultOptions();
 
-        $("#getDegreeButton").on("click", CC7.getDegreeAction);
+        $("#cancelLoad").off("click").on("click", CC7.cancelLoad);
+        $("#getDegreeButton").off("click").on("click", CC7.getDegreeAction);
 
-        $("#savePeople").click(function (e) {
-            e.preventDefault();
-            CC7.handleFileDownload();
-        });
-        $("#loadButton").click(function (e) {
-            e.preventDefault();
-            $("#fileInput").click();
-        });
+        $("#savePeople")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                CC7.handleFileDownload();
+            });
+        $("#loadButton")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                $("#fileInput").click();
+            });
         $("#getPeopleButton").click();
+    }
+
+    static cancelLoad() {
+        if (CC7.cancelLoadController) {
+            CC7.clearDisplay();
+            wtViewRegistry.showWarning("Cancelling profile retrieval...");
+            CC7.cancelLoadController.abort();
+        }
     }
 
     static toggleSettings() {
@@ -3069,6 +3095,10 @@ export class CC7 {
         event.preventDefault();
         const wtId = wtViewRegistry.getCurrentWtId();
         if (wtId.match(/.+\-.+/)) {
+            $("#getPeopleButton").prop("disabled", true);
+            $("#getDegreeButton").prop("disabled", true);
+            $("#cancelLoad").show();
+            CC7.cancelLoadController = new AbortController();
             CC7.clearDisplay();
             CC7.showShakingTree();
             $("#cc7Container").addClass("degreeView");
@@ -3081,30 +3111,38 @@ export class CC7 {
                 theDegree,
                 degreeCounts
             );
-            console.log(
-                `Retrieved ${countAtD} profiles at degrees ${theDegree - 1} to ${theDegree + 1} in ${
-                    performance.now() - starttime
-                }ms`
-            );
-            if (dIsPartial) {
-                wtViewRegistry.showWarning(
-                    `Due to limits imposed by the API, we could not retrieve all required data. Relative counts may also be incorrect.`
-                );
-            }
-
-            if (countAtD == 0) {
+            if (resultByKeyAtD == "aborted") {
+                wtViewRegistry.showWarning("Profile retrieval cancelled.");
                 CC7.hideShakingTree();
-                return;
+            } else {
+                console.log(
+                    `Retrieved ${countAtD} profiles at degrees ${theDegree - 1} to ${theDegree + 1} in ${
+                        performance.now() - starttime
+                    }ms`
+                );
+                if (dIsPartial) {
+                    wtViewRegistry.showWarning(
+                        `Due to limits imposed by the API, we could not retrieve all required data. Relative counts may also be incorrect.`
+                    );
+                }
+
+                if (countAtD == 0) {
+                    CC7.hideShakingTree();
+                    return;
+                }
+                window.rootId = +resultByKeyAtD[wtId].Id;
+                CC7.populateRelativeArrays();
+                CC7.hideShakingTree();
+                $("#degreesTable").remove();
+                $("#cc7Container").append(
+                    $("<table id='degreesTable'><tr><th>Degree</th></tr><tr><th>Connections</th></tr></table>")
+                );
+                CC7.buildDegreeTableData(degreeCounts, theDegree, theDegree);
+                CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
             }
-            window.rootId = +resultByKeyAtD[wtId].Id;
-            CC7.populateRelativeArrays();
-            CC7.hideShakingTree();
-            $("#degreesTable").remove();
-            $("#cc7Container").append(
-                $("<table id='degreesTable'><tr><th>Degree</th></tr><tr><th>Connections</th></tr></table>")
-            );
-            CC7.buildDegreeTableData(degreeCounts, theDegree, theDegree);
-            CC7.addPeopleTable(`Degree ${theDegree} connected people for ${wtId}`);
+            $("#getPeopleButton").prop("disabled", false);
+            $("#getDegreeButton").prop("disabled", false);
+            $("#cancelLoad").hide();
         }
     }
 
@@ -3119,6 +3157,9 @@ export class CC7 {
         let callNr = 1;
         const starttime = performance.now();
         const [status, resultByKey, peopleData] = await CC7.getPeopleForNthDegree(wtId, theDegree, start, limit);
+        if (status == "aborted") {
+            return [status, 0, false];
+        }
         if (status != "" && peopleData && peopleData.length > 0) {
             isPartial = true;
         }
@@ -3148,6 +3189,9 @@ export class CC7 {
                 `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
             );
             const [sstatus, , ancestorJson] = await CC7.getPeopleForNthDegree(wtId, theDegree, start, limit);
+            if (sstatus == "aborted") {
+                return [sstatus, 0, false];
+            }
             if (sstatus != "") {
                 console.warn(`Partial results obtained when requesting relatives for ${wtId}: ${sstatus}`);
                 isPartial = true;
@@ -3169,20 +3213,29 @@ export class CC7 {
         // We get two more degrees than necessary to ensure we can calculate the relative counts
         // correctly.
         try {
-            const result = await WikiTreeAPI.postToAPI({
-                appId: CC7.APP_ID,
-                action: "getPeople",
-                keys: key,
-                nuclear: degree + 1,
-                minGeneration: degree - 1,
-                start: start,
-                limit: limit,
-                fields: CC7.GET_PEOPLE_FIELDS,
-            });
+            const result = await WikiTreeAPI.postToAPI(
+                {
+                    appId: CC7.APP_ID,
+                    action: "getPeople",
+                    keys: key,
+                    nuclear: degree + 1,
+                    minGeneration: degree - 1,
+                    start: start,
+                    limit: limit,
+                    fields: CC7.GET_PEOPLE_FIELDS,
+                },
+                CC7.cancelLoadController.signal
+            );
             return [result[0].status, result[0].resultByKey, result[0].people];
         } catch (error) {
-            console.warn(`Could not retrieve relatives at degrees ${degree - 1} to ${degree + 1} for ${key}: ${error}`);
-            return [`${error}`, [], []];
+            if (error.name !== "AbortError") {
+                console.warn(
+                    `Could not retrieve relatives at degrees ${degree - 1} to ${degree + 1} for ${key}: ${error}`
+                );
+                return [`${error}`, [], []];
+            } else {
+                return ["aborted", [], []];
+            }
         }
     }
 
@@ -3312,6 +3365,10 @@ export class CC7 {
     }
 
     static async getConnections(maxWantedDegree) {
+        $("#getPeopleButton").prop("disabled", true);
+        $("#getDegreeButton").prop("disabled", true);
+        $("#cancelLoad").show();
+        CC7.cancelLoadController = new AbortController();
         CC7.showShakingTree();
         const wtId = wtViewRegistry.getCurrentWtId();
         const degreeCounts = {};
@@ -3320,31 +3377,39 @@ export class CC7 {
             maxWantedDegree,
             degreeCounts
         );
-        if (isPartial) {
-            wtViewRegistry.showWarning(
-                "Limits imposed by the API is causing relative counts of people at the highest degree of separation " +
-                    "to be incomplete."
+        if (resultByKey == "aborted") {
+            wtViewRegistry.showWarning("Profile retrieval cancelled.");
+            CC7.hideShakingTree();
+        } else {
+            if (isPartial) {
+                wtViewRegistry.showWarning(
+                    "Limits imposed by the API is causing relative counts of people at the highest degree of separation " +
+                        "to be incomplete."
+                );
+            }
+
+            window.rootId = +resultByKey[wtId]?.Id;
+            CC7.populateRelativeArrays();
+
+            window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
+            CC7.hideShakingTree();
+            if ($("#degreesTable").length != 0) {
+                $("#degreesTable").remove();
+            }
+            $("#cc7Container").append(
+                $(
+                    "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
+                )
+            );
+            CC7.buildDegreeTableData(degreeCounts, 1, window.cc7Degree);
+            const root = window.people.get(window.rootId);
+            CC7.addPeopleTable(
+                root ? `CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}` : ""
             );
         }
-
-        window.rootId = +resultByKey[wtId]?.Id;
-        CC7.populateRelativeArrays();
-
-        window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
-        CC7.hideShakingTree();
-        if ($("#degreesTable").length != 0) {
-            $("#degreesTable").remove();
-        }
-        $("#cc7Container").append(
-            $(
-                "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
-            )
-        );
-        CC7.buildDegreeTableData(degreeCounts, 1, window.cc7Degree);
-        const root = window.people.get(window.rootId);
-        CC7.addPeopleTable(
-            root ? `CC${window.cc7Degree} for ${new PersonName(root).withParts(CC7.WANTED_NAME_PARTS)}` : ""
-        );
+        $("#getPeopleButton").prop("disabled", false);
+        $("#getDegreeButton").prop("disabled", false);
+        $("#cancelLoad").hide();
     }
 
     static getIdsOf(arrayOfPeople) {
@@ -3396,6 +3461,9 @@ export class CC7 {
                 start,
                 limit
             );
+            if (status == "aborted") {
+                return [status, false, 0];
+            }
             const callTime = performance.now() - starttime;
             if (status != "" && peopleData && peopleData.length > 0) {
                 isPartial = true;
@@ -3435,19 +3503,26 @@ export class CC7 {
 
     static async getPeopleUpToDegree(ids, depth, start = 0, limit = CC7.GET_PEOPLE_LIMIT) {
         try {
-            const result = await WikiTreeAPI.postToAPI({
-                appId: CC7.APP_ID,
-                action: "getPeople",
-                keys: ids.join(","),
-                start: start,
-                limit: limit,
-                nuclear: depth,
-                fields: CC7.GET_PEOPLE_FIELDS,
-            });
+            const result = await WikiTreeAPI.postToAPI(
+                {
+                    appId: CC7.APP_ID,
+                    action: "getPeople",
+                    keys: ids.join(","),
+                    start: start,
+                    limit: limit,
+                    nuclear: depth,
+                    fields: CC7.GET_PEOPLE_FIELDS,
+                },
+                CC7.cancelLoadController.signal
+            );
             return [result[0]["status"], result[0]["resultByKey"], result[0]["people"]];
         } catch (error) {
-            console.warn(`Could not retrieve relatives up to degree ${depth} for ${key}: ${error}`);
-            return [`${error}`, [], []];
+            if (error.name !== "AbortError") {
+                console.warn(`Could not retrieve relatives up to degree ${depth} for ${key}: ${error}`);
+                return [`${error}`, [], []];
+            } else {
+                return ["aborted", [], []];
+            }
         }
     }
 
