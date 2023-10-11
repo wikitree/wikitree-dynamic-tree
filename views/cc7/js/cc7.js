@@ -12,6 +12,9 @@ import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
 
 export class CC7 {
     static APP_ID = "CC7";
+    static DESCRIPTION =
+        "Loading 7 degrees may take a while (it can be 2 minutes or more) so the default is set to 3. Feel free to change it. ";
+    static BIOCHECK_OFF_DESCRIPTION = CC7.DESCRIPTION + "Bio Check is OFF in settings.";
     static SETTINGS_GEAR = "&#x2699;";
     static #helpText = `
         <x>[ x ]</x>
@@ -138,7 +141,6 @@ export class CC7 {
         </ul>`;
 
     static GET_PEOPLE_FIELDS = [
-        "Bio",
         "BirthDate",
         "BirthDateDecade",
         "BirthLocation",
@@ -274,6 +276,13 @@ export class CC7 {
                 subsections: [{ name: "DiedYoungIcons", label: "Died young icons" }],
                 // comment: "",
             },
+            {
+                name: "biocheck",
+                label: "Bio Check",
+                hideSelect: true,
+                subsections: [{ name: "BioCheckOptions", label: "Bio Check Options" }],
+                // comment: "",
+            },
         ],
         optionsGroups: [
             {
@@ -308,6 +317,25 @@ export class CC7 {
                     },
                 ],
             },
+            {
+                tab: "biocheck",
+                subsection: "BioCheckOptions",
+                category: "biocheck",
+                subcategory: "options",
+                options: [
+                    {
+                        optionName: "bioComment",
+                        comment: "Turning this on will only affect the next load of profiles.",
+                        type: "br",
+                    },
+                    {
+                        optionName: "biocheckOn",
+                        type: "checkbox",
+                        label: "Enable Bio Check on all profiles",
+                        defaultValue: 0,
+                    },
+                ],
+            },
         ],
     };
     static settingOptionsObj;
@@ -321,6 +349,7 @@ export class CC7 {
             const opt = JSON.parse(optionsJson);
             CC7.optionsDef.optionsGroups[0].options[1].defaultValue = opt["icons_options_veryYoung"];
             CC7.optionsDef.optionsGroups[0].options[3].defaultValue = opt["icons_options_young"];
+            CC7.optionsDef.optionsGroups[1].options[1].defaultValue = opt["biocheck_options_biocheckOn"] || 0;
         }
         CC7.settingOptionsObj = new SettingsOptions.SettingsOptionsObject(CC7.optionsDef);
         $(selector).html(
@@ -387,6 +416,12 @@ export class CC7 {
         CC7.settingOptionsObj.buildPage();
         CC7.settingOptionsObj.setActiveTab("icons");
         CC7.currentSettings = CC7.settingOptionsObj.getDefaultOptions();
+        if (!CC7.currentSettings["biocheck_options_biocheckOn"]) {
+            wtViewRegistry.setInfoPanel(CC7.BIOCHECK_OFF_DESCRIPTION);
+        } else {
+            wtViewRegistry.setInfoPanel(CC7.DESCRIPTION);
+        }
+        wtViewRegistry.showInfoPanel();
 
         $("#getDegreeButton").on("click", CC7.getDegreeAction);
 
@@ -423,6 +458,16 @@ export class CC7 {
             $("img.diedYoungImg").each(function () {
                 $(this).attr("src", youngImg);
             });
+            if (!CC7.currentSettings["biocheck_options_biocheckOn"]) {
+                $("td.bioIssue").each(function () {
+                    $(this).off("click");
+                    $(this).removeClass("bioIssue");
+                });
+                wtViewRegistry.setInfoPanel(CC7.BIOCHECK_OFF_DESCRIPTION);
+            } else {
+                wtViewRegistry.setInfoPanel(CC7.DESCRIPTION);
+            }
+            wtViewRegistry.showInfoPanel();
             CC7.setCookie("w_diedYoung", JSON.stringify(CC7.currentSettings), { expires: 365 });
         }
         CC7View.cancelSettings();
@@ -1751,11 +1796,14 @@ export class CC7 {
         const spousesNum = "<th id='spouse' title='Spouses. Click to sort.' data-order='desc'>Sp.</th>";
         const childrenNum = "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>";
         const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
+        const bioCheck = CC7.currentSettings["biocheck_options_biocheckOn"];
 
         const aTable = $(
             "<table id='peopleTable' class='peopleTable'>" +
                 aCaption +
-                "<thead><tr><th title='Privacy/BioCheck'>P/B</th><th></th><th></th>" +
+                `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
+                    bioCheck ? "/B" : ""
+                }</th><th></th><th></th>` +
                 degreeTH +
                 parentsNum +
                 siblingsNum +
@@ -3233,7 +3281,9 @@ export class CC7 {
                 minGeneration: degree - 1,
                 start: start,
                 limit: limit,
-                fields: CC7.GET_PEOPLE_FIELDS,
+                fields: CC7.currentSettings["biocheck_options_biocheckOn"]
+                    ? CC7.GET_PEOPLE_FIELDS + ",Bio"
+                    : CC7.GET_PEOPLE_FIELDS,
             });
             return [result[0].status, result[0].resultByKey, result[0].people];
         } catch (error) {
@@ -3275,17 +3325,19 @@ export class CC7 {
                 person.Child = [];
                 person.Marriage = {};
 
-                const bioPerson = new BioCheckPerson();
-                if (bioPerson.canUse(person, false, true, userWTuserID)) {
-                    const biography = new Biography(theSourceRules);
-                    biography.parse(bioPerson.getBio(), bioPerson, "");
-                    biography.validate();
-                    person.hasBioIssues = biography.hasStyleIssues() || !biography.hasSources();
-                    if (person.hasBioIssues) {
-                        person.bioCheckReport = getReportLines(biography, bioPerson.isPre1700());
+                if (CC7.currentSettings["biocheck_options_biocheckOn"]) {
+                    const bioPerson = new BioCheckPerson();
+                    if (bioPerson.canUse(person, false, true, userWTuserID)) {
+                        const biography = new Biography(theSourceRules);
+                        biography.parse(bioPerson.getBio(), bioPerson, "");
+                        biography.validate();
+                        person.hasBioIssues = biography.hasStyleIssues() || !biography.hasSources();
+                        if (person.hasBioIssues) {
+                            person.bioCheckReport = getReportLines(biography, bioPerson.isPre1700());
+                        }
                     }
+                    delete person.bio;
                 }
-                delete person.bio;
 
                 function getReportLines(biography, isPre1700) {
                     const profileReportLines = [];
@@ -3538,7 +3590,9 @@ export class CC7 {
                 start: start,
                 limit: limit,
                 nuclear: depth,
-                fields: CC7.GET_PEOPLE_FIELDS,
+                fields: CC7.currentSettings["biocheck_options_biocheckOn"]
+                    ? CC7.GET_PEOPLE_FIELDS + ",Bio"
+                    : CC7.GET_PEOPLE_FIELDS,
             });
             return [result[0]["status"], result[0]["resultByKey"], result[0]["people"]];
         } catch (error) {
