@@ -14,7 +14,7 @@ export class CC7 {
     static APP_ID = "CC7";
     static DESCRIPTION =
         "Loading 7 degrees may take a while (it can be 2 minutes or more) so the default is set to 3. Feel free to change it. ";
-    static BIOCHECK_OFF_DESCRIPTION = CC7.DESCRIPTION + "Bio Check is OFF in settings.";
+    static BIOCHECK_OFF_DESCRIPTION = CC7.DESCRIPTION + "Bio Check is DISABLED in settings.";
     static SETTINGS_GEAR = "&#x2699;";
     static #helpText = `
         <x>[ x ]</x>
@@ -325,7 +325,7 @@ export class CC7 {
                 options: [
                     {
                         optionName: "bioComment",
-                        comment: "Turning this on will only affect the next load of profiles.",
+                        comment: "Enabling Bio Check only comes into effect at subsequent GET button clicks.",
                         type: "br",
                     },
                     {
