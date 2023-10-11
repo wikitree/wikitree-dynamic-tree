@@ -16,14 +16,9 @@
  * Some SVG button icons from SVG Repo - open-licencesed SVG Vector and Icons website:  https://www.svgrepo.com/
  */
 
-import { BioCheckTemplateManager } from "../../lib/biocheck-api/src/BioCheckTemplateManager.js";
 import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
-
-// initialization - just once
-let bioCheckTemplateManager = new BioCheckTemplateManager();
-bioCheckTemplateManager.load();
 
 (function () {
     const APP_ID = "FanChart";
@@ -59,7 +54,7 @@ bioCheckTemplateManager.load();
     const AboutAdditionalProgrammers =
         "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
     const AboutAssistants = "Rob Pavey & Kay Knight";
-    const AboutLatestG2G =  "https://www.wikitree.com/g2g/1621138/fan-chart-update-august-2023-chocolate-peanut-butter"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutLatestG2G = "https://www.wikitree.com/g2g/1621138/fan-chart-update-august-2023-chocolate-peanut-butter"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -73,7 +68,7 @@ bioCheckTemplateManager.load();
     const SVGbtnUP =
         '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 
-    const SVGbtnSETTINGS = `<svg height="16" width="16" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+    const SVGbtnSETTINGS = `<svg height="16" width="16" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             viewBox="0 0 512 512"  xml:space="preserve">
         <style type="text/css">
             .st0{fill:#000000;}
@@ -99,7 +94,7 @@ bioCheckTemplateManager.load();
                 c0-46.184,37.458-83.622,83.622-83.622s83.602,37.438,83.602,83.622C339.612,302.179,302.174,339.618,256.01,339.618z"/>
         </g>
         </svg>`;
-    const SVGbtnINFO = `<svg fill="#0000FF" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+    const SVGbtnINFO = `<svg fill="#0000FF" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             width="16" height="16" viewBox="0 0 45.818 45.818"
             xml:space="preserve">
         <g>
@@ -109,7 +104,7 @@ bioCheckTemplateManager.load();
                 c0-2.12,1.718-3.836,3.837-3.836c2.118,0,3.837,1.716,3.837,3.836C26.746,12.133,25.027,13.851,22.909,13.851z"/>
         </g>
         </svg>`;
-    const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+    const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             width="16" height="16" viewBox="0 0 95.334 95.334"
             xml:space="preserve">
         <g>
@@ -124,8 +119,8 @@ bioCheckTemplateManager.load();
         </g>
         </svg>`;
 
-    const SVGbtnRESIZE2 = `<svg width="16" height="16" viewBox="0 -0.5 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-            class="si-glyph si-glyph-arrow-fullscreen-2">    
+    const SVGbtnRESIZE2 = `<svg width="16" height="16" viewBox="0 -0.5 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+            class="si-glyph si-glyph-arrow-fullscreen-2">
             <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                 <path d="M14.988,6.979 C15.547,6.979 16,6.527 16,5.97 L16,1.008 C16,0.45 15.547,-0.000999999989 14.988,-0.000999999989 L10.011,-0.000999999989 C9.452,-0.000999999989 8.999,0.45 8.999,1.008 L10.579,2.583 L8.009,5.153 L5.439,2.583 L7.019,1.008 C7.019,0.45 6.566,-0.000999999989 6.007,-0.000999999989 L1.03,-0.000999999989 C0.471,-0.000999999989 0.0179999999,0.45 0.0179999999,1.008 L0.0179999999,5.97 C0.0179999999,6.527 0.471,6.979 1.03,6.979 L2.62,5.394 L5.194,7.968 L2.598,10.565 L1.028,9 C0.471,9 0.0189999999,9.45 0.0189999999,10.006 L0.0189999999,14.952 C0.0189999999,15.507 0.471,15.958 1.028,15.958 L5.99,15.958 C6.548,15.958 6.999,15.507 6.999,14.952 L5.417,13.375 L8.009,10.783 L10.601,13.375 L9.019,14.952 C9.019,15.507 9.47,15.958 10.028,15.958 L14.99,15.958 C15.547,15.958 15.999,15.507 15.999,14.952 L15.999,10.006 C15.999,9.45 15.547,9 14.99,9 L13.42,10.565 L10.824,7.968 L13.398,5.394 L14.988,6.979 L14.988,6.979 Z" fill="#434343" class="si-glyph-fill">
                 </path>
@@ -1224,13 +1219,10 @@ bioCheckTemplateManager.load();
         FanChartView.reZoom = function () {
             // condLog("TIME to RE ZOOM now !", FanChartView.currentScaleFactor);
             let newScaleFactor = 0.8;
-           
+
             let svg = document.getElementById("fanChartSVG");
             let makeFitZoomFactor = 1;
             // return;
-
-             
-
 
             if (svg) {
                 let g = svg.firstElementChild;
@@ -1245,8 +1237,9 @@ bioCheckTemplateManager.load();
                             `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
                         );
 
-                        if (window.innerWidth * h / boundingBox.width > (window.innerHeight - 30)) {
-                            makeFitZoomFactor = (window.innerHeight - 30) / ((window.innerWidth * h) / boundingBox.width);
+                        if ((window.innerWidth * h) / boundingBox.width > window.innerHeight - 30) {
+                            makeFitZoomFactor =
+                                (window.innerHeight - 30) / ((window.innerWidth * h) / boundingBox.width);
                         }
                     }
                 }
@@ -1255,7 +1248,7 @@ bioCheckTemplateManager.load();
                 //     FanChartView.currentScaleFactor,
                 //     FanChartView.lastCustomScaleFactor,
                 //     0.8 * makeFitZoomFactor,
-                
+
                 // );
 
                 if (
@@ -1295,7 +1288,7 @@ bioCheckTemplateManager.load();
                 //     newScaleFactor  * window.innerWidth +
                 //         " x " +
                 //         newScaleFactor * window.innerHeight
-                // );    
+                // );
 
                 d3.select(svg).call(
                     FanChartView.zoom.transform,
@@ -1320,8 +1313,7 @@ bioCheckTemplateManager.load();
                 let showBadges = FanChartView.currentSettings["general_options_showBadges"];
                 let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
                 let colour_options_specifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
-                let colour_options_specifyByLocation =
-                    FanChartView.currentSettings["colour_options_specifyByLocation"];
+                let colour_options_specifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
 
                 let legendDIV = document.getElementById("legendDIV");
                 let LegendTitle = document.getElementById("LegendTitle");
@@ -2373,15 +2365,15 @@ bioCheckTemplateManager.load();
                     innerCode += clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
-            } else  if (settingForColourBy == "Family" && settingForSpecifyByFamily == "numSpouses") {
+            } else if (settingForColourBy == "Family" && settingForSpecifyByFamily == "numSpouses") {
                 clrSwatchUNK =
                     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
                     "white" +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
-                innerCode = clrSwatchUNK + " unknown <br/>" ;
+                innerCode = clrSwatchUNK + " unknown <br/>";
                 for (let index = 0; index < 5; index++) {
                     innerCode += "<br/>";
-                    innerCode += clrSwatchArray[index ] + " " + (index )  ;
+                    innerCode += clrSwatchArray[index] + " " + index;
                 }
                 innerCode += "<br/>" + clrSwatchArray[7] + " over 4";
             } else if (settingForColourBy == "BioCheck") {
@@ -2766,7 +2758,7 @@ bioCheckTemplateManager.load();
             if (g && g.getBBox) {
                 let boundingBox = g.getBBox();
                 h = boundingBox.height;
-                condLog(boundingBox)
+                condLog(boundingBox);
                 if (boundingBox) {
                     svg.setAttribute(
                         "viewBox",
@@ -2844,7 +2836,6 @@ bioCheckTemplateManager.load();
                 screen.availWidth +
                 "/" +
                 screen.availHeight +
-               
                 ", " +
                 "Inner width/height: " +
                 window.innerWidth +
@@ -3706,7 +3697,7 @@ bioCheckTemplateManager.load();
                         "D"
                     )}</div>
 						</div>
-					</div>${mDateDIV}           
+					</div>${mDateDIV}
                     `;
                 }
             });
@@ -4486,10 +4477,10 @@ bioCheckTemplateManager.load();
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
-         const SVGbtnDESC = `<svg width="30" height="30" viewBox="0 0 30 30" stroke="#25422d" fill="none" xmlns="http://www.w3.org/2000/svg">
+        const SVGbtnDESC = `<svg width="30" height="30" viewBox="0 0 30 30" stroke="#25422d" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M 4 5 L 10 5 L 10 9 L 24 9 M 16 9 L 16 13 L 24 13 M 10 9 L 10 19 L 24 19 M 16 19 L 16 23 L 24 23 M 16 23 L 16 27 L 24 27" fill="none" />
         </svg>`;
-        
+
         // condLog("popup  = ", popup);
         popup
             .append("foreignObject")
@@ -5746,7 +5737,7 @@ bioCheckTemplateManager.load();
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                         thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"] &&
                         (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["bioHasSources"] == false ||
-                            thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"].isMarkedUnsourced() ))
+                            thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]["biocheck"].isMarkedUnsourced()))
                 ) {
                     let badgeVars = FanChartView.theBadgeTracker[ahnNum][num];
                     FanChartView.addNewBadge(badgeVars.x, badgeVars.y, num, badgeVars.angle);
@@ -6007,10 +5998,7 @@ bioCheckTemplateManager.load();
                         showY = true;
                         showDs = true;
                         showAs = true;
-                    } else if (
-                        ahnNum == 1 &&
-                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
-                    ) {
+                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         showY = true;
                         showDs = true;
                         showAs = true;
@@ -6056,10 +6044,7 @@ bioCheckTemplateManager.load();
                     // AND/OR by Y-DNA inheritance
                     if (ahnNum > 1) {
                         showY = true;
-                    } else if (
-                        ahnNum == 1 &&
-                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
-                    ) {
+                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         showY = true;
                     }
                 }
@@ -6448,11 +6433,11 @@ bioCheckTemplateManager.load();
             // isMarkedUnsourced;
             // hasStyleIssues;
 
-
             if (
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck &&
-               ( thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources == false || theBioCheck.isMarkedUnsourced() )
+                (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources == false ||
+                    theBioCheck.isMarkedUnsourced())
             ) {
                 return true;
             }
@@ -7316,11 +7301,10 @@ bioCheckTemplateManager.load();
             } else if (settingForSpecifyByFamily == "numSpouses") {
                 let thePerp = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
                 if (thePerp && thePerp._data.Spouses && thePerp._data.Spouses.length >= 0) {
-                    return thisColourArray[thePerp._data.Spouses.length ];
+                    return thisColourArray[thePerp._data.Spouses.length];
                 } else {
                     return "white";
                 }
-
             } else if (settingForSpecifyByFamily == "siblings") {
             }
         } else if (settingForColourBy == "Location") {
@@ -7409,14 +7393,8 @@ bioCheckTemplateManager.load();
                 return thisColourArray[0];
             }
         } else if (settingForColourBy == "DNAstatus") {
-            let DNAStatuses = [
-                "unknown",
-                "Confirmed by DNA",
-                "Confident",
-                "Uncertain",
-                "Non-biological",
-            ];
-            
+            let DNAStatuses = ["unknown", "Confirmed by DNA", "Confident", "Uncertain", "Non-biological"];
+
             if (ahnNum == 1) {
                 return "white";
             }
@@ -7437,19 +7415,17 @@ bioCheckTemplateManager.load();
                 // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
                 if (
                     thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]] &&
-                    thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother 
+                    thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother
                 ) {
-                    theStatusNum = thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother
+                    theStatusNum = thePeopleList[FanChartView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother;
                 } else {
                     return "white";
                 }
             }
 
-                
-        //    console.log("Status For ", ahnNum, " is ", theStatusNum) ;
+            //    console.log("Status For ", ahnNum, " is ", theStatusNum) ;
 
-            
-            if (theStatusNum == 30 ) {
+            if (theStatusNum == 30) {
                 return thisColourArray[1];
             } else if (theStatusNum == 20) {
                 return thisColourArray[4];

@@ -6,8 +6,15 @@
  * It makes use (through direct code inclusion) of FileSave (https://github.com/eligrey/FileSaver.js/)
  * and SheetJs (https://www.npmjs.com/package/xlsx)
  */
+import { theSourceRules } from "../../../lib/biocheck-api/src/SourceRules.js";
+import { BioCheckPerson } from "../../../lib/biocheck-api/src/BioCheckPerson.js";
+import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
+
 export class CC7 {
     static APP_ID = "CC7";
+    static DESCRIPTION =
+        "Loading 7 degrees may take a while (it can be 2 minutes or more) so the default is set to 3. Feel free to change it. ";
+    static BIOCHECK_OFF_DESCRIPTION = CC7.DESCRIPTION + "Bio Check is DISABLED in settings.";
     static SETTINGS_GEAR = "&#x2699;";
     static #helpText = `
         <x>[ x ]</x>
@@ -153,6 +160,7 @@ export class CC7 {
         "Gender",
         "Id",
         "IsLiving",
+        "IsMember",
         "LastNameAtBirth",
         "LastNameCurrent",
         "LastNameOther",
@@ -270,6 +278,13 @@ export class CC7 {
                 subsections: [{ name: "DiedYoungIcons", label: "Died young icons" }],
                 // comment: "",
             },
+            {
+                name: "biocheck",
+                label: "Bio Check",
+                hideSelect: true,
+                subsections: [{ name: "BioCheckOptions", label: "Bio Check Options" }],
+                // comment: "",
+            },
         ],
         optionsGroups: [
             {
@@ -304,6 +319,25 @@ export class CC7 {
                     },
                 ],
             },
+            {
+                tab: "biocheck",
+                subsection: "BioCheckOptions",
+                category: "biocheck",
+                subcategory: "options",
+                options: [
+                    {
+                        optionName: "bioComment",
+                        comment: "Enabling Bio Check only comes into effect at subsequent GET button clicks.",
+                        type: "br",
+                    },
+                    {
+                        optionName: "biocheckOn",
+                        type: "checkbox",
+                        label: "Enable Bio Check on all profiles",
+                        defaultValue: 0,
+                    },
+                ],
+            },
         ],
     };
     static settingOptionsObj;
@@ -318,6 +352,7 @@ export class CC7 {
             const opt = JSON.parse(optionsJson);
             CC7.optionsDef.optionsGroups[0].options[1].defaultValue = opt["icons_options_veryYoung"];
             CC7.optionsDef.optionsGroups[0].options[3].defaultValue = opt["icons_options_young"];
+            CC7.optionsDef.optionsGroups[1].options[1].defaultValue = opt["biocheck_options_biocheckOn"] || 0;
         }
         CC7.settingOptionsObj = new SettingsOptions.SettingsOptionsObject(CC7.optionsDef);
         $(selector).html(
@@ -394,6 +429,12 @@ export class CC7 {
         CC7.settingOptionsObj.buildPage();
         CC7.settingOptionsObj.setActiveTab("icons");
         CC7.currentSettings = CC7.settingOptionsObj.getDefaultOptions();
+        if (!CC7.currentSettings["biocheck_options_biocheckOn"]) {
+            wtViewRegistry.setInfoPanel(CC7.BIOCHECK_OFF_DESCRIPTION);
+        } else {
+            wtViewRegistry.setInfoPanel(CC7.DESCRIPTION);
+        }
+        wtViewRegistry.showInfoPanel();
 
         $("#cancelLoad").off("click").on("click", CC7.cancelLoad);
         $("#getDegreeButton").off("click").on("click", CC7.getDegreeAction);
@@ -443,6 +484,16 @@ export class CC7 {
             $("img.diedYoungImg").each(function () {
                 $(this).attr("src", youngImg);
             });
+            if (!CC7.currentSettings["biocheck_options_biocheckOn"]) {
+                $("td.bioIssue").each(function () {
+                    $(this).off("click");
+                    $(this).removeClass("bioIssue");
+                });
+                wtViewRegistry.setInfoPanel(CC7.BIOCHECK_OFF_DESCRIPTION);
+            } else {
+                wtViewRegistry.setInfoPanel(CC7.DESCRIPTION);
+            }
+            wtViewRegistry.showInfoPanel();
             CC7.setCookie("w_diedYoung", JSON.stringify(CC7.currentSettings), { expires: 365 });
         }
         CC7View.cancelSettings();
@@ -569,52 +620,54 @@ export class CC7 {
             const wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
             wideTableButton.insertBefore(pTable);
 
-            $("#wideTableButton").click(function (e) {
-                e.preventDefault();
+            $("#wideTableButton")
+                .off("click")
+                .on("click", function (e) {
+                    e.preventDefault();
 
-                const dTable = $(".peopleTable").eq(0);
-                if (CC7.getCookie("w_wideTable") == "1") {
-                    // Display a normal table
-                    CC7.setCookie("w_wideTable", 0, { expires: 365 });
-                    CC7.setOverflow("visible");
-                    dTable.removeClass("wide");
-                    $(this).text("Wide table");
-                    $("#peopleTable").attr("title", "");
-                    dTable.css({
-                        position: "relative",
-                        top: "0px",
-                        left: "0px",
-                    });
-                    dTable.draggable("disable");
-                } else {
-                    // Display a wide table
-                    CC7.setCookie("w_wideTable", 1, { expires: 365 });
-                    CC7.setOverflow("auto");
-                    $(this).text("Normal Table");
-                    $("#peopleTable").attr("title", "Drag to scroll left or right");
-                    dTable.addClass("wide");
-                    dTable.find("th").each(function () {
-                        $(this).data("width", $(this).css("width"));
-                        $(this).css("width", "auto");
-                    });
-                    var isiPad = navigator.userAgent.match(/iPad/i) != null;
-                    if (isiPad) {
-                        if ($("#cc7Container").length) {
-                            dTable.draggable({
-                                cursor: "grabbing",
-                            });
-                        }
+                    const dTable = $(".peopleTable").eq(0);
+                    if (CC7.getCookie("w_wideTable") == "1") {
+                        // Display a normal table
+                        CC7.setCookie("w_wideTable", 0, { expires: 365 });
+                        CC7.setOverflow("visible");
+                        dTable.removeClass("wide");
+                        $(this).text("Wide table");
+                        $("#peopleTable").attr("title", "");
+                        dTable.css({
+                            position: "relative",
+                            top: "0px",
+                            left: "0px",
+                        });
+                        dTable.draggable("disable");
                     } else {
-                        if ($("#cc7Container").length) {
-                            dTable.draggable({
-                                axis: "x",
-                                cursor: "grabbing",
-                            });
+                        // Display a wide table
+                        CC7.setCookie("w_wideTable", 1, { expires: 365 });
+                        CC7.setOverflow("auto");
+                        $(this).text("Normal Table");
+                        $("#peopleTable").attr("title", "Drag to scroll left or right");
+                        dTable.addClass("wide");
+                        dTable.find("th").each(function () {
+                            $(this).data("width", $(this).css("width"));
+                            $(this).css("width", "auto");
+                        });
+                        var isiPad = navigator.userAgent.match(/iPad/i) != null;
+                        if (isiPad) {
+                            if ($("#cc7Container").length) {
+                                dTable.draggable({
+                                    cursor: "grabbing",
+                                });
+                            }
+                        } else {
+                            if ($("#cc7Container").length) {
+                                dTable.draggable({
+                                    axis: "x",
+                                    cursor: "grabbing",
+                                });
+                            }
                         }
+                        dTable.draggable("enable");
                     }
-                    dTable.draggable("enable");
-                }
-            });
+                });
         }
         if (CC7.getCookie("w_wideTable") == "1") {
             CC7.setCookie("w_wideTable", 0, { expires: 365 });
@@ -1091,7 +1144,8 @@ export class CC7 {
     }
 
     static showTimeline(jqClicked) {
-        const id = +jqClicked.attr("data-id");
+        const theClickedRow = jqClicked.closest("tr");
+        const id = +theClickedRow.attr("data-id");
         let tPerson = window.people.get(id);
         const theClickedName = tPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_timeLine";
@@ -1111,35 +1165,77 @@ export class CC7 {
         }
         // Make a table
         const timelineTable = CC7.buildTimeline(tPerson, familyFacts, familyId);
-        // Attach the table to the container div
-        timelineTable.prependTo($("#cc7Container"));
-        //timelineTable.css({ top: window.pointerY - 30, left: 10 });
-
         timelineTable.attr("id", familyId);
-        timelineTable.draggable();
-        timelineTable.dblclick(function () {
+        CC7.showTable(jqClicked, timelineTable, 30, 30);
+    }
+
+    static showTable(jqClicked, theTable, lOffset, tOffset) {
+        // Attach the table to the container div
+        theTable.prependTo($("#cc7Container"));
+        theTable.draggable();
+        theTable.off("dblclick").on("dblclick", function () {
             $(this).slideUp();
         });
 
-        CC7.setOffset(jqClicked, timelineTable, 75, 40);
+        CC7.setOffset(jqClicked, theTable, lOffset, tOffset);
         $(window).resize(function () {
-            if (timelineTable.length) {
-                CC7.setOffset(jqClicked, timelineTable, 75, 40);
+            if (theTable.length) {
+                CC7.setOffset(jqClicked, theTable, lOffset, tOffset);
             }
         });
 
-        timelineTable.slideDown("slow");
-        timelineTable.find("x").click(function () {
-            timelineTable.slideUp();
-        });
-        timelineTable.find("w").click(function () {
-            timelineTable.toggleClass("wrap");
-        });
+        theTable.slideDown("slow");
+        theTable
+            .find("x")
+            .off("click")
+            .on("click", function () {
+                theTable.slideUp();
+            });
+        theTable
+            .find("w")
+            .off("click")
+            .on("click", function () {
+                theTable.toggleClass("wrap");
+            });
     }
 
     static setOffset(theClicked, elem, lOffset, tOffset) {
         const theLeft = CC7.getOffset(theClicked[0]).left + lOffset;
         elem.css({ top: CC7.getOffset(theClicked[0]).top + tOffset, left: theLeft });
+    }
+
+    static showBioCheckReport(jqClicked) {
+        const theClickedRow = jqClicked.closest("tr");
+        const id = +theClickedRow.attr("data-id");
+        let person = window.people.get(id);
+        if (typeof person.bioCheckReport == "undefined" || person.bioCheckReport.length == 0) {
+            return;
+        }
+        const theClickedName = person.Name;
+        const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
+        if ($(`#${familyId}`).length) {
+            $(`#${familyId}`).slideToggle();
+            return;
+        }
+
+        const bioReportTable = CC7.getBioCheckReportTable(person);
+        bioReportTable.attr("id", familyId);
+        CC7.showTable(jqClicked, bioReportTable, 30, 30);
+    }
+
+    static getBioCheckReportTable(person) {
+        const issueWord = person.bioCheckReport.length == 1 ? "issue" : "issues";
+        const bioCheckTable = $(
+            `<div class='bioReport' data-wtid='${person.Name}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
+                `<caption>Bio Check found the following ${issueWord} with the biography of ${person.FirstName}</caption>` +
+                "<tbody></tbody></table></div>"
+        );
+
+        for (const msg of person.bioCheckReport) {
+            const msgTR = $("<tr></tr>").append($("<td></td>").text(msg));
+            bioCheckTable.find("tbody").append(msgTR);
+        }
+        return bioCheckTable;
     }
 
     static peopleToTable(kPeople) {
@@ -1303,27 +1399,8 @@ export class CC7 {
         const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
 
         const kkTable = CC7.peopleToTable(thisFamily);
-        kkTable.prependTo("#cc7Container");
         kkTable.attr("id", familyId);
-        kkTable.draggable();
-        kkTable.on("dblclick", function () {
-            $(this).slideUp();
-        });
-
-        CC7.setOffset(theClicked, kkTable, 0, 40);
-        $(window).resize(function () {
-            if (kkTable.length) {
-                CC7.setOffset(theClicked, kkTable, 0, 40);
-            }
-        });
-
-        kkTable.slideDown("slow");
-        kkTable.find("x").click(function () {
-            kkTable.slideUp();
-        });
-        kkTable.find("w").click(function () {
-            kkTable.toggleClass("wrap");
-        });
+        CC7.showTable(theClicked, kkTable, 30, 30);
     }
 
     static assignRelationshipsFor(person) {
@@ -1338,15 +1415,14 @@ export class CC7 {
         }
     }
 
-    static showFamilySheet(jq) {
-        const theClicked = jq;
-        const jqClosest = jq.closest("tr");
-        const theClickedName = jqClosest.attr("data-name");
-        const theClickedId = +jqClosest.attr("data-id");
+    static showFamilySheet(jqClicked) {
+        const theClickedRow = jqClicked.closest("tr");
+        const theClickedName = theClickedRow.attr("data-name");
+        const theClickedId = +theClickedRow.attr("data-id");
 
         const aPeo = window.people.get(theClickedId);
         if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
-            CC7.doFamilySheet(aPeo, theClicked);
+            CC7.doFamilySheet(aPeo, jqClicked);
         } else {
             console.log(`Calling getRelatives for ${theClickedName}`);
             WikiTreeAPI.postToAPI({
@@ -1361,7 +1437,7 @@ export class CC7 {
                 // Construct this person so it conforms to the profiles retrieved using getPeople
                 const mPerson = CC7.convertToInternal(data[0].items[0].person);
                 window.people.set(+mPerson.Id, mPerson);
-                CC7.doFamilySheet(mPerson, theClicked);
+                CC7.doFamilySheet(mPerson, jqClicked);
             });
         }
     }
@@ -1655,7 +1731,7 @@ export class CC7 {
 
     static sortByThis(el) {
         const aTable = $("#peopleTable");
-        el.click(function () {
+        el.off("click").on("click", function () {
             let sorter = el.attr("id");
             let rows = aTable.find("tbody tr");
             if (sorter == "birthlocation" || sorter == "deathlocation") {
@@ -1746,11 +1822,14 @@ export class CC7 {
         const spousesNum = "<th id='spouse' title='Spouses. Click to sort.' data-order='desc'>Sp.</th>";
         const childrenNum = "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>";
         const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
+        const bioCheck = CC7.currentSettings["biocheck_options_biocheckOn"];
 
         const aTable = $(
             "<table id='peopleTable' class='peopleTable'>" +
                 aCaption +
-                "<thead><tr><th></th><th></th><th></th>" +
+                `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
+                    bioCheck ? "/B" : ""
+                }</th><th></th><th></th>` +
                 degreeTH +
                 parentsNum +
                 siblingsNum +
@@ -1840,7 +1919,7 @@ export class CC7 {
             switch (privacyLevel) {
                 case 60:
                     privacy = "./views/cc7/images/privacy_open.png";
-                    privacyTitle = "Open";
+                    privacyTitle = "Privacy: Open";
                     break;
                 case 50:
                     privacy = "./views/cc7/images/privacy_public.png";
@@ -2106,7 +2185,11 @@ export class CC7 {
                     dManager +
                     "' class='" +
                     gender +
-                    "'><td>" +
+                    `'><td ${
+                        mPerson.hasBioIssues
+                            ? "class='privBio bioIssue' title='Click to see Bio Check Report'"
+                            : "class='privBio'"
+                    }>` +
                     (privacy ? "<img class='privacyImage' src='" + privacy + "' title='" + privacyTitle + "'>" : "") +
                     `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
@@ -2156,25 +2239,36 @@ export class CC7 {
             CC7.setOverflow("auto");
         }
         if ($("#cc7Container").length == 0) {
-            $(".peopleTable caption").click(function () {
-                $(this).parent().find("thead,tbody").slideToggle();
-            });
+            $(".peopleTable caption")
+                .off("click")
+                .on("click", function () {
+                    $(this).parent().find("thead,tbody").slideToggle();
+                });
         }
 
         // Provide a way to examine the data record of a specific person
-        $("img.privacyImage").click(function (event) {
-            if (event.altKey) {
+        $("img.privacyImage, .bioIssue")
+            .off("click")
+            .on("click", function (event) {
+                event.stopImmediatePropagation();
                 const id = $(this).closest("tr").attr("data-id");
                 const p = window.people.get(+id);
-                console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
-            }
-        });
-        $("img.familyHome").click(function () {
-            CC7.showFamilySheet($(this));
-        });
-        $("img.timelineButton").click(function (event) {
-            CC7.showTimeline($(this).closest("tr"));
-        });
+                if (event.altKey) {
+                    console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
+                } else if (p.hasBioIssues) {
+                    CC7.showBioCheckReport($(this));
+                }
+            });
+        $("img.familyHome")
+            .off("click")
+            .on("click", function () {
+                CC7.showFamilySheet($(this));
+            });
+        $("img.timelineButton")
+            .off("click")
+            .on("click", function (event) {
+                CC7.showTimeline($(this));
+            });
 
         aTable.find("th[id]").each(function () {
             CC7.sortByThis($(this));
@@ -2189,35 +2283,41 @@ export class CC7 {
                 )
             );
         }
-        $("#listViewButton").on("click", function () {
-            $(".viewButton").removeClass("active");
-            $(this).addClass("active");
-            $("#peopleTable,#hierarchyView").hide();
-            if ($("#lanceTable").length == 0) {
-                CC7.lanceView();
-            } else {
-                $("#lanceTable").show().addClass("active");
-                $("#wideTableButton").hide();
-            }
-        });
-        $("#hierarchyViewButton").on("click", function () {
-            $(".viewButton").removeClass("active");
-            $(this).addClass("active");
-            $("#peopleTable,#lanceTable").hide().removeClass("active");
-            if ($("#hierarchyView").length == 0) {
-                CC7.showShakingTree(() => CC7.hierarchyCC7());
-                $("#wideTableButton").hide();
-            } else {
-                $("#hierarchyView").show();
-            }
-        });
-        $("#tableViewButton").on("click", function () {
-            $(".viewButton").removeClass("active");
-            $(this).addClass("active");
-            $("#hierarchyView,#lanceTable").hide().removeClass("active");
-            $("#peopleTable").show();
-            $("#wideTableButton").show();
-        });
+        $("#listViewButton")
+            .off("click")
+            .on("click", function () {
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#peopleTable,#hierarchyView").hide();
+                if ($("#lanceTable").length == 0) {
+                    CC7.lanceView();
+                } else {
+                    $("#lanceTable").show().addClass("active");
+                    $("#wideTableButton").hide();
+                }
+            });
+        $("#hierarchyViewButton")
+            .off("click")
+            .on("click", function () {
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#peopleTable,#lanceTable").hide().removeClass("active");
+                if ($("#hierarchyView").length == 0) {
+                    CC7.showShakingTree(() => CC7.hierarchyCC7());
+                    $("#wideTableButton").hide();
+                } else {
+                    $("#hierarchyView").show();
+                }
+            });
+        $("#tableViewButton")
+            .off("click")
+            .on("click", function () {
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#hierarchyView,#lanceTable").hide().removeClass("active");
+                $("#peopleTable").show();
+                $("#wideTableButton").show();
+            });
 
         CC7.hideShakingTree();
         $("#countdown").fadeOut();
@@ -2235,17 +2335,21 @@ export class CC7 {
             $(
                 '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
             ).insertAfter($("#loadButton"));
-            $("#cc7excel").click(function () {
-                CC7.cc7excelOut(CC7.EXCEL);
-            });
+            $("#cc7excel")
+                .off("click")
+                .on("click", function () {
+                    CC7.cc7excelOut(CC7.EXCEL);
+                });
         }
         if ($("#cc7csv").length == 0) {
             $(
                 '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
             ).insertAfter($("#loadButton"));
-            $("#cc7csv").click(function () {
-                CC7.cc7excelOut(CC7.CSV);
-            });
+            $("#cc7csv")
+                .off("click")
+                .on("click", function () {
+                    CC7.cc7excelOut(CC7.CSV);
+                });
         }
         aTable.floatingScroll();
     }
@@ -2289,7 +2393,7 @@ export class CC7 {
             }
             const headerCellText = headerCell.textContent.trim();
             const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
-            if (!["Pos."].includes(headerCellText) && !["Pos.", ""].includes(originalHeaderCellText)) {
+            if (!["Pos.", "P/B"].includes(headerCellText) && !["Pos.", "P/B", ""].includes(originalHeaderCellText)) {
                 // console.log(headerCellText);
                 filterCell.title = "Enter a column value to which to limit the rows";
                 const filterInput = document.createElement("input");
@@ -3222,7 +3326,9 @@ export class CC7 {
                     minGeneration: degree - 1,
                     start: start,
                     limit: limit,
-                    fields: CC7.GET_PEOPLE_FIELDS,
+                    fields: CC7.currentSettings["biocheck_options_biocheckOn"]
+                        ? CC7.GET_PEOPLE_FIELDS + ",Bio"
+                        : CC7.GET_PEOPLE_FIELDS,
                 },
                 CC7.cancelLoadController.signal
             );
@@ -3240,6 +3346,7 @@ export class CC7 {
     }
 
     static addPeople(profiles, degreeCounts, minDegree, maxDegree) {
+        const userWTuserID = window.wtViewRegistry.session.lm.user.name;
         let nrAdded = 0;
         let maxDegreeFound = -1;
         for (const person of profiles) {
@@ -3270,6 +3377,47 @@ export class CC7 {
                 person.Sibling = [];
                 person.Child = [];
                 person.Marriage = {};
+
+                if (CC7.currentSettings["biocheck_options_biocheckOn"]) {
+                    const bioPerson = new BioCheckPerson();
+                    if (bioPerson.canUse(person, false, true, userWTuserID)) {
+                        const biography = new Biography(theSourceRules);
+                        biography.parse(bioPerson.getBio(), bioPerson, "");
+                        biography.validate();
+                        person.hasBioIssues = biography.hasStyleIssues() || !biography.hasSources();
+                        if (person.hasBioIssues) {
+                            person.bioCheckReport = getReportLines(biography, bioPerson.isPre1700());
+                        }
+                    }
+                    delete person.bio;
+                }
+
+                function getReportLines(biography, isPre1700) {
+                    const profileReportLines = [];
+                    if (!biography.hasSources()) {
+                        profileReportLines.push("Profile may be unsourced");
+                    }
+                    const invalidSources = biography.getInvalidSources();
+                    const nrInvalidSources = invalidSources.length;
+                    if (nrInvalidSources > 0) {
+                        let msg = "Bio Check found sources that are not ";
+                        if (isPre1700) {
+                            msg += "reliable or ";
+                        }
+                        msg += "clearly identified: \u00A0\u00A0";
+                        profileReportLines.push(msg);
+                        for (const invalidSource of invalidSources) {
+                            profileReportLines.push("\xa0\xa0\xa0" + invalidSource);
+                        }
+                    }
+                    for (const sectMsg of biography.getSectionMessages()) {
+                        profileReportLines.push(sectMsg);
+                    }
+                    for (const styleMsg of biography.getStyleMessages()) {
+                        profileReportLines.push(styleMsg);
+                    }
+                    return profileReportLines;
+                }
 
                 window.people.set(id, person);
                 ++nrAdded;
@@ -3511,7 +3659,9 @@ export class CC7 {
                     start: start,
                     limit: limit,
                     nuclear: depth,
-                    fields: CC7.GET_PEOPLE_FIELDS,
+                    fields: CC7.currentSettings["biocheck_options_biocheckOn"]
+                        ? CC7.GET_PEOPLE_FIELDS + ",Bio"
+                        : CC7.GET_PEOPLE_FIELDS,
                 },
                 CC7.cancelLoadController.signal
             );
