@@ -205,6 +205,13 @@
                 C70.497,42.54,65.421,46.885,61.342,50.376z"/>
         </g>
         </svg>`;
+    const SVGbtnRESIZE2 = `<svg width="16" height="16" viewBox="0 -0.5 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+            class="si-glyph si-glyph-arrow-fullscreen-2">    
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <path d="M14.988,6.979 C15.547,6.979 16,6.527 16,5.97 L16,1.008 C16,0.45 15.547,-0.000999999989 14.988,-0.000999999989 L10.011,-0.000999999989 C9.452,-0.000999999989 8.999,0.45 8.999,1.008 L10.579,2.583 L8.009,5.153 L5.439,2.583 L7.019,1.008 C7.019,0.45 6.566,-0.000999999989 6.007,-0.000999999989 L1.03,-0.000999999989 C0.471,-0.000999999989 0.0179999999,0.45 0.0179999999,1.008 L0.0179999999,5.97 C0.0179999999,6.527 0.471,6.979 1.03,6.979 L2.62,5.394 L5.194,7.968 L2.598,10.565 L1.028,9 C0.471,9 0.0189999999,9.45 0.0189999999,10.006 L0.0189999999,14.952 C0.0189999999,15.507 0.471,15.958 1.028,15.958 L5.99,15.958 C6.548,15.958 6.999,15.507 6.999,14.952 L5.417,13.375 L8.009,10.783 L10.601,13.375 L9.019,14.952 C9.019,15.507 9.47,15.958 10.028,15.958 L14.99,15.958 C15.547,15.958 15.999,15.507 15.999,14.952 L15.999,10.006 C15.999,9.45 15.547,9 14.99,9 L13.42,10.565 L10.824,7.968 L13.398,5.394 L14.988,6.979 L14.988,6.979 Z" fill="#434343" class="si-glyph-fill">
+                </path>
+            </g>
+        </svg>`;
 
     /**
      * Constructor
@@ -248,6 +255,8 @@
 
     SuperBigFamView.maxDiamPerGen = []; // used to store the diameter of the spokes for the Super Big Family Tree
     SuperBigFamView.currentScaleFactor = 1;
+    SuperBigFamView.lastCustomScaleFactor = 0.9;
+    SuperBigFamView.zoomCounter = 0;
 
     SuperBigFamView.loadedLevels = ["D1"];
     SuperBigFamView.linesATC = []; // the Lines (connectors) Air Traffic Controller
@@ -679,7 +688,7 @@
                         {
                             optionName: "font4Info",
                             type: "radio",
-                            label: "Font for Info",
+                            label: "!* Font for Info",
                             values: [
                                 { value: "SansSerif", text: "Arial" },
                                 { value: "Mono", text: "Courier" },
@@ -726,14 +735,14 @@
                         { optionName: "break1", type: "br" },
                         {
                             optionName: "colourizeRepeats",
-                            label: "Colourize Repeat Ancestors",
+                            label: "!* Colourize Repeat Ancestors",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         { optionName: "break2", type: "br" },
                         {
                             optionName: "showBadges",
-                            label: "Add Badges to Ancestors",
+                            label: "!* Add Badges to Ancestors",
                             type: "checkbox",
                             defaultValue: false,
                         },
@@ -748,14 +757,14 @@
                     options: [
                         {
                             optionName: "prefix",
-                            label: "Show Prefix before full name",
+                            label: "!* Show Prefix before full name",
                             type: "checkbox",
                             defaultValue: 0,
                         },
                         {
                             optionName: "firstName",
                             type: "radio",
-                            label: "",
+                            label: "!* ",
                             values: [
                                 { value: "FirstNameAtBirth", text: "First Name at Birth" },
                                 { value: "UsualName", text: "Usual Name" },
@@ -764,21 +773,21 @@
                         },
                         {
                             optionName: "middleName",
-                            label: "Show Middle Name",
+                            label: "!* Show Middle Name",
                             type: "checkbox",
                             defaultValue: 0,
                         },
                         {
                             optionName: "middleInitial",
-                            label: "Show Middle Initial",
+                            label: "!* Show Middle Initial",
                             type: "checkbox",
                             defaultValue: 0,
                         },
-                        { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
+                        { optionName: "nickName", label: "!* Show NickName", type: "checkbox", defaultValue: 0 },
                         {
                             optionName: "lastName",
                             type: "radio",
-                            label: "",
+                            label: "!* ",
                             values: [
                                 { value: "LastNameAtBirth", text: "Last Name at Birth" },
                                 { value: "CurrentLastName", text: "Current Last Name" },
@@ -787,7 +796,7 @@
                         },
                         {
                             optionName: "suffix",
-                            label: "Show Suffix after full name",
+                            label: "!* Show Suffix after full name",
                             type: "checkbox",
                             defaultValue: 0,
                         },
@@ -803,7 +812,7 @@
                         {
                             optionName: "dateTypes",
                             type: "radio",
-                            label: "",
+                            label: "!* ",
                             values: [
                                 { value: "none", text: "No Dates" },
                                 { value: "br" },
@@ -816,29 +825,29 @@
                         { optionName: "break0", comment: "Full Dates details:", type: "br" },
                         {
                             optionName: "showBirth",
-                            label: "Show Birth Date",
+                            label: "!* Show Birth Date",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "showDeath",
-                            label: "Show Death Date",
+                            label: "!* Show Death Date",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         // {
                         //     optionName: "showLifeSpan",
-                        //     label: "Show LifeSpan (replaces birth & death dates)",
+                        //     label: "!* Show LifeSpan (replaces birth & death dates)",
                         //     type: "checkbox",
                         //     defaultValue: 0,
                         // },
                         // { optionName: "break1", type: "br" },
-                        // { optionName: "showMarriage", label: "Show Marriage Date", type: "checkbox", defaultValue: 0 },
+                        // { optionName: "showMarriage", label: "!* Show Marriage Date", type: "checkbox", defaultValue: 0 },
                         { optionName: "break2", comment: "Date Format:", type: "br" },
                         {
                             optionName: "dateFormat",
                             type: "radio",
-                            label: "",
+                            label: "!* ",
                             values: [
                                 { value: "YYYY", text: "1964" },
                                 { value: "YYYYMMDD", text: "1964-01-16" },
@@ -858,7 +867,7 @@
                         {
                             optionName: "locationTypes",
                             type: "radio",
-                            label: "",
+                            label: "!* ",
                             values: [
                                 { value: "none", text: "No Locations" },
                                 { value: "br" },
@@ -869,13 +878,13 @@
                         { optionName: "break0", comment: "Location details:", type: "br" },
                         {
                             optionName: "showBirth",
-                            label: "Show Birth Location",
+                            label: "!* Show Birth Location",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "showDeath",
-                            label: "Show Death Location",
+                            label: "!* Show Death Location",
                             type: "checkbox",
                             defaultValue: true,
                         },
@@ -883,7 +892,7 @@
                         {
                             optionName: "locationFormatBD",
                             type: "radio",
-                            label: "",
+                            label: "!* ",
                             values: [
                                 { value: "Full", text: "Full Location as entered" },
                                 { value: "br" },
@@ -927,26 +936,26 @@
                     options: [
                         {
                             optionName: "showCentralPic",
-                            label: "Show the Central Person Photo",
+                            label: "!* Show the Central Person Photo",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "showAllPics",
-                            label: "Show Photos of Ancestors",
+                            label: "!* Show Photos of Ancestors",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "useSilhouette",
-                            label: "Use Silhouette when no photo available",
+                            label: "!* Use Silhouette when no photo available",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         { optionName: "break1", type: "br" },
                         {
                             optionName: "showPicsToN",
-                            label: "Limit Photos to first N generations",
+                            label: "!* Limit Photos to first N generations",
                             type: "checkbox",
                             defaultValue: true,
                         },
@@ -965,19 +974,19 @@
                             label: "Background Colour cells by",
                             values: [
                                 { value: "None", text: "OFF - All White, all the time WHITE" },
-                                { value: "Gender", text: "Gender" },
                                 { value: "Generation", text: "Generation" },
-                                { value: "Grand", text: "Grandparent" },
-                                { value: "GGrand", text: "Great-Grandparent" },
-                                { value: "GGGrand", text: "2x Great Grandparent" },
-                                { value: "GGGGrand", text: "3x Great Grandparent" },
-                                { value: "Family", text: "Family Stats" },
-                                { value: "Location", text: "Location" },
+                                { value: "Gender", text: "!* Gender" },
+                                { value: "Grand", text: "!* Grandparent" },
+                                { value: "GGrand", text: "!* Great-Grandparent" },
+                                { value: "GGGrand", text: "!* 2x Great Grandparent" },
+                                { value: "GGGGrand", text: "!* 3x Great Grandparent" },
+                                { value: "Family", text: "!* Family Stats" },
+                                { value: "Location", text: "!* Location" },
 
                                 // { value: "Town", text: "by Place name" },
                                 // { value: "Region", text: "by Region (Province/State)" },
                                 // { value: "Country", text: "by Country" },
-                                { value: "random", text: "random chaos" },
+                                { value: "random", text: "!* random chaos" },
                             ],
                             defaultValue: "Generation",
                         },
@@ -1062,7 +1071,7 @@
                         {
                             optionName: "highlightBy",
                             type: "select",
-                            label: "Highlight by",
+                            label: "!* Highlight by",
                             values: [
                                 { value: "YDNA", text: "Y-DNA" },
                                 { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
@@ -1230,7 +1239,10 @@
             '<td width="5%">&nbsp;' +
             "</td>" +
             '<td width="30%" align="right">' +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Planning mode:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPlanningMode -=1; SuperBigFamView.redraw();">  ' +
+            // '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Planning mode:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPlanningMode -=1; SuperBigFamView.redraw();">  ' +
+            '<A onclick="SuperBigFamView.reZoom();">' +
+            SVGbtnRESIZE2 +
+            "</A>&nbsp;&nbsp;" +
             '<span id=legendASCII style="display:inline;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
             LEGEND_CLIPBOARD +
             "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
@@ -1469,22 +1481,38 @@
         }
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
-        const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+        const svg = d3
+            .select(container)
+            .append("svg")
+            .attr("id", "superbigChartSVG")
+            .attr("width", width)
+            .attr("height", height);
         const g = svg.append("g").attr("id", "SVGgraphics");
         const lines = g.append("g").attr("id", "theConnectors");
 
         condLog("ADDING THE SVG BIG DADDY TAZ");
 
         // Setup zoom and pan
-        const zoom = d3
+        SuperBigFamView.zoom = d3
             .zoom()
-            .scaleExtent([0.02, 1.2])
+            .scaleExtent([0.02, 3.0])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
                 SuperBigFamView.currentScaleFactor = event.transform.k;
             });
-        svg.call(zoom);
-        svg.call(zoom.transform, d3.zoomIdentity.scale(0.75).translate(((4 / 3) * width) / 2, height / 2));
+        svg.call(SuperBigFamView.zoom);
+        svg.call(SuperBigFamView.zoom.transform, d3.zoomIdentity.scale(0.75).translate(((4 / 3) * width) / 2, height / 2));
+
+        // // Setup zoom and pan
+        // FanChartView.zoom = d3
+        //     .zoom()
+        //     .scaleExtent([0.1, 3.0])
+        //     .on("zoom", function (event) {
+        //         g.attr("transform", event.transform);
+        //         FanChartView.currentScaleFactor = event.transform.k;
+        //     });
+        // svg.call(FanChartView.zoom);
+
 
         // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Super Big Family Tree
@@ -2944,12 +2972,12 @@
                                     // need to put in the test ... in case we get a null result3, which we will eventually at the end of the line
                                     let allTheSpouses = result3[2];
                                     condLog("All THe Cousin Spouses Found:", allTheSpouses);
-                                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (3 of 4)";
+                                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 3 of 4)";
 
                                     let numNexteepsAdded = 0;   
                                     for (const index in allTheSpouses) {
                                         numNexteepsAdded++;
-                                        loadingTD.innerHTML = "loading Cousins " + newLevel + " - (3 of 4) - spouse " + numNexteepsAdded;
+                                        loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 3 of 4) - spouse " + numNexteepsAdded;
                                         thePeopleList.add(allTheSpouses[index]);
                                         theListOfIDs.push(index);
                                     }
@@ -2959,13 +2987,13 @@
                                     // for (let x in theListOfIDs) {
                                     //     const peepID = theListOfIDs[x];
                                     //     let thisPeep = thePeopleList[peepID];
-                                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (4 of 4)";
+                                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 4 of 4)";
                                     let numPeeps = 0;
                                     for (let peepID in thePeopleList) {
                                         let thisPeep = thePeopleList[peepID];
                                         numPeeps++;
                                         loadingTD.innerHTML =
-                                            "loading Cousins " + newLevel + " - (4 of 4) - spouse peep " + numPeeps;
+                                            "loading Cousins " + newLevel + " - (step 4 of 4) - spouse peep " + numPeeps;
 
                                         if (!thisPeep) {
                                             console.log(
@@ -2990,7 +3018,7 @@
                                             }
                                         }
                                     }
-                                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (5 of 4)";
+                                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 5 of 4)";
 
                                     assembleSiblingsFor(theAncsParentsIDs);
 
@@ -3109,7 +3137,7 @@
             );
         } else {
             let loadingTD = document.getElementById("loadingTD");
-            loadingTD.innerHTML = "loading Ancestors " + newLevel + " - (1 of 4)";
+            loadingTD.innerHTML = "loading Ancestors - gen" + newLevel + " - (step 1 of 4)";
             let theListOfID2Use = theSibsOnlyIDs;
             if (theListOfID2Use.length == 0) {
                 theListOfID2Use = [theListOfIDs[0]];
@@ -3214,7 +3242,7 @@
                     // SuperBigFamView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
 
                     console.log("SPOUSES from Siblings Descendants: ", spouseIDsArray.length);
-                    loadingTD.innerHTML = "loading Ancestors " + newLevel + " - (2 of 4)";
+                    loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 2 of 4)";
                     // (2) -> getPeople keys: A(N) direct ancestors;  Next level of Ancestors + their Siblings  : ancestors:1, siblings:1, incl. Spouses
 
                     console.log(
@@ -3313,7 +3341,7 @@
                             }
                             console.log("ADDED ", numNextAncsAndSibs, " ancestors + sibling peeps!");
                             console.log("ALL SPOUSES from Siblings Descendants + New Ancestors + Siblings: ", spouseIDsArray.length);
-                            loadingTD.innerHTML = "loading Ancestors " + newLevel + " - (3 of 4)";
+                            loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 3 of 4)";
 
                             console.log(
                                 "(loadAncestorsAtLevel:" + newLevel + " - 3) GETPEOPLE",
@@ -3380,7 +3408,7 @@
                                     //     const peepID = theListOfIDs[x];
                                     //     let thisPeep = thePeopleList[peepID];
 
-                                    loadingTD.innerHTML = "loading Ancestors " + newLevel + " - (4 of 4)";
+                                    loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 4 of 4)";
                                     for (let peepID in thePeopleList) {
                                         let thisPeep = thePeopleList[peepID];
 
@@ -3409,7 +3437,7 @@
                                     }
 
                                     assembleSiblingsFor(theAncsParentsIDs);
-                                    loadingTD.innerHTML = "loading Ancestors " + newLevel + " - (5 of 4)";
+                                    loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 5 of 4)";
                                     for (let NL = newLevel; NL <= newLevel + 3; NL++) {
                                         addToLeafCollectionAtLevel(NL);
                                     }
@@ -3499,7 +3527,7 @@
             // WikiTreeAPI.getRelatives(
             let loadingTD = document.getElementById("loadingTD");
             loadingTD.innerHTML = "loading";
-            loadingTD.innerHTML = "loading Descendants " + newLevel + " - (1 of 4)";
+            loadingTD.innerHTML = "loading Descendants gen" + newLevel + " - (step 1 of 4)";
             console.log(
                 "(loadDescendantsAtLevel:" + newLevel + " - 1) GETPEOPLE",
                 APP_ID,
@@ -3566,7 +3594,7 @@
                     // SuperBigFamView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
 
                     console.log("SPOUSES NEXT: ", spouseIDsArray.length);
-                    loadingTD.innerHTML = "loading Descendants " + newLevel + " - (2 of 4)";
+                    loadingTD.innerHTML = "loading Descendants gen" + newLevel + " - (step 2 of 4)";
 
                      console.log(
                          "(loadDescendantsAtLevel:" + newLevel + " - 2) GETPEOPLE",
@@ -4843,6 +4871,88 @@
         let theDIV = document.getElementById("legendDIV");
         theDIV.style.display = "none";
     };
+
+    SuperBigFamView.reZoom = function () {
+        // condLog("TIME to RE ZOOM now !", SuperBigFamView.currentScaleFactor);
+        let newScaleFactor = 0.8;
+
+        let svg = document.getElementById("superbigChartSVG");
+        let makeFitZoomFactor = 1;
+        // return;
+
+        if (svg) {
+            let g = svg.firstElementChild;
+            let h = 0;
+            let boundingBox = {};
+            if (g && g.getBBox) {
+                boundingBox = g.getBBox();
+                h = boundingBox.height;
+                if (boundingBox) {
+                    svg.setAttribute(
+                        "viewBox",
+                        `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
+                    );
+
+                    if ((window.innerWidth * h) / boundingBox.width > window.innerHeight - 30) {
+                        makeFitZoomFactor =
+                            (window.innerHeight - 30) / ((window.innerWidth * h) / boundingBox.width);
+                    }
+                }
+            }
+            // condLog(
+            //     makeFitZoomFactor,
+            //     SuperBigFamView.currentScaleFactor,
+            //     SuperBigFamView.lastCustomScaleFactor,
+            //     0.8 * makeFitZoomFactor,
+
+            // );
+
+            if (
+                SuperBigFamView.currentScaleFactor != 0.8 * makeFitZoomFactor &&
+                SuperBigFamView.currentScaleFactor != 1.0 * makeFitZoomFactor &&
+                SuperBigFamView.lastCustomScaleFactor != SuperBigFamView.currentScaleFactor
+            ) {
+                SuperBigFamView.lastCustomScaleFactor = SuperBigFamView.currentScaleFactor;
+                SuperBigFamView.zoomCounter = 2;
+            }
+
+            SuperBigFamView.zoomCounter = (SuperBigFamView.zoomCounter + 1) % 3;
+
+            if (SuperBigFamView.zoomCounter == 0) {
+                newScaleFactor = 0.8 * makeFitZoomFactor;
+            } else if (SuperBigFamView.zoomCounter == 1) {
+                newScaleFactor = 1.0 * makeFitZoomFactor;
+            } else if (SuperBigFamView.zoomCounter == 2) {
+                newScaleFactor = SuperBigFamView.lastCustomScaleFactor;
+            }
+
+            let overHead = 0;
+            if ((newScaleFactor * window.innerWidth * h) / boundingBox.width < window.innerHeight) {
+                overHead = Math.max(0, window.innerHeight - newScaleFactor * window.innerHeight);
+            }
+            // condLog(
+            //     "z",
+            //     SuperBigFamView.zoomCounter,
+            //     "overHead:",
+            //     overHead,
+            //     "newScaleFactor:",
+            //     newScaleFactor,
+            //     "bounding:",
+            //     boundingBox.width + " x " + boundingBox.height,
+            //     "in app:",
+
+            //     newScaleFactor  * window.innerWidth +
+            //         " x " +
+            //         newScaleFactor * window.innerHeight
+            // );
+
+            d3.select(svg).call(
+                SuperBigFamView.zoom.transform,
+                d3.zoomIdentity.translate(0, 0 - overHead).scale(newScaleFactor) /// translation used to be -h * 0.08
+            );
+        }
+    };
+
 
     /**
      * Load and display a person
