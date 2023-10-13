@@ -372,6 +372,11 @@ div.cc7Table input {
   padding-right: 1em;
   background-size: 1em 2em;
 }
+#cc7Subset {
+  margin-left: 1em;
+  min-width: 3em;
+  padding-right: 1.5em;
+}
 div.cc7Table #settingsDIV input[type="radio"] {
   min-width: 40px;
 }
