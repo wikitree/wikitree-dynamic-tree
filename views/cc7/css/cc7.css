@@ -377,6 +377,9 @@ div.cc7Table input {
   min-width: 3em;
   padding-right: 1.5em;
 }
+#cc7PBFilter {
+  min-width: 1em;
+}
 div.cc7Table #settingsDIV input[type="radio"] {
   min-width: 40px;
 }
@@ -768,6 +771,10 @@ table tr.cc7filter-row input[type="text"] {
   width: 100%;
 }
 
+#cc7Container li.select2-results__option {
+  height: 0.8em;
+  margin-bottom: 0;
+}
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/
