@@ -775,6 +775,9 @@ table tr.cc7filter-row input[type="text"] {
   height: 0.8em;
   margin-bottom: 0;
 }
+#cc7Container .select2-dropdown {
+  width: 40px !important;
+}
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/
