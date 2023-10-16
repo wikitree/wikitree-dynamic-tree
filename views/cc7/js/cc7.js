@@ -12,9 +12,10 @@ import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
 
 export class CC7 {
     static APP_ID = "CC7";
-    static DESCRIPTION =
-        "Loading 7 degrees may take a while (it can be 2 minutes or more) so the default is set to 3. Feel free to change it. ";
-    static BIOCHECK_OFF_DESCRIPTION = CC7.DESCRIPTION + "Bio Check is DISABLED in settings.";
+    static LONG_LOAD_WARNING =
+        "Loading 7 degrees may take a while, especially with Bio Check enabled (it can be 3 minutes or more) " +
+        "so the default is set to 3. Feel free to change it. ";
+    static firstTimeLoad = true;
     static SETTINGS_GEAR = "&#x2699;";
     static #helpText = `
         <x>[ x ]</x>
@@ -449,12 +450,7 @@ export class CC7 {
         CC7.settingOptionsObj.buildPage();
         CC7.settingOptionsObj.setActiveTab("icons");
         CC7.currentSettings = CC7.settingOptionsObj.getDefaultOptions();
-        if (!CC7.currentSettings["biocheck_options_biocheckOn"]) {
-            wtViewRegistry.setInfoPanel(CC7.BIOCHECK_OFF_DESCRIPTION);
-        } else {
-            wtViewRegistry.setInfoPanel(CC7.DESCRIPTION);
-        }
-        wtViewRegistry.showInfoPanel();
+        CC7.setInfoPanelMessage();
 
         $("#cancelLoad").off("click").on("click", CC7.cancelLoad);
         $("#getDegreeButton").off("click").on("click", CC7.getDegreeAction);
@@ -472,6 +468,17 @@ export class CC7 {
                 $("#fileInput").click();
             });
         $("#getPeopleButton").click();
+    }
+
+    static setInfoPanelMessage() {
+        const loadWarning = CC7.firstTimeLoad ? CC7.LONG_LOAD_WARNING : "";
+        wtViewRegistry.setInfoPanel(
+            loadWarning +
+                `Bio Check is ${
+                    CC7.currentSettings["biocheck_options_biocheckOn"] ? "ENABLED" : "DISABLED"
+                } in settings.`
+        );
+        wtViewRegistry.showInfoPanel();
     }
 
     static cancelLoad() {
@@ -509,11 +516,8 @@ export class CC7 {
                     $(this).off("click");
                     $(this).removeClass("bioIssue");
                 });
-                wtViewRegistry.setInfoPanel(CC7.BIOCHECK_OFF_DESCRIPTION);
-            } else {
-                wtViewRegistry.setInfoPanel(CC7.DESCRIPTION);
             }
-            wtViewRegistry.showInfoPanel();
+            CC7.setInfoPanelMessage();
             CC7.setCookie("w_diedYoung", JSON.stringify(CC7.currentSettings), { expires: 365 });
         }
         CC7View.cancelSettings();
@@ -527,6 +531,15 @@ export class CC7 {
         const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
         $("#getPeopleButton").text(`Get CC${newDegree}`);
         $("#getDegreeButton").text(`Get Degree ${newDegree} Only`);
+        if (newDegree > 3) {
+            CC7.LONG_LOAD_WARNING =
+                "Loading larger degrees may take a while, especially with Bio Check enabled " +
+                "(it can be 3 minutes or more for 7 degrees) so please be patient. ";
+        } else if (newDegree != 3) {
+            CC7.LONG_LOAD_WARNING =
+                "Loading larger degrees may take a while, especially with Bio Check enabled " +
+                "(it can be 3 minutes or more for 7 degrees) so please be patient when you do that. ";
+        }
         // Set the selected degree value if required
         let theDegree = $("#cc7Degree").val();
         if (newDegree != theDegree) {
@@ -1842,6 +1855,23 @@ export class CC7 {
         return caption;
     }
 
+    // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
+    // Privacy_IsPrivate            True if Privacy = 20
+    // Privacy_IsPublic             True if Privacy = 50
+    // Privacy_IsOpen               True if Privacy = 60
+    // Privacy_IsAtLeastPublic      True if Privacy >= 50
+    // Privacy_IsSemiPrivate        True if Privacy = 30-40
+    // Privacy_IsSemiPrivateBio     True if Privacy = 30
+    static PRIVACY_LEVELS = new Map([
+        [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
+        [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
+        [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
+        [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
+        [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
+        [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
+        [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
+    ]);
+
     static async addPeopleTable(caption) {
         $("#savePeople").show();
         const sortTitle = "title='Click to sort'";
@@ -1957,49 +1987,17 @@ export class CC7 {
                 deathLocationReversed = dLocation2ways[1];
             }
 
-            const privacyLevel = mPerson.Privacy;
-
-            let privacy = null;
+            const privacyLevel = +mPerson.Privacy;
+            const privacyDetail = CC7.PRIVACY_LEVELS.get(privacyLevel);
+            let privacyImg = null;
             let privacyTitle = "";
-            // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
-            // Privacy_IsPrivate            True if Privacy = 20
-            // Privacy_IsPublic             True if Privacy = 50
-            // Privacy_IsOpen               True if Privacy = 60
-            // Privacy_IsAtLeastPublic      True if Privacy >= 50
-            // Privacy_IsSemiPrivate        True if Privacy = 30-40
-            // Privacy_IsSemiPrivateBio     True if Privacy = 30
-            switch (privacyLevel) {
-                case 60:
-                    privacy = "./views/cc7/images/privacy_open.png";
-                    privacyTitle = "Privacy: Open";
-                    break;
-                case 50:
-                    privacy = "./views/cc7/images/privacy_public.png";
-                    privacyTitle = "Public";
-                    break;
-                case 40:
-                    privacy = "./views/cc7/images/privacy_public-tree.png";
-                    privacyTitle = "Private with Public Bio and Tree";
-                    break;
-                case 35:
-                    privacy = "./views/cc7/images/privacy_privacy35.png";
-                    privacyTitle = "Private with Public Tree";
-                    break;
-                case 30:
-                    privacy = "./views/cc7/images/privacy_public-bio.png";
-                    privacyTitle = "Public Bio";
-                    break;
-                case 20:
-                    privacy = "./views/cc7/images/privacy_private.png";
-                    privacyTitle = "Private";
-                    break;
-                case 10:
-                    privacy = "./views/cc7/images/privacy_unlisted.png";
-                    privacyTitle = "Unlisted";
-                    break;
-                default:
-                    break;
+            let dprivacy = "";
+            if (privacyDetail) {
+                privacyTitle = privacyDetail.title;
+                privacyImg = privacyDetail.img;
+                dprivacy = "data-privacy='" + privacyLevel + "'";
             }
+
             let firstName = mPerson.FirstName;
             if (mPerson.MiddleName) {
                 firstName = mPerson.FirstName + " " + mPerson.MiddleName;
@@ -2196,6 +2194,8 @@ export class CC7 {
 
             const aLine = $(
                 "<tr " +
+                    dprivacy +
+                    " " +
                     ddegree +
                     " " +
                     dAgeAtDeath +
@@ -2242,7 +2242,9 @@ export class CC7 {
                             ? "class='privBio bioIssue' title='Click to see Bio Check Report'"
                             : "class='privBio'"
                     }>` +
-                    (privacy ? "<img class='privacyImage' src='" + privacy + "' title='" + privacyTitle + "'>" : "") +
+                    (privacyImg
+                        ? "<img class='privacyImage' src='" + privacyImg + "' title='" + privacyTitle + "'>"
+                        : "") +
                     `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
@@ -2485,12 +2487,56 @@ export class CC7 {
         headerCells.forEach((headerCell, i) => {
             const filterCell = document.createElement("th");
             if (i == 0) {
-                filterCell.colSpan = 3;
+                filterCell.title = "Select a column value to which to limit the rows";
+                filterRow.appendChild(filterCell);
+                // $(
+                // "<select id='cc7PBFilter' title='Select which Privacy/BioCheck rows should be displayed'>"
+                // <option value='all' title="Everything" selected>&nbsp;</option>"
+                // <option value='bioBad' title="With Bio Check Issues">./views/cc7/images/checkbox-cross-red-icon.png</option>"
+                // <option value='bioOK' title="No Bio Check Issues">./views/cc7/images/checkmark-box-green-icon.png</option>"
+                // <option value='60' title='Privacy: Open'>./views/cc7/images/privacy_open.png</option>" +
+                // <option value='50' title='Public'>./views/cc7/images/privacy_public.png</option>" +
+                // <option value='40' title='Private with Public Bio and Tree'>./views/cc7/images/privacy_public-tree.png</option>"
+                // etc.
+                // );
+                const filterSelect = document.createElement("select");
+                filterSelect.id = "cc7PBFilter";
+                filterSelect.title = "Select which Privacy/BioCheck rows should be displayed";
+                let filterOption = document.createElement("option");
+                filterOption.value = "all";
+                filterOption.title = "Everything";
+                filterOption.text = " ";
+                filterSelect.appendChild(filterOption);
+                if (CC7.currentSettings["biocheck_options_biocheckOn"]) {
+                    filterOption = document.createElement("option");
+                    filterOption.value = "bioBad";
+                    filterOption.title = "With Bio Check Issues";
+                    filterOption.text = "./views/cc7/images/checkbox-cross-red-icon.png";
+                    filterSelect.appendChild(filterOption);
+                    filterOption = document.createElement("option");
+                    filterOption.value = "bioOK";
+                    filterOption.title = "No Bio Check Issue";
+                    filterOption.text = "./views/cc7/images/checkmark-box-green-icon.png";
+                    filterSelect.appendChild(filterOption);
+                }
+                for (const privLevel of CC7.PRIVACY_LEVELS.keys()) {
+                    const privacy = CC7.PRIVACY_LEVELS.get(privLevel);
+                    filterOption = document.createElement("option");
+                    filterOption.value = privLevel;
+                    filterOption.title = privacy.title;
+                    filterOption.text = privacy.img;
+                    filterSelect.appendChild(filterOption);
+                }
+                filterCell.appendChild(filterSelect);
+                return;
+            } else if (i == 1) {
+                filterCell.colSpan = 2;
                 filterCell.style.textAlign = "right";
-                filterCell.innerHTML = "Filters:";
+                filterCell.innerHTML = "Filters";
                 filterCell.title =
                     "Show only rows with these column values. > and < may be used for numerical columns.";
                 filterRow.appendChild(filterCell);
+                return;
             }
             const headerCellText = headerCell.textContent.trim();
             const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
@@ -2552,9 +2598,31 @@ export class CC7 {
             headerRow.parentElement.insertBefore(filterRow, headerRow);
         }
 
+        function formatOptions(option) {
+            // option:
+            // {
+            //     "id": "value attribute" || "option text",
+            //     "text": "label attribute" || "option text",
+            //     "element": HTMLOptionElement
+            // }
+            if (!option.id || option.id == "all") {
+                return option.text;
+            }
+            return $(`<img class="privacyImage" src="./${option.text}"/>`);
+        }
+        $("#cc7PBFilter").select2({
+            templateResult: formatOptions,
+            templateResult: formatOptions,
+            templateSelection: formatOptions,
+            dropdownParent: $("#cc7Container"),
+            minimumResultsForSearch: Infinity,
+            width: "2em",
+        });
+
         document.querySelectorAll(".filter-input").forEach((input) => {
             input.addEventListener("input", CC7.filterListener);
         });
+        $("#cc7PBFilter").off("select2:select").on("select2:select", CC7.filterListener);
 
         // Add Clear Filters button
         $("#clearTableFiltersButton").remove();
@@ -2576,6 +2644,7 @@ export class CC7 {
         document.querySelectorAll(".filter-input").forEach((input) => {
             input.value = "";
         });
+        $("#cc7PBFilter").val("all").trigger("change");
         CC7.filterFunction();
         CC7.updateClearFiltersButtonVisibility();
     }
@@ -2598,16 +2667,25 @@ export class CC7 {
                 return;
             }
 
-            let displayRow = true;
-
+            const filters = [];
             filterInputs.forEach((input, inputIndex) => {
                 let filterText = input.value.toLowerCase();
                 if (filterText.length == 0) {
                     return;
                 }
                 const columnIndex =
-                    Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 2;
-                let cellText = row.children[columnIndex].textContent.toLowerCase();
+                    Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 1;
+                filters.push({
+                    input: input,
+                    cellText: row.children[columnIndex].textContent.toLowerCase(),
+                });
+            });
+
+            let displayRow = true;
+            filters.forEach((filter, inputIndex) => {
+                const input = filter.input;
+                let filterText = input.value.toLowerCase();
+                let cellText = filter.cellText;
                 const isDateColumn = input.classList.contains("date-input");
                 const isNumericColumn = input.classList.contains("numeric-input");
                 let operator;
@@ -2621,9 +2699,11 @@ export class CC7 {
                 }
 
                 // Perform the appropriate checks
+                // Note, since we want the && of all the filters, the code below should only set
+                // displayRow to false as and when necessary (and never set it to true).
                 if (operator == "?") {
                     // Select rows with an empty cell in this column
-                    displayRow = cellText == "";
+                    if (cellText != "") displayRow = false;
                 } else if (
                     (isNumericColumn && filterText != "~") ||
                     (isDateColumn && (operator == ">" || operator == "<"))
@@ -2654,16 +2734,27 @@ export class CC7 {
                         }
                     }
                 } else {
-                    // Perform partial matching
-                    if (!cellText.includes(filterText)) {
-                        displayRow = false;
-                    }
-                    // Flip the result for the not (!) operator
+                    // Perform partial matching and lip the result for the not (!) operator
+                    let aMatch = cellText.includes(filterText);
                     if (operator == "!=") {
-                        displayRow = !displayRow;
+                        aMatch = !aMatch;
                     }
+                    if (!aMatch) displayRow = false;
                 }
             });
+            // Add the Privacy/BioCheck filter
+            const pbFilterSelected = $("#cc7PBFilter").select2("data")[0];
+            const reqPrivacy = pbFilterSelected.id;
+            if (reqPrivacy != "all") {
+                if (reqPrivacy == "bioOK") {
+                    if (row.children[0].classList.contains("bioIssue")) displayRow = false;
+                } else if (reqPrivacy == "bioBad") {
+                    if (!row.children[0].classList.contains("bioIssue")) displayRow = false;
+                } else {
+                    const rowPrivacy = row.getAttribute("data-privacy");
+                    if (rowPrivacy != reqPrivacy) displayRow = false;
+                }
+            }
 
             row.style.display = displayRow ? "" : "none";
         });
@@ -2671,9 +2762,10 @@ export class CC7 {
     }
 
     static updateClearFiltersButtonVisibility() {
-        const anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
+        let anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
             (input) => input.value.trim() !== ""
         );
+        if ($("#cc7PBFilter").select2("data")[0].id != "all") anyFilterHasText = true;
         const clearFiltersButton = document.querySelector("#clearTableFiltersButton");
         clearFiltersButton.style.display = anyFilterHasText ? "inline-block" : "none";
     }
@@ -3333,6 +3425,7 @@ export class CC7 {
         event.preventDefault();
         const wtId = wtViewRegistry.getCurrentWtId();
         if (wtId.match(/.+\-.+/)) {
+            CC7.firstTimeLoad = false;
             $("#getPeopleButton").prop("disabled", true);
             $("#getDegreeButton").prop("disabled", true);
             $("#cancelLoad").show();
@@ -3382,6 +3475,7 @@ export class CC7 {
             $("#getPeopleButton").prop("disabled", false);
             $("#getDegreeButton").prop("disabled", false);
             $("#cancelLoad").hide();
+            CC7.setInfoPanelMessage();
         }
     }
 
@@ -3692,6 +3786,8 @@ export class CC7 {
         $("#getPeopleButton").prop("disabled", false);
         $("#getDegreeButton").prop("disabled", false);
         $("#cancelLoad").hide();
+        CC7.setInfoPanelMessage();
+        CC7.firstTimeLoad = false;
     }
 
     static getIdsOf(arrayOfPeople) {
@@ -4003,6 +4099,7 @@ export class CC7 {
                 input.removeEventListener("input", CC7.filterListener);
                 input.removeEventListener("click", CC7.clearFilterClickListener);
             });
+        $("#cc7PBFilter").off("select2:select");
 
         $(
             [

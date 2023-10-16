@@ -1,7 +1,6 @@
 import { CC7 } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
-
     constructor() {
         super();
         this.overflow = undefined;
@@ -10,7 +9,7 @@ window.CC7View = class CC7View extends View {
     meta() {
         return {
             title: "CC7 Views",
-            description: CC7.DESCRIPTION,
+            description: CC7.LONG_LOAD_WARNING,
             docs: "",
         };
     }
