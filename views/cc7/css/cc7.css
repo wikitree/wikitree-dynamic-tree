@@ -42,7 +42,7 @@ div.cc7Table button[disabled] {
 img.familyHome,
 img.privacyImage,
 img.timelineButton {
-  height: 1em;
+  height: 15px;
 }
 .cc7Table .bioIssue,
 img.familyHome,
@@ -247,7 +247,7 @@ div.cc7Table .timelineTable td {
 }
 
 .cc7Table #settingsDIV {
-  z-index: 20000;
+  z-index: 10000;
 }
 
 .cc7Table #explanation {
@@ -262,7 +262,7 @@ div.cc7Table .timelineTable td {
   margin: 1em auto;
   background: white;
   box-shadow: 1em 1em 1em grey;
-  z-index: 20000;
+  z-index: 10000;
 }
 #explanation:hover {
   cursor: grab;
@@ -319,15 +319,6 @@ span.missingText {
   margin-top: 0.3em;
 }
 
-img.familyHome {
-  height: 15px;
-  display: none;
-}
-
-div.cc7Table img.familyHome {
-  height: 15px;
-  display: inline;
-}
 .cc7Table .birthDate,
 .cc7Table .deathDate,
 .cc7Table .relationCell {
@@ -399,7 +390,7 @@ div.cc7Table #settingsDIV input[type="radio"] {
   border: none;
   list-style: none;
   display: block;
-  padding: 0.7em 0.5em 0.3em 0.5em;
+  padding: 0 0.5em 0 0.5em;
 }
 .cc7Table #cc7ImgKey li {
   width: auto;
