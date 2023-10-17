@@ -1,4 +1,4 @@
-class StatsView extends View {
+window.StatsView = class StatsView extends View {
     genNames = [];
     GENERATIONS = 10;
     ancestors = {};
@@ -92,11 +92,17 @@ class StatsView extends View {
         for (const person in this.ancestors) {
             const ancestor = this.ancestors[person];
 
-            console.log(ancestor);
+            //console.log(ancestor);
 
             let ancestorGeneration = ancestor["Meta"]["Degrees"];
-            let ancestorBirthYear = parseInt(ancestor["BirthDate"].substring(0, 4));
-            let ancestorDeathYear = parseInt(ancestor["DeathDate"].substring(0, 4));
+            let ancestorBirthYear;
+            let ancestorDeathYear;
+            if (ancestor.hasOwnProperty("BirthDate")) {
+                ancestorBirthYear = parseInt(ancestor["BirthDate"].substring(0, 4));
+            }
+            if (ancestor.hasOwnProperty("DeathDate")) {
+                ancestorDeathYear = parseInt(ancestor["DeathDate"].substring(0, 4));
+            }
 
             // add the birth year to the proper generation
             let birthGeneration = birthYears[ancestorGeneration];
@@ -105,7 +111,10 @@ class StatsView extends View {
             }
 
             // add the death age to the proper generation
-            let ancestorAgeAtDeath = this.getAgeAtDeath(ancestor["BirthDate"], ancestor["DeathDate"]);
+            let ancestorAgeAtDeath;
+            if (ancestor.hasOwnProperty("BirthDate") && ancestor.hasOwnProperty("DeathDate")) {
+                ancestorAgeAtDeath = this.getAgeAtDeath(ancestor["BirthDate"], ancestor["DeathDate"]);
+            }
             let deathAgeGeneration = deathAges[ancestorGeneration];
             if (ancestorAgeAtDeath != null) {
                 deathAgeGeneration.push(ancestorAgeAtDeath);
@@ -307,4 +316,4 @@ class StatsView extends View {
     sortByYear(a, b) {
         return a - b;
     }
-}
+};
