@@ -139,6 +139,8 @@ export class CC7 {
         </ul>
         <ul>
             <li>Click a Bio Check Issue cell to see the Bio Check report.</li>
+            <li>You can close an open report/pop-up in four ways: 1) press the ESC key, 2) double-click the pop-up,
+                3) click the [x] in the top right corner, or 4) click the button with which you opened it.</li>
         </ul>
         <h3>Hierarchy View</h3>
         <ul>
