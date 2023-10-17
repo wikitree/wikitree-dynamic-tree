@@ -42,7 +42,7 @@ div.cc7Table button[disabled] {
 img.familyHome,
 img.privacyImage,
 img.timelineButton {
-  height: 1em;
+  height: 15px;
 }
 .cc7Table .bioIssue,
 img.familyHome,
@@ -81,7 +81,6 @@ div.cc7Table #tree {
 .cc7Table .timeline {
   height: auto;
   width: auto;
-  /* z-index: 4000; */
 }
 .timelineTable td {
   padding: 0.1em;
@@ -210,8 +209,15 @@ div.cc7Table .timelineTable td {
 .cc7Table #peopleTable td.age-at-death {
   text-align: right;
 }
+.cc7Table span.bioIssue,
 .cc7Table #peopleTable td.bioIssue {
-  border: 2px solid red;
+  border: 2px solid darkorange;
+  background: #ffe270;
+}
+.cc7Table span.bioIssue {
+  cursor: default;
+  position: relative;
+  top: -0.4em;
 }
 .cc7Table #peopleTable td.privBio {
   text-align: center;
@@ -239,17 +245,9 @@ div.cc7Table .timelineTable td {
   height: 1.8em;
   vertical-align: middle;
 }
-.cc7Table ul#key {
-  display: block;
-  border: none;
-}
-.cc7Table ul#key li {
-  width: auto;
-  cursor: default;
-}
 
 .cc7Table #settingsDIV {
-  z-index: 11000;
+  z-index: 10000;
 }
 
 .cc7Table #explanation {
@@ -264,7 +262,7 @@ div.cc7Table .timelineTable td {
   margin: 1em auto;
   background: white;
   box-shadow: 1em 1em 1em grey;
-  z-index: 11000;
+  z-index: 10000;
 }
 #explanation:hover {
   cursor: grab;
@@ -312,13 +310,6 @@ div.cc7Table {
   min-width: 650px;
 }
 
-#peopleList td,
-#peopleList th {
-  padding: 1px 1em 1px 1px;
-}
-#peopleList li a {
-  font: 1.2em;
-}
 span.death,
 span.birth {
   display: block;
@@ -328,21 +319,9 @@ span.missingText {
   margin-top: 0.3em;
 }
 
-img.familyHome {
-  height: 15px;
-  display: none;
-}
-
-div.cc7Table img.familyHome {
-  height: 15px;
-  display: inline;
-}
-#peopleList {
-  display: none;
-}
-.birthDate,
-.deathDate,
-.relationCell {
+.cc7Table .birthDate,
+.cc7Table .deathDate,
+.cc7Table .relationCell {
   white-space: nowrap;
 }
 #getPeopleButton {
@@ -383,27 +362,7 @@ div.cc7Table input {
 div.cc7Table #settingsDIV input[type="radio"] {
   min-width: 40px;
 }
-#peopleList {
-  margin-left: 0.5em;
-  margin-bottom: 1em;
-  padding: 0.5em;
-}
-#peopleList th {
-  text-align: left;
-  white-space: nowrap;
-}
-#peopleList tr {
-  padding: 0.2em;
-  border-bottom: 1px solid gray;
-}
 
-td.actions img,
-#key img,
-.key img {
-  width: 20px;
-  height: 20px;
-  margin-right: 2px;
-}
 #wideTableButton {
   margin-left: 0.5em;
 }
@@ -426,92 +385,28 @@ td.actions img,
   border-radius: 50%;
   cursor: pointer;
 }
-label.missingLabel {
-  margin-left: 1em;
-  display: inline-block;
-}
-label.missingLabel input {
-  width: auto;
-  min-width: auto;
-}
-label.missingLabel {
-  border: 1px solid forestgreen;
-  border-radius: 1em;
-  padding: 0 0.5em;
-}
-#key,
-.key {
-  list-style: none;
-  display: inline-block;
-  margin-bottom: 0;
-}
-#key li,
-.key li {
-  display: inline-block;
-  cursor: pointer;
-}
-.key li {
-  width: 48%;
-}
-.key li.bricks {
-  width: 32%;
-}
-.key {
-  width: 37em;
-  margin: 1em auto;
+.cc7Table #cc7ImgKey {
   display: block;
-  text-align: center;
-  padding: 0.7em 0.5em 0.3em 0.5em;
-  border: 2px solid forestgreen;
-  border-radius: 1em;
+  border: none;
+  list-style: none;
+  display: block;
+  padding: 0 0.5em 0 0.5em;
 }
-.key span {
-  position: relative;
-  top: -0.4em;
-}
-
-img.missingImg {
-  cursor: pointer;
-}
-img.missingImg:active {
-  border-right: 1px solid forestgreen;
-  border-left: 1px solid forestgreen;
-}
-.key li {
-  border-bottom: 2px solid #fff;
-  border-radius: 1em;
+.cc7Table #cc7ImgKey li {
+  width: auto;
+  display: inline-block;
+  margin: 0;
   padding: 3px 2px 2px 3px;
 }
-.key li.clicked {
-  background: #f7f6f0;
-  border-radius: 1em;
-  border-bottom: 2px solid forestgreen;
+#cc7ImgKey img {
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
 }
-#peopleList tr[data-name=""] td.actions img,
-#peopleList tr[data-name=""] td.actions a {
-  visibility: hidden;
+.cc7ImgKey span.none {
+  height: 1.3em;
 }
-#peopleList tr[data-name=""] td.actions img.missingImg {
-  visibility: visible;
-}
-#peopleList th.missingChildrenCell,
-#peopleList td.missingChildrenCell,
-#peopleList th.missingSpouseCell,
-#peopleList td.missingSpouseCell,
-#peopleList th.actions,
-#peopleList td.actions {
-  padding-right: 2px;
-  padding-left: 0;
-}
-#peopleList .created,
-#peopleList .touched {
-  display: none;
-  text-align: right;
-}
-#peopleList.wide .created,
-#peopleList.wide .touched {
-  display: table-cell;
-}
+
 td.degree {
   text-align: center;
   cursor: default;

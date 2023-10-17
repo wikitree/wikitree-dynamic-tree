@@ -125,14 +125,20 @@ export class CC7 {
                 <img width=16px src="./views/cc7/images/setting-icon.png" />
                 at the top right, and selecting the images you want to use.
             </li>
+            <li>Click the images <img height=15px src="./views/cc7/images/Home_icon.png" /> and
+                <img height=15px src="./views/cc7/images/timeline.png" /> to see a family sheet and timeline, respectively,
+                of the given person.</li>
+            <li> Some cells may be colour-coded as follows:
         </ul>
-        <ul id="key" class="key">
+        <ul id="cc7ImgKey" class="cc7ImgKey">
+            <li><span class="bioIssue">&nbsp;&nbsp;&nbsp;</span> Bio Check issue</li>
             <li><img src="./views/cc7/images/blue_bricks_small.jpg" /> missing father</li>
             <li><img src="./views/cc7/images/pink_bricks_small.jpg" /> missing mother</li>
             <li><img src="./views/cc7/images/purple_bricks_small.jpg" /> both parents missing</li>
-            <li>
-                <span><span class="none"></span> the 'No more spouses/children' box is checked, or Died Young</span>
-            </li>
+            <li><span class="none"></span> the 'No more spouses/children' box is checked, or Died Young</li>
+        </ul>
+        <ul>
+            <li>Click a Bio Check Issue cell to see the Bio Check report.</li>
         </ul>
         <h3>Hierarchy View</h3>
         <ul>
@@ -364,6 +370,7 @@ export class CC7 {
     static settingOptionsObj;
     static currentSettings = {};
     static cancelLoadController;
+    static nextZLevel = 10000;
 
     constructor(selector, startId) {
         this.selector = selector;
@@ -424,7 +431,7 @@ export class CC7 {
         $("#help")
             .off("click")
             .on("click", function () {
-                $("#explanation").slideToggle();
+                $("#explanation").css("z-index", `${CC7.nextZLevel++}`).slideToggle();
             });
         $("#explanation")
             .off("dblclick")
@@ -468,6 +475,7 @@ export class CC7 {
                 $("#fileInput").click();
             });
         $("#getPeopleButton").click();
+        $(document).off("keyup", CC7.closePopup).on("keyup", CC7.closePopUp);
     }
 
     static setInfoPanelMessage() {
@@ -492,6 +500,7 @@ export class CC7 {
     static toggleSettings() {
         const theDIV = document.getElementById("settingsDIV");
         if (theDIV.style.display == "none") {
+            theDIV.style.zIndex = `${CC7.nextZLevel++}`;
             theDIV.style.display = "block";
         } else {
             theDIV.style.display = "none";
@@ -550,6 +559,29 @@ export class CC7 {
         theDegree = CC7.getCookie("w_cc7Degree");
         if (newDegree != theDegree) {
             CC7.setCookie("w_cc7Degree", newDegree, { expires: 365 });
+        }
+    }
+
+    static closePopUp(e) {
+        if (e.key === "Escape") {
+            // Find the popup with the highest z-index
+            let highestZIndex = 0;
+            let lastPopup = null;
+            $(
+                ".familySheet:visible, .timeline:visible, .bioReport:visible, #settingsDIV:visible, #explanation:visible"
+            ).each(function () {
+                const zIndex = parseInt($(this).css("z-index"), 10);
+                if (zIndex > highestZIndex) {
+                    highestZIndex = zIndex;
+                    lastPopup = $(this);
+                }
+            });
+
+            // Close the popup with the highest z-index
+            if (lastPopup) {
+                CC7.nextZLevel = highestZIndex;
+                lastPopup.slideUp();
+            }
         }
     }
 
@@ -1183,7 +1215,7 @@ export class CC7 {
         const theClickedName = tPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_timeLine";
         if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).slideToggle();
+            $(`#${familyId}`).css("z-index", `${CC7.nextZLevel++}`).slideToggle();
             return;
         }
 
@@ -1217,6 +1249,7 @@ export class CC7 {
             }
         });
 
+        theTable.css("z-index", `${CC7.nextZLevel++}`);
         theTable.slideDown("slow");
         theTable
             .find("x")
@@ -1247,7 +1280,7 @@ export class CC7 {
         const theClickedName = person.Name;
         const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
         if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).slideToggle();
+            $(`#${familyId}`).css("z-index", `${CC7.nextZLevel++}`).slideToggle();
             return;
         }
 
@@ -1424,7 +1457,7 @@ export class CC7 {
         const theClickedName = fPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_family";
         if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).slideToggle();
+            $(`#${familyId}`).css("z-index", `${CC7.nextZLevel++}`).slideToggle();
             return;
         }
 
@@ -2292,13 +2325,6 @@ export class CC7 {
         } else {
             CC7.setOverflow("auto");
         }
-        if ($("#cc7Container").length == 0) {
-            $(".peopleTable caption")
-                .off("click")
-                .on("click", function () {
-                    $(this).parent().find("thead,tbody").slideToggle();
-                });
-        }
 
         // Provide a way to examine the data record of a specific person
         $("img.privacyImage, .bioIssue")
@@ -2398,7 +2424,11 @@ export class CC7 {
                 $(this).addClass("active");
                 $("#peopleTable,#lanceTable").hide().removeClass("active");
                 if ($("#hierarchyView").length == 0) {
-                    CC7.showShakingTree(() => CC7.hierarchyCC7());
+                    CC7.showShakingTree(function () {
+                        // We only call hierarchyCC7 after a timeout in order to give the shaking tree
+                        // animation a change to complete first
+                        setTimeout(() => CC7.hierarchyCC7(), 10);
+                    });
                     $("#wideTableButton").hide();
                 } else {
                     $("#hierarchyView").show();
@@ -2421,10 +2451,6 @@ export class CC7 {
             });
 
         CC7.hideShakingTree();
-        $("#countdown").fadeOut();
-        if ($("#cc7Container").length == 0) {
-            $("#birthdate").click();
-        }
 
         CC7.addFiltersToPeopleTable();
         aTable.css({
