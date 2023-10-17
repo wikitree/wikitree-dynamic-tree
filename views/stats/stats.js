@@ -19,16 +19,19 @@ class StatsView extends View {
         // to showcase your awesome view, e.g.
         document.querySelector(container_selector).innerHTML = `
             <table id="stats-table">
-                <tr>
-                    <th>Generation</th>
-                    <th>Relation</th>
-                    <th>Total w/ Birth Year</th>
-                    <th>Earliest Birth Year</th>
-                    <th>Latest Birth Year</th>
-                    <th>Average Birth Year</th>
-                    <th>Gen Length</th>
-                    <th>Average Lifespan</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Generation</th>
+                        <th>Relation</th>
+                        <th>Total w/ Birth Year</th>
+                        <th>Earliest Birth Year</th>
+                        <th>Latest Birth Year</th>
+                        <th>Average Birth Year</th>
+                        <th>Gen Length</th>
+                        <th>Average Lifespan</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
             </table>
             <div id="results"></div>
         `;
@@ -202,6 +205,8 @@ class StatsView extends View {
         }
         overallAvgGenLength = Math.round(genLengthSum / totalGenLengths);
         let results = document.getElementById("results");
+        results.id = "results-container";
+
         let avgGenLengthDiv = document.createElement("div");
         avgGenLengthDiv.innerHTML = `Average generation length: ${overallAvgGenLength}`;
         results.appendChild(avgGenLengthDiv);
@@ -238,7 +243,7 @@ class StatsView extends View {
     }
 
     fillTable(stats) {
-        let table = document.getElementById("stats-table");
+        let table = document.querySelector("#stats-table > tbody");
 
         for (let generation = 0; generation < this.GENERATIONS; generation++) {
             let maxAncestorsForGen = Math.pow(2, generation);
