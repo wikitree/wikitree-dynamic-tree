@@ -1,4 +1,4 @@
-class StatsView extends View {
+window.StatsView = class StatsView extends View {
     genNames = [];
     GENERATIONS = 10;
     ancestors = {};
@@ -307,4 +307,4 @@ class StatsView extends View {
     sortByYear(a, b) {
         return a - b;
     }
-}
+};
