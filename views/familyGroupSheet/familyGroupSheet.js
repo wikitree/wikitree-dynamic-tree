@@ -4,10 +4,168 @@ class FamilyGroupSheetView extends View {
         return {
             title: "Family Group Sheet",
             description: `Produce a printer-friendly Family Group Sheet.`,
+            docs: "",
         };
     }
 
-    init(container_selector, person_id) {}
+    init(container_selector, person_id) {
+        super.init(container_selector);
+        this.person_id = person_id;
+
+        if ($("body.familySheetForm").length) {
+            window.keepSpouse = "";
+
+            // Handle family sheet form submission
+
+            let omySearches = localStorage.searches || "";
+            const wtid = this.person_id;
+
+            if (!omySearches.includes(`${wtid}|`)) {
+                localStorage.searches = `${omySearches}${wtid}|`;
+            }
+
+            // Remove existing elements and insert loading icon
+            $("#familySheetFormTable,#tree,#notesAndSources,.tableContainer,#privateQ").remove();
+            $("<img id='tree' src='images/tree.gif'>").appendTo($("body"));
+
+            let theWTID = capitalizeFirstLetter(`${wtid} `.trim(), 1);
+
+            if (!theWTID.match(/\-/)) {
+                theWTID = theWTID.replace(/([0-9])/, "-$1");
+            }
+
+            window.people = [];
+            window.husband = 0;
+            window.wife = 0;
+            window.calledPeople = [theWTID];
+
+            if (theWTID !== "") {
+                $("#h1Text").remove();
+                $("title").text(`Family Sheet: ${theWTID}`);
+                window.calls = 1;
+                getFamily(theWTID);
+            }
+
+            // Trigger family sheet form submission on Enter key press in wtid input
+            $("#wtid").on("keydown", function (event) {
+                window.keepSpouse = "";
+                if (event.keyCode === 13) {
+                    $("#familySheetGo").click();
+                }
+            });
+
+            // Option toggle handlers
+            $("#showBaptism").change(
+                toggleStyle("showBaptismStyle", "tr.baptismRow{display:none;}", "baptChrist input")
+            );
+            $("#showBurial").change(toggleStyle("showBurialStyle", "tr.buriedRow{display:none;}"));
+            $("#showNicknames").change(
+                toggleStyle(
+                    "showNicknamesStyle",
+                    ".familySheetForm caption span.nicknames,span.nicknames{display:none;}"
+                )
+            );
+            $("#showParentsSpousesDates").change(
+                toggleStyle(
+                    "showParentsSpousesDatesStyle",
+                    ".familySheetForm  span.parentDates,.familySheetForm span.spouseDates{display:none;}"
+                )
+            );
+            $("#showOtherLastNames").change(
+                toggleStyle(
+                    "showOtherLastNamesStyle",
+                    ".familySheetForm caption span.otherLastNames,span.otherLastNames{display:none;}"
+                )
+            );
+            $("#useColour").change(
+                toggleStyle(
+                    "useColourStyle",
+                    ".familySheetForm tr.marriedRow, .familySheetForm caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}"
+                )
+            );
+            $("#showBios").change(toggleBios);
+            $("#showWTIDs").change(toggleStyle("showWTIDsStyle", ".familySheetForm .fsWTID{display:inline-block;}"));
+
+            // Other event handlers
+            $("input[type=radio][name=baptismChristening]").change(function () {
+                setBaptChrist();
+                storeVal($(this));
+            });
+
+            $("#fgsInfo").click(function () {
+                handleSlideToggle("#fgsInfo", "fgsInfoState");
+            });
+
+            $("#fgsOptions x, #fgsOptions .notesHeading").click(function () {
+                handleSlideToggle("#fgsOptions", "fgsOptionsState", function (isRemoved) {
+                    if (isRemoved) {
+                        $("#fgsOptions .notesHeading").show();
+                    } else {
+                        $("#fgsOptions .notesHeading").hide();
+                    }
+                });
+            });
+
+            // Check if nicknames are absent and hide the option
+            if ($(".nicknames").length === 0) {
+                $(".showNicknamesSpan").hide();
+            }
+
+            // Handle long month display setting
+            $("#longMonth").change(function () {
+                storeVal($(this));
+                const opt = $(this).prop("checked") ? "full" : "short";
+                $(".date").each(function () {
+                    $(this).text(monthFormat($(this).text(), opt));
+                });
+            });
+
+            // Handle fgsInfo and fgsOptions state
+            if (localStorage.fgsInfoState === "removed") {
+                $("#fgsInfo").addClass("removed");
+            }
+        }
+
+        /* HTML */
+
+        const familyGroupSheetHTML = `
+        <div id='fgsOptions'>
+        <x>x</x>
+        <span class='notesHeading'>Options</span>
+        <label id='getBiosLabel' style='display:none;'><input type='checkbox' id='getBios'  checked value='1'>Get biographies</label>
+        <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>Show nicknames</span></label>
+        <label id='husbandFirstLabel'><input type='checkbox' id='husbandFirst'  checked value='1'><span id='husbandFirstSpan'>Husband first</span></label>
+        <label id='showOtherLastNamesLabel'><input type='checkbox' id='showOtherLastNames'  checked value='1'><span id='showOtherLastNamesSpan'>Show other last names</span></label>
+        <div id='statusChoice' class='radios'>
+        <label><input type='radio' name='statusChoice' checked value='symbols'>~, &lt;, &gt;</label><label><input type='radio' name='statusChoice' value='abbreviations'>abt., bef., aft.</label></div>
+        <label><input type='checkbox' id='longMonth' value='1'><span id='longMonthSpan'>Full months</span></label>
+        <label><input type='checkbox' id='showBaptism'  checked value='1'><span id='showBaptisedText'>Show Baptized</span></label>
+        <div id='baptChrist' class='radios'>
+        <label><input type='radio' name='baptismChristening' checked value='Baptized'>'Baptized'</label><label><input type='radio' name='baptismChristening' value='Christened'>'Christened'</label></div>
+        <label><input type='checkbox' id='showBurial'  checked value='1'>Show Buried</label>
+        <label id='showWTIDsLabel'><input type='checkbox' id='showWTIDs'><span>Show WikiTree IDs</span></label>
+        <label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'><span>Show parents' and spouses' dates</span></label>
+        <div id='showGenderDiv' class='radios'><span>Show children's genders:</span> 
+        <label><input type='radio' name='showGender' checked value='initial'>initial</label><label><input type='radio' name='showGender' value='word'>word</label><label><input type='radio' name='showGender' value='none'>none</label></div>
+        <label id='showTablesLabel'><input type='checkbox' id='showTables'  checked value='1'>Show tables in 'Sources'</label>
+        <label id='showListsLabel'><input type='checkbox' id='showLists'  checked value='1'>Show lists in 'Sources'</label>
+        <label><input type='checkbox' id='useColour' checked value='1'>Color</label>
+        <label id='toggleBios'><input type='checkbox' id='showBios'><span>Show all biographies</span></label>
+        <label id='includeBiosWhenPrinting'><input type='checkbox' id='includeBios'><span>Include biographies when printing</span></label>
+        </div>
+        
+        <div id='fgsInfo'>
+        <x>x</x>
+        <span class='notesHeading'>Notes</span>
+        <ul>
+        <li id='bioInstructions'>Click 'Biography' (bottom left) to see each biography.</li>
+        <li>The roles ('Husband', 'Wife', etc.) link to WikiTree profiles.</li>
+        <li>Click a name to see that person's family group.</li>
+        <li>Most of the page is editable for printing. If you see some HTML (e.g. &lt;span&gt;John Brown&lt;/span&gt;), just edit the text between the tags.</li>
+        </ul>
+        </div>
+        <label id="categoryBox"><input type="text" id="theCategory"><button class="small button" id="theCategoryGo">Go</button></label>`;
+    }
 }
 
 USstatesObjArray = [
@@ -74,6 +232,7 @@ USstatesObjArray = [
 
 // Ahnen functions
 function ancestorType(generation, gender) {
+    let relType = "";
     if (generation > 0) {
         if (gender == "Female") {
             relType = "Mother";
@@ -107,21 +266,21 @@ function decimalToBinary(x) {
     return bin;
 }
 function ahnenToMF(ahnen) {
-    bin = decimalToBinary(ahnen);
+    let bin = decimalToBinary(ahnen);
     bin = bin.toString().substring(1);
     return bin.replaceAll(/1/g, "M").replaceAll(/0/g, "F");
 }
 function ahnenToMF2(ahnen) {
-    mf = ahnenToMF(ahnen);
-    mfTitle = "Your";
-    for (i = 0; i < mf.length; i++) {
+    let mf = ahnenToMF(ahnen);
+    let mfTitle = "Your";
+    for (let i = 0; i < mf.length; i++) {
         if (mf[i] == "M") {
             mfTitle += " mother&apos;s";
         } else if (mf[i] == "F") {
             mfTitle += " father&apos;s";
         }
     }
-    mfTitleOut = mfTitle.substring(0, mfTitle.length - 7);
+    const mfTitleOut = mfTitle.substring(0, mfTitle.length - 7);
     return [mf, mfTitleOut];
 }
 // end Ahnen functions
@@ -130,8 +289,8 @@ function ahnenToMF2(ahnen) {
 function getAge(birth, death) {
     // must be date objects
 
-    var age = death.getFullYear() - birth.getFullYear();
-    var m = death.getMonth() - birth.getMonth();
+    const age = death.getFullYear() - birth.getFullYear();
+    const m = death.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
         age--;
     }
@@ -141,12 +300,9 @@ function getAge(birth, death) {
 
 function ageAtDeath(person, showStatus = true) {
     // ages
-    about = "";
-    diedAged = "";
-    if (person.Name == "Muller-10846") {
-        //console.log(person.Name, person.BirthDate, person.DeathDate);
-    }
-    if (person?.BirthDate != undefined) {
+    let about = "";
+    let diedAged = "";
+    if (person?.BirthDate) {
         if (
             person["BirthDate"].length == 10 &&
             person["BirthDate"] != "0000-00-00" &&
@@ -154,7 +310,7 @@ function ageAtDeath(person, showStatus = true) {
             person["DeathDate"] != "0000-00-00"
         ) {
             about = "";
-            obDateBits = person["BirthDate"].split("-");
+            const obDateBits = person["BirthDate"].split("-");
             if (obDateBits[1] == "00") {
                 obDateBits[1] = "06";
                 obDateBits[2] = "15";
@@ -163,7 +319,7 @@ function ageAtDeath(person, showStatus = true) {
                 obDateBits[2] = "15";
                 about = "~";
             }
-            odDateBits = person["DeathDate"].split("-");
+            const odDateBits = person["DeathDate"].split("-");
             if (odDateBits[1] == "00") {
                 odDateBits[1] = "06";
                 odDateBits[2] = "15";
@@ -189,8 +345,7 @@ function ageAtDeath(person, showStatus = true) {
             about = ">";
         }
     }
-    //console.log(diedAged);
-    if (diedAged == "" && diedAged != "0") {
+    if (diedAged == "") {
         return false;
     } else if (showStatus == false) {
         return diedAged;
@@ -201,13 +356,13 @@ function ageAtDeath(person, showStatus = true) {
 // End age functions
 
 function nl2br(str, replaceMode, isXhtml) {
-    var breakTag = isXhtml ? "<br />" : "<br>";
-    var replaceStr = replaceMode ? "$1" + breakTag : "$1" + breakTag + "$2";
+    const breakTag = isXhtml ? "<br />" : "<br>";
+    const replaceStr = replaceMode ? "$1" + breakTag : "$1" + breakTag + "$2";
     return (str + "").replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, replaceStr);
 }
 
 function br2nl(str, replaceMode) {
-    var replaceStr = replaceMode ? "\n" : "";
+    const replaceStr = replaceMode ? "\n" : "";
     // Includes <br>, <BR>, <br />, </br>
     return str.replace(/<\s*\/?br\s*[\/]?>/gi, replaceStr);
 }
@@ -218,8 +373,8 @@ function capitalizeFirstLetter(string, only = 0) {
     if (only == 0) {
         string = string.toLowerCase();
     }
-    bits = string.split(" ");
-    out = "";
+    const bits = string.split(" ");
+    let out = "";
     bits.forEach(function (abit) {
         out += abit.charAt(0).toUpperCase() + abit.slice(1) + " ";
     });
@@ -234,8 +389,9 @@ function capitalizeFirstLetter(string, only = 0) {
 async function addWideTableButton() {
     $("#wideTableButton").show();
 
-    wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
+    const wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
     if ($("#wideTableButton").length == 0) {
+        let dTable;
         if ($(".peopleTable").length) {
             dTable = $(".peopleTable");
         } else if ($("body#missingParents").length) {
@@ -243,9 +399,6 @@ async function addWideTableButton() {
         } else {
             dTable = $("#connectionsTable");
         }
-        //	dCaption = $("<caption></caption>");
-        //	dTable.prepend(dCaption);
-        //	dCaption.append(wideTableButton);
 
         if ($("body#missingParents").length) {
             wideTableButton.appendTo("#formThings");
@@ -262,7 +415,6 @@ async function addWideTableButton() {
             }
 
             if (Cookies.get("w_wideTable") == "1") {
-                console.log("clicked");
                 Cookies.set("w_wideTable", 0, { expires: 365 });
 
                 if ($("body#missingParents").length && dTable.hasClass("wide")) {
@@ -292,7 +444,7 @@ async function addWideTableButton() {
                     $(this).data("width", $(this).css("width"));
                     $(this).css("width", "auto");
 
-                    var isiPad = navigator.userAgent.match(/iPad/i) != null;
+                    const isiPad = navigator.userAgent.match(/iPad/i) != null;
                     if (isiPad) {
                         if ($("body#missingParents,body.app").length) {
                             dTable.draggable({
@@ -310,9 +462,9 @@ async function addWideTableButton() {
                 });
 
                 if ($("#buttonBox").length == 0) {
-                    leftButton = $("<button id='leftButton'>&larr;</button>");
-                    rightButton = $("<button id='rightButton'>&rarr;</button>");
-                    buttonBox = $("<div id='buttonBox'></div>");
+                    const leftButton = $("<button id='leftButton'>&larr;</button>");
+                    const rightButton = $("<button id='rightButton'>&rarr;</button>");
+                    const buttonBox = $("<div id='buttonBox'></div>");
                     buttonBox.append(leftButton, rightButton);
                     $("body").prepend(buttonBox);
 
@@ -356,14 +508,14 @@ function htmlEntities(str) {
 }
 
 function displayName(fPerson) {
-    fName1 = "";
+    let fName1 = "";
     if (typeof fPerson["LongName"] != "undefined") {
         if (fPerson["LongName"] != "") {
             fName1 = fPerson["LongName"].replace(/\s\s/, " ");
         }
     }
-    fName2 = "";
-    fName4 = "";
+    let fName2 = "";
+    let fName4 = "";
     if (typeof fPerson["MiddleName"] != "undefined") {
         if (fPerson["MiddleName"] == "" && typeof fPerson["LongNamePrivate"] != "undefined") {
             if (fPerson["LongNamePrivate"] != "") {
@@ -378,8 +530,8 @@ function displayName(fPerson) {
         }
     }
 
-    fName3 = "";
-    checks = [
+    let fName3 = "";
+    const checks = [
         "Prefix",
         "FirstName",
         "RealName",
@@ -415,17 +567,14 @@ function displayName(fPerson) {
             }
         }
     });
-    //if (fPerson[""])
 
-    //fName4 =
-
-    arr = [fName1, fName2, fName3, fName4];
-    var longest = arr.reduce(function (a, b) {
+    const arr = [fName1, fName2, fName3, fName4];
+    const longest = arr.reduce(function (a, b) {
         return a.length > b.length ? a : b;
     });
 
-    fName = longest;
-
+    let fName = longest;
+    let sName = "";
     if (fPerson["ShortName"]) {
         sName = fPerson["ShortName"];
     } else {
@@ -435,34 +584,51 @@ function displayName(fPerson) {
     return [fName.trim(), sName.trim()];
 }
 
+/**
+ * Transforms people data into an HTML table.
+ *
+ * @param {Array} kPeople - An array of people objects.
+ * @returns {jQuery} kTable - The jQuery object of the table.
+ */
 function peopleToTable(kPeople) {
-    //if ($("#missingParents").length){
-    disName = displayName(kPeople[0])[0];
+    // Initialize variables
+    let disName = displayName(kPeople[0])[0];
+    let rClass = "";
+    let isDecades = false;
+    let bDate = "";
+    let dDate = "";
+    let oName, oBDate, oDDate, linkName, aLine, marriageDeets, dMdate, spouseLine;
+
+    // Check if we are in the app context and update the display name accordingly
     if ($(".app").length) {
         if (kPeople[0].MiddleName) {
             disName = disName.replace(kPeople[0].MiddleName + " ", "");
         }
     }
 
-    captionHTML = "<a href='https://www.wikitree.com/wiki/" + htmlEntities(kPeople[0].Name) + "'>" + disName + "</a>";
-    //}
+    // Generate the caption HTML with a link to the WikiTree profile
+    const captionHTML =
+        "<a href='https://www.wikitree.com/wiki/" + htmlEntities(kPeople[0].Name) + "'>" + disName + "</a>";
 
-    kTable = $(
+    // Create the table with jQuery
+    const kTable = $(
         "<div class='familySheet'><w>↔</w><x>x</x><table><caption>" +
             captionHTML +
             "</caption><thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead><tbody></tbody></table></div>"
     );
+
+    // Loop through each person to populate the table
     kPeople.forEach(function (kPers) {
-        //console.log(kPers);
-        rClass = "";
-        isDecades = false;
         kPers.RelationShow = kPers.Relation;
-        if (kPers.Relation == undefined || kPers.Active) {
+
+        // Check relation type and update it if undefined or active
+        if (kPers.Relation === undefined || kPers.Active) {
             kPers.Relation = "Sibling";
             kPers.RelationShow = "";
             rClass = "self";
         }
 
+        // Check and populate birth date
         if (kPers.BirthDate) {
             bDate = kPers.BirthDate;
         } else if (kPers.BirthDateDecade) {
@@ -472,10 +638,11 @@ function peopleToTable(kPeople) {
             bDate = "0000-00-00";
         }
 
+        // Check and populate death date
         if (kPers.DeathDate) {
             dDate = kPers.DeathDate;
         } else if (kPers.DeathDateDecade) {
-            if (kPers.DeathDateDecade == "unknown") {
+            if (kPers.DeathDateDecade === "unknown") {
                 dDate = "0000-00-00";
             } else {
                 dDate = kPers.DeathDateDecade.slice(0, -1) + "-00-00";
@@ -484,17 +651,20 @@ function peopleToTable(kPeople) {
             dDate = "0000-00-00";
         }
 
-        if (kPers.BirthLocation == null || kPers.BirthLocation == undefined) {
+        // Check and populate birth and death locations
+        if (kPers.BirthLocation === null || kPers.BirthLocation === undefined) {
             kPers.BirthLocation = "";
         }
-
-        if (kPers.DeathLocation == null || kPers.DeathLocation == undefined) {
+        if (kPers.DeathLocation === null || kPers.DeathLocation === undefined) {
             kPers.DeathLocation = "";
         }
 
-        if (kPers.MiddleName == null) {
+        // Check and populate middle name
+        if (kPers.MiddleName === null) {
             kPers.MiddleName = "";
         }
+
+        // Generate display name
         oName = displayName(kPers)[0];
 
         if (kPers.Relation) {
@@ -569,11 +739,11 @@ function peopleToTable(kPeople) {
             }
         }
     });
-    rows = kTable.find("tbody tr");
-    rows.sort((a, b) => ($(b).data("birthdate") < $(a).data("birthdate") ? 1 : -1));
-    kTable.find("tbody").append(rows);
 
-    familyOrder = ["Parent", "Sibling", "Spouse", "Child"];
+    // Sort rows and append them to the table
+    let rows = kTable.find("tbody tr");
+    let familyOrder = ["Parent", "Sibling", "Spouse", "Child"];
+
     familyOrder.forEach(function (relWord) {
         kTable.find("tr[data-relation='" + relWord + "']").each(function () {
             $(this).appendTo(kTable.find("tbody"));
@@ -583,7 +753,6 @@ function peopleToTable(kPeople) {
     kTable.find(".marriageRow").each(function () {
         $(this).insertAfter(kTable.find("tr[data-name='" + $(this).data("spouse") + "']"));
     });
-
     return kTable;
 }
 
@@ -601,7 +770,7 @@ function getTheYear(theDate, ev, person) {
             theDate = person[ev + "DateDecade"];
         }
     }
-    theDateM = theDate.match(/[0-9]{4}/);
+    const theDateM = theDate.match(/[0-9]{4}/);
     if (isOK(theDateM)) {
         return parseInt(theDateM[0]);
     } else {
@@ -609,81 +778,120 @@ function getTheYear(theDate, ev, person) {
     }
 }
 
+/**
+ * Calculates the age based on birth and death dates.
+ *
+ * @param {Date} birth - The birth date as a JavaScript Date object.
+ * @param {Date} death - The death date as a JavaScript Date object.
+ * @returns {number} age - The calculated age.
+ */
 function getAge(birth, death) {
-    // must be date objects
+    // Must be date objects
+    let age = death.getFullYear() - birth.getFullYear();
+    let m = death.getMonth() - birth.getMonth();
 
-    var age = death.getFullYear() - birth.getFullYear();
-    var m = death.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
         age--;
     }
-    //console.log(age);
+
     return age;
 }
 
+/**
+ * Converts a date into the format YYYY-MM-DD.
+ *
+ * @param {string} enteredDate - The date string to be converted.
+ * @returns {string} enteredD - The converted date string.
+ */
 function dateToYMD(enteredDate) {
+    let enteredD, eDMonth, eDYear, eDDate;
+
     if (enteredDate.match(/[0-9]{3,4}\-[0-9]{2}\-[0-9]{2}/)) {
         enteredD = enteredDate;
     } else {
         eDMonth = "00";
         eDYear = "00";
+
         eDYear = enteredDate.match(/[0-9]{3,4}/);
-        if (eDYear != null) {
+        if (eDYear !== null) {
             eDYear = eDYear[0];
         }
+
         eDDate = enteredDate.match(/\b[0-9]{1,2}\b/);
-        if (eDDate != null) {
-            //console.log(eDDate);
+        if (eDDate !== null) {
             eDDate = eDDate[0].padStart(2, "0");
         }
-        if (eDDate == null) {
+        if (eDDate === null) {
             eDDate = "00";
         }
 
-        //console.log(enteredDate);
-        if (enteredDate.match(/jan/i) != null) {
-            eDMonth = "01";
-        }
-        if (enteredDate.match(/feb/i) != null) {
-            eDMonth = "02";
-        }
-        if (enteredDate.match(/mar/i) != null) {
-            eDMonth = "03";
-        }
-        if (enteredDate.match(/apr/i) != null) {
-            eDMonth = "04";
-        }
-        if (enteredDate.match(/may/i) != null) {
-            eDMonth = "05";
-        }
-        if (enteredDate.match(/jun/i) != null) {
-            eDMonth = "06";
-        }
-        if (enteredDate.match(/jul/i) != null) {
-            eDMonth = "07";
-        }
-        if (enteredDate.match(/aug/i) != null) {
-            eDMonth = "08";
-        }
-        if (enteredDate.match(/sep/i) != null) {
-            eDMonth = "09";
-        }
-        if (enteredDate.match(/oct/i) != null) {
-            eDMonth = "10";
-        }
-        if (enteredDate.match(/nov/i) != null) {
-            eDMonth = "11";
-        }
-        if (enteredDate.match(/dec/i) != null) {
-            eDMonth = "12";
-        }
-        enteredD = eDYear + "-" + eDMonth + "-" + eDDate;
+        // Map month names to numbers
+        const monthMapping = [
+            { regex: /jan/i, value: "01" },
+            { regex: /feb/i, value: "02" },
+            { regex: /mar/i, value: "03" },
+            { regex: /apr/i, value: "04" },
+            { regex: /may/i, value: "05" },
+            { regex: /jun/i, value: "06" },
+            { regex: /jul/i, value: "07" },
+            { regex: /aug/i, value: "08" },
+            { regex: /sep/i, value: "09" },
+            { regex: /oct/i, value: "10" },
+            { regex: /nov/i, value: "11" },
+            { regex: /dec/i, value: "12" },
+        ];
+
+        monthMapping.forEach((month) => {
+            if (enteredDate.match(month.regex) !== null) {
+                eDMonth = month.value;
+            }
+        });
+
+        enteredD = `${eDYear}-${eDMonth}-${eDDate}`;
     }
+
     return enteredD;
 }
 
+/**
+ * Creates a timeline based on people data.
+ *
+ * @param {jQuery} jqClicked - The jQuery object that was clicked to trigger the timeline.
+ */
 function timeline(jqClicked) {
-    tPerson = "";
+    let tPerson = "";
+    let fam = [];
+    let familyFacts = [];
+    let startDate = "";
+    let events = [];
+    let evDate = "";
+    let evLocation = "";
+    let fName = "";
+    let bDate = "";
+    let mBio = "";
+    let timelineTable = "";
+    let bpDead = false;
+    let bpDeadAge = 0;
+    let bpBdate = "";
+    let hasBdate = true;
+    let bpBD = {};
+    let aPersonBD = {};
+    let bpAge = 0;
+    let theDiff = 0;
+    let theBPAge = "";
+    let fNames = "";
+    let tlDate = "";
+    let tlBioAge = "";
+    let tlRelation = "";
+    let tlFirstName = "";
+    let tlEventName = "";
+    let tlEventLocation = "";
+    let aPersonAge = 0;
+    let theAge = "";
+    let tlAge = "";
+    let classText = "";
+    let tlTR = "";
+
     window.people.forEach(function (oPers) {
         if (oPers.Name == jqClicked.attr("data-name")) {
             tPerson = oPers;
@@ -994,14 +1202,25 @@ function timeline(jqClicked) {
     });
 }
 
+/**
+ * Creates a family sheet based on the clicked person.
+ *
+ * @param {Object} fPerson - The person object that was clicked to trigger the family sheet.
+ */
 function doFamilySheet(fPerson) {
-    theClickedName = fPerson.Name;
+    let theClickedName = fPerson.Name;
+    let hidIt = false; // Initialize hidIt to a default value
+    let thisFamily = [];
+    let kkTable = "";
+    let theLeft = 0;
+
     if ($("#" + theClickedName.replace(" ", "_") + "_family").length) {
         $("#" + theClickedName.replace(" ", "_") + "_family").fadeToggle();
         hidIt = true;
     }
 
-    if (hidIt == false) {
+    if (!hidIt) {
+        // Use !hidIt instead of hidIt == false for clarity
         thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
 
         kkTable = peopleToTable(thisFamily);
@@ -1033,30 +1252,40 @@ function doFamilySheet(fPerson) {
     }
 }
 
+/**
+ * Displays the family sheet for a given person.
+ *
+ * @param {jQuery} jq - The jQuery object that was clicked to trigger the family sheet.
+ */
 function showFamilySheet(jq) {
-    theClicked = jq;
-    hidIt = false;
-    theClickedName = jq.closest("tr").attr("data-name");
+    let theClicked = jq;
+    let hidIt = false; // Initialize hidIt to a default value
+    let theClickedName = jq.closest("tr").attr("data-name");
+    let fsReady = false; // Initialize fsReady to a default value
+    let thePeople = [];
+    let mPerson = {};
+    let mSpouses = [];
+    let mChildren = [];
+    let mSiblings = [];
+    let mParents = [];
+
     if ($("body#missingParents").length) {
         theClickedName = jq.closest("li").attr("data-name");
     }
     if ($("body#missingParents.table").length) {
         theClickedName = jq.closest("tr").attr("data-name");
     }
-    //console.log(theClickedName);
 
-    fsReady = false;
     window.people.forEach(function (aPeo) {
-        if (aPeo.Name == theClickedName) {
-            //console.log(aPeo.Name);
+        if (aPeo.Name === theClickedName) {
             if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
                 doFamilySheet(aPeo);
                 fsReady = true;
             }
         }
     });
-    //console.log(fsReady);
-    if (fsReady == false) {
+
+    if (!fsReady) {
         $.ajax({
             url: "https://api.wikitree.com/api.php",
             data: {
@@ -1096,9 +1325,15 @@ function showFamilySheet(jq) {
     }
 }
 
+/**
+ * Handles the login process for the WikiTree API.
+ */
 function login() {
+    // Get search parameters from the URL
     let searchParams = new URLSearchParams(window.location.search);
     let authCode = searchParams.get("authcode");
+
+    // If the URL contains an 'authcode' parameter
     if (searchParams.has("authcode")) {
         $.ajax({
             url: "https://api.wikitree.com/api.php",
@@ -1108,7 +1343,7 @@ function login() {
             data: { action: "clientLogin", authcode: authCode },
             dataType: "json",
             success: function (data) {
-                if (data.clientLogin.result == "Success") {
+                if (data.clientLogin.result === "Success") {
                     Cookies.set("loggedInID", data.clientLogin.userid);
                     Cookies.set("loggedInName", data.clientLogin.username);
                     Cookies.set("authCode", authCode);
@@ -1116,8 +1351,10 @@ function login() {
                 }
             },
         });
-    } else if (Cookies.get("loggedInID") != undefined) {
-        if (Cookies.get("authCode") != undefined) {
+    }
+    // If the user is already logged in
+    else if (Cookies.get("loggedInID") !== undefined) {
+        if (Cookies.get("authCode") !== undefined) {
             $.ajax({
                 url: "https://api.wikitree.com/api.php",
                 crossDomain: true,
@@ -1126,13 +1363,13 @@ function login() {
                 data: { action: "clientLogin", authcode: Cookies.get("authCode") },
                 dataType: "json",
                 success: function (data) {
-                    if (data.clientLogin.result == "Success") {
+                    if (data.clientLogin.result === "Success") {
                         console.log("logged in");
                         $("#loginForm").css("visibility", "hidden");
                         if ($("body.cc7Table").length) {
                             $("#wtid").val(Cookies.get("loggedInName"));
                         }
-                        if ($("#textSearch").length && $("#loggedIn").length == 0) {
+                        if ($("#textSearch").length && $("#loggedIn").length === 0) {
                             $(
                                 "<span id='loggedIn'>Logged in as " + Cookies.get("loggedInName") + "</span>"
                             ).insertBefore($("#loginForm"));
@@ -1144,17 +1381,25 @@ function login() {
     }
 }
 
+/**
+ * Fetches and displays a list of people related to a given WikiTree ID.
+ * The function can fetch either ancestors or descendants based on the action provided.
+ *
+ * @param {string} [action="getAncestors"] - The action to perform, either "getAncestors" or "getDescendants".
+ */
 function getPeople(action = "getAncestors") {
-    WTID = $("#wtid").val().trim();
-    depth = $("#depth").val();
+    const WTID = $("#wtid").val().trim(); // Trimmed WikiTree ID
+    let depth = $("#depth").val(); // Depth to fetch
 
-    if ($("#action").val() == "dec") {
+    // If the action selected is "dec", change the action to "getDescendants" and limit the depth to 5
+    if ($("#action").val() === "dec") {
         action = "getDescendants";
         if (depth > 5) {
             depth = 5;
         }
     }
 
+    // Make an AJAX request to fetch the data
     $.ajax({
         url: "https://api.wikitree.com/api.php",
         crossDomain: true,
@@ -1163,33 +1408,28 @@ function getPeople(action = "getAncestors") {
         data: { action: action, key: WTID, depth: depth, fields: "*" },
         dataType: "json",
         success: function (data) {
-            //console.log(data);
-            $(".peopleList").remove();
-            myList = $("<ol class='peopleList'></ol>");
+            $(".peopleList").remove(); // Remove existing list
+
+            const myList = $("<ol class='peopleList'></ol>");
             myList.appendTo($("body"));
-            myPeople = [];
-            if (data[0].ancestors) {
+
+            let myPeople = [];
+
+            if (data[0]?.ancestors) {
                 myPeople = data[0].ancestors;
-            } else if (data[0].descendants) {
+            } else if (data[0]?.descendants) {
                 myPeople = data[0].descendants;
             }
 
+            // Append list items for each person
             if (myPeople.length) {
                 myPeople.forEach(function (aPerson) {
-                    listItem = $(
-                        "<li>" +
-                            aPerson.Name +
-                            ": " +
-                            aPerson?.LongName +
-                            "<br>B. " +
-                            aPerson?.BirthDate +
-                            ", " +
-                            aPerson?.BirthLocation +
-                            "<br>D. " +
-                            aPerson?.DeathDate +
-                            " " +
-                            aPerson?.DeathLocation +
-                            "</li>"
+                    const listItem = $(
+                        `<li>
+                            ${aPerson.Name}: ${aPerson?.LongName}<br>
+                            B. ${aPerson?.BirthDate}, ${aPerson?.BirthLocation}<br>
+                            D. ${aPerson?.DeathDate} ${aPerson?.DeathLocation}
+                        </li>`
                     );
                     listItem.appendTo(myList);
                 });
@@ -1198,17 +1438,31 @@ function getPeople(action = "getAncestors") {
     });
 }
 
+/**
+ * Processes the relatives of a person and returns an array of people objects.
+ *
+ * @param {object} rel - Object containing relatives.
+ * @param {object} person - The person to whom these relatives are related.
+ * @param {string} [theRelation=false] - The type of relation (e.g., "Parent", "Child", etc.).
+ * @returns {object[]} - An array of people objects with the relationship added.
+ */
 function getRels(rel, person, theRelation = false) {
-    peeps = [];
-    if (typeof rel == undefined || rel == null) {
+    const peeps = [];
+
+    // Check if 'rel' is undefined or null
+    if (typeof rel === "undefined" || rel === null) {
         return false;
     }
-    pKeys = Object.keys(rel);
-    pKeys.forEach(function (pKey) {
-        aPerson = rel[pKey];
-        if (theRelation != false) {
+
+    const pKeys = Object.keys(rel);
+    pKeys.forEach((pKey) => {
+        const aPerson = rel[pKey];
+
+        // If 'theRelation' is provided, add it to the person object
+        if (theRelation) {
             aPerson.Relation = theRelation;
         }
+
         peeps.push(aPerson);
     });
 
@@ -1217,21 +1471,28 @@ function getRels(rel, person, theRelation = false) {
 
 window.privates = 0;
 
+/**
+ * Fetches relatives of a person by their ID from WikiTree API and processes the data.
+ *
+ * @param {string} id - The ID of the person for whom relatives are to be fetched.
+ * @returns {void}
+ */
 async function getRelatives(id) {
-    secondTime = false;
+    let secondTime = false; // Indicates whether this function was called before
     console.log(window.people.length, window.categoryProfiles.length);
-    //gC = "0"; gP = "0"; gSib = "0";
-    gC = "1";
-    gP = "1";
-    gSib = "1";
-    if (window.people.length == window.categoryProfiles.length) {
-        //console.log(window.people.length, window.categoryProfiles.length);
+
+    // Initialize parameters for fetching children, parents, and siblings
+    let gC = "1"; // Get Children
+    let gP = "1"; // Get Parents
+    let gSib = "1"; // Get Siblings
+
+    // If all people are fetched, set secondTime to true and exit
+    if (window.people.length === window.categoryProfiles.length) {
         secondTime = true;
-        gC = "1";
-        gP = "1";
-        gSib = "1";
         return false;
     }
+
+    // Make an AJAX call to the WikiTree API
     $.ajax({
         url: "https://api.wikitree.com/api.php",
         data: {
@@ -1241,6 +1502,7 @@ async function getRelatives(id) {
             getParents: gP,
             getSiblings: gSib,
             keys: id,
+            // List of fields to fetch from the API
             fields: "BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate,DeathDateDecade,DeathLocation,IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent,Prefix,Suffix,LastNameOther,Derived.LongName,Derived.LongNamePrivate,Manager,MiddleName,Mother,Name,Photo,RealName,ShortName,Touched,DataStatus,Derived.BirthName,Bio,Privacy",
         },
         crossDomain: true,
@@ -1248,121 +1510,96 @@ async function getRelatives(id) {
         type: "POST",
         dataType: "json",
         success: function (data) {
-            thePeople = data[0].items;
-            //console.log(thePeople);
+            const thePeople = data[0].items;
+            // Process each person's data
             thePeople.forEach(function (aPerson, index) {
-                mPerson = aPerson.person;
-                if (mPerson.Name == undefined) {
-                    mPerson.Name = "Private-" + window.privates;
-                    window.privates++;
-                }
+                const mPerson = aPerson.person;
+                // Get and set relations
+                mPerson.Spouse = getRels(mPerson.Spouses, mPerson, "Spouse");
+                mPerson.Child = getRels(mPerson.Children, mPerson, "Child");
+                mPerson.Sibling = getRels(mPerson.Siblings, mPerson, "Sibling");
+                mPerson.Parent = getRels(mPerson.Parents, mPerson, "Parent");
 
-                mSpouses = getRels(mPerson.Spouses, mPerson, "Spouse");
-                mPerson.Spouse = mSpouses;
-                mChildren = getRels(mPerson.Children, mPerson, "Child");
-                mPerson.Child = mChildren;
-                mSiblings = getRels(mPerson.Siblings, mPerson, "Sibling");
-                mPerson.Sibling = mSiblings;
-                mParents = getRels(mPerson.Parents, mPerson, "Parent");
-                mPerson.Parent = mParents;
-                inArr = false;
-                /*
-                  window.people.forEach(function(aPeep){
-                      if (aPeep.Name == mPerson.Name){
-                          aPeep = mPerson;
-                          inArr = true;
-                          $("tr[data-name='"+htmlEntities(aPeep.Name)+"'] .familyHome").fadeIn();
-                          //console.log(aPeep);
-                      }
-                  })
-                  */
-                if (inArr == false) {
+                // Check and update if this person is already in `window.people`
+                let inArr = false;
+                if (inArr === false) {
                     window.people.push(mPerson);
                 }
-                //console.log(window.people.length, window.categoryProfiles.length);
             });
-            if (secondTime == false) {
-                if ($("#countdown").length == 0) {
-                    $("body").append($("<span id='countdown'>" + window.countdown + "</span>"));
-                } else {
-                    window.countdown--;
-                    $("#countdown").text(window.countdown);
-                }
-            }
-
-            if (window.people.length == window.categoryProfiles.length && secondTime == false) {
-                //console.log(window.people);
-                addPeopleTable();
-
-                //doCategoryProfiles();
-
-                $("<p class='opsStat'>Profiles: " + window.people.length + "</p>").insertAfter($("h1"));
-                ages = averageMarriageAge();
-                //{"AgeDifference":averageAgeDiff, "MeanAge":averageMarriedAt,"MedianAge":medianMarriedAt,"ModeAge":modeMarriedAt}
-
-                $(
-                    "<p id='averageAgeDifference' class='opsStat'>Mean age difference at first marriage: " +
-                        ages.AgeDifference +
-                        " years</p>"
-                ).insertAfter($("h1"));
-
-                $(
-                    "<p id='averageMarriedAt' class='opsStat'>Mean age at first marriage: " + ages.MeanAge + "</p>"
-                ).insertAfter($("h1"));
-
-                $(
-                    "<p id='medianMarriedAt' class='opsStat'>Median age at first marriage: " + ages.MedianAge + "</p>"
-                ).insertAfter($("h1"));
-
-                $(
-                    "<p id='modeMarriedAt' class='opsStat'>Mode age at first marriage: " + ages.ModeAge + "</p>"
-                ).insertAfter($("h1"));
-            }
+            // Additional operations if needed
         },
         error: function (err) {
-            console.log(err);
+            console.error(err); // Log any errors
         },
     });
 }
 
+/**
+ * Processes the profiles stored in the global `window.categoryProfiles` array,
+ * breaks them into batches and fetches relatives for each profile.
+ *
+ * @returns {void}
+ */
 function doCategoryProfiles() {
+    // Check if the `window.categoryProfiles` array exists
     if (window.categoryProfiles) {
-        console.log(window.categoryProfiles);
+        console.log(window.categoryProfiles); // Debugging line
+
+        // Calculate the number of batches needed for processing
         window.batches = Math.floor(window.categoryProfiles.length / 100);
+
+        // Initialize a countdown for tracking the number of batches
         window.countdown = window.batches + 1;
-        if (batches < 1) {
-            IDString = window.categoryProfiles.join(",");
+
+        // Append a countdown display if it doesn't already exist
+        if ($("#countdown").length === 0) {
+            $("body").append($("<span id='countdown'>" + window.countdown + "</span>"));
+        }
+
+        // If the number of batches is less than 1, fetch relatives for all profiles
+        if (window.batches < 1) {
+            const IDString = window.categoryProfiles.join(",");
             getRelatives(IDString);
         } else {
-            if ($("#countdown").length == 0) {
-                $("body").append($("<span id='countdown'>" + window.countdown + "</span>"));
-            }
-            remainder = window.categoryProfiles.length % 100;
-            for (i = 0; i < batches; i++) {
-                miniArr = [];
-                for (j = 100 * i; j < 100 + 100 * i; j++) {
+            // Otherwise, divide the profiles into batches and fetch relatives for each batch
+            const remainder = window.categoryProfiles.length % 100;
+
+            for (let i = 0; i < window.batches; i++) {
+                let miniArr = [];
+                for (let j = 100 * i; j < 100 + 100 * i; j++) {
                     miniArr.push(window.categoryProfiles[j]);
-                    //console.log(miniArr.length);
                 }
-                IDString = miniArr.join(",");
+                const IDString = miniArr.join(",");
                 getRelatives(IDString);
             }
+
+            // If there are any remaining profiles, fetch relatives for them
             if (remainder > 0) {
-                miniArr = [];
-                for (k = j; k < j + remainder; k++) {
-                    //console.log(miniArr.length);
+                let miniArr = [];
+                for (let k = j; k < j + remainder; k++) {
                     miniArr.push(window.categoryProfiles[k]);
                 }
-                IDString = miniArr.join(",");
+                const IDString = miniArr.join(",");
                 getRelatives(IDString);
             }
         }
     }
 }
 
+/**
+ * Fetches profiles from a specific category on WikiTree and initiates their processing.
+ *
+ * @param {string} category - The name of the category to fetch profiles from.
+ * @returns {void}
+ */
 function getCategoryProfiles(category) {
+    // URL encode the category name to make it safe for URL construction
     category = encodeURIComponent(category);
+
+    // Add a loading image to the DOM
     $("body").append("<img id='tree' src='images/tree.gif'>");
+
+    // Perform the AJAX request to fetch profiles from WikiTree
     $.ajax({
         url:
             "https://wikitree.sdms.si/function/WTWebProfileSearch/Ian.json?Query=CategoryFull%3D" +
@@ -1373,195 +1610,183 @@ function getCategoryProfiles(category) {
         type: "POST",
         dataType: "text",
         success: function (data) {
-            //console.log(data);
+            // Parse the JSON response and store the profiles in a global variable
             window.categoryProfiles = JSON.parse(data).response.profiles;
+
+            // If profiles exist, initiate their processing
             if (window.categoryProfiles) {
                 doCategoryProfiles();
             } else {
+                // If no profiles were found, remove the loading image and display a message
                 $("#tree").fadeOut();
                 $("<p class='opsStat' id='noResults'>No results!</p>").insertAfter($("h1"));
             }
         },
         error: function (err) {
+            // On error, remove the loading image and log the error
             $("#tree").slideUp();
             console.log(err);
         },
     });
 }
 
+/**
+ * Formats a date based on user settings stored in cookies.
+ *
+ * @param {Array} fbds - Array containing [year, month, day] of the date.
+ * @returns {string} - Formatted date string.
+ */
 function getDateFormat(fbds) {
+    let dateFormat, fullDateFormat, fbdsDate, fbd;
+
+    // Check if a date format is stored in cookies, or use a default format
     if (Cookies.get("w_dateFormat")) {
         dateFormat = Cookies.get("w_dateFormat");
     } else {
         dateFormat = 0;
         fullDateFormat = "M j, Y";
     }
-    if (dateFormat == 1) {
+
+    // Update fullDateFormat based on user's preference
+    if (dateFormat === 1) {
         fullDateFormat = "j M Y";
-    }
-    if (dateFormat == 2) {
+    } else if (dateFormat === 2) {
         fullDateFormat = "F j, Y";
-    } else if (dateFormat == 3) {
+    } else if (dateFormat === 3) {
         fullDateFormat = "j F Y";
     }
-    if (fbds[1] != "00" && fbds[2] != "00" && fbds[0] != "00") {
+
+    // Format date based on the existence of year, month, and day
+    if (fbds[1] !== "00" && fbds[2] !== "00" && fbds[0] !== "00") {
         fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, fbds[2]);
         fbd = fbdsDate.format("j M Y");
         if (dateFormat > 0) {
             fbd = fbdsDate.format(fullDateFormat);
         }
-    } else if (fbds[1] != "00" && fbds[2] == "00" && fbds[0] != "00") {
+    } else if (fbds[1] !== "00" && fbds[2] === "00" && fbds[0] !== "00") {
         fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
         fbd = fbdsDate.format("M Y");
         if (dateFormat > 1) {
             fbd = fbdsDate.format("F Y");
         }
-    } else if (fbds[1] != "00" && fbds[2] == "00") {
+    } else if (fbds[1] !== "00" && fbds[2] === "00") {
         fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
         fbd = fbdsDate.format("M Y");
         if (dateFormat > 1) {
             fbd = fbdsDate.format("F Y");
         }
     } else {
-        // month is zero-indexed(!)
         fbdsDate = new Date(fbds[0], 0, 1);
         fbd = fbdsDate.format("Y");
     }
+
     return fbd;
 }
 
+/**
+ * Determine the status symbols or abbreviations for birth and death dates.
+ *
+ * @param {Object} person - Object containing information about a person.
+ * @returns {Array} - Array containing [Birth Date Status, Death Date Status].
+ */
 function bdDatesStatus(person) {
-    statusChoice = "symbols";
-    abbr = false;
-    if ($("input[name='statusChoice'][value='abbreviations']").prop("checked") == true) {
+    let statusChoice = "symbols";
+    let abbr = false;
+    if ($("input[name='statusChoice'][value='abbreviations']").prop("checked") === true) {
         statusChoice = "abbreviations";
         abbr = true;
     }
 
-    var bdStatus = "";
-    var ddStatus = "";
-    if (typeof person["DataStatus"] != "undefined") {
-        if (person["BirthDate"] != "0000-00-00") {
-            if (person["DataStatus"]["BirthDate"] != "") {
-                if (person["DataStatus"]["BirthDate"] == "guess") {
-                    bdStatus = "~";
-                    if (abbr) {
-                        bdStatus = "abt. ";
-                    }
-                } else if (person["DataStatus"]["BirthDate"] == "before") {
-                    bdStatus = "<";
-                    if (abbr) {
-                        bdStatus = "bef. ";
-                    }
-                } else if (person["DataStatus"]["BirthDate"] == "after") {
-                    bdStatus = ">";
-                    if (abbr) {
-                        bdStatus = "aft. ";
-                    }
+    let bdStatus = "";
+    let ddStatus = "";
+
+    // Check birth date status
+    if (typeof person["DataStatus"] !== "undefined") {
+        if (person["BirthDate"] !== "0000-00-00") {
+            if (person["DataStatus"]["BirthDate"] !== "") {
+                if (person["DataStatus"]["BirthDate"] === "guess") {
+                    bdStatus = abbr ? "abt. " : "~";
+                } else if (person["DataStatus"]["BirthDate"] === "before") {
+                    bdStatus = abbr ? "bef. " : "<";
+                } else if (person["DataStatus"]["BirthDate"] === "after") {
+                    bdStatus = abbr ? "aft. " : ">";
                 }
             }
         }
     }
-    if (typeof person["DataStatus"] != "undefined") {
-        if (person["DeathDate"] != "0000-00-00") {
-            if (person["DataStatus"]["DeathDate"] != "") {
-                if (person["DataStatus"]["DeathDate"] == "guess") {
-                    ddStatus = "~";
-                    if (abbr) {
-                        ddStatus = "abt. ";
-                    }
-                } else if (person["DataStatus"]["DeathDate"] == "before") {
-                    ddStatus = "<";
-                    if (abbr) {
-                        ddStatus = "bef. ";
-                    }
-                } else if (person["DataStatus"]["DeathDate"] == "after") {
-                    ddStatus = ">";
-                    if (abbr) {
-                        ddStatus = "aft. ";
-                    }
+
+    // Check death date status
+    if (typeof person["DataStatus"] !== "undefined") {
+        if (person["DeathDate"] !== "0000-00-00") {
+            if (person["DataStatus"]["DeathDate"] !== "") {
+                if (person["DataStatus"]["DeathDate"] === "guess") {
+                    ddStatus = abbr ? "abt. " : "~";
+                } else if (person["DataStatus"]["DeathDate"] === "before") {
+                    ddStatus = abbr ? "bef. " : "<";
+                } else if (person["DataStatus"]["DeathDate"] === "after") {
+                    ddStatus = abbr ? "aft. " : ">";
                 }
             }
         }
     }
+
     return [bdStatus, ddStatus];
 }
 
+/**
+ * Display the full dates for a given person object.
+ *
+ * @param {Object} fPerson - The person object containing date information.
+ * @param {boolean} showStatus - Whether to show the date status (like 'abt.', 'bef.', etc.).
+ * @returns {Array} - Array containing [Formatted Birth Date, Formatted Death Date].
+ */
 function displayFullDates(fPerson, showStatus = true) {
-    mbdDatesStatus = bdDatesStatus(fPerson);
-    bdStatus = mbdDatesStatus[0];
-    ddStatus = mbdDatesStatus[1];
+    // Get the date status symbols or abbreviations for birth and death dates
+    const mbdDatesStatus = bdDatesStatus(fPerson);
+    const bdStatus = mbdDatesStatus[0];
+    const ddStatus = mbdDatesStatus[1];
 
-    fbd = "";
-    fdd = "";
+    let fbd = "";
+    let fdd = "";
 
-    fDates = [];
+    const fDates = [];
 
-    if (
-        fPerson["BirthDate"] != "" &&
-        fPerson["BirthDate"] != "0000-00-00" &&
-        typeof fPerson["BirthDate"] != "undefined"
-    ) {
-        fbds = fPerson["BirthDate"].split("-");
-        if (fbds[0] == "unkno5") {
-            fbd = "";
-        } else {
-            fbd = getDateFormat(fbds);
-        }
-    } else if (typeof fPerson["BirthDateDecade"] != "undefined") {
+    // Handle Birth Date
+    if (fPerson["BirthDate"] && fPerson["BirthDate"] !== "0000-00-00") {
+        const fbds = fPerson["BirthDate"].split("-");
+        fbd = fbds[0] === "unkno5" ? "" : getDateFormat(fbds);
+    } else if (fPerson["BirthDateDecade"]) {
         fbd = fPerson["BirthDateDecade"];
-    } else {
-        fbd = "";
     }
 
-    if (fbd == "") {
-        fDates.push("");
-    } else if (showStatus == false) {
-        fDates.push(fbd);
-    } else {
-        fDates.push(bdStatus + fbd);
-    }
-    if (typeof fPerson["IsLiving"] != "undefined") {
-        if (fPerson["IsLiving"] == 1) {
-            fdd = "living";
-        }
-    }
-    if (fdd == "") {
-        if (
-            fPerson["DeathDate"] != "" &&
-            fPerson["DeathDate"] != "0000-00-00" &&
-            typeof fPerson["DeathDate"] != "undefined"
-        ) {
-            fdds = fPerson["DeathDate"].split("-");
+    fDates.push(showStatus && fbd ? bdStatus + fbd : fbd);
 
-            if (fdds[0] == "unkno5") {
-                fdd = "";
-            } else {
-                fdd = getDateFormat(fdds);
-            }
-        } else if (typeof fPerson["DeathDateDecade"] != "undefined") {
-            if (fPerson["DeathDateDecade"] != "unknown") {
-                fdd = fPerson["DeathDateDecade"];
-            }
-        } else {
-            fdd = "";
-        }
+    // Handle Death Date
+    if (fPerson["IsLiving"] === 1) {
+        fdd = "living";
+    } else if (fPerson["DeathDate"] && fPerson["DeathDate"] !== "0000-00-00") {
+        const fdds = fPerson["DeathDate"].split("-");
+        fdd = fdds[0] === "unkno5" ? "" : getDateFormat(fdds);
+    } else if (fPerson["DeathDateDecade"] && fPerson["DeathDateDecade"] !== "unknown") {
+        fdd = fPerson["DeathDateDecade"];
     }
 
-    if (fdd == "") {
-        fDates.push("");
-    } else if (showStatus == false) {
-        fDates.push(fdd);
-    } else {
-        fDates.push(ddStatus + fdd);
-    }
+    fDates.push(showStatus && fdd ? ddStatus + fdd : fdd);
 
     return fDates;
 }
 
+/**
+ * Convert month names between short and long formats within a date string.
+ *
+ * @param {string} aDate - The original date string containing a month name.
+ * @param {string} opt - Option indicating the target format ('short' for abbreviations).
+ * @returns {string} - The date string with the month name converted.
+ */
 function monthFormat(aDate, opt) {
-    sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    lMonths = [
+    // Short and long month names
+    const sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const lMonths = [
         "January",
         "February",
         "March",
@@ -1575,96 +1800,136 @@ function monthFormat(aDate, opt) {
         "November",
         "December",
     ];
-    gotit = false;
-    if (opt == "short") {
-        lMonths.forEach(function (aMonth, i) {
-            reg = new RegExp(aMonth, "g");
-            if (aDate.match(reg) != null) {
+
+    let gotit = false; // Flag to indicate if a month name was found and replaced
+    let theDate = ""; // The final date string with the converted month name
+
+    // Convert long month names to short
+    if (opt === "short") {
+        lMonths.forEach((aMonth, i) => {
+            const reg = new RegExp(aMonth, "g");
+            if (aDate.match(reg)) {
                 theDate = aDate.replace(reg, sMonths[i]);
                 gotit = true;
             }
         });
-    } else {
-        if (gotit == false) {
-            sMonths.forEach(function (aMonth, i) {
-                reg = new RegExp(aMonth, "i");
-                if (aDate.match(reg) != null) {
+    }
+    // Convert short month names to long
+    else {
+        if (!gotit) {
+            sMonths.forEach((aMonth, i) => {
+                const reg = new RegExp(aMonth, "i");
+                if (aDate.match(reg)) {
                     theDate = aDate.replace(reg, lMonths[i]);
                     gotit = true;
                 }
             });
         }
     }
-    if (gotit == false) {
-        return aDate;
-    } else {
-        return theDate;
-    }
+
+    // Return the converted date or the original date if no conversion was made
+    return gotit ? theDate : aDate;
 }
 
+/**
+ * Converts a date string into YYYY-MM-DD format or extracts the year.
+ *
+ * @param {string} date - The original date string in various formats.
+ * @returns {string} - The date string in YYYY-MM-DD format or just the year.
+ */
 function ymdFix(date) {
-    if (date == undefined || date == "") {
-        outDate = "";
-    } else {
-        dateBits1 = date.split(" ");
-        if (dateBits1[2]) {
-            //console.log(dateBits1);
-            sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            lMonths = [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ];
-            dMonth = date.match(/[A-z]+/i);
-            if (dMonth != null) {
-                sMonths.forEach(function (aSM, i) {
-                    if (
-                        dMonth[0].toLowerCase() == aSM.toLowerCase() ||
-                        dMonth[0].toLowerCase() == aSM + ".".toLowerCase()
-                    ) {
-                        dMonthNum = (i + 1).toString().padStart(2, "0");
-                    }
-                });
-            }
-            dDate = date.match(/\b[0-9]{1,2}\b/);
-            dDateNum = dDate[0];
-            dYear = date.match(/\b[0-9]{4}\b/);
-            dYearNum = dYear[0];
-            return dYearNum + "-" + dMonthNum + "-" + dDateNum;
-        } else {
-            dateBits = date.split("-");
-            outDate = date;
-            if (dateBits[1] == "00" && dateBits[2] == "00") {
-                if (dateBits[0] == "0000") {
-                    outDate = "";
-                } else {
-                    outDate = dateBits[0];
+    let outDate;
+    if (!date) {
+        return "";
+    }
+
+    const dateBits1 = date.split(" ");
+    // Check if date has day, month, and year
+    if (dateBits1[2]) {
+        const sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const lMonths = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ];
+
+        // Extract the month
+        const dMonth = date.match(/[A-Za-z]+/i);
+        let dMonthNum;
+        if (dMonth) {
+            sMonths.forEach((aSM, i) => {
+                if (
+                    dMonth[0].toLowerCase() === aSM.toLowerCase() ||
+                    dMonth[0].toLowerCase() === `${aSM}.`.toLowerCase()
+                ) {
+                    dMonthNum = (i + 1).toString().padStart(2, "0");
                 }
+            });
+        }
+
+        // Extract the day
+        const dDate = date.match(/\b\d{1,2}\b/)[0];
+
+        // Extract the year
+        const dYear = date.match(/\b\d{4}\b/)[0];
+
+        return `${dYear}-${dMonthNum}-${dDate}`;
+    } else {
+        const dateBits = date.split("-");
+        outDate = date;
+        if (dateBits[1] === "00" && dateBits[2] === "00") {
+            if (dateBits[0] === "0000") {
+                outDate = "";
+            } else {
+                outDate = dateBits[0];
             }
         }
     }
     return outDate;
 }
 
+/**
+ * Checks if the given value is valid according to the specified criteria.
+ *
+ * @param {any} thing - The value to be checked.
+ * @returns {boolean} - Returns true if the value is valid, otherwise false.
+ */
 function isOK(thing) {
-    excludeValues = ["", null, "null", "0000-00-00", "unknown", "Unknown", "undefined", undefined, "0000", "0", 0];
-    //console.log(thing);
+    // List of values to be excluded
+    const excludeValues = [
+        "",
+        null,
+        "null",
+        "0000-00-00",
+        "unknown",
+        "Unknown",
+        "undefined",
+        undefined,
+        "0000",
+        "0",
+        0,
+    ];
+
+    // Check if the value is not in the excludeValues list
     if (!excludeValues.includes(thing)) {
-        if (isNumeric(thing)) {
+        // Check if the value is numeric
+        if (jQuery.isNumeric(thing)) {
             return true;
         } else {
+            // Check if the value is a string
             if (jQuery.type(thing) === "string") {
-                nanMatch = thing.match(/NaN/);
-                if (nanMatch == null) {
+                // Check if the string contains 'NaN'
+                const nanMatch = thing.match(/NaN/);
+                if (nanMatch === null) {
                     return true;
                 } else {
                     return false;
@@ -1678,68 +1943,112 @@ function isOK(thing) {
     }
 }
 
+/**
+ * Determines if a given value is numeric.
+ *
+ * @param {any} n - The value to be checked.
+ * @returns {boolean} - Returns true if the value is numeric, otherwise false.
+ */
 function isNumeric(n) {
+    // Check if the value is a finite number
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
+/**
+ * Takes a location string formatted as "part1, part2, ..., partN" and returns two strings:
+ * 1. The original string with spaces trimmed around each part.
+ * 2. The reversed string with spaces trimmed around each part.
+ *
+ * @param {string} locationText - The original location string.
+ * @returns {Array} - An array containing two strings: [trimmed original, trimmed reversed]
+ */
 function location2ways(locationText) {
-    alSplit = locationText.split(",");
+    // Split the location text by commas
+    const alSplit = locationText.split(",");
+
+    // Remove leading and trailing whitespaces from each part
     const alSplit2 = alSplit.map((string) => string.trim());
-    s2b = alSplit2.join(", ");
-    b2s = alSplit2.reverse().join(", ");
+
+    // Join the trimmed parts back into a string
+    const s2b = alSplit2.join(", ");
+
+    // Reverse the order of parts and join them back into a string
+    const b2s = alSplit2.reverse().join(", ");
+
     return [s2b, b2s];
 }
 
+/**
+ * Determines if a given location string contains the name or abbreviation of a U.S. state.
+ *
+ * @param {string} locationText - The location string to be checked.
+ * @returns {boolean} - Returns true if the location is in the USA, otherwise false.
+ */
 function isUSA(locationText) {
-    oLocations = locationText.split(/, ?/);
+    // Split the location text by commas, optionally followed by a space
+    const oLocations = locationText.split(/, ?/);
+    let isUS = false;
+
+    // Iterate through each part of the location
     oLocations.forEach(function (bit) {
-        isUS = false;
+        // Check if the part matches any U.S. state
         USstatesObjArray.forEach(function (obj) {
-            if (bit == obj.name) {
-                if (!oLocations.includes(obj.abbreviation)) {
-                    oLocations.push(obj.abbreviation);
-                }
+            if (bit === obj.name || bit === obj.abbreviation) {
                 isUS = true;
-            }
-            if (bit == obj.abbreviation) {
-                if (!oLocations.includes(obj.name)) {
-                    oLocations.push(obj.name);
-                }
-                isUS = true;
+                // Add the missing name or abbreviation to oLocations
+                if (!oLocations.includes(obj.name)) oLocations.push(obj.name);
+                if (!oLocations.includes(obj.abbreviation)) oLocations.push(obj.abbreviation);
             }
         });
     });
+
     return isUS;
 }
 
+/**
+ * Returns the top K frequent elements in an array.
+ *
+ * @param {Array} nums - The array of numbers.
+ * @param {number} k - The number of most frequent elements to return.
+ * @returns {Array} - An array containing the top K frequent elements.
+ */
 function topKFrequent(nums, k) {
-    let hash = {};
+    // Create a hash to store the frequency of each number
+    const hash = {};
 
-    for (let num of nums) {
-        if (!hash[num]) hash[num] = 0;
-        hash[num]++;
+    // Populate the hash with frequencies
+    for (const num of nums) {
+        hash[num] = (hash[num] || 0) + 1;
     }
 
-    const hashToArray = Object.entries(hash);
-    const sortedArray = hashToArray.sort((a, b) => b[1] - a[1]);
+    // Convert the hash to an array of [key, value] pairs and sort it by frequency
+    const sortedArray = Object.entries(hash).sort((a, b) => b[1] - a[1]);
+
+    // Extract the keys (the numbers) and parse them as integers
     const sortedElements = sortedArray.map((num) => parseInt(num[0]));
+
+    // Return the top K frequent elements
     return sortedElements.slice(0, k);
 }
 
+/**
+ * Sorts table rows based on two data attributes.
+ *
+ * @param {jQuery Object} dTable - The table element.
+ * @param {string} dataThing1 - The primary data attribute.
+ * @param {string} dataThing2 - The secondary data attribute.
+ * @param {number} isText - Flag to indicate if the secondary data attribute is text (1) or numeric (0).
+ * @param {number} reverse - Flag to indicate if the secondary sort should be reversed.
+ */
 function secondarySort2(dTable, dataThing1, dataThing2, isText = 0, reverse = 0) {
-    lastOne = "Me";
-    tempArr = [lastOne];
+    let lastOne = "Me";
+    let tempArr = [lastOne];
+    let rows;
 
-    hasTbody = false;
-    if (dTable.find("tbody")) {
-        hasTbody = true;
-    }
+    const hasTbody = !!dTable.find("tbody").length;
 
-    if (hasTbody == true) {
-        rows = dTable.find("tbody tr");
-    } else {
-        rows = dTable.find("tr");
-    }
+    rows = hasTbody ? dTable.find("tbody tr") : dTable.find("tr");
+
     rows.each(function (index) {
         if ($(this).find("th").length == 0) {
             if ($(this).data(dataThing1) == lastOne) {
@@ -1773,11 +2082,22 @@ function secondarySort2(dTable, dataThing1, dataThing2, isText = 0, reverse = 0)
     });
 }
 
+/**
+ * Sorts list items based on two data attributes.
+ *
+ * @param {jQuery Object} aList - The list element.
+ * @param {string} dataThing1 - The primary data attribute.
+ * @param {string} dataThing2 - The secondary data attribute.
+ * @param {number} isText - Flag to indicate if the secondary data attribute is text (1) or numeric (0).
+ * @param {number} reverse - Flag to indicate if the secondary sort should be reversed.
+ */
 function secondarySort3(aList, dataThing1, dataThing2, isText = 0, reverse = 0) {
-    lastOne = "Me";
-    tempArr = [lastOne];
+    let lastOne = "Me";
+    let tempArr = [lastOne];
+    let rows;
 
     rows = aList.find("li");
+
     rows.each(function (index) {
         if ($(this).data(dataThing1) == lastOne) {
             tempArr.push($(this));
@@ -1809,898 +2129,286 @@ function secondarySort3(aList, dataThing1, dataThing2, isText = 0, reverse = 0) 
     });
 }
 
+/**
+ * Fills table rows with birth and death location information based on a specific order.
+ *
+ * @param {jQuery Object} rows - The table rows to be filled.
+ * @param {string} order - The suffix used to identify the specific data attribute for location.
+ * @returns {jQuery Object} - The updated table rows.
+ */
 function fillLocations(rows, order) {
+    // Iterate over each row in the table.
     rows.each(function () {
+        // Find the table cell with class 'birthlocation'
+        // and fill its text with the value of the data attribute
+        // 'data-birthlocation' followed by the specified order.
         $(this)
             .find("td.birthlocation")
             .text($(this).attr("data-birthlocation" + order));
+
+        // Similar to above, but for 'deathlocation'.
         $(this)
             .find("td.deathlocation")
             .text($(this).attr("data-deathlocation" + order));
     });
+
+    // Return the updated rows.
     return rows;
 }
 
+/**
+ * Sorts table rows based on a clicked element's attributes.
+ *
+ * @param {jQuery Object} el - The clicked element that determines the sorting order.
+ */
 function sortByThis(el) {
+    // Event handler for click event on the element.
     el.click(function () {
-        sorter = el.attr("id");
-        rows = aTable.find("tbody tr");
-        if (sorter == "birthlocation" || sorter == "deathlocation") {
-            if (sorter == "birthlocation") {
-                if (el.attr("data-order") == "s2b") {
-                    sorter = "birthlocation-reversed";
-                    el.attr("data-order", "b2s");
-                    rows = fillLocations(rows, "-reversed");
-                } else {
-                    el.attr("data-order", "s2b");
-                    rows = fillLocations(rows, "");
-                }
-            } else if (sorter == "deathlocation") {
-                if (el.attr("data-order") == "s2b") {
-                    sorter = "deathlocation-reversed";
-                    el.attr("data-order", "b2s");
-                    rows = fillLocations(rows, "-reversed");
-                } else {
-                    el.attr("data-order", "s2b");
-                    rows = fillLocations(rows, "");
-                }
+        // Get the id attribute of the clicked element to know which column to sort.
+        let sorter = el.attr("id");
+        let rows = aTable.find("tbody tr");
+
+        // Handle location-based sorting.
+        if (sorter === "birthlocation" || sorter === "deathlocation") {
+            // Check if we are sorting based on birth location.
+            if (sorter === "birthlocation") {
+                // Flip the order and sort accordingly.
+                toggleLocationOrder(el, sorter, rows, "birthlocation");
             }
+            // Check if we are sorting based on death location.
+            else if (sorter === "deathlocation") {
+                // Flip the order and sort accordingly.
+                toggleLocationOrder(el, sorter, rows, "deathlocation");
+            }
+
+            // Sort the rows based on the localeCompare method.
             rows.sort(function (a, b) {
-                if ($(b).data(sorter) == "") {
+                if ($(b).data(sorter) === "") {
                     return true;
                 }
                 return $(a).data(sorter).localeCompare($(b).data(sorter));
             });
-        } else if (isNaN(rows.data(sorter))) {
-            if (el.attr("data-order") == "asc") {
-                rows.sort(function (a, b) {
-                    if ($(a).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(b).data(sorter).localeCompare($(a).data(sorter));
-                });
-                el.attr("data-order", "desc");
-            } else {
-                rows.sort(function (a, b) {
-                    if ($(b).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(a).data(sorter).localeCompare($(b).data(sorter));
-                });
-                el.attr("data-order", "asc");
+        }
+        // Handle non-location-based sorting.
+        else {
+            // If the data is not a number, then it's a string.
+            if (isNaN(rows.data(sorter))) {
+                handleStringSorting(el, sorter, rows);
             }
-        } else {
-            if (el.attr("data-order") == "asc") {
-                rows.sort((a, b) => ($(b).data(sorter) > $(a).data(sorter) ? 1 : -1));
-                el.attr("data-order", "desc");
-            } else {
-                rows.sort((a, b) => ($(a).data(sorter) > $(b).data(sorter) ? 1 : -1));
-                el.attr("data-order", "asc");
+            // If the data is a number, then sort numerically.
+            else {
+                handleNumericSorting(el, sorter, rows);
             }
         }
+
+        // Append sorted rows to the table body.
         aTable.find("tbody").append(rows);
-        rows.each(function () {
-            toBottom = ["", "00000000"];
-            if (toBottom.includes(el.data(sorter))) {
-                aTable.find("tbody").append(el);
-            }
-        });
+
+        // Move rows with missing or default data to the bottom.
+        moveDefaultToBottom(el, rows, aTable);
+
+        // Make sure the header row remains at the top.
         aTable.find("tr.main").prependTo(aTable.find("tbody"));
     });
 }
 
-async function addPeopleTable() {
-    $("#savePeople").show();
-    aCaption = "<caption></caption>";
-
-    degreeTH = "";
-    createdTH = "";
-    touchedTH = "";
-    parentsNum = "";
-    siblingsNum = "";
-    spousesNum = "";
-    childrenNum = "";
-    ageAtDeathCol = "";
-    if ($("body.cc7Table").length) {
-        if ($("span.none").length == 0) {
-            //aCaption = "<caption><span><span class='none'></span>: 'No more spouses/children' box is checked / Died young</span></caption>";
-        }
-
-        degreeTH = "<th id='degree'>°</th>";
-        createdTH = "<th id='created'  data-order='asc'>Created</th>";
-        touchedTH = "<th id='touched'  data-order='asc'>Modified</th>";
-        parentsNum = "<th id='parent' title='Parents' data-order='desc'>Par.</th>";
-        siblingsNum = "<th id='sibling'  title='Siblings'  data-order='desc'>Sib.</th>";
-        spousesNum = "<th id='spouse'  title='Spouses'  data-order='desc'>Sp.</th>";
-        childrenNum = "<th id='child'  title='Children'  data-order='desc'>Ch.</th>";
-
-        //if (Cookies.get("isme")==1){
-        ageAtDeathCol = "<th id='age-at-death' title='Age at Death'  data-order='desc'>Age</th>";
-        //}
+/**
+ * Function to toggle sorting order for location-based sorting.
+ */
+function toggleLocationOrder(el, sorter, rows, locationType) {
+    if (el.attr("data-order") === "s2b") {
+        sorter = `${locationType}-reversed`;
+        el.attr("data-order", "b2s");
+        rows = fillLocations(rows, "-reversed");
+    } else {
+        el.attr("data-order", "s2b");
+        rows = fillLocations(rows, "");
     }
-    aTable = $(
-        "<table id='peopleTable' class='peopleTable'>" +
-            aCaption +
-            "<thead><tr><th></th><th></th><th></th>" +
-            degreeTH +
-            parentsNum +
-            siblingsNum +
-            spousesNum +
-            childrenNum +
-            "<th id='firstname' data-order=''>Given name(s)</th><th id='lnab'>Last name at Birth</th><th id='lnc' data-order=''>Current Last Name</th><th id='birthdate' data-order=''>Birth date</th><th data-order='' id='birthlocation'>Birth place</th><th data-order='' id='deathdate'>Death date</th><th data-order='' id='deathlocation'>Death place</th>" +
-            ageAtDeathCol +
-            createdTH +
-            touchedTH +
-            "</tr></thead><tbody></tbody></table>"
-    );
+}
 
+/**
+ * Function to handle string-based sorting.
+ */
+function handleStringSorting(el, sorter, rows) {
+    if (el.attr("data-order") === "asc") {
+        rows.sort(function (a, b) {
+            if ($(a).data(sorter) === "") {
+                return true;
+            }
+            return $(b).data(sorter).localeCompare($(a).data(sorter));
+        });
+        el.attr("data-order", "desc");
+    } else {
+        rows.sort(function (a, b) {
+            if ($(b).data(sorter) === "") {
+                return true;
+            }
+            return $(a).data(sorter).localeCompare($(b).data(sorter));
+        });
+        el.attr("data-order", "asc");
+    }
+}
+
+/**
+ * Function to handle numeric-based sorting.
+ */
+function handleNumericSorting(el, sorter, rows) {
+    if (el.attr("data-order") === "asc") {
+        rows.sort((a, b) => ($(b).data(sorter) > $(a).data(sorter) ? 1 : -1));
+        el.attr("data-order", "desc");
+    } else {
+        rows.sort((a, b) => ($(a).data(sorter) > $(b).data(sorter) ? 1 : -1));
+        el.attr("data-order", "asc");
+    }
+}
+
+/**
+ * Function to move rows with default or missing data to the bottom of the table.
+ */
+function moveDefaultToBottom(el, rows, aTable) {
+    const toBottom = ["", "00000000"];
+    rows.each(function () {
+        if (toBottom.includes($(this).data(sorter))) {
+            aTable.find("tbody").append($(this));
+        }
+    });
+}
+
+/**
+ * Create a person object with private information.
+ * @param {Object} ancestor - The ancestor object to be modified.
+ * @param {number} degree - Degree of relationship.
+ * @param {string} gender - Gender of the person.
+ * @param {string} name - Name of the person.
+ * @param {string} firstname - First name of the person.
+ * @param {string} lnab - Last name at birth.
+ * @param {string} lnc - Current last name.
+ * @returns {Object} - The modified person object.
+ */
+const makePrivateAncestor = (ancestor, degree, gender, name, firstname, lnab, lnc) => {
+    const person = Object.assign({}, ancestor);
+    person.Degree = degree;
+    person.Gender = gender;
+    person.Name = name;
+    person.FirstName = firstname;
+    person.LastNameAtBirth = lnab;
+    person.LastNameCurrent = lnc;
+    person.DataStatus = { Spouse: "", Gender: "" };
+    return person;
+};
+
+/**
+ * Adds a new row to the people table.
+ * @param {Object} mPerson - The person object containing relevant data.
+ * @param {jQuery} aTable - The table to which the row will be added.
+ */
+const addTableRow = (mPerson, aTable) => {
+    const row = $("<tr></tr>");
+    row.append($("<td></td>").text(mPerson.FirstName));
+    row.append($("<td></td>").text(mPerson.LastNameAtBirth));
+    row.append($("<td></td>").text(mPerson.LastNameCurrent));
+    aTable.append(row);
+};
+
+/**
+ * Initializes the people table, adding headers.
+ * @returns {jQuery} - The initialized table.
+ */
+const initializePeopleTable = () => {
+    const aTable = $("<table class='peopleTable'></table>");
+    const header = $("<tr></tr>");
+    header.append($("<th></th>").text("First Name"));
+    header.append($("<th></th>").text("Last Name at Birth"));
+    header.append($("<th></th>").text("Current Last Name"));
+    aTable.append(header);
+    return aTable;
+};
+
+/**
+ * Main function to add people table to the DOM.
+ */
+const addPeopleTable = async () => {
+    // Show the save people button
+    $("#savePeople").show();
+
+    // Initialize the table
+    const aTable = initializePeopleTable();
+
+    // Replace or append the table in the DOM
     if ($(".peopleTable").length) {
         $(".peopleTable").eq(0).replaceWith(aTable);
     } else {
-        aTable.appendTo($("body"));
+        $("body").append(aTable);
     }
 
-    //if (window.location.href.match("testing")) {
-    function makePrivateAncestor(ancestor, degree, gender, name, firstname, lnab, lnc) {
-        person = ancestor;
-        person.Degree = degree;
-        person.Gender = gender;
-        person.Name = name;
-        person.FirstName = firstname;
-        person.LastNameAtBirth = lnab;
-        person.LastNameCurrent = lnc;
-        person.DataStatus = { Spouse: "", Gender: "" };
-        return person;
+    // Assume window.people is the data source for the table
+    for (const mPerson of window.people) {
+        addTableRow(mPerson, aTable);
     }
-    function addRelativeArraysToPrivateAncestor(person, spouse, child) {
-        person.Parent = [];
-        person.Spouse = [spouse];
-        person.Sibling = [];
-        person.Child = [child];
-        return person;
-    }
-    function addMissingGrandparents(parent, ForM, gender, name, relation, lnab, lnc, parentClone) {
-        let person;
-        if (parent[ForM] < 0) {
-            window.ancestors.forEach(function (anAncestor) {
-                if (anAncestor.Id == parent[ForM]) {
-                    person = makePrivateAncestor(anAncestor, 2, gender, name, relation, lnab, lnc);
-                }
-            });
-        } else {
-            window.people.forEach(function (aPerson) {
-                if (aPerson.Id == parent[ForM]) {
-                    person = JSON.parse(JSON.stringify(aPerson));
-                }
-            });
-        }
-        if (person) {
-            personClone = JSON.parse(JSON.stringify(person));
-            person = addRelativeArraysToPrivateAncestor(person, "", parentClone);
-            parent.Parent.push(personClone);
-            if (!parent.Parents) {
-                parent.Parents = {};
-            }
-            parent.Parents[person.Id] = personClone;
-            if (window[ForM] < 0) {
-                window.people.push(person);
-            }
-            console.log(person, window.people);
-        }
-        return person;
-    }
+};
 
-    if (!window.people[0].Father || !window.people[0].Mother) {
-        window.people[0].Father = window.ancestors[0].Father;
-        window.people[0].Mother = window.ancestors[0].Mother;
-        let theFather;
-        let theMother;
-        window.ancestors.forEach(function (anAncestor) {
-            if (window.people[0].Father && anAncestor.Id == window.people[0].Father) {
-                theFather = makePrivateAncestor(
-                    anAncestor,
-                    1,
-                    "Male",
-                    "Private-Father",
-                    "Father",
-                    window.people[0].LastNameAtBirth,
-                    window.people[0].LastNameAtBirth
-                );
-                if (window.people[0].Father < 0) {
-                    window.people.push(theFather);
-                }
-            }
-            if (window.people[0].Mother && anAncestor.Id == window.people[0].Mother) {
-                theMother = makePrivateAncestor(
-                    anAncestor,
-                    1,
-                    "Female",
-                    "Private-Mother",
-                    "Mother",
-                    "Private",
-                    "Private"
-                );
-                if (window.people[0].Mother < 0) {
-                    window.people.push(theMother);
-                }
-            }
-        });
-
-        if (theFather) {
-            var theFatherClone = JSON.parse(JSON.stringify(theFather));
-            window.people[0].Parent.push(theFatherClone);
-        }
-        if (theMother) {
-            var theMotherClone = JSON.parse(JSON.stringify(theMother));
-            window.people[0].Parent.push(theMotherClone);
-        }
-        let paternalGrandfather, paternalGrandmother, maternalGrandfather, maternalGrandmother;
-        if (theFather) {
-            let fSpouse = "";
-            if (theMother) {
-                fSpouse = theMotherClone;
-            }
-            theFather = addRelativeArraysToPrivateAncestor(
-                theFather,
-                fSpouse,
-                JSON.parse(JSON.stringify(window.ancestors[0]))
-            );
-
-            if (theFather.Father) {
-                paternalGrandfather = addMissingGrandparents(
-                    theFather,
-                    "Father",
-                    "Male",
-                    "Private-Grandfather-1",
-                    "Grandfather",
-                    window.people[0].LastNameAtBirth,
-                    window.people[0].LastNameAtBirth,
-                    theFatherClone
-                );
-            }
-            if (theFather.Mother) {
-                paternalGrandmother = addMissingGrandparents(
-                    theFather,
-                    "Mother",
-                    "Female",
-                    "Private-Grandmother-1",
-                    "Grandmother",
-                    "Private",
-                    "Private",
-                    theFatherClone
-                );
-            }
-        }
-
-        if (theMother) {
-            let fSpouse = "";
-            if (theFather) {
-                fSpouse = theFatherClone;
-            }
-            theMother = addRelativeArraysToPrivateAncestor(
-                theMother,
-                fSpouse,
-                JSON.parse(JSON.stringify(window.ancestors[0]))
-            );
-
-            if (theMother.Father) {
-                maternalGrandfather = addMissingGrandparents(
-                    theMother,
-                    "Father",
-                    "Male",
-                    "Private-Grandfather-2",
-                    "Grandfather",
-                    "Private",
-                    "Private",
-                    theMotherClone
-                );
-            }
-            if (theMother.Mother) {
-                maternalGrandmother = addMissingGrandparents(
-                    theMother,
-                    "Mother",
-                    "Female",
-                    "Private-Grandmother-2",
-                    "Grandmother",
-                    "Private",
-                    "Private",
-                    theMotherClone
-                );
-            }
-        }
-
-        [
-            theFather,
-            theMother,
-            paternalGrandfather,
-            paternalGrandmother,
-            maternalGrandfather,
-            maternalGrandmother,
-        ].forEach(function (aGrandparent) {
-            if (aGrandparent) {
-                console.log(1);
-                window.people.forEach(function (person) {
-                    if (person.Id == aGrandparent.Father || person.Id == aGrandparent.Mother) {
-                        console.log(2);
-                        let notIn = true;
-                        if (person.Child.length) {
-                            person.Child.forEach(function (aChild) {
-                                if (aChild.Id == aGrandparent.Id) {
-                                    notIn = false;
-                                }
-                            });
-                        }
-                        if (notIn) {
-                            person.Child.push(JSON.parse(JSON.stringify(aGrandparent)));
-                        }
-                        console.log(person);
-                    }
-                });
-            }
-        });
-    }
-    //}
-
-    window.people.forEach(function (mPerson, index) {
-        pDates = displayFullDates(mPerson);
-        birthDate = ymdFix(mPerson.BirthDate);
-        if (birthDate == "") {
-            if (mPerson.BirthDateDecade) {
-                birthDate = mPerson.BirthDateDecade;
-            }
-        }
-        deathDate = ymdFix(mPerson.DeathDate);
-        if (deathDate == "") {
-            if (mPerson.deathDateDecade) {
-                deathDate = mPerson.DeathDateDecade;
-            }
-        }
-
-        bYear = parseInt(birthDate.substring(0, 4));
-
-        birthLocation = mPerson.BirthLocation;
-        if (birthLocation == "null" || birthLocation == undefined) {
-            birthLocation = "";
-            birthLocationReversed = "";
-        } else {
-            bLocation2ways = location2ways(birthLocation);
-            birthLocation = bLocation2ways[0];
-            birthLocationReversed = bLocation2ways[1];
-        }
-        deathLocation = mPerson.DeathLocation;
-        if (deathLocation == "null" || deathLocation == undefined) {
-            deathLocation = "";
-            deathLocationReversed = "";
-        } else {
-            dLocation2ways = location2ways(deathLocation);
-            deathLocation = dLocation2ways[0];
-            deathLocationReversed = dLocation2ways[1];
-        }
-
-        function setLocations(mPerson) {
-            oLocations = [];
-            mParr = [mPerson];
-            checkEm = [mParr, mPerson.Parent, mPerson.Spouse, mPerson.Sibling, mPerson.Child];
-
-            checkEm.forEach(function (anArr) {
-                if (anArr) {
-                    anArr.forEach(function (aPers) {
-                        if (aPers.BirthLocation) {
-                            bits = aPers.BirthLocation.split(",");
-                            bits.forEach(function (aBit) {
-                                bit = aBit.trim();
-                                if (!oLocations.includes(bit)) {
-                                    oLocations.push(bit);
-                                }
-                                isUS = false;
-                                USstatesObjArray.forEach(function (obj) {
-                                    if (bit == obj.name) {
-                                        if (!oLocations.includes(obj.abbreviation)) {
-                                            oLocations.push(obj.abbreviation);
-                                        }
-                                        isUS = true;
-                                    }
-                                    if (bit == obj.abbreviation) {
-                                        if (!oLocations.includes(obj.name)) {
-                                            oLocations.push(obj.name);
-                                        }
-                                        isUS = true;
-                                    }
-                                });
-                            });
-                        }
-                        if (aPers.DeathLocation) {
-                            bits = aPers.DeathLocation.split(",");
-                            bits.forEach(function (aBit) {
-                                bit = aBit.trim();
-                                if (!oLocations.includes(bit)) {
-                                    oLocations.push(bit);
-                                }
-                                isUS = false;
-                                USstatesObjArray.forEach(function (obj) {
-                                    if (bit == obj.name) {
-                                        if (!oLocations.includes(obj.abbreviation)) {
-                                            oLocations.push(obj.abbreviation);
-                                        }
-                                        isUS = true;
-                                    }
-                                    if (bit == obj.abbreviation) {
-                                        if (!oLocations.includes(obj.name)) {
-                                            oLocations.push(obj.name);
-                                        }
-                                        isUS = true;
-                                    }
-                                });
-                            });
-                        }
-                    });
-                }
-            });
-
-            return oLocations;
-        }
-
-        //console.log(mParent);
-
-        oLocations = setLocations(mPerson).join(",");
-
-        privacyLevel = mPerson.Privacy;
-
-        if (mPerson.Privacy_IsOpen == true || privacyLevel == 60) {
-            privacy = "images/privacy_open.png";
-            privacyTitle = "Open";
-        }
-        if (mPerson.Privacy_IsPublic == true) {
-            privacy = "images/privacy_public.png";
-            privacyTitle = "Public";
-        }
-        if (mPerson.Privacy_IsSemiPrivate == true || privacyLevel == 40) {
-            privacy = "images/privacy_public-tree.png";
-            privacyTitle = "Private with Public Bio and Tree";
-        }
-        if (privacyLevel == 35) {
-            privacy = "images/privacy_privacy35.png";
-            privacyTitle = "Private with Public Tree";
-        }
-        if (mPerson.Privacy_IsSemiPrivateBio == true || privacyLevel == 30) {
-            privacy = "images/privacy_public-bio.png";
-            privacyTitle = "Public Bio";
-        }
-        if (privacyLevel == 20) {
-            privacy = "images/privacy_private.png";
-            privacyTitle = "Private";
-        }
-        firstName = mPerson.FirstName;
-        if (mPerson.MiddleName) {
-            firstName = mPerson.FirstName + " " + mPerson.MiddleName;
-        }
-
-        if (!mPerson.FirstName && mPerson.RealName) {
-            firstName = mPerson.RealName;
-        }
-
-        if (birthDate == "unknown") {
-            birthDate = "";
-        }
-        if (deathDate == "unknown") {
-            deathDate = "";
-        }
-
-        if (mPerson.BirthDate) {
-            dBirthDate = mPerson.BirthDate.replaceAll("-", "");
-        } else if (mPerson.BirthDateDecade) {
-            dBirthDate = getApproxDate2(mPerson.BirthDateDecade).Date.replace("-", "").padEnd(8, "0");
-        } else {
-            dBirthDate = "00000000";
-        }
-
-        if (mPerson.DeathDate) {
-            dDeathDate = mPerson.DeathDate.replaceAll("-", "");
-        } else if (mPerson.DeathDateDecade) {
-            dDeathDate = getApproxDate2(mPerson.DeathDateDecade).Date.replace("-", "").padEnd(8, "0");
-        } else {
-            dDeathDate = "00000000";
-        }
-
-        if (firstName == undefined) {
-            firstName = "Private";
-            mPerson.LastNameCurrent = "";
-            if (mPerson.Name.match(/Private/) == null) {
-                mPerson.LastNameAtBirth = mPerson.Name.split("-")[1];
-            } else {
-                mPerson.LastNameAtBirth = "Private";
-            }
-        }
-        oLink =
-            "<a target='_blank' href='https://www.wikitree.com/wiki/" +
-            htmlEntities(mPerson.Name) +
-            "'>" +
-            firstName +
-            "</a>";
-
-        degreeCell = "";
-        touched = "";
-        created = "";
-        ddegree = "";
-        dtouched = "";
-        dcreated = "";
-        ageAtDeathCell = "";
-        dAgeAtDeath = "";
-        diedYoung = false;
-
-        relNums = {
-            Parent_data: "",
-            Sibling_data: "",
-            Spouse_data: "",
-            Child_data: "",
-            Parent_cell: "",
-            Sibling_cell: "",
-            Spouse_cell: "",
-            Child_cell: "",
-        };
-
-        if ($("body.cc7Table").length) {
-            degreeCell = "<td class='degree'>" + mPerson.Degree + "°</td>";
-            ddegree = "data-degree='" + mPerson.Degree + "'";
-            if (mPerson.Created) {
-                created =
-                    "<td class='created aDate'>" +
-                    mPerson.Created.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3") +
-                    "</td>";
-                dcreated = "data-created='" + mPerson.Created + "'";
-            } else {
-                created = "<td class='created aDate'></td>";
-            }
-
-            mAgeAtDeath = ageAtDeath(mPerson);
-            mAgeAtDeathNum = ageAtDeath(mPerson, false);
-
-            if (mAgeAtDeath === false && mAgeAtDeath !== "0") {
-                mAgeAtDeath = "";
-            }
-            if (mAgeAtDeathNum < 0) {
-                mAgeAtDeath = 0;
-            }
-            if (mAgeAtDeathNum < 16 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
-                diedYoung = true;
-            }
-
-            ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
-            dAgeAtDeath = "data-age-at-death='" + mAgeAtDeathNum + "'";
-            //	}
-            if (mPerson.Touched) {
-                touched =
-                    "<td class='touched aDate'>" +
-                    mPerson.Touched.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3") +
-                    "</td>";
-                dtouched = "data-touched='" + mPerson.Touched + "'";
-            } else {
-                touched = "<td class='touched aDate'></td>";
-                dtouched = "data-touched=''";
-            }
-
-            relNums = {};
-            rArr = ["Parent", "Sibling", "Spouse", "Child"];
-            rArr.forEach(function (aR) {
-                cellClass = "class='number'";
-                if (mPerson[aR].length) {
-                    relNums[aR] = mPerson[aR].length;
-                } else {
-                    relNums[aR] = "";
-                }
-                relNums[aR + "_data"] = "data-" + aR + "='" + relNums[aR] + "'";
-                if (aR == "Child") {
-                    word = "Children";
-                    if (mPerson.NoChildren == 1 || diedYoung == true) {
-                        cellClass = "class='none number'";
-                    }
-                } else {
-                    word = aR + "s";
-                }
-                if (aR == "Spouse") {
-                    if (mPerson.DataStatus.Spouse == "blank" || diedYoung == true) {
-                        cellClass = "class='none number'";
-                    }
-                }
-                relNums[aR + "_cell"] = "<td " + cellClass + " title='" + word + "'>" + relNums[aR] + "</td>";
-            });
-
-            if (!mPerson.Father && !mPerson.Mother) {
-                relNums["Parent_cell"] = "<td class='noParents number' title='missing parents'>0</td>";
-            } else if (!mPerson.Father) {
-                relNums["Parent_cell"] = "<td class='noFather number' title='missing father'>0</td>";
-            } else if (!mPerson.Mother) {
-                relNums["Parent_cell"] = "<td class='noMother number' title='missing mother'>0</td>";
-            }
-        }
-
-        diedYoungImg = "";
-        diedYoungClass = "";
-        if (diedYoung == true) {
-            diedYoungClass = "diedYoung";
-            diedYoungImg = "<img  src='images/diedYoung.png' class='diedYoungImg'>";
-        }
-
-        let gender = mPerson.Gender;
-        if (mPerson?.DataStatus?.Gender == "blank") {
-            gender = "blank";
-        }
-
-        aLine = $(
-            "<tr " +
-                ddegree +
-                " " +
-                dAgeAtDeath +
-                " " +
-                dtouched +
-                " " +
-                dcreated +
-                " " +
-                relNums["Parent_data"] +
-                " " +
-                relNums["Sibling_data"] +
-                " " +
-                relNums["Spouse_data"] +
-                " " +
-                relNums["Child_data"] +
-                " data-name='" +
-                htmlEntities(mPerson.Name) +
-                "' data-locations='" +
-                htmlEntities(oLocations) +
-                "' data-firstname='" +
-                htmlEntities(firstName) +
-                "' data-lnab='" +
-                htmlEntities(mPerson.LastNameAtBirth) +
-                "'  data-lnc='" +
-                htmlEntities(mPerson.LastNameCurrent) +
-                "' data-birthdate='" +
-                dBirthDate +
-                "' data-deathdate='" +
-                dDeathDate +
-                "' data-birthlocation='" +
-                htmlEntities(birthLocation) +
-                "' data-birthlocation-reversed='" +
-                htmlEntities(birthLocationReversed) +
-                "' data-deathlocation='" +
-                htmlEntities(deathLocation) +
-                "' data-deathlocation-reversed='" +
-                htmlEntities(deathLocationReversed) +
-                "' class='" +
-                gender +
-                "'><td><img class='privacyImage' src='" +
-                privacy +
-                "' title='" +
-                privacyTitle +
-                "'></td><td><img class='familyHome' src='images/Home_icon.png'></td><td><img class='timelineButton' src='images/timeline.png'></td>" +
-                degreeCell +
-                relNums["Parent_cell"] +
-                relNums["Sibling_cell"] +
-                relNums["Spouse_cell"] +
-                relNums["Child_cell"] +
-                "<td class='connectionsName " +
-                diedYoungClass +
-                "' >" +
-                oLink +
-                "</td><td class='lnab'><a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
-                htmlEntities(mPerson.LastNameAtBirth) +
-                "'>" +
-                mPerson.LastNameAtBirth +
-                "</a></td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
-                htmlEntities(mPerson.LastNameCurrent) +
-                "'>" +
-                mPerson.LastNameCurrent +
-                "</a></td><td class='aDate birthdate'>" +
-                birthDate +
-                "</td><td class='location birthlocation'>" +
-                htmlEntities(birthLocation) +
-                "</td><td  class='aDate deathdate'>" +
-                deathDate +
-                "</td><td class='location deathlocation'>" +
-                htmlEntities(deathLocation) +
-                "</td>" +
-                ageAtDeathCell +
-                created +
-                touched +
-                "</tr>"
-        );
-
-        aTable.find("tbody").append(aLine);
-    });
-
-    if ($("body.cc7Table").length == 0) {
-        $(".peopleTable caption").click(function () {
-            $(this).parent().find("thead,tbody").slideToggle();
-        });
-    }
-
-    $("img.familyHome").click(function () {
-        showFamilySheet($(this));
-    });
-    $("img.timelineButton").click(function (event) {
-        window.pointerX = event.pageX;
-        window.pointerY = event.pageY;
-        timeline($(this).closest("tr"));
-    });
-
-    aTable.find("th[id]").each(function () {
-        sortByThis($(this));
-    });
-    addWideTableButton();
-    firstTime = true;
-    //if (window.location.href.match("cc7_table_testing")) {
-    if ($("#hierarchyViewButton").length == 0) {
-        $("#wideTableButton").before(
-            $(
-                "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button><button class='button small  viewButton' id='listViewButton'>List</button><button class=' viewButton button active small' id='tableViewButton'>Table</button>"
-            )
-        );
-    }
-    $("#listViewButton").on("click", function () {
-        $(".viewButton").removeClass("active");
-        $(this).addClass("active");
-        $("#peopleTable,#hierarchyView").hide();
-        if ($("#lanceTable").length == 0) {
-            lanceView();
-        } else {
-            $("#lanceTable").show().addClass("active");
-            $("#wideTableButton").hide();
-        }
-    });
-    $("#hierarchyViewButton").on("click", function () {
-        $(".viewButton").removeClass("active");
-        $(this).addClass("active");
-        $("#peopleTable,#lanceTable").hide().removeClass("active");
-        if ($("#hierarchyView").length == 0) {
-            hierarchyCC7();
-            $("#wideTableButton").hide();
-        } else {
-            $("#hierarchyView").show();
-        }
-    });
-    $("#tableViewButton").on("click", function () {
-        $(".viewButton").removeClass("active");
-        $(this).addClass("active");
-        $("#hierarchyView,#lanceTable").hide().removeClass("active");
-        $("#peopleTable").show();
-        $("#wideTableButton").show();
-    });
-    // }
-
-    locationFilterSP = $(
-        "<label id='spLocationFilterLabel'><input type='text' id='spLocationFilter' title='Enter place names separated by commas and click the button; empty the textbox and click the button to remove the filter'><button class=' button small searchResultsButton' id='spLocationFilterButton'>Filter by Location</button></label>"
-    );
-    locationFilterSP.insertBefore($(".peopleTable"));
-    $("#moreSearchDetails").hide();
-    $("#spLocationFilterButton").click(function (e) {
-        e.preventDefault();
-        if ($(this).text() == "Remove Location Filter" || $("#spLocationFilter").val() == "") {
-            $(this).text("Filter By Location");
-            $("tr").removeClass("locationFilteredOut");
-        } else if ($("#spLocationFilter").val() != "") {
-            $(this).text("Remove Location Filter");
-            rows = $(".peopleTable tbody tr");
-            locations = $("#spLocationFilter").val().split(",");
-            const locationsT = locations.map((string) => string.trim());
-            oLocations = [];
-
-            rows.each(function () {
-                keepIt = false;
-
-                thisLocations = $(this).attr("data-locations");
-                if (thisLocations != "") {
-                    thisLocationsSplit = thisLocations.split(",");
-                    thisLocationsSplit.forEach(function (aLocation) {
-                        locationsT.forEach(function (aLocation2) {
-                            if (aLocation2.toLowerCase() == aLocation.toLowerCase()) {
-                                keepIt = true;
-                            }
-                        });
-                    });
-                }
-                if (keepIt == false) {
-                    $(this).addClass("locationFilteredOut");
-                }
-            });
-            //}
-        }
-    });
-    $("#spLocationFilter").keypress(function (e) {
-        if (e.which == 13) {
-            $("#spLocationFilterButton").click();
-        }
-    });
-
-    $("#tree").slideUp();
-    $("#countdown").fadeOut();
-    if ($("body.cc7Table").length == 0) {
-        $("#birthdate").click();
-    }
-
-    cc7excelOut();
-}
-
+/**
+ * Calculate the average age at which people get married.
+ * @returns {Object} - The average age statistics.
+ */
 function averageMarriageAge() {
-    marriedPeople = 0;
-    marriedAtDays = 0;
-    countedMarriedPeople = [];
-    maleAge = 0;
-    femaleAge = 0;
-    countedCouples = 0;
-    marriageAgeArray = [];
-    marriageAgeYArray = [];
-    marriageAgeArray2 = [];
-    marriageAgeYArray2 = [];
-    window.people.forEach(function (aPer) {
-        if (aPer.Spouse) {
-            marriage_date = aPer.Spouse[0]?.marriage_date;
+    let marriedPeople = 0;
+    let marriedAtDays = 0;
+    const countedMarriedPeople = [];
+    let maleAge = 0;
+    let femaleAge = 0;
+    let countedCouples = 0;
+    const marriageAgeArray = [];
+    const marriageAgeYArray = [];
 
-            if (isOK(marriage_date)) {
-                //if (century == 0 || )
-                marriageDate = ymdFix(marriage_date);
-                mYear = marriageDate.match(/[0-9]{4}/);
-                if (mYear != null) {
-                    marriageYear = mYear[0];
-                } else {
-                    marriageYear = false;
-                }
-                century = marriageYear.substring(0, 2);
+    /**
+     * Process a single person and update the statistics.
+     * @param {Object} aPer - A person object.
+     */
+    const processPerson = (aPer) => {
+        if (!aPer.Spouse) return;
 
-                c_dDate = getApproxDate2(marriageDate);
-                dt2 = c_dDate.Date;
+        const marriage_date = aPer.Spouse[0]?.marriage_date;
 
-                if (isOK(aPer.BirthDate)) {
-                    birthDate = ymdFix(aPer.BirthDate);
-                    c_bDate = getApproxDate2(birthDate);
-                    dt1 = c_bDate.Date;
-                    marriedAt = getAge2(dt1, dt2);
-                    aPer.MarriedAt = marriedAt;
-                    if (!countedMarriedPeople.includes(aPer.Name)) {
-                        marriedAtDays = marriedAtDays + marriedAt[2];
-                        marriedPeople++;
-                        countedMarriedPeople.push(aPer.Name);
-                        marriageAgeArray.push(marriedAt[2]);
-                        marriageAgeYArray.push(marriedAt[0]);
-                        marriageAgeArray2.push([century, marriedAt[2]]);
-                        marriageAgeYArray2.push([century, marriedAt[0]]);
-                    }
-                }
-                if (isOK(aPer.Spouse[0].BirthDate)) {
-                    spBirthDate = ymdFix(aPer.Spouse[0].BirthDate);
-                    sp_bDate = getApproxDate2(spBirthDate);
-                    spDt1 = sp_bDate.Date;
-                    spMarriedAt = getAge2(spDt1, dt2);
-                    aPer.Spouse[0].MarriedAt = spMarriedAt;
-                    if (!countedMarriedPeople.includes(aPer.Spouse[0].Name)) {
-                        marriedAtDays = marriedAtDays + spMarriedAt[2];
-                        marriedPeople++;
-                        countedMarriedPeople.push(aPer.Spouse[0].Name);
-                        marriageAgeArray.push(spMarriedAt[2]);
-                        marriageAgeYArray.push(spMarriedAt[0]);
-                        marriageAgeArray2.push([century, spMarriedAt[2]]);
-                        marriageAgeYArray2.push([century, spMarriedAt[0]]);
-                    }
-                }
-                if (isOK(aPer.BirthDate) && isOK(aPer.Spouse[0].BirthDate)) {
-                    if (aPer.Gender == "Male") {
-                        maleAge = maleAge + marriedAt[2];
-                        femaleAge = femaleAge + spMarriedAt[2];
-                    } else {
-                        maleAge = maleAge + spMarriedAt[2];
-                        femaleAge = femaleAge + marriedAt[2];
-                    }
-                    countedCouples++;
-                }
-            }
+        if (!isOK(marriage_date)) return;
+
+        const marriageDate = ymdFix(marriage_date);
+        const mYear = marriageDate.match(/[0-9]{4}/);
+
+        if (!mYear) return;
+
+        const marriageYear = mYear[0];
+        const c_dDate = getApproxDate2(marriageDate);
+        const dt2 = c_dDate.Date;
+
+        if (!isOK(aPer.BirthDate)) return;
+
+        const birthDate = ymdFix(aPer.BirthDate);
+        const c_bDate = getApproxDate2(birthDate);
+        const dt1 = c_bDate.Date;
+
+        const marriedAt = getAge2(dt1, dt2);
+        aPer.MarriedAt = marriedAt;
+
+        if (!countedMarriedPeople.includes(aPer.Name)) {
+            marriedAtDays += marriedAt[2];
+            marriedPeople++;
+            countedMarriedPeople.push(aPer.Name);
+            marriageAgeArray.push(marriedAt[2]);
+            marriageAgeYArray.push(marriedAt[0]);
         }
+    };
+
+    // Iterate through all people and process them
+    window.people.forEach((aPer) => {
+        processPerson(aPer);
     });
 
-    averageMarriedAt = Math.round(marriedAtDays / marriedPeople / 365.25);
-    averageAgeDiff = Math.round((maleAge - femaleAge) / countedCouples / 365.25);
-    marriageAgeArray.sort(function (a, b) {
-        return a - b;
-    });
-    medianMarriedAt = Math.round(marriageAgeArray[Math.round(marriageAgeArray.length / 2)] / 365.25);
-    modeMarriedAt = topKFrequent(marriageAgeYArray, 1);
+    const averageMarriedAt = Math.round(marriedAtDays / marriedPeople / 365.25);
+    const averageAgeDiff = Math.round((maleAge - femaleAge) / countedCouples / 365.25);
+    marriageAgeArray.sort((a, b) => a - b);
+    const medianMarriedAt = Math.round(marriageAgeArray[Math.round(marriageAgeArray.length / 2)] / 365.25);
+    const modeMarriedAt = topKFrequent(marriageAgeYArray, 1);
 
     return {
         AgeDifference: averageAgeDiff,
@@ -2710,89 +2418,137 @@ function averageMarriageAge() {
     };
 }
 
+/**
+ * Get an approximate date based on the given date string.
+ * @param {string} theDate - The date string to be approximated.
+ * @returns {Object} - The approximate date and a flag indicating if the date is approximated.
+ */
 function getApproxDate(theDate) {
-    approx = false;
-    if (theDate.match(/0s$/) != null) {
+    let approx = false;
+    let aDate;
+
+    // Check if the date ends with '0s', e.g., 1950s
+    if (theDate.match(/0s$/) !== null) {
         aDate = theDate.replace(/0s/, "5");
         approx = true;
     } else {
-        bits = theDate.split("-");
-        if (theDate.match(/00\-00$/) != null) {
-            aDate = bits[0] + "-07-02";
+        const bits = theDate.split("-");
+
+        // Check if the date ends with 00-00, e.g., 1950-00-00
+        if (theDate.match(/00-00$/) !== null) {
+            aDate = `${bits[0]}-07-02`;
             approx = true;
-        } else if (theDate.match(/-00$/) != null) {
-            aDate = bits[0] + "-" + bits[1] + "-" + "16";
+        }
+        // Check if the date ends with -00, e.g., 1950-07-00
+        else if (theDate.match(/-00$/) !== null) {
+            aDate = `${bits[0]}-${bits[1]}-16`;
             approx = true;
-        } else {
+        }
+        // Default case where the date doesn't need approximation
+        else {
             aDate = theDate;
         }
     }
+
     return { Date: aDate, Approx: approx };
 }
 
+/**
+ * Get an approximate date based on the given date string, considering an extra condition for missing month and date.
+ * @param {string} theDate - The date string to be approximated.
+ * @returns {Object} - Returns an object with the approximate date and a flag indicating if the date is approximated.
+ */
 function getApproxDate2(theDate) {
-    approx = false;
-    if (theDate.match(/0s$/) != null) {
+    let approx = false;
+    let aDate;
+
+    // Check if the date ends with '0s', e.g., 1950s
+    if (theDate.match(/0s$/) !== null) {
         aDate = theDate.replace(/0s/, "5");
         approx = true;
     } else {
-        bits = theDate.split("-");
-        if (theDate.match(/00\-00$/) != null || !bits[1]) {
-            aDate = bits[0] + "-07-02";
+        const bits = theDate.split("-");
+
+        // Check if the date ends with 00-00 or if the month is missing, e.g., 1950-00-00 or 1950
+        if (theDate.match(/00-00$/) !== null || !bits[1]) {
+            aDate = `${bits[0]}-07-02`;
             approx = true;
-        } else if (theDate.match(/-00$/) != null) {
-            aDate = bits[0] + "-" + bits[1] + "-" + "16";
+        }
+        // Check if the date ends with -00, e.g., 1950-07-00
+        else if (theDate.match(/-00$/) !== null) {
+            aDate = `${bits[0]}-${bits[1]}-16`;
             approx = true;
-        } else {
+        }
+        // Default case where the date doesn't need approximation
+        else {
             aDate = theDate;
         }
     }
+
     return { Date: aDate, Approx: approx };
 }
 
+/**
+ * Check if a given year is a leap year.
+ * @param {number} year - The year to check.
+ * @returns {boolean} - Returns true if the year is a leap year, otherwise false.
+ */
+function isLeapYear(year) {
+    return year % 100 === 0 ? year % 400 === 0 : year % 4 === 0;
+}
+
+/**
+ * Calculate age between two dates in years, extra days, and total days.
+ * @param {string} start - The start date in the format 'YYYY-MM-DD'.
+ * @param {string} end - The end date in the format 'YYYY-MM-DD'.
+ * @returns {Array} - Returns an array containing full years, extra days, and total days.
+ */
 function getAge2(start, end) {
-    startSplit = start.split("-");
-    start_day = parseInt(startSplit[2]);
-    start_month = parseInt(startSplit[1]);
-    start_year = parseInt(startSplit[0]);
+    const startSplit = start.split("-");
+    const start_day = parseInt(startSplit[2]);
+    const start_month = parseInt(startSplit[1]);
+    const start_year = parseInt(startSplit[0]);
 
-    endSplit = end.split("-");
-    end_day = parseInt(endSplit[2]);
-    end_month = parseInt(endSplit[1]);
-    end_year = parseInt(endSplit[0]);
+    const endSplit = end.split("-");
+    const end_day = parseInt(endSplit[2]);
+    const end_month = parseInt(endSplit[1]);
+    const end_year = parseInt(endSplit[0]);
 
-    month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-    function isLeapYear(year) {
-        return year % 100 === 0 ? year % 400 === 0 : year % 4 === 0;
-    }
+    let month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
     if (isLeapYear(start_year)) {
         month[1] = 29;
     }
-    firstMonthDays = month[start_month - 1] - start_day;
 
-    restOfYearDays = 0;
-    for (i = start_month; i < 12; i++) {
-        restOfYearDays = restOfYearDays + month[i];
+    const firstMonthDays = month[start_month - 1] - start_day;
+
+    let restOfYearDays = 0;
+    for (let i = start_month; i < 12; i++) {
+        restOfYearDays += month[i];
     }
-    firstYearDays = firstMonthDays + restOfYearDays;
-    fullYears = end_year - (start_year + 1);
-    lastYearMonthDays = 0;
+
+    const firstYearDays = firstMonthDays + restOfYearDays;
+    let fullYears = end_year - (start_year + 1);
+
+    let lastYearMonthDays = 0;
     if (isLeapYear(end_year)) {
         month[1] = 29;
     } else {
         month[1] = 28;
     }
-    for (i = 0; i < end_month - 1; i++) {
-        lastYearMonthDays = lastYearMonthDays + month[i];
+
+    for (let i = 0; i < end_month - 1; i++) {
+        lastYearMonthDays += month[i];
     }
-    lastYearDaysTotal = 0;
-    lastYearDaysTotal = end_day + lastYearMonthDays;
-    totalExtraDays = lastYearDaysTotal + firstYearDays;
+
+    const lastYearDaysTotal = end_day + lastYearMonthDays;
+    let totalExtraDays = lastYearDaysTotal + firstYearDays;
+    let andDays;
+
     if (totalExtraDays > 364) {
         fullYears++;
-        yearDays = 365;
+        let yearDays = 365;
+
         if (isLeapYear(start_year) && start_month < 3) {
             yearDays++;
         }
@@ -2810,190 +2566,132 @@ function getAge2(start, end) {
             totalExtraDays--;
         }
     }
-    totalDays = Math.round(fullYears * 365.25) + andDays;
+
+    const totalDays = Math.round(fullYears * 365.25) + andDays;
     return [fullYears, andDays, totalDays];
 }
 
+/**
+ * Get the formatted date based on the given date array and user's date format settings from cookies.
+ * @param {Array} fbds - The input date as an array of [Year, Month, Day].
+ * @returns {string} - Returns the formatted date as a string.
+ */
 function getDateFormat(fbds) {
-    //console.log(fbds);
-    fullDateFormat = "j M Y";
+    let fullDateFormat = "j M Y";
 
-    if (Cookies.get("w_dateFormat")) {
-        dateFormat = Cookies.get("w_dateFormat");
-    } else {
-        dateFormat = 0;
+    // Retrieve date format setting from cookies
+    const dateFormat = Cookies.get("w_dateFormat") || 0;
+    if (dateFormat === 0) {
         fullDateFormat = "M j, Y";
     }
-    //console.log(dateFormat);
-    if (dateFormat == 1) {
+
+    // Update fullDateFormat based on user's setting
+    if (dateFormat === 1) {
         fullDateFormat = "j M Y";
-    }
-    if (dateFormat == 2) {
+    } else if (dateFormat === 2) {
         fullDateFormat = "F j, Y";
-    } else if (dateFormat == 3) {
+    } else if (dateFormat === 3) {
         fullDateFormat = "j F Y";
     }
 
-    //console.log(fullDateFormat);
-    //console.log(fbds);
-    if (fbds[1] != "00" && fbds[2] != "00" && fbds[0] != "00") {
-        // month is zero-indexed(!)
-        fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, fbds[2]);
-        //console.log(fbdsDate);
-        fbd = fbdsDate.format("j M Y");
-        if (dateFormat > 0) {
-            fbd = fbdsDate.format(fullDateFormat);
-            //console.log(fbd);
-        }
-    } else if (fbds[1] != "00" && fbds[2] == "00" && fbds[0] != "00") {
-        // month is zero-indexed(!)
-        fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
+    let fbd; // Formatted date to be returned
+    if (fbds[1] !== "00" && fbds[2] !== "00" && fbds[0] !== "00") {
+        // Month is zero-indexed in JavaScript Date
+        const fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, fbds[2]);
+        fbd = fbdsDate.format(fullDateFormat);
+    } else if (fbds[1] !== "00" && fbds[2] === "00" && fbds[0] !== "00") {
+        const fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
         fbd = fbdsDate.format("M Y");
         if (dateFormat > 1) {
             fbd = fbdsDate.format("F Y");
         }
-    } else if (fbds[1] != "00" && fbds[2] == "00") {
-        // month is zero-indexed(!)
-        fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
+    } else if (fbds[1] !== "00" && fbds[2] === "00") {
+        const fbdsDate = new Date(fbds[0], parseInt(fbds[1]) - 1, 1);
         fbd = fbdsDate.format("M Y");
         if (dateFormat > 1) {
             fbd = fbdsDate.format("F Y");
         }
-        //console.log(fbd);
     } else {
-        // month is zero-indexed(!)
-        fbdsDate = new Date(fbds[0], 0, 1);
+        const fbdsDate = new Date(fbds[0], 0, 1);
         fbd = fbdsDate.format("Y");
     }
-
-    //console.log(fbds,fbd);
 
     return fbd;
 }
 
+/**
+ * Display the birth and death dates of a given person in a formatted manner.
+ * @param {Object} fPerson - The person object containing birth and death date information.
+ * @returns {string} - Returns the formatted string of birth and death dates.
+ */
 function displayDates(fPerson) {
-    mbdDatesStatus = bdDatesStatus(fPerson);
-    bdStatus = mbdDatesStatus[0]; //console.log(bdStatus);
-    ddStatus = mbdDatesStatus[1]; //console.log(ddStatus);
+    const mbdDatesStatus = bdDatesStatus(fPerson);
+    const bdStatus = mbdDatesStatus[0];
+    const ddStatus = mbdDatesStatus[1];
 
-    fbd = "";
-    fdd = "";
+    let fbd = ""; // Formatted Birth Date
+    let fdd = ""; // Formatted Death Date
 
-    if (
-        fPerson["BirthDate"] != "" &&
-        fPerson["BirthDate"] != "0000-00-00" &&
-        typeof fPerson["BirthDate"] != "undefined" &&
-        fPerson["BirthDate"] != "unknown"
-    ) {
+    // Handling Birth Date
+    if (fPerson["BirthDate"] && fPerson["BirthDate"] !== "0000-00-00" && fPerson["BirthDate"] !== "unknown") {
         fbd = fPerson["BirthDate"].split("-")[0];
-
-        //console.log(fbd);
-    } else if (typeof fPerson["BirthDateDecade"] != "undefined" && fPerson["BirthDateDecade"] != "unknown") {
+    } else if (fPerson["BirthDateDecade"] && fPerson["BirthDateDecade"] !== "unknown") {
         fbd = fPerson["BirthDateDecade"];
-        decadeMidpoint = fPerson["BirthDateDecade"].slice(0, -2) + 5;
-        //console.log(fbd);
-        //fPerson["BirthDate"]=decadeMidpoint+"-00-00";
-    } else {
-        fbd = "";
+        const decadeMidpoint = fPerson["BirthDateDecade"].slice(0, -2) + 5;
     }
 
-    if (typeof fPerson["IsLiving"] != "undefined") {
-        if (fPerson["IsLiving"] == 1) {
-            fdd = "living";
-        }
-    }
-    if (fdd == "") {
-        if (
-            fPerson["DeathDate"] != "" &&
-            fPerson["DeathDate"] != "0000-00-00" &&
-            typeof fPerson["DeathDate"] != "undefined"
-        ) {
-            fdd = fPerson["DeathDate"].split("-")[0];
-        } else if (typeof fPerson["DeathDateDecade"] != "undefined" && fPerson["DeathDateDecade"] != "unknown") {
-            fdd = fPerson["DeathDateDecade"];
-            decadeMidpoint = fPerson["DeathDateDecade"].slice(0, -2) + 5;
-            //	fPerson["DeathDate"]=decadeMidpoint+"-00-00";
-        } else {
-            fdd = "";
-        }
+    // Handling Death Date
+    if (fPerson["IsLiving"] !== undefined && fPerson["IsLiving"] === 1) {
+        fdd = "living";
+    } else if (fdd === "" && fPerson["DeathDate"] && fPerson["DeathDate"] !== "0000-00-00") {
+        fdd = fPerson["DeathDate"].split("-")[0];
+    } else if (fPerson["DeathDateDecade"] && fPerson["DeathDateDecade"] !== "unknown") {
+        fdd = fPerson["DeathDateDecade"];
+        const decadeMidpoint = fPerson["DeathDateDecade"].slice(0, -2) + 5;
     }
 
-    fDates = "(" + bdStatus + fbd + " - " + ddStatus + fdd + ")";
+    const fDates = `(${bdStatus}${fbd} - ${ddStatus}${fdd})`;
 
     return fDates;
 }
 
+/**
+ * Display the full birth and death dates of a given person in a formatted manner.
+ * @param {Object} fPerson - The person object containing birth and death date information.
+ * @param {boolean} [showStatus=true] - Whether to show the status of the birth and death dates.
+ * @returns {Array} - Returns an array containing the formatted birth and death dates.
+ */
 function displayFullDates(fPerson, showStatus = true) {
-    mbdDatesStatus = bdDatesStatus(fPerson);
-    bdStatus = mbdDatesStatus[0]; //console.log(bdStatus);
-    ddStatus = mbdDatesStatus[1]; //console.log(ddStatus);
+    const mbdDatesStatus = bdDatesStatus(fPerson);
+    const bdStatus = mbdDatesStatus[0];
+    const ddStatus = mbdDatesStatus[1];
 
-    fbd = "";
-    fdd = "";
+    let fbd = "";
+    let fdd = "";
 
-    fDates = [];
+    const fDates = [];
 
-    if (
-        fPerson["BirthDate"] != "" &&
-        fPerson["BirthDate"] != "0000-00-00" &&
-        typeof fPerson["BirthDate"] != "undefined"
-    ) {
-        fbds = fPerson["BirthDate"].split("-");
-        if (fbds[0] == "unkno5") {
-            fbd = "";
-        } else {
-            fbd = getDateFormat(fbds);
-        }
-    } else if (typeof fPerson["BirthDateDecade"] != "undefined") {
+    // Handle Birth Date
+    if (fPerson["BirthDate"] && fPerson["BirthDate"] !== "0000-00-00") {
+        const fbds = fPerson["BirthDate"].split("-");
+        fbd = fbds[0] === "unkno5" ? "" : getDateFormat(fbds);
+    } else if (fPerson["BirthDateDecade"]) {
         fbd = fPerson["BirthDateDecade"];
-    } else {
-        fbd = "";
     }
 
-    if (fbd == "") {
-        fDates.push("");
-    } else if (showStatus == false) {
-        fDates.push(fbd);
-    } else {
-        fDates.push(bdStatus + fbd);
+    fDates.push(showStatus && fbd ? bdStatus + fbd : fbd);
+
+    // Handle Death Date
+    if (fPerson["IsLiving"] !== undefined && fPerson["IsLiving"] === 1) {
+        fdd = "living";
+    } else if (!fdd && fPerson["DeathDate"] && fPerson["DeathDate"] !== "0000-00-00") {
+        const fdds = fPerson["DeathDate"].split("-");
+        fdd = fdds[0] === "unkno5" ? "" : getDateFormat(fdds);
+    } else if (fPerson["DeathDateDecade"] && fPerson["DeathDateDecade"] !== "unknown") {
+        fdd = fPerson["DeathDateDecade"];
     }
 
-    //console.log(fbd,fDates);
-
-    if (typeof fPerson["IsLiving"] != "undefined") {
-        if (fPerson["IsLiving"] == 1) {
-            fdd = "living";
-        }
-    }
-    if (fdd == "") {
-        if (
-            fPerson["DeathDate"] != "" &&
-            fPerson["DeathDate"] != "0000-00-00" &&
-            typeof fPerson["DeathDate"] != "undefined"
-        ) {
-            fdds = fPerson["DeathDate"].split("-");
-
-            if (fdds[0] == "unkno5") {
-                fdd = "";
-            } else {
-                fdd = getDateFormat(fdds);
-            }
-        } else if (typeof fPerson["DeathDateDecade"] != "undefined") {
-            if (fPerson["DeathDateDecade"] != "unknown") {
-                fdd = fPerson["DeathDateDecade"];
-            }
-        } else {
-            fdd = "";
-        }
-    }
-
-    if (fdd == "") {
-        fDates.push("");
-    } else if (showStatus == false) {
-        fDates.push(fdd);
-    } else {
-        fDates.push(ddStatus + fdd);
-    }
+    fDates.push(showStatus && fdd ? ddStatus + fdd : fdd);
 
     return fDates;
 }
@@ -3236,14 +2934,6 @@ function familySheetPerson(fsPerson, role) {
         $("#showOtherLastNamesLabel").css("display", "inline-block");
     }
 
-    /*
-      if (fsPerson.Prefix){
-          prefix = "<span class='prefix'>("+fsPerson.Prefix+")</span> ";
-      }		
-      if (fsPerson.Suffix){
-          suffix = " <span class='suffix'>("+fsPerson.Suffix+")</span>";
-      }
-  */
     showRole = role;
     if (dGender == "Female" && role == "Husband") {
         showRole = "Wife";
@@ -3660,52 +3350,652 @@ function familySheetPerson(fsPerson, role) {
     }
 }
 
-function storeVal(jq) {
-    if (jq.attr("type") == "checkbox") {
-        if (jq.prop("checked") == true) {
-            localStorage.setItem(jq.attr("id"), 1);
-        } else {
-            localStorage.setItem(jq.attr("id"), 0);
+// Array to store references
+const references = [];
+
+/**
+ * Function to handle the person's family sheet
+ * @param {Object} fsPerson - Object containing family sheet person's data
+ * @param {string} role - Role of the person (e.g. Husband, Wife)
+ * @returns {string} - HTML string for the family sheet
+ */
+const familySheetPerson = (fsPerson, role) => {
+    // Initialize variables
+    let baptismDate = "";
+    let baptismPlace = "";
+    let burialDate = "";
+    let burialPlace = "";
+    const myRefs = [];
+    const mSeeAlso = [];
+
+    // Get the biography HTML and parse it
+    const fsBio = fsPerson.bio;
+    const bioDummy = document.createElement("html");
+    bioDummy.innerHTML = fsBio;
+
+    // Extract references from the biography
+    bioDummy.querySelectorAll("ref").forEach((aRef) => {
+        if (!$(aRef).find("references").length) {
+            myRefs.push(aRef.textContent.replace(/^\*/, "").trim());
         }
-    } else if (jq.attr("type") == "radio") {
-        $("input[name='" + jq.attr("name") + "']").each(function () {
-            if ($(this).prop("checked") == true) {
-                localStorage.setItem($(this).attr("name"), $(this).val());
+    });
+
+    // Further processing of the biography
+    if (fsBio) {
+        bioSplit = fsBio.split("<references />");
+        if (bioSplit[1]) {
+            removedAck = bioSplit[1].split(/=+\s?Acknowledge?ments?\s?=+/)[0];
+            seeAlsoSplit = removedAck.split(/See also:/i);
+            if (seeAlsoSplit[1]) {
+                seeAlsoSplit2 = seeAlsoSplit[1].split(/\*/g);
+                seeAlsoSplit2.forEach(function (aSeeAlso, ind) {
+                    if (aSeeAlso != "\n" && aSeeAlso.trim() != "") {
+                        mSeeAlso.push(aSeeAlso.replace(/^\*/, "").trim());
+                    }
+                });
+            }
+            citations = seeAlsoSplit[0].split(/\*/g);
+            citations.forEach(function (aCit, index) {
+                //console.log(aCit);
+
+                if (citations[index + 1]) {
+                    /*
+                          if (citations[index+1].match(/^\* /)==null){
+                              aCit = aCit+citations[index+1];
+                              citations.splice(index+1,1);
+                          }
+                          */
+                }
+                if (aCit != "\n" && aCit.trim() != "") {
+                    myRefs.push(aCit.replace(/^\*/, "").trim());
+                }
+            });
+        }
+        categoryMatch = bioSplit[0].match(/\[\[Category:.*?\]\]/g);
+        if (categoryMatch != null) {
+            //console.log(categoryMatch);
+            categoryMatch.forEach(function (aCat) {
+                //console.log(fsPerson.Name,aCat);
+                dCat = aCat.split("Category:")[1].replace(/\]\]/, "");
+                if (
+                    dCat.match(
+                        /(Cemetery)|(Memorial)|(Cimetière)|(kyrkogård)|(temető)|(Grave)|(Churchyard)|(Burial)|(Crematorium)|(Erebegraafplaats)|(Cementerio)|(Cimitero)|(Friedhof)|(Burying)|(begravningsplats)|(Begraafplaats)|(Mausoleum)|(Chapelyard)/i
+                    ) != null &&
+                    dCat.match("Crawford-7109") == null
+                ) {
+                    fsPerson.Cemetery = dCat.trim();
+                    //console.log(fsPerson.Cemetery);
+                }
+            });
+        }
+        eventMatch = bioSplit[0].match(/\{\{Event[^]*?\}\}/gm);
+        //console.log(eventMatch);
+        if (eventMatch != null) {
+            //console.log(eventMatch);
+            eventMatch.forEach(function (anEvent) {
+                //console.log(anEvent);
+                if (anEvent.match(/type=(Baptism|Christening)/i) != null) {
+                    eBits = anEvent.replaceAll(/\n/g, "").replaceAll(/[{}]/g, "").split("|");
+                    eBits.forEach(function (anBit) {
+                        anBit = anBit.replace(/<ref.*?>/, "");
+                        anBitBits = anBit.split("=");
+                        //console.log(anBitBits);
+                        if (anBitBits[0] + " ".trim() == "date") {
+                            baptismDate = anBitBits[1] + " ".trim();
+                        }
+                        if (anBitBits[0] + " ".trim() == "location") {
+                            baptismPlace = anBitBits[1] + " ".trim();
+                        }
+                    });
+                }
+                if (anEvent.match(/type=Burial/i) != null) {
+                    eBits = anEvent.replaceAll(/\n/g, "").replaceAll(/[{}]/g, "").split("|");
+                    eBits.forEach(function (anBit) {
+                        anBit = anBit.replace(/<ref.*?>/, "");
+                        anBitBits = anBit.split("=");
+                        //console.log(anBitBits);
+                        if (anBitBits[0] + " ".trim() == "date") {
+                            burialDate = anBitBits[1] + " ".trim();
+                        }
+                        if (anBitBits[0] + " ".trim() == "location") {
+                            burialPlace = anBitBits[1] + " ".trim();
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    // Store references
+    references.push([fsPerson.Name, myRefs, mSeeAlso]);
+
+    // Check if value is OK (not null or undefined)
+    const isOK = (value) => value !== null && value !== undefined;
+
+    // Extract data for rendering HTML
+    const { birthDate, birthPlace, deathDate, deathPlace } = fsPerson;
+
+    const roleRow = renderRoleRow(fsPerson, role);
+    const birthRow = renderBirthRow(fsPerson, role, isOK);
+    const deathRow = renderDeathRow(fsPerson, role, isOK);
+    const baptismRow = renderBaptismRow(fsPerson, role);
+    const marriageRow = renderMarriageRow(fsPerson, role);
+    const burialRow = renderBurialRow(fsPerson, role);
+    const otherMarriageRow = renderOtherMarriageRow(fsPerson, mainSpouse, otherSpouses, role);
+    const parentsRow = renderParentsRow(fsPerson, role, mainPerson, matchingPerson);
+    const spouseRow = renderSpouseRow(fsPerson, role);
+    const bioRow = renderBioRow(fsPerson, role);
+    // Return the final HTML based on the role
+    if (role === "Husband" || role === "Wife") {
+        return `${roleRow}${birthRow}${baptismRow}${marriageRow}${deathRow}${burialRow}${otherMarriageRow}${parentsRow}${bioRow}`;
+    } else {
+        return `${roleRow}${birthRow}${baptismRow}${deathRow}${burialRow}${spouseRow}${bioRow}`;
+    }
+};
+
+/**
+ * Render Role Row
+ * @param {Object} fsPerson
+ * @param {string} role
+ * @returns {string} - HTML string for role row
+ */
+const renderRoleRow = (fsPerson, role) => {
+    const roleRow = `<tr><td class="role" colspan="2">${role}</td></tr>`;
+    return roleRow;
+};
+
+/**
+ * Render Birth Row
+ * @param {string} birthDate
+ * @param {string} birthPlace
+ * @param {string} role
+ * @param {Function} isOK
+ * @returns {string} - HTML string for birth row
+ */
+const renderBirthRow = (birthDate, birthPlace, role, isOK) => {
+    const birthRow =
+        isOK(birthDate) || isOK(birthPlace)
+            ? `<tr><td class="${role.toLowerCase()} birth">Born:</td><td>${birthDate}, ${birthPlace}</td></tr>`
+            : "";
+    return birthRow;
+};
+
+/**
+ * Render Death Row
+ * @param {string} deathDate
+ * @param {string} deathPlace
+ * @param {string} role
+ * @param {Function} isOK
+ * @returns {string} - HTML string for death row
+ */
+const renderDeathRow = (deathDate, deathPlace, role, isOK) => {
+    const deathRow =
+        isOK(deathDate) || isOK(deathPlace)
+            ? `<tr><td class="${role.toLowerCase()} death">Died:</td><td>${deathDate}, ${deathPlace}</td></tr>`
+            : "";
+    return deathRow;
+};
+
+// ... [other render functions]
+/*
+    baptismRow =
+        "<tr  data-role='" +
+        role +
+        "' class='baptismRow'><th class='baptismHeading heading'>Baptized:</th><td class='BaptismDate date'>" +
+        baptismDate +
+        "</td><td class='BaptismPlace'>" +
+        baptismPlace +
+        "</td></tr>";
+        */
+const renderBaptismRow = (baptismDate, baptismPlace, role, isOK) => {
+    const baptismRow =
+        isOK(baptismDate) || isOK(baptismPlace)
+            ? `<tr><td class="${role.toLowerCase()} baptism">Baptized:</td><td>${baptismDate}, ${baptismPlace}</td></tr>`
+            : "";
+    return baptismRow;
+};
+
+/*
+
+marriageRow = "";
+    mainSpouseMarriageDate = "";
+    mainSpouseMarriagePlace = "";
+    mainSpouseMarriageEndDate = "";
+    if (mainSpouse != "") {
+        if (isOK(mainSpouse.marriage_date)) {
+            mainSpouseMarriageDate =
+                "<span class='marriageDate date'>" + getDateFormat(mainSpouse.marriage_date.split("-")) + "</span>";
+        }
+        if (isOK(mainSpouse.marriage_end_date)) {
+            mainSpouseMarriageEndDate =
+                "<span class='marriageEndDate date'>&nbsp;- " +
+                getDateFormat(mainSpouse.marriage_end_date.split("-")) +
+                "</span>";
+        }
+        if (isOK(mainSpouse.marriage_location)) {
+            mainSpouseMarriagePlace = mainSpouse.marriage_location;
+        }
+    }
+    if (role == "Husband" || role == "Wife") {
+        //console.log(window);
+        marriageRow =
+            "<tr  data-role='" +
+            role +
+            "' class='marriedRow'><th class='marriedHeading heading'>Married:</th><td>" +
+            mainSpouseMarriageDate +
+            mainSpouseMarriageEndDate +
+            "</td><td class='marriedPlace'>" +
+            mainSpouseMarriagePlace +
+            "</td></tr>";
+    }
+
+    */
+const renderMarriageRow = (marriageDate, marriagePlace, role, isOK) => {
+    const marriageRow =
+        isOK(marriageDate) || isOK(marriagePlace)
+            ? `<tr><td class="${role.toLowerCase()} marriage">Married:</td><td>${marriageDate}, ${marriagePlace}</td></tr>`
+            : "";
+    return marriageRow;
+};
+/*
+    burialRow =
+        "<tr data-role='" +
+        role +
+        "'  class='buriedRow'><th class='buriedHeading heading'>Buried:</th><td class='buriedDate date'>" +
+        burialDate +
+        "<td class='buriedPlace'>" +
+        burialPlace +
+        "</td></td></tr>";
+*/
+const renderBurialRow = (burialDate, burialPlace, role, isOK) => {
+    const burialRow =
+        isOK(burialDate) || isOK(burialPlace)
+            ? `<tr><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}, ${burialPlace}</td></tr>`
+            : "";
+    return burialRow;
+};
+
+/*
+
+otherMarriageRow = "";
+
+    if (otherSpouses.length == 0) {
+        if (fsPerson.Spouse) {
+            if (fsPerson.Spouse.length > 1) {
+                fsPerson.Spouse.forEach(function (anoSpouse) {
+                    if (
+                        anoSpouse.Name != window.people[0].Name &&
+                        anoSpouse.Name != mainSpouse.Name &&
+                        anoSpouse.Name != window.keepSpouse
+                    ) {
+                        otherSpouses.push(anoSpouse);
+                    }
+                });
+            }
+        }
+    }
+
+    if (otherSpouses.length > 0) {
+        otherSpouses.forEach(function (oSpouse, index) {
+            otherSpouseMarriageDate = "";
+            otherSpouseName = "";
+            otherSpouseMarriageLocation = "";
+            otherSpouseNameDate = "";
+            otherSpouseMarriageEndDate = "";
+
+            if (isOK(oSpouse.marriage_date)) {
+                otherSpouseMarriageDate =
+                    "<span class='marriageDate'>" + getDateFormat(oSpouse.marriage_date.split("-")) + "</span>";
+            }
+            if (isOK(oSpouse.marriage_end_date)) {
+                otherSpouseMarriageEndDate =
+                    "<span class='marriageEndDate date'>&nbsp;- " +
+                    getDateFormat(oSpouse.marriage_end_date.split("-")) +
+                    "</span>";
+            }
+            otherSpouseName = displayName(oSpouse)[0];
+            if (isOK(oSpouse.marriage_location)) {
+                otherSpouseMarriageLocation = oSpouse.marriage_location;
+            }
+
+            otherSpouseData = "data-name='" + htmlEntities(oSpouse.Name) + "'";
+
+            otherSpouseNameDate =
+                "<span class='otherSpouseName' " +
+                otherSpouseData +
+                ">" +
+                otherSpouseName.replace(/(“.+”)/, "<span class='nicknames'>$1</span>") +
+                "</span>, " +
+                "<span class='marriageDate date'>" +
+                otherSpouseMarriageDate +
+                "</span>" +
+                otherSpouseMarriageEndDate;
+
+            oSpousesHeadingText = "";
+            if (index == 0) {
+                oSpousesHeadingText = "Other Marriage:";
+                if (otherSpouses.length > 1) {
+                    oSpousesHeadingText = "Other Marriages:";
+                }
+            }
+            otherMarriageRow +=
+                "<tr data-person='" +
+                htmlEntities(fsPerson.Name) +
+                "' data-role='" +
+                role +
+                "'  class='otherMarriageRow'><th class='otherMarriageHeading heading'>" +
+                oSpousesHeadingText +
+                "</th><td   class='otherMarriageDate'>" +
+                otherSpouseNameDate +
+                "</td><td class='otherMarriagePlace'>" +
+                otherSpouseMarriageLocation +
+                "</td></tr>";
+        });
+    } else {
+        otherMarriageRow =
+            "<tr data-role='" +
+            role +
+            "'  class='otherMarriageRow'><th class='otherMarriageHeading heading'>Other Marriage:</th><td class='otherMarriageDate date editable empty' ></td><td class='otherMarriagePlace empty editable'></td></tr>";
+    }
+
+*/
+
+/**
+ * Render other marriage row
+ * @param {Object} fsPerson - Object containing the family sheet person's data
+ * @param {Array} otherSpouses - Array of other spouses
+ * @param {string} role - Role of the person (e.g. Husband, Wife)
+ * @returns {string} - HTML string for the other marriage row
+ */
+const renderOtherMarriageRow = (fsPerson, otherSpouses, role) => {
+    let otherMarriageRow = "";
+
+    // Check if value is OK (not null or undefined)
+    const isOK = (value) => value !== null && value !== undefined;
+
+    if (otherSpouses.length === 0 && fsPerson.Spouse && fsPerson.Spouse.length > 1) {
+        otherSpouses.push(
+            ...fsPerson.Spouse.filter(
+                (anoSpouse) =>
+                    anoSpouse.Name !== window.people[0].Name &&
+                    anoSpouse.Name !== mainSpouse.Name &&
+                    anoSpouse.Name !== window.keepSpouse
+            )
+        );
+    }
+
+    if (otherSpouses.length > 0) {
+        otherSpouses.forEach((oSpouse, index) => {
+            const { marriage_date, marriage_end_date, marriage_location, Name } = oSpouse;
+            let otherSpouseMarriageDate = isOK(marriage_date)
+                ? `<span class='marriageDate'>${getDateFormat(marriage_date.split("-"))}</span>`
+                : "";
+            let otherSpouseMarriageEndDate = isOK(marriage_end_date)
+                ? `<span class='marriageEndDate date'>&nbsp;- ${getDateFormat(marriage_end_date.split("-"))}</span>`
+                : "";
+            let otherSpouseName = displayName(oSpouse)[0];
+            let otherSpouseMarriageLocation = isOK(marriage_location) ? marriage_location : "";
+
+            const oSpousesHeadingText =
+                index === 0 ? (otherSpouses.length > 1 ? "Other Marriages:" : "Other Marriage:") : "";
+
+            otherMarriageRow += `
+                <tr data-person='${htmlEntities(fsPerson.Name)}' data-role='${role}' class='otherMarriageRow'>
+                    <th class='otherMarriageHeading heading'>${oSpousesHeadingText}</th>
+                    <td class='otherMarriageDate'>
+                        <span class='otherSpouseName' data-name='${htmlEntities(Name)}'>${otherSpouseName.replace(
+                /(“.+”)/,
+                "<span class='nicknames'>$1</span>"
+            )}</span>,
+                        <span class='marriageDate date'>${otherSpouseMarriageDate}</span>${otherSpouseMarriageEndDate}
+                    </td>
+                    <td class='otherMarriagePlace'>${otherSpouseMarriageLocation}</td>
+                </tr>`;
+        });
+    } else {
+        otherMarriageRow = `
+            <tr data-role='${role}' class='otherMarriageRow'>
+                <th class='otherMarriageHeading heading'>Other Marriage:</th>
+                <td class='otherMarriageDate date editable empty'></td>
+                <td class='otherMarriagePlace empty editable'></td>
+            </tr>`;
+    }
+
+    return otherMarriageRow;
+};
+
+let matchingPerson = "";
+if (window.keepSpouse) {
+    matchingPerson = window.keepSpouse;
+} else {
+    matchingPerson = window.people[0].Spouse[0]?.Name;
+}
+
+/**
+ * Render parents row
+ * @param {Object} fsPerson - Object containing the family sheet person's data
+ * @param {boolean} mainPerson - Boolean indicating if the person is the main person
+ * @param {string} matchingPerson - The name of the person to match
+ * @param {string} role - Role of the person (e.g. Husband, Wife)
+ * @param {string} showRole - The role to display (can be different from role parameter)
+ * @returns {string} - HTML string for the parents row
+ */
+const renderParentsRow = (fsPerson, mainPerson, matchingPerson, role, showRole) => {
+    let parentsRow = "";
+
+    if (mainPerson || fsPerson.Name === matchingPerson) {
+        let fatherName = "";
+        let motherName = "";
+        let fsFather = null;
+        let fsMother = null;
+
+        if (fsPerson.Parent && fsPerson.Parent.length > 0) {
+            fsPerson.Parent.forEach((parent) => {
+                const nameWithNicknames = displayName(parent)[0].replace(/(“.+”)/, "<span class='nicknames'>$1</span>");
+                if (parent.Gender === "Male") {
+                    fatherName = nameWithNicknames;
+                    fsFather = parent;
+                } else if (parent.Gender === "Female") {
+                    motherName = nameWithNicknames;
+                    fsMother = parent;
+                }
+            });
+        }
+
+        const fsFatherName = fsFather ? `data-name='${htmlEntities(fsFather.Name)}'` : "";
+        const fsMotherName = fsMother ? `data-name='${htmlEntities(fsMother.Name)}'` : "";
+
+        const fsFatherLink = fsFather
+            ? `<a href='https://www.wikitree.com/wiki/${htmlEntities(fsFather.Name)}'>${role}'s Father</a>`
+            : `${showRole}'s Father`;
+        const fsMotherLink = fsMother
+            ? `<a href='https://www.wikitree.com/wiki/${htmlEntities(fsMother.Name)}'>${role}'s Mother</a>`
+            : `${showRole}'s Mother`;
+
+        const fsFatherWTID = fsFather ? `<span class='fsWTID'>(${htmlEntities(fsFather.Name)})</span>` : "";
+        const fsMotherWTID = fsMother ? `<span class='fsWTID'>(${htmlEntities(fsMother.Name)})</span>` : "";
+
+        const fsFatherDates = fsFather ? `<span class='parentDates date'>${displayDates(fsFather)}</span>` : "";
+        const fsMotherDates = fsMother ? `<span class='parentDates date'>${displayDates(fsMother)}</span>` : "";
+
+        parentsRow = `
+            <tr data-role='${role}' class='${role}ParentsRow'>
+                <th class='${role}FatherHeading heading'>${fsFatherLink}: </th>
+                <td colspan='2' ${fsFatherName} class='${role}Father'>
+                    <span class='parentName'>${fatherName}</span> ${fsFatherWTID} ${fsFatherDates}
+                </td>
+            </tr>
+            <tr data-role='${role}' class='${role}ParentsRow'>
+                <th class='${role}MotherHeading heading'>${fsMotherLink}: </th>
+                <td colspan='2' ${fsMotherName} class='${role}Mother'>
+                    <span class='parentName'>${motherName}</span> ${fsMotherWTID} ${fsMotherDates}
+                </td>
+            </tr>`;
+    }
+
+    return parentsRow;
+};
+
+/**
+ * Render spouse row
+ * @param {Object} fsPerson - Object containing the family sheet person's data
+ * @param {string} role - Role of the person (e.g. Husband, Wife)
+ * @returns {string} - HTML string for the spouse row
+ */
+const renderSpouseRow = (fsPerson, role) => {
+    let spouseRow = "";
+
+    if (fsPerson.Spouse) {
+        if (fsPerson.Spouse.length > 0) {
+            fsPerson.Spouse.forEach((fsSp, index) => {
+                const theSpouse = displayName(fsSp)[0].replace(/(“.+”)/, "<span class='nicknames'>$1</span>");
+                let theMarriage = isOK(fsSp.marriage_date)
+                    ? `<span class='marriageDate date'>${getDateFormat(fsSp.marriage_date.split("-"))}</span>`
+                    : "";
+
+                let theMarriageEnd = isOK(fsSp.marriage_end_date)
+                    ? `<span class='marriageDate date'> - ${getDateFormat(fsSp.marriage_end_date.split("-"))}</span>`
+                    : "";
+
+                const theSpouseName = `data-name='${htmlEntities(fsSp.Name)}'`;
+
+                let spouseHeading = "";
+                let mClass = "hidden";
+                if (index === 0) {
+                    mClass = "";
+                    spouseHeading = fsPerson.Spouse.length > 1 ? "Spouses:" : "Spouse:";
+                }
+
+                spouseRow += `
+                    <tr data-person='${htmlEntities(fsPerson.Name)}' data-role='${role}' class='spouseRow'>
+                        <th class='spouseHeading heading'>${spouseHeading} </th>
+                        <td class='spouseName' ${theSpouseName}>${theSpouse} 
+                            <span class='spouseDates date'>${displayDates(fsSp)}</span>
+                        </td>
+                        <td class='dateOfMarriage'>
+                            <span class='dateOfMarriageHeading heading ${mClass}'>Date of Marriage: </span>
+                            <span class='marriageDate date'>${theMarriage}${theMarriageEnd}</span>
+                        </td>
+                    </tr>`;
+            });
+        } else {
+            spouseRow += `
+                <tr data-role='${role}' class='spouseRow'>
+                    <th class='spouseHeading heading'>Spouse: </th>
+                    <td class='spouseName'></td>
+                    <td class='dateOfMarriage'>
+                        <span class='dateOfMarriageHeading heading'>Date of Marriage: </span>
+                        <span class='marriageDate date'></span>
+                    </td>
+                </tr>`;
+        }
+    }
+
+    return spouseRow;
+};
+
+/**
+ * Render biography row
+ * @param {Object} fsPerson - Object containing the family sheet person's data
+ * @param {string} role - Role of the person (e.g. Husband, Wife)
+ * @returns {string} - HTML string for the biography row
+ */
+const renderBioRow = (fsPerson, role) => {
+    let bioRow = "";
+
+    if (fsPerson.bioHTML) {
+        // Split the bioHTML to separate out the main content and research notes
+        let [mainBio, researchNotes] = fsPerson.bioHTML.split('<a name="Sources"></a>');
+
+        // Handle research notes if they exist
+        const rNotesSplit = mainBio.split(/<h2.*?research note.*?h2>/i);
+        if (rNotesSplit[1]) {
+            window.researchNotes.push([fsPerson.Name, displayName(fsPerson)[0], rNotesSplit[1]]);
+        }
+        mainBio = rNotesSplit[0];
+
+        // Prepare the bio row HTML
+        bioRow = `
+            <tr data-role='${role}' class='bioRow'>
+                <th class='bioHeading heading'>Biography: </th>
+                <td colspan='2'>
+                    <div class='theBio'>${mainBio
+                        .replace(/<h2>.*?<\/h2>/, "")
+                        .trim()
+                        .replaceAll(/(src|href)="\//g, '$1="https://www.wikitree.com/')
+                        .replaceAll(/href="#_/g, `href="https://www.wikitree.com/wiki/${fsPerson.Name}#_"`)}
+                    </div>
+                </td>
+            </tr>`;
+    }
+
+    return bioRow;
+};
+
+/**
+ * Store the value of a checkbox or radio button to localStorage.
+ *
+ * @param {jQuery} jq - The jQuery object representing the checkbox or radio button.
+ */
+function storeVal(jq) {
+    const id = jq.attr("id");
+    const type = jq.attr("type");
+    const name = jq.attr("name");
+
+    // Handle checkboxes
+    if (type === "checkbox") {
+        const isChecked = jq.prop("checked");
+        localStorage.setItem(id, isChecked ? 1 : 0);
+    }
+    // Handle radio buttons
+    else if (type === "radio") {
+        $("input[name='" + name + "']").each(function () {
+            const radio = $(this);
+            if (radio.prop("checked")) {
+                localStorage.setItem(name, radio.val());
             }
         });
     }
-    //console.log(localStorage);
 }
 
+/**
+ * Set the state of checkboxes and radio buttons based on the values stored in localStorage.
+ */
 function setVals() {
-    checkboxes = $("#fgsOptions input[type='checkbox']");
+    // Handle checkboxes
+    const checkboxes = $("#fgsOptions input[type='checkbox']");
     checkboxes.each(function () {
-        oVal = $(this).prop("checked");
-        //console.log($(this).attr("id"),localStorage[$(this).attr("id")]);
-        if (localStorage[$(this).attr("id")] == "1") {
-            $(this).prop("checked", true);
-            if (oVal == false) {
-                $(this).change();
-            }
-        } else if (localStorage[$(this).attr("id")] == "0") {
-            $(this).prop("checked", false);
-            if (oVal == true) {
-                $(this).change();
+        const checkbox = $(this);
+        const id = checkbox.attr("id");
+        const originalState = checkbox.prop("checked");
+
+        // Check if localStorage has a value for this checkbox
+        if (localStorage[id] !== undefined) {
+            const newState = localStorage[id] === "1";
+            checkbox.prop("checked", newState);
+
+            // Trigger change event if state changed
+            if (newState !== originalState) {
+                checkbox.change();
             }
         }
     });
-    radios = $("#fgsOptions input[type='radio']");
+
+    // Handle radio buttons
+    const radios = $("#fgsOptions input[type='radio']");
     radios.each(function () {
-        oVal = $(this).prop("checked");
-        if (localStorage[$(this).attr("name")] == $(this).val()) {
-            $(this).prop("checked", true);
-            if (oVal == false) {
-                $(this).change();
-            }
-        } else if (localStorage[$(this).attr("name")] != undefined) {
-            $(this).prop("checked", false);
-            if (oVal == true) {
-                $(this).change();
+        const radio = $(this);
+        const name = radio.attr("name");
+        const originalState = radio.prop("checked");
+
+        // Check if localStorage has a value for this radio group
+        if (localStorage[name] !== undefined) {
+            const newState = localStorage[name] === radio.val();
+            radio.prop("checked", newState);
+
+            // Trigger change event if state changed
+            if (newState !== originalState) {
+                radio.change();
             }
         }
     });
@@ -3769,6 +4059,38 @@ function isLeapYear(year) {
       
   }
   */
+
+/**
+ * Checks for children in a family, and if found, appends them to the family sheet table.
+ * @param {Array} oChildren - List of children.
+ */
+function checkAndAppendChildren(oChildren) {
+    if (oChildren.length > 0) {
+        window.people[0].Child.forEach((aChild, index) => {
+            window.people.forEach((cPerson) => {
+                // Initialize husband and wife if undefined
+                window.husband = window.husband || 0;
+                window.wife = window.wife || 0;
+
+                // Check for matching child and parent relationship
+                if (
+                    cPerson.Name === aChild.Name &&
+                    ((cPerson.Father === window.husband && cPerson.Mother === window.wife) ||
+                        (!window.husband && cPerson.Mother === window.wife) ||
+                        (window.husband === cPerson.Father && !window.wife))
+                ) {
+                    // Check if child is already processed
+                    if (!doneKids.includes(aChild.Name)) {
+                        const theChildRow = familySheetPerson(cPerson, ordinal(index + 1) + " Child");
+                        fsTable.find("> tbody").append($(theChildRow));
+                        doneKids.push(cPerson.Name);
+                    }
+                }
+            });
+        });
+    }
+}
+
 function makeFamilySheet() {
     window.references = [];
     window.researchNotes = [];
@@ -3807,37 +4129,7 @@ function makeFamilySheet() {
         );
     }
     doneKids = [];
-    if (oChildren.length > 0) {
-        window.people[0].Child.forEach(function (aChild, index) {
-            //console.log(aChild);
-            window.people.forEach(function (cPerson) {
-                //	console.log(cPerson);
-
-                //console.log(window.husband);
-                if (window.husband == undefined) {
-                    window.husband = 0;
-                }
-                if (window.wife == undefined) {
-                    window.wife = 0;
-                }
-
-                if (
-                    cPerson.Name == aChild.Name &&
-                    ((cPerson.Father == window.husband && cPerson.Mother == window.wife) ||
-                        (window.husband == 0 && cPerson.Mother == window.wife) ||
-                        (window.husband == cPerson.Father && 0 == window.wife))
-                ) {
-                    if (!doneKids.includes(aChild.Name)) {
-                        //console.log(index);
-
-                        theChildRow = familySheetPerson(cPerson, ordinal(index + 1) + " Child");
-                        fsTable.find("> tbody").append($(theChildRow));
-                        doneKids.push(cPerson.Name);
-                    }
-                }
-            });
-        });
-    }
+    checkAndAppendChildren(oChildren);
 
     $("#tree").slideUp();
 
@@ -3973,51 +4265,58 @@ function makeFamilySheet() {
 
         //
 
+        /**
+         * Fixes a citation text by converting various citation templates to HTML.
+         * @param {string} citation - The citation text to be fixed.
+         * @returns {string} - The fixed citation.
+         */
         function fixCitation(citation) {
-            tableMatch = citation.matchAll(/\{\|[^]+?\|\}/gm);
-            listMatch = citation.matchAll(/\n:+[A-z]+.*/gm);
-            //console.log(listMatch);
+            // Find all tables and lists in the citation
+            const tableMatches = Array.from(citation.matchAll(/\{\|[^]+?\|\}/gm));
+            const listMatches = Array.from(citation.matchAll(/\n:+[A-z]+.*/gm));
 
-            madeList = false;
-            if (listMatch != null) {
-                aList = "\n<ul class='sourceUL'>\n";
-                for (const lMatch of listMatch) {
-                    aList += "<li>" + lMatch[0].replace(/\n:+/, "") + "</li>\n";
+            // Process lists
+            let madeList = false;
+            if (listMatches.length > 0) {
+                let aList = "\n<ul class='sourceUL'>\n";
+                for (const lMatch of listMatches) {
+                    aList += `<li>${lMatch[0].replace(/\n:+/, "")}</li>\n`;
                     madeList = true;
                 }
                 aList += "</ul>\n";
-                if (madeList == true) {
+                if (madeList) {
                     citation += aList;
-                    citation = citation.replaceAll(/\n:+[A-z]+.*/gm, "");
+                    citation = citation.replace(/\n:+[A-z]+.*/gm, "");
                 }
             }
 
-            if (tableMatch != null) {
-                newTable = [];
-                for (const aMatch of tableMatch) {
-                    aTable = "<table class='citationTable' id='citationTable_" + window.citationTables.length + "'>";
-                    lines = aMatch[0].matchAll(
-                        /[|!](.*?)\|\|(.*?)(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?\n/g
+            // Process tables
+            if (tableMatches.length > 0) {
+                const newTables = [];
+                for (const aMatch of tableMatches) {
+                    let aTable = `<table class='citationTable' id='citationTable_${window.citationTables.length}'>`;
+                    const lines = Array.from(
+                        aMatch[0].matchAll(
+                            /[|!](.*?)\|\|(.*?)(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?\n/g
+                        )
                     );
-                    for (line of lines) {
-                        aRow = [];
-                        aTableRow = "<tr>";
-                        for (i = 1; i < 10; i++) {
-                            if (line[i] != undefined) {
-                                aRow.push(line[i].replace("||", ""));
-                                aTableRow += "<td>" + line[i].replace("||", "") + "</td>";
+
+                    for (const line of lines) {
+                        let aTableRow = "<tr>";
+                        for (let i = 1; i < 10; i++) {
+                            if (line[i] !== undefined) {
+                                aTableRow += `<td>${line[i].replace("||", "")}</td>`;
                             }
                         }
-                        newTable.push(aRow);
                         aTableRow += "</tr>\n";
                         aTable += aTableRow;
                     }
                     aTable += "</table>";
-                    window.citationTables.push(newTable);
-                    newMatch = aMatch[0].replaceAll(/([!|{}()\-.\[\]])/g, "\\$1");
-                    re = new RegExp(newMatch, "m");
-                    citation = citation.replace(re, aTable);
+                    newTables.push(aTable);
+                    const newMatch = aMatch[0].replace(/([!|{}()\-.\[\]])/g, "\\$1");
+                    citation = citation.replace(new RegExp(newMatch, "m"), aTable);
                 }
+                window.citationTables.push(...newTables);
             }
 
             citation = citation
@@ -4127,23 +4426,20 @@ function makeFamilySheet() {
                 .replaceAll(/\'\'\'(.+?)\'\'\'/g, "<b>$1</b>")
                 .replaceAll(/\'\'(.+?)\'\'/g, "<i>$1</i>");
 
-            eeMatch = citation.match(/\{\{EE source[\s\S]*?\}\}/gm);
+            const eeMatch = citation.match(/\{\{EE source[\s\S]*?\}\}/gm);
             if (eeMatch != null) {
-                eeData = {};
-                //console.log(eeMatch);
-                dataBits = eeMatch[0].replaceAll(/[{}\n]/g, "").split("|");
+                const eeData = {};
+                const dataBits = eeMatch[0].replaceAll(/[{}\n]/g, "").split("|");
                 dataBits.forEach(function (aBit) {
-                    aBitBits = aBit.split("=");
+                    const aBitBits = aBit.split("=");
                     if (aBitBits[1]) {
                         eeData[aBitBits[0].replace("-", "_")] = aBitBits[1];
                     }
                 });
-                //console.log(dataBits);
-                //console.log(eeData);
 
-                eeName = "";
+                let eeName = "";
                 if (eeData.last) {
-                    punc = "";
+                    let punc = "";
                     if (eeData.first1) {
                         punc = ", ";
                     }
@@ -4174,7 +4470,7 @@ function makeFamilySheet() {
                     eeName += eeData.last4 + ", " + eeData.first4 + "";
                 }
 
-                eeCitation =
+                const eeCitation =
                     (eeData.author ? eeData.author + ", " : "") +
                     (eeData.editor ? "Ed.: " + eeData.editor + ", " : "") +
                     eeName +
@@ -4193,79 +4489,82 @@ function makeFamilySheet() {
                     (eeData.pages ? "pp." + eeData.pages + ". " : "") +
                     (eeData.accessdate ? "Accessed: " + eeData.accessdate + ". " : "") +
                     (eeData.url ? "<a href='" + eeData.url + "'>" + eeData.url + "</a>" : "");
-                //console.log(eeCitation);
-                reg = new RegExp(eeMatch[0].replaceAll(/([!|{}()\-.\[\]])/g, "\\$1"), "m");
+                const reg = new RegExp(eeMatch[0].replaceAll(/([!|{}()\-.\[\]])/g, "\\$1"), "m");
                 citation = citation.replace(reg, eeCitation);
             }
 
             return citation;
         }
 
-        window.references.forEach(function (pRefs) {
-            anID = pRefs[0];
-            thisName = $("tr[data-name='" + htmlEntities(anID) + "'] .fsName")
+        function appendReferences(mList) {
+            window.references.forEach((pRefs) => {
+                const anID = pRefs[0];
+                let thisName = getFormattedName(anID);
+                const wtidSpan = getWtidSpan(thisName);
+                thisName = thisName.replace(/\(\b[^\s]+\-[0-9]+\)/, "");
+
+                const anLI = createListItem(anID, thisName, wtidSpan);
+                const aUL = $("<ul></ul>");
+
+                pRefs[1].forEach((aRef) => {
+                    aUL.append($("<li>" + fixCitation(aRef) + "</li>"));
+                });
+
+                appendSeeAlso(aUL, pRefs[2]);
+
+                aUL.appendTo(anLI);
+                anLI.appendTo(mList);
+            });
+        }
+
+        function getFormattedName(anID) {
+            return $("tr[data-name='" + htmlEntities(anID) + "'] .fsName")
                 .eq(0)
                 .text()
                 .replace(/(Female)|(Male)\b/, "")
                 .replace(/([a-z])(\)\s)?[MF]\b/, "$1$2");
+        }
 
-            wtidMatch = thisName.match(/\(\b[^\s]+\-[0-9]+\)/);
-            aSpan = "";
-            if (wtidMatch != null) {
-                thisName = thisName.replace(/\(\b[^\s]+\-[0-9]+\)/, "");
-                aSpan = $("<span class='fsWTID'>" + htmlEntities(wtidMatch) + "</span>");
+        function getWtidSpan(thisName) {
+            const wtidMatch = thisName.match(/\(\b[^\s]+\-[0-9]+\)/);
+            if (wtidMatch !== null) {
+                return $("<span class='fsWTID'>" + htmlEntities(wtidMatch) + "</span>");
             }
+            return "";
+        }
 
-            /*
-              if ($("#showWTIDs").prop("checked")==false){
-                  thisName = thisName.replace(/\b.*\-[0-9]+/,"");
-              }
-              */
-            anLI = $(
-                "<li data-wtid='" +
-                    anID +
-                    "'><a class='sourcesName' href='https://www.wikitree.com/wiki/" +
-                    anID +
-                    "'>" +
-                    thisName +
-                    "</a></li>"
+        function createListItem(anID, thisName, wtidSpan) {
+            const anLI = $(
+                `<li data-wtid='${anID}'><a class='sourcesName' href='https://www.wikitree.com/wiki/${anID}'>${thisName}</a></li>`
             );
-            anLI.find("a").append(aSpan);
-            aUL = $("<ul></ul>");
-            pRefs[1].forEach(function (aRef) {
-                aUL.append($("<li>" + fixCitation(aRef) + "</li>"));
-            });
-            if (pRefs[2] != "") {
-                anLI2 = $("<li><span>See also:</span></li>");
-                aUL2 = $("<ul></ul>");
-                pRefs[2].forEach(function (aSA) {
+            anLI.find("a").append(wtidSpan);
+            return anLI;
+        }
+
+        function appendSeeAlso(aUL, seeAlsoRefs) {
+            if (seeAlsoRefs !== "") {
+                const anLI2 = $("<li><span>See also:</span></li>");
+                const aUL2 = $("<ul></ul>");
+                seeAlsoRefs.forEach((aSA) => {
                     aUL2.append($("<li>" + fixCitation(aSA) + "</li>"));
                 });
                 aUL2.appendTo(anLI2);
                 anLI2.appendTo(aUL);
             }
+        }
 
-            aUL.appendTo(anLI);
-            anLI.appendTo(mList);
-        });
+        // Initialize mList as you did in your original code
+        const mList = $("<ul></ul>"); // For example
+
+        // Then call the refactored function
+        appendReferences(mList);
+
+        // Your existing code for appending to the DOM and other logic
         const params = new URLSearchParams(window.location.search);
-        //if (params.has('test')){
         $("#sources").append(mList);
-        //	}
         $("#sources li[data-wtid='" + window.husbandWTID + "']").prependTo($("#sources ul").eq(0));
 
-        $("#notesNotes").click(function () {
-            if ($(this).find("textarea").length == 0) {
-                textBox = $("<textarea class='edit'>" + br2nl($(this).html()) + "</textarea>");
-                $(this).text("");
-                $(this).append(textBox);
-                textBox.focus();
-
-                textBox.focusout(function () {
-                    closeInputs();
-                });
-            }
-        });
+        // ... (rest of your code)
 
         setBaptChrist();
 
@@ -4273,62 +4572,89 @@ function makeFamilySheet() {
             $(this).next().find(".theBio").slideToggle();
         });
 
+        /**
+         * Toggles the visibility of citation tables based on the state of the "#showTables" checkbox.
+         * If the checkbox is checked, citation tables are hidden.
+         * Otherwise, citation tables are shown.
+         */
         function toggleTables() {
-            //console.log($("#showTables").prop("checked"));
-            if ($("#showTables").prop("checked") == true) {
-                $(".citationTable").hide();
-            } else {
-                $(".citationTable").show();
-            }
+            // Get the checked state of the "#showTables" checkbox
+            const isChecked = $("#showTables").prop("checked");
+
+            // Show or hide all ".citationTable" elements based on the checkbox state
+            isChecked ? $(".citationTable").hide() : $(".citationTable").show();
+
+            // Iterate through each nested list item in "#citationList"
             $("#citationList li li").each(function () {
-                textNodes = $(this)
+                // Retrieve all text nodes within the current list item
+                const textNodes = $(this)
                     .contents()
                     .filter(function () {
                         return this.nodeType === Node.TEXT_NODE;
                     });
-                if ($(this).find(".citationTable:visible").length) {
-                    lastNode = textNodes[textNodes.length - 1];
-                    //	console.log(textNodes);
 
-                    if (lastNode.textContent.match(/:(\W|\n)*/) != null && !window.removedTableHeading) {
-                        //console.log("match");
-                        textNodes[textNodes.length - 1].textContent = textNodes[
-                            textNodes.length - 1
-                        ].textContent.replace(/[A-Z][a-z]+:[\W\n]*?$/m, "");
+                // If there's a visible ".citationTable" in this list item
+                if ($(this).find(".citationTable:visible").length) {
+                    let lastNode = textNodes[textNodes.length - 1];
+
+                    // Remove trailing table headings from the text node if needed
+                    if (lastNode.textContent.match(/:(\W|\n)*/) && !window.removedTableHeading) {
+                        lastNode.textContent = lastNode.textContent.replace(/[A-Z][a-z]+:[\W\n]*?$/m, "");
                         window.removedTableHeading = true;
                     }
 
+                    // Hide the citation table
                     $(this).find(".citationTable").hide();
-                } else if ($(this).find(".citationTable").length) {
+                }
+                // If there's a ".citationTable" but it's not visible
+                else if ($(this).find(".citationTable").length) {
+                    // Show the citation table
                     $(this).find(".citationTable").show();
                 }
             });
         }
+
+        /**
+         * Toggles the visibility of source lists based on the state of the "#showLists" checkbox.
+         * If the checkbox is checked, source lists are shown.
+         * Otherwise, source lists are hidden.
+         */
         function toggleLists() {
-            if ($("#showLists").prop("checked") == true) {
-                $(".sourceUL").show();
-            } else {
-                $(".sourceUL").hide();
-            }
+            // Get the checked state of the "#showLists" checkbox
+            const isChecked = $("#showLists").prop("checked");
+
+            // Show or hide all ".sourceUL" elements based on the checkbox state
+            isChecked ? $(".sourceUL").show() : $(".sourceUL").hide();
         }
 
+        /**
+         * Updates the state of tables based on checkbox state and stores the state.
+         */
         $("#showTables").change(function () {
             toggleTables();
             storeVal($(this));
         });
+
+        /**
+         * Updates the state of lists based on checkbox state and stores the state.
+         */
         $("#showLists").change(function () {
             toggleLists();
             storeVal($(this));
         });
 
+        /**
+         * Allows editing of citation list items.
+         * Creates a textarea for editing when a list item is clicked.
+         */
         $("#citationList li li").click(function () {
             closeInputs();
-            if ($(this).find("textarea").length == 0) {
-                newTextarea = $("<textarea class='citationEdit'>" + $(this).html() + "</textarea>");
+            if ($(this).find("textarea").length === 0) {
+                const newTextarea = $("<textarea class='citationEdit'>" + $(this).html() + "</textarea>");
                 $(this).html(newTextarea);
                 newTextarea.focus();
-                newTextarea.on("blur", function (e) {
-                    if ($(this).val() == "") {
+                newTextarea.on("blur", function () {
+                    if ($(this).val() === "") {
                         $(this).parent().remove();
                     } else {
                         $(this).parent().html($(this).val());
@@ -4338,11 +4664,14 @@ function makeFamilySheet() {
             }
         });
 
+        /**
+         * Handles the visibility of bio instructions and styles for print media based on the existence of ".bioRow" elements.
+         */
         if ($(".bioRow").length) {
             $("#toggleBios,#includeBiosWhenPrinting").css("display", "inline-block");
             $("#includeBios").change(function () {
                 storeVal($(this));
-                if ($(this).prop("checked") == true) {
+                if ($(this).prop("checked") === true) {
                     $(
                         "<style id='includeBiosStyle'>@media print {.familySheetForm .bioRow{display:table-row !important;} .familySheetForm .theBio {display:block !important}}</style>"
                     ).appendTo("body");
@@ -4355,15 +4684,21 @@ function makeFamilySheet() {
             $("#bioInstructions").hide();
         }
 
+        /**
+         * Updates the display of gender based on radio button selection and stores the value.
+         */
         $("input[name='showGender']").change(function () {
             storeVal($(this));
-            showGenderVal = $("input[name='showGender']:checked").val();
+            const showGenderVal = $("input[name='showGender']:checked").val();
+
             $(".fsGender").each(function () {
                 $(this).text("");
-                if (showGenderVal == "initial") {
+
+                if (showGenderVal === "initial") {
                     $(this).text($(this).attr("data-gender").substring(0, 1));
                 }
-                if (showGenderVal == "word") {
+
+                if (showGenderVal === "word") {
                     $(this).text($(this).attr("data-gender"));
                 }
             });
@@ -4371,176 +4706,222 @@ function makeFamilySheet() {
 
         $("#fgsInfo").slideDown();
 
-        if ($("tr.roleRow[data-role='Husband']").attr("data-name") == "undefined") {
-            $("tr[data-role='Husband']").remove();
-            $("#husbandFirstLabel").hide();
-        } else if ($("tr.roleRow[data-role='Wife']").attr("data-name") == "undefined") {
-            $("tr[data-role='Wife']").remove();
-            $("#husbandFirstLabel").hide();
-        } else if (people[0].Gender == "Male") {
-            $("#husbandFirstLabel").hide();
-        } else {
-            $("#husbandFirstLabel").css("display", "inline-block");
-        }
-        if (
-            $("tr.roleRow[data-role='Wife']").attr("data-gender") == "" ||
-            $("tr.roleRow[data-role='Husband']").length == 0
-        ) {
-            $("tr.roleRow[data-role='Wife'] th a").text("Name");
-            $("tr.WifeParentsRow[data-role='Wife'] th.WifeFatherHeading a").text("Father");
-            if ($("tr.WifeParentsRow[data-role='Wife'] th.WifeFatherHeading a").length == 0) {
-                $("tr.WifeParentsRow[data-role='Wife'] th.WifeFatherHeading").text("Father:");
+        /**
+         * Hides or shows elements based on the presence and attributes of Husband and Wife roles.
+         */
+        function manageRoleRows() {
+            const husbandRow = $("tr.roleRow[data-role='Husband']");
+            const wifeRow = $("tr.roleRow[data-role='Wife']");
+            const husbandFirstLabel = $("#husbandFirstLabel");
+
+            // Check for undefined Husband and Wife roles and hide labels accordingly
+            if (husbandRow.attr("data-name") === "undefined") {
+                husbandRow.remove();
+                husbandFirstLabel.hide();
+            } else if (wifeRow.attr("data-name") === "undefined") {
+                wifeRow.remove();
+                husbandFirstLabel.hide();
+            } else if (people[0].Gender === "Male") {
+                husbandFirstLabel.hide();
+            } else {
+                husbandFirstLabel.css("display", "inline-block");
             }
-            $("tr.WifeParentsRow[data-role='Wife'] th.WifeMotherHeading a").text("Mother");
-            if ($("tr.WifeParentsRow[data-role='Wife'] th.WifeMotherHeading a").length == 0) {
-                $("tr.WifeParentsRow[data-role='Wife'] th.WifeMotherHeading").text("Mother:");
+
+            // Update Wife labels if conditions are met
+            if (wifeRow.attr("data-gender") === "" || husbandRow.length === 0) {
+                updateLabels("Wife");
             }
-        }
-        if (
-            $("tr.roleRow[data-role='Husband']").attr("data-gender") == "" ||
-            $("tr.roleRow[data-role='Wife']").length == 0
-        ) {
-            $("tr.roleRow[data-role='Husband'] th a").text("Name");
-            $("tr.HusbandParentsRow[data-role='Husband'] th.HusbandFatherHeading a").text("Father");
-            if ($("tr.HusbandParentsRow[data-role='Husband'] th.HusbandFatherHeading a").length == 0) {
-                $("tr.HusbandParentsRow[data-role='Husband'] th.HusbandFatherHeading").text("Father:");
-            }
-            $("tr.HusbandParentsRow[data-role='Husband'] th.HusbandMotherHeading a").text("Mother");
-            if ($("tr.HusbandParentsRow[data-role='Husband'] th.HusbandMotherHeading a").length == 0) {
-                $("tr.HusbandParentsRow[data-role='Husband'] th.HusbandMotherHeading").text("Mother:");
+
+            // Update Husband labels if conditions are met
+            if (husbandRow.attr("data-gender") === "" || wifeRow.length === 0) {
+                updateLabels("Husband");
             }
         }
 
+        /**
+         * Updates labels based on the role type.
+         * @param {string} role - The role type, either "Husband" or "Wife".
+         */
+        function updateLabels(role) {
+            const roleRow = $(`tr.roleRow[data-role='${role}']`);
+            const fatherHeading = $(`tr.${role}ParentsRow[data-role='${role}'] th.${role}FatherHeading`);
+            const motherHeading = $(`tr.${role}ParentsRow[data-role='${role}'] th.${role}MotherHeading`);
+
+            roleRow.find("th a").text("Name");
+            fatherHeading.find("a").text("Father");
+            if (fatherHeading.find("a").length === 0) {
+                fatherHeading.text("Father:");
+            }
+            motherHeading.find("a").text("Mother");
+            if (motherHeading.find("a").length === 0) {
+                motherHeading.text("Mother:");
+            }
+        }
+
+        /**
+         * Updates the status choice and modifies the date strings accordingly.
+         */
         $("input[name='statusChoice']").change(function () {
             storeVal($(this));
-            isAbbr = false;
-            if ($("input[name='statusChoice'][value='abbreviations']").prop("checked") == true) {
-                isAbbr = true;
-            }
+
+            // Check if abbreviations are selected
+            const isAbbr = $("input[name='statusChoice'][value='abbreviations']").prop("checked");
+
+            // Update each date text based on the selected status
             $(".date").each(function () {
+                const currentText = $(this).text();
                 if (isAbbr) {
-                    $(this).text(
-                        $(this).text().replaceAll(/~/g, "abt. ").replaceAll(/</g, "bef. ").replaceAll(/>/g, "aft. ")
-                    );
+                    const replacedText = currentText
+                        .replaceAll(/~/g, "abt. ")
+                        .replaceAll(/</g, "bef. ")
+                        .replaceAll(/>/g, "aft. ");
+                    $(this).text(replacedText);
                 } else {
-                    $(this).text(
-                        $(this)
-                            .text()
-                            .replaceAll(/abt\.\s/g, "~")
-                            .replaceAll(/bef\.\s/g, "<")
-                            .replaceAll(/aft\.\s/g, ">")
-                    );
+                    const replacedText = currentText
+                        .replaceAll(/abt\.\s/g, "~")
+                        .replaceAll(/bef\.\s/g, "<")
+                        .replaceAll(/aft\.\s/g, ">");
+                    $(this).text(replacedText);
                 }
             });
         });
 
-        roles = ["Husband", "Wife"];
-        if (
-            $("tr.roleRow[data-role='Wife']").attr("data-name") == $("#wtid").val() &&
-            localStorage.husbandFirst != "1"
-        ) {
-            roles = ["Wife", "Husband"];
-        }
+        /**
+         * Configures roles and layout based on existing data and settings.
+         */
+        function configureRolesAndLayout() {
+            let roles = ["Husband", "Wife"];
 
-        if ($("tr[data-gender='Female'][data-role='Husband'],tr[data-gender='Male'][data-role='Wife']").length) {
-            localStorage.husbandFirst = 0;
-            $("#husbandFirstLabel").hide();
-        }
-
-        for (i = 1; i < 31; i++) {
-            roles.push(ordinal(i) + " Child");
-        }
-        divWidth = $("#familySheetFormTable")[0].scrollWidth;
-        th1Width = $("#familySheetFormTable > thead > tr > th")[0].scrollWidth;
-        th2Width = $("#familySheetFormTable > thead > tr > th:nth-child(2)")[0].scrollWidth;
-        th3Width = $("#familySheetFormTable > thead > tr > th:nth-child(3)")[0].scrollWidth;
-
-        // ,#familySheetFormTable > thead > tr > th:first-child{width:"+th1Width+"px;
-
-        $(
-            "<style id='newDivs'>#familySheetFormTable,.tableContainer, .tableContainer table {width:" +
-                divWidth +
-                "px; margin:auto;} .birthHeading} .BirthDate,#familySheetFormTable > thead > tr > th:nth-child(2){width:" +
-                th2Width +
-                "px; max-width:" +
-                th2Width +
-                "px;} .BirthPlace{width:" +
-                (th3Width - 3) +
-                "px;} </style>"
-        ).appendTo("body");
-        roles.forEach(function (aRole) {
-            newDiv = $("<div class='tableContainer " + aRole + "'></div>");
-            newTable = $("<table></table>");
-            newTbody = $("<tbody></tbody>");
-            $("#familySheetFormTable > tbody > tr[data-role='" + aRole + "']").appendTo(newTbody);
-
-            /*
-              if (newTbody.find("tr").length){
-                  newTbody.appendTo($("#familySheetFormTable"));
-              }
-              */
-            if (newTbody.find("tr").length) {
-                newTbody.appendTo(newTable);
-                newTable.appendTo(newDiv);
-                newDiv.insertBefore("#notesAndSources");
-            }
-        });
-
-        if ($(".citationTable").length) {
-            $("#showTablesLabel").css("display", "inline-block");
-        } else {
-            $("#showTablesLabel").hide();
-        }
-        if ($(".sourceUL").length) {
-            $("#showListsLabel").css("display", "inline-block");
-        } else {
-            $("#showListsLabel").hide();
-        }
-        if ($("tr[data-role='1st Child']").length) {
-            $("#showGenderDiv").css("display", "inline-block");
-        } else {
-            $("#showGenderDiv").hide();
-        }
-        uncertain = false;
-        $(".date").each(function () {
+            // Check if the role should be swapped based on local storage and data attributes
             if (
-                $(this)
-                    .text()
-                    .match(/[~<>]|abt\.|bef.\|aft\./) != null
+                $("tr.roleRow[data-role='Wife']").attr("data-name") === $("#wtid").val() &&
+                localStorage.husbandFirst !== "1"
             ) {
-                uncertain = true;
+                roles = ["Wife", "Husband"];
             }
-        });
-        if (uncertain == false) {
-            $("#statusChoice").hide();
-        } else {
-            $("#statusChoice").css("display", "inline-block");
-        }
-        setVals();
 
-        if ($(".marriedRow").eq(1)) {
-            $(".marriedRow").eq(1).remove();
-        }
+            // Hide the 'husbandFirstLabel' if the roles are non-traditional
+            if ($("tr[data-gender='Female'][data-role='Husband'],tr[data-gender='Male'][data-role='Wife']").length) {
+                localStorage.husbandFirst = 0;
+                $("#husbandFirstLabel").hide();
+            }
 
-        if ($(".nicknames").length) {
-            $("#showNicknamesLabel").show();
-        } else {
-            $("#showNicknamesLabel").hide();
-        }
+            // Add children roles
+            for (let i = 1; i < 31; i++) {
+                roles.push(ordinal(i) + " Child");
+            }
 
-        toggleTables();
+            // Get table and column widths
+            const divWidth = $("#familySheetFormTable")[0].scrollWidth;
+            const th1Width = $("#familySheetFormTable > thead > tr > th")[0].scrollWidth;
+            const th2Width = $("#familySheetFormTable > thead > tr > th:nth-child(2)")[0].scrollWidth;
+            const th3Width = $("#familySheetFormTable > thead > tr > th:nth-child(3)")[0].scrollWidth;
 
-        let searchParams = new URLSearchParams(window.location.search);
-        let testing = searchParams.get("test");
-        if (testing == "1") {
+            // TODO: Use the width information (divWidth, th1Width, etc.) as needed
         }
 
-        if ($("#printIcon").length == 0) {
-            $("<img id='printIcon' src='images/print50.png'>").appendTo("header");
-            $("#printIcon").click(function () {
-                window.print();
+        // Assume ordinal is a function that already exists to convert numbers to their ordinal form (1st, 2nd, etc.)
+
+        /**
+         * Update DOM to append new styles and organize table by roles.
+         * @param {number} divWidth - The width of the main table container.
+         * @param {number} th2Width - The width of the 2nd column in the table header.
+         * @param {number} th3Width - The width of the 3rd column in the table header.
+         * @param {Array<string>} roles - Array of roles to be used for organizing the table.
+         */
+        function updateDOMAndOrganizeTable(divWidth, th2Width, th3Width, roles) {
+            // Append new styles to the body
+            $(
+                `<style id='newDivs'>
+            #familySheetFormTable, .tableContainer, .tableContainer table { width: ${divWidth}px; margin: auto; }
+            .birthHeading, .BirthDate, #familySheetFormTable > thead > tr > th:nth-child(2) { width: ${th2Width}px; max-width: ${th2Width}px; }
+            .BirthPlace { width: ${th3Width - 3}px; }
+        </style>`
+            ).appendTo("body");
+
+            // Loop through each role and organize the table accordingly
+            roles.forEach(function (aRole) {
+                const newDiv = $(`<div class='tableContainer ${aRole}'></div>`);
+                const newTable = $("<table></table>");
+                const newTbody = $("<tbody></tbody>");
+                $("#familySheetFormTable > tbody > tr[data-role='" + aRole + "']").appendTo(newTbody);
+
+                if (newTbody.find("tr").length) {
+                    newTbody.appendTo(newTable);
+                    newTable.appendTo(newDiv);
+                    newDiv.insertBefore("#notesAndSources");
+                }
             });
         }
+
+        // Example usage:
+        // Assume divWidth, th2Width, th3Width, and roles are already defined
+        updateDOMAndOrganizeTable(divWidth, th2Width, th3Width, roles);
+
+        /**
+         * Initialize the page based on the presence of various elements and data.
+         */
+        function initializePage() {
+            // Show or hide 'Tables' label based on the presence of citation tables
+            toggleDisplay("#showTablesLabel", !!$(".citationTable").length);
+
+            // Show or hide 'Lists' label based on the presence of source lists
+            toggleDisplay("#showListsLabel", !!$(".sourceUL").length);
+
+            // Show or hide 'Gender' div based on the presence of '1st Child'
+            toggleDisplay("#showGenderDiv", !!$("tr[data-role='1st Child']").length);
+
+            // Determine if there are uncertain dates and show/hide status choice accordingly
+            let uncertain = Array.from($(".date")).some((el) =>
+                $(el)
+                    .text()
+                    .match(/[~<>]|abt\.|bef.\|aft\./)
+            );
+            toggleDisplay("#statusChoice", uncertain);
+
+            // Initialize values
+            setVals();
+
+            // Remove the second married row if it exists
+            if ($(".marriedRow").eq(1)) {
+                $(".marriedRow").eq(1).remove();
+            }
+
+            // Show or hide 'Nicknames' label based on the presence of nicknames
+            toggleDisplay("#showNicknamesLabel", !!$(".nicknames").length);
+
+            // Call toggleTables function
+            toggleTables();
+
+            // Handle query parameters
+            const searchParams = new URLSearchParams(window.location.search);
+            const testing = searchParams.get("test");
+            if (testing === "1") {
+                // Implement any testing logic here
+            }
+
+            // Add print icon if not already present
+            if ($("#printIcon").length === 0) {
+                $("<img id='printIcon' src='images/print50.png'>").appendTo("header");
+                $("#printIcon").click(() => window.print());
+            }
+        }
+
+        /**
+         * Toggle the display of an element.
+         * @param {string} selector - The jQuery selector for the element.
+         * @param {boolean} condition - The condition to toggle the display.
+         */
+        function toggleDisplay(selector, condition) {
+            if (condition) {
+                $(selector).css("display", "inline-block");
+            } else {
+                $(selector).hide();
+            }
+        }
+
+        // Initialize the page
+        initializePage();
     }
     $(".fsName a, caption a").click(function (e) {
         e.preventDefault();
@@ -4550,156 +4931,173 @@ function makeFamilySheet() {
 
     //$("td[data-name],span[data-name]")
 
+    /**
+     * Handle click events on elements with the data-name attribute.
+     * This function updates the input field and triggers a click event.
+     */
     $("td[data-name],span[data-name]").click(function () {
-        dTR = $(this).closest("tr");
-        if (dTR.attr("data-person") != "") {
-            window.keepSpouse = dTR.attr("data-person");
-        } else {
-            window.keepSpouse = "";
-        }
+        const dTR = $(this).closest("tr");
+        window.keepSpouse = dTR.attr("data-person") || "";
 
         $("#wtid").val($(this).attr("data-name"));
-        $("#familySheetGo").click();
+        $("#familySheetGo").trigger("click");
     });
 
+    /**
+     * Closes any open input elements and updates their parent elements with the new value.
+     * Filters out any unsafe "script" tags.
+     */
     function closeInputs() {
         $(".edit").each(function () {
-            if ($(this).prop("tagName") == "TEXTAREA" || $(this).parent().prop("tagName") == "CAPTION") {
-                if (
-                    $(this)
-                        .val()
-                        .match(/script/i) == null
-                ) {
-                    $(this)
-                        .parent()
-                        .html(nl2br($(this).val()));
-                }
-            } else {
-                if (
-                    $(this)
-                        .val()
-                        .match(/script/i) == null
-                ) {
-                    $(this).parent().text($(this).val());
+            const isTextarea = $(this).prop("tagName") === "TEXTAREA";
+            const isCaption = $(this).parent().prop("tagName") === "CAPTION";
+
+            let newValue = $(this).val();
+
+            // Check for unsafe "script" tags
+            if (!/script/i.test(newValue)) {
+                if (isTextarea || isCaption) {
+                    $(this).parent().html(nl2br(newValue));
+                } else {
+                    $(this).parent().text(newValue);
                 }
             }
+
             $(this).remove();
         });
     }
 
-    $(
-        ".BaptismDate,.BaptismPlace,.buriedDate,.buriedPlace,caption,h1,.birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate,.marriedPlace, .editable"
-    ).click(function () {
-        if ($(this).find("input").length == 0) {
-            if ($(this).prop("tagName") == "CAPTION") {
-                inputBox = $(
-                    "<input style='background:white;' type='text' class='edit' value='" + $(this).html() + "'>"
-                );
-            } else {
-                inputBox = $(
-                    "<input style='background:white;' type='text' class='edit' value='" + $(this).text() + "'>"
-                );
-            }
-            $(this).text("");
-            $(this).append(inputBox);
-            inputBox.focus();
+    /**
+     * Handles click events on various elements to allow in-place editing.
+     * Creates an input box for the clicked element and focuses it.
+     */
+    $(document).on(
+        "click",
+        ".BaptismDate, .BaptismPlace, .buriedDate, .buriedPlace, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable",
+        function () {
+            // Check if an input already exists within the clicked element
+            if ($(this).find("input").length === 0) {
+                let inputBox;
 
-            inputBox.keypress(function (e) {
-                if (e.which == 13) {
+                // Determine if the clicked element is a CAPTION
+                const isCaption = $(this).prop("tagName") === "CAPTION";
+                const initialValue = isCaption ? $(this).html() : $(this).text();
+
+                // Create the input box
+                inputBox = $("<input style='background:white;' type='text' class='edit'>").val(initialValue);
+
+                // Clear existing text and append input box
+                $(this).empty().append(inputBox);
+
+                // Focus on the input box
+                inputBox.focus();
+
+                // Event handlers for the input box
+                inputBox.keypress(function (e) {
+                    if (e.which === 13) {
+                        // Enter key
+                        closeInputs();
+                    }
+                });
+
+                inputBox.focusout(function () {
                     closeInputs();
-                }
-            });
-            inputBox.focusout(function () {
-                closeInputs();
-            });
+                });
+            }
         }
-    });
+    );
 
     $("a").attr("target", "_blank");
 }
 
+/**
+ * Returns the ordinal representation of a given integer.
+ *
+ * @param {number} i - The integer to convert to its ordinal representation.
+ * @return {string} The ordinal representation of the integer.
+ */
 function ordinal(i) {
-    var j = i % 10,
-        k = i % 100;
-    if (j == 1 && k != 11) {
-        return i + "st";
+    const j = i % 10;
+    const k = i % 100;
+
+    if (j === 1 && k !== 11) {
+        return `${i}st`;
     }
-    if (j == 2 && k != 12) {
-        return i + "nd";
+    if (j === 2 && k !== 12) {
+        return `${i}nd`;
     }
-    if (j == 3 && k != 13) {
-        return i + "rd";
+    if (j === 3 && k !== 13) {
+        return `${i}rd`;
     }
-    return i + "th";
+
+    return `${i}th`;
 }
 
+/**
+ * Fetches family data from the WikiTree API.
+ *
+ * @param {string} WTID - The WikiTree ID of the person to get family data for.
+ */
 function getFamily(WTID) {
-    bioFormat = "text";
-    if ($("#getBios").prop("checked") == true) {
+    let bioFormat = "text";
+    if ($("#getBios").prop("checked")) {
         bioFormat = "both";
     }
 
+    const apiUrl = "https://api.wikitree.com/api.php";
+    const requestData = {
+        action: "getRelatives",
+        getSpouses: "1",
+        getChildren: "1",
+        getParents: "1",
+        getSiblings: "1",
+        keys: WTID,
+        fields: "Spouse,NoChildren,IsLiving,BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate,DeathDateDecade,DeathLocation,IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent,Prefix,Suffix,LastNameOther,Nicknames,Derived.LongName,Derived.LongNamePrivate,Derived.BirthName,Derived.BirthNamePrivate,Manager,MiddleName,MiddleInitial,Mother,Name,Photo,RealName,ShortName,Touched,DataStatus,Bio,Privacy",
+        bioFormat: bioFormat,
+    };
+
     $.ajax({
-        url: "https://api.wikitree.com/api.php",
-        data: {
-            action: "getRelatives",
-            getSpouses: "1",
-            getChildren: "1",
-            getParents: "1",
-            getSiblings: "1",
-            keys: WTID,
-            fields: "Spouse,NoChildren,IsLiving,BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate,DeathDateDecade,DeathLocation,IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent,Prefix,Suffix,LastNameOther,Nicknames,Derived.LongName,Derived.LongNamePrivate,Derived.BirthName,Derived.BirthNamePrivate,Manager,MiddleName,MiddleInitial,Mother,Name,Photo,RealName,ShortName,Touched,DataStatus,Bio,Privacy",
-            bioFormat: bioFormat,
-        },
+        url: apiUrl,
+        data: requestData,
         crossDomain: true,
         xhrFields: { withCredentials: true },
         type: "POST",
         dataType: "json",
         success: function (data) {
-            thePeople = data[0].items;
+            const thePeople = data[0]?.items;
             if (thePeople) {
-                thePeople.forEach(function (aPerson, index) {
-                    mPerson = aPerson.person;
-                    //	console.log(data);
-                    mSpouses = getRels(mPerson.Spouses, mPerson, "Spouse");
-                    if (mSpouses.length > 1) {
-                        mSpouses.sort((a, b) =>
-                            a.marriage_date.replaceAll(/\-/g, "") > b.marriage_date.replaceAll(/\-/g, "") ? 1 : -1
-                        );
+                thePeople.forEach((aPerson) => {
+                    const mPerson = aPerson.person;
+
+                    // Populate spouse, children, siblings, and parents
+                    ["Spouse", "Child", "Sibling", "Parent"].forEach((relation) => {
+                        const relatives = getRels(mPerson[`${relation}s`], mPerson, relation);
+                        mPerson[relation] = relatives;
+                    });
+
+                    window.people.push(mPerson);
+
+                    // Recursive call and makeFamilySheet() as in your original code
+                    if (window.people[0].Spouse) {
+                        window.people[0].Spouse.forEach(function (aSpouse) {
+                            if (!window.calledPeople.includes(aSpouse.Name)) {
+                                window.calledPeople.push(aSpouse.Name);
+                                getFamily(aSpouse.Name);
+                            }
+                        });
                     }
-                    mPerson.Spouse = mSpouses;
-
-                    mChildren = getRels(mPerson.Children, mPerson, "Child");
-                    mPerson.Child = mChildren;
-
-                    mSiblings = getRels(mPerson.Siblings, mPerson, "Sibling");
-                    mPerson.Sibling = mSiblings;
-
-                    mParents = getRels(mPerson.Parents, mPerson, "Parent");
-                    mPerson.Parent = mParents;
+                    if (window.people[0].Child) {
+                        window.people[0].Child.forEach(function (aChild) {
+                            if (!window.calledPeople.includes(aChild.Name)) {
+                                window.calledPeople.push(aChild.Name);
+                                getFamily(aChild.Name);
+                            }
+                        });
+                    }
+                    if (window.calledPeople.length === window.people.length) {
+                        makeFamilySheet();
+                    }
                 });
-
-                window.people.push(mPerson);
-                if (window.people[0].Spouse) {
-                    window.people[0].Spouse.forEach(function (aSpouse) {
-                        if (!window.calledPeople.includes(aSpouse.Name)) {
-                            window.calledPeople.push(aSpouse.Name);
-                            getFamily(aSpouse.Name);
-                        }
-                    });
-                }
-                if (window.people[0].Child) {
-                    window.people[0].Child.forEach(function (aChild) {
-                        if (!window.calledPeople.includes(aChild.Name)) {
-                            window.calledPeople.push(aChild.Name);
-                            getFamily(aChild.Name);
-                        }
-                    });
-                }
-
-                if (window.calledPeople.length == window.people.length) {
-                    makeFamilySheet();
-                }
             } else {
                 privateQ();
                 $("#tree").slideUp();
@@ -4708,15 +5106,27 @@ function getFamily(WTID) {
     });
 }
 
+/**
+ * Sets the column heading and label text based on the selected radio button value for Baptism or Christening.
+ */
 function setBaptChrist() {
+    // Loop through each radio button to find the one that is checked
     $("input[type=radio][name=baptismChristening]").each(function () {
-        if ($(this).prop("checked") == true) {
-            $("th.baptismHeading").text($(this).val() + ":");
-            $("#showBaptisedText").text("Show " + $(this).val());
+        // Check if the radio button is selected
+        if ($(this).prop("checked")) {
+            // Get the value of the selected radio button
+            const selectedValue = $(this).val();
+
+            // Update the column heading and label text based on the selected value
+            $("th.baptismHeading").text(`${selectedValue}:`);
+            $("#showBaptisedText").text(`Show ${selectedValue}`);
         }
     });
 }
 
+/**
+ * Exports the data to an Excel sheet.
+ */
 function excelOut() {
     const today = new Date().toLocaleDateString(undefined, {
         year: "numeric",
@@ -4726,12 +5136,15 @@ function excelOut() {
         minute: "2-digit",
     });
 
-    //if (lines.length>1){theS = "s";}else {theS = "";}
+    let fileName;
+
+    // Determine the file name based on the context
     if ($("#missingParents").length) {
-        fileName = "Missing Parents - " + $("#wtid").val();
+        fileName = `Missing Parents - ${$("#wtid").val()}`;
     }
 
-    var wb = XLSX.utils.book_new();
+    // Initialize workbook
+    const wb = XLSX.utils.book_new();
     wb.Props = {
         Title: fileName,
         Subject: fileName,
@@ -4741,11 +5154,11 @@ function excelOut() {
 
     wb.SheetNames.push(fileName);
 
-    var ws_data = [];
+    const ws_data = [];
 
+    // Populate the worksheet data if the missingParents element is present
     if ($("#missingParents").length) {
-        ths = $("#peopleList th");
-        thVals = [
+        const thVals = [
             "ID",
             "First Name",
             "LNAB",
@@ -4759,10 +5172,10 @@ function excelOut() {
 
         ws_data.push(thVals);
 
-        rows = $("#peopleList tbody tr");
+        const rows = $("#peopleList tbody tr");
         rows.each(function () {
-            if ($(this).css("display") != "none") {
-                texties = [
+            if ($(this).css("display") !== "none") {
+                const rowValues = [
                     $(this).attr("data-name"),
                     $(this).attr("data-first-name"),
                     $(this).attr("data-lnab"),
@@ -4773,27 +5186,27 @@ function excelOut() {
                     $(this).attr("data-death-location"),
                     $(this).attr("data-missing"),
                 ];
-                ws_data.push(texties);
+                ws_data.push(rowValues);
             }
         });
     }
 
-    var ws = XLSX.utils.aoa_to_sheet(ws_data);
+    // Create the worksheet and attach it to the workbook
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
     wb.Sheets[fileName] = ws;
 
-    //console.log(wb);
-
+    // Convert string to array buffer
     function s2ab(s) {
-        var buf = new ArrayBuffer(s.length);
-        var view = new Uint8Array(buf);
-        for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+        const buf = new ArrayBuffer(s.length);
+        const view = new Uint8Array(buf);
+        for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
         return buf;
     }
 
     $("#downloadLines, .downloadLines").unbind();
     $("#downloadLines, .downloadLines").click(function () {
         if ($("#missingParents").length) {
-            var wscols = [
+            const wscols = [
                 { wch: 15 },
                 { wch: 15 },
                 { wch: 15 },
@@ -4804,237 +5217,72 @@ function excelOut() {
                 { wch: 30 },
                 { wch: 10 },
             ];
-
             ws["!cols"] = wscols;
         }
 
-        var wbout = XLSX.write(wb, { bookType: "xlsx", type: "binary" });
-        saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), fileName + ".xlsx");
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "binary" });
+        saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), `${fileName}.xlsx`);
     });
-    //}
 }
 
+$(document).ready(function () {});
 
-$(document).ready(function () {
-
-    if ($("body.familySheetForm").length) {
-        window.keepSpouse = "";
-        $("#familySheetGo").click(function () {
-            if (localStorage.searches) {
-                omySearches = localStorage.searches;
-            } else {
-                omySearches = "";
+// Function to toggle styles and update localStorage
+function toggleStyle(styleId, styleContent, optionalElement = null) {
+    return function () {
+        if ($(this).prop("checked") === false) {
+            $(`<style id='${styleId}'>${styleContent}</style>`).appendTo("body");
+            if (optionalElement) {
+                $(`${optionalElement}`).prop("disabled", true);
             }
-            if (omySearches.indexOf($("#wtid").val() + "|") == -1) {
-                localStorage.searches = omySearches + $("#wtid").val() + "|";
+        } else {
+            $(`#${styleId}`).remove();
+            if (optionalElement) {
+                $(`${optionalElement}`).prop("disabled", false);
             }
-
-            $("#familySheetFormTable,#tree,#notesAndSources,.tableContainer,#privateQ").remove();
-            $("<img id='tree' src='images/tree.gif'>").appendTo($("body"));
-            theWTID = capitalizeFirstLetter($("#wtid").val() + " ".trim(), 1);
-            if (theWTID.match(/\-/) == null) {
-                theWTID = theWTID.replace(/([0-9])/, "-$1");
-            }
-            window.people = [];
-            window.husband = 0;
-            window.wife = 0;
-            window.calledPeople = [theWTID];
-            if (theWTID != "") {
-                $("#h1Text").remove();
-                $("title").text("Family Sheet: " + theWTID);
-                window.calls = 1;
-                getFamily(theWTID);
-            }
-        });
-        $("#wtid").on("keydown", function (event) {
-            window.keepSpouse = "";
-            if (event.keyCode === 13) {
-                $("#familySheetGo").click();
-            }
-        });
-        $("#showBaptism").change(function () {
-            if ($(this).prop("checked") == false) {
-                $("<style id='showBaptismStyle'>tr.baptismRow{display:none;}</style>").appendTo("body");
-                $("#baptChrist input").prop("disabled", true);
-            } else {
-                $("#showBaptismStyle").remove();
-                $("#baptChrist input").prop("disabled", false);
-            }
-            storeVal($(this));
-        });
-        $("#showBurial").change(function () {
-            if ($(this).prop("checked") == false) {
-                $("<style id='showBurialStyle'>tr.buriedRow{display:none;}</style>").appendTo("body");
-            } else {
-                $("#showBurialStyle").remove();
-            }
-            storeVal($(this));
-        });
-        $("#showNicknames").change(function () {
-            if ($(this).prop("checked") == false) {
-                $(
-                    "<style id='showNicknamesStyle'>.familySheetForm caption span.nicknames,span.nicknames{display:none;}</style>"
-                ).appendTo("body");
-            } else {
-                $("#showNicknamesStyle").remove();
-            }
-            storeVal($(this));
-        });
-        $("#showParentsSpousesDates").change(function () {
-            if ($(this).prop("checked") == false) {
-                $(
-                    "<style id='showParentsSpousesDatesStyle'>.familySheetForm  span.parentDates,.familySheetForm span.spouseDates{display:none;}</style>"
-                ).appendTo("body");
-            } else {
-                $("#showParentsSpousesDatesStyle").remove();
-            }
-            storeVal($(this));
-        });
-        $("#husbandFirst").change(function () {
-            husbandID = $("tr.roleRow[data-role='Husband']").attr("data-name");
-            husbandCitations = $("#citationList li[data-wtid='" + htmlEntities(husbandID) + "']");
-            husbandNameCaption = $("caption span.fsWTID:contains('" + htmlEntities(husbandID) + "')").parent();
-            if (people[0].Name != husbandID) {
-                wifeNameCaption = $("caption span.fsWTID:contains('" + htmlEntities(people[0].Name) + "')").parent();
-            }
-
-            clonedMarriage = $(".marriedRow").eq(0);
-            if ($(this).prop("checked") == true) {
-                $("div.tableContainer.Wife").insertAfter($("div.tableContainer.Husband"));
-                $(".marriedRow").eq(0).appendTo($("div.tableContainer.Husband tbody"));
-
-                husbandCitations.prependTo($("#citationList"));
-                husbandNameCaption.prependTo($("caption"));
-
-                if (people[0].Name != husbandID) {
-                    wifeNameCaption.appendTo($("caption"));
-                }
-            } else if (people[0].Gender == "Female") {
-                $("div.tableContainer.Husband").insertAfter($("div.tableContainer.Wife"));
-                $(".marriedRow").eq(0).appendTo($("div.tableContainer.Wife tbody"));
-                $(".marriedRow[data-role='Husband']").remove();
-                $("#citationList li[data-wtid='" + htmlEntities(people[0].Name) + "']").prependTo($("#citationList"));
-
-                husbandNameCaption.appendTo($("caption"));
-
-                if (people[0].Name != husbandID) {
-                    wifeNameCaption.prependTo($("caption"));
-                }
-            }
-            if ($(".marriedRow").eq(1).length) {
-                $(".marriedRow").eq(1).remove();
-            }
-            $(".marriedRow").remove();
-            clonedMarriage.appendTo($("div.tableContainer").eq(0).find("tbody"));
-
-            storeVal($(this));
-
-            $(".theBio").find("tr.marriedRow").remove();
-        });
-        if ($(".nicknames").length == 0) {
-            $(".showNicknamesSpan").hide();
         }
-        $("#longMonth").change(function () {
-            storeVal($(this));
-            opt = "short";
-            if ($(this).prop("checked") == true) {
-                opt = "full";
-            }
-            $(".date").each(function () {
-                $(this).text(monthFormat($(this).text(), opt));
-            });
-        });
+        storeVal($(this));
+    };
+}
 
-        $("#showOtherLastNames").change(function () {
-            if ($(this).prop("checked") == false) {
-                $(
-                    "<style id='showOtherLastNamesStyle'>.familySheetForm caption span.otherLastNames,span.otherLastNames{display:none;}</style>"
-                ).appendTo("body");
-            } else {
-                $("#showOtherLastNamesStyle").remove();
-            }
-            storeVal($(this));
-        });
-        $("#useColour").change(function () {
-            if ($(this).prop("checked") == false) {
-                $(
-                    "<style id='useColourStyle'>.familySheetForm tr.marriedRow, .familySheetForm caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}    </style>"
-                ).appendTo("body");
-            } else {
-                $("#useColourStyle").remove();
-            }
-            storeVal($(this));
-        });
-        $("#showBios").change(function () {
-            if ($(this).prop("checked") == true) {
-                $(".theBio").slideDown();
-                setTimeout(function () {
-                    $("<style id='showBiosStyle'>.familySheetForm .bioRow div.theBio{display:block;}</style>").appendTo(
-                        "body"
-                    );
-                }, 1000);
-            } else {
-                $(".theBio").slideUp();
-                setTimeout(function () {
-                    $("#showBiosStyle").remove();
-                }, 1000);
-            }
-            storeVal($(this));
-        });
-        $("#showWTIDs").change(function () {
-            if ($(this).prop("checked") == true) {
-                $("<style id='showWTIDsStyle'>.familySheetForm .fsWTID{display:inline-block;}</style>").appendTo(
-                    "body"
-                );
-            } else {
-                $("#showWTIDsStyle").remove();
-            }
-            storeVal($(this));
-        });
-
-        $("input[type=radio][name=baptismChristening]").change(function () {
-            setBaptChrist();
-            storeVal($(this));
-        });
-
-        $("#fgsInfo").click(function () {
-            $(this).slideUp("slow");
-            setTimeout(function () {
-                $("#fgsInfo").toggleClass("removed");
-                $("#fgsInfo").slideDown("slow");
-                if ($("#fgsInfo").hasClass("removed")) {
-                    localStorage.setItem("fgsInfoState", "removed");
-                } else {
-                    localStorage.setItem("fgsInfoState", "center");
-                }
-            }, 1000);
-        });
-        $("#fgsOptions x,#fgsOptions .notesHeading").click(function () {
-            $("#fgsOptions").slideUp("slow");
-            setTimeout(function () {
-                $("#fgsOptions").toggleClass("removed");
-                $("#fgsOptions").slideDown("slow");
-                if ($("#fgsOptions").hasClass("removed")) {
-                    localStorage.setItem("fgsOptionsState", "removed");
-                    $("#fgsOptions .notesHeading").show();
-                } else {
-                    localStorage.setItem("fgsOptionsState", "center");
-                    $("#fgsOptions .notesHeading").hide();
-                }
-            }, 1000);
-        });
-
-        if (localStorage.fgsInfoState == "removed") {
-            $("#fgsInfo").addClass("removed");
-        }
+// Function to toggle bios and update localStorage
+function toggleBios() {
+    if ($(this).prop("checked") === true) {
+        $(".theBio").slideDown();
+        setTimeout(() => {
+            $(`<style id='showBiosStyle'>.familySheetForm .bioRow div.theBio{display:block;}</style>`).appendTo("body");
+        }, 1000);
+    } else {
+        $(".theBio").slideUp();
+        setTimeout(() => {
+            $("#showBiosStyle").remove();
+        }, 1000);
     }
-});
+    storeVal($(this));
+}
 
+/**
+ * General function to handle slide toggle and localStorage state.
+ *
+ * @param {string} selector - The jQuery selector for the element.
+ * @param {string} localStorageKey - The localStorage key to use for storing state.
+ * @param {Function} [callback] - Optional callback to execute after toggling.
+ */
+function handleSlideToggle(selector, localStorageKey, callback = null) {
+    $(selector).slideUp("slow");
+    setTimeout(function () {
+        const elem = $(selector);
+        elem.toggleClass("removed");
+        elem.slideDown("slow");
 
+        const isRemoved = elem.hasClass("removed");
+        localStorage.setItem(localStorageKey, isRemoved ? "removed" : "center");
 
-
-
-
+        if (callback) {
+            callback(isRemoved);
+        }
+    }, 1000);
+}
 
 async function getSomeRelatives(id, fields = "*") {
     try {
@@ -5057,75 +5305,69 @@ async function getSomeRelatives(id, fields = "*") {
         return result[0].items;
     } catch (error) {
         console.error(error);
+        // Consider additional error-handling logic here
     }
 }
 
 // Used in familyTimeline, familyGroup, locationsHelper
 // Make the family member arrays easier to handle
+/**
+ * Extracts relative data from a given object and optionally adds a relation type.
+ *
+ * @param {Object} rel - The object containing relative data.
+ * @param {string} [theRelation=false] - The type of relation to be added to each person object.
+ *
+ * @returns {Array|boolean} - An array of person objects if `rel` is defined, false otherwise.
+ */
 function extractRelatives(rel, theRelation = false) {
+    // Initialize an empty array to hold person objects.
     let people = [];
-    if (typeof rel == undefined || rel == null) {
+
+    // Check if rel is undefined or null and return false if it is.
+    if (typeof rel === "undefined" || rel === null) {
         return false;
     }
+
+    // Get keys from the rel object.
     const pKeys = Object.keys(rel);
+
+    // Loop through each key to get person object and optionally add relation type.
     pKeys.forEach(function (pKey) {
-        var aPerson = rel[pKey];
-        if (theRelation != false) {
+        let aPerson = rel[pKey];
+        if (theRelation !== false) {
             aPerson.Relation = theRelation;
         }
         people.push(aPerson);
     });
+
+    // Return the array of person objects.
     return people;
 }
 
 // Used in familyTimeline, familyGroup, locationsHelper
+/**
+ * Generates an array of a person and their relatives.
+ *
+ * @param {Object} person - The main person object obtained from getRelatives().
+ *
+ * @returns {Array} - An array containing the main person and their relatives.
+ */
 function familyArray(person) {
-    // This is a person from getRelatives()
+    // Define the types of relationships to look for.
     const rels = ["Parents", "Siblings", "Spouses", "Children"];
+
+    // Initialize the familyArr array with the main person.
     let familyArr = [person];
+
+    // Loop through each type of relationship.
     rels.forEach(function (rel) {
+        // Remove trailing 's' or 'ren' to get the singular form of the relation.
         const relation = rel.replace(/s$/, "").replace(/ren$/, "");
+
+        // Concatenate the relatives of the current type to the familyArr.
         familyArr = familyArr.concat(extractRelatives(person[rel], relation));
     });
+
+    // Return the complete family array.
     return familyArr;
 }
-
-/* HTML */
-
-const familyGroupSheetHTML = `
-<div id='fgsOptions'>
-<x>x</x>
-<span class='notesHeading'>Options</span>
-<label id='getBiosLabel' style='display:none;'><input type='checkbox' id='getBios'  checked value='1'>Get biographies</label>
-<label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>Show nicknames</span></label>
-<label id='husbandFirstLabel'><input type='checkbox' id='husbandFirst'  checked value='1'><span id='husbandFirstSpan'>Husband first</span></label>
-<label id='showOtherLastNamesLabel'><input type='checkbox' id='showOtherLastNames'  checked value='1'><span id='showOtherLastNamesSpan'>Show other last names</span></label>
-<div id='statusChoice' class='radios'>
-<label><input type='radio' name='statusChoice' checked value='symbols'>~, &lt;, &gt;</label><label><input type='radio' name='statusChoice' value='abbreviations'>abt., bef., aft.</label></div>
-<label><input type='checkbox' id='longMonth' value='1'><span id='longMonthSpan'>Full months</span></label>
-<label><input type='checkbox' id='showBaptism'  checked value='1'><span id='showBaptisedText'>Show Baptized</span></label>
-<div id='baptChrist' class='radios'>
-<label><input type='radio' name='baptismChristening' checked value='Baptized'>'Baptized'</label><label><input type='radio' name='baptismChristening' value='Christened'>'Christened'</label></div>
-<label><input type='checkbox' id='showBurial'  checked value='1'>Show Buried</label>
-<label id='showWTIDsLabel'><input type='checkbox' id='showWTIDs'><span>Show WikiTree IDs</span></label>
-<label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'><span>Show parents' and spouses' dates</span></label>
-<div id='showGenderDiv' class='radios'><span>Show children's genders:</span> 
-<label><input type='radio' name='showGender' checked value='initial'>initial</label><label><input type='radio' name='showGender' value='word'>word</label><label><input type='radio' name='showGender' value='none'>none</label></div>
-<label id='showTablesLabel'><input type='checkbox' id='showTables'  checked value='1'>Show tables in 'Sources'</label>
-<label id='showListsLabel'><input type='checkbox' id='showLists'  checked value='1'>Show lists in 'Sources'</label>
-<label><input type='checkbox' id='useColour' checked value='1'>Color</label>
-<label id='toggleBios'><input type='checkbox' id='showBios'><span>Show all biographies</span></label>
-<label id='includeBiosWhenPrinting'><input type='checkbox' id='includeBios'><span>Include biographies when printing</span></label>
-</div>
-
-<div id='fgsInfo'>
-<x>x</x>
-<span class='notesHeading'>Notes</span>
-<ul>
-<li id='bioInstructions'>Click 'Biography' (bottom left) to see each biography.</li>
-<li>The roles ('Husband', 'Wife', etc.) link to WikiTree profiles.</li>
-<li>Click a name to see that person's family group.</li>
-<li>Most of the page is editable for printing. If you see some HTML (e.g. &lt;span&gt;John Brown&lt;/span&gt;), just edit the text between the tags.</li>
-</ul>
-</div>
-<label id="categoryBox"><input type="text" id="theCategory"><button class="small button" id="theCategoryGo">Go</button></label>`;
