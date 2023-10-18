@@ -58,11 +58,13 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
         "familyCalendar": new CalendarView(),
+        "portraits": new PortraitView(),
         "nameTest": new NameTestView(),
         "cc7": new CC7View(),
         "ale": new ALEView(),
         "descendants": new DescendantsView(),
         "xtree": new XTreeView(),
+        "stats": new StatsView(),
     };
 
     for (let key in views) {
