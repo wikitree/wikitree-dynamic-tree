@@ -73,7 +73,7 @@ export class CC7 {
         <ul>
             <li>Use the select option to the left of the HIERARCHY button to select which subset of the loaded profiles
                 should be displayed. This selection is also valid for the List View, but not for the Hierarchy View. You
-                have 5 choices:
+                have 6 choices:
                 <ul>
                     <li><b>All</b> – All profiles.</li>
                     <li><b>Ancestors</b> – Only direct ancestors of the central person.</li>
@@ -85,6 +85,9 @@ export class CC7 {
                         link from the central person. If someone can be reached by both a parent link and any of the other
                         links, they are placed in the "Above" group if they are older than the central person.
                         Otherwise they are in the "Below" group.
+                    </li>
+                    <li><b>Missing Family</b> – Anyone who is missing a parent or does not have the "no more children" 
+                        or "no more spouses" boxes checked.
                     </li>
                 </ul>
             </li>
@@ -1993,6 +1996,21 @@ export class CC7 {
                     if (typeof mPerson.isAncestor != "undefined" && !mPerson.isAncestor) break;
                     continue;
 
+                case "missing-links":
+                    console.log(mPerson);
+                    // if someone doesn't have "No Spouses" or "No Children" checked, or is
+                    // missing one or more parents
+                    if (
+                        mPerson.LastNameAtBirth != "Private" &&
+                        (mPerson.DataStatus.Spouse != "blank" ||
+                            mPerson.NoChildren != 1 ||
+                            mPerson.Father == 0 ||
+                            mPerson.Mother == 0)
+                    ) {
+                        break;
+                    }
+                    continue; // else hide
+
                 default:
                     break;
             }
@@ -2364,7 +2382,9 @@ export class CC7 {
                         "<option value='ancestors' title='Direct ancestors only'>Ancestors</option>" +
                         "<option value='descendants' title='Direct descendants only'>Descendants</option>" +
                         '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
-                        '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option></select>' +
+                        '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
+                        '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
+                        "</select>" +
                         "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='button small viewButton' id='listViewButton'>List</button>" +
                         "<button class='button small viewButton active' id='tableViewButton'>Table</button>"
@@ -2398,6 +2418,9 @@ export class CC7 {
                     break;
                 case "below":
                     subsetWord = ' ("Below" Only)';
+                    break;
+                case "missing-links":
+                    subsetWord = " (Missing Family)";
                     break;
                 default:
                     break;
