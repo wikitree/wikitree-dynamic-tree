@@ -1,4 +1,4 @@
-class FamilyGroupSheetView extends View {
+window.FamilyGroupSheetView = class FamilyGroupSheetView extends View {
     static APP_ID = "familyGroupSheet";
     meta() {
         return {
@@ -166,7 +166,7 @@ class FamilyGroupSheetView extends View {
         </div>
         <label id="categoryBox"><input type="text" id="theCategory"><button class="small button" id="theCategoryGo">Go</button></label>`;
     }
-}
+};
 
 USstatesObjArray = [
     { name: "Alabama", abbreviation: "AL" },
