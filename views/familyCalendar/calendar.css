@@ -1,14 +1,19 @@
+#display-mode {
+  padding: 5px;
+  width: 300px;
+}
+
 .calendar {
   display: none;
   height: 100%;
 }
 
 .loaderIMG {
-  width: 200px;
+  width: 100px;
 }
 
 .loader {
-  width: 201px;
+  width: 101px;
   position: relative;
   -webkit-animation: spin 4s linear infinite;
   -moz-animation: spin 4s linear infinite;
