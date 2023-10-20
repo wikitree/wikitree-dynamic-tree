@@ -65,6 +65,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "descendants": new DescendantsView(),
         "xtree": new XTreeView(),
         "stats": new StatsView(),
+        "wtPlusMaps": new WtPlusMaps(),
     };
 
     for (let key in views) {
