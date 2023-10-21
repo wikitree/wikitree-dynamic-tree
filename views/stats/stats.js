@@ -14,11 +14,14 @@ window.StatsView = class StatsView extends View {
             Table columns explained:
             <ul>
                 <li>
-                    <b>Total Profiles</b> shows how many profiles exist in this generation with the total expected for that generation.
+                    <b>Total Profiles</b> shows how many profiles exist in this generation with the total expected for 
+                    that generation.
                 </li><li>
-                    <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that generation.
+                    <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that 
+                    generation.
                 </li><li>
-                    <b>Gen Length</b> is worked out as the difference between the average birth year of this generation and the more recent one.
+                    <b>Gen Length</b> is worked out as the difference between the average birth year of this generation
+                     and the more recent one.
                 </li>
             </ul>
         </p>
@@ -67,7 +70,8 @@ window.StatsView = class StatsView extends View {
                 </table>
                 <div id="results"></div>
             </div>
-            <div id="g2g">If you have suggestions for this app, please post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.</div>
+            <div id="g2g">If you have suggestions for this app, please post a comment on
+                <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.</div>
         `;
 
         // Add click action to help button
