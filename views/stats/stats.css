@@ -38,3 +38,53 @@
 #results-container div {
   margin: 10px auto;
 }
+
+.stats #help-button {
+  background: darkgreen;
+  color: #fff;
+  font-size: 0.8em;
+  padding: 0.1em 0.5em;
+  border-radius: 50%;
+  float: right;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 11000;
+}
+
+.stats #help-text {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 50em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  z-index: 11000;
+  cursor: default;
+}
+
+.stats xx {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+
+.stats #help-text:hover {
+  cursor: grab;
+}
+.stats #help-text:active {
+  cursor: grabbing;
+}
+
+#g2g {
+  text-align: center;
+  background: lightgoldenrodyellow;
+}

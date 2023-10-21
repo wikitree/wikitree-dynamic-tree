@@ -3,6 +3,32 @@ window.StatsView = class StatsView extends View {
     GENERATIONS = 10;
     ancestors = {};
 
+    static #helpText = `
+        <xx>[ x ]</xx>
+        <h2 style="text-align: center">About Ancestor Statistics</h2>
+        <p>
+            The app show statistics about the ancestors of a profile. Each of the 10 generations of
+            ancestors are shown as a separate row with some overall stats shown below the table.
+        </p>
+        <p>
+            Table columns explained:
+            <ul>
+                <li>
+                    <b>Total Profiles</b> shows how many profiles exist in this generation with the total expected for that generation.
+                </li><li>
+                    <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that generation.
+                </li><li>
+                    <b>Gen Length</b> is worked out as the difference between the average birth year of this generation and the more recent one.
+                </li>
+            </ul>
+        </p>
+        <p>
+            If you find problems with this app or have suggestions for improvements, please
+            post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
+        </p>
+        <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
+    `;
+
     meta() {
         return {
             // short title - will be in select control
@@ -17,24 +43,48 @@ window.StatsView = class StatsView extends View {
     init(container_selector, person_id) {
         // do whathever you want there
         // to showcase your awesome view, e.g.
+
         document.querySelector(container_selector).innerHTML = `
-            <table id="stats-table">
-                <thead>
-                    <tr>
-                        <th>Generation</th>
-                        <th>Relation</th>
-                        <th>Total w/ Birth Year</th>
-                        <th>Earliest Birth Year</th>
-                        <th>Latest Birth Year</th>
-                        <th>Average Birth Year</th>
-                        <th>Gen Length</th>
-                        <th>Average Lifespan</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <div id="results"></div>
+            <div id="statsContainer" class="stats">
+                <span id="help-button" title="About this">?</span>
+                <div id="help-text">${window.StatsView.#helpText}</div>
+
+                <table id="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Generation</th>
+                            <th>Relation</th>
+                            <th>Total Profiles</th>
+                            <th>Profiles w/ Birth Year</th>
+                            <th>Earliest Birth Year</th>
+                            <th>Latest Birth Year</th>
+                            <th>Average Birth Year</th>
+                            <th>Gen Length</th>
+                            <th>Average Lifespan</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="results"></div>
+            </div>
+            <div id="g2g">If you have suggestions for this app, please post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.</div>
         `;
+
+        // Add click action to help button
+        const helpButton = document.getElementById("help-button");
+        helpButton.addEventListener("click", function () {
+            $("#help-text").slideToggle();
+        });
+        $("#help-text").draggable();
+
+        // Add the help text as a pop-up
+        const help = document.getElementById("help-text");
+        help.addEventListener("dblclick", function () {
+            $(this).slideToggle();
+        });
+        document.querySelector("#help-text xx").addEventListener("click", function () {
+            $(this).parent().slideUp();
+        });
 
         this.gatherStats(person_id);
     }
@@ -65,7 +115,7 @@ window.StatsView = class StatsView extends View {
         const ancestors = await WikiTreeAPI.getPeople(
             "stats",
             id,
-            ["BirthDate, DeathDate, Name, Derived.BirthName, Meta"],
+            ["BirthDate, DeathDate, Name, Derived.BirthName, Gender, Meta"],
             {
                 ancestors: this.GENERATIONS,
             }
@@ -78,12 +128,20 @@ window.StatsView = class StatsView extends View {
         let oldestAge = 0;
         let oldestPerson = "";
 
+        let oldestMaleAge = 0;
+        let oldestMalePerson = "";
+
+        let oldestFemaleAge = 0;
+        let oldestFemalePerson = "";
+
         // fill array with the birth years of all ancestors in each generation and death years
 
         // setup birth and death year storage with an array for each generation
+        const profileCounts = {};
         const birthYears = {};
         const deathAges = {};
         for (let i = 0; i <= this.GENERATIONS; i++) {
+            profileCounts[i] = 0;
             birthYears[i] = [];
             deathAges[i] = [];
         }
@@ -95,6 +153,7 @@ window.StatsView = class StatsView extends View {
             //console.log(ancestor);
 
             let ancestorGeneration = ancestor["Meta"]["Degrees"];
+            let ancestorGender = ancestor["Gender"];
             let ancestorBirthYear;
             let ancestorDeathYear;
             if (ancestor.hasOwnProperty("BirthDate")) {
@@ -103,6 +162,9 @@ window.StatsView = class StatsView extends View {
             if (ancestor.hasOwnProperty("DeathDate")) {
                 ancestorDeathYear = parseInt(ancestor["DeathDate"].substring(0, 4));
             }
+
+            // increase the profile count of the proper generation
+            profileCounts[ancestorGeneration]++;
 
             // add the birth year to the proper generation
             let birthGeneration = birthYears[ancestorGeneration];
@@ -124,6 +186,18 @@ window.StatsView = class StatsView extends View {
             if (ancestorAgeAtDeath > oldestAge) {
                 oldestAge = ancestorAgeAtDeath;
                 oldestPerson = `
+                    <a href="https://www.wikitree.com/wiki/${ancestor["Name"]}" target="_blank">${ancestor["BirthName"]}</a>`;
+            }
+
+            if ((ancestorGender == "Male") & (ancestorAgeAtDeath > oldestMaleAge)) {
+                oldestMaleAge = ancestorAgeAtDeath;
+                oldestMalePerson = `
+                    <a href="https://www.wikitree.com/wiki/${ancestor["Name"]}" target="_blank">${ancestor["BirthName"]}</a>`;
+            }
+
+            if (ancestorGender == "Female" && ancestorAgeAtDeath > oldestFemaleAge) {
+                oldestFemaleAge = ancestorAgeAtDeath;
+                oldestFemalePerson = `
                     <a href="https://www.wikitree.com/wiki/${ancestor["Name"]}" target="_blank">${ancestor["BirthName"]}</a>`;
             }
         }
@@ -241,7 +315,16 @@ window.StatsView = class StatsView extends View {
         oldestAncestorDiv.innerHTML = `Oldest ancestor: ${oldestPerson}, ${oldestAge} years old.`;
         results.appendChild(oldestAncestorDiv);
 
+        let oldestMaleAncestorDiv = document.createElement("div");
+        oldestMaleAncestorDiv.innerHTML = `Oldest male ancestor: ${oldestMalePerson}, ${oldestMaleAge} years old.`;
+        results.appendChild(oldestMaleAncestorDiv);
+
+        let oldestFemaleAncestorDiv = document.createElement("div");
+        oldestFemaleAncestorDiv.innerHTML = `Oldest female ancestor: ${oldestFemalePerson}, ${oldestFemaleAge} years old.`;
+        results.appendChild(oldestFemaleAncestorDiv);
+
         this.fillTable({
+            profileCounts: profileCounts,
             birthYears: birthYears,
             earliestBirthYears: earliestBirthYears,
             latestBirthYears: latestBirthYears,
@@ -260,12 +343,13 @@ window.StatsView = class StatsView extends View {
             let row = table.insertRow(-1);
             row.insertCell(0).innerHTML = generation + 1;
             row.insertCell(1).innerHTML = this.genNames[generation];
-            row.insertCell(2).innerHTML = `${stats.birthYears[generation].length}/${maxAncestorsForGen}`;
-            row.insertCell(3).innerHTML = stats.earliestBirthYears[generation];
-            row.insertCell(4).innerHTML = stats.latestBirthYears[generation];
-            row.insertCell(5).innerHTML = stats.avgBirthYears[generation];
-            row.insertCell(6).innerHTML = stats.avgGenLengths[generation];
-            row.insertCell(7).innerHTML = stats.avgLifeSpans[generation];
+            row.insertCell(2).innerHTML = `${stats.profileCounts[generation]}/${maxAncestorsForGen}`;
+            row.insertCell(3).innerHTML = `${stats.birthYears[generation].length}/${stats.profileCounts[generation]}`;
+            row.insertCell(4).innerHTML = stats.earliestBirthYears[generation];
+            row.insertCell(5).innerHTML = stats.latestBirthYears[generation];
+            row.insertCell(6).innerHTML = stats.avgBirthYears[generation];
+            row.insertCell(7).innerHTML = stats.avgGenLengths[generation];
+            row.insertCell(8).innerHTML = stats.avgLifeSpans[generation];
         }
     }
 
