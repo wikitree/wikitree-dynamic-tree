@@ -350,8 +350,10 @@ export class AncestorTree {
 
     static getD3Children(person, alreadyInTree) {
         const parents = [];
-        addParent(+person.getFatherId());
-        addParent(+person.getMotherId());
+        if (!(person instanceof LinkToPerson)) {
+            addParent(+person.getFatherId());
+            addParent(+person.getMotherId());
+        }
         return parents;
 
         function addParent(id) {
