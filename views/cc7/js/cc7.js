@@ -86,7 +86,7 @@ export class CC7 {
                         links, they are placed in the "Above" group if they are older than the central person.
                         Otherwise they are in the "Below" group.
                     </li>
-                    <li><b>Missing Family</b> – Anyone who is missing a parent or does not have the "no more children" 
+                    <li><b>Missing Family</b> – Anyone who is missing a parent or does not have the "no more children"
                         or "no more spouses" boxes checked.
                     </li>
                 </ul>
@@ -3957,7 +3957,7 @@ export class CC7 {
             return [result[0]["status"], result[0]["resultByKey"], result[0]["people"]];
         } catch (error) {
             if (error.name !== "AbortError") {
-                console.warn(`Could not retrieve relatives up to degree ${depth} for ${key}: ${error}`);
+                console.warn(`Could not retrieve relatives up to degree ${depth} for ${ids}: ${error}`);
                 return [`${error}`, [], []];
             } else {
                 return ["aborted", [], []];
