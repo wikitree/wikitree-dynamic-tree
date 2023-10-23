@@ -104,9 +104,9 @@ export class AncestorTree {
 
     static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset, withBios) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
-        const starttime = performance.now();
+        let starttime = performance.now();
         const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
-        const callTime = performance.now() - starttime;
+        let callTime = performance.now() - starttime;
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
         console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
         const notLoaded = new Set();
@@ -151,7 +151,7 @@ export class AncestorTree {
                 `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
             );
             starttime = performance.now();
-            let [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
             callTime = performance.now() - starttime;
             profiles = Object.values(ancestor_json);
             console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
