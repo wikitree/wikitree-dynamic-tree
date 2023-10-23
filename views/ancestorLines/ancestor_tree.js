@@ -151,7 +151,7 @@ export class AncestorTree {
                 `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
             );
             starttime = performance.now();
-            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+            let [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
             callTime = performance.now() - starttime;
             profiles = Object.values(ancestor_json);
             console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
