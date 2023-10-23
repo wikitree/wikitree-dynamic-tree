@@ -37,7 +37,7 @@ export class AncestorTree {
         AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
     }
 
-    static async buildTreeWithGetPeople(wtId, depth) {
+    static async buildTreeWithGetPeople(wtId, depth, withBios) {
         const starttime = performance.now();
         let remainingDepth = depth;
         let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
@@ -48,7 +48,8 @@ export class AncestorTree {
             reqDepth,
             start,
             API.GET_PERSON_LIMIT,
-            privateIdOffset
+            privateIdOffset,
+            withBios
         );
         if (!resultByKey) return [AncestorTree.root, performance.now() - starttime];
         const rootId = resultByKey[wtId].Id;
@@ -80,7 +81,8 @@ export class AncestorTree {
                     reqDepth,
                     start,
                     API.GET_PERSON_LIMIT,
-                    privateIdOffset
+                    privateIdOffset,
+                    withBios
                 );
                 const newTreeSize = AncestorTree.#people.size;
                 console.log(
@@ -100,11 +102,13 @@ export class AncestorTree {
         return [AncestorTree.root, performance.now() - starttime];
     }
 
-    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset) {
+    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset, withBios) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
-        const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+        const starttime = performance.now();
+        const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+        const callTime = performance.now() - starttime;
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
-        console.log(`Received ${profiles.length} profiles`);
+        console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
         const notLoaded = new Set();
 
         let nrPrivateIds = 0;
@@ -146,9 +150,11 @@ export class AncestorTree {
             console.log(
                 `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
             );
-            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+            starttime = performance.now();
+            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+            callTime = performance.now() - starttime;
             profiles = Object.values(ancestor_json);
-            console.log(`Received ${profiles.length} profiles`);
+            console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
         }
         return [resultByKey, notLoaded, nrPrivateIds];
     }
@@ -301,6 +307,32 @@ export class AncestorTree {
                 AncestorTree.DFS(adjnode, dstWtId, path, allPaths);
                 path.pop();
             }
+        }
+    }
+
+    static markBrickWalls(opt) {
+        AncestorTree.#people.forEach((person) => {
+            person.setBrickWall(isBrickWall(person));
+        });
+        function isBrickWall(person) {
+            let val = false;
+            if (opt.bioCheck) {
+                val = person.hasBioIssues;
+            }
+            if (!val && opt.noParents) {
+                val = !person.hasAParent();
+            }
+            if (!val && opt.noNoChildren) {
+                val = person._data.NoChildren != 1;
+            }
+            if (!val && opt.noNoSpouses) {
+                val = person._data.DataStatus.Spouse != "blank";
+            }
+            if (!val && opt.oneParent) {
+                val =
+                    (person.getFatherId() && !person.getMotherId()) || (!person.getFatherId() && person.getMotherId());
+            }
+            return val;
         }
     }
 
