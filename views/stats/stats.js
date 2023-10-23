@@ -1,32 +1,32 @@
 window.StatsView = class StatsView extends View {
     static #helpText = `
-	<xx>[ x ]</xx>
-	<h2 style="text-align: center">About Ancestor Statistics</h2>
-	<p>
-		The app show statistics about the ancestors of a profile. Each of the 10 generations of
-		ancestors are shown as a separate row with some overall stats shown below the table.
-	</p>
-	<p>
-		Table columns explained:
-		<ul>
-			<li>
-				<b>Total Profiles</b> shows how many profiles exist in this generation versus the total expected for 
-				that generation.
-			</li><li>
-				<b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that 
-				generation.
-			</li><li>
-				<b>Gen Length</b> is worked out as the difference between the average birth year of this generation
-				and the more recent one.
-			</li>
-		</ul>
-	</p>
-	<p>
-		If you find problems with this app or have suggestions for improvements, please
-		post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
-	</p>
-	<p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
-	`;
+    <xx>[ x ]</xx>
+    <h2 style="text-align: center">About Ancestor Statistics</h2>
+    <p>
+        The app show statistics about the ancestors of a profile. Each of the 10 generations of
+        ancestors are shown as a separate row with some overall stats shown below the table.
+    </p>
+    <p>
+        Table columns explained:
+        <ul>
+            <li>
+                <b>Total Profiles</b> shows how many profiles exist in this generation versus the total expected for 
+                that generation.
+            </li><li>
+                <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that 
+                generation.
+            </li><li>
+                <b>Gen Length</b> is worked out as the difference between the average birth year of this generation
+                and the more recent one.
+            </li>
+        </ul>
+    </p>
+    <p>
+        If you find problems with this app or have suggestions for improvements, please
+        post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
+    </p>
+    <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
+    `;
 
     meta() {
         return {
