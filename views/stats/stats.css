@@ -1,3 +1,7 @@
+#statsContainer {
+  padding: 0.3em;
+}
+
 #stats-table {
   border-collapse: collapse;
   margin: 25px auto;
@@ -37,6 +41,22 @@
 
 #results-container div {
   margin: 10px auto;
+}
+
+div.stats select,
+div.stats input {
+  padding: 0.3em;
+  width: auto;
+  background-size: 1em 2em;
+  margin: 5px 5px 0px 0px;
+}
+
+#gender {
+  /* width: auto; */
+  min-width: auto;
+  margin-right: 10px;
+  margin-top: 0;
+  padding-right: 1.5em;
 }
 
 .stats #help-button {
@@ -87,4 +107,10 @@
 #g2g {
   text-align: center;
   background: lightgoldenrodyellow;
+}
+
+@media print {
+  .stats-not-printable {
+    display: none;
+  }
 }
