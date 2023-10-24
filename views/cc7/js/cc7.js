@@ -4009,6 +4009,7 @@ export class CC7 {
         const aboveQ = [+theRoot.Id];
         const directAncestors = new Set();
         const duplicates = new Set();
+        let nrProfiles = 0;
         let firstIteration = true;
         while (belowQ.length > 0 || aboveQ.length > 0 || descendantQ.length > 0 || ancestorQ.length > 0) {
             // console.log("Queues", descendantQ, belowQ, ancestorQ, aboveQ);
@@ -4068,6 +4069,7 @@ export class CC7 {
                     // console.log(`Adding parents for ${person.Id} (${person.Name})`, rels);
                     for (const rId of rels) {
                         const relId = +rId;
+                        if (relId) nrProfiles += 1;
                         // Count duplicates
                         if (directAncestors.has(relId)) {
                             duplicates.add(relId);
@@ -4116,7 +4118,7 @@ export class CC7 {
             }
             firstIteration = false;
         }
-        return [directAncestors.size, duplicates.size];
+        return [nrProfiles, duplicates.size];
 
         function setAndShouldAdd(pId, where) {
             const p = window.people.get(pId);
