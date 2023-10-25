@@ -331,7 +331,7 @@ export class AncestorTree {
                 val = person._data.NoChildren != 1;
             }
             if (!val && opt.noNoSpouses) {
-                val = person._data.DataStatus.Spouse != "blank";
+                val = person._data.DataStatus?.Spouse != "blank";
             }
             if (!val && opt.oneParent) {
                 val =
