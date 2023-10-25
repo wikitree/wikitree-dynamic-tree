@@ -3192,7 +3192,7 @@ export class CC7 {
             const theLNAB = theParts.get("LastNameAtBirth");
             const theFirstName = theParts.get("FirstName");
 
-            if (CC7.isOK(theDegree) && theDegree <= CC7.MAX_DEGREE) {
+            if (CC7.isOK(theDegree) && theDegree <= window.cc7Degree) {
                 if (!surnames["degree_" + theDegree].includes(theLNAB)) {
                     // Add the LNAB to the appropriate degree column header
                     surnames["degree_" + theDegree].push(theLNAB);
@@ -3399,7 +3399,7 @@ export class CC7 {
                 "<ul></ul></li>"
         );
         hierarchySection.children("ul").append(anLi);
-        for (let i = 0; i < CC7.MAX_DEGREE; i++) {
+        for (let i = 0; i < window.cc7Degree; i++) {
             CC7.addPeopleToHierarchy(i);
         }
         $("#hierarchyView li").each(function () {
@@ -3421,7 +3421,7 @@ export class CC7 {
         });
         $("#showAllDegrees").on("click", function (e) {
             e.preventDefault();
-            window.visibleDegrees = CC7.MAX_DEGREE;
+            window.visibleDegrees = window.cc7Degree;
             if ($(this).text() == "Expand All") {
                 $(this).text("Collapse All");
                 $("#hierarchyView ul ul").show();
@@ -3439,7 +3439,7 @@ export class CC7 {
         });
         $("#showOneMoreDegree").on("click", function (e) {
             e.preventDefault();
-            if (window.visibleDegrees < CC7.MAX_DEGREE) {
+            if (window.visibleDegrees < window.cc7Degree) {
                 window.visibleDegrees++;
                 let j = window.visibleDegrees;
                 for (let i = 0; i < j + 1; i++) {
@@ -3467,7 +3467,7 @@ export class CC7 {
                 window.visibleDegrees--;
                 let j = window.visibleDegrees;
 
-                for (let i = CC7.MAX_DEGREE; i >= j + 1; i--) {
+                for (let i = window.cc7Degree; i >= j + 1; i--) {
                     $("li[data-degree='" + i + "']")
                         .parent()
                         .hide();
@@ -3950,7 +3950,6 @@ export class CC7 {
                 $("#degreesTable").remove();
                 $("#ancReport").remove();
             }
-            window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
             const maxNrPeople = 2 ** (actualMaxDegree + 1) - 2;
             $("#cc7Container").append(
                 $(
