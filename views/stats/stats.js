@@ -1,32 +1,35 @@
 window.StatsView = class StatsView extends View {
     static #helpText = `
-	<xx>[ x ]</xx>
-	<h2 style="text-align: center">About Ancestor Statistics</h2>
-	<p>
-		The app show statistics about the ancestors of a profile. Each of the 10 generations of
-		ancestors are shown as a separate row with some overall stats shown below the table.
-	</p>
-	<p>
-		Table columns explained:
-		<ul>
-			<li>
-				<b>Total Profiles</b> shows how many profiles exist in this generation versus the total expected for 
-				that generation.
-			</li><li>
-				<b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that 
-				generation.
-			</li><li>
-				<b>Gen Length</b> is worked out as the difference between the average birth year of this generation
-				and the more recent one.
-			</li>
-		</ul>
-	</p>
-	<p>
-		If you find problems with this app or have suggestions for improvements, please
-		post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
-	</p>
-	<p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
-	`;
+    <xx>[ x ]</xx>
+    <h2 style="text-align: center">About Ancestor Statistics</h2>
+    <p>
+        The app show statistics about the ancestors of a profile. Each of the 10 generations of
+        ancestors are shown as a separate row with some overall stats shown below the table.
+    </p>
+    <p>
+        Table columns explained:
+        <ul>
+            <li>
+                <b>Total Profiles</b> shows how many profiles exist in this generation versus the total expected for 
+                that generation.
+            </li><li>
+                <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that 
+                generation.
+            </li><li>
+                <b>Average Marriage Age</b> is based on the age at the time of a first marriage. Any subsequent
+                marriages are ignored.
+            </li><li>
+                <b>Gen Length</b> is worked out as the difference between the average birth year of this generation
+                and the more recent one.
+            </li>
+        </ul>
+    </p>
+    <p>
+        If you find problems with this app or have suggestions for improvements, please
+        post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
+    </p>
+    <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
+    `;
 
     meta() {
         return {
@@ -70,6 +73,7 @@ window.StatsView = class StatsView extends View {
                             <th>Earliest Birth Year</th>
                             <th>Latest Birth Year</th>
                             <th>Average Birth Year</th>
+                            <th>Average Marriage Age</th>
                             <th>Gen Length</th>
                             <th>Average Lifespan</th>
                         </tr>
@@ -137,7 +141,7 @@ window.StatsView = class StatsView extends View {
             const results = await WikiTreeAPI.getPeople(
                 "stats",
                 id,
-                ["BirthDate, DeathDate, Name, Derived.BirthName, Gender, Meta"],
+                ["BirthDate, DeathDate, Name, Derived.BirthName, Gender, Spouses, Meta"],
                 {
                     ancestors: GENERATIONS,
                 }
@@ -170,10 +174,12 @@ window.StatsView = class StatsView extends View {
             const profileCounts = {};
             const birthYears = {};
             const deathAges = {};
+            const marriageAges = {};
             for (let i = 0; i <= GENERATIONS; i++) {
                 profileCounts[i] = 0;
                 birthYears[i] = [];
                 deathAges[i] = [];
+                marriageAges[i] = [];
             }
 
             // for each ancestor
@@ -186,11 +192,27 @@ window.StatsView = class StatsView extends View {
                 let ancestorGender = ancestor["Gender"];
                 let ancestorBirthYear;
                 let ancestorDeathYear;
+                let ancestorMarriageYear;
                 if (ancestor.hasOwnProperty("BirthDate")) {
                     ancestorBirthYear = parseInt(ancestor["BirthDate"].substring(0, 4));
                 }
                 if (ancestor.hasOwnProperty("DeathDate")) {
                     ancestorDeathYear = parseInt(ancestor["DeathDate"].substring(0, 4));
+                }
+                if (ancestor.hasOwnProperty("Spouses")) {
+                    if (ancestor.Spouses.length > 1) {
+                        // Check for multiple marriages
+                        ancestor.Spouses = ancestor.Spouses.filter(function (value) {
+                            return value.MarriageDate != "0000-00-00"; // Remove marriages without a date
+                        });
+                        // Ensure the 1st marriage element is the earliest one
+                        ancestor.Spouses.sort(function (a, b) {
+                            return parseInt(a.MarriageDate.substring(0, 4)) - parseInt(b.MarriageDate.substring(0, 4));
+                        });
+                    }
+                    if (ancestor.Spouses[0]) {
+                        ancestorMarriageYear = parseInt(ancestor.Spouses[0]["MarriageDate"].substring(0, 4));
+                    }
                 }
 
                 // increase the profile count of the proper generation
@@ -202,10 +224,20 @@ window.StatsView = class StatsView extends View {
                     birthGeneration.push(ancestorBirthYear);
                 }
 
+                // add the marriage age to the proper generation
+                let ancestorAgeAtMarriage;
+                if (ancestorMarriageYear && ancestorBirthYear > 0) {
+                    ancestorAgeAtMarriage = getAgeAtEvent(ancestor["BirthDate"], ancestor.Spouses[0]["MarriageDate"]);
+                }
+                let marriageAgeGeneration = marriageAges[ancestorGeneration];
+                if (ancestorAgeAtMarriage != null) {
+                    marriageAgeGeneration.push(ancestorAgeAtMarriage);
+                }
+
                 // add the death age to the proper generation
                 let ancestorAgeAtDeath;
                 if (ancestor.hasOwnProperty("BirthDate") && ancestor.hasOwnProperty("DeathDate")) {
-                    ancestorAgeAtDeath = getAgeAtDeath(ancestor["BirthDate"], ancestor["DeathDate"]);
+                    ancestorAgeAtDeath = getAgeAtEvent(ancestor["BirthDate"], ancestor["DeathDate"]);
                 }
                 let deathAgeGeneration = deathAges[ancestorGeneration];
                 if (ancestorAgeAtDeath != null) {
@@ -275,6 +307,22 @@ window.StatsView = class StatsView extends View {
                     avgBirthYear = "-";
                 }
                 avgBirthYears.push(avgBirthYear);
+            }
+
+            // calculate the average marriage age for each generation
+            const avgMarriageAges = [];
+            for (const generation in marriageAges) {
+                let avgMarriageAge;
+                let sumOfMarriageAges = 0;
+                let countOfMarriageAges = marriageAges[generation].length;
+                for (const year in marriageAges[generation]) {
+                    sumOfMarriageAges += marriageAges[generation][year];
+                }
+                avgMarriageAge = Math.round(sumOfMarriageAges / countOfMarriageAges);
+                if (isNaN(avgMarriageAge)) {
+                    avgMarriageAge = "-";
+                }
+                avgMarriageAges.push(avgMarriageAge);
             }
 
             // calculate the generation length for each generation -- average age of giving birth to your ancestor
@@ -361,6 +409,7 @@ window.StatsView = class StatsView extends View {
                 earliestBirthYears: earliestBirthYears,
                 latestBirthYears: latestBirthYears,
                 avgBirthYears: avgBirthYears,
+                avgMarriageAges: avgMarriageAges,
                 avgGenLengths: avgGenLengths,
                 avgLifeSpans: avgLifeSpans,
             });
@@ -382,14 +431,15 @@ window.StatsView = class StatsView extends View {
                 row.insertCell(4).innerHTML = stats.earliestBirthYears[generation];
                 row.insertCell(5).innerHTML = stats.latestBirthYears[generation];
                 row.insertCell(6).innerHTML = stats.avgBirthYears[generation];
-                row.insertCell(7).innerHTML = stats.avgGenLengths[generation];
-                row.insertCell(8).innerHTML = stats.avgLifeSpans[generation];
+                row.insertCell(7).innerHTML = stats.avgMarriageAges[generation];
+                row.insertCell(8).innerHTML = stats.avgGenLengths[generation];
+                row.insertCell(9).innerHTML = stats.avgLifeSpans[generation];
             }
         }
 
-        function getAgeAtDeath(birth, death) {
+        function getAgeAtEvent(birth, event) {
             let birthDate;
-            let deathDate;
+            let eventDate;
 
             if (getMonth(birth) != "00" && getDay(birth) != "00") {
                 birthDate = new Date(birth);
@@ -399,16 +449,16 @@ window.StatsView = class StatsView extends View {
                 birthDate = new Date(getYear(birth));
             }
 
-            if (getMonth(death) != "00" && getDay(death) != "00") {
-                deathDate = new Date(death);
-            } else if (getYear(death) == "0000") {
-                deathDate = new Date(death);
+            if (getMonth(event) != "00" && getDay(event) != "00") {
+                eventDate = new Date(event);
+            } else if (getYear(event) == "0000") {
+                eventDate = new Date(event);
             } else {
-                deathDate = new Date(getYear(death));
+                eventDate = new Date(getYear(event));
             }
 
-            if (birthDate != "Invalid Date" && deathDate != "Invalid Date") {
-                let age = Math.floor((deathDate - birthDate) / 31536000000);
+            if (birthDate != "Invalid Date" && eventDate != "Invalid Date") {
+                let age = Math.floor((eventDate - birthDate) / 31536000000);
                 if (age > 0) {
                     return age;
                 } else {
