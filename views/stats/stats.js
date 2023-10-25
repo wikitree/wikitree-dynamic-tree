@@ -200,6 +200,16 @@ window.StatsView = class StatsView extends View {
                     ancestorDeathYear = parseInt(ancestor["DeathDate"].substring(0, 4));
                 }
                 if (ancestor.hasOwnProperty("Spouses")) {
+                    if (ancestor.Spouses.length > 1) {
+                        // Check for multiple marriages
+                        ancestor.Spouses = ancestor.Spouses.filter(function (value) {
+                            return value.MarriageDate != "0000-00-00"; // Remove marriages without a date
+                        });
+                        // Ensure the 1st marriage element is the earliest one
+                        ancestor.Spouses.sort(function (a, b) {
+                            return parseInt(a.MarriageDate.substring(0, 4)) - parseInt(b.MarriageDate.substring(0, 4));
+                        });
+                    }
                     if (ancestor.Spouses[0]) {
                         ancestorMarriageYear = parseInt(ancestor.Spouses[0]["MarriageDate"].substring(0, 4));
                     }
