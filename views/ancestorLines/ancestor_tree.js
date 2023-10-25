@@ -12,11 +12,13 @@ export class AncestorTree {
     static maxGeneration;
     static duplicates = new Map();
     static genCounts = [];
+    static profileCount = 0;
 
     static init() {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
+        AncestorTree.profileCount = 0;
     }
 
     static clear() {
@@ -26,6 +28,7 @@ export class AncestorTree {
         AncestorTree.root = undefined;
         AncestorTree.maxGeneration = 0;
         AncestorTree.genCounts = [];
+        AncestorTree.profileCount = 0;
     }
 
     static replaceWith(treeArray) {
@@ -173,14 +176,16 @@ export class AncestorTree {
         const m = AncestorTree.#validate_and_set_generations(rootId, 1, new Set(), 0);
         AncestorTree.maxGeneration = m;
         AncestorTree.duplicates.clear();
+        AncestorTree.profileCount = 0;
         let n = 0;
         for (const p of AncestorTree.#people.values()) {
             const id = p.getId();
             if (p.isDuplicate() && !AncestorTree.duplicates.has(id)) {
                 AncestorTree.duplicates.set(id, ++n);
             }
+            AncestorTree.profileCount += p.getNrCopies();
         }
-        console.log(`nr duplicates=${AncestorTree.duplicates.size}`);
+        console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
     }
 
@@ -326,7 +331,7 @@ export class AncestorTree {
                 val = person._data.NoChildren != 1;
             }
             if (!val && opt.noNoSpouses) {
-                val = person._data.DataStatus.Spouse != "blank";
+                val = person._data.DataStatus?.Spouse != "blank";
             }
             if (!val && opt.oneParent) {
                 val =

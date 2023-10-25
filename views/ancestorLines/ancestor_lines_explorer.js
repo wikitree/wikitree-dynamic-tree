@@ -534,16 +534,16 @@ export class AncestorLinesExplorer {
 
         const gen = $("#generation").val();
         const maxNrPeople = 2 ** gen - 2;
-        const nrAncestorProfiles = AncestorTree.getPeople().size - 1;
+        const nrAncestorProfiles = AncestorTree.profileCount - 1;
         $("#aleFieldset .report").remove();
         $("#aleFieldset").append(
-            `<span class="report">Out of ${maxNrPeople} possible ancestors in ${gen} generations, ${
-                AncestorTree.getPeople().size
-            } (${((nrAncestorProfiles / maxNrPeople) * 100).toFixed(2)}%) have WikiTree profiles. ${
-                AncestorTree.duplicates.size
-            } (${(AncestorTree.duplicates.size / nrAncestorProfiles).toFixed(
-                2
-            )}%) are duplicates due to pedigree collapse.<span>`
+            `<span class="report">Out of ${maxNrPeople} possible direct ancestors in ${gen} generations, ${nrAncestorProfiles} (${(
+                (nrAncestorProfiles / maxNrPeople) *
+                100
+            ).toFixed(2)}%) have WikiTree profiles and out of them, ${AncestorTree.duplicates.size} (${(
+                (AncestorTree.duplicates.size / nrAncestorProfiles) *
+                100
+            ).toFixed(2)}%) occur more than once due to pedigree collapse.</span>`
         );
 
         AncestorTree.markBrickWalls({

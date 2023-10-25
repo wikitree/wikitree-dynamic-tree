@@ -97,6 +97,9 @@ export class Person {
     isAtGeneration(n) {
         return this.generations.has(n);
     }
+    getNrCopies() {
+        return [...this.generations.values()].reduce((acc, cur) => acc + cur, 0);
+    }
     isBelowGeneration(n) {
         for (const g of this.generations.keys()) {
             if (g < n) return true;
