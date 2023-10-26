@@ -13,12 +13,14 @@ export class AncestorTree {
     static duplicates = new Map();
     static genCounts = [];
     static profileCount = 0;
+    static requestedGen = 0;
 
     static init() {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
         AncestorTree.profileCount = 0;
+        AncestorTree.requestedGen = 0;
     }
 
     static clear() {
@@ -29,6 +31,7 @@ export class AncestorTree {
         AncestorTree.maxGeneration = 0;
         AncestorTree.genCounts = [];
         AncestorTree.profileCount = 0;
+        AncestorTree.requestedGen = 0;
     }
 
     static replaceWith(treeArray) {
@@ -42,6 +45,7 @@ export class AncestorTree {
 
     static async buildTreeWithGetPeople(wtId, depth, withBios) {
         const starttime = performance.now();
+        AncestorTree.requestedGen = depth + 1;
         let remainingDepth = depth;
         let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
         let start = 0;
@@ -183,7 +187,7 @@ export class AncestorTree {
             if (p.isDuplicate() && !AncestorTree.duplicates.has(id)) {
                 AncestorTree.duplicates.set(id, ++n);
             }
-            AncestorTree.profileCount += p.getNrCopies();
+            AncestorTree.profileCount += p.getNrCopies(AncestorTree.requestedGen);
         }
         console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
@@ -339,6 +343,17 @@ export class AncestorTree {
             }
             return val;
         }
+    }
+
+    static nrDuplicatesUpToGen(gen) {
+        let cnt = 0;
+        for (const dId of AncestorTree.duplicates.keys()) {
+            const dPerson = AncestorTree.#people.get(+dId);
+            if (dPerson.getNrCopies(gen) > 1) {
+                ++cnt;
+            }
+        }
+        return cnt;
     }
 
     static toArray() {

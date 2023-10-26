@@ -91,9 +91,9 @@ export class CC7 {
                         <ul>
                           <li>Anyone with no parents.</li>
                           <li>Anyone with only one parent.</li>
-                          <li>Anyone who does not have their "No more spouses" tickbox set.</li>
-                          <li>Anyone who does not have their "No more children" tickbox set.</li>
-                          <li>Anyone who does not have any children AND does not have their "No more children" tickbox set.</li>
+                          <li>Anyone with their "No more spouses" box unchecked.</li>
+                          <li>Anyone with their "No more children" box unchecked.</li>
+                          <li>Anyone without children and their "No more children" box unchecked.</li>
                         </ul>
                         You may fine-tune the above missing family setting by selecting any combination of the above values
                         in the Settings (see <img width=16px src="./views/cc7/images/setting-icon.png" /> at the top right).
@@ -394,37 +394,37 @@ export class CC7 {
                 options: [
                     {
                         optionName: "mfComment",
-                        comment: "Determine which profiles should be added to the Missing Family subset.",
+                        comment: "Include profiles with:",
                         type: "br",
                     },
                     {
                         optionName: "noParents",
                         type: "checkbox",
-                        label: "Anyone with no parents",
+                        label: "No parents",
                         defaultValue: 1,
                     },
                     {
                         optionName: "oneParent",
                         type: "checkbox",
-                        label: "Anyone with only one parent",
+                        label: "One parent",
                         defaultValue: 1,
                     },
                     {
                         optionName: "noNoSpouses",
                         type: "checkbox",
-                        label: 'Anyone who does not have their "No more spouses" tickbox set',
+                        label: 'The "No more spouses" box unchecked',
                         defaultValue: 1,
                     },
                     {
                         optionName: "noNoChildren",
                         type: "checkbox",
-                        label: 'Anyone who does not have their "No more children" tickbox set',
+                        label: 'The "No more children" box unchecked',
                         defaultValue: 1,
                     },
                     {
                         optionName: "noChildren",
                         type: "checkbox",
-                        label: 'Anyone without children and their "No more children" tickbox not set',
+                        label: 'No children and the "No more children" box unchecked',
                         defaultValue: 1,
                     },
                 ],
@@ -543,7 +543,11 @@ export class CC7 {
         $("#explanation").draggable();
 
         $("#settingsButton").off("click").on("click", CC7.toggleSettings);
-        $("#saveSettingsChanges").html("Apply Changes").addClass("small button").click(CC7.settingsChanged);
+        $("#saveSettingsChanges")
+            .html("Apply Changes")
+            .addClass("small button")
+            .off("click")
+            .on("click", CC7.settingsChanged);
         $("#settingsDIV")
             .css("width", "285")
             .dblclick(function () {
@@ -630,6 +634,39 @@ export class CC7 {
             }
         }
         CC7View.cancelSettings();
+    }
+
+    static showMissingLinksButtons() {
+        $("#mlButtons").show();
+        if ($("#mlButtons").length == 0) {
+            const mlButtons = $(
+                "<div id=mlButtons>" +
+                    '<label><input id="mlNoParents" type="checkbox" class="mfCheckbox"> No parents</label>' +
+                    '<label><input id="mlOneParent" type="checkbox" class="mfCheckbox"> One parent</label>' +
+                    '<label><input id="mlNoNoSpouses" type="checkbox" class="mfCheckbox"> No "No more spouses"</label>' +
+                    '<label><input id="mlNoNoChildren" type="checkbox" class="mfCheckbox"> No "No more children"</label>' +
+                    '<label><input id="mlNoChildren" type="checkbox" class="mfCheckbox"> No children and no "No more children"</label>' +
+                    "</div>"
+            );
+            mlButtons.insertAfter($("#tableButtons"));
+            $(".mfCheckbox")
+                .off("change")
+                .on("change", function (e) {
+                    const id = $(this).attr("id");
+                    const optId = `#missingFamily_options_${id[2].toLowerCase() + id.substring(3)}`;
+                    $(optId).prop("checked", $(this).prop("checked"));
+                    $("#saveSettingsChanges").trigger("click");
+                });
+        }
+        CC7.setMissingLinkButtons();
+    }
+
+    static setMissingLinkButtons() {
+        $("#mlNoParents").prop("checked", CC7.currentSettings["missingFamily_options_noParents"]);
+        $("#mlOneParent").prop("checked", CC7.currentSettings["missingFamily_options_oneParent"]);
+        $("#mlNoNoSpouses").prop("checked", CC7.currentSettings["missingFamily_options_noNoSpouses"]);
+        $("#mlNoNoChildren").prop("checked", CC7.currentSettings["missingFamily_options_noNoChildren"]);
+        $("#mlNoChildren").prop("checked", CC7.currentSettings["missingFamily_options_noChildren"]);
     }
 
     static imagePath(fileName) {
@@ -782,7 +819,9 @@ export class CC7 {
 
         if ($("#wideTableButton").length == 0) {
             const pTable = $(".peopleTable");
-            const wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
+            const wideTableButton = $(
+                "<div id='tableButtons'><button class='button small' id='wideTableButton'>Wide Table</button></div>"
+            );
             wideTableButton.insertBefore(pTable);
 
             $("#wideTableButton")
@@ -2517,6 +2556,11 @@ export class CC7 {
                 } else if (curTableId == "peopleTable") {
                     drawPeopleTable();
                 }
+                if ($("#cc7Subset").val() == "missing-links") {
+                    CC7.showMissingLinksButtons();
+                } else {
+                    $("#mlButtons").hide();
+                }
             });
 
         function drawPeopleTable() {
@@ -2558,6 +2602,9 @@ export class CC7 {
                     $("#wideTableButton").hide();
                 }
                 $("#cc7Subset").show();
+                if ($("#cc7Subset").val() == "missing-links") {
+                    CC7.showMissingLinksButtons();
+                }
             });
         $("#hierarchyViewButton")
             .off("click")
@@ -2576,6 +2623,7 @@ export class CC7 {
                     $("#hierarchyView").show();
                 }
                 $("#cc7Subset").hide();
+                $("#mlButtons").hide();
             });
         $("#tableViewButton")
             .off("click")
@@ -2584,11 +2632,15 @@ export class CC7 {
                 $(this).addClass("active");
                 $("#hierarchyView,#lanceTable").hide().removeClass("active");
                 $("#cc7Subset").show();
-                if (!$("#peopleTable").hasClass($("#cc7Subset").val())) {
+                if ($("#peopleTable").hasClass($("#cc7Subset").val())) {
+                    // We don't have to re-draw he table
                     $("#peopleTable").show().addClass("active");
                     $("#wideTableButton").show();
                 } else {
                     drawPeopleTable();
+                }
+                if ($("#cc7Subset").val() == "missing-links") {
+                    CC7.showMissingLinksButtons();
                 }
             });
 
@@ -3942,7 +3994,7 @@ export class CC7 {
             window.rootId = +resultByKey[wtId]?.Id;
             CC7.populateRelativeArrays();
             const root = window.people.get(window.rootId);
-            const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root);
+            const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root, maxWantedDegree);
 
             window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
             CC7.hideShakingTree();
@@ -3950,7 +4002,7 @@ export class CC7 {
                 $("#degreesTable").remove();
                 $("#ancReport").remove();
             }
-            const maxNrPeople = 2 ** (actualMaxDegree + 1) - 2;
+            const maxNrPeople = 2 ** (maxWantedDegree + 3) - 2;
             $("#cc7Container").append(
                 $(
                     "<table id='degreesTable'>" +
@@ -3958,7 +4010,7 @@ export class CC7 {
                         "<tr id='trCon'><th>Connections</th></tr>" +
                         "<tr id='trTot'><th>Total</th></tr>" +
                         `</table><p id="ancReport">Out of ${maxNrPeople} possible direct ancestors in ${
-                            actualMaxDegree + 1
+                            maxWantedDegree + 3
                         } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
                             2
                         )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
@@ -4101,7 +4153,7 @@ export class CC7 {
         }
     }
 
-    static categoriseProfiles(theRoot) {
+    static categoriseProfiles(theRoot, maxWantedDegree) {
         if (!theRoot) return;
         const ABOVE = true;
         const BELOW = false;
@@ -4114,7 +4166,7 @@ export class CC7 {
         // relatives (depending on the queue) that needs to be categorised and then added to the queues
         const descendantQ = [+theRoot.Id];
         const belowQ = [+theRoot.Id];
-        const ancestorQ = [+theRoot.Id];
+        const ancestorQ = [[+theRoot.Id, 0]];
         const aboveQ = [+theRoot.Id];
         const directAncestors = new Set();
         const duplicates = new Set();
@@ -4170,29 +4222,40 @@ export class CC7 {
                 }
             }
             if (ancestorQ.length > 0) {
-                const pId = ancestorQ.shift();
+                const [pId, degree] = ancestorQ.shift();
                 const person = window.people.get(+pId);
                 if (person) {
-                    // Add this person's parents to the queue
-                    const rels = CC7.getIdsOfRelatives(person, ["Parent"]);
+                    // Add this person's parents to the queue if necessary
                     // console.log(`Adding parents for ${person.Id} (${person.Name})`, rels);
-                    for (const rId of rels) {
+                    const parentDegree = degree + 1;
+                    // Note that we're using the Parents array and not the Parent array here
+                    // so that we can count profiles and duplicates to as high a degree as possible.
+                    // The Parent array contains actual profiles that we have loaded, while
+                    // Parents contain parent IDs and may be for profiles we have not loaded
+                    // (but which actually exists in WikiTree).
+                    for (const rId of person["Parents"]) {
                         const relId = +rId;
-                        if (relId) nrProfiles += 1;
-                        // Count duplicates
-                        if (directAncestors.has(relId)) {
-                            duplicates.add(relId);
-                        } else {
-                            directAncestors.add(relId);
+
+                        // Count profiles and duplicates
+                        if (relId) {
+                            ++nrProfiles;
+                            if (directAncestors.has(relId)) {
+                                duplicates.add(relId);
+                            } else {
+                                directAncestors.add(relId);
+                            }
                         }
-                        // Set ancestor relationship
-                        const parent = window.people.get(relId);
-                        if (parent) {
-                            // console.log(
-                            //     `Adding parent for ${person.Id} (${person.Name}): ${parent.Id} (${parent.Name}) ${parent.BirthNamePrivate}`
-                            // );
-                            parent.isAncestor = true;
-                            ancestorQ.push(rId);
+
+                        // Set ancestor relationship (we have requestd  maxWantedDegree + 1 from W^)
+                        if (parentDegree <= maxWantedDegree + 1) {
+                            const parent = window.people.get(relId);
+                            if (parent) {
+                                // console.log(
+                                //     `Adding parent for ${person.Id} (${person.Name}): ${parent.Id} (${parent.Name}) ${parent.BirthNamePrivate}`
+                                // );
+                                parent.isAncestor = true;
+                                ancestorQ.push([rId, parentDegree]);
+                            }
                         }
                     }
                 }
@@ -4227,6 +4290,7 @@ export class CC7 {
             }
             firstIteration = false;
         }
+        console.log(`nr direct ancestor profiles=${directAncestors.size}, nr dups=${duplicates.size}`, duplicates);
         return [nrProfiles, duplicates.size];
 
         function setAndShouldAdd(pId, where) {
@@ -4318,6 +4382,8 @@ export class CC7 {
                 "#wideTableButton",
                 "#clearTableFiltersButton",
                 "#cc7Subset",
+                "#tableButtons",
+                "#mlButtons",
             ].join(",")
         ).remove();
     }
