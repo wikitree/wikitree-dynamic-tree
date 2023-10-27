@@ -319,30 +319,43 @@ export class AncestorTree {
         }
     }
 
-    static markBrickWalls(opt) {
+    static markAndCountBricks(opt) {
+        let nrNoParents = 0;
+        let nrOneParent = 0;
+        let nrNoNoSpouses = 0;
+        let nrNoNoChildren = 0;
+        let nrBioIssue = 0;
         AncestorTree.#people.forEach((person) => {
-            person.setBrickWall(isBrickWall(person));
+            let isBrick = false;
+            if (!person.hasAParent()) {
+                ++nrNoParents;
+                isBrick ||= opt.noParents;
+            }
+            if ((person.getFatherId() && !person.getMotherId()) || (!person.getFatherId() && person.getMotherId())) {
+                ++nrOneParent;
+                isBrick ||= opt.oneParent;
+            }
+            if (person._data.DataStatus?.Spouse != "blank") {
+                ++nrNoNoSpouses;
+                isBrick ||= opt.noNoSpouses;
+            }
+            if (person._data.NoChildren != 1) {
+                ++nrNoNoChildren;
+                isBrick ||= opt.noNoChildren;
+            }
+            if (person.hasBioIssues) {
+                ++nrBioIssue;
+                isBrick ||= opt.bioCheck;
+            }
+            person.setBrickWall(isBrick);
         });
-        function isBrickWall(person) {
-            let val = false;
-            if (opt.bioCheck) {
-                val = person.hasBioIssues;
-            }
-            if (!val && opt.noParents) {
-                val = !person.hasAParent();
-            }
-            if (!val && opt.noNoChildren) {
-                val = person._data.NoChildren != 1;
-            }
-            if (!val && opt.noNoSpouses) {
-                val = person._data.DataStatus?.Spouse != "blank";
-            }
-            if (!val && opt.oneParent) {
-                val =
-                    (person.getFatherId() && !person.getMotherId()) || (!person.getFatherId() && person.getMotherId());
-            }
-            return val;
-        }
+        return {
+            noParents: nrNoParents,
+            oneParent: nrOneParent,
+            noNoSpouses: nrNoNoSpouses,
+            noNoChildren: nrNoNoChildren,
+            bioCheck: window.aleBiosLoaded ? nrBioIssue : "?",
+        };
     }
 
     static nrDuplicatesUpToGen(gen) {

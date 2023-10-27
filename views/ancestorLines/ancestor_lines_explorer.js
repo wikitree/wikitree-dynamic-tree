@@ -282,7 +282,7 @@ export class AncestorLinesExplorer {
                         for="noParents"
                         title="Anyone with no parents."
                         class="right">
-                        No Parents</label
+                        No Parents [<span class="cnt">?</span>]</label
                       >
                     </td>
                     <td>
@@ -294,7 +294,7 @@ export class AncestorLinesExplorer {
                         for="oneParent"
                         title="Anyone with only one parent."
                         class="right">
-                        Only 1 Parent</label
+                        Only 1 Parent [<span class="cnt">?</span>]</label
                       >
                     </td>
                     <td>
@@ -306,7 +306,7 @@ export class AncestorLinesExplorer {
                         for="noNoSpouses"
                         title='Anyone who does not have their "no more spouses" set.'
                         class="right">
-                        No "no more spouses"</label
+                        No "no more spouses" [<span class="cnt">?</span>]</label
                       >
                     </td>
                     <td>
@@ -315,10 +315,10 @@ export class AncestorLinesExplorer {
                         type="checkbox"
                         title='Anyone who does not have their "no more children" set.' />
                       <label
-                        for="oneParent"
+                        for="noNoChildren"
                         title='Anyone who does not have their "no more children" set.'
                         class="right">
-                        No "no more children"</label
+                        No "no more children" [<span class="cnt">?</span>]</label
                       >
                     </td>
                   </tr>
@@ -333,7 +333,7 @@ export class AncestorLinesExplorer {
                         for="bioCheck"
                         title="Anyone with issues reported by Bio Check."
                         class="right">
-                        Bio Check</label
+                        Bio Check [<span class="cnt">?</span>]</label
                       >
                     </td>
                   </tr>
@@ -547,13 +547,17 @@ export class AncestorLinesExplorer {
             ).toFixed(2)}%) occur more than once due to pedigree collapse.</span>`
         );
 
-        AncestorTree.markBrickWalls({
+        const counts = AncestorTree.markAndCountBricks({
             noParents: document.getElementById("noParents").checked,
             oneParent: document.getElementById("oneParent").checked,
             noNoSpouses: document.getElementById("noNoSpouses").checked,
             noNoChildren: document.getElementById("noNoChildren").checked,
             bioCheck: document.getElementById("bioCheck").checked,
         });
+
+        for (const id of ["noParents", "oneParent", "noNoSpouses", "noNoChildren", "bioCheck"]) {
+            $(`label[for=${id}`).find("span.cnt").text(counts[id]);
+        }
 
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
