@@ -70,7 +70,7 @@ export class Person {
     }
     getBirthYear() {
         const d = this._data.BirthDate || this._data.BirthDateDecade;
-        return d.substring(0,4);
+        return d?.substring(0, 4) || "0000";
     }
     getBirthLocation() {
         return this._data.BirthLocation;

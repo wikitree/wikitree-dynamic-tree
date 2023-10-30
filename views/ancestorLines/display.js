@@ -256,7 +256,7 @@ export function showTree(
 
         // Calculate y position of each node.
         const tWidth = edgeFactor * (currentMaxShowDepth - 1);
-        const maxYear = +AncestorTree.root.getBirthYear();
+        const maxYear = +AncestorTree.root.getBirthYear() || +new Date().getFullYear();
         const ageSpan = maxYear - AncestorTree.minBirthYear;
         const birthScale = document.getElementById("birthScale").checked;
         nodes.forEach(function (d) {
