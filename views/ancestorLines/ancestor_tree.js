@@ -14,6 +14,7 @@ export class AncestorTree {
     static genCounts = [];
     static profileCount = 0;
     static requestedGen = 0;
+    static minBirthYear = 0;
 
     static init() {
         AncestorTree.#people = new Map();
@@ -172,6 +173,7 @@ export class AncestorTree {
         AncestorTree.root = AncestorTree.#people.get(rootId);
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.genCounts = [0];
+        AncestorTree.minBirthYear = 5000;
         // Clear each person's generation info and add them to the byWtId map
         for (const person of AncestorTree.#people.values()) {
             person.clearGenerations();
@@ -188,6 +190,10 @@ export class AncestorTree {
                 AncestorTree.duplicates.set(id, ++n);
             }
             AncestorTree.profileCount += p.getNrCopies(AncestorTree.requestedGen);
+            const bYear = +p.getBirthYear();
+            if (bYear > 0 && bYear < AncestorTree.minBirthYear) {
+                AncestorTree.minBirthYear = bYear;
+            }
         }
         console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
