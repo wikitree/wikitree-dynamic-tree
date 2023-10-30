@@ -52,7 +52,11 @@ export class AncestorLinesExplorer {
                 to show for a person (i.e. their circle is coloured white), the name will appear to the right of the circle.
             </li><li>
                 The table has a header labeling each generation. This can be removed via the <b>Hide tree header</b>
-                tickbox.
+                checkbox.
+            </li><li>
+                If the <b>Position relative to birth year</b> box is ticked, people in the same generation are not aligned
+                vertically, but they are positioned according to ther years of birth. Everyone born in the same year, will
+                be aligned. Those with an unknown year of birth wil be placed in an average position for that generation.
             </li><li>
                 The <b>Brick wall colour</b> determines, by default, in which colour the names of people with no ancestors on
                 record are displayed. The default is black, i.e. they will be displayed like everyone else. If you want to
@@ -79,7 +83,7 @@ export class AncestorLinesExplorer {
                   </li>
                 </ul>
             </li><li>
-                Changes to tickbox options only take effect when <b>(Re-)Draw Tree</b> or <b>Go</b> is clicked. A colour
+                Changes to checkbox options only take effect when <b>(Re-)Draw Tree</b> or <b>Go</b> is clicked. A colour
                 change takes effect immediately, while the remaining options can be applied immediatly by pressing enter
                 after any of them was changed.
             </li><li>
