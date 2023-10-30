@@ -4525,6 +4525,8 @@ export class CC7 {
     }
 
     static cc7excelOut(fileType) {
+        const bioCheck = CC7.currentSettings["biocheck_options_biocheckOn"];
+        const idMap = new Map();
         const sheetName = CC7.makeSheetname();
 
         const wb = XLSX.utils.book_new();
@@ -4556,13 +4558,20 @@ export class CC7 {
             "Created",
             "Modified",
         ];
+        if (bioCheck) {
+            // Add biocheck column
+            headings.splice(1, 0, "Bio Issue");
+        }
 
         ws_data.push(headings, []);
         $("#peopleTable > tbody tr").each(function () {
             const row = $(this);
             const tds = row.find("td");
-            let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched;
+            let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched, bioIssue;
             tds.each(function () {
+                if ($(this).hasClass("privBio")) {
+                    bioIssue = $(this).hasClass("bioIssue");
+                }
                 if ($(this).hasClass("birthdate")) {
                     birthdate = $(this).text();
                 }
@@ -4604,10 +4613,55 @@ export class CC7 {
                 created,
                 touched,
             ];
+            if (bioCheck) {
+                // Add biocheck column and create id lookup table
+                pData.splice(1, 0, bioIssue);
+                if (bioIssue) idMap.set(row.data("name"), row.data("id"));
+            }
             ws_data.push(pData);
         });
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        Object.getOwnPropertyNames(ws)
+            .filter((k) => k.startsWith("A"))
+            .forEach((aCell) => {
+                const bCell = `B${aCell.substring(1)}`;
+                const wtId = ws[aCell].v;
+                if (wtId.match(/.+\-.+/)) {
+                    // Add a hyperlink to the WtId cell
+                    ws[aCell].l = { Target: `https://www.wikitree.com/wiki/${wtId}` };
+                }
+                if (bioCheck && ws[bCell].v === true) {
+                    // Add a BioCeck column with the BioCheck report as comment
+                    const id = idMap.get(wtId);
+                    const person = window.people.get(id);
+                    if (person?.bioCheckReport) {
+                        ws[bCell].c = [{ a: "WT", t: formCommentFromReport(person.bioCheckReport) }];
+                    }
+                }
+            });
+
+        function formCommentFromReport(bioCheckReport) {
+            let comment = "";
+            let cnt = 0;
+            for (let [msg, subLines] of bioCheckReport) {
+                if (subLines && subLines.length > 0) {
+                    let subList = "";
+                    for (const line of subLines) {
+                        subList = subList.concat("\n  * ", line);
+                    }
+                    msg += subList;
+                }
+                if (++cnt == 1) {
+                    comment += `${cnt}. `;
+                } else {
+                    comment += `\n${cnt}. `;
+                }
+                comment += msg;
+            }
+            return comment;
+        }
+
         wb.Sheets[sheetName] = ws;
 
         function s2ab(s) {
@@ -4635,6 +4689,9 @@ export class CC7 {
             { wch: 10 },
             { wch: 10 },
         ];
+        if (bioCheck) {
+            wscols.splice(1, 0, { wch: 5 });
+        }
 
         ws["!cols"] = wscols;
 
