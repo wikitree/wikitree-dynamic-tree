@@ -68,6 +68,10 @@ export class Person {
     getBirthDate() {
         return this._data.BirthDate;
     }
+    getBirthYear() {
+        const d = this._data.BirthDate || this._data.BirthDateDecade;
+        return d.substring(0,4);
+    }
     getBirthLocation() {
         return this._data.BirthLocation;
     }

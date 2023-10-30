@@ -270,6 +270,18 @@ export class AncestorLinesExplorer {
                     </td>
                   </tr>
                   <tr>
+                    <td>
+                      <input
+                        id="birthScale"
+                        type="checkbox"
+                        title="Position people along the horizontal tree axis relative to their year of birth." />
+                      <label
+                        for="birthScale"
+                        title="Position people along the horizontal tree axis relative to their year of birth."
+                        class="right">
+                        Position relative to birth year</label
+                      >
+                    </td>
                     <td style="text-align:right"><span title='Set what constitutes a "brick wall."'>
                       Add to Brick Wall:&nbsp;<span></td>
                     <td>
@@ -282,7 +294,7 @@ export class AncestorLinesExplorer {
                         for="noParents"
                         title="Anyone with no parents."
                         class="right">
-                        No Parents [<span class="cnt">?</span>]</label
+                        No Parents [<span class="cnt" title="Number of profiles with no parent">?</span>]</label
                       >
                     </td>
                     <td>
@@ -294,35 +306,12 @@ export class AncestorLinesExplorer {
                         for="oneParent"
                         title="Anyone with only one parent."
                         class="right">
-                        Only 1 Parent [<span class="cnt">?</span>]</label
-                      >
-                    </td>
-                    <td>
-                      <input
-                        id="noNoSpouses"
-                        type="checkbox"
-                        title='Anyone who does not have their "no more spouses" set.' />
-                      <label
-                        for="noNoSpouses"
-                        title='Anyone who does not have their "no more spouses" set.'
-                        class="right">
-                        No "no more spouses" [<span class="cnt">?</span>]</label
-                      >
-                    </td>
-                    <td>
-                      <input
-                        id="noNoChildren"
-                        type="checkbox"
-                        title='Anyone who does not have their "no more children" set.' />
-                      <label
-                        for="noNoChildren"
-                        title='Anyone who does not have their "no more children" set.'
-                        class="right">
-                        No "no more children" [<span class="cnt">?</span>]</label
+                        Only 1 Parent [<span class="cnt" title="Number of profiles with only one parent">?</span>]</label
                       >
                     </td>
                   </tr>
                   <tr>
+                    <td></td>
                     <td></td>
                     <td>
                       <input
@@ -333,7 +322,31 @@ export class AncestorLinesExplorer {
                         for="bioCheck"
                         title="Anyone with issues reported by Bio Check."
                         class="right">
-                        Bio Check [<span class="cnt">?</span>]</label
+                        Bio Check [<span class="cnt" title="Number of profiles with Bio Check Issues">?</span>]</label
+                      >
+                    </td>
+                    <td>
+                      <input
+                        id="noNoSpouses"
+                        type="checkbox"
+                        title='Anyone who does not have their "No more spouses" checkbox set.' />
+                      <label
+                        for="noNoSpouses"
+                        title='Anyone who does not have their "No more spouses" checkbox set.'
+                        class="right">
+                        No "no more spouses" [<span class="cnt" title='Number of profiles with "No more spouses" not checked'>?</span>]</label
+                      >
+                    </td>
+                    <td>
+                      <input
+                        id="noNoChildren"
+                        type="checkbox"
+                        title='Anyone who does not have their "No more children" checkbox set.' />
+                      <label
+                        for="noNoChildren"
+                        title='Anyone who does not have their "No more children" checkbox set.'
+                        class="right">
+                        No "no more children" [<span class="cnt" title='Number of profiles with "No more children" not checked'>?</span>]</label
                       >
                     </td>
                   </tr>
@@ -721,6 +734,7 @@ export class AncestorLinesExplorer {
             noNoSpouses: document.getElementById("noNoSpouses").checked,
             noNoChildren: document.getElementById("noNoChildren").checked,
             bioCheck: document.getElementById("bioCheck").checked,
+            birthScale: document.getElementById("birthScale").checked,
         };
         // console.log(`Saving options ${JSON.stringify(options)}`);
         AncestorLinesExplorer.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
@@ -746,6 +760,7 @@ export class AncestorLinesExplorer {
             $("#noNoSpouses").attr("checked", opt.noNoSpouses);
             $("#noNoChildren").attr("checked", opt.noNoChildren);
             $("#bioCheck").attr("checked", opt.bioCheck);
+            $("#birthScale").attr("checked", opt.birthScale);
         }
     }
 

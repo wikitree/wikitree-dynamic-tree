@@ -254,9 +254,22 @@ export function showTree(
         const nodes = treeData.descendants();
         const links = treeData.descendants().slice(1);
 
-        // Normalize for fixed-depth.
+        // Calculate y position of each node.
+        const tWidth = edgeFactor * (currentMaxShowDepth - 1);
+        const maxYear = +AncestorTree.root.getBirthYear();
+        const ageSpan = maxYear - AncestorTree.minBirthYear;
+        const birthScale = document.getElementById("birthScale").checked;
         nodes.forEach(function (d) {
-            d.y = d.depth * edgeFactor;
+            if (birthScale) {
+                const bYear = +d.data.getBirthYear();
+                if (bYear == 0) {
+                    d.y = d.depth * edgeFactor;
+                } else {
+                    d.y = (tWidth * (maxYear - d.data.getBirthYear())) / ageSpan;
+                }
+            } else {
+                d.y = d.depth * edgeFactor;
+            }
         });
 
         // ****************** Nodes section ***************************
