@@ -21,6 +21,10 @@ window.StatsView = class StatsView extends View {
             </li><li>
                 <b>Gen Length</b> is worked out as the difference between the average birth year of this generation
                 and the more recent one.
+            </li><li>
+                <b>Average Children</b> shows the average number of children per person in this generation.
+            </li><li>
+                <b>Average Siblings</b> shows the average number of siblings per person in this generation.
             </li>
         </ul>
     </p>
@@ -76,6 +80,8 @@ window.StatsView = class StatsView extends View {
                             <th>Average Marriage Age</th>
                             <th>Gen Length</th>
                             <th>Average Lifespan</th>
+                            <th>Average Children</th>
+                            <th>Average Siblings</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -158,7 +164,7 @@ window.StatsView = class StatsView extends View {
             }
         }
 
-        function calculateAvgAgeEachGen(gender) {
+        async function calculateAvgAgeEachGen(gender) {
             let oldestAge = 0;
             let oldestPerson = "";
 
@@ -175,11 +181,15 @@ window.StatsView = class StatsView extends View {
             const birthYears = {};
             const deathAges = {};
             const marriageAges = {};
+            const childrenCounts = {};
+            const siblingsCounts = {};
             for (let i = 0; i <= GENERATIONS; i++) {
                 profileCounts[i] = 0;
                 birthYears[i] = [];
                 deathAges[i] = [];
                 marriageAges[i] = [];
+                childrenCounts[i] = [];
+                siblingsCounts[i] = [];
             }
 
             // for each ancestor
@@ -264,6 +274,23 @@ window.StatsView = class StatsView extends View {
                 }
             }
 
+            // Look up the number of siblings / children
+            let profileIDs = [];
+            for (const person in ancestors) {
+                profileIDs.push(person);
+            }
+            const relatives = await WikiTreeAPI.getRelatives("stats", profileIDs, ["Id"], {
+                getChildren: 1,
+                getSiblings: 1,
+            });
+            for (const relative in relatives) {
+                let generation = ancestors[relatives[relative].key]["Meta"]["Degrees"];
+
+                let person = relatives[relative].person;
+                childrenCounts[generation].push(Object.keys(person.Children).length);
+                siblingsCounts[generation].push(Object.keys(person.Siblings).length);
+            }
+
             // sort birth years by earliest to latest
             for (const generation in birthYears) {
                 birthYears[generation].sort(sortByYear);
@@ -315,8 +342,8 @@ window.StatsView = class StatsView extends View {
                 let avgMarriageAge;
                 let sumOfMarriageAges = 0;
                 let countOfMarriageAges = marriageAges[generation].length;
-                for (const year in marriageAges[generation]) {
-                    sumOfMarriageAges += marriageAges[generation][year];
+                for (const age in marriageAges[generation]) {
+                    sumOfMarriageAges += marriageAges[generation][age];
                 }
                 avgMarriageAge = Math.round(sumOfMarriageAges / countOfMarriageAges);
                 if (isNaN(avgMarriageAge)) {
@@ -403,6 +430,38 @@ window.StatsView = class StatsView extends View {
                 results.appendChild(oldestFemaleAncestorDiv);
             }
 
+            // calculate the average number of children for each generation
+            const avgChildrenCounts = [];
+            for (const generation in childrenCounts) {
+                let avgChildrenCount;
+                let sumOfChildrenCounts = 0;
+                let countOfChildrenCounts = childrenCounts[generation].length;
+                for (const count in childrenCounts[generation]) {
+                    sumOfChildrenCounts += childrenCounts[generation][count];
+                }
+                avgChildrenCount = Math.round(sumOfChildrenCounts / countOfChildrenCounts);
+                if (isNaN(avgChildrenCount)) {
+                    avgChildrenCount = "-";
+                }
+                avgChildrenCounts.push(avgChildrenCount);
+            }
+
+            // calculate the average number of siblings for each generation
+            const avgSiblingsCounts = [];
+            for (const generation in siblingsCounts) {
+                let avgSiblingsCount;
+                let sumOfSiblingsCounts = 0;
+                let countOfSiblingsCounts = siblingsCounts[generation].length;
+                for (const count in siblingsCounts[generation]) {
+                    sumOfSiblingsCounts += siblingsCounts[generation][count];
+                }
+                avgSiblingsCount = Math.round(sumOfSiblingsCounts / countOfSiblingsCounts);
+                if (isNaN(avgSiblingsCount)) {
+                    avgSiblingsCount = "-";
+                }
+                avgSiblingsCounts.push(avgSiblingsCount);
+            }
+
             fillTable({
                 profileCounts: profileCounts,
                 birthYears: birthYears,
@@ -412,6 +471,8 @@ window.StatsView = class StatsView extends View {
                 avgMarriageAges: avgMarriageAges,
                 avgGenLengths: avgGenLengths,
                 avgLifeSpans: avgLifeSpans,
+                avgChildrenCounts: avgChildrenCounts,
+                avgSiblingsCounts: avgSiblingsCounts,
             });
         }
 
@@ -434,6 +495,8 @@ window.StatsView = class StatsView extends View {
                 row.insertCell(7).innerHTML = stats.avgMarriageAges[generation];
                 row.insertCell(8).innerHTML = stats.avgGenLengths[generation];
                 row.insertCell(9).innerHTML = stats.avgLifeSpans[generation];
+                row.insertCell(10).innerHTML = stats.avgChildrenCounts[generation];
+                row.insertCell(11).innerHTML = stats.avgSiblingsCounts[generation];
             }
         }
 
