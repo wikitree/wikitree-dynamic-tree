@@ -68,6 +68,10 @@ export class Person {
     getBirthDate() {
         return this._data.BirthDate;
     }
+    getBirthYear() {
+        const d = this._data.BirthDate || this._data.BirthDateDecade;
+        return d?.substring(0, 4) || "0000";
+    }
     getBirthLocation() {
         return this._data.BirthLocation;
     }
@@ -96,6 +100,10 @@ export class Person {
     }
     isAtGeneration(n) {
         return this.generations.has(n);
+    }
+    getNrCopies(upToGen) {
+        // Count how many copies of this profile are there within upToGen generations
+        return [...this.generations.entries()].reduce((acc, [gen, cnt]) => (gen <= upToGen ? acc + cnt : acc), 0);
     }
     isBelowGeneration(n) {
         for (const g of this.generations.keys()) {

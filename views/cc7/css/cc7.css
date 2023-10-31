@@ -72,6 +72,9 @@ div.cc7Table #tree {
   white-space: nowrap;
   z-index: 10000;
 }
+.cc7Table .bioReport {
+  white-space: normal;
+}
 .bioReport.wrap,
 .timeline.wrap,
 .familySheet.wrap {
@@ -128,6 +131,9 @@ div.cc7Table .timelineTable {
   width: 98%;
   margin: auto;
 }
+div.cc7Table .bioReportTable ol {
+  margin-left: 2em;
+}
 div.cc7Table .bioReportTable td,
 div.cc7Table .timelineTable td {
   border-top: none;
@@ -163,12 +169,15 @@ div.cc7Table .timelineTable td {
 }
 
 .cc7Table #degreesTable {
-  margin: 1em;
+  margin: 1em 1em 0.5em;
   text-align: right;
 }
 .cc7Table #degreesTable td,
 .cc7Table #degreesTable th {
   padding: 0.3em;
+}
+.cc7Table #ancReport {
+  margin: 0 1em 1em;
 }
 
 .cc7Table #peopleTable.wide {

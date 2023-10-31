@@ -86,8 +86,17 @@ export class CC7 {
                         links, they are placed in the "Above" group if they are older than the central person.
                         Otherwise they are in the "Below" group.
                     </li>
-                    <li><b>Missing Family</b> – Anyone who is missing a parent or does not have the "no more children"
-                        or "no more spouses" boxes checked.
+                    <li><b>Missing Family</b> – By default, anyone who might possibly be missing a family member. The default
+                        setting includes all of the following:
+                        <ul>
+                          <li>Anyone with no parents.</li>
+                          <li>Anyone with only one parent.</li>
+                          <li>Anyone with their "No more spouses" box unchecked.</li>
+                          <li>Anyone with their "No more children" box unchecked.</li>
+                          <li>Anyone without children and their "No more children" box unchecked.</li>
+                        </ul>
+                        You may fine-tune the above missing family setting by selecting any combination of the above values
+                        in the Settings (see <img width=16px src="./views/cc7/images/setting-icon.png" /> at the top right).
                     </li>
                 </ul>
             </li>
@@ -124,9 +133,9 @@ export class CC7 {
                 The Died Young images, <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
                 <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> by default, are used to flag people
                 (in their Children column) who died under age 5 and under age 16, respectively, provided they had
-                no children. You can change the image by clicking on the settings gear,
-                <img width=16px src="./views/cc7/images/setting-icon.png" />
-                at the top right, and selecting the images you want to use.
+                no children. You can change the image by clicking on the settings gear
+                (<img width=16px src="./views/cc7/images/setting-icon.png" />
+                at the top right) and selecting the images you want to use.
             </li>
             <li>Click the images <img height=15px src="./views/cc7/images/Home_icon.png" /> and
                 <img height=15px src="./views/cc7/images/timeline.png" /> to see a family sheet and timeline, respectively,
@@ -317,6 +326,13 @@ export class CC7 {
                 subsections: [{ name: "BioCheckOptions", label: "Bio Check Options" }],
                 // comment: "",
             },
+            {
+                name: "missingFamily",
+                label: "Missing Family",
+                hideSelect: true,
+                subsections: [{ name: "mfOptions", label: "Missing Family Options" }],
+                // comment: "",
+            },
         ],
         optionsGroups: [
             {
@@ -370,6 +386,49 @@ export class CC7 {
                     },
                 ],
             },
+            {
+                tab: "missingFamily",
+                subsection: "mfOptions",
+                category: "missingFamily",
+                subcategory: "options",
+                options: [
+                    {
+                        optionName: "mfComment",
+                        comment: "Include profiles with:",
+                        type: "br",
+                    },
+                    {
+                        optionName: "noParents",
+                        type: "checkbox",
+                        label: "No parents",
+                        defaultValue: 1,
+                    },
+                    {
+                        optionName: "oneParent",
+                        type: "checkbox",
+                        label: "One parent",
+                        defaultValue: 1,
+                    },
+                    {
+                        optionName: "noNoSpouses",
+                        type: "checkbox",
+                        label: 'The "No more spouses" box unchecked',
+                        defaultValue: 1,
+                    },
+                    {
+                        optionName: "noNoChildren",
+                        type: "checkbox",
+                        label: 'The "No more children" box unchecked',
+                        defaultValue: 1,
+                    },
+                    {
+                        optionName: "noChildren",
+                        type: "checkbox",
+                        label: 'No children and the "No more children" box unchecked',
+                        defaultValue: 1,
+                    },
+                ],
+            },
         ],
     };
     static settingOptionsObj;
@@ -383,9 +442,42 @@ export class CC7 {
         // console.log(`Retrieved options ${optionsJson}`);
         if (optionsJson) {
             const opt = JSON.parse(optionsJson);
-            CC7.optionsDef.optionsGroups[0].options[1].defaultValue = opt["icons_options_veryYoung"];
-            CC7.optionsDef.optionsGroups[0].options[3].defaultValue = opt["icons_options_young"];
-            CC7.optionsDef.optionsGroups[1].options[1].defaultValue = opt["biocheck_options_biocheckOn"] || 0;
+            function optionWithDefault(theOption, theDefault) {
+                return typeof opt[theOption] == "undefined" ? theDefault : opt[theOption];
+            }
+            CC7.optionsDef.optionsGroups[0].options[1].defaultValue = optionWithDefault(
+                "icons_options_veryYoung",
+                "47px-RTC_-_Pictures.jpeg"
+            );
+            CC7.optionsDef.optionsGroups[0].options[3].defaultValue = optionWithDefault(
+                "icons_options_young",
+                "50px-Remember_the_Children-26.png"
+            );
+
+            CC7.optionsDef.optionsGroups[1].options[1].defaultValue = optionWithDefault(
+                "biocheck_options_biocheckOn",
+                0
+            );
+            CC7.optionsDef.optionsGroups[2].options[1].defaultValue = optionWithDefault(
+                "missingFamily_options_noParents",
+                1
+            );
+            CC7.optionsDef.optionsGroups[2].options[2].defaultValue = optionWithDefault(
+                "missingFamily_options_oneParent",
+                1
+            );
+            CC7.optionsDef.optionsGroups[2].options[3].defaultValue = optionWithDefault(
+                "missingFamily_options_noNoSpouses",
+                1
+            );
+            CC7.optionsDef.optionsGroups[2].options[4].defaultValue = optionWithDefault(
+                "missingFamily_options_noNoChildren",
+                1
+            );
+            CC7.optionsDef.optionsGroups[2].options[5].defaultValue = optionWithDefault(
+                "missingFamily_options_noChildren",
+                1
+            );
         }
         CC7.settingOptionsObj = new SettingsOptions.SettingsOptionsObject(CC7.optionsDef);
         $(selector).html(
@@ -451,7 +543,11 @@ export class CC7 {
         $("#explanation").draggable();
 
         $("#settingsButton").off("click").on("click", CC7.toggleSettings);
-        $("#saveSettingsChanges").html("Apply Changes").addClass("small button").click(CC7.settingsChanged);
+        $("#saveSettingsChanges")
+            .html("Apply Changes")
+            .addClass("small button")
+            .off("click")
+            .on("click", CC7.settingsChanged);
         $("#settingsDIV")
             .css("width", "285")
             .dblclick(function () {
@@ -477,9 +573,9 @@ export class CC7 {
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
-                $("#fileInput").click();
+                $("#fileInput").trigger("click");
             });
-        $("#getPeopleButton").click();
+        $("#getPeopleButton").trigger("click");
         $(document).off("keyup", CC7.closePopup).on("keyup", CC7.closePopUp);
     }
 
@@ -533,8 +629,44 @@ export class CC7 {
             }
             CC7.setInfoPanelMessage();
             CC7.setCookie("w_diedYoung", JSON.stringify(CC7.currentSettings), { expires: 365 });
+            if ($("#cc7Subset").val() == "missing-links") {
+                $("#cc7Subset").trigger("change");
+            }
         }
         CC7View.cancelSettings();
+    }
+
+    static showMissingLinksButtons() {
+        $("#mlButtons").show();
+        if ($("#mlButtons").length == 0) {
+            const mlButtons = $(
+                "<div id=mlButtons>" +
+                    '<label><input id="mlNoParents" type="checkbox" class="mfCheckbox"> No parents</label>' +
+                    '<label><input id="mlOneParent" type="checkbox" class="mfCheckbox"> One parent</label>' +
+                    '<label><input id="mlNoNoSpouses" type="checkbox" class="mfCheckbox"> No "No more spouses"</label>' +
+                    '<label><input id="mlNoNoChildren" type="checkbox" class="mfCheckbox"> No "No more children"</label>' +
+                    '<label><input id="mlNoChildren" type="checkbox" class="mfCheckbox"> No children and no "No more children"</label>' +
+                    "</div>"
+            );
+            mlButtons.insertAfter($("#tableButtons"));
+            $(".mfCheckbox")
+                .off("change")
+                .on("change", function (e) {
+                    const id = $(this).attr("id");
+                    const optId = `#missingFamily_options_${id[2].toLowerCase() + id.substring(3)}`;
+                    $(optId).prop("checked", $(this).prop("checked"));
+                    $("#saveSettingsChanges").trigger("click");
+                });
+        }
+        CC7.setMissingLinkButtons();
+    }
+
+    static setMissingLinkButtons() {
+        $("#mlNoParents").prop("checked", CC7.currentSettings["missingFamily_options_noParents"]);
+        $("#mlOneParent").prop("checked", CC7.currentSettings["missingFamily_options_oneParent"]);
+        $("#mlNoNoSpouses").prop("checked", CC7.currentSettings["missingFamily_options_noNoSpouses"]);
+        $("#mlNoNoChildren").prop("checked", CC7.currentSettings["missingFamily_options_noNoChildren"]);
+        $("#mlNoChildren").prop("checked", CC7.currentSettings["missingFamily_options_noChildren"]);
     }
 
     static imagePath(fileName) {
@@ -687,7 +819,9 @@ export class CC7 {
 
         if ($("#wideTableButton").length == 0) {
             const pTable = $(".peopleTable");
-            const wideTableButton = $("<button class='button small' id='wideTableButton'>Wide Table</button>");
+            const wideTableButton = $(
+                "<div id='tableButtons'><button class='button small' id='wideTableButton'>Wide Table</button></div>"
+            );
             wideTableButton.insertBefore(pTable);
 
             $("#wideTableButton")
@@ -741,7 +875,7 @@ export class CC7 {
         }
         if (CC7.getCookie("w_wideTable") == "1") {
             CC7.setCookie("w_wideTable", 0, { expires: 365 });
-            $("#wideTableButton").click();
+            $("#wideTableButton").trigger("click");
         }
     }
 
@@ -1299,12 +1433,20 @@ export class CC7 {
         const bioCheckTable = $(
             `<div class='bioReport' data-wtid='${person.Name}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
                 `<caption>Bio Check found the following ${issueWord} with the biography of ${person.FirstName}</caption>` +
-                "<tbody></tbody></table></div>"
+                "<tbody><tr><td><ol></ol></td></tr></tbody></table></div>"
         );
 
-        for (const msg of person.bioCheckReport) {
-            const msgTR = $("<tr></tr>").append($("<td></td>").text(msg));
-            bioCheckTable.find("tbody").append(msgTR);
+        const ol = bioCheckTable.find("tbody ol");
+        for (const [msg, subLines] of person.bioCheckReport) {
+            let msgLI = $("<li></li>").text(msg);
+            if (subLines && subLines.length > 0) {
+                const subList = $("<ul></ul>");
+                for (const line of subLines) {
+                    subList.append($("<li></li>").text(line));
+                }
+                msgLI = msgLI.append(subList);
+            }
+            ol.append(msgLI);
         }
         return bioCheckTable;
     }
@@ -1981,38 +2123,52 @@ export class CC7 {
             if (mPerson.Hide) continue;
             switch (subset) {
                 case "above":
-                    if (!mPerson.isAbove) continue;
+                    if (!mPerson.isAbove) continue; // hide
                     break;
 
                 case "below":
-                    if (mPerson.isAbove) continue;
+                    if (mPerson.isAbove) continue; // hide
                     break;
 
                 case "ancestors":
-                    if (mPerson.isAncestor) break;
+                    if (mPerson.isAncestor) break; // show
                     continue;
 
                 case "descendants":
-                    if (typeof mPerson.isAncestor != "undefined" && !mPerson.isAncestor) break;
+                    if (typeof mPerson.isAncestor != "undefined" && !mPerson.isAncestor) break; // show
                     continue;
 
                 case "missing-links":
-                    console.log(mPerson);
-                    // if someone doesn't have "No Spouses" or "No Children" checked, or is
-                    // missing one or more parents
-                    if (
-                        mPerson.LastNameAtBirth != "Private" &&
-                        (mPerson.DataStatus.Spouse != "blank" ||
-                            mPerson.NoChildren != 1 ||
-                            mPerson.Father == 0 ||
-                            mPerson.Mother == 0)
-                    ) {
-                        break;
-                    }
+                    if (isMissingFamily(mPerson)) break; // show
                     continue; // else hide
 
                 default:
                     break;
+            }
+            function isMissingFamily(person) {
+                if (person.LastNameAtBirth == "Private") return false;
+                let val = false;
+                if (CC7.currentSettings["missingFamily_options_noNoChildren"]) {
+                    // no more children flag is not set
+                    val = person.NoChildren != 1;
+                }
+                if (!val && CC7.currentSettings["missingFamily_options_noNoSpouses"]) {
+                    // no more spouses flag is not set
+                    val = person.DataStatus.Spouse != "blank";
+                }
+                if (!val && CC7.currentSettings["missingFamily_options_noParents"]) {
+                    // no father or mother
+                    val = !person.Father && !person.Mother;
+                }
+                if (!val && CC7.currentSettings["missingFamily_options_noChildren"]) {
+                    // no more children flag is not set and they don't have any children
+                    val = person.NoChildren != 1 && (!person.Child || person.Child.length == 0);
+                }
+                if (!val && CC7.currentSettings["missingFamily_options_oneParent"]) {
+                    // at least one parent missing
+                    val = (person.Father && !person.Mother) || (!person.Father && person.Mother);
+                }
+                return val;
             }
 
             let deathDate = CC7.ymdFix(mPerson.DeathDate);
@@ -2400,6 +2556,11 @@ export class CC7 {
                 } else if (curTableId == "peopleTable") {
                     drawPeopleTable();
                 }
+                if ($("#cc7Subset").val() == "missing-links") {
+                    CC7.showMissingLinksButtons();
+                } else {
+                    $("#mlButtons").hide();
+                }
             });
 
         function drawPeopleTable() {
@@ -2441,6 +2602,9 @@ export class CC7 {
                     $("#wideTableButton").hide();
                 }
                 $("#cc7Subset").show();
+                if ($("#cc7Subset").val() == "missing-links") {
+                    CC7.showMissingLinksButtons();
+                }
             });
         $("#hierarchyViewButton")
             .off("click")
@@ -2459,6 +2623,7 @@ export class CC7 {
                     $("#hierarchyView").show();
                 }
                 $("#cc7Subset").hide();
+                $("#mlButtons").hide();
             });
         $("#tableViewButton")
             .off("click")
@@ -2467,11 +2632,15 @@ export class CC7 {
                 $(this).addClass("active");
                 $("#hierarchyView,#lanceTable").hide().removeClass("active");
                 $("#cc7Subset").show();
-                if (!$("#peopleTable").hasClass($("#cc7Subset").val())) {
+                if ($("#peopleTable").hasClass($("#cc7Subset").val())) {
+                    // We don't have to re-draw he table
                     $("#peopleTable").show().addClass("active");
                     $("#wideTableButton").show();
                 } else {
                     drawPeopleTable();
+                }
+                if ($("#cc7Subset").val() == "missing-links") {
+                    CC7.showMissingLinksButtons();
                 }
             });
 
@@ -3075,7 +3244,7 @@ export class CC7 {
             const theLNAB = theParts.get("LastNameAtBirth");
             const theFirstName = theParts.get("FirstName");
 
-            if (CC7.isOK(theDegree) && theDegree <= CC7.MAX_DEGREE) {
+            if (CC7.isOK(theDegree) && theDegree <= window.cc7Degree) {
                 if (!surnames["degree_" + theDegree].includes(theLNAB)) {
                     // Add the LNAB to the appropriate degree column header
                     surnames["degree_" + theDegree].push(theLNAB);
@@ -3282,7 +3451,7 @@ export class CC7 {
                 "<ul></ul></li>"
         );
         hierarchySection.children("ul").append(anLi);
-        for (let i = 0; i < CC7.MAX_DEGREE; i++) {
+        for (let i = 0; i < window.cc7Degree; i++) {
             CC7.addPeopleToHierarchy(i);
         }
         $("#hierarchyView li").each(function () {
@@ -3304,7 +3473,7 @@ export class CC7 {
         });
         $("#showAllDegrees").on("click", function (e) {
             e.preventDefault();
-            window.visibleDegrees = CC7.MAX_DEGREE;
+            window.visibleDegrees = window.cc7Degree;
             if ($(this).text() == "Expand All") {
                 $(this).text("Collapse All");
                 $("#hierarchyView ul ul").show();
@@ -3322,7 +3491,7 @@ export class CC7 {
         });
         $("#showOneMoreDegree").on("click", function (e) {
             e.preventDefault();
-            if (window.visibleDegrees < CC7.MAX_DEGREE) {
+            if (window.visibleDegrees < window.cc7Degree) {
                 window.visibleDegrees++;
                 let j = window.visibleDegrees;
                 for (let i = 0; i < j + 1; i++) {
@@ -3350,7 +3519,7 @@ export class CC7 {
                 window.visibleDegrees--;
                 let j = window.visibleDegrees;
 
-                for (let i = CC7.MAX_DEGREE; i >= j + 1; i--) {
+                for (let i = window.cc7Degree; i >= j + 1; i--) {
                     $("li[data-degree='" + i + "']")
                         .parent()
                         .hide();
@@ -3516,8 +3685,14 @@ export class CC7 {
                 CC7.populateRelativeArrays();
                 CC7.hideShakingTree();
                 $("#degreesTable").remove();
+                $("#ancReport").remove();
                 $("#cc7Container").append(
-                    $("<table id='degreesTable'><tr><th>Degree</th></tr><tr><th>Connections</th></tr></table>")
+                    $(
+                        "<table id='degreesTable'>" +
+                            "<tr id='trDeg'><th>Degrees</th></tr>" +
+                            "<tr id='trCon'><th>Connections</th></tr>" +
+                            "</table>"
+                    )
                 );
                 CC7.buildDegreeTableData(degreeCounts, theDegree, theDegree);
                 CC7.addPeopleTable(CC7.tableCaption(wtId, theDegree, CC7.ONE_DEGREE));
@@ -3675,26 +3850,26 @@ export class CC7 {
                 function getReportLines(biography, isPre1700) {
                     const profileReportLines = [];
                     if (!biography.hasSources()) {
-                        profileReportLines.push("Profile may be unsourced");
+                        profileReportLines.push(["Profile may be unsourced", null]);
                     }
                     const invalidSources = biography.getInvalidSources();
-                    const nrInvalidSources = invalidSources.length;
-                    if (nrInvalidSources > 0) {
+                    if (invalidSources.length > 0) {
                         let msg = "Bio Check found sources that are not ";
                         if (isPre1700) {
                             msg += "reliable or ";
                         }
-                        msg += "clearly identified: \u00A0\u00A0";
-                        profileReportLines.push(msg);
+                        msg += "clearly identified:";
+                        const subLines = [];
                         for (const invalidSource of invalidSources) {
-                            profileReportLines.push("\xa0\xa0\xa0" + invalidSource);
+                            subLines.push(invalidSource);
                         }
+                        profileReportLines.push([msg, subLines]);
                     }
                     for (const sectMsg of biography.getSectionMessages()) {
-                        profileReportLines.push(sectMsg);
+                        profileReportLines.push([sectMsg, null]);
                     }
                     for (const styleMsg of biography.getStyleMessages()) {
-                        profileReportLines.push(styleMsg);
+                        profileReportLines.push([styleMsg, null]);
                     }
                     return profileReportLines;
                 }
@@ -3819,16 +3994,29 @@ export class CC7 {
             window.rootId = +resultByKey[wtId]?.Id;
             CC7.populateRelativeArrays();
             const root = window.people.get(window.rootId);
-            CC7.categoriseProfiles(root);
+            const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root, maxWantedDegree);
 
             window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
             CC7.hideShakingTree();
             if ($("#degreesTable").length != 0) {
                 $("#degreesTable").remove();
+                $("#ancReport").remove();
             }
+            const maxNrPeople = 2 ** (maxWantedDegree + 3) - 2;
             $("#cc7Container").append(
                 $(
-                    "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
+                    "<table id='degreesTable'>" +
+                        "<tr id='trDeg'><th>Degrees</th></tr>" +
+                        "<tr id='trCon'><th>Connections</th></tr>" +
+                        "<tr id='trTot'><th>Total</th></tr>" +
+                        `</table><p id="ancReport">Out of ${maxNrPeople} possible direct ancestors in ${
+                            maxWantedDegree + 3
+                        } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
+                            2
+                        )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
+                            (nrDuplicateAncestors / nrDirectAncestors) *
+                            100
+                        ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1, window.cc7Degree);
@@ -3965,7 +4153,7 @@ export class CC7 {
         }
     }
 
-    static categoriseProfiles(theRoot) {
+    static categoriseProfiles(theRoot, maxWantedDegree) {
         if (!theRoot) return;
         const ABOVE = true;
         const BELOW = false;
@@ -3973,21 +4161,28 @@ export class CC7 {
         CC7.fixBirthDate(theRoot);
         theRoot.isAncestor = false;
         theRoot.isAbove = false;
-        const descendantQ = [theRoot.Id];
-        const belowQ = [theRoot.Id];
-        const ancestorQ = [theRoot.Id];
-        const aboveQ = [theRoot.Id];
+        // Note: unlike the usual case, where the queue contains nodes still to be "visited" and processed,
+        // the people on the queues here have already been categorised and it is their appropriate
+        // relatives (depending on the queue) that needs to be categorised and then added to the queues
+        const descendantQ = [+theRoot.Id];
+        const belowQ = [+theRoot.Id];
+        const ancestorQ = [[+theRoot.Id, 0]];
+        const aboveQ = [+theRoot.Id];
+        const directAncestors = new Set();
+        const duplicates = new Set();
+        let nrProfiles = 0;
         let firstIteration = true;
         while (belowQ.length > 0 || aboveQ.length > 0 || descendantQ.length > 0 || ancestorQ.length > 0) {
             // console.log("Queues", descendantQ, belowQ, ancestorQ, aboveQ);
             if (descendantQ.length > 0) {
                 const pId = descendantQ.shift();
-                const person = window.people.get(+pId);
+                const person = window.people.get(pId);
                 if (person) {
                     // Add this persons children to the queue
                     const rels = CC7.getIdsOfRelatives(person, ["Child"]);
-                    for (const relId of rels) {
-                        const child = window.people.get(+relId);
+                    for (const rId of rels) {
+                        const relId = +rId;
+                        const child = window.people.get(relId);
                         if (child) {
                             // console.log(
                             //     `Adding child for ${person.Id} (${person.Name}): ${child.Id} (${child.Name}) ${child.BirthNamePrivate}`
@@ -4000,7 +4195,7 @@ export class CC7 {
             }
             if (belowQ.length > 0) {
                 const pId = belowQ.shift();
-                const person = window.people.get(+pId);
+                const person = window.people.get(pId);
                 if (person) {
                     if (typeof person.fixedBirthDate === "undefined") {
                         CC7.fixBirthDate(person);
@@ -4014,7 +4209,8 @@ export class CC7 {
                     //     belowQ,
                     //     rels
                     // );
-                    for (const relId of rels) {
+                    for (const rId of rels) {
+                        const relId = +rId;
                         if (setAndShouldAdd(relId, BELOW)) {
                             if (!belowQ.includes(relId)) {
                                 // const p = window.people.get(+relId);
@@ -4026,28 +4222,47 @@ export class CC7 {
                 }
             }
             if (ancestorQ.length > 0) {
-                const pId = ancestorQ.shift();
+                const [pId, degree] = ancestorQ.shift();
                 const person = window.people.get(+pId);
                 if (person) {
-                    // Add this person's parents to the queue
-                    const rels = CC7.getIdsOfRelatives(person, ["Parent"]);
+                    // Add this person's parents to the queue if necessary
                     // console.log(`Adding parents for ${person.Id} (${person.Name})`, rels);
-                    for (const relId of rels) {
-                        // Set ancestor relationship
-                        const parent = window.people.get(+relId);
-                        if (parent) {
-                            // console.log(
-                            //     `Adding parent for ${person.Id} (${person.Name}): ${parent.Id} (${parent.Name}) ${parent.BirthNamePrivate}`
-                            // );
-                            parent.isAncestor = true;
-                            ancestorQ.push(relId);
+                    const parentDegree = degree + 1;
+                    // Note that we're using the Parents array and not the Parent array here
+                    // so that we can count profiles and duplicates to as high a degree as possible.
+                    // The Parent array contains actual profiles that we have loaded, while
+                    // Parents contain parent IDs and may be for profiles we have not loaded
+                    // (but which actually exists in WikiTree).
+                    for (const rId of person["Parents"]) {
+                        const relId = +rId;
+
+                        // Count profiles and duplicates
+                        if (relId) {
+                            ++nrProfiles;
+                            if (directAncestors.has(relId)) {
+                                duplicates.add(relId);
+                            } else {
+                                directAncestors.add(relId);
+                            }
+                        }
+
+                        // Set ancestor relationship (we have requestd  maxWantedDegree + 1 from W^)
+                        if (parentDegree <= maxWantedDegree + 1) {
+                            const parent = window.people.get(relId);
+                            if (parent) {
+                                // console.log(
+                                //     `Adding parent for ${person.Id} (${person.Name}): ${parent.Id} (${parent.Name}) ${parent.BirthNamePrivate}`
+                                // );
+                                parent.isAncestor = true;
+                                ancestorQ.push([rId, parentDegree]);
+                            }
                         }
                     }
                 }
             }
             if (aboveQ.length > 0) {
                 const pId = aboveQ.shift();
-                const person = window.people.get(+pId);
+                const person = window.people.get(pId);
                 if (person) {
                     if (typeof person.fixedBirthDate === "undefined") {
                         CC7.fixBirthDate(person);
@@ -4061,7 +4276,8 @@ export class CC7 {
                     //     aboveQ,
                     //     rels
                     // );
-                    for (const relId of rels) {
+                    for (const rId of rels) {
+                        const relId = +rId;
                         if (setAndShouldAdd(relId, ABOVE)) {
                             if (!aboveQ.includes(relId)) {
                                 // const p = window.people.get(+relId);
@@ -4074,9 +4290,11 @@ export class CC7 {
             }
             firstIteration = false;
         }
+        console.log(`nr direct ancestor profiles=${directAncestors.size}, nr dups=${duplicates.size}`, duplicates);
+        return [nrProfiles, duplicates.size];
 
         function setAndShouldAdd(pId, where) {
-            const p = window.people.get(+pId);
+            const p = window.people.get(pId);
             if (p) {
                 if (
                     where == BELOW &&
@@ -4134,7 +4352,7 @@ export class CC7 {
 
         // Append the link to the DOM and trigger the download
         document.body.appendChild(link);
-        link.click();
+        link.trigger("click");
 
         // Remove the link from the DOM
         document.body.removeChild(link);
@@ -4155,6 +4373,7 @@ export class CC7 {
         $(
             [
                 "#degreesTable",
+                "#ancReport",
                 "#hierarchyView",
                 "#lanceTable",
                 "#peopleTable",
@@ -4163,6 +4382,8 @@ export class CC7 {
                 "#wideTableButton",
                 "#clearTableFiltersButton",
                 "#cc7Subset",
+                "#tableButtons",
+                "#mlButtons",
             ].join(",")
         ).remove();
     }
@@ -4265,7 +4486,10 @@ export class CC7 {
             CC7.addPeopleTable(CC7.tableCaption(window.rootId, theDegree, !CC7.ONE_DEGREE));
             $("#cc7Container #cc7Subset").before(
                 $(
-                    "<table id='degreesTable'><tr><th>Degrees</th></tr><tr><th>Connections</th></tr><tr><th>Total</th></tr></table>"
+                    "<table id='degreesTable'>" +
+                        "<tr id='trDeg'><th>Degrees</th></tr>" +
+                        "<tr id='trCon'><th>Connections</th></tr>" +
+                        "<tr id='trTot'><th>Total</th></tr></table>"
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1, theDegree);
@@ -4283,16 +4507,10 @@ export class CC7 {
 
     static buildDegreeTableData(degreeCounts, fromDegree, toDegree) {
         function addTableCol(i, degreeSum) {
-            $("#degreesTable tr")
-                .eq(0)
-                .append($(`<td>${i}</td>`));
-            $("#degreesTable tr")
-                .eq(1)
-                .append($(`<td>${degreeCounts[i]}</td>`));
+            $("#trDeg").append($(`<td>${i}</td>`));
+            $("#trCon").append($(`<td>${degreeCounts[i]}</td>`));
             if (fromDegree == 1) {
-                $("#degreesTable tr")
-                    .eq(2)
-                    .append($(`<td>${degreeSum}</td>`));
+                $("#trTot").append($(`<td>${degreeSum}</td>`));
             }
         }
         let degreeSum = 0;
@@ -4307,6 +4525,8 @@ export class CC7 {
     }
 
     static cc7excelOut(fileType) {
+        const bioCheck = CC7.currentSettings["biocheck_options_biocheckOn"];
+        const idMap = new Map();
         const sheetName = CC7.makeSheetname();
 
         const wb = XLSX.utils.book_new();
@@ -4338,13 +4558,20 @@ export class CC7 {
             "Created",
             "Modified",
         ];
+        if (bioCheck) {
+            // Add biocheck column
+            headings.splice(1, 0, "Bio Issue");
+        }
 
         ws_data.push(headings, []);
         $("#peopleTable > tbody tr").each(function () {
             const row = $(this);
             const tds = row.find("td");
-            let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched;
+            let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched, bioIssue;
             tds.each(function () {
+                if ($(this).hasClass("privBio")) {
+                    bioIssue = $(this).hasClass("bioIssue");
+                }
                 if ($(this).hasClass("birthdate")) {
                     birthdate = $(this).text();
                 }
@@ -4386,10 +4613,55 @@ export class CC7 {
                 created,
                 touched,
             ];
+            if (bioCheck) {
+                // Add biocheck column and create id lookup table
+                pData.splice(1, 0, bioIssue);
+                if (bioIssue) idMap.set(row.data("name"), row.data("id"));
+            }
             ws_data.push(pData);
         });
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        Object.getOwnPropertyNames(ws)
+            .filter((k) => k.startsWith("A"))
+            .forEach((aCell) => {
+                const bCell = `B${aCell.substring(1)}`;
+                const wtId = ws[aCell].v;
+                if (wtId.match(/.+\-.+/)) {
+                    // Add a hyperlink to the WtId cell
+                    ws[aCell].l = { Target: `https://www.wikitree.com/wiki/${wtId}` };
+                }
+                if (bioCheck && ws[bCell].v === true) {
+                    // Add a BioCeck column with the BioCheck report as comment
+                    const id = idMap.get(wtId);
+                    const person = window.people.get(id);
+                    if (person?.bioCheckReport) {
+                        ws[bCell].c = [{ a: "WT", t: formCommentFromReport(person.bioCheckReport) }];
+                    }
+                }
+            });
+
+        function formCommentFromReport(bioCheckReport) {
+            let comment = "";
+            let cnt = 0;
+            for (let [msg, subLines] of bioCheckReport) {
+                if (subLines && subLines.length > 0) {
+                    let subList = "";
+                    for (const line of subLines) {
+                        subList = subList.concat("\n  * ", line);
+                    }
+                    msg += subList;
+                }
+                if (++cnt == 1) {
+                    comment += `${cnt}. `;
+                } else {
+                    comment += `\n${cnt}. `;
+                }
+                comment += msg;
+            }
+            return comment;
+        }
+
         wb.Sheets[sheetName] = ws;
 
         function s2ab(s) {
@@ -4417,6 +4689,9 @@ export class CC7 {
             { wch: 10 },
             { wch: 10 },
         ];
+        if (bioCheck) {
+            wscols.splice(1, 0, { wch: 5 });
+        }
 
         ws["!cols"] = wscols;
 
