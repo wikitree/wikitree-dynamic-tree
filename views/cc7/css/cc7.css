@@ -223,7 +223,12 @@ div.cc7Table .timelineTable td {
   border: 2px solid darkorange;
   background: #ffe270;
 }
-.cc7Table span.bioIssue {
+.cc7Table span.bioIssue2,
+.cc7Table #peopleTable td.bioIssue2 {
+  border: 2px solid darkorange;
+}
+.cc7Table span.bioIssue,
+.cc7Table span.bioIssue2 {
   cursor: default;
   position: relative;
   top: -0.4em;
