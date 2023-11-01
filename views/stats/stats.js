@@ -117,6 +117,8 @@ window.StatsView = class StatsView extends View {
         gatherStats(person_id, selectedGender);
 
         async function gatherStats(id, gender) {
+            window.StatsView.showShakingTree();
+
             let results = document.getElementById("results-container");
             results.innerHTML = ""; // Clear away any previous results
             let table = document.querySelector("#stats-table > tbody");
@@ -474,6 +476,8 @@ window.StatsView = class StatsView extends View {
                 avgChildrenCounts: avgChildrenCounts,
                 avgSiblingsCounts: avgSiblingsCounts,
             });
+
+            window.StatsView.hideShakingTree();
         }
 
         function fillTable(stats) {
@@ -547,5 +551,26 @@ window.StatsView = class StatsView extends View {
         function sortByYear(a, b) {
             return a - b;
         }
+    }
+
+    static showShakingTree(callback) {
+        if ($("#tree").length) {
+            $("#tree").slideDown("fast", "swing", callback);
+        } else {
+            const treeGIF = $("<img id='tree' src='./views/cc7/images/tree.gif'>");
+            treeGIF.appendTo("#statsContainer");
+            $("#tree").css({
+                "display": "block",
+                "margin": "auto",
+                "height": "50px",
+                "width": "50px",
+                "border-radius": "50%",
+                "border": "3px solid forestgreen",
+            });
+        }
+    }
+
+    static hideShakingTree() {
+        $("#tree").slideUp("fast");
     }
 };

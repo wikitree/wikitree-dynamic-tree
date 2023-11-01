@@ -34,6 +34,15 @@
   border-bottom: 2px solid #25422d;
 }
 
+#stats-Table #tree {
+  display: block;
+  height: 5em;
+  border-radius: 50%;
+  border: 3px solid forestgreen;
+  width: 5em;
+  margin: auto;
+}
+
 #results-container {
   margin: 25px auto;
   text-align: center;
