@@ -2981,13 +2981,20 @@ export class CC7 {
         $("#peopleTable").floatingScroll("update");
     }
 
-    static updateClearFiltersButtonVisibility() {
-        let anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
-            (input) => input.value.trim() !== ""
+    static anyFilterActive() {
+        return (
+            Array.from(document.querySelectorAll(".filter-input")).some((input) => input.value.trim() !== "") ||
+            $("#cc7PBFilter").select2("data")[0].id != "all"
         );
-        if ($("#cc7PBFilter").select2("data")[0].id != "all") anyFilterHasText = true;
+    }
+
+    static updateClearFiltersButtonVisibility() {
+        // let anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
+        //     (input) => input.value.trim() !== ""
+        // );
+        // if ($("#cc7PBFilter").select2("data")[0].id != "all") anyFilterHasText = true;
         const clearFiltersButton = document.querySelector("#clearTableFiltersButton");
-        clearFiltersButton.style.display = anyFilterHasText ? "inline-block" : "none";
+        clearFiltersButton.style.display = CC7.anyFilterActive() ? "inline-block" : "none";
     }
 
     static stripLtGt() {
@@ -4328,13 +4335,19 @@ export class CC7 {
     }
 
     static makeFilename() {
-        return CC7.makeSheetname() + new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
+        return (
+            CC7.makeSheetname() +
+            new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19) +
+            "_" +
+            $("#cc7Subset").val().substring(0, 3) +
+            (CC7.anyFilterActive() ? "_filtered" : "")
+        );
     }
 
     static makeSheetname() {
         const theDegree = $("#cc7Degree").val();
         let fileName = `CC${theDegree}_${wtViewRegistry.getCurrentWtId()}_`;
-        fileName += $("div.degreeView").length ? `Degree_${theDegree}_` : "";
+        fileName += $("div.degreeView").length ? `Deg_${theDegree}_` : "";
         return fileName;
     }
 
@@ -4566,6 +4579,7 @@ export class CC7 {
         ws_data.push(headings, []);
         $("#peopleTable > tbody tr").each(function () {
             const row = $(this);
+            if (!row.is(":visible")) return;
             const tds = row.find("td");
             let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched, bioIssue;
             tds.each(function () {
