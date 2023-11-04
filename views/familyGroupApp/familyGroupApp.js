@@ -68,19 +68,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         super(); // If there is a constructor in the parent class, make sure to call it.
         this.container_selector = container_selector;
         this.person_id = person_id;
-
-        // Initialize instance properties
-        this.keepSpouse = "";
-        this.people = [];
-        this.husband = 0;
-        this.husbandWTID = "";
-        this.wife = 0;
-        this.wifeWTID = "";
-        this.calledPeople = [this.person_id];
-        this.calls = 1;
-        this.privates = 0;
-        this.references = [];
-        // Any other properties that need to be initialized.
+        this.initializeLocalStates(); // Call this method to set initial state
+        this.$header = $("header");
+        this.$body = $("body");
     }
 
     meta() {
@@ -98,11 +88,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.husbandWTID = "";
         this.wife = 0;
         this.wifeWTID = "";
-        // Ensure that this.person_id is already in the correct format before this point.
         this.calledPeople = [this.person_id];
         this.calls = 1;
         this.privates = 0;
         this.references = [];
+        this.doneKids = [];
     }
 
     getRels(rel, person, theRelation = false) {
@@ -156,7 +146,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                         // Populate spouse, children, siblings, and parents
                         ["Spouse", "Child", "Sibling", "Parent"].forEach((relation) => {
-                            const relatives = this.getRels(mPerson[`${relation}s`], mPerson, relation);
+                            let s = "s";
+                            if (relation === "Child") {
+                                s = "ren";
+                            }
+                            const relatives = this.getRels(mPerson[`${relation}${s}`], mPerson, relation);
                             mPerson[relation] = relatives;
                         });
 
@@ -211,87 +205,86 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     startIt() {
         this.keepSpouse = "";
-
         $("#familySheetFormTable,#tree,#notesAndSources,.tableContainer,#privateQ").remove();
         $("<img id='tree' src='views/familyGroupApp/images/tree.gif'>").appendTo($(this.$container));
-
         this.getFamily(this.person_id);
-
-        if (localStorage.fgsInfoState == "removed") {
-            $("#fgsInfo").addClass("removed");
-        }
     }
 
     setupEventListeners() {
+        this.$body.off("click.fgs change.fgs");
         // Delegated event listeners for checkbox changes
-        this.$container.on("change", "#showBaptism", () =>
-            this.toggleStyle("showBaptismStyle", "tr.baptismRow{display:none;}", "baptChrist input")
-        );
-        this.$container.on("change", "#showBurial", () =>
+        this.$container.on("change.fgs", "#showBaptism", () => {
+            this.toggleStyle("showBaptism", "tr.baptismRow, #baptChrist { display: none; }");
+            console.log("showBaptism");
+        });
+        this.$container.on("change.fgs", "#showBurial", () =>
             this.toggleStyle("showBurialStyle", "tr.buriedRow{display:none;}")
         );
-        this.$container.on("change", "#showNicknames", () =>
+        this.$container.on("change.fgs", "#showNicknames", () =>
             this.toggleStyle(
                 "showNicknamesStyle",
                 ".familySheetForm caption span.nicknames,span.nicknames{display:none;}"
             )
         );
-        this.$container.on("change", "#showParentsSpousesDates", () =>
+        this.$container.on("change.fgs", "#showParentsSpousesDates", () =>
             this.toggleStyle(
                 "showParentsSpousesDatesStyle",
                 ".familySheetForm span.parentDates,.familySheetForm span.spouseDates{display:none;}"
             )
         );
-        this.$container.on("change", "#showOtherLastNames", () =>
+        this.$container.on("change.fgs", "#showOtherLastNames", () =>
             this.toggleStyle(
                 "showOtherLastNamesStyle",
                 ".familySheetForm caption span.otherLastNames,span.otherLastNames{display:none;}"
             )
         );
-        this.$container.on("change", "#useColour", () =>
+        this.$container.on("change.fgs", "#useColour", () =>
             this.toggleStyle(
                 "useColourStyle",
                 ".familySheetForm tr.marriedRow, .familySheetForm caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}"
             )
         );
-        this.$container.on("change", "#showWTIDs", () =>
+        this.$container.on("change.fgs", "#showWTIDs", () =>
             this.toggleStyle("showWTIDsStyle", ".familySheetForm .fsWTID{display:inline-block;}")
         );
-        this.$container.on("change", "#showBios", () => this.toggleBios());
+        this.$container.on("change.fgs", "#showBios", () => this.toggleBios());
 
         // Delegated event listeners for radio button changes
-        this.$container.on("change", "input[type=radio][name=baptismChristening]", () => this.setBaptChrist());
-        this.$container.on("change", "input[type=radio][name=statusChoice]", () => this.setStatusChoice());
-        this.$container.on("change", "input[type=radio][name=showGender]", () => this.setShowGender());
+        this.$container.on("change.fgs", "input[type=radio][name=baptismChristening]", () => this.setBaptChrist());
+        this.$container.on("change.fgs", "input[type=radio][name=statusChoice]", (e) => this.setStatusChoice(e));
+        this.$container.on("change.fgs", "input[type=radio][name=showGender]", () => this.setShowGender());
 
-        // Delegated click event listeners for options and information panels
-        this.$container.on("click", "#fgsInfo", () => this.handleSlideToggle("#fgsInfo", "fgsInfoState"));
-        this.$container.on("click", "#fgsOptions x, #fgsOptions .notesHeading", () =>
-            this.handleSlideToggle("#fgsOptions", "fgsOptionsState")
-        );
+        // Delegated click.fgs event listeners for options and information panels
+        this.$body.on("click.fgs", "#fgsInfo, #fgsNotesButton", function () {
+            $("#fgsInfo").toggle();
+            $("#fgsNotesButton").toggleClass("active");
+        });
+        this.$body.on("click.fgs", "#fgsOptions x, #fgsOptionsButton", function () {
+            $("#fgsOptions").toggle();
+            $("#fgsOptionsButton").toggleClass("active");
+        });
 
-        // Delegated change event listener for the long month display setting
-        this.$container.on("change", "#longMonth", (event) => {
+        // Delegated change.fgs event listener for the long month display setting
+        this.$container.on("change.fgs", "#longMonth", (event) => {
             const isChecked = $(event.target).is(":checked");
             $(".date").each((index, element) => {
                 $(element).text(this.monthFormat($(element).text(), isChecked ? "full" : "short"));
             });
         });
 
-        // Listeners
-        this.$container.on("click", ".fsName a, caption a", function (e) {
+        this.$container.on("click.fgs", ".fsName a, caption a", function (e) {
             e.preventDefault();
         });
 
-        this.$container.on("click", "td[data-name],span[data-name]", (e) => {
+        this.$container.on("click.fgs", "td[data-name],span[data-name]", (e) => {
             const $this = $(e.currentTarget);
             const dTR = $this.closest("tr");
             this.keepSpouse = dTR.attr("data-person") || "";
 
-            $("#wtid").val($this.attr("data-name"));
-            $("#familySheetGo").trigger("click");
+            $("#wt-id-text").val($this.attr("data-name"));
+            this.init(this.$container, $this.attr("data-name"));
         });
-
+        /*
         this.$container.on("change", "#showBaptism", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
@@ -303,7 +296,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#showBurial", (e) => {
+  */
+        this.$container.on("change.fgs", "#showBurial", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
                 $("<style id='showBurialStyle'>tr.buriedRow{display:none;}</style>").appendTo(this.$container);
@@ -312,7 +306,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#showNicknames", (e) => {
+        this.$container.on("change.fgs", "#showNicknames", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
                 $(
@@ -323,7 +317,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#showParentsSpousesDates", (e) => {
+        this.$container.on("change.fgs", "#showParentsSpousesDates", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
                 $(
@@ -334,7 +328,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#husbandFirst", (e) => {
+        this.$container.on("change.fgs", "#husbandFirst", (e) => {
             const $this = $(e.currentTarget);
             const husbandID = $("tr.roleRow[data-role='Husband']").attr("data-name");
             const husbandCitations = $("#citationList li[data-wtid='" + this.htmlEntities(husbandID) + "']");
@@ -342,9 +336,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 "caption span.fsWTID:contains('" + this.htmlEntities(husbandID) + "')"
             ).parent();
             let wifeNameCaption;
-            if (people[0].Name != husbandID) {
+            if (this.people[0].Name != husbandID) {
                 wifeNameCaption = $(
-                    "caption span.fsWTID:contains('" + this.htmlEntities(people[0].Name) + "')"
+                    "caption span.fsWTID:contains('" + this.htmlEntities(this.people[0].Name) + "')"
                 ).parent();
             }
 
@@ -356,20 +350,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 husbandCitations.prependTo($("#citationList"));
                 husbandNameCaption.prependTo($("caption"));
 
-                if (people[0].Name != husbandID) {
+                if (this.people[0].Name != husbandID) {
                     wifeNameCaption.appendTo($("caption"));
                 }
-            } else if (people[0].Gender == "Female") {
+            } else if (this.people[0].Gender == "Female") {
                 $("div.tableContainer.Husband").insertAfter($("div.tableContainer.Wife"));
                 $(".marriedRow").eq(0).appendTo($("div.tableContainer.Wife tbody"));
                 $(".marriedRow[data-role='Husband']").remove();
-                $("#citationList li[data-wtid='" + this.htmlEntities(people[0].Name) + "']").prependTo(
+                $("#citationList li[data-wtid='" + this.htmlEntities(this.people[0].Name) + "']").prependTo(
                     $("#citationList")
                 );
 
                 husbandNameCaption.appendTo($("caption"));
 
-                if (people[0].Name != husbandID) {
+                if (this.people[0].Name != husbandID) {
                     wifeNameCaption.prependTo($("caption"));
                 }
             }
@@ -388,7 +382,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $(".showNicknamesSpan").hide();
         }
 
-        this.$container.on("change", "#longMonth", (e) => {
+        this.$container.on("change.fgs", "#longMonth", (e) => {
             const $this = $(e.currentTarget);
             this.storeVal($this);
             let opt = "short";
@@ -400,7 +394,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             });
         });
 
-        this.$container.on("change", "#showOtherLastNames", (e) => {
+        this.$container.on("change.fgs", "#showOtherLastNames", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
                 $(
@@ -411,7 +405,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#useColour", (e) => {
+        this.$container.on("change.fgs", "#useColour", (e) => {
+            const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
                 $(
                     "<style id='useColourStyle'>.familySheetForm tr.marriedRow, .familySheetForm caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}    </style>"
@@ -421,7 +416,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#showBios", (e) => {
+        this.$container.on("change.fgs", "#showBios", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == true) {
                 $(".theBio").slideDown();
@@ -438,7 +433,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change", "#showWTIDs", (e) => {
+        this.$container.on("change.fgs", "#showWTIDs", (e) => {
             const $this = $(e.currentTarget);
             if ($(this).prop("checked") == true) {
                 $("<style id='showWTIDsStyle'>.familySheetForm .fsWTID{display:inline-block;}</style>").appendTo(
@@ -450,57 +445,34 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.storeVal($this);
         });
 
-        this.$container.on("change", "input[type=radio][name=baptismChristening]", (e) => {
+        this.$container.on("change.fgs", "input[type=radio][name=baptismChristening]", (e) => {
             const $this = $(e.currentTarget);
             this.setBaptChrist();
             this.storeVal($this);
         });
 
-        this.$container.on("click", "#fgsInfo", (e) => {
-            $this.slideUp("slow");
-            setTimeout(function () {
-                $("#fgsInfo").toggleClass("removed");
-                $("#fgsInfo").slideDown("slow");
-                if ($("#fgsInfo").hasClass("removed")) {
-                    localStorage.setItem("fgsInfoState", "removed");
-                } else {
-                    localStorage.setItem("fgsInfoState", "center");
-                }
-            }, 1000);
-        });
-        this.$container.on("click", "#fgsOptions x,#fgsOptions .notesHeading", () => {
-            $("#fgsOptions").slideUp("slow");
-            setTimeout(function () {
-                $("#fgsOptions").toggleClass("removed");
-                $("#fgsOptions").slideDown("slow");
-                if ($("#fgsOptions").hasClass("removed")) {
-                    localStorage.setItem("fgsOptionsState", "removed");
-                    $("#fgsOptions .notesHeading").show();
-                } else {
-                    localStorage.setItem("fgsOptionsState", "center");
-                    $("#fgsOptions .notesHeading").hide();
-                }
-            }, 1000);
-        });
-
         this.$container.on(
-            "click",
+            "click.fgs",
             ".BaptismDate, .BaptismPlace, .buriedDate, .buriedPlace, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable",
             (e) => {
                 const $this = $(e.currentTarget);
+                let theEl = $this;
                 // Check if an input already exists within the clicked element
                 if ($this.find("input").length === 0) {
                     let inputBox;
 
                     // Determine if the clicked element is a CAPTION
-                    const isCaption = $this.prop("tagName") === "CAPTION";
-                    const initialValue = isCaption ? $this.html() : $this.text();
+                    const isCaption = $this.closest("caption").length;
+                    if (isCaption) {
+                        theEl = $this.closest("caption");
+                    }
+                    const initialValue = isCaption ? theEl.html() : theEl.text();
 
                     // Create the input box
                     inputBox = $("<input style='background:white;' type='text' class='edit'>").val(initialValue);
 
                     // Clear existing text and append input box
-                    $this.empty().append(inputBox);
+                    theEl.empty().append(inputBox);
 
                     // Focus on the input box
                     inputBox.focus();
@@ -519,7 +491,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
             }
         );
-        this.$container.on("click", "#notesNotes", (e) => {
+        this.$container.on("click.fgs", "#notesNotes", (e) => {
             const $this = $(e.currentTarget);
             if ($this.find("textarea").length == 0) {
                 const textBox = $("<textarea class='edit'>" + this.br2nl($this.html()) + "</textarea>");
@@ -534,23 +506,28 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
-    setStatusChoice() {
-        // Get the value of the selected radio button for statusChoice
-        const statusChoiceValue = this.$container.find('input[name="statusChoice"]:checked').val();
-
-        // Apply this value to change the status in your UI
-        // For example, if you're using this to toggle classes or content, it might look like this:
-        this.updateStatusDisplay(statusChoiceValue);
-    }
-
-    updateStatusDisplay(choice) {
-        // Here, we'll use 'choice' to determine what to display or how to update the UI
-        // This is just a placeholder - you would replace this with your actual logic
-        if (choice === "symbols") {
-            // Update the UI to show symbols
-        } else if (choice === "abbreviations") {
-            // Update the UI to show abbreviations
+    setStatusChoice(e) {
+        const $this = $(e.currentTarget);
+        this.storeVal($this);
+        let isAbbr = false;
+        if ($("input[name='statusChoice'][value='abbreviations']").prop("checked") == true) {
+            isAbbr = true;
         }
+        $(".date").each(function () {
+            if (isAbbr) {
+                $(this).text(
+                    $(this).text().replaceAll(/~/g, "abt. ").replaceAll(/</g, "bef. ").replaceAll(/>/g, "aft. ")
+                );
+            } else {
+                $(this).text(
+                    $(this)
+                        .text()
+                        .replaceAll(/abt\.\s/g, "~")
+                        .replaceAll(/bef\.\s/g, "<")
+                        .replaceAll(/aft\.\s/g, ">")
+                );
+            }
+        });
     }
 
     setShowGender() {
@@ -609,7 +586,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     loadFamilyGroupSheetHTML() {
         const familyGroupSheetHTML = `
         <div id='fgsOptions'>
-        <x>x</x>
+        <x>&#10005;</x>
         <span class='notesHeading'>Options</span>
         <label id='getBiosLabel' style='display:none;'><input type='checkbox' id='getBios'  checked value='1'>Get biographies</label>
         <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>Show nicknames</span></label>
@@ -634,7 +611,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         </div>
         
         <div id='fgsInfo'>
-        <x>x</x>
+        <x>&#10005;</x>
         <span class='notesHeading'>Notes</span>
         <ul>
         <li id='bioInstructions'>Click 'Biography' (bottom left) to see each biography.</li>
@@ -644,6 +621,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         </ul>
         </div>`;
         this.$container.html(familyGroupSheetHTML);
+        const fgsButtons = `<div id="fgsButtons"><button class="small" id="fgsOptionsButton">Options</button><button class="small" id="fgsNotesButton">Notes</button></div>`;
+        if ($("#fgsButtons").length === 0) {
+            $("header").append(fgsButtons);
+        }
     }
 
     ancestorType(generation, gender) {
@@ -806,38 +787,40 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 ? fPerson.LongNamePrivate.replace(/\s\s+/g, " ")
                 : "";
 
-        // Construct the full name from components.
-        let fullName = "";
-        const nameComponents = [
-            "Prefix",
-            "FirstName",
-            "RealName",
-            "MiddleName",
-            "Nicknames",
-            "LastNameAtBirth",
-            "LastNameCurrent",
-            "Suffix",
-        ];
-        nameComponents.forEach((component) => {
-            if (cleanName(fPerson[component])) {
-                if (component === "LastNameAtBirth" && fPerson.LastNameAtBirth !== fPerson.LastNameCurrent) {
-                    fullName += `(${fPerson.LastNameAtBirth}) `;
-                } else if (component === "Nicknames") {
-                    const nicknames = fPerson.Nicknames.split(/,\s?/)
-                        .map((nick) => `“${nick}”`)
-                        .join(" ");
-                    fullName += `${nicknames} `;
-                } else if (component !== "RealName" || !fPerson.FirstName) {
-                    fullName += `${fPerson[component]} `;
-                }
-            }
-        });
+        // Initialize the fullName with Prefix if it exists.
+        let fullName = cleanName(fPerson.Prefix) ? `${fPerson.Prefix} ` : "";
+
+        // Include FirstName or RealName (RealName takes precedence if no FirstName).
+        fullName += cleanName(fPerson.FirstName)
+            ? `${fPerson.FirstName} `
+            : cleanName(fPerson.RealName)
+            ? `${fPerson.RealName} `
+            : "";
+
+        // Add MiddleName and Nicknames if they exist.
+        fullName += cleanName(fPerson.MiddleName) ? `${fPerson.MiddleName} ` : "";
+        fullName += cleanName(fPerson.Nicknames)
+            ? `${fPerson.Nicknames.split(/,\s?/)
+                  .map((nick) => `“${nick}”`)
+                  .join(" ")} `
+            : "";
+
+        // Handle last names, including the condition for LastNameAtBirth.
+        if (cleanName(fPerson.LastNameAtBirth) && fPerson.LastNameAtBirth !== fPerson.LastNameCurrent) {
+            fullName += `(${fPerson.LastNameAtBirth}) `;
+        }
+        if (cleanName(fPerson.LastNameCurrent)) {
+            fullName += `${fPerson.LastNameCurrent} `;
+        }
+
+        // Append Suffix if it exists.
+        fullName += cleanName(fPerson.Suffix) ? `${fPerson.Suffix} ` : "";
 
         // Determine the display and short names.
-        const fName = getLongestName(longName, longNamePrivate, fullName);
-        const sName = fPerson.ShortName || fName;
+        const fName = getLongestName(longName, longNamePrivate, fullName).trim();
+        const sName = cleanName(fPerson.ShortName) ? fPerson.ShortName.trim() : fName;
 
-        return [fName.trim(), sName.trim()];
+        return [fName, sName];
     }
 
     peopleToTable(kPeople) {
@@ -1383,7 +1366,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             kkTable.draggable();
 
             // Fade out the table on double click
-            kkTable.on("dblclick", function () {
+            kkTable.on("dblclick.fgs", function () {
                 $(this).fadeOut();
             });
 
@@ -1455,7 +1438,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 type: "POST",
                 dataType: "json",
                 success: (data) => {
-                    //	console.log(data);
                     let thePeople = data[0].items;
                     thePeople.forEach((aPerson) => {
                         let mPerson = aPerson.person;
@@ -2365,6 +2347,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     familySheetPerson = (fsPerson, role) => {
+        console.log("fsPerson object:", fsPerson);
+
         // Initialize variables
         let baptismDate = "";
         let baptismPlace = "";
@@ -2372,7 +2356,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         let burialPlace = "";
         const myRefs = [];
         const mSeeAlso = [];
-        const references = [];
 
         // Get the biography HTML and parse it
         const fsBio = fsPerson.bio;
@@ -2388,6 +2371,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Further processing of the biography
         if (fsBio) {
+            console.log("fsBio:", fsBio);
             const bioSplit = fsBio.split("<references />");
             if (bioSplit[1]) {
                 const removedAck = bioSplit[1].split(/=+\s?Acknowledge?ments?\s?=+/)[0];
@@ -2406,12 +2390,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         myRefs.push(aCit.replace(/^\*/, "").trim());
                     }
                 });
+                console.log("myRefs:", myRefs);
             }
             const categoryMatch = bioSplit[0].match(/\[\[Category:.*?\]\]/g);
             if (categoryMatch != null) {
-                //console.log(categoryMatch);
                 categoryMatch.forEach(function (aCat) {
-                    //console.log(fsPerson.Name,aCat);
                     const dCat = aCat.split("Category:")[1].replace(/\]\]/, "");
                     if (
                         dCat.match(
@@ -2420,7 +2403,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         dCat.match("Crawford-7109") == null
                     ) {
                         fsPerson.Cemetery = dCat.trim();
-                        //console.log(fsPerson.Cemetery);
                     }
                 });
             }
@@ -2462,12 +2444,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
 
         // Store references
-        references.push([fsPerson.Name, myRefs, mSeeAlso]);
+        this.references.push([fsPerson.Name, myRefs, mSeeAlso]);
+        console.log("references:", this.references);
 
         // Check if value is OK (not null or undefined)
         // const isOK = (value) => value !== null && value !== undefined;
 
         myRefs.forEach(function (anRef) {
+            console.log("anRef:", anRef);
             if (anRef.match(/(burial\b)|(Grave\b)/i) != null) {
                 const burialDateMatch = anRef.match(/Burial Date.*(\b[0-9]+.*[0-9]{4})/);
                 const burialPlaceMatch = anRef.match(/Burial Place.*?(\b[A-z,\s]+)/);
@@ -2529,7 +2513,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             dDate = "";
         }
         let mainPerson = false;
-        let otherSpouse = "";
         const otherSpouses = [];
         let mainSpouse = "";
         let mainSpouseName = "";
@@ -2629,7 +2612,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
         const burialRow = this.renderBurialRow(burialDate, burialPlace, role);
         const otherMarriageRow = this.renderOtherMarriageRow(fsPerson, mainSpouse, otherSpouses, role);
-        const parentsRow = this.renderParentsRow(fsPerson, role, mainPerson, matchingPerson);
+        const parentsRow = this.renderParentsRow(fsPerson, mainPerson, matchingPerson, role, showRole);
         const spouseRow = this.renderSpouseRow(fsPerson, role);
         const bioRow = this.renderBioRow(fsPerson, role);
         // Return the final HTML based on the role
@@ -2668,10 +2651,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 <th class='role heading'>
                     <a href='https://www.wikiTree.com/wiki/${escapedName}'>${role}</a>:
                 </th>
-                <td class='fsName' colspan='2'>
-                    <a href='https://apps.wikitree.com/apps/beacall6/familySheet.php?id=${fsPerson.Name}'>
+                <td class='fsName'  colspan='2'>
+                    <span data-name='${escapedName}'>
                         ${this.displayName(fsPerson)[0]}
-                    </a>
+                    </span>
                     ${otherLastNames}
                     ${genderSpan}
                     <span class='fsWTID'>(${escapedName})</span>
@@ -2694,7 +2677,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         console.log("renderBirthRow called with:", { birthDate, birthPlace, role });
         const birthRow =
             this.isOK(birthDate) || this.isOK(birthPlace)
-                ? `<tr><td class="${role.toLowerCase()} birth">Born:</td><td>${birthDate}, ${birthPlace}</td></tr>`
+                ? `<tr><td class="${role.toLowerCase()} birth">Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
                 : "";
         console.log("birthRow generated:", birthRow);
         return birthRow;
@@ -2703,23 +2686,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderDeathRow = (deathDate, deathPlace, role) => {
         const deathRow =
             this.isOK(deathDate) || this.isOK(deathPlace)
-                ? `<tr><td class="${role.toLowerCase()} death">Died:</td><td>${deathDate}, ${deathPlace}</td></tr>`
+                ? `<tr><td class="${role.toLowerCase()} death">Died:</td><td>${deathDate}</td><td>${deathPlace}</td></tr>`
                 : "";
         return deathRow;
     };
 
     renderBaptismRow = (baptismDate, baptismPlace, role) => {
-        const baptismRow =
-            this.isOK(baptismDate) || this.isOK(baptismPlace)
-                ? `<tr><td class="${role.toLowerCase()} baptism">Baptized:</td><td>${baptismDate}, ${baptismPlace}</td></tr>`
-                : "";
+        const baptismRow = `<tr class='baptismRow'><td class="${role.toLowerCase()} baptism">Baptized:</td><td>${baptismDate}</td><td>${baptismPlace}</td></tr>`;
         return baptismRow;
     };
 
     renderMarriageRow = (marriageDate, marriagePlace, role) => {
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
-                ? `<tr><td class="${role.toLowerCase()} marriage">Married:</td><td>${marriageDate}, ${marriagePlace}</td></tr>`
+                ? `<tr><td class="${role.toLowerCase()} marriage">Married:</td><td>${marriageDate}</td><td>${marriagePlace}</td></tr>`
                 : "";
         return marriageRow;
     };
@@ -2727,38 +2707,49 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderBurialRow = (burialDate, burialPlace, role) => {
         const burialRow =
             this.isOK(burialDate) || this.isOK(burialPlace)
-                ? `<tr><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}, ${burialPlace}</td></tr>`
+                ? `<tr><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}</td><td>${burialPlace}</td></tr>`
                 : "";
         return burialRow;
     };
-    renderOtherMarriageRow = (fsPerson, otherSpouses, role) => {
+    renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
         let otherMarriageRow = "";
 
         // Check if value is OK (not null or undefined)
         const isOK = (value) => value !== null && value !== undefined;
 
+        console.log("fsPerson:", fsPerson); // Check the fsPerson data
+        console.log("otherSpouses before processing:", otherSpouses); // Check the initial otherSpouses
+
         if (otherSpouses.length === 0 && fsPerson.Spouse && fsPerson.Spouse.length > 1) {
+            // Log the condition being checked
+            console.log("Checking for other spouses...");
             otherSpouses.push(
-                ...fsPerson.Spouse.filter(
-                    (anoSpouse) =>
+                ...fsPerson.Spouse.filter((anoSpouse) => {
+                    const isDifferentSpouse =
                         anoSpouse.Name !== this.people[0].Name &&
                         anoSpouse.Name !== mainSpouse.Name &&
-                        anoSpouse.Name !== this.keepSpouse
-                )
+                        anoSpouse.Name !== this.keepSpouse;
+                    console.log(`${anoSpouse.Name} is different spouse: ${isDifferentSpouse}`);
+                    return isDifferentSpouse;
+                })
             );
         }
+
+        console.log("otherSpouses after processing:", otherSpouses); // Check the processed otherSpouses
 
         if (otherSpouses.length > 0) {
             otherSpouses.forEach((oSpouse, index) => {
                 const { marriage_date, marriage_end_date, marriage_location, Name } = oSpouse;
-                let otherSpouseMarriageDate = isOK(marriage_date)
-                    ? `<span class='marriageDate'>${getDateFormat(marriage_date.split("-"))}</span>`
+                let otherSpouseMarriageDate = this.isOK(marriage_date)
+                    ? `<span class='marriageDate'>${this.getDateFormat(marriage_date.split("-"))}</span>`
                     : "";
-                let otherSpouseMarriageEndDate = isOK(marriage_end_date)
-                    ? `<span class='marriageEndDate date'>&nbsp;- ${getDateFormat(marriage_end_date.split("-"))}</span>`
+                let otherSpouseMarriageEndDate = this.isOK(marriage_end_date)
+                    ? `<span class='marriageEndDate date'>&nbsp;- ${this.getDateFormat(
+                          marriage_end_date.split("-")
+                      )}</span>`
                     : "";
-                let otherSpouseName = displayName(oSpouse)[0];
-                let otherSpouseMarriageLocation = isOK(marriage_location) ? marriage_location : "";
+                let otherSpouseName = this.displayName(oSpouse)[0];
+                let otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
 
                 const oSpousesHeadingText =
                     index === 0 ? (otherSpouses.length > 1 ? "Other Marriages:" : "Other Marriage:") : "";
@@ -2767,7 +2758,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 <tr data-person='${htmlEntities(fsPerson.Name)}' data-role='${role}' class='otherMarriageRow'>
                     <th class='otherMarriageHeading heading'>${oSpousesHeadingText}</th>
                     <td class='otherMarriageDate'>
-                        <span class='otherSpouseName' data-name='${htmlEntities(Name)}'>${otherSpouseName.replace(
+                        <span class='otherSpouseName' data-name='${this.htmlEntities(Name)}'>${otherSpouseName.replace(
                     /(“.+”)/,
                     "<span class='nicknames'>$1</span>"
                 )}</span>,
@@ -2934,6 +2925,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         return bioRow;
     };
+
+    /*
     storeVal(jq) {
         const id = jq.attr("id");
         const type = jq.attr("type");
@@ -2954,6 +2947,40 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             });
         }
     }
+*/
+
+    storeVal(jq) {
+        const id = jq.attr("id");
+        const type = jq.attr("type");
+        const name = jq.attr("name");
+        let storageObject = {}; // Initialize the storage object
+
+        // Retrieve the storage object if it exists
+        const existingStorage = localStorage.getItem("formStorage");
+        if (existingStorage) {
+            storageObject = JSON.parse(existingStorage);
+        }
+
+        // Handle checkboxes
+        if (type === "checkbox") {
+            const isChecked = jq.prop("checked");
+            storageObject[id] = isChecked; // Use boolean value directly
+        }
+        // Handle radio buttons
+        else if (type === "radio") {
+            $("input[name='" + name + "']").each(function () {
+                const radio = $(this);
+                if (radio.prop("checked")) {
+                    storageObject[name] = radio.val();
+                }
+            });
+        }
+
+        // Store the updated storage object in localStorage
+        localStorage.setItem("familyGroupAppSettings", JSON.stringify(storageObject));
+    }
+
+    /*
     setVals() {
         // Handle checkboxes
         const checkboxes = $("#fgsOptions input[type='checkbox']");
@@ -2993,6 +3020,40 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         });
     }
+    */
+
+    setVals() {
+        // Retrieve the storage object from localStorage and parse it
+        const storedSettings = JSON.parse(localStorage.getItem("familyGroupAppSettings")) || {};
+
+        // Handle checkboxes
+        $("#fgsOptions input[type='checkbox']").each(function () {
+            const checkbox = $(this);
+            const id = checkbox.attr("id");
+
+            // Check if the storage object has a value for this checkbox and update it
+            if (storedSettings.hasOwnProperty(id)) {
+                checkbox.prop("checked", storedSettings[id]);
+
+                // Trigger change event to apply the new state
+                checkbox.change();
+            }
+        });
+
+        // Handle radio buttons
+        $("#fgsOptions input[type='radio']").each(function () {
+            const radio = $(this);
+            const name = radio.attr("name");
+
+            // Check if the storage object has a value for this radio group and update it
+            if (storedSettings.hasOwnProperty(name) && storedSettings[name] === radio.val()) {
+                radio.prop("checked", true);
+
+                // Trigger change event to apply the new state
+                radio.change();
+            }
+        });
+    }
 
     privateQ() {
         $(this.$container).append(
@@ -3003,7 +3064,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return year % 100 === 0 ? year % 400 === 0 : year % 4 === 0;
     }
 
-    checkAndAppendChildren(oChildren) {
+    async checkAndAppendChildren(oChildren) {
+        console.log("checkAndAppendChildren called with:", oChildren);
+        const childRows = [];
         if (oChildren.length > 0) {
             this.people[0].Child.forEach((aChild, index) => {
                 this.people.forEach((cPerson) => {
@@ -3019,17 +3082,75 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                             (this.husband === cPerson.Father && !this.wife))
                     ) {
                         // Check if child is already processed
-                        if (!doneKids.includes(aChild.Name)) {
-                            const theChildRow = this.familySheetPerson(cPerson, ordinal(index + 1) + " Child");
-                            fsTable.find("> tbody").append($(theChildRow));
-                            doneKids.push(cPerson.Name);
+                        if (!this.doneKids.includes(aChild.Name)) {
+                            const theChildRow = this.familySheetPerson(cPerson, this.ordinal(index + 1) + " Child");
+                            childRows.push(theChildRow);
+                            this.doneKids.push(cPerson.Name);
+                        }
+                    }
+                });
+            });
+            const table = await waitForElement("#familySheetFormTable");
+            const tbody = table.querySelector("tbody");
+
+            // Append child rows
+            if (childRows.length > 0) {
+                return new Promise((resolve) => {
+                    const $tbody = $("#familySheetFormTable > tbody");
+                    childRows.forEach((aRow, index) => {
+                        $tbody.append($(aRow));
+                        // Check if it's the last row being appended
+                        if (index === childRows.length - 1) {
+                            // Allow the browser to render the appended elements
+                            setTimeout(() => {
+                                resolve();
+                            }, 0);
+                        }
+                    });
+                });
+            } else {
+                // If there are no child rows, resolve the promise immediately
+                return Promise.resolve();
+            }
+
+            // Now that children are appended, you can perform any additional actions
+        }
+    }
+    /*
+    checkAndAppendChildren(oChildren) {
+        console.log("checkAndAppendChildren called with:", oChildren);
+        const childRows = [];
+        if (oChildren.length > 0) {
+            this.people[0].Child.forEach((aChild, index) => {
+                this.people.forEach((cPerson) => {
+                    // Initialize husband and wife if undefined
+                    this.husband = this.husband || 0;
+                    this.wife = this.wife || 0;
+
+                    // Check for matching child and parent relationship
+                    if (
+                        cPerson.Name === aChild.Name &&
+                        ((cPerson.Father === this.husband && cPerson.Mother === this.wife) ||
+                            (!this.husband && cPerson.Mother === this.wife) ||
+                            (this.husband === cPerson.Father && !this.wife))
+                    ) {
+                        // Check if child is already processed
+                        if (!this.doneKids.includes(aChild.Name)) {
+                            const theChildRow = this.familySheetPerson(cPerson, this.ordinal(index + 1) + " Child");
+                            childRows.push(theChildRow);
+                            this.doneKids.push(cPerson.Name);
                         }
                     }
                 });
             });
         }
+        setTimeout(() => {
+            childRows.forEach((aRow) => {
+                $("#familySheetFormTable").find("> tbody").append($(aRow));
+            });
+        }, 200);
     }
-
+*/
     fixCitation(citation) {
         // Find all tables and lists in the citation
         const tableMatches = Array.from(citation.matchAll(/\{\|[^]+?\|\}/gm));
@@ -3257,7 +3378,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     appendReferences(mList) {
+        // logging
+        console.log(this.references);
+
         this.references.forEach((pRefs) => {
+            // logging
+            console.log("pRefs:", pRefs);
+
             const anID = pRefs[0];
             let thisName = this.getFormattedName(anID);
             const wtidSpan = this.getWtidSpan(thisName);
@@ -3515,6 +3642,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     makeFamilySheet() {
+        console.log(this.people);
         this.researchNotes = [];
         const fsTable = $(
             "<table id='familySheetFormTable'><thead><tr><th></th><th>Name and/or Date</th><th>Place</th></tr></thead><tbody></tbody></table>"
@@ -3542,9 +3670,22 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 theSpouse = aPerson;
             }
         });
-        const spouseRow = this.familySheetPerson(theSpouse, spouseRole);
 
-        fsTable.find("> tbody").append($(mainRow), $(spouseRow));
+        fsTable.find("> tbody").append($(mainRow));
+
+        if (theSpouse) {
+            const spouseRow = this.familySheetPerson(theSpouse, spouseRole);
+            fsTable.find("> tbody").append($(spouseRow));
+        } else {
+            console.log("The spouse could not be found: ", matchPerson);
+            setTimeout(() => {
+                $("th.role.heading a").text("Name");
+                $("tr.otherMarriageRow").remove();
+                $("tr.HusbandParentsRow th, tr.WifeParentsRow th").each(function () {
+                    $(this).text($(this).text().replace("Husband's ", "").replace("Wife's ", ""));
+                });
+            }, 500);
+        }
 
         const oChildren = this.people[0].Child;
         if (oChildren.length > 0) {
@@ -3552,7 +3693,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 a.BirthDate + "-".replaceAll(/\-/g, "") > b.BirthDate + "-".replaceAll(/\-/g, "") ? 1 : -1
             );
         }
-        const doneKids = [];
         this.checkAndAppendChildren(oChildren);
 
         $("#tree").slideUp();
@@ -3560,11 +3700,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if (this.people[0].Name == undefined) {
             this.privateQ();
         } else {
-            // Everything's OK!
-            if (localStorage.fgsOptionsState == "removed") {
-                $("#fgsOptions").addClass("removed");
-            }
-            $("#fgsOptions").slideDown();
             $(this.$container).append(fsTable);
             if (localStorage.husbandFirst == "1") {
                 $("tr[data-role='Husband']").prependTo($("#familySheetFormTable > tbody"));
@@ -3680,17 +3815,18 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $("#familySheetFormTable").css({ "max-width": setWidth, "min-width": setWidth, "width": setWidth });
             const mList = $("<ul id='citationList'></ul>");
 
+            console.log("this.citationTables:", this.citationTables);
+            console.log(this.references, this.myRefs);
+
             this.citationTables = [];
 
-            // Then call the refactored function
-            this.appendReferences(mList);
-
+            setTimeout(() => {
+                this.appendReferences(mList);
+            }, 500);
             // Your existing code for appending to the DOM and other logic
             const params = new URLSearchParams(window.location.search);
             $("#sources").append(mList);
             $("#sources li[data-wtid='" + this.husbandWTID + "']").prependTo($("#sources ul").eq(0));
-
-            // ... (rest of your code)
 
             this.setBaptChrist();
 
@@ -3707,35 +3843,38 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             /**
              * Updates the state of tables based on checkbox state and stores the state.
              */
-            $("#showTables").change(function () {
+            $("#showTables").change((e) => {
+                const $this = $(e.target);
                 toggleTables();
-                storeVal($(this));
+                this.storeVal($this);
             });
 
             /**
              * Updates the state of lists based on checkbox state and stores the state.
              */
-            $("#showLists").change(function () {
+            $("#showLists").change((e) => {
                 toggleLists();
-                storeVal($(this));
+                this.storeVal($this);
             });
 
             /**
              * Allows editing of citation list items.
              * Creates a textarea for editing when a list item is clicked.
              */
-            $("#citationList li li").click(function () {
-                closeInputs();
-                if ($(this).find("textarea").length === 0) {
-                    const newTextarea = $("<textarea class='citationEdit'>" + $(this).html() + "</textarea>");
-                    $(this).html(newTextarea);
+            $("#citationList li li").click((e) => {
+                const $this = $(e.target);
+                this.closeInputs();
+                if ($this.find("textarea").length === 0) {
+                    const newTextarea = $("<textarea class='citationEdit'>" + $this.html() + "</textarea>");
+                    $this.html(newTextarea);
                     newTextarea.focus();
-                    newTextarea.on("blur", function () {
-                        if ($(this).val() === "") {
-                            $(this).parent().remove();
+                    newTextarea.on("blur", (ev) => {
+                        const $thisn = $(ev.target);
+                        if ($this.val() === "") {
+                            $this.parent().remove();
                         } else {
-                            $(this).parent().html($(this).val());
-                            $(this).remove();
+                            $this.parent().html($this.val());
+                            $this.remove();
                         }
                     });
                 }
@@ -3746,9 +3885,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
              */
             if ($(".bioRow").length) {
                 $("#toggleBios,#includeBiosWhenPrinting").css("display", "inline-block");
-                $("#includeBios").change(function () {
-                    storeVal($(this));
-                    if ($(this).prop("checked") === true) {
+                $("#includeBios").change((e) => {
+                    const $this = $(e.target);
+                    this.storeVal($this);
+                    if ($this.prop("checked") === true) {
                         $(
                             "<style id='includeBiosStyle'>@media print {.familySheetForm .bioRow{display:table-row !important;} .familySheetForm .theBio {display:block !important}}</style>"
                         ).appendTo(this.$container);
@@ -3764,53 +3904,50 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             /**
              * Updates the display of gender based on radio button selection and stores the value.
              */
-            $("input[name='showGender']").change(function () {
-                storeVal($(this));
+            $("input[name='showGender']").change((e) => {
+                const $this = $(e.target);
+                this.storeVal($this);
                 const showGenderVal = $("input[name='showGender']:checked").val();
 
                 $(".fsGender").each(function () {
-                    $(this).text("");
+                    $this.text("");
 
                     if (showGenderVal === "initial") {
-                        $(this).text($(this).attr("data-gender").substring(0, 1));
+                        $this.text($this.attr("data-gender").substring(0, 1));
                     }
 
                     if (showGenderVal === "word") {
-                        $(this).text($(this).attr("data-gender"));
+                        $this.text($this.attr("data-gender"));
                     }
                 });
             });
 
-            $("#fgsInfo").slideDown();
-
-            /**
-             * Hides or shows elements based on the presence and attributes of Husband and Wife roles.
-             */
-
             /**
              * Updates the status choice and modifies the date strings accordingly.
              */
-            $("input[name='statusChoice']").change(function () {
-                storeVal($(this));
+            $("input[name='statusChoice']").change((e) => {
+                const $this = $(e.target);
+                this.storeVal($this);
 
                 // Check if abbreviations are selected
                 const isAbbr = $("input[name='statusChoice'][value='abbreviations']").prop("checked");
 
                 // Update each date text based on the selected status
-                $(".date").each(function () {
-                    const currentText = $(this).text();
+                $(".date").each((e) => {
+                    const $this = $(e.target);
+                    const currentText = $this.text();
                     if (isAbbr) {
                         const replacedText = currentText
                             .replaceAll(/~/g, "abt. ")
                             .replaceAll(/</g, "bef. ")
                             .replaceAll(/>/g, "aft. ");
-                        $(this).text(replacedText);
+                        $this.text(replacedText);
                     } else {
                         const replacedText = currentText
                             .replaceAll(/abt\.\s/g, "~")
                             .replaceAll(/bef\.\s/g, "<")
                             .replaceAll(/aft\.\s/g, ">");
-                        $(this).text(replacedText);
+                        $this.text(replacedText);
                     }
                 });
             });
@@ -3821,22 +3958,23 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     closeInputs() {
-        $(".edit").each(function () {
-            const isTextarea = $(this).prop("tagName") === "TEXTAREA";
-            const isCaption = $(this).parent().prop("tagName") === "CAPTION";
+        $(".edit").each((e) => {
+            const $this = $(e.target);
+            const isTextarea = $this.prop("tagName") === "TEXTAREA";
+            const isCaption = $this.parent().prop("tagName") === "CAPTION";
 
-            let newValue = $(this).val();
+            let newValue = $this.val();
 
             // Check for unsafe "script" tags
             if (!/script/i.test(newValue)) {
                 if (isTextarea || isCaption) {
-                    $(this).parent().html(this.nl2br(newValue));
+                    $this.parent().html(this.nl2br(newValue));
                 } else {
-                    $(this).parent().text(newValue);
+                    $this.parent().text(newValue);
                 }
             }
 
-            $(this).remove();
+            $this.remove();
         });
     }
 
@@ -3969,10 +4107,16 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
+    /*
     toggleStyle(styleId, styleContent, optionalElement = null) {
+        const self = this; // Capture the correct 'this' context
         return function () {
+            // The 'this' context here is the checkbox element
+
+            console.log("this:", this);
+
             if ($(this).prop("checked") === false) {
-                $(`<style id='${styleId}'>${styleContent}</style>`).appendTo(this.$container);
+                $(`<style id='${styleId}'>${styleContent}</style>`).appendTo($("head"));
                 if (optionalElement) {
                     $(`${optionalElement}`).prop("disabled", true);
                 }
@@ -3982,26 +4126,58 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     $(`${optionalElement}`).prop("disabled", false);
                 }
             }
-            storeVal($(this));
+            self.storeVal($(this)); // Use 'self' to refer to the original context
         };
+    }
+    */
+
+    toggleStyle(styleId, styleContent, optionalElement = null) {
+        // Directly bind the change event to the checkbox
+        this.$container.on("change", `#${styleId}`, (event) => {
+            const isChecked = $(event.target).prop("checked");
+            const headElement = $("head");
+
+            // If the checkbox is not checked, add the style to hide elements
+            if (!isChecked) {
+                // Only append if not already there
+                if ($(`#${styleId}Style`).length === 0) {
+                    headElement.append(`<style id='${styleId}Style'>${styleContent}</style>`);
+                }
+                if (optionalElement) {
+                    $(optionalElement).prop("disabled", true);
+                }
+            } else {
+                // If the checkbox is checked, remove the style to show elements
+                $(`#${styleId}Style`).remove();
+                if (optionalElement) {
+                    $(optionalElement).prop("disabled", false);
+                }
+            }
+
+            // Store the current state of the checkbox
+            this.storeVal($(event.target));
+        });
     }
 
     // Function to toggle bios and update localStorage
     toggleBios() {
-        if ($(this).prop("checked") === true) {
-            $(".theBio").slideDown();
-            setTimeout(() => {
-                $(`<style id='showBiosStyle'>.familySheetForm .bioRow div.theBio{display:block;}</style>`).appendTo(
-                    this.$container
-                );
-            }, 1000);
-        } else {
-            $(".theBio").slideUp();
-            setTimeout(() => {
-                $("#showBiosStyle").remove();
-            }, 1000);
-        }
-        storeVal($(this));
+        const self = this; // Capture the class instance context
+        return function () {
+            if ($(this).prop("checked") === true) {
+                $(".theBio").slideDown();
+                setTimeout(() => {
+                    $(`<style id='showBiosStyle'>.familySheetForm .bioRow div.theBio{display:block;}</style>`).appendTo(
+                        self.$container // Use 'self' to refer to the class instance
+                    );
+                }, 1000);
+            } else {
+                $(".theBio").slideUp();
+                setTimeout(() => {
+                    $("#showBiosStyle").remove();
+                }, 1000);
+            }
+            self.storeVal($(this)); // Use 'self' to call 'storeVal'
+        };
     }
 
     handleSlideToggle(selector, localStorageKey, callback = null) {
@@ -4012,6 +4188,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             elem.slideDown("slow");
 
             const isRemoved = elem.hasClass("removed");
+            console.log(isRemoved);
             localStorage.setItem(localStorageKey, isRemoved ? "removed" : "center");
 
             if (callback) {
@@ -4091,3 +4268,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return familyArr;
     }
 };
+
+// This function returns a promise that resolves when the specified element is added to the DOM
+function waitForElement(selector) {
+    return new Promise((resolve, reject) => {
+        const observer = new MutationObserver((mutations, obs) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                resolve(element);
+                obs.disconnect();
+            }
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    });
+}

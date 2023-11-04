@@ -220,37 +220,11 @@ th.bioHeading {
 #view-container.familyGroupApp #fgsOptions .notesHeading {
   display: none;
 }
-#view-container.familyGroupApp #fgsOptions.removed .notesHeading {
-  display: inline-block;
-}
-#view-container.familyGroupApp #fgsOptions.removed {
-  position: absolute;
-  top: calc(75px + 2em);
-  left: 0.2em;
-  display: inline-block;
-  width: auto;
-  padding-right: 1em;
-  border: 1px solid forestgreen;
-  border-radius: 1em;
-  padding-left: 0;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-}
-html body#view-container.familyGroupApp div#fgsOptions.removed label,
-body#view-container.familyGroupApp div#fgsOptions.removed div,
-#view-container.familyGroupApp #fgsOptions.removed x,
-#fgsInfo.removed x {
-  display: none !important;
+
+#view-container.familyGroupApp {
+  position: relative;
 }
 
-#view-container.familyGroupApp #fgsOptions x,
-#view-container.familyGroupApp #fgsInfo x {
-  border: 1px solid gray;
-  padding: 0.2em 0.5em 0.2em 0.5em;
-  border-radius: 1em;
-  text-align: center;
-  top: 1em;
-}
 #view-container.familyGroupApp #fgsOptions label {
   padding: 0.2em 1em 0.2em 0.2em;
   border: 1px solid gray;
@@ -302,17 +276,7 @@ body#view-container.familyGroupApp div#fgsOptions.removed div,
   left: 0;
   position: relative;
 }
-#view-container.familyGroupApp #fgsInfo.removed ul {
-  display: none;
-}
-#view-container.familyGroupApp #fgsInfo.removed {
-  position: absolute;
-  top: 75px;
-  left: 0.2em;
-  display: inline-block;
-  width: auto;
-  padding-right: 2em;
-}
+
 #view-container.familyGroupApp #fgsInfo ul {
   margin-top: 0.5em;
 }
@@ -589,4 +553,17 @@ body.app header {
     width: 100% !important;
     max-width: 100% !important;
   }
+}
+
+#fgsOptions x,
+#fgsInfo x {
+  border: 0;
+  position: absolute;
+  top: 0.2em;
+  right: 0.4em;
+}
+
+#fgsOptionsButton.active,
+#fgsNotesButton.active {
+  background-color: orange;
 }
