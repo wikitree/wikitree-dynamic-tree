@@ -3767,13 +3767,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             $("#familySheetFormTable caption").append(husbandNameSpan, andSpan, wifeNameSpan);
 
-            $("title").text(
-                "Family Group: " +
-                    coupleText
-                        .replaceAll(/&nbsp;/g, " ")
-                        .replaceAll(/<span.*?>(.*?)<\/span>/g, "$1")
-                        .replaceAll(/<a.+?>(.+?)<\/a>/g, "$1")
-            );
+            const titleText = $("caption").text().replace(/\s+/, " ").trim();
+            $("title").text("Family Group: " + titleText);
 
             const notesAndSources = $("<section id='notesAndSources'></section>");
             $("<div id='notes'><h2>Research Notes:</h2><div id='notesNotes'></div></div>").appendTo(notesAndSources);
