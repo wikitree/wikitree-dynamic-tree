@@ -214,38 +214,43 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.$body.off("click.fgs change.fgs");
         // Delegated event listeners for checkbox changes
         this.$container.on("change.fgs", "#showBaptism", () => {
-            this.toggleStyle("showBaptism", "tr.baptismRow, #baptChrist { display: none; }");
-            console.log("showBaptism");
+            this.toggleStyle(
+                "showBaptism",
+                "#view-container.familyGroupApp tr.baptismRow, #view-container.familyGroupApp #baptChrist { display: none; }"
+            );
         });
         this.$container.on("change.fgs", "#showBurial", () =>
-            this.toggleStyle("showBurialStyle", "tr.buriedRow{display:none;}")
+            this.toggleStyle("showBurial", "#view-container.familyGroupApp tr.burialRow{display:none;}")
         );
         this.$container.on("change.fgs", "#showNicknames", () =>
             this.toggleStyle(
-                "showNicknamesStyle",
-                ".familySheetForm caption span.nicknames,span.nicknames{display:none;}"
+                "showNicknames",
+                "#view-container.familyGroupApp #familySheetFormTable caption span.nicknames,#view-container.familyGroupApp span.nicknames{display:none;}"
             )
         );
         this.$container.on("change.fgs", "#showParentsSpousesDates", () =>
             this.toggleStyle(
-                "showParentsSpousesDatesStyle",
-                ".familySheetForm span.parentDates,.familySheetForm span.spouseDates{display:none;}"
+                "showParentsSpousesDates",
+                "#familySheetFormTable span.parentDates,#familySheetFormTable span.spouseDates{display:none;}"
             )
         );
         this.$container.on("change.fgs", "#showOtherLastNames", () =>
             this.toggleStyle(
-                "showOtherLastNamesStyle",
-                ".familySheetForm caption span.otherLastNames,span.otherLastNames{display:none;}"
+                "showOtherLastNames",
+                "#familySheetFormTable caption span.otherLastNames,span.otherLastNames{display:none;}"
             )
         );
         this.$container.on("change.fgs", "#useColour", () =>
             this.toggleStyle(
-                "useColourStyle",
-                ".familySheetForm tr.marriedRow, .familySheetForm caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}"
+                "useColour",
+                "#familySheetFormTable tr.marriedRow, #familySheetFormTable caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}"
             )
         );
         this.$container.on("change.fgs", "#showWTIDs", () =>
-            this.toggleStyle("showWTIDsStyle", ".familySheetForm .fsWTID{display:inline-block;}")
+            this.toggleStyle(
+                "showWTIDs",
+                "#view-container.familyGroupApp #familySheetFormTable .fsWTID{display:inline-block;}"
+            )
         );
         this.$container.on("change.fgs", "#showBios", () => this.toggleBios());
 
@@ -297,15 +302,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.storeVal($this);
         });
   */
-        this.$container.on("change.fgs", "#showBurial", (e) => {
-            const $this = $(e.currentTarget);
-            if ($this.prop("checked") == false) {
-                $("<style id='showBurialStyle'>tr.buriedRow{display:none;}</style>").appendTo(this.$container);
-            } else {
-                $("#showBurialStyle").remove();
-            }
-            this.storeVal($this);
-        });
         this.$container.on("change.fgs", "#showNicknames", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
@@ -405,17 +401,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-        this.$container.on("change.fgs", "#useColour", (e) => {
-            const $this = $(e.currentTarget);
-            if ($this.prop("checked") == false) {
-                $(
-                    "<style id='useColourStyle'>.familySheetForm tr.marriedRow, .familySheetForm caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}    </style>"
-                ).appendTo(this.$container);
-            } else {
-                $("#useColourStyle").remove();
-            }
-            this.storeVal($this);
-        });
+
         this.$container.on("change.fgs", "#showBios", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == true) {
@@ -2705,10 +2691,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     };
 
     renderBurialRow = (burialDate, burialPlace, role) => {
-        const burialRow =
-            this.isOK(burialDate) || this.isOK(burialPlace)
-                ? `<tr><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}</td><td>${burialPlace}</td></tr>`
-                : "";
+        const burialRow = `<tr class="burialRow"><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}</td><td>${burialPlace}</td></tr>`;
         return burialRow;
     };
     renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
@@ -2979,48 +2962,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Store the updated storage object in localStorage
         localStorage.setItem("familyGroupAppSettings", JSON.stringify(storageObject));
     }
-
-    /*
-    setVals() {
-        // Handle checkboxes
-        const checkboxes = $("#fgsOptions input[type='checkbox']");
-        checkboxes.each(function () {
-            const checkbox = $(this);
-            const id = checkbox.attr("id");
-            const originalState = checkbox.prop("checked");
-
-            // Check if localStorage has a value for this checkbox
-            if (localStorage[id] !== undefined) {
-                const newState = localStorage[id] === "1";
-                checkbox.prop("checked", newState);
-
-                // Trigger change event if state changed
-                if (newState !== originalState) {
-                    checkbox.change();
-                }
-            }
-        });
-
-        // Handle radio buttons
-        const radios = $("#fgsOptions input[type='radio']");
-        radios.each(function () {
-            const radio = $(this);
-            const name = radio.attr("name");
-            const originalState = radio.prop("checked");
-
-            // Check if localStorage has a value for this radio group
-            if (localStorage[name] !== undefined) {
-                const newState = localStorage[name] === radio.val();
-                radio.prop("checked", newState);
-
-                // Trigger change event if state changed
-                if (newState !== originalState) {
-                    radio.change();
-                }
-            }
-        });
-    }
-    */
 
     setVals() {
         // Retrieve the storage object from localStorage and parse it
@@ -4101,30 +4042,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), `${fileName}.xlsx`);
         });
     }
-
-    /*
-    toggleStyle(styleId, styleContent, optionalElement = null) {
-        const self = this; // Capture the correct 'this' context
-        return function () {
-            // The 'this' context here is the checkbox element
-
-            console.log("this:", this);
-
-            if ($(this).prop("checked") === false) {
-                $(`<style id='${styleId}'>${styleContent}</style>`).appendTo($("head"));
-                if (optionalElement) {
-                    $(`${optionalElement}`).prop("disabled", true);
-                }
-            } else {
-                $(`#${styleId}`).remove();
-                if (optionalElement) {
-                    $(`${optionalElement}`).prop("disabled", false);
-                }
-            }
-            self.storeVal($(this)); // Use 'self' to refer to the original context
-        };
-    }
-    */
 
     toggleStyle(styleId, styleContent, optionalElement = null) {
         // Directly bind the change event to the checkbox
