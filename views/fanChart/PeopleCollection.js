@@ -30,6 +30,39 @@ PeopleCollection.PeopleList = class PeopleList {
             condLog("Can't add newPerson: ", newPerson);
         }
     }
+
+    // OR ... we use the add method if it's a new person, else we update the person
+    addOrUpdate(newPerson) {
+        if (newPerson && newPerson.Id) {
+            // condLog("Adding: ", newPerson.Id);
+            if (!this[newPerson.Id]) {
+                this.add(newPerson);
+            } else {
+                condLog("Need to UPDATE peeps ", newPerson, "in", this[newPerson.Id]);
+                for (const key in newPerson) {
+                    this[newPerson.Id]._data[key] = newPerson[key];
+                }
+            }
+        } else {
+            condLog("Can't add newPerson: ", newPerson);
+        }
+    }
+
+    // OR ... we only use the add method if it's a new person, else we ignore the request
+    addIfNeeded(newPerson) {
+        if (newPerson && newPerson.Id) {
+            // condLog("Adding: ", newPerson.Id);
+            if (!this[newPerson.Id]) {
+                this.add(newPerson);
+            } else {
+                condLog("Don't need to add new peeps ", newPerson, " - already there - ", this[newPerson.Id]);
+            }
+        } else {
+            condLog("Can't add newPerson: ", newPerson);
+        }
+    }
+    
+
     // A simple function to Count all the  people in the collection to the condLog (for debugging purposes)
     population() {
         let numPeeps = 0;
