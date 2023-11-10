@@ -587,7 +587,7 @@ bioCheckTemplateManager.load();
                                 { value: "ahnNum", text: "Ahnentafel number" },
                                 { value: "WikiTreeID", text: "WikiTree ID" },
                             ],
-                            defaultValue: "none",
+                            defaultValue: "WikiTreeID", // GPC - Changed for AZURE  / "none"
                         },
                         // {
                         //     optionName: "showWikiID",
@@ -724,7 +724,7 @@ bioCheckTemplateManager.load();
                             optionName: "marriageBlend",
                             label: "Blend in Marriage Date box (use background colour of husband)",
                             type: "checkbox",
-                            defaultValue: false,
+                            defaultValue: true, // GPC - Changed for AZURE  / "false"
                             indent: 3,
                         },
                         {
@@ -793,7 +793,7 @@ bioCheckTemplateManager.load();
                                 { value: "RegionCountry", text: "Region, Country" },
                                 { value: "TownRegion", text: "Town, Region" },
                             ],
-                            defaultValue: "Full",
+                            defaultValue: "Region", // GPC - Changed for AZURE  / "Full"
                         },
                         // { optionName: "break1", type: "br" },
                         // { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
@@ -886,7 +886,7 @@ bioCheckTemplateManager.load();
                                 { value: "DNAstatus", text: "Parental status" },
                                 { value: "random", text: "random chaos" },
                             ],
-                            defaultValue: "Generation",
+                            defaultValue: "Grand", // GPC - Changed for AZURE  / "Generation"
                         },
                         {
                             optionName: "specifyByFamily",
@@ -4156,6 +4156,9 @@ bioCheckTemplateManager.load();
             } else if (thePhotoDIV && thePhotoDIV.style.display == "none" && theInfoBox) {
                 theInfoBox.parentNode.parentNode.setAttribute("y", -60);
             }
+
+            // for AZURE ... tweak to slide up because of Extra ... maybe should have done this anyways ???
+            theInfoBox.parentNode.parentNode.setAttribute("y", theInfoBox.parentNode.parentNode.getAttribute("y") - 10);
 
             // AND ... FINALLY, LET'S TALK DATES & PLACES:
             // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
