@@ -236,7 +236,7 @@
     SuperBigFamView.numDescGens2Display = 1;
     SuperBigFamView.numCuzGens2Display = 0;
     SuperBigFamView.displayINLAWS = 0;
-    SuperBigFamView.displayPlanningMode = false;
+    SuperBigFamView.displayPrivatize = 0;
 
     SuperBigFamView.lastNumGens = 3;
     SuperBigFamView.numGensRetrieved = 3;
@@ -820,14 +820,14 @@
                     options: [
                         {
                             optionName: "prefix",
-                            label: "!* Show Prefix before full name",
+                            label: "Show Prefix before full name",
                             type: "checkbox",
                             defaultValue: 0,
                         },
+                        
                         {
                             optionName: "firstName",
                             type: "radio",
-                            label: "!* ",
                             values: [
                                 { value: "FirstNameAtBirth", text: "First Name at Birth" },
                                 { value: "UsualName", text: "Usual Name" },
@@ -836,21 +836,21 @@
                         },
                         {
                             optionName: "middleName",
-                            label: "!* Show Middle Name",
+                            label: "Show Middle Name",
                             type: "checkbox",
                             defaultValue: 0,
                         },
                         {
                             optionName: "middleInitial",
-                            label: "!* Show Middle Initial",
+                            label: "Show Middle Initial",
                             type: "checkbox",
                             defaultValue: 0,
                         },
-                        { optionName: "nickName", label: "!* Show NickName", type: "checkbox", defaultValue: 0 },
+                        // { optionName: "nickName", label: "Show NickName", type: "checkbox", defaultValue: 0 },
                         {
                             optionName: "lastName",
                             type: "radio",
-                            label: "!* ",
+                            // label: "!* ",
                             values: [
                                 { value: "LastNameAtBirth", text: "Last Name at Birth" },
                                 { value: "CurrentLastName", text: "Current Last Name" },
@@ -859,7 +859,7 @@
                         },
                         {
                             optionName: "suffix",
-                            label: "!* Show Suffix after full name",
+                            label: "Show Suffix after full name",
                             type: "checkbox",
                             defaultValue: 0,
                         },
@@ -875,7 +875,7 @@
                         {
                             optionName: "dateTypes",
                             type: "radio",
-                            label: "!* ",
+                            
                             values: [
                                 { value: "none", text: "No Dates" },
                                 { value: "br" },
@@ -888,13 +888,13 @@
                         { optionName: "break0", comment: "Full Dates details:", type: "br" },
                         {
                             optionName: "showBirth",
-                            label: "!* Show Birth Date",
+                            label: "Show Birth Date",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "showDeath",
-                            label: "!* Show Death Date",
+                            label: "Show Death Date",
                             type: "checkbox",
                             defaultValue: true,
                         },
@@ -910,7 +910,7 @@
                         {
                             optionName: "dateFormat",
                             type: "radio",
-                            label: "!* ",
+                            
                             values: [
                                 { value: "YYYY", text: "1964" },
                                 { value: "YYYYMMDD", text: "1964-01-16" },
@@ -930,7 +930,7 @@
                         {
                             optionName: "locationTypes",
                             type: "radio",
-                            label: "!* ",
+                            
                             values: [
                                 { value: "none", text: "No Locations" },
                                 { value: "br" },
@@ -941,13 +941,13 @@
                         { optionName: "break0", comment: "Location details:", type: "br" },
                         {
                             optionName: "showBirth",
-                            label: "!* Show Birth Location",
+                            label: "Show Birth Location",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "showDeath",
-                            label: "!* Show Death Location",
+                            label: "Show Death Location",
                             type: "checkbox",
                             defaultValue: true,
                         },
@@ -955,7 +955,7 @@
                         {
                             optionName: "locationFormatBD",
                             type: "radio",
-                            label: "!* ",
+                            
                             values: [
                                 { value: "Full", text: "Full Location as entered" },
                                 { value: "br" },
@@ -997,32 +997,32 @@
                     category: "photo",
                     subcategory: "options",
                     options: [
-                        {
-                            optionName: "showCentralPic",
-                            label: "!* Show the Central Person Photo",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
+                        // {
+                        //     optionName: "showCentralPic",
+                        //     label: "Show the Central Person Photo",
+                        //     type: "checkbox",
+                        //     defaultValue: true,
+                        // },
                         {
                             optionName: "showAllPics",
-                            label: "!* Show Photos of Ancestors",
+                            label: "Show Photos",
                             type: "checkbox",
                             defaultValue: true,
                         },
                         {
                             optionName: "useSilhouette",
-                            label: "!* Use Silhouette when no photo available",
+                            label: "Use Silhouette when no photo available",
                             type: "checkbox",
                             defaultValue: true,
                         },
-                        { optionName: "break1", type: "br" },
-                        {
-                            optionName: "showPicsToN",
-                            label: "!* Limit Photos to first N generations",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
-                        { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
+                        // { optionName: "break1", type: "br" },
+                        // {
+                        //     optionName: "showPicsToN",
+                        //     label: "Limit Photos to first N generations",
+                        //     type: "checkbox",
+                        //     defaultValue: true,
+                        // },
+                        // { optionName: "showPicsToValue", label: "N", type: "number", defaultValue: 5 },
                     ],
                 },
                 {
@@ -1043,12 +1043,11 @@
                             label: "Background Colour cells by",
                             values: [
                                 { value: "None", text: "OFF - All White, all the time WHITE" },
+                                { value: "Distance", text: "Distance from Primary" },
                                 { value: "Generation", text: "Generation" },
-                                { value: "Gender", text: "!* Gender" },
-                                { value: "Grand", text: "!* Grandparent" },
-                                { value: "GGrand", text: "!* Great-Grandparent" },
-                                { value: "GGGrand", text: "!* 2x Great Grandparent" },
-                                { value: "GGGGrand", text: "!* 3x Great Grandparent" },
+                                { value: "Gender", text: "Gender" },
+                                { value: "Ancestor", text: "Ancestor family" },
+                                 
                                 { value: "Family", text: "!* Family Stats" },
                                 { value: "Location", text: "!* Location" },
 
@@ -1308,11 +1307,11 @@
             '<td width="5%">&nbsp;' +
             "</td>" +
             '<td width="30%" align="right">' +
-            // '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Planning mode:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPlanningMode -=1; SuperBigFamView.redraw();">  ' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
             '<A onclick="SuperBigFamView.reZoom();">' +
             SVGbtnRESIZE2 +
             "</A>&nbsp;&nbsp;" +
-            '<span id=legendASCII style="display:inline;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
+            '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
             LEGEND_CLIPBOARD +
             "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
             ' <A style="cursor:pointer;" onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
@@ -6990,7 +6989,7 @@
                             leafObject.Code
                         } style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
 						  <div class="name fontBold font${font4Name}" id=nameDiv-${leafObject.Code}>
-						    ${getSettingsName(person)}
+						    ${getSettingsName(leafObject.Code)}
 						  </div>
 						  <div class="birth vital font${font4Info}" id=birthDiv-${leafObject.Code}>${getSettingsDateAndPlace(person, "B")}</div>
 						  <div class="death vital font${font4Info}" id=deathDiv-${leafObject.Code}>${getSettingsDateAndPlace(person, "D")}</div>
@@ -7126,20 +7125,20 @@
             }
 
             // LET'S UPDATE THE NAME !
-            let thisDIVtoUpdate = document.getElementById("nameDivFor" + leafObject.Code);
+            let thisDIVtoUpdate = document.getElementById("nameDiv-" + leafObject.Code);
             if (thisDIVtoUpdate) {
-                thisDIVtoUpdate.textContent = getSettingsName(d); // REMEMBER that d = person;
+                thisDIVtoUpdate.textContent = getSettingsName(leafObject.Code); // REMEMBER that d = person;
             }
             // let thisNameDIV = thisDIVtoUpdate;
             // LET'S UPDATE THE BIRTH INFO !
-            thisDIVtoUpdate = document.getElementById("birthDivFor" + leafObject.Code);
+            thisDIVtoUpdate = document.getElementById("birthDiv-" + leafObject.Code);
             if (thisDIVtoUpdate) {
                 thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "B");
             }
             // let thisBirthIV = thisDIVtoUpdate;
 
             // LET'S UPDATE THE DEATH INFO !
-            thisDIVtoUpdate = document.getElementById("deathDivFor" + leafObject.Code);
+            thisDIVtoUpdate = document.getElementById("deathDiv-" + leafObject.Code);
             if (thisDIVtoUpdate) {
                 thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "D");
             }
@@ -7147,20 +7146,22 @@
 
             // LET'S UPDATE THE PHOTO !
             let photoUrl = d.getPhotoUrl(75); // will exist if there is a unique photo for this person, if not - then we can show silhouette if option says that's ok
-            thisDIVtoUpdate = document.getElementById("photoDivFor" + leafObject.Code);
+            thisDIVtoUpdate = document.getElementById("photoDiv-" + leafObject.Code);
 
             if (thisDIVtoUpdate) {
                 // FIRST ... let's deal with the CENTRAL PERP
                 if (leafObject.Code == 1) {
-                    if (SuperBigFamView.currentSettings["photo_options_showCentralPic"] == true) {
-                        if (!photoUrl && SuperBigFamView.currentSettings["photo_options_useSilhouette"] == false) {
-                            thisDIVtoUpdate.style.display = "none";
-                        } else {
-                            thisDIVtoUpdate.style.display = "block";
-                        }
-                    } else {
-                        thisDIVtoUpdate.style.display = "none";
-                    }
+                    // null case --> IF we REALLY wanted to institute the showCentralPic, then the code to check is "A0"
+
+                    // if (SuperBigFamView.currentSettings["photo_options_showCentralPic"] == true) {
+                    //     if (!photoUrl && SuperBigFamView.currentSettings["photo_options_useSilhouette"] == false) {
+                    //         thisDIVtoUpdate.style.display = "none";
+                    //     } else {
+                    //         thisDIVtoUpdate.style.display = "block";
+                    //     }
+                    // } else {
+                    //     thisDIVtoUpdate.style.display = "none";
+                    // }
                 } else {
                     // NOW DEAL with ALL THE REST
                     if (SuperBigFamView.currentSettings["photo_options_showAllPics"] == true) {
@@ -7960,7 +7961,7 @@
                     }
                     if (day) {
                         if (formatString == "YYYYMMDD") {
-                            day2digits = day;
+                            let day2digits = day;
                             if (day < 10) {
                                 day2digits = "0" + day;
                             }
@@ -8077,7 +8078,16 @@
     /**
      * Return the name as required by the Settings options.
      */
-    function getSettingsName(person) {
+    function getSettingsName(code) {
+
+        if (code && SuperBigFamView.theLeafCollection[code]) {
+            // console.log("Person: exists ")
+        } else {
+            console.log("NO PERSON EXISTS for ",code);
+            return "Unknown";
+        }
+
+        const person = thePeopleList[SuperBigFamView.theLeafCollection[code].Id];
         const maxLength = 50;
         // condLog("IXes : ", person._data.Prefix, person._data.Suffix);
         let theName = "";
@@ -9939,6 +9949,8 @@
         let pos = 1;
         let ahnNum = 2;
 
+        const person = thePeopleList[theId];
+
         let thisColourArray = getColourArray();
 
         let overRideByHighlight = false; //
@@ -9961,7 +9973,7 @@
 
         if (theChunk.indexOf("IL") > -1) {
             return "#E5E4E2";
-        } else {
+        } else if (settingForColourBy == "Distance") {
             if (
                 SuperBigFamView.currentSettings["colour_options_primarySiblings"] == true &&
                 theCode.indexOf("A0S") > -1
@@ -9972,19 +9984,41 @@
             }
         }
 
-        if (SuperBigFamView.theLeafCollection[theDegree] && SuperBigFamView.theLeafCollection[theDegree].degree > -1) {
-            return thisColourArray[SuperBigFamView.theLeafCollection[theDegree].degree];
-        }
+        // if (SuperBigFamView.theLeafCollection[theDegree] && SuperBigFamView.theLeafCollection[theDegree].degree > -1) {
+        //     return thisColourArray[SuperBigFamView.theLeafCollection[theDegree].degree];
+        // }
 
         if (settingForColourBy == "Gender") {
-            return thisColourArray[1 + (ahnNum % 2)];
+            if (person._data.Gender == "Male") {
+                return thisColourArray[1];
+            } else if (person._data.Gender == "Female") {
+                return thisColourArray[2];
+            } else  {
+                return thisColourArray[10];
+            }
+            
         } else if (settingForColourBy == "Generation") {
-            if (settingForPalette == "Rainbow") {
-                for (var i = 0; i < SuperBigFamView.numGens2Display; i++) {
-                    thisColourArray[SuperBigFamView.numGens2Display - i] = Rainbow8[i];
+            let thisGen = 0;
+            if (theChunk == "A0" || theChunk == "S0") {
+                thisGen = 8;
+            } else if (theChunk.indexOf("A0D") > -1 || theChunk.indexOf("S0D") > -1) {
+                // down as many generations as there are Ds
+                thisGen = 8 - 1 * theChunk.substr(3,1);
+                if (theCode.substr(-2,1).indexOf("P") > -1) {
+                    thisGen += 1; // partner, not a kid, so up one generation
+                }
+            } else if (theChunk.indexOf("A") > -1 ) {
+                thisGen = 8 + 1 * theChunk.substr(1,1);
+
+                if (theChunk.indexOf("C") > -1) {
+                    thisGen -= 1 * theChunk.substr(3, 1);
+                    if (theCode.substr(-2, 1).indexOf("P") > -1) {
+                        thisGen += 1; // partner, not a kid, so up one generation
+                    }
+
                 }
             }
-            return thisColourArray[1 + (gen % thisColourArray.length)];
+            return thisColourArray[1 + (thisGen % thisColourArray.length)];
         } else if (settingForColourBy == "Grand") {
             return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGrand") {
