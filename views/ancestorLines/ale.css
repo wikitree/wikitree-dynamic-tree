@@ -160,6 +160,52 @@ div.ale input {
 .ale #help-text:active {
   cursor: grabbing;
 }
+.ale #help-text h3 {
+  font-size: 1.3em;
+  margin-bottom: 0.5em;
+}
+
+.ale .bioReport {
+  background: white;
+  border-radius: 1em;
+  border: 3px solid forestgreen;
+  box-shadow: 0.5em 0.5em 0.5em 0.5em #ccc;
+  cursor: grab;
+  display: none;
+  position: absolute;
+  padding: 1.5em 1em 1em;
+  /* white-space: nowrap; */
+  z-index: 10000;
+}
+.ale .bioReport caption {
+  font-family: sans-serif;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: left;
+  padding: 0.5em;
+  background: white;
+  border-top: 1px solid forestgreen;
+  border-bottom: 1px solid forestgreen;
+}
+
+.ale .bioReport w {
+  position: absolute;
+  top: 0;
+  left: 0.5em;
+  font-weight: bold;
+  cursor: pointer;
+}
+.ale .bioReport.wrap {
+  width: 80%;
+  white-space: normal;
+}
+.ale .bioReportTable ol {
+  margin-left: 2em;
+}
+.ale .bioReportTable td {
+  border-top: none;
+  border-bottom: none;
+}
 
 @media print {
   .ale-not-printable {

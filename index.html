@@ -15,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/js/select2.min.js"></script>
     <script src="WikiTreeAPI.js"></script>
     <script src="tree.js"></script>
     <script src="person_name.js"></script>
@@ -23,23 +24,25 @@
     <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton.css" />
     <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton-wide.css" />
     <link rel="stylesheet" href="https://www.wikitree.com/css/layout.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/css/select2.min.css" />
     <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 
     <script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
     <script src="views/timeline/TimelineView.js"></script>
-    <script src="views/calendar/calendar.js"></script>
+    <script src="views/familyPortraits/portraits.js"></script>
     <script src="views/familyCalendar/familyCalendar.js"></script>
-    <link rel="stylesheet" href="views/calendar/calendar.css" />
+    <link rel="stylesheet" href="views/familyCalendar/calendar.css" />
+    <link rel="stylesheet" href="views/familyPortraits/portraits.css" />
 
     <script src="views/fanChart/SVGfunctions.js"></script>
     <script src="views/fanChart/AhnenTafel.js"></script>
     <script src="views/fanChart/PeopleCollection.js"></script>
     <script src="views/fanChart/SettingsOptions.js"></script>
-    <script src="views/fanChart/FanChartView.js" type="module"></script>
+    <script type="module" src="views/fanChart/FanChartView.js"></script>
     <!-- <script src="views/fanChart/FanChartView2.js" type="module"></script> -->
     <script src="views/fandoku/FandokuView.js"></script>
-    <script src="views/fractalTree/FractalView.js" type="module"></script>
+    <script type="module" src="views/fractalTree/FractalView.js"></script>
     <script src="views/webs/WebsView.js"></script>
 
     <script src="views/xTree/XTreeView.js"></script>
@@ -76,6 +79,11 @@
     <script src="views/cc7/js/date.format.js"></script>
     <script src="views/cc7/js/xlsx.full.min.js"></script>
     <script src="views/cc7/js/FileSaver.min.js"></script>
+    <script type="module" src="views/cc7/js/Settings.js"></script>
+    <script type="module" src="views/cc7/js/Utils.js"></script>
+    <script type="module" src="views/cc7/js/HierarchyView.js"></script>
+    <script type="module" src="views/cc7/js/LanceView.js"></script>
+    <script type="module" src="views/cc7/js/PeopleTable.js"></script>
     <script type="module" src="views/cc7/js/cc7.js"></script>
     <script type="module" src="views/cc7/cc7View.js"></script>
     <link rel="stylesheet" href="views/cc7/css/cc7.css" />
@@ -92,7 +100,12 @@
     <script src="views/descendants/descendants.js"></script>
     <link rel="stylesheet" href="views/descendants/descendants.css" />
 
+    <script src="views/stats/stats.js"></script>
+    <link rel="stylesheet" href="views/stats/stats.css" />
+
     <link rel="stylesheet" href="tree.css" />
+
+    <script type="module" src="views/wtPlusMaps/wtPlusMaps.js"></script>
   </head>
 
   <body>

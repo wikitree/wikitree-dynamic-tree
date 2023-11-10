@@ -1,9 +1,6 @@
 import { CC7 } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
-    static #DESCRIPTION =
-        "Loading 7 degrees may take a while (it can be 2 minutes or more) so the default is set to 3. Feel free to change it. ";
-
     constructor() {
         super();
         this.overflow = undefined;
@@ -12,7 +9,7 @@ window.CC7View = class CC7View extends View {
     meta() {
         return {
             title: "CC7 Views",
-            description: CC7View.#DESCRIPTION,
+            description: CC7.LONG_LOAD_WARNING,
             docs: "",
         };
     }
@@ -25,8 +22,6 @@ window.CC7View = class CC7View extends View {
         if (!this.overflow) {
             this.overflow = $("#view-container").css("overflow");
         }
-        wtViewRegistry.setInfoPanel(CC7View.#DESCRIPTION);
-        wtViewRegistry.showInfoPanel();
         const cc7 = new CC7(container_selector, person_id);
     }
 

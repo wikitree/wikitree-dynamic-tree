@@ -14,7 +14,7 @@ Example use:
 ```
 import { BioCheckTemplateManager } from "./BioCheckTemplateManager";
 import { theSourceRules } from "./SourceRules.js";
-import { BioCheckPerson } from "./PersonDate.js";
+import { BioCheckPerson } from "./BioCheckPerson.js";
 import { Biography } from "./Biography.js";
 
   // initialization - just once
@@ -23,11 +23,13 @@ import { Biography } from "./Biography.js";
 
   // For each person. Get the bio text and dates to test
   let thePerson = new BioCheckPerson();
-  let canUseThis = thePerson.canUse(profileObj, openOnly, ignorePre1500, useId);
+  let canUseThis = thePerson.canUse(profileObj, openOnly, ignorePre1500, userId);
   let biography = new Biography(theSourceRules);
   biography.parse(bioString, thePerson, searchString);
-  let hasSources = biography.validate(); 
+  let isValid = biography.validate(); 
 
   // now report from biography (use getters) as desired or just the boolean return 
+  // you might want to report any biography that is not valid from the validate()
+  // method as well as any any biography that hasStyleIssues()
 ```
 ## API 

@@ -1,6 +1,27 @@
 /*
  * This code was adpated from WikiTreeDynamicTreeViewer.js
  * We use the D3.js library to render the graph.
+ *
+ * The code currently makes use of getPerson API calls. Call counts come down to about one call per person being displayed
+ * (in their own little box) plus one for each of their other spouses. This is regardless of whether it is for the initial
+ * display, or when the tree is being expanded - every new person "in a box" requires an API call. Children that only
+ * appear in drop-down lists do not need their own calls. They'll only need a call when they appear in their own box.
+ * The opening display can therefore result in about 20 to 40 getPerson calls for a large family and 10 for a family
+ * with 2 married children and 2 sets of grand-parents.
+ *
+ * At a high level it seems straight-forward to replace these calls with one or two getPerson calls, but when you dig
+ * deeper, it gets complicated. None of the current api calls that retrieve more than one profile's data in one call, is
+ * (imho) a good fit to give one everything one needs when retrieving more than one profile for the couples tree. The
+ * reason for this is that one needs spousal and children data of the relatives.
+ *
+ * The result is that managing what you need to call when, in order to add the missing information that you did not get
+ * the first time, becomes tricky. I think the current solution is a good one if you ignore the number of calls. However,
+ * I don't think the latter is excessive. All people are cached, so there should be at most one call for any person added.
+ * Sometimes a person is added as result of someone else's call and then, depending on where the user clicks, we might
+ * have to make a call again for that person (to get info on relatives), but that will only happen once, if at all.
+ * Since we are doing this at user click frequency, we should be ok as far as API call limits are concerned.  I might
+ * be wrong, but unless there is compelling evidence for the need to reduce the number calls, I don't think it is
+ * worthwhile to attempt it. You are welcome to prove me wrong, but you do it. :)  [Riël Smit, 4 Sep 2023]
  */
 
 import { PeopleCache } from "./people_cache.js";
@@ -282,8 +303,15 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         removeAncestors() {
-            if (this.a && this.a._data.Parents) delete this.a._data.Parents;
-            if (this.b && this.b._data.Parents) delete this.b._data.Parents;
+            // Move the ancestors out of the way rather than completely deleting them so we can restore them later
+            if (this.a && this.a._data.Parents) {
+                this.a._data._Parents = this.a._data.Parents;
+                delete this.a._data.Parents;
+            }
+            if (this.b && this.b._data.Parents) {
+                this.b._data._Parents = this.b._data.Parents;
+                delete this.b._data.Parents;
+            }
             this.expanded = false;
             if (this.children) delete this.children;
             return new Promise((resolve, reject) => {
@@ -292,8 +320,15 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         removeDescendants() {
-            if (this.a && this.a._data.Children) delete this.a._data.Children;
-            if (this.b && this.b._data.Children) delete this.b._data.Children;
+            // Move the ancestors out of the way rather than completely deleting them so we can restore them later
+            if (this.a && this.a._data.Children) {
+                this.a._data._Children = this.a._data.Children;
+                delete this.a._data.Children;
+            }
+            if (this.b && this.b._data.Children) {
+                this.b._data._Children = this.b._data.Children;
+                delete this.b._data.Children;
+            }
             this.expanded = false;
             if (this.children) delete this.children;
             return new Promise((resolve, reject) => {
@@ -364,11 +399,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             // Listen to tree events
             this.ancestorTree.setExpandCallback(function (couple) {
-                return self.loadMore(couple);
+                return self.loadMore(couple, ANCESTORS);
             });
 
             this.descendantTree.setExpandCallback(function (couple) {
-                return self.loadMore(couple);
+                return self.loadMore(couple, DESCENDANTS);
             });
 
             this.ancestorTree.setContractCallback(function (couple) {
@@ -430,19 +465,20 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          * a parent will be richLoaded before they are expanded. However, since we need
          * to know the names of a person's siblings and the names of both of their parents'
          * other spouses (if any) in order to construct children and spouse dropdowns for
-         * each profile, we make getRelatives calls (if necessary) on each parent of the
-         * profile being richLoaded as well as on the parents of his/her spouses.
+         * each profile, we make getPerson calls (to get other spouses and children if
+         * necessary) on each parent of the profile being richLoaded as well as on the
+         * parents of his/her spouses.
          *
          * These calls are only made if we have not rerieved the relevant data in the past.
          */
-        async richLoad(id, partnerId) {
+        async richLoad(id, partnerId, direction) {
             condLog(`=======RICH_LOAD ${id}`);
             const person = await this.getFullPerson(id);
             condLog(`=======RICH_LOAD completed await getWithChildren ${person.toString()}`);
-            return await this.loadRelated(person, partnerId);
+            return await this.loadRelated(person, partnerId, direction);
         }
 
-        async loadRelated(person, partnerId) {
+        async loadRelated(person, partnerId, direction) {
             const self = this;
             let loadPromises = [];
             condLog(`=======RICH_LOAD loadRelated for ${person.toString()}`);
@@ -460,20 +496,22 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             } else {
                 condLog(`loadRelated called on Person ${person.toString()} without preferred spouse`, person);
             }
-            // Add promises to load all the children. This is so that we can get
+            // Add promises to load all the children, if we're expanding descendants. This is so that we can get
             // the names of all their spouses
-            let childrenIds = person.getChildrenIds();
-            if (childrenIds) {
-                condLog(`loadRelated Children`, childrenIds);
-                for (const childId of childrenIds) {
-                    const child = person.getChild(childId);
-                    if (child && !child.getSpouseIds()) {
-                        condLog(`loadRelated: get promise for child ${childId}`);
-                        loadPromises.push(this.getWithSpouses(childId));
+            if (direction != ANCESTORS) {
+                let childrenIds = person.getChildrenIds();
+                if (childrenIds) {
+                    condLog(`loadRelated Children`, childrenIds);
+                    for (const childId of childrenIds) {
+                        const child = person.getChild(childId);
+                        if (child && !child.getSpouseIds()) {
+                            condLog(`loadRelated: get promise for child ${childId}`);
+                            loadPromises.push(this.getWithSpouses(childId));
+                        }
                     }
+                } else {
+                    condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person);
                 }
-            } else {
-                condLog(`loadRelated called on Person ${person.toString()} without Children[]`, person);
             }
 
             // Now wait for all the above promises to complete and process the results
@@ -501,16 +539,18 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 );
                 loadPromises = getPromisesForParents(selectedSpouse, loadPromises);
             }
-            // For the same reason as above, we also need the names of the other spouses and children of
-            // each child's spouse.
-            const children = person.getChildren();
-            condLog("=======loadRelated get promises for spouses of children");
-            for (const i in children) {
-                const child = children[i];
-                const spouseIds = child.getSpouseIds() || new Set();
-                for (const spouseId of spouseIds) {
-                    condLog(`loadRelated: get promise for spouse ${spouseId} of child ${child.toString()}`);
-                    loadPromises.push(self.getWithSpouses(spouseId));
+            // For the same reason as above, if we are expanding descendants, we also need the names of the other
+            // spouses and children of each child's spouse.
+            if (direction != ANCESTORS) {
+                const children = person.getChildren();
+                condLog("=======loadRelated get promises for spouses of children");
+                for (const i in children) {
+                    const child = children[i];
+                    const spouseIds = child.getSpouseIds() || new Set();
+                    for (const spouseId of spouseIds) {
+                        condLog(`loadRelated: get promise for spouse ${spouseId} of child ${child.toString()}`);
+                        loadPromises.push(self.getWithSpouses(spouseId));
+                    }
                 }
             }
 
@@ -534,18 +574,49 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         /**
          * Load more ancestors or descendants. Update existing data in place
          */
-        async loadMore(couple) {
+        async loadMore(couple, direction) {
             const self = this;
             condLog(`loadMore for ${couple.toString()}`, couple);
             const oldPerson = couple.getInFocus();
             const oldSpouse = couple.getNotInFocus();
-            if (oldPerson && !oldPerson.isFullyEnriched()) {
-                await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId());
-                condLog(`loadMore done for ${couple.toString()}`, couple);
+            const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
+            if (direction != DESCENDANTS) {
+                // Restore ancestors if we have contracted them before
+                if (couple.a && couple.a._data._Parents) {
+                    couple.a._data.Parents = couple.a._data._Parents;
+                    delete couple.a._data._Parents;
+                }
+                if (couple.b && couple.b._data._Parents) {
+                    couple.b._data.Parents = couple.b._data._Parents;
+                    delete couple.b._data._Parents;
+                }
+            }
+            if (direction != ANCESTORS) {
+                // Restore descendants if we have contracted them before
+                if (couple.a && couple.a._data._Children) {
+                    couple.a._data.Children = couple.a._data._Children;
+                    delete couple.a._data._Children;
+                }
+                if (couple.b && couple.b._data._Children) {
+                    couple.b._data.Children = couple.b._data._Children;
+                    delete couple.b._data._Children;
+                }
+            }
+            const isNowExpanded = oldPerson && oldPerson.isFullyEnriched();
+            // if (oldPerson && !oldPerson.isFullyEnriched()) {
+            if (wasNotExpanded) {
+                if (!isNowExpanded) {
+                    await self.richLoad(
+                        oldPerson.getId(),
+                        oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(),
+                        direction
+                    );
+                    condLog(`loadMore done for ${couple.toString()}`, couple);
+                }
                 couple.expanded = true;
                 self.drawTree();
             } else {
-                console.error("Attempted to loadMore for non-enriched person", oldPerson);
+                console.error("Attempted to loadMore for enriched person", oldPerson);
                 return new Promise((resolve, reject) => {
                     resolve(couple);
                 });
@@ -700,7 +771,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 });
         }
         /**
-         * @returns 'descendant' iff this is a descendent tree, otherwise returns 'ancestor'
+         * @returns 'descendant' iff this is a descendant tree, otherwise returns 'ancestor'
          */
         getSelector() {
             if (this.selector) {
@@ -898,6 +969,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 } else if (this.classList.contains("R")) {
                     person = this.parentNode.__data__.data.b;
                 } else {
+                    return;
+                }
+                if (event.altKey) {
+                    // provide a way to examine the current node and internal person structure
+                    console.log(person.toString(), person, this.parentNode.__data__);
                     return;
                 }
                 self.personPopup(person, d3.pointer(event, self.svg.node()));
@@ -1200,7 +1276,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 				</div>
 			`);
 
-            d3.select("#view-container").on("click", function () {
+            d3.select("#couples-view-container").on("click", function () {
                 popup.remove();
             });
         }
@@ -1577,9 +1653,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
         const wrapper = document.createElement("div");
         wrapper.className = "box alt-spouse-list-wrapper";
+        wrapper.setAttribute("title", ""); // prevent the spouse box's title from being actibe here
         wrapper.style.display = "none";
         const heading = document.createElement("h4");
-        heading.textContent = `Spouses for ${getShortName(currentSpouse)}`;
+        heading.textContent = `Spouses of ${getShortName(currentSpouse)}`;
         wrapper.appendChild(heading);
 
         const listDiv = document.createElement("div");

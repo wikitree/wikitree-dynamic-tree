@@ -11,14 +11,15 @@ export class AncestorLinesExplorer {
             start profile and draw their family tree up to the specified tree level. Although one might have specified N
             generations to be retrieved, the maximum level of the tree might be at more than N generations if an ancestor
             appears at more than one generation (i.e. level in the tree).
-        </p>
-        <p>
+        </p><p>
             <em><b>Warning</b>: A "full" (or complete) ancesstor tree of 15 generations or higher (e.g. for Windsor-1)
             WILL take a long time to retrieve and an even longer time to draw (a 15 generation tree can contain 32768 people).
             It may even crash your browser.
             It is possible, however, to retrieve 20 generations of trees that are relatively sparse in the older
-            generations.</em>
+            generations.</em> The more generations are requested in a load, the longer it may take, so please be patient.
+            Once loaded, you can save the data locally to your device and re-load it much faster later.
         </p>
+        <h3>Display and Interaction</h3>
         <ul>
             <li>
                 People that appear more than once in the tree are marked with a coloured square.
@@ -37,6 +38,12 @@ export class AncestorLinesExplorer {
             </li><li>
                 If you hover your pointer over a person, the birth- and death date and location of that person is displayed.
             </li><li>
+                The names of people marked as a <b>Brick Wall</b> (see below) are displayed in the selected colour.
+            </li>
+        </ul>
+        <h3>Options</h3>
+        <ul>
+            <li>
                 If the <b>Connectors</b> checkbox is ticked, a tree line will not be extended to beyond a duplicate
                 person if there is already a line containing this person.
             </li><li>
@@ -45,13 +52,38 @@ export class AncestorLinesExplorer {
                 to show for a person (i.e. their circle is coloured white), the name will appear to the right of the circle.
             </li><li>
                 The table has a header labeling each generation. This can be removed via the <b>Hide tree header</b>
-                tickbox.
+                checkbox.
             </li><li>
-                The <b>Brick wall colour</b> determines in which colour the names of people with no ancestors on record
-                are displayed. The default is black, i.e. they will be displayed like everyone else. If you want to
-                distinguish them, choose another colour.
+                If the <b>Position relative to birth year</b> box is ticked, people in the same generation are not aligned
+                vertically, but they are positioned according to ther years of birth. Everyone born in the same year, will
+                be aligned. Those with an unknown year of birth wil be placed in an average position for that generation.
             </li><li>
-                Changes to tickbox options only take effect when <b>(Re-)Draw Tree</b> or <b>Go</b> is clicked. A colour
+                The <b>Brick wall colour</b> determines, by default, in which colour the names of people with no ancestors on
+                record are displayed. The default is black, i.e. they will be displayed like everyone else. If you want to
+                distinguish them, choose another colour. You can control who is regarded as a "brick wall" by selecting the
+                approriate options in the <b>Add to Brick Wall</b> section.
+            </li><li>
+                If you inlcude <b>Bio Check</b> as a brick wall option, not only are profiles with Bio Check issues displayed in
+                the selected colour, but you can also see the Bio Check report by alt-clicking in their circle.
+            </li><li>
+                The size of the drawn tree is determined by the data, but also by the 3 controls below. You can fine tune the
+                tree layout by adjusting these parameters.
+                <ul>
+                  <li>
+                      The <b>Edge Factor</b> controls the horizontal distance between generations: the smaller the number,
+                      the closer the generations are on the horizontal axis.
+                  </li><li>
+                      The <b>Height Factor</b> controls the vertical distance between people at the same level in the tree.
+                      The larger the number, the further apart they are on the vertical axis.
+                  </li><li>
+                      The <b>Limit display to generation</b> value determines how many generations of the tree will be
+                      shown with all the people available rather than just those directly connected to a person of
+                      interest. If you select 'All',the complete tree will be shown (subject to the setting of the other
+                      parameters).
+                  </li>
+                </ul>
+            </li><li>
+                Changes to checkbox options only take effect when <b>(Re-)Draw Tree</b> or <b>Go</b> is clicked. A colour
                 change takes effect immediately, while the remaining options can be applied immediatly by pressing enter
                 after any of them was changed.
             </li><li>
@@ -59,39 +91,19 @@ export class AncestorLinesExplorer {
             </li>
         </ul>
         <p>
-            The more generations are requested in a load, the longer it may take, so please be patient. Once loaded, you can
-            save the data locally to your device and re-load it much faster later.
-        </p>
-        <p>
-            If you provide a list of comma-separated WikiTree IDs in the 'People of Interest' field, all the lines to those
-            ancestors (if they are in the tree) will be highlighted. You can choose if these lines should be drawn in full,
-            or whether they should also stop at the tree level specified. Separately you can specify whether or not only
+            If you provide a list of comma-separated WikiTree IDs in the <b>People of Interest</b> field, all the lines to
+            those ancestors (if they are in the tree) will be highlighted. You can choose if these lines should be drawn in
+            full, or whether they should also stop at the tree level specified. Separately you can specify whether or not only
             these "lines of interest" should be displayed or not.
-        </p>
-        <p>
-            The size of the drawn tree is determined by the data, but also by the 3 controls below. You can fine tune the
-            tree layout by adjusting these parameters.
-        </p>
-        <ul>
-            <li>
-                The <b>Edge Factor</b> controls the horizontal distance between generations: the smaller the number, the
-                closer the generations are on the horizontal axis.
-            </li><li>
-                The <b>Height Factor</b> controls the vertical distance between people at the same level in the tree.
-                The larger the number, the further apart they are on the vertical axis.
-            </li><li>
-                The <b>Limit display to generation</b> value determines how many generations of the tree will be shown with
-                all the people available rather than just those directly connected to a person of interest. If you select
-                'All',the complete tree will be shown (subject to the setting of the other parameters).
-            </li>
-        </ul>
-        <p>
+        </p><p>
             If you find problems with this app or have suggestions for improvements, please
             <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641" , target="_blank"
             >let me know</a>.
+        </p><p>
+            You can double click in this box, or click the X in the top right corner to remove this About text.
         </p>
-        <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
    `;
+    static nextZLevel = 10000;
 
     constructor(selector, startId) {
         this.selector = selector;
@@ -132,7 +144,7 @@ export class AncestorLinesExplorer {
               <span id="help-button" title="About this">?</span>
               <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
               <br />
-              <fieldset>
+              <fieldset id="aleFieldset">
                 <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
                 <table id="optionsTbl">
                   <tr>
@@ -234,7 +246,7 @@ export class AncestorLinesExplorer {
                     <td>
                       <label
                         for="aleBrickWallColour"
-                        title="Choose the colour for people with no known ancestors."
+                        title='Choose the colour for people categorised as a "brick wall".'
                         class="left">
                         Brick wall colour</label
                       >
@@ -242,7 +254,7 @@ export class AncestorLinesExplorer {
                         id="aleBrickWallColour"
                         type="color"
                         value="#000000"
-                        title="Choose the colour for people with no known ancestors." />
+                        title='Choose the colour for people chosen as a "brick wall".' />
                     </td>
                     <td>
                       <label for="tHFactor" title="Determines the display height of the tree." class="left"> Height Factor</label>
@@ -261,6 +273,87 @@ export class AncestorLinesExplorer {
                       </select>
                     </td>
                   </tr>
+                  <tr>
+                    <td>
+                      <input
+                        id="birthScale"
+                        type="checkbox"
+                        title="Position people along the horizontal tree axis relative to their year of birth." />
+                      <label
+                        for="birthScale"
+                        title="Position people along the horizontal tree axis relative to their year of birth."
+                        class="right">
+                        Position relative to birth year</label
+                      >
+                    </td>
+                    <td style="text-align:right"><span title='Set what constitutes a "brick wall."'>
+                      Add to Brick Wall:&nbsp;<span></td>
+                    <td>
+                      <input
+                        id="noParents"
+                        type="checkbox"
+                        checked
+                        title="Anyone with no parents." />
+                      <label
+                        for="noParents"
+                        title="Anyone with no parents."
+                        class="right">
+                        No Parents [<span class="cnt" title="Number of profiles with no parent">?</span>]</label
+                      >
+                    </td>
+                    <td>
+                      <input
+                        id="oneParent"
+                        type="checkbox"
+                        title="Anyone with only one parent." />
+                      <label
+                        for="oneParent"
+                        title="Anyone with only one parent."
+                        class="right">
+                        Only 1 Parent [<span class="cnt" title="Number of profiles with only one parent">?</span>]</label
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td></td>
+                    <td>
+                      <input
+                        id="bioCheck"
+                        type="checkbox"
+                        title="Anyone with only one parent." />
+                      <label
+                        for="bioCheck"
+                        title="Anyone with issues reported by Bio Check."
+                        class="right">
+                        Bio Check [<span class="cnt" title="Number of profiles with Bio Check Issues">?</span>]</label
+                      >
+                    </td>
+                    <td>
+                      <input
+                        id="noNoSpouses"
+                        type="checkbox"
+                        title='Anyone who does not have their "No more spouses" checkbox set.' />
+                      <label
+                        for="noNoSpouses"
+                        title='Anyone who does not have their "No more spouses" checkbox set.'
+                        class="right">
+                        No "no more spouses" [<span class="cnt" title='Number of profiles with "No more spouses" not checked'>?</span>]</label
+                      >
+                    </td>
+                    <td>
+                      <input
+                        id="noNoChildren"
+                        type="checkbox"
+                        title='Anyone who does not have their "No more children" checkbox set.' />
+                      <label
+                        for="noNoChildren"
+                        title='Anyone who does not have their "No more children" checkbox set.'
+                        class="right">
+                        No "no more children" [<span class="cnt" title='Number of profiles with "No more children" not checked'>?</span>]</label
+                      >
+                    </td>
+                  </tr>
                 </table>
               </fieldset>
               <div class="floating-button-div" style="position: fixed; bottom: 20px; left: 20px;">
@@ -277,13 +370,23 @@ export class AncestorLinesExplorer {
 
         AncestorTree.init();
 
-        $("#generation").on("change", function () {
-            const maxGen = $("#generation").val();
-            AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
-            AncestorLinesExplorer.updateMaxLevelSelection(maxGen, $("#maxLevel").val());
-        });
-        $("#getAncestorsButton").on("click", AncestorLinesExplorer.getAncestorsAndPaint);
-        $("#drawTreeButton").on("click", AncestorLinesExplorer.findPathsAndDrawTree);
+        $("#generation")
+            .off("change")
+            .on("change", function () {
+                const maxGen = $("#generation").val();
+                AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
+                AncestorLinesExplorer.updateMaxLevelSelection(maxGen, $("#maxLevel").val());
+            });
+        $("#getAncestorsButton").off("click").on("click", AncestorLinesExplorer.getAncestorsAndPaint);
+        $("#drawTreeButton")
+            .off("click")
+            .on("click", function (e) {
+                if (document.getElementById("bioCheck").checked && !window.aleBiosLoaded) {
+                    AncestorLinesExplorer.getAncestorsAndPaint(e);
+                } else {
+                    AncestorLinesExplorer.findPathsAndDrawTree(e);
+                }
+            });
         $("#edgeFactor").keyup(function (e) {
             if (e.keyCode == 13) {
                 $("#drawTreeButton").click();
@@ -295,46 +398,58 @@ export class AncestorLinesExplorer {
             }
         });
 
-        $("#fileInput").on("change", AncestorLinesExplorer.handleFileUpload);
-        $("#savePeople").click(function (e) {
-            e.preventDefault();
-            const fileName = AncestorLinesExplorer.makeFilename();
-            AncestorLinesExplorer.saveArrayToFile(AncestorTree.toArray(), fileName);
-        });
-        $("#loadButton").click(function (e) {
-            e.preventDefault();
-            $("#fileInput").click();
-        });
-        $("#aleOptions").click(function (e) {
-            e.preventDefault();
-            $("#optionsTbl").slideToggle();
-        });
-        $("#aleBrickWallColour").on("change", function () {
-            $("#drawTreeButton").click();
-        });
+        $("#fileInput").off("change").on("change", AncestorLinesExplorer.handleFileUpload);
+        $("#savePeople")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                const fileName = AncestorLinesExplorer.makeFilename();
+                AncestorLinesExplorer.saveArrayToFile(AncestorTree.toArray(), fileName);
+            });
+        $("#loadButton")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                $("#fileInput").click();
+            });
+        $("#aleOptions")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                $("#optionsTbl").slideToggle();
+            });
+        $("#aleBrickWallColour")
+            .off("change")
+            .on("change", function () {
+                $("#drawTreeButton").click();
+            });
         AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
         AncestorLinesExplorer.retrieveOptionsFromCookie();
 
         const container = $("#theSvg");
         container.floatingScroll();
-        $("#slideLeft").on("click", function (event) {
-            event.preventDefault();
-            container.animate(
-                {
-                    scrollLeft: "-=300px",
-                },
-                "fast"
-            );
-        });
-        $("#slideRight").on("click", function (event) {
-            event.preventDefault();
-            container.animate(
-                {
-                    scrollLeft: "+=300px",
-                },
-                "fast"
-            );
-        });
+        $("#slideLeft")
+            .off("click")
+            .on("click", function (event) {
+                event.preventDefault();
+                container.animate(
+                    {
+                        scrollLeft: "-=300px",
+                    },
+                    "fast"
+                );
+            });
+        $("#slideRight")
+            .off("click")
+            .on("click", function (event) {
+                event.preventDefault();
+                container.animate(
+                    {
+                        scrollLeft: "+=300px",
+                    },
+                    "fast"
+                );
+            });
 
         if (typeof window.aleShowingInfo === "undefined") {
             window.aleShowingInfo = true;
@@ -344,24 +459,29 @@ export class AncestorLinesExplorer {
         }
 
         // Add click action to help button
-        const helpButton = document.getElementById("help-button");
-        helpButton.addEventListener("click", function () {
-            if (window.aleShowingInfo) {
-                wtViewRegistry.hideInfoPanel();
-                window.aleShowingInfo = false;
-            }
-            $("#help-text").slideToggle();
-        });
+        $("#help-button")
+            .off("click")
+            .on("click", function () {
+                if (window.aleShowingInfo) {
+                    wtViewRegistry.hideInfoPanel();
+                    window.aleShowingInfo = false;
+                }
+                $("#help-text").slideToggle();
+            });
         $("#help-text").draggable();
 
         // Add the help text as a pop-up
-        const help = document.getElementById("help-text");
-        help.addEventListener("dblclick", function () {
-            $(this).slideToggle();
-        });
-        document.querySelector("#help-text xx").addEventListener("click", function () {
-            $(this).parent().slideUp();
-        });
+        $("#help-text")
+            .off("dblclick")
+            .on("dblclick", function () {
+                $(this).slideToggle();
+            });
+        $("#help-text xx")
+            .off("click")
+            .on("click", function () {
+                $(this).parent().slideUp();
+            });
+        $(document).off("keyup", AncestorLinesExplorer.closePopup).on("keyup", AncestorLinesExplorer.closePopUp);
         $("#getAncestorsButton").click();
     }
 
@@ -383,6 +503,27 @@ export class AncestorLinesExplorer {
             return nrGenerations - 1;
         }
         return 4;
+    }
+
+    static closePopUp(e) {
+        if (e.key === "Escape") {
+            // Find the popup with the highest z-index
+            let highestZIndex = 0;
+            let lastPopup = null;
+            $(".bioReport:visible, #help-text:visible").each(function () {
+                const zIndex = parseInt($(this).css("z-index"), 10);
+                if (zIndex > highestZIndex) {
+                    highestZIndex = zIndex;
+                    lastPopup = $(this);
+                }
+            });
+
+            // Close the popup with the highest z-index
+            if (lastPopup) {
+                AncestorLinesExplorer.nextZLevel = highestZIndex;
+                lastPopup.slideUp();
+            }
+        }
     }
 
     static async getAncestorsAndPaint(event) {
@@ -407,6 +548,34 @@ export class AncestorLinesExplorer {
             AncestorLinesExplorer.setEarlySaAfricaIndiaIds();
         }
         AncestorLinesExplorer.saveOptionCookies();
+
+        const gen = $("#generation").val();
+        const maxNrPeople = 2 ** gen - 2;
+        const nrAncestorProfiles = AncestorTree.profileCount - 1;
+        const nrDuplicates = AncestorTree.nrDuplicatesUpToGen(gen);
+        $("#aleFieldset .report").remove();
+        $("#aleFieldset").append(
+            `<span class="report">Out of ${maxNrPeople} possible direct ancestors in ${gen} generations, ${nrAncestorProfiles} (${(
+                (nrAncestorProfiles / maxNrPeople) *
+                100
+            ).toFixed(2)}%) have WikiTree profiles and out of them, ${nrDuplicates} (${(
+                (nrDuplicates / nrAncestorProfiles) *
+                100
+            ).toFixed(2)}%) occur more than once due to pedigree collapse.</span>`
+        );
+
+        const counts = AncestorTree.markAndCountBricks({
+            noParents: document.getElementById("noParents").checked,
+            oneParent: document.getElementById("oneParent").checked,
+            noNoSpouses: document.getElementById("noNoSpouses").checked,
+            noNoChildren: document.getElementById("noNoChildren").checked,
+            bioCheck: document.getElementById("bioCheck").checked,
+        });
+
+        for (const id of ["noParents", "oneParent", "noNoSpouses", "noNoChildren", "bioCheck"]) {
+            $(`label[for=${id}`).find("span.cnt").text(counts[id]);
+        }
+
         const expandPaths = document.getElementById("expandPaths").checked;
         const onlyPaths = document.getElementById("onlyPaths").checked;
         const connectors = document.getElementById("connectors").checked;
@@ -441,8 +610,13 @@ export class AncestorLinesExplorer {
     }
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {
+        window.aleBiosLoaded = document.getElementById("bioCheck").checked;
         const treeDepth = nrGenerations > 1 ? nrGenerations - 1 : 4;
-        const [theTreeRoot, buildTime] = await AncestorTree.buildTreeWithGetPeople(wtId, treeDepth);
+        const [theTreeRoot, buildTime] = await AncestorTree.buildTreeWithGetPeople(
+            wtId,
+            treeDepth,
+            window.aleBiosLoaded
+        );
         // console.log("theTreeRoot", theTreeRoot);
         console.log(`Tree size=${AncestorTree.getPeople().size}, buildTime=${buildTime}ms`);
         return theTreeRoot;
@@ -559,6 +733,12 @@ export class AncestorLinesExplorer {
             heightFactor: document.getElementById("tHFactor").value,
             maxLevel: document.getElementById("maxLevel").value,
             otherWtIds: document.getElementById("otherWtIds").value,
+            noParents: document.getElementById("noParents").checked,
+            oneParent: document.getElementById("oneParent").checked,
+            noNoSpouses: document.getElementById("noNoSpouses").checked,
+            noNoChildren: document.getElementById("noNoChildren").checked,
+            bioCheck: document.getElementById("bioCheck").checked,
+            birthScale: document.getElementById("birthScale").checked,
         };
         // console.log(`Saving options ${JSON.stringify(options)}`);
         AncestorLinesExplorer.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
@@ -579,6 +759,12 @@ export class AncestorLinesExplorer {
             $("#tHFactor").val(opt.heightFactor);
             $("#maxLevel").val(opt.maxLevel);
             $("#otherWtIds").val(opt.otherWtIds);
+            $("#noParents").attr("checked", opt.noParents);
+            $("#oneParent").attr("checked", opt.oneParent);
+            $("#noNoSpouses").attr("checked", opt.noNoSpouses);
+            $("#noNoChildren").attr("checked", opt.noNoChildren);
+            $("#bioCheck").attr("checked", opt.bioCheck);
+            $("#birthScale").attr("checked", opt.birthScale);
         }
     }
 

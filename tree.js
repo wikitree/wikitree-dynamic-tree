@@ -53,6 +53,12 @@
  *
  */
 
+// BioCheck initialization - just once
+import("./lib/biocheck-api/src/BioCheckTemplateManager.js").then((bio) => {
+    window.bioCheckTemplateManager = new bio.BioCheckTemplateManager();
+    window.bioCheckTemplateManager.load();
+});
+
 window.View = class View {
     constructor() {
         this.id = null;
@@ -260,7 +266,10 @@ window.ViewRegistry = class ViewRegistry {
                 if (status == "Illegal WikiTree ID") {
                     this.showError(`Person not found for WikiTree ID ${wtID}.`);
                 } else {
-                    this.showError(`An unexpected error occurred: ${status}. Refreshing the page might help.`);
+                    const help = status.toLowerCase().includes("limit exceeded")
+                        ? "Wait a minute and retry, otherwise wait an hour and retry."
+                        : " Refreshing the page might help.";
+                    this.showError(`An unexpected error occurred: ${status}.${help}`);
                 }
             } else {
                 this.showError("Please enter a WikiTree ID.");
