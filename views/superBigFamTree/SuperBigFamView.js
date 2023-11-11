@@ -7167,6 +7167,8 @@
                     if (SuperBigFamView.currentSettings["photo_options_showAllPics"] == true) {
                         if (!photoUrl && SuperBigFamView.currentSettings["photo_options_useSilhouette"] == false) {
                             thisDIVtoUpdate.style.display = "none";
+                        } else if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
+                            thisDIVtoUpdate.style.display = "none";
                         } else {
                             if (
                                 SuperBigFamView.currentSettings["photo_options_showPicsToN"] == true &&
@@ -8002,6 +8004,11 @@
         if (!person || !person._data) {
             return "Unknown";
         }
+
+        if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
+            return "";
+        }
+
         if (SuperBigFamView.currentSettings["date_options_dateTypes"] == "lifespan" && dateType == "B") {
             datePlaceString = getLifeSpan(person) + "<br/>";
         }
@@ -8097,6 +8104,10 @@
         // );
         if (!person || !person._data) {
             return "Unknown";
+        }
+
+        if (SuperBigFamView.displayPrivatize == 1 &&  person._data.IsLiving == true) {
+            return "Living";
         }
 
         if (
