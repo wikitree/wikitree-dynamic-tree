@@ -59,6 +59,41 @@ div.stats select {
   margin: 5px 5px 0px 0px;
 }
 
+#generation {
+  width: 3em;
+  min-width: 3em;
+  margin-right: 10px;
+  margin-top: 0;
+}
+
+.stats fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0.625em;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  margin-bottom: 10px;
+}
+.stats fieldset input {
+  margin: 0;
+}
+.stats fieldset label {
+  margin-right: 0;
+}
+.stats fieldset label.left {
+  margin-left: 10px;
+}
+.stats fieldset label.right {
+  margin-right: 10px;
+}
+
 #gender {
   /* width: auto; */
   min-width: auto;

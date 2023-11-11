@@ -1,17 +1,17 @@
 window.StatsView = class StatsView extends View {
     static #helpText = `
     <xx>[ x ]</xx>
-    <h2 style="text-align: center">About Ancestor Statistics</h2>
+    <h2 style="text-align: center">About Generational Statistics</h2>
     <p>
-        The app show statistics about the ancestors of a profile. Each of the 10 generations of
-        ancestors are shown as a separate row with some overall stats shown below the table.
+        The app show statistics about the ancestors or descendants of a profile. Each of the 10 generations are shown as 
+        a separate row with some overall stats shown below the table.
     </p>
     <p>
         Table columns explained:
         <ul>
             <li>
-                <b>Total Profiles</b> shows how many profiles exist in this generation versus the total expected for 
-                that generation.
+                <b>Total Profiles</b> shows how many profiles exist in this generation. For ancestors, the total number 
+                expected for that generation is given.
             </li><li>
                 <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that 
                 generation.
@@ -38,7 +38,7 @@ window.StatsView = class StatsView extends View {
     meta() {
         return {
             // short title - will be in select control
-            title: "Ancestor Statistics",
+            title: "Generational Statistics",
             // some longer description or usage
             description: "",
             // link pointing at some webpage with documentation
@@ -51,21 +51,50 @@ window.StatsView = class StatsView extends View {
         // to showcase your awesome view, e.g.
 
         let genNames = [];
-        let GENERATIONS = 10;
-        var ancestors = {};
+        let GENERATIONS = 5; // New default value
+        var familyMembers = {};
+        let mode = "ancestor";
 
         document.querySelector(container_selector).innerHTML = `
             <div id="statsContainer" class="stats">
                 <div id="controlBlock" class="stats-not-printable">
-                    <label for="gender" title="The genders to search and report on">Genders to search</label>
-                    <select id="gender" title="The genders to search and report on">
-                        <option value="" selected>all</option>
-                        <option value="Male">males only</option>
-                        <option value="Female">females only</option>
+                    <label for="generations"  title="The number of generations to fetch from WikiTree">Max Generations:</label>
+                    <select id="generations" title="The number of generations to fetch from WikiTree">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5" selected>5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
                     </select>
-                    <button id="getStatsButton" class="small button" title="Get ancestor stats">Get ancestor stats</button>
+                    <button id="getStatsButton" class="small button" title="Get generational stats">Get generational stats</button>
                     <span id="help-button" title="About this">?</span>
-                    <div id="help-text">${window.StatsView.#helpText}</div>
+                    <div id="help-text">${window.StatsView.#helpText}</div><br>
+                    <fieldset id="statsFieldset">
+                        <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
+                        <table id="optionsTbl">
+                            <tr>
+                                <td>Mode:
+                                    <input type="radio" id="ancestor" name="mode" value="ancestor" checked="checked">
+                                    <label for="ancestor" title="Ancestor">Ancestors</label>
+                                    <input type="radio" id="descendant" name="mode" value="descendant">
+                                    <label for="descendant" title="Descendant">Descendants</label>
+                                </td>
+                            </tr><tr>
+                                <td>
+                                    <label for="gender" title="The genders to search and report on">Genders to search</label>
+                                    <select id="gender" title="The genders to search and report on">
+                                        <option value="" selected>all</option>
+                                        <option value="Male">males only</option>
+                                        <option value="Female">females only</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                    </fieldset>
                 </div>
                 <table id="stats-table">
                     <thead>
@@ -93,8 +122,7 @@ window.StatsView = class StatsView extends View {
         `;
 
         $("#getStatsButton").on("click", function () {
-            const selectedGender = $("#gender").val();
-            gatherStats(person_id, selectedGender);
+            gatherStats(person_id);
         });
 
         // Add click action to help button
@@ -113,11 +141,19 @@ window.StatsView = class StatsView extends View {
             $(this).parent().slideUp();
         });
 
-        const selectedGender = $("#gender").val();
-        gatherStats(person_id, selectedGender);
+        gatherStats(person_id);
 
-        async function gatherStats(id, gender) {
+        async function gatherStats(id) {
             window.StatsView.showShakingTree();
+
+            GENERATIONS = $("#generations").val();
+            if ($("#ancestor").is(":checked")) {
+                mode = "ancestor";
+            }
+            if ($("#descendant").is(":checked")) {
+                mode = "descendant";
+            }
+            const gender = $("#gender").val();
 
             let results = document.getElementById("results-container");
             results.innerHTML = ""; // Clear away any previous results
@@ -126,41 +162,53 @@ window.StatsView = class StatsView extends View {
 
             fillGenNames();
 
-            await getAncestors(id, gender);
+            await getFamilyMembers(id, gender);
 
             calculateAvgAgeEachGen(gender);
         }
 
         function fillGenNames() {
             genNames[0] = "Self";
-            genNames[1] = "Parents";
-            genNames[2] = "Grandparents";
-            genNames[3] = "Great-Grandparents";
+            let modifier = ""; // Either parents or children
+            if (mode == "ancestor") {
+                genNames[1] = "Parents";
+                modifier = "parents";
+            } else if (mode == "descendant") {
+                genNames[1] = "Children";
+                modifier = "children";
+            }
+            genNames[2] = "Grand" + modifier;
+            genNames[3] = "Great-Grand" + modifier;
             if (GENERATIONS > 3) {
                 for (let i = 4; i <= GENERATIONS; i++) {
                     let greats = i - 2;
-                    genNames[i] = greats + "x Great-Grandparents";
+                    genNames[i] = greats + "x Great-Grand" + modifier;
                 }
             }
         }
 
-        async function getAncestors(id, gender) {
-            // get ancestors of given ID with getPeople
+        async function getFamilyMembers(id, gender) {
+            // get ancestors / descendants of given ID with getPeople
+            const options = {};
+            if (mode == "ancestor") {
+                options["ancestors"] = GENERATIONS;
+            }
+            if (mode == "descendant") {
+                options["descendants"] = GENERATIONS;
+            }
             const results = await WikiTreeAPI.getPeople(
                 "stats",
                 id,
                 ["BirthDate, DeathDate, Name, Derived.BirthName, Gender, Spouses, Meta"],
-                {
-                    ancestors: GENERATIONS,
-                }
+                options
             );
-            // save the list of ancestors
-            ancestors = results[2];
+            // save the list of familyMembers
+            familyMembers = results[2];
 
             if (gender) {
-                for (const profile in ancestors) {
-                    if (ancestors[profile].Gender != gender) {
-                        delete ancestors[profile];
+                for (const profile in familyMembers) {
+                    if (familyMembers[profile].Gender != gender) {
+                        delete familyMembers[profile];
                     }
                 }
             }
@@ -176,7 +224,7 @@ window.StatsView = class StatsView extends View {
             let oldestFemaleAge = 0;
             let oldestFemalePerson = "";
 
-            // fill array with the birth years of all ancestors in each generation and death years
+            // fill array with the birth and death years of all family members in each generation
 
             // setup birth and death year storage with an array for each generation
             const profileCounts = {};
@@ -194,91 +242,89 @@ window.StatsView = class StatsView extends View {
                 siblingsCounts[i] = [];
             }
 
-            // for each ancestor
-            for (const person in ancestors) {
-                const ancestor = ancestors[person];
+            // for each family member
+            for (const person in familyMembers) {
+                const familyMember = familyMembers[person];
 
-                //console.log(ancestor);
-
-                let ancestorGeneration = ancestor["Meta"]["Degrees"];
-                let ancestorGender = ancestor["Gender"];
-                let ancestorBirthYear;
-                let ancestorDeathYear;
-                let ancestorMarriageYear;
-                if (ancestor.hasOwnProperty("BirthDate")) {
-                    ancestorBirthYear = parseInt(ancestor["BirthDate"].substring(0, 4));
+                let generation = familyMember["Meta"]["Degrees"];
+                let gender = familyMember["Gender"];
+                let birthYear;
+                let deathYear;
+                let marriageYear;
+                if (familyMember.hasOwnProperty("BirthDate")) {
+                    birthYear = parseInt(familyMember["BirthDate"].substring(0, 4));
                 }
-                if (ancestor.hasOwnProperty("DeathDate")) {
-                    ancestorDeathYear = parseInt(ancestor["DeathDate"].substring(0, 4));
+                if (familyMember.hasOwnProperty("DeathDate")) {
+                    deathYear = parseInt(familyMember["DeathDate"].substring(0, 4));
                 }
-                if (ancestor.hasOwnProperty("Spouses")) {
-                    if (ancestor.Spouses.length > 1) {
+                if (familyMember.hasOwnProperty("Spouses")) {
+                    if (familyMember.Spouses.length > 1) {
                         // Check for multiple marriages
-                        ancestor.Spouses = ancestor.Spouses.filter(function (value) {
+                        familyMember.Spouses = familyMember.Spouses.filter(function (value) {
                             return value.MarriageDate != "0000-00-00"; // Remove marriages without a date
                         });
                         // Ensure the 1st marriage element is the earliest one
-                        ancestor.Spouses.sort(function (a, b) {
+                        familyMember.Spouses.sort(function (a, b) {
                             return parseInt(a.MarriageDate.substring(0, 4)) - parseInt(b.MarriageDate.substring(0, 4));
                         });
                     }
-                    if (ancestor.Spouses[0]) {
-                        ancestorMarriageYear = parseInt(ancestor.Spouses[0]["MarriageDate"].substring(0, 4));
+                    if (familyMember.Spouses[0]) {
+                        marriageYear = parseInt(familyMember.Spouses[0]["MarriageDate"].substring(0, 4));
                     }
                 }
 
                 // increase the profile count of the proper generation
-                profileCounts[ancestorGeneration]++;
+                profileCounts[generation]++;
 
                 // add the birth year to the proper generation
-                let birthGeneration = birthYears[ancestorGeneration];
-                if (ancestorBirthYear > 0) {
-                    birthGeneration.push(ancestorBirthYear);
+                let birthGeneration = birthYears[generation];
+                if (birthYear > 0) {
+                    birthGeneration.push(birthYear);
                 }
 
                 // add the marriage age to the proper generation
-                let ancestorAgeAtMarriage;
-                if (ancestorMarriageYear && ancestorBirthYear > 0) {
-                    ancestorAgeAtMarriage = getAgeAtEvent(ancestor["BirthDate"], ancestor.Spouses[0]["MarriageDate"]);
+                let ageAtMarriage;
+                if (marriageYear && birthYear > 0) {
+                    ageAtMarriage = getAgeAtEvent(familyMember["BirthDate"], familyMember.Spouses[0]["MarriageDate"]);
                 }
-                let marriageAgeGeneration = marriageAges[ancestorGeneration];
-                if (ancestorAgeAtMarriage != null) {
-                    marriageAgeGeneration.push(ancestorAgeAtMarriage);
+                let marriageAgeGeneration = marriageAges[generation];
+                if (ageAtMarriage != null) {
+                    marriageAgeGeneration.push(ageAtMarriage);
                 }
 
                 // add the death age to the proper generation
-                let ancestorAgeAtDeath;
-                if (ancestor.hasOwnProperty("BirthDate") && ancestor.hasOwnProperty("DeathDate")) {
-                    ancestorAgeAtDeath = getAgeAtEvent(ancestor["BirthDate"], ancestor["DeathDate"]);
+                let ageAtDeath;
+                if (familyMember.hasOwnProperty("BirthDate") && familyMember.hasOwnProperty("DeathDate")) {
+                    ageAtDeath = getAgeAtEvent(familyMember["BirthDate"], familyMember["DeathDate"]);
                 }
-                let deathAgeGeneration = deathAges[ancestorGeneration];
-                if (ancestorAgeAtDeath != null) {
-                    deathAgeGeneration.push(ancestorAgeAtDeath);
+                let deathAgeGeneration = deathAges[generation];
+                if (ageAtDeath != null) {
+                    deathAgeGeneration.push(ageAtDeath);
                 }
 
-                // check if this ancestor is the oldest one so far
-                if (ancestorAgeAtDeath > oldestAge) {
-                    oldestAge = ancestorAgeAtDeath;
+                // check if this family member is the oldest one so far
+                if (ageAtDeath > oldestAge) {
+                    oldestAge = ageAtDeath;
                     oldestPerson = `
-                    <a href="https://www.wikitree.com/wiki/${ancestor["Name"]}" target="_blank">${ancestor["BirthName"]}</a>`;
+                    <a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
                 }
 
-                if ((ancestorGender == "Male") & (ancestorAgeAtDeath > oldestMaleAge)) {
-                    oldestMaleAge = ancestorAgeAtDeath;
+                if ((gender == "Male") & (ageAtDeath > oldestMaleAge)) {
+                    oldestMaleAge = ageAtDeath;
                     oldestMalePerson = `
-                    <a href="https://www.wikitree.com/wiki/${ancestor["Name"]}" target="_blank">${ancestor["BirthName"]}</a>`;
+                    <a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
                 }
 
-                if (ancestorGender == "Female" && ancestorAgeAtDeath > oldestFemaleAge) {
-                    oldestFemaleAge = ancestorAgeAtDeath;
+                if (gender == "Female" && ageAtDeath > oldestFemaleAge) {
+                    oldestFemaleAge = ageAtDeath;
                     oldestFemalePerson = `
-                    <a href="https://www.wikitree.com/wiki/${ancestor["Name"]}" target="_blank">${ancestor["BirthName"]}</a>`;
+                    <a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
                 }
             }
 
             // Look up the number of siblings / children
             let profileIDs = [];
-            for (const person in ancestors) {
+            for (const person in familyMembers) {
                 profileIDs.push(person);
             }
             WikiTreeAPI.getRelatives("stats", profileIDs, ["Id"], {
@@ -288,7 +334,7 @@ window.StatsView = class StatsView extends View {
 
             function calculateChildrenSiblings(relatives) {
                 for (const relative in relatives) {
-                    let generation = ancestors[relatives[relative].key]["Meta"]["Degrees"];
+                    let generation = familyMembers[relatives[relative].key]["Meta"]["Degrees"];
 
                     let person = relatives[relative].person;
                     childrenCounts[generation].push(Object.keys(person.Children).length);
@@ -396,10 +442,15 @@ window.StatsView = class StatsView extends View {
                 avgMarriageAges.push(avgMarriageAge);
             }
 
-            // calculate the generation length for each generation -- average age of giving birth to your ancestor
+            // calculate the generation length for each generation -- average age of giving birth to your family members
             const avgGenLengths = [];
             for (const generation in birthYears) {
-                let genLength = avgBirthYears[generation - 1] - avgBirthYears[generation];
+                let genLength = 0;
+                if (mode == "ancestor") {
+                    genLength = avgBirthYears[generation - 1] - avgBirthYears[generation];
+                } else if (mode == "descendant") {
+                    genLength = avgBirthYears[generation] - avgBirthYears[generation - 1];
+                }
 
                 if (isNaN(genLength) || genLength == 0) {
                     genLength = "-";
@@ -459,19 +510,19 @@ window.StatsView = class StatsView extends View {
             avgLifeSpanDiv.innerHTML = `Average lifespan: ${overallAvgLifeSpan}`;
             results.appendChild(avgLifeSpanDiv);
 
-            // show oldest ancestor
-            let oldestAncestorDiv = document.createElement("div");
-            oldestAncestorDiv.innerHTML = `Oldest ancestor: ${oldestPerson}, ${oldestAge} years old.`;
-            results.appendChild(oldestAncestorDiv);
+            // show oldest family member
+            let oldestRelativeDiv = document.createElement("div");
+            oldestRelativeDiv.innerHTML = `Oldest ${mode}: ${oldestPerson}, ${oldestAge} years old.`;
+            results.appendChild(oldestRelativeDiv);
 
             if (!gender) {
-                let oldestMaleAncestorDiv = document.createElement("div");
-                oldestMaleAncestorDiv.innerHTML = `Oldest male ancestor: ${oldestMalePerson}, ${oldestMaleAge} years old.`;
-                results.appendChild(oldestMaleAncestorDiv);
+                let oldestMaleRelativeDiv = document.createElement("div");
+                oldestMaleRelativeDiv.innerHTML = `Oldest male ${mode}: ${oldestMalePerson}, ${oldestMaleAge} years old.`;
+                results.appendChild(oldestMaleRelativeDiv);
 
-                let oldestFemaleAncestorDiv = document.createElement("div");
-                oldestFemaleAncestorDiv.innerHTML = `Oldest female ancestor: ${oldestFemalePerson}, ${oldestFemaleAge} years old.`;
-                results.appendChild(oldestFemaleAncestorDiv);
+                let oldestFemaleRelativeDiv = document.createElement("div");
+                oldestFemaleRelativeDiv.innerHTML = `Oldest female ${mode}: ${oldestFemalePerson}, ${oldestFemaleAge} years old.`;
+                results.appendChild(oldestFemaleRelativeDiv);
             }
 
             fillTable({
@@ -496,7 +547,11 @@ window.StatsView = class StatsView extends View {
                 row.id = "stats-row" + generation;
                 row.insertCell(0).innerHTML = generation + 1;
                 row.insertCell(1).innerHTML = genNames[generation];
-                row.insertCell(2).innerHTML = `${stats.profileCounts[generation]}/${maxAncestorsForGen}`;
+                if (mode == "ancestor") {
+                    row.insertCell(2).innerHTML = `${stats.profileCounts[generation]}/${maxAncestorsForGen}`;
+                } else {
+                    row.insertCell(2).innerHTML = `${stats.profileCounts[generation]}`;
+                }
                 row.insertCell(
                     3
                 ).innerHTML = `${stats.birthYears[generation].length}/${stats.profileCounts[generation]}`;
