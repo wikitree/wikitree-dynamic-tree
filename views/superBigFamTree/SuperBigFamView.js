@@ -243,12 +243,11 @@
     SuperBigFamView.numAncGensRetrieved = 0;
     SuperBigFamView.numDescGensRetrieved = 1;
     SuperBigFamView.numCuzGensRetrieved = 0;
-    SuperBigFamView.maxNumGens = 7;
+    
     SuperBigFamView.maxNumAncGens = 7;
     SuperBigFamView.maxNumDescGens = 7;
-    SuperBigFamView.maxNumCuzGens = 3;
-
-    SuperBigFamView.workingMaxNumGens = 3;
+    SuperBigFamView.maxNumCuzGens = 4;
+    
     SuperBigFamView.workingMaxNumAncGens = 3;
     SuperBigFamView.workingMaxNumDescGens = 2;
     SuperBigFamView.workingMaxNumCuzGens = 1;
@@ -1614,7 +1613,7 @@
 
         */
 
-        condLog("ADDING THE PIECES FROM 0 to 2 ** SBFtree VIEW maxNumGens", 2 ** SuperBigFamView.maxNumGens);
+        // condLog("ADDING THE PIECES FROM 0 to 2 ** SBFtree VIEW maxNumGens", 2 ** SuperBigFamView.maxNumGens);
         // for (let index = 0; index < 2 ** SuperBigFamView.maxNumGens; index++) {
         //     condLog("ADDING THE PIECES FOR ", index);
         //     // Create an Empty Line, hidden, to be used later
@@ -2767,8 +2766,8 @@
         if (SuperBigFamView.numCuzGens2Display < 0) {
             SuperBigFamView.numCuzGens2Display = 0;
             showTemporaryMessageBelowButtonBar("You can't display less than nothing.");
-        } else if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.MaxNumCuzGens) {
-            SuperBigFamView.numCuzGens2Display = SuperBigFamView.MaxNumCuzGens;
+        } else if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.maxNumCuzGens) {
+            SuperBigFamView.numCuzGens2Display = SuperBigFamView.maxNumCuzGens;
             // if (SuperBigFamView.workingMaxNumGens < SuperBigFamView.maxNumGens) {
             //     flashWarningMessageBelowButtonBar(
             //         "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
@@ -2776,7 +2775,7 @@
             // } else {
 
             showTemporaryMessageBelowButtonBar(
-                SuperBigFamView.MaxNumCuzGens + " is the maximum number of cousin generations you can display."
+                "3rd cousins is the maximum depth in generations you can display."
             );
 
             // }
@@ -2937,19 +2936,19 @@
         if (SuperBigFamView.numDescGens2Display < 0) {
             SuperBigFamView.numDescGens2Display = 0;
             showTemporaryMessageBelowButtonBar("0 is the minimum number of descendants you can display.");
-        } else if (SuperBigFamView.numDescGens2Display > SuperBigFamView.workingMaxNumDescGens) {
-            SuperBigFamView.numDescGens2Display = SuperBigFamView.workingMaxNumDescGens;
-            if (SuperBigFamView.workingMaxNumDescGens < SuperBigFamView.maxNumDescGens) {
-                flashWarningMessageBelowButtonBar(
-                    "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
-                );
-                OKtoAddDescs = false;
-            } else {
+        } else if (SuperBigFamView.numDescGens2Display > SuperBigFamView.maxNumDescGens) {
+            SuperBigFamView.numDescGens2Display = SuperBigFamView.maxNumDescGens;
+            // if (SuperBigFamView.workingMaxNumDescGens < SuperBigFamView.maxNumDescGens) {
+            //     flashWarningMessageBelowButtonBar(
+            //         "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
+            //     );
+            //     OKtoAddDescs = false;
+            // } else {
                 showTemporaryMessageBelowButtonBar(
                     SuperBigFamView.maxNumDescGens + " is the maximum number of descendant generations you can display."
                 );
                 OKtoAddDescs = false;
-            }
+            // }
         }
 
         let numGensSpan = document.querySelector("#numDescGensInBBar");
@@ -2988,6 +2987,8 @@
                 " unknown Children"
             );
         }
+
+        console.log("numCuzGens2Display , MaxCuz",SuperBigFamView.numCuzGens2Display , SuperBigFamView.maxNumCuzGens)
         let OKtoAddAncs = true;
         let OKtoAddDescs = true;
         let OKtoAddCuzs = true;
@@ -2995,8 +2996,8 @@
         if (SuperBigFamView.numCuzGens2Display < 0) {
             SuperBigFamView.numCuzGens2Display = 0;
             showTemporaryMessageBelowButtonBar("You can't display less than nothing.");
-        } else if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.MaxNumCuzGens) {
-            SuperBigFamView.numCuzGens2Display = SuperBigFamView.MaxNumCuzGens;
+        } else if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.maxNumCuzGens) {
+            SuperBigFamView.numCuzGens2Display = SuperBigFamView.maxNumCuzGens;
             // if (SuperBigFamView.workingMaxNumGens < SuperBigFamView.maxNumGens) {
             //     flashWarningMessageBelowButtonBar(
             //         "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
@@ -3004,9 +3005,9 @@
             // } else {
 
             showTemporaryMessageBelowButtonBar(
-                SuperBigFamView.MaxNumCuzGens + " is the maximum number of cousin generations you can display."
+                "3rd cousins is the maximum depth in generations you can display."
             );
-
+            OKtoAddCuzs = false;
             // }
         }
 
@@ -3094,11 +3095,13 @@
             thisGetPeopleOptions.start = startResultAt;
         }
 
+        let cuzQuips = ["none", "aunts/uncles", "1st cousins", "2nd cousins", "3rd cousins"];
         let messagePrefixes = {
             A: "Loading Ancestors - generation " + newAncLevel + " : phase ",
             D: "Loading Descendants - generation " + newDescLevel + " : phase ",
-            C: "Loading Cousins - " + numCousinDescendants + "th cousins : phase ",
+            C: "Loading Cousins - " + cuzQuips[numCousinDescendants] + " : phase ",
         };
+
         loadingTD.innerHTML = "loading...";
         
 
@@ -3534,7 +3537,12 @@
                 const code = theCodesList[c];
                 const ancID = SuperBigFamView.theLeafCollection[code].Id;
                 // theListOfIDs.push(ancID);
+                 
                 theAncsOnlyIDs.push(ancID);
+
+                if (!thePeopleList[ancID]) {
+                    continue;
+                }
 
                 const theSiblings = thePeopleList[ancID]._data.Siblings;
                 if (theSiblings) {
@@ -5544,6 +5552,22 @@
         SuperBigFamView.dontSaveCollection = {};
         SuperBigFamView.theChunkCollection = {};
 
+        SuperBigFamView.numAncGens2Display = 2;
+        SuperBigFamView.numDescGens2Display = 1;
+        SuperBigFamView.numCuzGens2Display = 0;
+        SuperBigFamView.displayINLAWS = 0;
+        SuperBigFamView.displayPrivatize = 0;
+
+        SuperBigFamView.maxNumAncGens = 7;
+        SuperBigFamView.maxNumDescGens = 7;
+        SuperBigFamView.maxNumCuzGens = 4;
+
+        SuperBigFamView.workingMaxNumAncGens = 3;
+        SuperBigFamView.workingMaxNumDescGens = 2;
+        SuperBigFamView.workingMaxNumCuzGens = 1;
+
+
+
         self._load(id).then(function (person) {
             // condLog("SuperBigFamView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
@@ -7448,10 +7472,19 @@
         condLog("new var ANCESTOR TREE");
 
         // RESET  the # of Gens parameters
-        SuperBigFamView.numGens2Display = 3;
-        SuperBigFamView.lastNumGens = 3;
-        SuperBigFamView.numGensRetrieved = 3;
-        SuperBigFamView.maxNumGens = 10;
+        SuperBigFamView.numAncGens2Display = 2;
+        SuperBigFamView.numDescGens2Display = 1;
+        SuperBigFamView.numCuzGens2Display = 0;
+        SuperBigFamView.displayINLAWS = 0;
+        SuperBigFamView.displayPrivatize = 0;
+
+        SuperBigFamView.maxNumAncGens = 7;
+        SuperBigFamView.maxNumDescGens = 7;
+        SuperBigFamView.maxNumCuzGens = 3;
+
+        SuperBigFamView.workingMaxNumAncGens = 3;
+        SuperBigFamView.workingMaxNumDescGens = 2;
+        SuperBigFamView.workingMaxNumCuzGens = 1;        
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
