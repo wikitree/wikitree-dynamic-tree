@@ -824,7 +824,7 @@
                             type: "checkbox",
                             defaultValue: 0,
                         },
-                        
+
                         {
                             optionName: "firstName",
                             type: "radio",
@@ -875,7 +875,7 @@
                         {
                             optionName: "dateTypes",
                             type: "radio",
-                            
+
                             values: [
                                 { value: "none", text: "No Dates" },
                                 { value: "br" },
@@ -910,7 +910,7 @@
                         {
                             optionName: "dateFormat",
                             type: "radio",
-                            
+
                             values: [
                                 { value: "YYYY", text: "1964" },
                                 { value: "YYYYMMDD", text: "1964-01-16" },
@@ -930,7 +930,7 @@
                         {
                             optionName: "locationTypes",
                             type: "radio",
-                            
+
                             values: [
                                 { value: "none", text: "No Locations" },
                                 { value: "br" },
@@ -955,7 +955,7 @@
                         {
                             optionName: "locationFormatBD",
                             type: "radio",
-                            
+
                             values: [
                                 { value: "Full", text: "Full Location as entered" },
                                 { value: "br" },
@@ -1047,14 +1047,14 @@
                                 { value: "Generation", text: "Generation" },
                                 { value: "Gender", text: "Gender" },
                                 { value: "Ancestor", text: "Ancestor family" },
-                                 
-                                { value: "Family", text: "!* Family Stats" },
-                                { value: "Location", text: "!* Location" },
+
+                                // { value: "Family", text: "!* Family Stats" },
+                                // { value: "Location", text: "!* Location" },
 
                                 // { value: "Town", text: "by Place name" },
                                 // { value: "Region", text: "by Region (Province/State)" },
                                 // { value: "Country", text: "by Country" },
-                                { value: "random", text: "!* random chaos" },
+                                { value: "random", text: "random chaos" },
                             ],
                             defaultValue: "Generation",
                         },
@@ -1139,22 +1139,22 @@
                         {
                             optionName: "highlightBy",
                             type: "select",
-                            label: "!* Highlight by",
+                            label: "Highlight by",
                             values: [
-                                { value: "YDNA", text: "Y-DNA" },
-                                { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
-                                { value: "XDNA", text: "X-chromosome inheritance" },
-                                { value: "DNAinheritance", text: "DNA inheritance" },
-                                { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
-                                { value: "-", text: "-" },
+                                // { value: "YDNA", text: "Y-DNA" },
+                                // { value: "mtDNA", text: "Mitonchondrial DNA (mtDNA)" },
+                                // { value: "XDNA", text: "X-chromosome inheritance" },
+                                // { value: "DNAinheritance", text: "DNA inheritance" },
+                                // { value: "DNAconfirmed", text: "DNA confirmed ancestors" },
+                                { value: "none", text: "Pick one below:" },
                                 { value: "aliveDay", text: "Alive on this Day" },
                                 { value: "bioText", text: "Biography Text" },
-                                { value: "cat", text: "Category or Sticker" },
+                                // { value: "cat", text: "Category or Sticker" },
                             ],
-                            defaultValue: "DNAinheritance",
+                            defaultValue: "none",
                         },
 
-                        { optionName: "break4DNA", comment: "For WikiTree DNA pages:", type: "br" },
+                        // { optionName: "break4DNA", comment: "For WikiTree DNA pages:", type: "br" },
                         {
                             optionName: "aliveYYYY",
                             type: "text",
@@ -1228,17 +1228,17 @@
                             defaultValue: "01",
                         },
 
-                        {
-                            optionName: "howDNAlinks",
-                            type: "radio",
-                            label: "",
-                            values: [
-                                { value: "Hide", text: "Hide Links" },
-                                { value: "Highlights", text: "Show Links for highlighted cells only" },
-                                { value: "ShowAll", text: "Show All Links" },
-                            ],
-                            defaultValue: "Highlights",
-                        },
+                        // {
+                        //     optionName: "howDNAlinks",
+                        //     type: "radio",
+                        //     label: "",
+                        //     values: [
+                        //         { value: "Hide", text: "Hide Links" },
+                        //         { value: "Highlights", text: "Show Links for highlighted cells only" },
+                        //         { value: "ShowAll", text: "Show All Links" },
+                        //     ],
+                        //     defaultValue: "Highlights",
+                        // },
                         {
                             optionName: "catName",
                             type: "select",
@@ -1870,8 +1870,8 @@
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
         highlightSelector.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
+        // let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        // let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
         catNameSelector.style.display = "none";
@@ -1925,8 +1925,8 @@
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
-        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        let howDNAlinksRadiosBR = document.getElementById("highlight_options_howDNAlinks_BR");
+        // let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        // let howDNAlinksRadiosBR = document.getElementById("highlight_options_howDNAlinks_BR");
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
 
@@ -1987,8 +1987,8 @@
             theDIV.style.display = "none";
         }
 
-        break4DNASelector.parentNode.style.display = "none";
-        howDNAlinksRadiosBR.parentNode.style.display = "none";
+        // break4DNASelector.parentNode.style.display = "none";
+        // howDNAlinksRadiosBR.parentNode.style.display = "none";
         bioTextSelector.style.display = "none";
         bioTextSelectorLabel.style.display = "none";
         catNameSelector.style.display = "none";
@@ -2005,8 +2005,8 @@
             bioTextSelector.style.display = "inline-block";
             bioTextSelectorLabel.style.display = "inline-block";
         } else {
-            break4DNASelector.parentNode.style.display = "block";
-            howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
+            // break4DNASelector.parentNode.style.display = "block";
+            // howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
         }
     };
 
@@ -9308,64 +9308,71 @@
         }
     }
 
-    function doHighlightFor(gen, pos, ahnNum) {
-        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
-            if (pos == 0) {
-                if (ahnNum > 1) {
-                    return true;
-                } else if (ahnNum == 1 && thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data.Gender == "Male") {
-                    return true;
-                }
-            }
-        } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
-            if (pos == 2 ** gen - 1) {
-                return true;
-            }
-        } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
-            if (SuperBigFamView.XAncestorList.indexOf(ahnNum) > -1) {
-                return true;
-            }
-        } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
-            if (SuperBigFamView.XAncestorList.indexOf(ahnNum) > -1) {
-                // HIGHLIGHT by X-chromosome inheritance
-                return true;
-            } else if (pos == 2 ** gen - 1) {
-                // OR by mtDNA inheritance
-                return true;
-            } else if (pos == 0) {
-                // OR by Y-DNA inheritance
-                if (ahnNum > 1) {
-                    return true;
-                } else if (ahnNum == 1 && thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data.Gender == "Male") {
-                    return true;
-                }
-            }
-        } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
-            if (ahnNum == 1) {
-                condLog(thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data);
-                return true;
-            } else {
-                let childAhnNum = Math.floor(ahnNum / 2);
-                if (ahnNum % 2 == 0) {
-                    // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
-                    if (thePeopleList[SuperBigFamView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
-                        return true;
-                    }
-                } else {
-                    // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
-                    if (thePeopleList[SuperBigFamView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
-                        return true;
-                    }
-                }
-            }
-        } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+    function doHighlightFor(theDegree, theChunk, theId, theCode) {
+        let person = null;
+        if (!thePeopleList[theId]) {
+            return false;
+        } else {    
+            person = thePeopleList[theId];
+        }
+        // if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+        //     if (pos == 0) {
+        //         if (ahnNum > 1) {
+        //             return true;
+        //         } else if (ahnNum == 1 && thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data.Gender == "Male") {
+        //             return true;
+        //         }
+        //     }
+        // } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+        //     if (pos == 2 ** gen - 1) {
+        //         return true;
+        //     }
+        // } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+        //     if (SuperBigFamView.XAncestorList.indexOf(ahnNum) > -1) {
+        //         return true;
+        //     }
+        // } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+        //     if (SuperBigFamView.XAncestorList.indexOf(ahnNum) > -1) {
+        //         // HIGHLIGHT by X-chromosome inheritance
+        //         return true;
+        //     } else if (pos == 2 ** gen - 1) {
+        //         // OR by mtDNA inheritance
+        //         return true;
+        //     } else if (pos == 0) {
+        //         // OR by Y-DNA inheritance
+        //         if (ahnNum > 1) {
+        //             return true;
+        //         } else if (ahnNum == 1 && thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data.Gender == "Male") {
+        //             return true;
+        //         }
+        //     }
+        // } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+        //     if (ahnNum == 1) {
+        //         condLog(thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data);
+        //         return true;
+        //     } else {
+        //         let childAhnNum = Math.floor(ahnNum / 2);
+        //         if (ahnNum % 2 == 0) {
+        //             // this person is male, so need to look at child's DataStatus.Father setting - if it's 30, then the Father is confirmed by DNA
+        //             if (thePeopleList[SuperBigFamView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Father == 30) {
+        //                 return true;
+        //             }
+        //         } else {
+        //             // this person is female, so need to look at child's DataStatus.Mother setting - if it's 30, then the Mother is confirmed by DNA
+        //             if (thePeopleList[SuperBigFamView.myAhnentafel.list[childAhnNum]]._data.DataStatus.Mother == 30) {
+        //                 return true;
+        //             }
+        //         }
+        //     }
+        // } else
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "bioText") {
             let bioTextSelector = document.getElementById("highlight_options_bioText");
             condLog("Looking for BIOs that Have the following: ", bioTextSelector.value);
-            condLog(thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio);
+            condLog(person._data.bio);
             if (
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio
+                person &&
+                person._data.bio &&
+                person._data.bio
                     .toUpperCase()
                     .indexOf(bioTextSelector.value.toUpperCase()) > -1
             ) {
@@ -9376,29 +9383,22 @@
             let rawValue = catNameSelector.value.trim();
             let spacelessValue = catNameSelector.value.trim().replace(/ /g, "_");
             let searchPrefix = "[[Category:";
-            condLog(
-                "Looking for BIOs that Have the following: ",
-                rawValue,
-                rawValue.length,
-                "or",
-                spacelessValue,
-                ahnNum
-            );
+            
             if (rawValue.length == 0) {
                 return false;
             }
             if (
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio &&
-                (thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(searchPrefix + rawValue) >
+                person &&
+                person._data.bio &&
+                (person._data.bio.indexOf(searchPrefix + rawValue) >
                     -1 ||
-                    thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                    person._data.bio.indexOf(
                         searchPrefix + " " + rawValue
                     ) > -1 ||
-                    thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                    person._data.bio.indexOf(
                         searchPrefix + spacelessValue
                     ) > -1 ||
-                    thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                    person._data.bio.indexOf(
                         searchPrefix + " " + spacelessValue
                     ) > -1)
             ) {
@@ -9417,12 +9417,12 @@
                 const element = acceptedStickers[index];
                 if (catNameSelector.value.indexOf(element) > -1) {
                     if (
-                        thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]] &&
-                        thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio &&
-                        (thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                        person &&
+                        person._data.bio &&
+                        (person._data.bio.indexOf(
                             "{{" + catNameSelector.value
                         ) > -1 ||
-                            thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.bio.indexOf(
+                            person._data.bio.indexOf(
                                 "{{ " + catNameSelector.value
                             ) > -1)
                     ) {
@@ -9444,19 +9444,19 @@
             }
 
             if (
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.IsLiving == false &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.DeathDate &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.DeathDate > inputDate
+                person &&
+                person._data.BirthDate &&
+                person._data.BirthDate <= inputDate &&
+                person._data.IsLiving == false &&
+                person._data.DeathDate &&
+                person._data.DeathDate > inputDate
             ) {
                 return true;
             } else if (
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
-                thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.IsLiving == true
+                person &&
+                person._data.BirthDate &&
+                person._data.BirthDate <= inputDate &&
+                person._data.IsLiving == true
             ) {
                 return true;
             }
@@ -9948,6 +9948,20 @@
         return thisColourArray;
     }
 
+    function getDecimalNumFromBinaryString( inp ) {
+        let num = 0;
+        for (let index = 0; index < inp.length; index++) {
+            const element = inp[index];
+            if (element == "0") {
+                num = num * 2;
+            } else if (element == "1") {
+                num = num * 2 + 1;
+            } else {
+                break;
+            }
+        }
+        return num;
+    }
     function getBackgroundColourFor(theDegree, theChunk, theId, theCode) {
         // GET the settings that determine what the colouring should look like (if at all)
         let settingForColourBy = SuperBigFamView.currentSettings["colour_options_colourBy"];
@@ -9966,7 +9980,7 @@
 
         let overRideByHighlight = false; //
         if (SuperBigFamView.currentSettings["highlight_options_showHighlights"] == true) {
-            overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
+            overRideByHighlight = doHighlightFor(theDegree, theChunk, theId, theCode);
         }
         if (overRideByHighlight == true) {
             return "yellow";
@@ -10030,6 +10044,26 @@
                 }
             }
             return thisColourArray[1 + (thisGen % thisColourArray.length)];
+        } else if (settingForColourBy == "Ancestor") {
+            if (theCode.indexOf("A0") > -1) {
+                let thisNum = theCode.replace("A0", "").replace(/RM/g, "1").replace(/RF/g, "0");
+                console.log("thisNum in getColourBackground : ", thisNum);
+
+                if (thisNum.substr(0,1) == "S") {
+                    return thisColourArray[2];    
+                } else if (theCode == "A0" || thisNum.substr(0, 1) == "P" || thisNum.substr(0, 1) == "K") {
+                    return thisColourArray[1];
+                } else if (thisNum.substr(0, 1) >= "0" && thisNum.substr(0, 1) <= "9") {
+                    //    if (thisNum > 1 && thisNum < 1000) {
+                    thisNum = getDecimalNumFromBinaryString("1" + thisNum);
+                    console.log("newNum : ", thisNum);
+                    return thisColourArray[thisNum % thisColourArray.length];
+                }  
+                
+                return thisColourArray[0];
+            } else {
+                return thisColourArray[1];
+            }
         } else if (settingForColourBy == "Grand") {
             return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGrand") {
