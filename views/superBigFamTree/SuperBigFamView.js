@@ -4444,6 +4444,9 @@
             if (leaf && leaf.x && leaf.Code != newCode && leaf.Code.indexOf(newCode) > -1) {
                 leaf.x += dx;
                 leaf.y += dy;
+                if (leaf.x == 0) {
+                    leaf.x = 1;
+                }
                 console.log("--> ", l, leaf.Code, " @ ", leaf.x, ",", leaf.y);
             }
         }
@@ -4545,7 +4548,7 @@
     }
 
     function repositionThisPersonsSiblingsAndTheirDescendants(code, x, y, align = "C", primarysDims = []) {
-        console.log("repositionThisPersonsSiblingsAndTheirDescendants : ", code, x, y, align);
+        console.log("repositionThisPersonsSiblingsAndTheirDescendants : ", code, x, y, align, primarysDims);
         let numA = SuperBigFamView.numAncGens2Display;
         let numD = SuperBigFamView.numDescGens2Display;
         let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
@@ -4677,6 +4680,7 @@
             // minX -= thisBoxWidth;
             // maxX += thisBoxWidth;
             maxX = primarysDims.maxX - thisBoxWidth;
+            if (code == "A0") {maxX = primarysDims.maxX - thisBoxWidth / 2;  }
             minX = primarysDims.minX - thisBoxWidth / 2;
         } else if (numC > 0) {
             minX -= thisBoxWidth / 2;
@@ -4771,7 +4775,7 @@
 
                 if (align == "C") {
                     if (theSibs[s].birthOrder < thisBirthOrder) {
-                        thisLeafSib["x"] = minX - thisBoxWidth / 2 /* * (thisBirthOrder - theSibs[s].birthOrder) */;
+                        thisLeafSib["x"] = minX - thisBoxWidth / 2 /* * (thisBirthOrder - theSibs[s].birthOrder) */;                        
                     } else {
                         continue; // skip along
                     }
@@ -4826,12 +4830,18 @@
                 if (numC > 0) {
                     // minX -= thisBoxWidth / 2;
                 } else if (numD == 0) {
-                    minX -= thisBoxWidth;
+                    minX -= thisBoxWidth;                    
                 }
+                
 
                 maxX = Math.max(maxX, thisLeafSib["x"]);
-                minX = Math.min(minX, thisLeafSib["x"]) - thisBoxWidth / 2;
-                console.log(thisSibCode, "@", thisLeafSib["x"]);
+                if (code == "A0") {
+                    minX = Math.min(minX, thisLeafSib["x"]) ;
+                } else {
+                    minX = Math.min(minX, thisLeafSib["x"]) - thisBoxWidth / 2;
+                }
+                
+                console.log(thisSibCode, "@", thisLeafSib["x"], thisLeafSib["y"]);
             }
         }
 
@@ -5207,13 +5217,13 @@
                     thePartnerNum++;
                     let thisPcode = thePsByID[opID].code;
                     let thisPartner = SuperBigFamView.theLeafCollection[thisPcode];
-                    console.log("Howdy Pardner:", op, opString);
-                    console.log("Howdy :", opID);
-                    console.log("Pardner:", thisPcode);
+                    // console.log("Howdy Pardner:", op, opString);
+                    // console.log("Howdy :", opID);
+                    // console.log("Pardner:", thisPcode);
+                    thisPartner["x"] = thisLeaf.x + thePartnerNum * (1.0 * thisBoxWidth + 20) + (thePartnerNum - 1) * 50;                   
+                    if (thisPartner["x"] == 0) {thisPartner["x"] = 1;}
                     console.log("Gday mate:", thisPartner, thePsByID);
-                    thisPartner["x"] =
-                        thisLeaf.x + thePartnerNum * (1.0 * thisBoxWidth + 20) + (thePartnerNum - 1) * 50;
-                    console.log("thisPartner.x", thisPartner["x"]);
+                    // console.log("thisPartner.x", thisPartner["x"]);
                     lastPartnerX = thisPartner["x"];
                     repositionThisSpousesFamily(thisPartner, thisPcode);
                 }
@@ -5598,7 +5608,7 @@
                 APP_ID,
                 id,
                 SuperBigFamView.fieldNamesArray,
-                { nuclear: 3 }
+                { nuclear: 4 }
             ).then(function (result) {
                 SuperBigFamView.theAncestors = result[2];
                 condLog("theAncestors:", SuperBigFamView.theAncestors);
