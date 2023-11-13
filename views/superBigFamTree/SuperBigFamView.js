@@ -1047,7 +1047,7 @@
                                 { value: "Gender", text: "Gender" },
                                 { value: "Ancestor", text: "Ancestor family" },
 
-                                // { value: "Family", text: "!* Family Stats" },
+                                { value: "Family", text: "!* Family Stats" },
                                 // { value: "Location", text: "!* Location" },
 
                                 // { value: "Town", text: "by Place name" },
@@ -10006,6 +10006,7 @@
         return num;
     }
     function getBackgroundColourFor(theDegree, theChunk, theId, theCode) {
+        // 2, A0C1, 23683923, A0RMS07
         // GET the settings that determine what the colouring should look like (if at all)
         let settingForColourBy = SuperBigFamView.currentSettings["colour_options_colourBy"];
         // WHILE we're here, might as well get the sub-settings if Family or Location colouring is being used ...
@@ -10033,9 +10034,9 @@
             return "White";
         }
 
-        if (ahnNum == 1 && settingForColourBy != "Location" && settingForColourBy != "Family") {
-            return thisColourArray[0];
-        }
+        // if (ahnNum == 1 && settingForColourBy != "Location" && settingForColourBy != "Family") {
+        //     return thisColourArray[0];
+        // }
 
         let numThisGen = 2 ** theDegree;
 
