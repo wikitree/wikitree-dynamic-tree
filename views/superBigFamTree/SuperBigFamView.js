@@ -1270,12 +1270,6 @@
         const SVGbtnUP =
             '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 
-        // Setup the LegendHTML for when we need the Legend (for multiple locations colouring legend, for example)
-        var legendHTML =
-            '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A style="cursor:pointer;" onclick="SuperBigFamView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
-            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='SuperBigFamView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>";
-
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<div id="btnBarDIV" class="stickyDIV"><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
@@ -1377,15 +1371,25 @@
         let highlightHTML =
             "<div id=highlightDescriptor><br/><span class='fontBold selectedMenuBarOption'>HIGHLIGHT people</span> = <span id=highlightPeepsDescriptor>Thirty-somethings...</span><br/><br/></div>";
 
+        // Setup the LegendHTML for when we need the Legend (for multiple locations colouring legend, for example)
         var legendHTML =
             '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="SuperBigFamView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '<span style="color:red; align:left"><A style="cursor:pointer;" onclick="SuperBigFamView.hideLegend();">' +
+            SVGbtnCLOSE +
+            "</A></span>" +
             highlightHTML +
-            "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='SuperBigFamView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
+            // "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
+            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='SuperBigFamView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
             badgesHTML +
             "</div>";
 
-        var popupDIV = "<DIV id=popupDIV width=200px height=500px style='float:top; background-color:blue;'></DIV>";
+        var popupDIV =
+            '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+            '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+            SVGbtnCLOSE +
+            "</A></span></div>";
+
+        // var popupDIV = "<DIV id=popupDIV width=200px height=500px style='float:top; background-color:blue;'></DIV>";
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         let infoPanel = document.getElementById("info-panel");
         // let mainDIV = document.getElementsByTagName("main");
@@ -7432,6 +7436,7 @@
 
         let zoomFactor = Math.max(1, 1 / SuperBigFamView.currentScaleFactor);
         let thisPopup = document.getElementById("popupDIV");
+        thisPopup.style.display = "block";
         // console.log("IN PERSON POPUP:",thisPopup);
         // console.log("IN PERSON POPUP - this::",this);
         // console.log("IN PERSON POPUP - document::",document);
@@ -7447,7 +7452,8 @@
         
         // console.log("IN PERSON POPUP - popup::", thisPopup);
 
-            thisPopup.classList.add("popup");
+        thisPopup.classList.add("popup");
+
             // .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")  scale(" + zoomFactor + ") ");
 
         let borderColor = "rgba(102, 204, 102, .5)";
@@ -7465,7 +7471,7 @@
 				<div class="popup-box" style="border-color: ${borderColor}">
                 
 					<div class="top-info">
-                    <span style="color:red; position:absolute; right:1.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePopup();">` +
+                    <span style="color:red; position:absolute; right:0.2em; top:0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePopup();">` +
             SVGbtnCLOSE +
             `</a></span>
 						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
@@ -7493,6 +7499,7 @@
             // popup.remove();
             document.getElementById("popupDIV").innerHTML = "";
             SuperBigFamView.currentPopupID = -1;
+            document.getElementById("popupDIV").style.display = "none";
         });
     };
 
@@ -7514,6 +7521,7 @@
     SuperBigFamView.removePopup = function () {
         document.getElementById("popupDIV").innerHTML = "";
         SuperBigFamView.currentPopupID = -1;
+        document.getElementById("popupDIV").style.display = "none";
         // console.log("REMOVE POPUP");
     }
     
