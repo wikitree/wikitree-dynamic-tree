@@ -666,7 +666,7 @@
         var container = document.querySelector(selector),
             width = container.offsetWidth,
             height = container.offsetHeight;
-
+        console.log("ORIG WID x HT : ", width, height);
         var self = this;
         SuperBigFamView.SBFtreeSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "SuperBigFamView",
@@ -1622,7 +1622,7 @@ var btnBarHTML =
         // Setup zoom and pan
         SuperBigFamView.zoom = d3
             .zoom()
-            .scaleExtent([0.02, 3.0])
+            .scaleExtent([0.02, 10.0])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
                 SuperBigFamView.currentScaleFactor = event.transform.k;
@@ -2742,7 +2742,7 @@ var btnBarHTML =
     function flashWarningMessageBelowButtonBar(theMessage) {
         // condLog(theMessage);
         if (theMessage > "") {
-            theMessage = "<P align=center>" + theMessage + "</P>";
+            theMessage = "<span align=center>" + theMessage + "</span>";
         }
         document.getElementById("WarningMessageBelowButtonBar").innerHTML = theMessage;
     }
@@ -4235,7 +4235,10 @@ var btnBarHTML =
             let thisLeaf = theLeaves[l];
             thisLeaf["x"] = Math.round(350 * (tmpCount % 20)) - 3500; //Math.round(2000 * Math.random()) - 1000;
             thisLeaf["y"] = Math.round(350 * Math.floor(tmpCount / 20)) - 3500; //Math.round(2000 * Math.random()) - 1000;
+            if (thisLeaf["x"] == 0) {thisLeaf["x"] = 1;} 
+            
             tmpCount++;
+
             console.log(
                 "Here leafy leafy: ",
                 thisLeaf["Chunk"],
@@ -4546,6 +4549,7 @@ var btnBarHTML =
                                 "wedgeInfo-" + thisLeafExtraPartnerCode
                             );
                             let thisLeafExtraPartnerPerson = thePeopleList[thisLeafExtraPartner.Id];
+                            console.log("thisLeafExtraPartnerPerson:", thisLeafExtraPartnerPerson);
                             if (
                                 thisLeafExtraPartnerPerson &&
                                 thisLeafExtraPartnerPerson._data.Children &&
@@ -4706,9 +4710,10 @@ var btnBarHTML =
         let minX = thisLeaf.x;
         let maxX = thisLeaf.x;
 
-        for (let s = 0; numD > 0 && s < thisLeafPerson._data.Spouses.length; s++) {
+        for (let s = 0; (numD > 0 || numC > 0) && s < thisLeafPerson._data.Spouses.length; s++) {
             let thisLeafPartner = SuperBigFamView.theLeafCollection[code + "P" + (s + 1)];
             if (thisLeafPartner && thisLeafPartner.x) {
+                // console.log("ALERT : partner.x : ", thisLeafPartner.x, " vs thisLeaf",thisLeaf.x);
                 rightSideMaxX = Math.max(rightSideMaxX, thisLeafPartner.x);
                 leftSideMinX = Math.min(leftSideMinX, thisLeafPartner.x);
                 repositionThisSpousesFamily(thisLeafPartner, code + "P" + (s + 1));
@@ -4740,7 +4745,11 @@ var btnBarHTML =
             // minX -= thisBoxWidth;
             // maxX += thisBoxWidth;
             maxX = primarysDims.maxX - thisBoxWidth;
-            if (code == "A0") {maxX = primarysDims.maxX - thisBoxWidth / 2;  }
+            if (code == "A0" && primarysDims.maxX < primarysDims.width) {
+                console.log("GROUND ZERO - A0 - PrimaryDims: ", primarysDims);
+                maxX = primarysDims.maxX - thisBoxWidth / 2;
+            }
+
             minX = primarysDims.minX - thisBoxWidth / 2;
         } else if (numC > 0) {
             minX -= thisBoxWidth / 2;
@@ -4840,7 +4849,10 @@ var btnBarHTML =
                         continue; // skip along
                     }
                 } else if (align == "L") {
-                    if(bs == theSibs.length - 1) {minX += thisBoxWidth / 2;}
+                     
+                    if(bs == theSibs.length - 1 ) {
+                        minX += thisBoxWidth / 2;                         
+                    }
                     thisLeafSib["x"] = minX; /* * (theSibs.length + 1 - theSibs[s].birthOrder + dxBirthOrder) */
                     if (thisLeafSib["x"] == 200) {
                         thisLeafSib["x"] = 201;
@@ -5537,6 +5549,14 @@ var btnBarHTML =
                 boundingBox = g.getBBox();
                 h = boundingBox.height;
                 if (boundingBox) {
+                    // svg.setAttribute(
+                    //     "width",
+                    //     `${boundingBox.width}`
+                    // );
+                    // svg.setAttribute(
+                    //     "height",
+                    //     `${boundingBox.height}`
+                    // );
                     svg.setAttribute(
                         "viewBox",
                         `${boundingBox.x} ${boundingBox.y} ${boundingBox.width} ${boundingBox.height}`
