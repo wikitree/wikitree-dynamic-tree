@@ -5662,13 +5662,27 @@ var btnBarHTML =
             // condLog(".load person:",person);
 
             // WikiTreeAPI.getAncestors(APP_ID, id, 3,
-            console.log("(load:" + id + " ) GETPEOPLE", APP_ID, id, ["Id"], { nuclear: 2 });
+            initialLoad1000(self, id, person, 0);
+
+       
+                     
+        });
+    };
+            
+    //         );
+    //     });
+    // };
+
+
+    function initialLoad1000(self, id, person, startingNum) {
+            console.log("(load:" + id + " ) GETPEOPLE", APP_ID, id, ["Id"], { nuclear: 3 , start:startingNum});
+
             WikiTreeAPI.getPeople(
                 // (appId, IDs, fields, options = {})
                 APP_ID,
                 id,
                 SuperBigFamView.fieldNamesArray,
-                { nuclear: 4 }
+                { nuclear: 3 , start:startingNum}
             ).then(function (result) {
                 SuperBigFamView.theAncestors = result[2];
                 condLog("theAncestors:", SuperBigFamView.theAncestors);
@@ -5694,8 +5708,10 @@ var btnBarHTML =
 
                 console.log("INITIALLY loaded ", numPeeps, "peeps");
 
-                person._data.Father = SuperBigFamView.theAncestors[id].Father;
-                person._data.Mother = SuperBigFamView.theAncestors[id].Mother;
+                if (SuperBigFamView.theAncestors[id]) {
+                    person._data.Father = SuperBigFamView.theAncestors[id].Father;
+                    person._data.Mother = SuperBigFamView.theAncestors[id].Mother;
+                } 
 
                 SuperBigFamView.myAhnentafel.update(person);
 
@@ -5733,115 +5749,130 @@ var btnBarHTML =
                     }
                 }
 
-                // ===================
-                // LOAD the SIBLINGS of the grandparents (2nd gen) ancestors for completeness
-                // ===================
+                if (numPeeps >= 1000) {
+                    initialLoad1000(self,id, person, startingNum + 1000);
+                } else {
+                    initialLoadSiblings(self,id, person, 0);
+                }
+            }
+            );
+        }
+    
+    function initialLoadSiblings(self, id, person, startingNum) {
+        // ===================
+        // LOAD the SIBLINGS of the grandparents (2nd gen) ancestors for completeness
+        // ===================
 
-                WikiTreeAPI.getPeople(
-                    // (appId, IDs, fields, options = {})
-                    APP_ID,
-                    id,
-                    SuperBigFamView.fieldNamesArray,
-                    { ancestors: 3, siblings: 1 }
-                ).then(function (result2) {
-                    let GGGparentSiblings = result2[2];
-                    condLog("theAncestors:", GGGparentSiblings);
-                    // console.log("load function : person with which to drawTree:", person);
-                    let numPeeps2 = 0;
-                    for (const ancNum2 in GGGparentSiblings) {
-                        let thePerson = GGGparentSiblings[ancNum2];
-                        if (thePerson.Id < 0) {
-                            thePerson.Id = 100 - thePerson.Id;
-                            thePerson["Name"] = "Private-" + thePerson.Id;
-                            thePerson["FirstName"] = "Private";
-                            thePerson["LastNameAtBirth"] = "TBD!";
-                        }
-                        if (thePerson.Mother < 0) {
-                            thePerson.Mother = 100 - thePerson.Mother;
-                        }
-                        if (thePerson.Father < 0) {
-                            thePerson.Father = 100 - thePerson.Father;
-                        }
-                        thePeopleList.addIfNeeded(thePerson);
-                        numPeeps2++;
+        WikiTreeAPI.getPeople(
+            // (appId, IDs, fields, options = {})
+            APP_ID,
+            id,
+            SuperBigFamView.fieldNamesArray,
+            { ancestors: 3, siblings: 1 , start:startingNum}
+        ).then(function (result2) {
+            let GGGparentSiblings = result2[2];
+            condLog("theAncestors:", GGGparentSiblings);
+            // console.log("load function : person with which to drawTree:", person);
+            let numPeeps2 = 0;
+            for (const ancNum2 in GGGparentSiblings) {
+                let thePerson = GGGparentSiblings[ancNum2];
+                if (thePerson.Id < 0) {
+                    thePerson.Id = 100 - thePerson.Id;
+                    thePerson["Name"] = "Private-" + thePerson.Id;
+                    thePerson["FirstName"] = "Private";
+                    thePerson["LastNameAtBirth"] = "TBD!";
+                }
+                if (thePerson.Mother < 0) {
+                    thePerson.Mother = 100 - thePerson.Mother;
+                }
+                if (thePerson.Father < 0) {
+                    thePerson.Father = 100 - thePerson.Father;
+                }
+                thePeopleList.addIfNeeded(thePerson);
+                numPeeps2++;
+            }
+
+            console.log("SUBSEQUENTLY loaded ", numPeeps2, " GGGparent Sibling peeps");
+
+            if (numPeeps2 >= 1000) {
+                initialLoadSiblings(self, id, person, startingNum + 1000);
+            } else {
+                finishInitialLoad(self, id, person);
+            }
+
+        }
+        );
+    
+    }
+    function finishInitialLoad(self, id, person) {
+
+                for (let peepID in thePeopleList) {
+                    let thisPeep = thePeopleList[peepID];
+                    // console.log("need to draw out Children and Siblings for ", thisPeep._data.BirthNamePrivate);
+
+                    // start off by adding arrays to hold potential Sibs and Kids
+                    if (!thisPeep._data["Children"]) {
+                        thisPeep._data["Children"] = [];
+                    }
+                    if (!thisPeep._data["Siblings"]) {
+                        thisPeep._data["Siblings"] = [];
                     }
 
-                    console.log("SUBSEQUENTLY loaded ", numPeeps2, " GGGparent Sibling peeps");
-
-                    // ===================
-
-                    for (let peepID in thePeopleList) {
-                        let thisPeep = thePeopleList[peepID];
-                        // console.log("need to draw out Children and Siblings for ", thisPeep._data.BirthNamePrivate);
-
-                        // start off by adding arrays to hold potential Sibs and Kids
-                        if (!thisPeep._data["Children"]) {
-                            thisPeep._data["Children"] = [];
-                        }
-                        if (!thisPeep._data["Siblings"]) {
-                            thisPeep._data["Siblings"] = [];
-                        }
-
-                        if (thisPeep._data.Mother > 0 && thePeopleList[thisPeep._data.Mother]) {
-                            linkParentAndChild(peepID, thisPeep._data.Mother, "F");
-                        }
-                        if (thisPeep._data.Father > 0 && thePeopleList[thisPeep._data.Father]) {
-                            linkParentAndChild(peepID, thisPeep._data.Father, "M");
-                        }
+                    if (thisPeep._data.Mother > 0 && thePeopleList[thisPeep._data.Mother]) {
+                        linkParentAndChild(peepID, thisPeep._data.Mother, "F");
                     }
-
-                    let thisPersonsLeaf = {
-                        Id: id,
-                        Code: "A0",
-                        FullCode: "A0:" + id + "-",
-                        degree: 0,
-                        Chunk: "A0",
-                        Who: person._data.BirthNamePrivate,
-                    };
-
-                    assembleSiblingsFor([id]);
-                    if (person._data.Father) {
-                        assembleSiblingsFor([person._data.Father]);
+                    if (thisPeep._data.Father > 0 && thePeopleList[thisPeep._data.Father]) {
+                        linkParentAndChild(peepID, thisPeep._data.Father, "M");
                     }
-                    if (person._data.Mother) {
-                        assembleSiblingsFor([person._data.Mother]);
-                    }
+                }
 
-                    // console.log("CAN WE FIND Spouses to ASSEMBLE  here ?", thePeopleList[id]._data.Spouses);
+                let thisPersonsLeaf = {
+                    Id: id,
+                    Code: "A0",
+                    FullCode: "A0:" + id + "-",
+                    degree: 0,
+                    Chunk: "A0",
+                    Who: person._data.BirthNamePrivate,
+                };
 
-                    for (var a = 0; a < thePeopleList[id]._data.Spouses.length; a++) {
-                        let spObj = thePeopleList[id]._data.Spouses[a];
+                assembleSiblingsFor([id]);
+                if (person._data.Father) {
+                    assembleSiblingsFor([person._data.Father]);
+                }
+                if (person._data.Mother) {
+                    assembleSiblingsFor([person._data.Mother]);
+                }
+
+                // console.log("CAN WE FIND Spouses to ASSEMBLE  here ?", thePeopleList[id]._data.Spouses);
+
+                for (var a = 0; a < thePeopleList[id]._data.Spouses.length; a++) {
+                    let spObj = thePeopleList[id]._data.Spouses[a];
+                    assembleSiblingsFor([spObj.Id]);
+                }
+
+                // ASSEMBLE SIBLINGS for GRANDPARENTS
+                for (var a = 4; a < 16; a++) {
+                    if (SuperBigFamView.myAhnentafel.list[a] && SuperBigFamView.myAhnentafel.list[a] > 0) {
+                        let GGidnum = SuperBigFamView.myAhnentafel.list[a];
+                        let spObj = thePeopleList[GGidnum]._data;
                         assembleSiblingsFor([spObj.Id]);
                     }
+                }
 
-                    // ASSEMBLE SIBLINGS for GRANDPARENTS
-                    for (var a = 4; a < 16; a++) {
-                        if (SuperBigFamView.myAhnentafel.list[a] && SuperBigFamView.myAhnentafel.list[a] > 0) {
-                            let GGidnum = SuperBigFamView.myAhnentafel.list[a];
-                            let spObj = thePeopleList[GGidnum]._data;
-                            assembleSiblingsFor([spObj.Id]);
-                        }
-                    }
+                addToLeafCollection(thisPersonsLeaf);
 
-                    addToLeafCollection(thisPersonsLeaf);
-
-                    self.drawTree(person);
-                    clearMessageBelowButtonBar();
-                    // populateXAncestorList(1);
-                    // fillOutFamilyStatsLocsForAncestors();
-                    // findCategoriesOfAncestors();
-                    console.log(
-                        "** Almost at end of load function - primary has ",
-                        thePeopleList[id]._data.Children.length,
-                        " Children"
-                    );
-                    // loadAncestorsAtLevel(1);
-                    // loadAncestorsAtLevel(2);
-                    // loadBiosNow(id);
-                });
-            });
-        });
-    };
+                self.drawTree(person);
+                clearMessageBelowButtonBar();
+                // populateXAncestorList(1);
+                // fillOutFamilyStatsLocsForAncestors();
+                // findCategoriesOfAncestors();
+                console.log(
+                    "** Almost at end of load function - primary has ",
+                    thePeopleList[id]._data.Children.length,
+                    " Children"
+                );
+            }
+            
 
     // ASSEMBLE the SIBLINGS object for one of the A direct ancestor objects (or A0 = Primary Person themself !)
     function assembleSiblingsFor(IDsArray) {
