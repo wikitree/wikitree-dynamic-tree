@@ -46,6 +46,7 @@ body#view-container.familyGroupApp {
 #view-container.familyGroupApp #familySheetFormTable {
   min-width: 50em;
   margin-bottom: 0.5em;
+  background-color: #fff;
 }
 
 #view-container.familyGroupApp #familySheetFormTable,
@@ -183,6 +184,7 @@ th.bioHeading {
 #view-container.familyGroupApp #sources {
   border-top: 1px solid black;
   border-bottom: 1px solid black;
+  background-color: white;
 }
 #view-container.familyGroupApp #notesAndSources {
   max-width: 50em;
