@@ -1271,8 +1271,8 @@
             '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
-        var btnBarHTML =
-            '<div id="btnBarDIV" class="stickyDIV"><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
+        var OLD_btnBarHTML =
+            '<div id="btnBarDIV"><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="60%">' +
             "&nbsp;" +
             '<span class="fontDarkGreen fontBold">ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
@@ -1321,6 +1321,55 @@
                 : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
+
+var btnBarHTML =
+    '<div id="btnBarDIV"><DIV border=0 style="background-color: #f8a51d80;" width="100%">' +
+    
+    "&nbsp;" +
+    '<span class="fontDarkGreen fontBold">ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
+    SVGbtnDOWN +
+    "</button> " +
+    "[ <span id=numAncGensInBBar>2 generations</span> ]" +
+    ' <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display +=1; SuperBigFamView.redrawAncs();">' +
+    SVGbtnUP +
+    "</button> " +
+    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">DESCENDANTS:</span> <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display -=1; SuperBigFamView.redrawDescs();">' +
+    SVGbtnDOWN +
+    "</button> " +
+    "[ <span id=numDescGensInBBar>1 generation</span> ]" +
+    ' <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display +=1; SuperBigFamView.redrawDescs();">' +
+    SVGbtnUP +
+    "</button> " +
+    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">COUSINS:</span> <button class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
+    SVGbtnDOWN +
+    "</button> " +
+    "[ <span id=numCuzGensInBBar>none</span> ]" +
+    ' <button class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
+    SVGbtnUP +
+    "</button> " +
+    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">IN-LAWS:</span> <input  class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();">  ' +
+    
+    '<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
+    '<span width="5%">&nbsp;' + "</span>" +
+    '<div align="right">' +
+    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
+    '<A onclick="SuperBigFamView.reZoom();">' +
+    SVGbtnRESIZE2 +
+    "</A>&nbsp;&nbsp;" +
+    '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
+    LEGEND_CLIPBOARD +
+    "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
+    ' <A style="cursor:pointer;" onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
+    SVGbtnSETTINGS +
+    "</font></A>" +
+    "&nbsp;&nbsp;" +
+    "<A onclick=SuperBigFamView.toggleAbout();>" +
+    SVGbtnINFO +
+    "</A>" +
+    (AboutHelpDoc > "" ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>" : "") +
+    "&nbsp;&nbsp;</div>" +
+    '</DIV></div>' +
+    '<DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
 
         var aboutHTML =
             '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
