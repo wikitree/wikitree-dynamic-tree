@@ -1351,7 +1351,7 @@ var btnBarHTML =
     
     '<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
     '<span width="5%">&nbsp;' + "</span>" +
-    '<div align="right">' +
+    '<div style="display: inline-block; float: right; position: absolute; top: 0.5em; right: 0.5em;">' +
     '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
     '<A onclick="SuperBigFamView.reZoom();">' +
     SVGbtnRESIZE2 +
