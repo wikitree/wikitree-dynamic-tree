@@ -95,6 +95,70 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.doneKids = [];
     }
 
+    toggleStyle(styleId, styleContent, isChecked, optionalElement = null) {
+        const headElement = $("head");
+
+        // Debugging log to check if the method is triggered and the checked state
+        console.log(`toggleStyle called for ${styleId}, isChecked: ${isChecked}`);
+
+        // If the checkbox is not checked, add the style to hide elements
+        console.log("isChecked", isChecked); // Debugging log
+        if (!isChecked) {
+            if ($(`#${styleId}Style`).length === 0) {
+                console.log(`Appending style for ${styleId}`); // Debugging log
+                headElement.append(`<style id='${styleId}Style'>${styleContent}</style>`);
+            }
+            if (optionalElement) {
+                console.log(`Disabling optional element for ${styleId}`); // Debugging log
+                $(optionalElement).prop("disabled", true);
+            }
+        } else {
+            // If the checkbox is checked, remove the style to show elements
+            console.log(`Removing style for ${styleId}`); // Debugging log
+            $(`#${styleId}Style`).remove();
+            if (optionalElement) {
+                console.log(`Enabling optional element for ${styleId}`); // Debugging log
+                $(optionalElement).prop("disabled", false);
+            }
+        }
+    }
+
+    /*
+    toggleStyle(styleId, styleContent, optionalElement = null) {
+        // Directly bind the change event to the checkbox
+        this.$container.on("change", `#${styleId}`, (event) => {
+            const isChecked = $(event.target).prop("checked");
+            console.log(`toggleStyle triggered for ${styleId}, isChecked: ${isChecked}`); // Debugging log
+
+            const headElement = $("head");
+
+            // If the checkbox is not checked, add the style to hide elements
+            if (!isChecked) {
+                // Only append if not already there
+                if ($(`#${styleId}Style`).length === 0) {
+                    console.log(`Appending style for ${styleId}`); // Debugging log
+                    headElement.append(`<style id='${styleId}Style'>${styleContent}</style>`);
+                }
+                if (optionalElement) {
+                    console.log(`Disabling optional element for ${styleId}`); // Debugging log
+                    $(optionalElement).prop("disabled", true);
+                }
+            } else {
+                // If the checkbox is checked, remove the style to show elements
+                console.log(`Removing style for ${styleId}`); // Debugging log
+                $(`#${styleId}Style`).remove();
+                if (optionalElement) {
+                    console.log(`Enabling optional element for ${styleId}`); // Debugging log
+                    $(optionalElement).prop("disabled", false);
+                }
+            }
+
+            // Store the current state of the checkbox
+            this.storeVal($(event.target));
+        });
+    }
+    */
+
     getRels(rel, person, theRelation = false) {
         const peeps = [];
         // Check if 'rel' is undefined or null
@@ -194,13 +258,16 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Initialize local variables and states
         this.initializeLocalStates();
 
-        // Setup event listeners
-        this.setupEventListeners();
-
         // Load the family group sheet HTML into the container
         this.loadFamilyGroupSheetHTML();
 
+        // Setup event listeners
+        this.setupEventListeners();
+
         this.startIt();
+
+        // Initialize values
+        this.setVals();
     }
 
     startIt() {
@@ -211,47 +278,80 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     setupEventListeners() {
+        // logging
+        console.log("setupEventListeners");
+
         this.$body.off("click.fgs change.fgs");
         // Delegated event listeners for checkbox changes
-        this.$container.on("change.fgs", "#showBaptism", () => {
+        this.$container.on("change.fgs", "#showBaptism", (e) => {
+            // logging
+            console.log("checkbox changed");
+            console.log("this", this);
+            const isChecked = $(e.target).prop("checked");
+
             this.toggleStyle(
                 "showBaptism",
-                "#view-container.familyGroupApp tr.baptismRow, #view-container.familyGroupApp #baptChrist { display: none; }"
+                "#view-container.familyGroupApp tr.baptismRow, #view-container.familyGroupApp #baptChrist { display: none; }",
+                isChecked,
+                "#baptChrist"
             );
         });
-        this.$container.on("change.fgs", "#showBurial", () =>
-            this.toggleStyle("showBurial", "#view-container.familyGroupApp tr.burialRow{display:none;}")
-        );
-        this.$container.on("change.fgs", "#showNicknames", () =>
+        this.$container.on("change.fgs", "#showBurial", (event) => {
+            const isChecked = $(event.target).prop("checked");
+            this.toggleStyle("showBurial", "#view-container.familyGroupApp tr.burialRow{display:none;}", isChecked);
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fgs", "#showNicknames", (event) => {
+            const isChecked = $(event.target).prop("checked");
             this.toggleStyle(
                 "showNicknames",
-                "#view-container.familyGroupApp #familySheetFormTable caption span.nicknames,#view-container.familyGroupApp span.nicknames{display:none;}"
-            )
-        );
-        this.$container.on("change.fgs", "#showParentsSpousesDates", () =>
+                "#view-container.familyGroupApp #familySheetFormTable caption span.nicknames,#view-container.familyGroupApp span.nicknames{display:none;}",
+                isChecked
+            );
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fgs", "#showParentsSpousesDates", (event) => {
+            const isChecked = $(event.target).prop("checked");
             this.toggleStyle(
                 "showParentsSpousesDates",
-                "#familySheetFormTable span.parentDates,#familySheetFormTable span.spouseDates{display:none;}"
-            )
-        );
-        this.$container.on("change.fgs", "#showOtherLastNames", () =>
+                "#view-container.familyGroupApp #familySheetFormTable span.parentDates,#view-container.familyGroupApp  #familySheetFormTable span.spouseDates{display:none;}",
+                isChecked
+            );
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fgs", "#showOtherLastNames", (event) => {
+            const isChecked = $(event.target).prop("checked");
             this.toggleStyle(
                 "showOtherLastNames",
-                "#familySheetFormTable caption span.otherLastNames,span.otherLastNames{display:none;}"
-            )
-        );
-        this.$container.on("change.fgs", "#useColour", () =>
+                "#view-container.familyGroupApp  #familySheetFormTable caption span.otherLastNames,#view-container.familyGroupApp  span.otherLastNames{display:none;}",
+                isChecked
+            );
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fgs", "#useColour", (event) => {
+            const isChecked = $(event.target).prop("checked");
             this.toggleStyle(
                 "useColour",
-                "#familySheetFormTable tr.marriedRow, #familySheetFormTable caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}"
-            )
-        );
-        this.$container.on("change.fgs", "#showWTIDs", () =>
+                "#view-container.familyGroupApp #familySheetFormTable tr.marriedRow, #view-container.familyGroupApp #familySheetFormTable caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}",
+                isChecked
+            );
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fgs", "#showWTIDs", (event) => {
+            const isChecked = $(event.target).prop("checked");
             this.toggleStyle(
                 "showWTIDs",
-                "#view-container.familyGroupApp #familySheetFormTable .fsWTID{display:inline-block;}"
-            )
-        );
+                "#view-container.familyGroupApp #familySheetFormTable .fsWTID{display:none;}",
+                isChecked
+            );
+            this.storeVal($(event.target));
+        });
+
         this.$container.on("change.fgs", "#showBios", () => this.toggleBios());
 
         // Delegated event listeners for radio button changes
@@ -419,6 +519,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
+        /*
         this.$container.on("change.fgs", "#showWTIDs", (e) => {
             const $this = $(e.currentTarget);
             if ($(this).prop("checked") == true) {
@@ -430,7 +531,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             this.storeVal($this);
         });
-
+*/
         this.$container.on("change.fgs", "input[type=radio][name=baptismChristening]", (e) => {
             const $this = $(e.currentTarget);
             this.setBaptChrist();
@@ -1064,9 +1165,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         fam = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
-
-        console.log(fam);
-
         const startDate = this.getTheYear(tPerson.BirthDate, "Birth", tPerson);
 
         fam.forEach((aPerson) => {
@@ -1533,8 +1631,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     async getRelatives(id) {
-        console.log(this.people.length, this.categoryProfiles.length);
-
         // If all people are fetched, simply return
         if (this.people.length === this.categoryProfiles.length) {
             return false;
@@ -2229,6 +2325,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         let fullDateFormat = "j M Y";
 
         // Retrieve date format setting from cookies
+
         const dateFormat = localStorage.getItem("w_dateFormat") || 0;
         if (dateFormat === 0) {
             fullDateFormat = "M j, Y";
@@ -2333,8 +2430,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     familySheetPerson = (fsPerson, role) => {
-        console.log("fsPerson object:", fsPerson);
-
         // Initialize variables
         let baptismDate = "";
         let baptismPlace = "";
@@ -2357,7 +2452,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Further processing of the biography
         if (fsBio) {
-            console.log("fsBio:", fsBio);
             const bioSplit = fsBio.split("<references />");
             if (bioSplit[1]) {
                 const removedAck = bioSplit[1].split(/=+\s?Acknowledge?ments?\s?=+/)[0];
@@ -2376,7 +2470,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         myRefs.push(aCit.replace(/^\*/, "").trim());
                     }
                 });
-                console.log("myRefs:", myRefs);
             }
             const categoryMatch = bioSplit[0].match(/\[\[Category:.*?\]\]/g);
             if (categoryMatch != null) {
@@ -2394,15 +2487,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             const eventMatch = bioSplit[0].match(/\{\{Event[^]*?\}\}/gm);
             if (eventMatch != null) {
-                //console.log(eventMatch);
                 eventMatch.forEach(function (anEvent) {
-                    //console.log(anEvent);
                     if (anEvent.match(/type=(Baptism|Christening)/i) != null) {
                         const eBits = anEvent.replaceAll(/\n/g, "").replaceAll(/[{}]/g, "").split("|");
                         eBits.forEach(function (anBit) {
                             anBit = anBit.replace(/<ref.*?>/, "");
                             const anBitBits = anBit.split("=");
-                            //console.log(anBitBits);
                             if (anBitBits[0] + " ".trim() == "date") {
                                 baptismDate = anBitBits[1] + " ".trim();
                             }
@@ -2416,7 +2506,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         eBits.forEach(function (anBit) {
                             anBit = anBit.replace(/<ref.*?>/, "");
                             const anBitBits = anBit.split("=");
-                            //console.log(anBitBits);
                             if (anBitBits[0] + " ".trim() == "date") {
                                 burialDate = anBitBits[1] + " ".trim();
                             }
@@ -2431,13 +2520,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Store references
         this.references.push([fsPerson.Name, myRefs, mSeeAlso]);
-        console.log("references:", this.references);
 
         // Check if value is OK (not null or undefined)
         // const isOK = (value) => value !== null && value !== undefined;
 
         myRefs.forEach(function (anRef) {
-            console.log("anRef:", anRef);
             if (anRef.match(/(burial\b)|(Grave\b)/i) != null) {
                 const burialDateMatch = anRef.match(/Burial Date.*(\b[0-9]+.*[0-9]{4})/);
                 const burialPlaceMatch = anRef.match(/Burial Place.*?(\b[A-z,\s]+)/);
@@ -2586,7 +2673,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             matchingPerson = this.people[0].Spouse[0]?.Name;
         }
 
-        console.log("fsPerson:", fsPerson);
         let marriageRow;
 
         const roleRow = this.renderRoleRow(fsPerson, role);
@@ -2660,12 +2746,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     };
 
     renderBirthRow = (birthDate, birthPlace, role) => {
-        console.log("renderBirthRow called with:", { birthDate, birthPlace, role });
         const birthRow =
             this.isOK(birthDate) || this.isOK(birthPlace)
                 ? `<tr><td class="${role.toLowerCase()} birth">Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
                 : "";
-        console.log("birthRow generated:", birthRow);
         return birthRow;
     };
 
@@ -2700,25 +2784,18 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Check if value is OK (not null or undefined)
         const isOK = (value) => value !== null && value !== undefined;
 
-        console.log("fsPerson:", fsPerson); // Check the fsPerson data
-        console.log("otherSpouses before processing:", otherSpouses); // Check the initial otherSpouses
-
         if (otherSpouses.length === 0 && fsPerson.Spouse && fsPerson.Spouse.length > 1) {
             // Log the condition being checked
-            console.log("Checking for other spouses...");
             otherSpouses.push(
                 ...fsPerson.Spouse.filter((anoSpouse) => {
                     const isDifferentSpouse =
                         anoSpouse.Name !== this.people[0].Name &&
                         anoSpouse.Name !== mainSpouse.Name &&
                         anoSpouse.Name !== this.keepSpouse;
-                    console.log(`${anoSpouse.Name} is different spouse: ${isDifferentSpouse}`);
                     return isDifferentSpouse;
                 })
             );
         }
-
-        console.log("otherSpouses after processing:", otherSpouses); // Check the processed otherSpouses
 
         if (otherSpouses.length > 0) {
             otherSpouses.forEach((oSpouse, index) => {
@@ -2909,75 +2986,101 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return bioRow;
     };
 
-    /*
     storeVal(jq) {
         const id = jq.attr("id");
         const type = jq.attr("type");
         const name = jq.attr("name");
-
-        // Handle checkboxes
-        if (type === "checkbox") {
-            const isChecked = jq.prop("checked");
-            localStorage.setItem(id, isChecked ? 1 : 0);
-        }
-        // Handle radio buttons
-        else if (type === "radio") {
-            $("input[name='" + name + "']").each(function () {
-                const radio = $(this);
-                if (radio.prop("checked")) {
-                    localStorage.setItem(name, radio.val());
-                }
-            });
-        }
-    }
-*/
-
-    storeVal(jq) {
-        const id = jq.attr("id");
-        const type = jq.attr("type");
-        const name = jq.attr("name");
-        let storageObject = {}; // Initialize the storage object
 
         // Retrieve the storage object if it exists
-        const existingStorage = localStorage.getItem("formStorage");
-        if (existingStorage) {
-            storageObject = JSON.parse(existingStorage);
-        }
+        const settings = this.getSettings();
 
         // Handle checkboxes
         if (type === "checkbox") {
             const isChecked = jq.prop("checked");
-            storageObject[id] = isChecked; // Use boolean value directly
+            settings[id] = isChecked; // Use boolean value directly
         }
         // Handle radio buttons
         else if (type === "radio") {
             $("input[name='" + name + "']").each(function () {
                 const radio = $(this);
                 if (radio.prop("checked")) {
-                    storageObject[name] = radio.val();
+                    settings[name] = radio.val();
                 }
             });
         }
 
         // Store the updated storage object in localStorage
-        localStorage.setItem("familyGroupAppSettings", JSON.stringify(storageObject));
+        console.log("Storing settings for " + id + " or " + name + ": ", settings);
+
+        this.setSettings(settings);
     }
 
     setVals() {
         // Retrieve the storage object from localStorage and parse it
-        const storedSettings = JSON.parse(localStorage.getItem("familyGroupAppSettings")) || {};
+        const settings = this.getSettings();
 
         // Handle checkboxes
-        $("#fgsOptions input[type='checkbox']").each(function () {
-            const checkbox = $(this);
+        $("#fgsOptions input[type='checkbox']").each((index, element) => {
+            const checkbox = $(element);
             const id = checkbox.attr("id");
+            const isChecked = checkbox.prop("checked");
 
-            // Check if the storage object has a value for this checkbox and update it
-            if (storedSettings.hasOwnProperty(id)) {
-                checkbox.prop("checked", storedSettings[id]);
-
-                // Trigger change event to apply the new state
-                checkbox.change();
+            // Apply styles based on checkbox ID
+            if (settings.hasOwnProperty(id)) {
+                checkbox.prop("checked", settings[id]);
+                switch (id) {
+                    case "showBaptism":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp tr.baptismRow, #view-container.familyGroupApp #baptChrist { display: none; }",
+                            settings[id],
+                            "#baptChrist"
+                        );
+                        break;
+                    case "showBurial":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp tr.burialRow{display:none;}",
+                            settings[id]
+                        );
+                        break;
+                    case "showNicknames":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp #familySheetFormTable caption span.nicknames,#view-container.familyGroupApp span.nicknames{display:none;}",
+                            settings[id]
+                        );
+                        break;
+                    case "showParentsSpousesDates":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp #familySheetFormTable  span.parentDates,#view-container.familyGroupApp #familySheetFormTable  span.spouseDates{display:none;}",
+                            settings[id]
+                        );
+                        break;
+                    case "showOtherLastNames":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp #familySheetFormTable caption span.otherLastNames,#view-container.familyGroupApp span.otherLastNames{display:none;}",
+                            settings[id]
+                        );
+                        break;
+                    case "useColour":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp #familySheetFormTable tr.marriedRow, #view-container.familyGroupApp #familySheetFormTable caption, .roleRow[data-gender],.roleRow[data-gender] th, #familySheetFormTable thead tr th:first-child{background-color: #fff; border-left:1px solid black;border-right:1px solid black;}",
+                            settings[id]
+                        );
+                        break;
+                    case "showWTIDs":
+                        this.toggleStyle(
+                            id,
+                            "#view-container.familyGroupApp #familySheetFormTable .fsWTID{display:none;}",
+                            settings[id]
+                        );
+                        break;
+                    // Add additional cases for other checkboxes as needed
+                }
             }
         });
 
@@ -2987,11 +3090,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const name = radio.attr("name");
 
             // Check if the storage object has a value for this radio group and update it
-            if (storedSettings.hasOwnProperty(name) && storedSettings[name] === radio.val()) {
-                radio.prop("checked", true);
-
-                // Trigger change event to apply the new state
-                radio.change();
+            if (settings.hasOwnProperty(name) && settings[name] === radio.val()) {
+                radio.prop("checked", true).change();
             }
         });
     }
@@ -3006,7 +3106,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     async checkAndAppendChildren(oChildren) {
-        console.log("checkAndAppendChildren called with:", oChildren);
         const childRows = [];
         if (oChildren.length > 0) {
             this.people[0].Child.forEach((aChild, index) => {
@@ -3057,41 +3156,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             // Now that children are appended, you can perform any additional actions
         }
     }
-    /*
-    checkAndAppendChildren(oChildren) {
-        console.log("checkAndAppendChildren called with:", oChildren);
-        const childRows = [];
-        if (oChildren.length > 0) {
-            this.people[0].Child.forEach((aChild, index) => {
-                this.people.forEach((cPerson) => {
-                    // Initialize husband and wife if undefined
-                    this.husband = this.husband || 0;
-                    this.wife = this.wife || 0;
 
-                    // Check for matching child and parent relationship
-                    if (
-                        cPerson.Name === aChild.Name &&
-                        ((cPerson.Father === this.husband && cPerson.Mother === this.wife) ||
-                            (!this.husband && cPerson.Mother === this.wife) ||
-                            (this.husband === cPerson.Father && !this.wife))
-                    ) {
-                        // Check if child is already processed
-                        if (!this.doneKids.includes(aChild.Name)) {
-                            const theChildRow = this.familySheetPerson(cPerson, this.ordinal(index + 1) + " Child");
-                            childRows.push(theChildRow);
-                            this.doneKids.push(cPerson.Name);
-                        }
-                    }
-                });
-            });
-        }
-        setTimeout(() => {
-            childRows.forEach((aRow) => {
-                $("#familySheetFormTable").find("> tbody").append($(aRow));
-            });
-        }, 200);
-    }
-*/
     fixCitation(citation) {
         // Find all tables and lists in the citation
         const tableMatches = Array.from(citation.matchAll(/\{\|[^]+?\|\}/gm));
@@ -3319,13 +3384,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     appendReferences(mList) {
-        // logging
-        console.log(this.references);
-
         this.references.forEach((pRefs) => {
-            // logging
-            console.log("pRefs:", pRefs);
-
             const anID = pRefs[0];
             let thisName = this.getFormattedName(anID);
             const wtidSpan = this.getWtidSpan(thisName);
@@ -3463,20 +3522,26 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
+    setSettings(settings) {
+        localStorage.setItem("familyGroupAppSettings", JSON.stringify(settings));
+    }
+    getSettings() {
+        return JSON.parse(localStorage.getItem("familyGroupAppSettings")) || {};
+    }
+
     configureRolesAndLayout() {
         let roles = ["Husband", "Wife"];
 
+        const settings = this.getSettings();
         // Check if the role should be swapped based on local storage and data attributes
-        if (
-            $("tr.roleRow[data-role='Wife']").attr("data-name") === $("#wtid").val() &&
-            localStorage.husbandFirst !== "1"
-        ) {
+        if ($("tr.roleRow[data-role='Wife']").attr("data-name") === $("#wtid").val() && settings.husbandFirst !== "1") {
             roles = ["Wife", "Husband"];
         }
 
         // Hide the 'husbandFirstLabel' if the roles are non-traditional
         if ($("tr[data-gender='Female'][data-role='Husband'],tr[data-gender='Male'][data-role='Wife']").length) {
-            localStorage.husbandFirst = 0;
+            settings.husbandFirst = 0;
+            this.setSettings(settings);
             $("#husbandFirstLabel").hide();
         }
 
@@ -3538,9 +3603,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         );
         this.toggleDisplay("#statusChoice", uncertain);
 
-        // Initialize values
-        this.setVals();
-
         // Remove the second married row if it exists
         if ($(".marriedRow").eq(1)) {
             $(".marriedRow").eq(1).remove();
@@ -3560,9 +3622,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
 
         // Add print icon if not already present
-        if ($("#printIcon").length === 0) {
-            $("<img id='printIcon' src='views/familyGroupApp/images/print50.png'>").appendTo("header");
-            $("#printIcon").click(() => window.print());
+        if ($("#fgsPrintIcon").length === 0) {
+            $("<img id='fgsPrintIcon' src='views/familyGroupApp/images/print50.png'>").appendTo("header");
+            $("#fgsPrintIcon").click(() => window.print());
         }
     }
 
@@ -3638,11 +3700,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         $("#tree").slideUp();
 
+        const settings = this.getSettings();
         if (this.people[0].Name == undefined) {
             this.privateQ();
         } else {
             $(this.$container).append(fsTable);
-            if (localStorage.husbandFirst == "1") {
+            if (settings.husbandFirst == "1") {
                 $("tr[data-role='Husband']").prependTo($("#familySheetFormTable > tbody"));
             }
 
@@ -3658,7 +3721,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             if (
                 $("tr.roleRow[data-role='Wife']").attr("data-name") == $("#wtid").val() &&
-                localStorage.husbandFirst != "1"
+                settings.husbandFirst != "1"
             ) {
                 clonedRow.insertBefore($("tr.roleRow[data-role='Husband']"));
             } else {
@@ -3750,9 +3813,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             notesAndSources.css({ "max-width": setWidth, "width": setWidth });
             $("#familySheetFormTable").css({ "max-width": setWidth, "min-width": setWidth, "width": setWidth });
             const mList = $("<ul id='citationList'></ul>");
-
-            console.log("this.citationTables:", this.citationTables);
-            console.log(this.references, this.myRefs);
 
             this.citationTables = [];
 
@@ -4043,34 +4103,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
-    toggleStyle(styleId, styleContent, optionalElement = null) {
-        // Directly bind the change event to the checkbox
-        this.$container.on("change", `#${styleId}`, (event) => {
-            const isChecked = $(event.target).prop("checked");
-            const headElement = $("head");
-
-            // If the checkbox is not checked, add the style to hide elements
-            if (!isChecked) {
-                // Only append if not already there
-                if ($(`#${styleId}Style`).length === 0) {
-                    headElement.append(`<style id='${styleId}Style'>${styleContent}</style>`);
-                }
-                if (optionalElement) {
-                    $(optionalElement).prop("disabled", true);
-                }
-            } else {
-                // If the checkbox is checked, remove the style to show elements
-                $(`#${styleId}Style`).remove();
-                if (optionalElement) {
-                    $(optionalElement).prop("disabled", false);
-                }
-            }
-
-            // Store the current state of the checkbox
-            this.storeVal($(event.target));
-        });
-    }
-
     // Function to toggle bios and update localStorage
     toggleBios() {
         const self = this; // Capture the class instance context
@@ -4094,6 +4126,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     handleSlideToggle(selector, localStorageKey, callback = null) {
         $(selector).slideUp("slow");
+        const settings = this.getSettings();
         setTimeout(function () {
             const elem = $(selector);
             elem.toggleClass("removed");
@@ -4101,7 +4134,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             const isRemoved = elem.hasClass("removed");
             console.log(isRemoved);
-            localStorage.setItem(localStorageKey, isRemoved ? "removed" : "center");
+            settings[localStorageKey] = isRemoved ? "removed" : "center";
 
             if (callback) {
                 callback(isRemoved);

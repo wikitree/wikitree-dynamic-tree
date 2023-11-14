@@ -440,7 +440,7 @@ body.app header {
   width: 50%;
 }
 
-#view-container.familyGroupApp #printIcon {
+#fgsPrintIcon {
   float: right;
   height: 30px;
   margin-top: 0.5em;
@@ -449,10 +449,10 @@ body.app header {
   border: 1px solid white;
   padding: 0.3em;
 }
-#view-container.familyGroupApp #printIcon:hover {
+#fgsPrintIcon:hover {
   box-shadow: 0.2em 0.2em 0.2em gray;
 }
-#view-container.familyGroupApp #printIcon:active {
+#fgsPrintIcon:active {
   box-shadow: 0.1em 0.1em 0.1em gold;
 }
 #view-container.familyGroupApp .fsName a,
@@ -566,4 +566,7 @@ body.app header {
 #fgsOptionsButton.active,
 #fgsNotesButton.active {
   background-color: orange;
+}
+#view-container.familyGroupApp #familySheetFormTable .fsWTID {
+  display: inline-block;
 }
