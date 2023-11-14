@@ -79,6 +79,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             border-left: 1px solid black;
             border-right: 1px solid black;
         }
+        #view-container.familyGroupApp #familySheetFormTable tr.marriedRow{
+            background-color:#fff2b0;
+        }
         
         #view-container.familyGroupApp .roleRow[data-gender='M'], 
         #view-container.familyGroupApp .roleRow[data-gender='M'] th {
@@ -2639,15 +2642,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const birthRow = this.renderBirthRow(BirthDate, BirthLocation, role);
         const deathRow = this.renderDeathRow(DeathDate, DeathLocation, role);
         const baptismRow = this.renderBaptismRow(baptismDate, baptismPlace, role);
-        if (marriage_date || marriage_location) {
-            marriageRow = this.renderMarriageRow(marriage_date, marriage_location, role) || "";
+
+        console.log("marriage_date", mainSpouse?.marriage_date);
+        console.log("marriage_location", mainSpouse?.marriage_location);
+        if (mainSpouse?.marriage_date || mainSpouse?.marriage_location) {
+            marriageRow = this.renderMarriageRow(mainSpouse?.marriage_date, mainSpouse?.marriage_location, role) || "";
         }
+        console.log("marriageRow", marriageRow);
         const burialRow = this.renderBurialRow(burialDate, burialPlace, role);
         const otherMarriageRow = this.renderOtherMarriageRow(fsPerson, mainSpouse, otherSpouses, role);
         const parentsRow = this.renderParentsRow(fsPerson, mainPerson, matchingPerson, role, showRole);
         const spouseRow = this.renderSpouseRow(fsPerson, role);
         const bioRow = this.renderBioRow(fsPerson, role);
         // Return the final HTML based on the role
+        console.log(role);
         if (role === "Husband" || role === "Wife") {
             return `${roleRow}${birthRow}${baptismRow}${marriageRow}${deathRow}${burialRow}${otherMarriageRow}${parentsRow}${bioRow}`;
         } else {
@@ -2729,7 +2737,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderMarriageRow = (marriageDate, marriagePlace, role) => {
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
-                ? `<tr><td class="${role.toLowerCase()} marriage">Married:</td><td>${marriageDate}</td><td>${marriagePlace}</td></tr>`
+                ? `<tr class='marriedRow'><th class="${role.toLowerCase()} marriage">Married:</th><td>${marriageDate}</td><td>${marriagePlace}</td></tr>`
                 : "";
         return marriageRow;
     };
@@ -3494,7 +3502,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         updateDOMAndOrganizeTable(divWidth, th2Width, th3Width, roles);
     }
 
-    // Assume ordinal is a function that already exists to convert numbers to their ordinal form (1st, 2nd, etc.)
     updateDOMAndOrganizeTable(divWidth, th2Width, th3Width, roles) {
         // Append new styles to the body
         $(
@@ -3595,6 +3602,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             fsTable.attr("data-wife", this.people[0].Name);
         }
         const mainRow = this.familySheetPerson(this.people[0], mainRole);
+
+        console.log("mainRow", mainRow);
 
         let matchPerson;
         let theSpouse;

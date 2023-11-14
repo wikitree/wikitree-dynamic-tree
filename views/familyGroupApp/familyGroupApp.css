@@ -11,12 +11,14 @@
 	Family Sheet
 	
 	*/
-body#view-container.familyGroupApp {
+#view-container.familyGroupApp {
   min-width: 730px;
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
   font-size: 16px;
 }
-
+#view-container.familyGroupApp caption {
+  font-family: "Open Sans", Helvetica, Arial, sans-serif;
+}
 #view-container.familyGroupApp #loginForm {
   display: block;
   width: 19em;
@@ -54,6 +56,10 @@ body#view-container.familyGroupApp {
   text-align: left;
   margin: auto;
 }
+#view-container.familyGroupApp .tableContainer.Child {
+  margin: 0.5em auto;
+}
+
 #view-container.familyGroupApp #familySheetFormTable th,
 #view-container.familyGroupApp #familySheetFormTable .heading,
 #view-container.familyGroupApp .tableContainer th,
@@ -62,7 +68,8 @@ body#view-container.familyGroupApp {
   text-align: left;
 }
 #view-container.familyGroupApp #familySheetFormTable tr.roleRow,
-#view-container.familyGroupApp .tableContainer tr.roleRow {
+#view-container.familyGroupApp .tableContainer tr.roleRow,
+#view-container.familyGroupApp #familySheetFormTable tr.marriedRow th {
   font-size: 1.4em;
 }
 #view-container.familyGroupApp #familySheetFormTable,
