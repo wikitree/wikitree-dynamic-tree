@@ -260,6 +260,8 @@
     SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
     SuperBigFamView.linesATC = []; // the Lines (connectors) Air Traffic Controller
 
+    SuperBigFamView.currentPopupID = -1;
+
     // holding spot for current list of IDs being used for keys to the getPeople API
     SuperBigFamView.currentListOfIDs = [];
 
@@ -1276,7 +1278,7 @@
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
-            '<table id="btnBarDIV" border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
+            '<div id="btnBarDIV" class="stickyDIV"><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="60%">' +
             "&nbsp;" +
             '<span class="fontDarkGreen fontBold">ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
@@ -1324,7 +1326,7 @@
                 ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
-            '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
+            '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
 
         var aboutHTML =
             '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
@@ -1383,8 +1385,13 @@
             badgesHTML +
             "</div>";
 
+        var popupDIV = "<DIV id=popupDIV width=200px height=500px style='float:top; background-color:blue;'></DIV>";
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
+        let infoPanel = document.getElementById("info-panel");
+        // let mainDIV = document.getElementsByTagName("main");
+        infoPanel.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML + popupDIV;
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -5549,7 +5556,7 @@
      */
     SuperBigFamView.prototype.load = function (id) {
         console.log("function SuperBigFamView.prototype.load");
-        var self = this;
+        var self = this;    
 
         // RESET some defaults
         SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
@@ -7399,6 +7406,16 @@
     Tree.prototype.personPopup = function (person, xy, Code) {
         this.removePopups();
         let thisPeep = thePeopleList[person._data.Id];
+
+        console.log("PERSON POPUP : ", SuperBigFamView.currentPopupID , person._data.Id);
+        if (SuperBigFamView.currentPopupID == person._data.Id) {
+            SuperBigFamView.removePopup();
+            return;
+        } else {
+            SuperBigFamView.currentPopupID = person._data.Id;
+        }
+    
+        console.log("PERSON POPUP : ", SuperBigFamView.currentPopupID, person._data.Id);
         // console.log("POPUP", person);
         // console.log("POPUP peep", thisPeep._data.Codes);
         var photoUrl = person.getPhotoUrl(75),
@@ -7414,11 +7431,24 @@
         }
 
         let zoomFactor = Math.max(1, 1 / SuperBigFamView.currentScaleFactor);
+        let thisPopup = document.getElementById("popupDIV");
+        // console.log("IN PERSON POPUP:",thisPopup);
+        // console.log("IN PERSON POPUP - this::",this);
+        // console.log("IN PERSON POPUP - document::",document);
+        // console.log("IN PERSON POPUP - person::",person);
 
-        var popup = this.svg
-            .append("g")
-            .attr("class", "popup")
-            .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")  scale(" + zoomFactor + ") ");
+        
+        // var popup = this.svg
+        //     .append("g")
+        //     .attr("class", "popup")
+        //     .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")  scale(" + zoomFactor + ") ");
+        
+        
+        
+        // console.log("IN PERSON POPUP - popup::", thisPopup);
+
+            thisPopup.classList.add("popup");
+            // .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")  scale(" + zoomFactor + ") ");
 
         let borderColor = "rgba(102, 204, 102, .5)";
         if (person.getGender() == "Male") {
@@ -7428,16 +7458,16 @@
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
-        popup
-            .append("foreignObject")
-            .attrs({
-                width: 400,
-                height: 300,
-            })
-            .style("overflow", "visible")
-            .append("xhtml:div").html(`
+        // console.log("IN PERSON POPUP - popup::", thisPopup);
+
+        let popupHTML =
+            `
 				<div class="popup-box" style="border-color: ${borderColor}">
+                
 					<div class="top-info">
+                    <span style="color:red; position:absolute; right:1.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePopup();">` +
+            SVGbtnCLOSE +
+            `</a></span>
 						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
 						<div class="vital-info">
 						  <div class="name">
@@ -7448,17 +7478,21 @@
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>
 						  <div class="death vital">${Code}  in ${SuperBigFamView.theLeafCollection[Code].Chunk}  : ${person._data.Id} : ${
-            SuperBigFamView.currentScaleFactor
-        }</div>
+                SuperBigFamView.currentScaleFactor
+            }</div>
 						</div>
 					</div>
 
 				</div>
-			`);
+			`;
+        // console.log(popupHTML);
+        thisPopup.innerHTML = popupHTML;
 
         d3.select("#view-container").on("click", function () {
             condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
-            popup.remove();
+            // popup.remove();
+            document.getElementById("popupDIV").innerHTML = "";
+            SuperBigFamView.currentPopupID = -1;
         });
     };
 
@@ -7472,9 +7506,17 @@
      */
     Tree.prototype.removePopups = function () {
         condLog("Tree.prototype - REMOVE POPUPS (plural) function");
-        d3.selectAll(".popup").remove();
+        d3.selectAll(".popup").innerHTML = "";
+        console.log("REMOVE POPUP SSSS");
+        // SuperBigFamView.currentPopupID = -1;
     };
 
+    SuperBigFamView.removePopup = function () {
+        document.getElementById("popupDIV").innerHTML = "";
+        SuperBigFamView.currentPopupID = -1;
+        // console.log("REMOVE POPUP");
+    }
+    
     /**
      * Manage the ancestors tree
      */
@@ -10006,7 +10048,8 @@
         return num;
     }
     function getBackgroundColourFor(theDegree, theChunk, theId, theCode) {
-        // 2, A0C1, 23683923, A0RMS07
+        // e.g.  getBackgroundColourFor(2, "A0C1", 23683923, "A0RMS07")
+
         // GET the settings that determine what the colouring should look like (if at all)
         let settingForColourBy = SuperBigFamView.currentSettings["colour_options_colourBy"];
         // WHILE we're here, might as well get the sub-settings if Family or Location colouring is being used ...
@@ -10062,29 +10105,27 @@
                 return thisColourArray[1];
             } else if (person._data.Gender == "Female") {
                 return thisColourArray[2];
-            } else  {
+            } else {
                 return thisColourArray[10];
             }
-            
         } else if (settingForColourBy == "Generation") {
             let thisGen = 0;
             if (theChunk == "A0" || theChunk == "S0") {
                 thisGen = 8;
             } else if (theChunk.indexOf("A0D") > -1 || theChunk.indexOf("S0D") > -1) {
                 // down as many generations as there are Ds
-                thisGen = 8 - 1 * theChunk.substr(3,1);
-                if (theCode.substr(-2,1).indexOf("P") > -1) {
+                thisGen = 8 - 1 * theChunk.substr(3, 1);
+                if (theCode.substr(-2, 1).indexOf("P") > -1) {
                     thisGen += 1; // partner, not a kid, so up one generation
                 }
-            } else if (theChunk.indexOf("A") > -1 ) {
-                thisGen = 8 + 1 * theChunk.substr(1,1);
+            } else if (theChunk.indexOf("A") > -1) {
+                thisGen = 8 + 1 * theChunk.substr(1, 1);
 
                 if (theChunk.indexOf("C") > -1) {
                     thisGen -= 1 * theChunk.substr(3, 1);
                     if (theCode.substr(-2, 1).indexOf("P") > -1) {
                         thisGen += 1; // partner, not a kid, so up one generation
                     }
-
                 }
             }
             return thisColourArray[1 + (thisGen % thisColourArray.length)];
@@ -10093,8 +10134,8 @@
                 let thisNum = theCode.replace("A0", "").replace(/RM/g, "1").replace(/RF/g, "0");
                 console.log("thisNum in getColourBackground : ", thisNum);
 
-                if (thisNum.substr(0,1) == "S") {
-                    return thisColourArray[2];    
+                if (thisNum.substr(0, 1) == "S") {
+                    return thisColourArray[2];
                 } else if (theCode == "A0" || thisNum.substr(0, 1) == "P" || thisNum.substr(0, 1) == "K") {
                     return thisColourArray[1];
                 } else if (thisNum.substr(0, 1) >= "0" && thisNum.substr(0, 1) <= "9") {
@@ -10102,8 +10143,8 @@
                     thisNum = getDecimalNumFromBinaryString("1" + thisNum);
                     console.log("newNum : ", thisNum);
                     return thisColourArray[thisNum % thisColourArray.length];
-                }  
-                
+                }
+
                 return thisColourArray[0];
             } else {
                 return thisColourArray[1];
