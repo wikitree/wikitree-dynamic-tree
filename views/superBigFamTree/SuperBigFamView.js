@@ -2118,49 +2118,84 @@
                 if (leaf.Code.substr(-2).indexOf("P") > -1) {
                     // console.log(leafID, leaf.Code, "*" + leaf.Code.substr(-2) + "*");
 
+                    
                     if (
                         SuperBigFamView.theLeafCollection[leaf.Code + "RM"] &&
                         SuperBigFamView.theLeafCollection[leaf.Code + "RF"] &&
                         SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["x"] &&
                         SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["x"]
                     ) {
+                        const dadsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RM").clientHeight;
+                        const momsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RF").clientHeight;
+
                         let minX = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["x"];
                         let minY = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["y"];
                         let maxX = SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["x"];
                         let avgX = SuperBigFamView.theLeafCollection[leaf.Code]["x"];
                         let avgY = SuperBigFamView.theLeafCollection[leaf.Code]["y"];
                         let drawColour = "#434343";
+
+                        // IF either of the parents' heights are < 180, then we need to do some refiguring to calculate a better minY
+                        // NOTE that each wedgeInfo has a 15px padding - AND - its parent node (foreignObject) is transformed using a y = -100
+                        // SO ... the TOP of the wedgeInfo box is going to be (minY - 85), and its bottom will be (minY - 85 + dadsLeafHt)  or momsLeafHt
+                        // THUS ... let's say the IDEAL equalsY value (middle of the equals sign) should be (minY - 85 + average of (dadsLeafHt + momsLeafHt))
+                        // WITH a caveat that if that IDEAL value is actual PAST the end of the shorter of the two of them, that we back it up enough pixels to be half-decent looking
+
+                        let eqY = minY + 50;
+
+                        if (dadsLeafHt < 180 || momsLeafHt < 180) {
+                            console.log(
+                                "INLAW HTS: ",
+                                document.querySelector("#wedgeInfo-" + leaf.Code + "RM"),
+                                document.querySelector("#wedgeInfo-" + leaf.Code + "RF")
+                            );
+                            console.log(
+                                "INLAW OPTIONS:",
+                                "minY = " + minY,
+                                eqY,
+                                minY - 100 + (dadsLeafHt + momsLeafHt) / 2,
+                                minY - 100 + dadsLeafHt - 20,
+                                minY - 100 + momsLeafHt - 20
+                            );
+                            eqY = Math.min(
+                                eqY,
+                                minY - 100 + Math.min((dadsLeafHt + momsLeafHt) / 2, dadsLeafHt - 20, momsLeafHt - 20)
+                            );
+                        }
+
+                        console.log("INLAW HTS: ", dadsLeafHt, momsLeafHt, "eqY = " + eqY);
+
                         let equalsLine =
                             `<polyline points="` +
                             (minX + 20) +
                             "," +
-                            (minY + 30) +
+                            (eqY + 8) +
                             " " +
                             (maxX - 20) +
                             "," +
-                            (minY + 30) +
+                            (eqY + 8) +
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="1"/>` +
                             `<polyline points="` +
                             (minX + 20) +
                             "," +
-                            (minY + 45) +
+                            (eqY - 8) +
                             " " +
                             (maxX - 20) +
                             "," +
-                            (minY + 45) +
+                            (eqY - 8) +
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="1" />` +
                             `<polyline points="` +
                             avgX +
                             "," +
-                            (minY + 45) +
+                            (eqY + 8) +
                             " " +
                             avgX +
                             "," +
-                            avgY +
+                            (avgY - 50) +
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="1" />`;
@@ -2171,7 +2206,8 @@
                     ) {
                         let minX = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["x"];
                         let minY = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["y"];
-
+                        const dadsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RM").clientHeight;
+                        let eqY = Math.min(minY + 37, minY - 85 + dadsLeafHt / 2);
                         let avgX = SuperBigFamView.theLeafCollection[leaf.Code]["x"];
                         let avgY = SuperBigFamView.theLeafCollection[leaf.Code]["y"];
                         let drawColour = "#434343";
@@ -2179,28 +2215,62 @@
                             `<polyline points="` +
                             (minX + 20) +
                             "," +
-                            (minY + 65) +
+                            eqY +
                             " " +
                             avgX +
                             "," +
-                            (minY + 65) +
+                            eqY +
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="1" />` +
                             `<polyline points="` +
                             avgX +
                             "," +
-                            (minY + 45) +
+                            eqY +
                             " " +
                             avgX +
                             "," +
-                            avgY +
+                            (avgY - 50) +
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="1" />`;
                         descLinesSVG += equalsLine;
-                    }
-                }
+                    } else if (
+                        SuperBigFamView.theLeafCollection[leaf.Code + "RF"] &&
+                        SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["x"]
+                    ) {
+                        let minX = SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["x"];
+                        let minY = SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["y"];
+                        const momsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RF").clientHeight;
+                        let eqY = Math.min(minY + 37, minY - 85 + momsLeafHt / 2);
+                        let avgX = SuperBigFamView.theLeafCollection[leaf.Code]["x"];
+                        let avgY = SuperBigFamView.theLeafCollection[leaf.Code]["y"];
+                        let drawColour = "#434343";
+                        let equalsLine =
+                            `<polyline points="` +
+                            (minX + 20) +
+                            "," +
+                            eqY +
+                            " " +
+                            avgX +
+                            "," +
+                            eqY +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="1" />` +
+                            `<polyline points="` +
+                            avgX +
+                            "," +
+                            eqY +
+                            " " +
+                            avgX +
+                            "," +
+                            (avgY - 50) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="1" />`;
+                        descLinesSVG += equalsLine;
+                    }                }
             } else {
                 // console.log("no Code for ", leaf);
             }
@@ -2530,6 +2600,15 @@
             let minX = Math.min(primaryLeaf.x, primarySpouse.x);
             let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
             let minY = Math.min(primaryLeaf.y, primarySpouse.y);
+
+            const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+            const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
+
+            if (thisLeafHt < 170 || otherLeafHt < 170) {
+                minY = minY - 85 + Math.min( thisLeafHt * 2/3 , otherLeafHt* 2/3, (thisLeafHt + otherLeafHt)/2) - 37;
+            }
+            // console.log("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
+
             let drawColour = spouseColours[(sp + clrNum) % spouseColours.length];
             if (doingDirectAncestorCode > "") {
                 drawColour = "black";
@@ -6799,6 +6878,8 @@
                         if (!photoUrl && SuperBigFamView.currentSettings["photo_options_useSilhouette"] == false) {
                             thisDIVtoUpdate.style.display = "none";
                         } else if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
+                            thisDIVtoUpdate.style.display = "none";
+                        } else if (!photoUrl && leafObject.Chunk.indexOf("IL") > -1 ) {
                             thisDIVtoUpdate.style.display = "none";
                         } else {
                             if (
