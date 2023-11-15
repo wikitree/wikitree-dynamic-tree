@@ -4566,15 +4566,24 @@ var btnBarHTML =
                                 repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
                             } else {
                                 // No children - then - no show (unless we're into Cousin mode of some flavour)
+                                if (numC > 0) {
+                                    // YAY - cousin mode - show the extra spouses (even if no kids involved)
+                                     thisLeafExtraPartner.x = thisLeaf.x + thisBoxWidth * (2 * (ahnenNum % 2) - 1);
+                                     thisLeafExtraPartner.y = thisLeaf.y;
+                                     thisWidth += thisBoxWidth;
+                                     repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
 
-                                if (
-                                    thisLeafExtraPartnerDIV &&
-                                    thisLeafExtraPartnerDIV.parentNode &&
-                                    thisLeafExtraPartnerDIV.parentNode.parentNode
-                                ) {
-                                    thisLeafExtraPartnerDIV.parentNode.parentNode.style.display = "none";
+                                } else {
+                                    // NO cousin mode - no extra spouses without children
+                                    if (
+                                        thisLeafExtraPartnerDIV &&
+                                        thisLeafExtraPartnerDIV.parentNode &&
+                                        thisLeafExtraPartnerDIV.parentNode.parentNode
+                                        ) {
+                                            thisLeafExtraPartnerDIV.parentNode.parentNode.style.display = "none";
+                                        }
+                                    }
                                 }
-                            }
                         }
                     }
                 }
@@ -6157,7 +6166,7 @@ var btnBarHTML =
                     console.log("HERE IS WHERE WE See tmpPartner  w No Kids :", tmpPartner);
                     newLeaf.Chunk = newLeaf.Chunk.replace("C0", "C1");
                 }
-                console.log("HERE IS WHERE AFTERWARDS ....  : ", newLeaf.Who, newLeaf.Code, newLeaf.Chunk);
+                console.log("HERE IS WHERE AFTERWARDS ....  : ", newLeaf.Who, newLeaf.Code, newLeaf.Chunk, newLeaf);
             }
 
             newChunk4Rents = newLeaf.Chunk + "IL";
@@ -7488,12 +7497,12 @@ var btnBarHTML =
                 theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
             }
 
-            if (leafObject.x || leafObject.x == 0) {
+            if (leafObject.x || leafObject.x === 0) {
                 newX = leafObject.x;
             } else {
                 newX = Math.round(2000 * Math.random()) - 1000;
             }
-            if (leafObject.y || leafObject.y == 0) {
+            if (leafObject.y || leafObject.y === 0) {
                 newY = leafObject.y;
             } else {
                 newY = Math.round(2000 * Math.random()) - 1000;
