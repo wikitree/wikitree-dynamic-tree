@@ -1271,9 +1271,9 @@
             '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
-        var OLD_btnBarHTML =
-            '<div id="btnBarDIV"><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
-            '<td width="60%">' +
+        
+        var btnBarHTML =
+            '<div id="btnBarDIV"><DIV border=0 style="background-color: #f8a51d80;" width="100%">' +
             "&nbsp;" +
             '<span class="fontDarkGreen fontBold">ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
             SVGbtnDOWN +
@@ -1297,18 +1297,16 @@
             SVGbtnUP +
             "</button> " +
             '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">IN-LAWS:</span> <input  class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();">  ' +
-            "</td>" +
-            '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
-            '<td width="5%">&nbsp;' +
-            "</td>" +
-            '<td width="30%" align="right">' +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
-            '<A onclick="SuperBigFamView.reZoom();">' +
-            SVGbtnRESIZE2 +
-            "</A>&nbsp;&nbsp;" +
+            '&nbsp;&nbsp;&nbsp;<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
+            "&nbsp;&nbsp;&nbsp;" +
+            '<div style="display: inline-block; float: right; position: absolute; top: -0.5em; right: 0.5em;">' +
             '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
             LEGEND_CLIPBOARD +
             "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
+            '<A onclick="SuperBigFamView.reZoom();">' +
+            SVGbtnRESIZE2 +
+            "</A>&nbsp;&nbsp;&nbsp;&nbsp;" +
             ' <A style="cursor:pointer;" onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>" +
@@ -1319,57 +1317,9 @@
             (AboutHelpDoc > ""
                 ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
                 : "") +
-            "&nbsp;&nbsp;</td>" +
-            '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
-
-var btnBarHTML =
-    '<div id="btnBarDIV"><DIV border=0 style="background-color: #f8a51d80;" width="100%">' +
-    
-    "&nbsp;" +
-    '<span class="fontDarkGreen fontBold">ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
-    SVGbtnDOWN +
-    "</button> " +
-    "[ <span id=numAncGensInBBar>2 generations</span> ]" +
-    ' <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display +=1; SuperBigFamView.redrawAncs();">' +
-    SVGbtnUP +
-    "</button> " +
-    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">DESCENDANTS:</span> <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display -=1; SuperBigFamView.redrawDescs();">' +
-    SVGbtnDOWN +
-    "</button> " +
-    "[ <span id=numDescGensInBBar>1 generation</span> ]" +
-    ' <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display +=1; SuperBigFamView.redrawDescs();">' +
-    SVGbtnUP +
-    "</button> " +
-    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">COUSINS:</span> <button class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
-    SVGbtnDOWN +
-    "</button> " +
-    "[ <span id=numCuzGensInBBar>none</span> ]" +
-    ' <button class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
-    SVGbtnUP +
-    "</button> " +
-    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">IN-LAWS:</span> <input  class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();">  ' +
-    
-    '<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
-    '<span width="5%">&nbsp;' + "</span>" +
-    '<div style="display: inline-block; float: right; position: absolute; top: -0.5em; right: 0.5em;">' +
-    '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
-    '<A onclick="SuperBigFamView.reZoom();">' +
-    SVGbtnRESIZE2 +
-    "</A>&nbsp;&nbsp;" +
-    '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
-    LEGEND_CLIPBOARD +
-    "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
-    ' <A style="cursor:pointer;" onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
-    SVGbtnSETTINGS +
-    "</font></A>" +
-    "&nbsp;&nbsp;" +
-    "<A onclick=SuperBigFamView.toggleAbout();>" +
-    SVGbtnINFO +
-    "</A>" +
-    (AboutHelpDoc > "" ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>" : "") +
-    "&nbsp;&nbsp;</div>" +
-    '</DIV></div>' +
-    '<DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
+            "&nbsp;&nbsp;</div>" +
+            "</DIV></div>" +
+            '<DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
 
         var aboutHTML =
             '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
@@ -2758,150 +2708,7 @@ var btnBarHTML =
         document.getElementById("WarningMessageBelowButtonBar").innerHTML = "";
     }
     // Make sure that the Button Bar displays the proper number of generations - and - adjust the max / min if needed because of over-zealous clicking
-    function recalcAndDisplayNumGensORIG() {
-        if (thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children) {
-            console.log(
-                "function recalcAndDisplayNumGens -> let's begin - At beginning of - primary has ",
-                thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
-                " Children"
-            );
-        } else {
-            console.log(
-                "function recalcAndDisplayNumGens -> let's begin - At beginning of - primary has ",
-                thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data,
-                " unknown Children"
-            );
-        }
-        let OKtoAddAncs = true;
-        let OKtoAddDescs = true;
-        let OKtoAddCuzs = true;
 
-        if (SuperBigFamView.numAncGens2Display < 0) {
-            SuperBigFamView.numAncGens2Display = 0;
-            showTemporaryMessageBelowButtonBar("You cannot display fewer than zero ancestors.");
-        } else if (SuperBigFamView.numAncGens2Display > SuperBigFamView.workingMaxNumAncGens) {
-            SuperBigFamView.numAncGens2Display = SuperBigFamView.workingMaxNumAncGens;
-            if (SuperBigFamView.workingMaxNumAncGens < SuperBigFamView.maxNumAncGens) {
-                flashWarningMessageBelowButtonBar(
-                    "Cannot load next generation of ancestors until the current one is fully processed. <BR>Please wait until this message disappears." +
-                        " / " +
-                        SuperBigFamView.numAncGens2Display +
-                        " / " +
-                        SuperBigFamView.workingMaxNumAncGens +
-                        " / " +
-                        SuperBigFamView.numAncGens2Display
-                );
-                OKtoAddAncs = false;
-            } else {
-                showTemporaryMessageBelowButtonBar(
-                    SuperBigFamView.maxNumAncGens +
-                        " is the maximum number of ancestor generations you can display." +
-                        " / " +
-                        SuperBigFamView.numAncGens2Display +
-                        " / " +
-                        SuperBigFamView.workingMaxNumAncGens +
-                        " / " +
-                        SuperBigFamView.numAncGens2Display
-                );
-                OKtoAddAncs = false;
-            }
-        }
-
-        if (SuperBigFamView.numDescGens2Display < 0) {
-            SuperBigFamView.numDescGens2Display = 0;
-            showTemporaryMessageBelowButtonBar("0 is the minimum number of descendants you can display.");
-        } else if (SuperBigFamView.numDescGens2Display > SuperBigFamView.workingMaxNumDescGens) {
-            SuperBigFamView.numDescGens2Display = SuperBigFamView.workingMaxNumDescGens;
-            if (SuperBigFamView.workingMaxNumDescGens < SuperBigFamView.maxNumDescGens) {
-                flashWarningMessageBelowButtonBar(
-                    "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
-                );
-                OKtoAddDescs = false;
-            } else {
-                showTemporaryMessageBelowButtonBar(
-                    SuperBigFamView.maxNumDescGens + " is the maximum number of descendant generations you can display."
-                );
-                OKtoAddDescs = false;
-            }
-        }
-
-        if (SuperBigFamView.numCuzGens2Display < 0) {
-            SuperBigFamView.numCuzGens2Display = 0;
-            showTemporaryMessageBelowButtonBar("You can't display less than nothing.");
-        } else if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.maxNumCuzGens) {
-            SuperBigFamView.numCuzGens2Display = SuperBigFamView.maxNumCuzGens;
-            // if (SuperBigFamView.workingMaxNumGens < SuperBigFamView.maxNumGens) {
-            //     flashWarningMessageBelowButtonBar(
-            //         "Cannot load next generation until the current one is fully processed. <BR>Please wait until this message disappears."
-            //     );
-            // } else {
-
-            showTemporaryMessageBelowButtonBar(
-                "3rd cousins is the maximum depth in generations you can display."
-            );
-
-            // }
-        }
-
-        var numGensSpan = document.querySelector("#numAncGensInBBar");
-        if (SuperBigFamView.numAncGens2Display == 0) {
-            numGensSpan.textContent = "none";
-        } else {
-            numGensSpan.textContent =
-                SuperBigFamView.numAncGens2Display +
-                " generation" +
-                (SuperBigFamView.numAncGens2Display != 1 ? "s" : "");
-        }
-        numGensSpan = document.querySelector("#numDescGensInBBar");
-        if (SuperBigFamView.numDescGens2Display == 0) {
-            numGensSpan.textContent = "none";
-        } else {
-            numGensSpan.textContent =
-                SuperBigFamView.numDescGens2Display +
-                " generation" +
-                (SuperBigFamView.numDescGens2Display != 1 ? "s" : "");
-        }
-
-        numGensSpan = document.querySelector("#numCuzGensInBBar");
-        let cuzQuips = ["none", "aunts/uncles", "1st cousins", "2nd cousins", "3rd cousins"];
-        if (SuperBigFamView.numCuzGens2Display < cuzQuips.length) {
-            numGensSpan.textContent = cuzQuips[SuperBigFamView.numCuzGens2Display];
-        } else {
-            numGensSpan.textContent = SuperBigFamView.numCuzGens2Display - 1 + "th cousins";
-        }
-
-        if (SuperBigFamView.numAncGens2Display > Math.max(0, SuperBigFamView.numAncGensRetrieved) && OKtoAddAncs) {
-            SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
-            console.log(
-                "** Calling function loadAncestorsAtLevel " +
-                    SuperBigFamView.numAncGens2Display +
-                    " from recalcAndDisplayNumGens"
-            );
-            loadAncestorsAtLevel(SuperBigFamView.numAncGens2Display);
-            // SuperBigFamView.workingMaxNumAncGens = Math.min(
-            //     SuperBigFamView.maxNumAncGens,
-            //     Math.max(SuperBigFamView.workingMaxNumAncGens, SuperBigFamView.numAncGens2Display + 1)
-            // );
-        }
-
-        if (SuperBigFamView.numDescGens2Display > SuperBigFamView.numDescGensRetrieved && OKtoAddDescs) {
-            SuperBigFamView.numDescGensRetrieved = SuperBigFamView.numDescGens2Display;
-            loadDescendantsAtLevel(SuperBigFamView.numDescGens2Display);
-            SuperBigFamView.workingMaxNumDescGens = Math.min(
-                SuperBigFamView.maxNumDescGens,
-                Math.max(SuperBigFamView.workingMaxNumDescGens, SuperBigFamView.numDescGens2Display + 1)
-            );
-        }
-
-        if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.numCuzGensRetrieved && OKtoAddCuzs) {
-            SuperBigFamView.numCuzGensRetrieved = SuperBigFamView.numCuzGens2Display;
-            loadCousinsAtLevel(SuperBigFamView.numCuzGens2Display);
-            SuperBigFamView.workingMaxNumCuzGens = Math.min(
-                SuperBigFamView.maxNumCuzGens,
-                Math.max(SuperBigFamView.workingMaxNumCuzGens, SuperBigFamView.numCuzGens2Display + 1)
-            );
-        }
-    }
 
     function recalcAndDisplayNumGensAncs() {
         if (thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children) {
@@ -2940,13 +2747,13 @@ var btnBarHTML =
                 // } else {
                 showTemporaryMessageBelowButtonBar(
                     SuperBigFamView.maxNumAncGens +
-                        " is the maximum number of ancestor generations you can display." +
-                        " / " +
-                        SuperBigFamView.numAncGens2Display +
-                        " / " +
-                        SuperBigFamView.workingMaxNumAncGens +
-                        " / " +
-                        SuperBigFamView.numAncGens2Display
+                        " is the maximum number of ancestor generations you can display." 
+                        // + " / " +
+                        // SuperBigFamView.numAncGens2Display +
+                        // " / " +
+                        // SuperBigFamView.workingMaxNumAncGens +
+                        // " / " +
+                        // SuperBigFamView.numAncGens2Display
                 );
                 OKtoAddAncs = false;
             // }
@@ -3607,7 +3414,21 @@ var btnBarHTML =
 
         for (let a = 1; a <= numAncestors; a++) {
             const thinkChunk = "A" + a;
-            const theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
+            var theCodesList = []; //SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
+
+            if (
+                SuperBigFamView.theChunkCollection[thinkChunk] &&
+                SuperBigFamView.theChunkCollection[thinkChunk].CodesList
+            ) {
+                theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
+            } else {
+                // no ancestors to load ...
+               continue; /// go to the next in the for loop
+            }
+
+            // AFTER we make sure that there ARE potential ancestors to load ... then we can push the A + newLevel to the loadedLevels array
+            SuperBigFamView.loadedLevels.push("A" + newLevel);
+
             for (let c = 0; c < theCodesList.length; c++) {
                 const code = theCodesList[c];
                 const ancID = SuperBigFamView.theLeafCollection[code].Id;
@@ -3648,7 +3469,7 @@ var btnBarHTML =
 
         //  (1)    -> getPeople keys: A(N) direct ancestors'  Siblings, and descendants based on num Cousins level,  descendants:1 + numCousins, incl. Spouses in fields list
 
-        if (theListOfIDs.length == 0) {
+        if (theAncsOnlyIDs.length == 0) {
             // condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS")
             clearMessageBelowButtonBar();
             SuperBigFamView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
@@ -3657,180 +3478,17 @@ var btnBarHTML =
                 SuperBigFamView.maxNumCuzGens,
                 SuperBigFamView.numGensRetrieved + 1
             );
+
+            console.log("NO ANCESTORS for COUSINS TO LOAD");
+            endisableButtons(true);
+
+            return;
         } else {
             let loadingTD = document.getElementById("loadingTD");
             loadingTD.innerHTML = "loading";
 
-            getPeopleCall(theSibsOnlyIDs,  "C1");
+            getPeopleCall(theSibsOnlyIDs, "C1");
             return;
-
-            loadingTD.innerHTML = "loading Cousins " + newLevel + " - (1 of 4)";
-            let theListOfID2Use = theSibsOnlyIDs;
-
-            if (theListOfID2Use.length == 0) {
-                theListOfID2Use = [theListOfIDs[0]];
-            } else if (theListOfID2Use.length <= 100) {
-                SuperBigFamView.currentListOfIDs = [];
-            } else {
-                SuperBigFamView.currentListOfIDs = theListOfID2Use.slice(100);
-                theListOfID2Use = theSibsOnlyIDs.slice(0, 100);
-                console.log("TOO MANY PEEPS !!!!!", theSibsOnlyIDs, theListOfID2Use, SuperBigFamView.currentListOfIDs);
-            }
-
-            console.log("(loadCousinsAtLevel:" + newLevel + " - 1) GETPEOPLE", APP_ID, theListOfID2Use, {
-                descendants: numDescendants,
-                minGeneration: numDescendants - 1,
-            });
-
-            WikiTreeAPI.getPeople(
-                // (appId, IDs, fields, options = {})
-                APP_ID,
-                theListOfID2Use,
-                SuperBigFamView.fieldNamesArray,
-                { descendants: numDescendants, minGeneration: numDescendants }
-                // { nuclear: newLevel, minGeneration: newLevel }
-            ).then(function (result1) {
-                if (result1) {
-                    // need to put in the test ... in case we get a null result1, which we will eventually at the end of the line
-                    let theSiblingsDescendants = result1[2];
-                    condLog("theAncestors needed:", theSiblingsDescendants);
-                    // condLog("person with which to drawTree:", person);
-                    let numPeepsAdded = 0;
-                    let spouseIDsArray = [];
-                    for (const index in theSiblingsDescendants) {
-                        numPeepsAdded++;
-                        thePeopleList.addIfNeeded(theSiblingsDescendants[index]);
-                        theListOfIDs.push(index);
-                        if (theSiblingsDescendants[index].Spouses && theSiblingsDescendants[index].Spouses.length > 0) {
-                            for (let s = 0; s < theSiblingsDescendants[index].Spouses.length; s++) {
-                                const sp = theSiblingsDescendants[index].Spouses[s];
-                                spouseIDsArray.push(sp.Id);
-                            }
-                        }
-                    }
-                    console.log(
-                        "ADDED ",
-                        numPeepsAdded,
-                        " Ancestors' Siblings' Descendants for Cousins peeps! - ",
-                        numDescendants,
-                        "generations down",
-                        ", taken from ",
-                        numAncestors,
-                        " generations of Ancestors above"
-                    );
-                    // SuperBigFamView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-
-                    // console.log("SPOUSES from Siblings Descendants for Cousins: ", spouseIDsArray.length);
-
-                    loadingTD.innerHTML = "loading Cousins " + newLevel + " - (2 of 4)";
-                    console.log("(loadCousinsAtLevel:" + newLevel + " - 2) GETPEOPLE", APP_ID, spouseIDsArray, {
-                        ancestors: 1,
-                    });
-
-                    if (spouseIDsArray.length == 0) {
-                        spouseIDsArray = [theListOfIDs[0]];
-                    } else if (spouseIDsArray.length <= 100) {
-                        SuperBigFamView.currentListOfIDs = [];
-                    } else {
-                        let ORIGspouseIDsArray = spouseIDsArray;
-                        SuperBigFamView.currentListOfIDs = spouseIDsArray.slice(100);
-                        spouseIDsArray = ORIGspouseIDsArray.slice(0, 100);
-                        console.log(
-                            "TOO MANY PEEPS !!!!!",
-                            ORIGspouseIDsArray,
-                            spouseIDsArray,
-                            SuperBigFamView.currentListOfIDs
-                        );
-                    }
-
-                    WikiTreeAPI.getPeople(
-                        // (appId, IDs, fields, options = {})
-                        APP_ID,
-                        spouseIDsArray,
-                        SuperBigFamView.fieldNamesArray,
-                        { ancestors: 1 }
-                        // changed to ancestors:1 to only get spouses parents - switch back to nuclear:1 if you want their siblings and children and other spouses as well
-                        // { nuclear: newLevel, minGeneration: newLevel }
-                    ).then(function (result2) {
-                        if (result2) {
-                            // need to put in the test ... in case we get a null result2, which we will eventually at the end of the line
-                            let allTheSpouses = result2[2];
-                            condLog("All THe Cousin Spouses Found:", allTheSpouses);
-                            loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 3 of 4)";
-
-                            let numNexteepsAdded = 0;
-                            for (const index in allTheSpouses) {
-                                numNexteepsAdded++;
-                                loadingTD.innerHTML =
-                                    "loading Cousins " + newLevel + " - (step 3 of 4) - spouse " + numNexteepsAdded;
-                                thePeopleList.addOrUpdate(allTheSpouses[index]);
-                                theListOfIDs.push(index);
-                            }
-                            console.log("ADDED ", numNexteepsAdded, " Cousin SPOUSES peeps of all types!");
-                            console.log("After 2nd getPeople of loadCousins - listOfIDs = ", theListOfIDs);
-
-                            // for (let x in theListOfIDs) {
-                            //     const peepID = theListOfIDs[x];
-                            //     let thisPeep = thePeopleList[peepID];
-                            loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 4 of 4)";
-                            let numPeeps = 0;
-                            for (let peepID in thePeopleList) {
-                                let thisPeep = thePeopleList[peepID];
-                                numPeeps++;
-                                loadingTD.innerHTML =
-                                    "loading Cousins " + newLevel + " - (step 4 of 4) - spouse peep " + numPeeps;
-
-                                if (!thisPeep) {
-                                    console.log(" - in loadCousins: can't find ", peepID, " in thePeopleList");
-                                } else {
-                                    console.log(
-                                        "need to draw out Children and Siblings for Cousin ",
-                                        thisPeep._data.BirthNamePrivate
-                                    );
-                                    if (!thisPeep._data.Children) {
-                                        thisPeep._data.Children = [];
-                                        thisPeep._data.Siblings = [];
-                                    }
-                                    if (thisPeep._data.Mother > 0 && thePeopleList[thisPeep._data.Mother]) {
-                                        linkParentAndChild(peepID, thisPeep._data.Mother, "F");
-                                    }
-                                    if (thisPeep._data.Father > 0 && thePeopleList[thisPeep._data.Father]) {
-                                        linkParentAndChild(peepID, thisPeep._data.Father, "M");
-                                    }
-                                }
-                            }
-                            loadingTD.innerHTML = "loading Cousins " + newLevel + " - (step 5 of 4)";
-
-                            //assembleSiblingsFor(theAncsParentsIDs);
-
-                            for (let NL = newLevel; NL <= newLevel + 3; NL++) {
-                                addToLeafCollectionAtLevel(NL);
-                            }
-
-                            SuperBigFamView.numGensRetrieved = newLevel;
-                            SuperBigFamView.workingMaxNumCuzGens = Math.min(
-                                SuperBigFamView.maxNumCuzGens,
-                                SuperBigFamView.numGensRetrieved + 1
-                            );
-
-                            clearMessageBelowButtonBar();
-                            loadingTD.innerHTML = "&nbsp;";
-                            // loadBiosNow(theListOfIDs, newLevel);
-                            // fillOutFamilyStatsLocsForAncestors();
-                            // findCategoriesOfAncestors();
-
-                            console.log(
-                                "At end of function loadCousinsAtLevel - " + newLevel + " - primary has ",
-                                thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
-                                " Children"
-                            );
-                            SuperBigFamView.refreshTheLegend();
-                        } else {
-                            // console.log("WARNING: Found no extra SPOUSES");
-                        }
-                    });
-                }
-            });
         }
     }
 
@@ -3872,9 +3530,10 @@ var btnBarHTML =
             );
             SuperBigFamView.refreshTheLegend();
             return;
-        } else {
-            SuperBigFamView.loadedLevels.push("A" + newLevel);
-        }
+        } 
+
+            
+        
         console.log("--> ENGAGE - Need to load really");
 
         let theListOfIDs = [];
@@ -3886,7 +3545,32 @@ var btnBarHTML =
 
         // condLog(theListOfIDs);
         const thinkChunk = "A" + newLevel;
-        const theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
+        var theCodesList = [];
+
+        if (SuperBigFamView.theChunkCollection[thinkChunk] && SuperBigFamView.theChunkCollection[thinkChunk].CodesList) {
+            theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
+        } else {
+            // no ancestors to load ...
+            console.log("NO ANCESTORS TO LOAD");
+            showTemporaryMessageBelowButtonBar("No ancestors (on WikiTree) to load beyond the level of " + "great-".repeat(newLevel - 3) + "grandparents.");
+            endisableButtons(true);
+            SuperBigFamView.numAncGens2Display -= 1;
+            SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
+            var numGensSpan = document.querySelector("#numAncGensInBBar");
+            if (SuperBigFamView.numAncGens2Display == 0) {
+                numGensSpan.textContent = "none";
+            } else {
+                numGensSpan.textContent =
+                    SuperBigFamView.numAncGens2Display +
+                    " generation" +
+                    (SuperBigFamView.numAncGens2Display != 1 ? "s" : "");
+            }
+            return;
+        }
+
+        // AFTER we make sure that there ARE potential ancestors to load ... then we can push the A + newLevel to the loadedLevels array
+        SuperBigFamView.loadedLevels.push("A" + newLevel);
+
         for (let c = 0; c < theCodesList.length; c++) {
             const code = theCodesList[c];
             const ancID = SuperBigFamView.theLeafCollection[code].Id;
@@ -3955,237 +3639,9 @@ var btnBarHTML =
                 descendants: numDescendants,
             });
 
-            getPeopleCall(theSibsOnlyIDs, "A1", 0, 0, theAncsOnlyIDs);
-            return;
+            getPeopleCall(theSibsOnlyIDs, "A1", 0, 0, theAncsOnlyIDs);            
 
-            WikiTreeAPI.getPeople(
-                // (appId, IDs, fields, options = {})
-                APP_ID,
-                theListOfID2Use,
-                SuperBigFamView.fieldNamesArray,
-                { descendants: numDescendants }
-                // { nuclear: newLevel, minGeneration: newLevel }
-            ).then(function (result1) {
-                if (result1) {
-                    // need to put in the test ... in case we get a null result1, which we will eventually at the end of the line
-                    let theSiblingsDescendants = result1[2];
-                    condLog("theAncestors needed:", theSiblingsDescendants);
-                    // condLog("person with which to drawTree:", person);
-                    let numPeepsAdded = 0;
-                    let spouseIDsArray = [];
-                    for (const index in theSiblingsDescendants) {
-                        numPeepsAdded++;
-                        thePeopleList.addIfNeeded(theSiblingsDescendants[index]);
-                        theListOfIDs.push(index);
-                        if (theSiblingsDescendants[index].Spouses && theSiblingsDescendants[index].Spouses.length > 0) {
-                            for (let s = 0; s < theSiblingsDescendants[index].Spouses.length; s++) {
-                                const sp = theSiblingsDescendants[index].Spouses[s];
-                                spouseIDsArray.push(sp.Id);
-                            }
-                        }
-                    }
-                    console.log(
-                        "ADDED ",
-                        numPeepsAdded,
-                        " Top Ancestors' Siblings' Descendant peeps for ",
-                        numDescendants,
-                        " generations"
-                    );
-                    // SuperBigFamView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-
-                    console.log("# SPOUSES from Siblings Descendants peeps: ", spouseIDsArray.length);
-                    loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 2 of 4)";
-                    // (2) -> getPeople keys: A(N) direct ancestors;  Next level of Ancestors + their Siblings  : ancestors:1, siblings:1, incl. Spouses
-
-                    console.log("(loadAncestorsAtLevel:" + newLevel + " - 2) GETPEOPLE", APP_ID, theAncsOnlyIDs, {
-                        ancestors: 1,
-                        siblings: 1,
-                    });
-
-                    if (theAncsOnlyIDs.length == 0) {
-                        theAncsOnlyIDs = [theAncsOnlyIDs[0]];
-                    } else if (theAncsOnlyIDs.length <= 100) {
-                        SuperBigFamView.currentListOfIDs = [];
-                    } else {
-                        let ORIGtheAncsOnlyIDs = theAncsOnlyIDs;
-                        SuperBigFamView.currentListOfIDs = theAncsOnlyIDs.slice(100);
-                        theAncsOnlyIDs = ORIGtheAncsOnlyIDs.slice(0, 100);
-                        console.log(
-                            "TOO MANY PEEPS !!!!!",
-                            ORIGtheAncsOnlyIDs,
-                            theAncsOnlyIDs,
-                            SuperBigFamView.currentListOfIDs
-                        );
-                    }
-
-                    WikiTreeAPI.getPeople(
-                        // (appId, IDs, fields, options = {})
-                        APP_ID,
-                        theAncsOnlyIDs,
-                        SuperBigFamView.fieldNamesArray,
-                        { ancestors: 1, siblings: 1 }
-                        // { nuclear: newLevel, minGeneration: newLevel }
-                    ).then(function (result2) {
-                        if (result2) {
-                            // need to put in the test ... in case we get a null result2, which we will eventually at the end of the line
-                            let theNextAncestorsAndSiblings = result2[2];
-                            condLog("Next Ancestors and Siblings Found:", theNextAncestorsAndSiblings);
-
-                            let numNextAncsAndSibs = 0;
-                            let numDirectAncestorSpouses = 0;
-                            for (const index in theNextAncestorsAndSiblings) {
-                                numNextAncsAndSibs++;
-                                thePeopleList.addIfNeeded(theNextAncestorsAndSiblings[index]);
-                                theListOfIDs.push(index);
-
-                                if (
-                                    theNextAncestorsAndSiblings[index].Spouses &&
-                                    theNextAncestorsAndSiblings[index].Spouses.length > 0
-                                    // && theAncsOnlyIDs.indexOf(theNextAncestorsAndSiblings[index].Id) > -1
-                                ) {
-                                    for (let s = 0; s < theNextAncestorsAndSiblings[index].Spouses.length; s++) {
-                                        const sp = theNextAncestorsAndSiblings[index].Spouses[s];
-                                        spouseIDsArray.push(sp.Id);
-                                        numDirectAncestorSpouses++;
-                                    }
-                                }
-                            }
-                            console.log("ADDED ", numNextAncsAndSibs, " next level Ancestors + Sibling peeps!");
-                            console.log(
-                                "GOING to ADD ",
-                                numDirectAncestorSpouses,
-                                " next level Ancestors' Spouses peeps!"
-                            );
-                            console.log(
-                                "ALL SPOUSES from Siblings Descendants + New Ancestors peeps: ",
-                                spouseIDsArray.length
-                            );
-                            loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 3 of 4)";
-
-                            console.log(
-                                "(loadAncestorsAtLevel:" + newLevel + " - 3) GETPEOPLE",
-                                APP_ID,
-                                spouseIDsArray,
-                                ["Id", "Bio"],
-                                { ancestors: 1 }
-                            );
-
-                            if (spouseIDsArray.length == 0) {
-                                spouseIDsArray = [];
-                            } else if (spouseIDsArray.length <= 100) {
-                                SuperBigFamView.currentListOfIDs = [];
-                            } else {
-                                let ORIGspouseIDsArray = spouseIDsArray;
-                                SuperBigFamView.currentListOfIDs = spouseIDsArray.slice(100);
-                                spouseIDsArray = ORIGspouseIDsArray.slice(0, 100);
-                                console.log(
-                                    "TOO MANY PEEPS !!!!!",
-                                    ORIGspouseIDsArray,
-                                    spouseIDsArray,
-                                    SuperBigFamView.currentListOfIDs
-                                );
-                            }
-
-                            WikiTreeAPI.getPeople(
-                                // (appId, IDs, fields, options = {})
-                                APP_ID,
-                                spouseIDsArray,
-                                SuperBigFamView.fieldNamesArray,
-                                { ancestors: 1 }
-                                // { nuclear: newLevel, minGeneration: newLevel }
-                            ).then(function (result3) {
-                                if (result3) {
-                                    // need to put in the test ... in case we get a null result3, which we will eventually at the end of the line
-                                    let allTheSpouses = result3[2];
-                                    console.log("All THe Spouses peeps Found:", allTheSpouses, result3);
-
-                                    let numNexteepsAdded = 0;
-                                    for (const index in allTheSpouses) {
-                                        numNexteepsAdded++;
-                                        thePeopleList.addOrUpdate(allTheSpouses[index]);
-                                        theListOfIDs.push(index);
-                                    }
-                                    console.log("ADDED ", numNexteepsAdded, " SPOUSES peeps of all types!");
-                                    console.log("After 3rd getPeople of loadAncestors - listOfIDs = ", theListOfIDs);
-
-                                    // for (let x in theListOfIDs) {
-                                    //     const peepID = theListOfIDs[x];
-                                    //     let thisPeep = thePeopleList[peepID];
-
-                                    loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 4 of 4)";
-                                    for (let peepID in thePeopleList) {
-                                        let thisPeep = thePeopleList[peepID];
-
-                                        if (!thisPeep) {
-                                            console.log(
-                                                " - in loadAncestors: can't find ",
-                                                peepID,
-                                                " in thePeopleList"
-                                            );
-                                        } else {
-                                            console.log(
-                                                "need to draw out Children and Siblings for ",
-                                                thisPeep._data.BirthNamePrivate
-                                            );
-                                            if (!thisPeep._data.Children) {
-                                                thisPeep._data.Children = [];
-                                                thisPeep._data.Siblings = [];
-                                            }
-                                            if (thisPeep._data.Mother > 0 && thePeopleList[thisPeep._data.Mother]) {
-                                                linkParentAndChild(peepID, thisPeep._data.Mother, "F");
-                                            }
-                                            if (thisPeep._data.Father > 0 && thePeopleList[thisPeep._data.Father]) {
-                                                linkParentAndChild(peepID, thisPeep._data.Father, "M");
-                                            }
-                                        }
-                                    }
-
-                                    assembleSiblingsFor(theAncsParentsIDs);
-                                    assembleSiblingsFor(theAncsOnlyIDs);
-                                    loadingTD.innerHTML = "loading Ancestors gen" + newLevel + " - (step 5 of 4)";
-                                    for (let NL = newLevel; NL <= newLevel + 3; NL++) {
-                                        addToLeafCollectionAtLevel(NL);
-                                    }
-
-                                    SuperBigFamView.numGensRetrieved = newLevel;
-                                    SuperBigFamView.workingMaxNumAncGens = Math.min(
-                                        SuperBigFamView.maxNumAncGens,
-                                        SuperBigFamView.numGensRetrieved + 1
-                                    );
-
-                                    clearMessageBelowButtonBar();
-                                    loadingTD.innerHTML = "&nbsp;";
-                                    // loadBiosNow(theListOfIDs, newLevel);
-                                    // fillOutFamilyStatsLocsForAncestors();
-                                    // findCategoriesOfAncestors();
-
-                                    console.log(
-                                        "At end of function loadAncestorsAtLevel - " + newLevel + " - primary has ",
-                                        thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
-                                        " Children"
-                                    );
-
-                                    SuperBigFamView.refreshTheLegend();
-                                    // if (newLevel == 1) {
-                                    //     console.log(
-                                    //         "** Calling function loadAncestorsAtLevel - " +
-                                    //             2 +
-                                    //             " - from inside loadAncestorsAtLevel ( 1 ) function "
-                                    //     );
-                                    //     loadAncestorsAtLevel(2);
-                                    // } else if (newLevel == 2) {
-                                    //     updateAllLeafCodesInPeopleList();
-                                    // }
-                                } else {
-                                    // console.log("WARNING: Found no extra ANCESTORS");
-                                }
-                            });
-                        } else {
-                            // console.log("WARNING: Found no extra SPOUSES");
-                        }
-                    });
-                }
-            });
+      
         }
     }
 
@@ -4625,12 +4081,14 @@ var btnBarHTML =
         let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
 
         if (SuperBigFamView.theLeafCollection[thisCode + "RM"]) {
-            SuperBigFamView.theLeafCollection[thisCode + "RM"].x = thisLeaf.x - thisBoxWidth / 2;
+            SuperBigFamView.theLeafCollection[thisCode + "RM"].x = thisLeaf.x - thisBoxWidth * .30; // should be / 2
             SuperBigFamView.theLeafCollection[thisCode + "RM"].y = thisLeaf.y - vBoxHeight;
+            SuperBigFamView.theLeafCollection[thisCode + "RM"]["slimLaw"] = true;
         }
         if (SuperBigFamView.theLeafCollection[thisCode + "RF"]) {
-            SuperBigFamView.theLeafCollection[thisCode + "RF"].x = thisLeaf.x + thisBoxWidth / 2;
+            SuperBigFamView.theLeafCollection[thisCode + "RF"].x = thisLeaf.x + thisBoxWidth * .30; // should be / 2
             SuperBigFamView.theLeafCollection[thisCode + "RF"].y = thisLeaf.y - vBoxHeight;
+            SuperBigFamView.theLeafCollection[thisCode + "RF"]["slimLaw"] = true;
         }
     }
 
@@ -7247,6 +6705,11 @@ var btnBarHTML =
                 theInfoBox.parentNode.parentNode.setAttribute("x", 0 - (boxWidth * 3) / 8); // was initially hardcoded as -150, when default boxWidth = 400
                 theInfoBox.parentNode.parentNode.setAttribute("width", (boxWidth * 3) / 4); //// was initially hardcoded as 300
 
+                if (leafObject.slimLaw == true) {
+                    theInfoBox.parentNode.parentNode.setAttribute("x", 0 - ((boxWidth * 2/3) * 3) / 8); // was initially hardcoded as -150, when default boxWidth = 400
+                    theInfoBox.parentNode.parentNode.setAttribute("width", ((boxWidth * 2/3) * 3) / 4); //// was initially hardcoded as 300
+                }
+
                 // CHECK for LOCATION SPECIFIC DOUBLE-COLOURS SETTINGS
                 if (settingForColourBy == "Location" && settingForSpecifyByLocation == "BirthDeathCountry") {
                     let locString = person._data["BirthCountry"];
@@ -7588,6 +7051,11 @@ var btnBarHTML =
         }
 
         // console.log("IN PERSON POPUP - popup::", thisPopup);
+        const SVGbtnDESC = `<svg width="30" height="30" viewBox="0 0 30 30" stroke="#25422d" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 4 5 L 10 5 L 10 9 L 24 9 M 16 9 L 16 13 L 24 13 M 10 9 L 10 19 L 24 19 M 16 19 L 16 23 L 24 23 M 16 23 L 16 27 L 24 27" fill="none" />
+        </svg>`;
+
+        let bioCheckLink = `<A target=_blank href="https://apps.wikitree.com/apps/sands1865/biocheck/?action=checkProfile&numAncestorGen=0&numDescendantGen=0&checkStart=auto&profileId=${person.getName()}">Bio Check</A>`;
 
         let popupHTML =
             `
@@ -7602,13 +7070,13 @@ var btnBarHTML =
 						  <div class="name">
 						    <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${person.getDisplayName()}</a>
 						    <span class="tree-links"><a href="#name=${person.getName()}&view=fanchart"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
+						    <span class="tree-links"><a href="#name=${person.getName()}&view=descendants">${SVGbtnDESC}</a></span>
 						    <span class="tree-links"><a href="#name=${person.getName()}&view=superbig"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" /></a></span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>
-						  <div class="death vital">${Code}  in ${SuperBigFamView.theLeafCollection[Code].Chunk}  : ${person._data.Id} : ${
-                SuperBigFamView.currentScaleFactor
-            }</div>
+						  <div class="death vital">${Code}  in ${SuperBigFamView.theLeafCollection[Code].Chunk}  : ${person._data.Id} : ${SuperBigFamView.currentScaleFactor}</div>
+                            ${bioCheckLink}
 						</div>
 					</div>
 
