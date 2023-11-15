@@ -1351,7 +1351,7 @@ var btnBarHTML =
     
     '<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
     '<span width="5%">&nbsp;' + "</span>" +
-    '<div style="display: inline-block; float: right; position: absolute; top: 0.5em; right: 0.5em;">' +
+    '<div style="display: inline-block; float: right; position: absolute; top: -0.5em; right: 0.5em;">' +
     '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Privatize:</span> <input type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
     '<A onclick="SuperBigFamView.reZoom();">' +
     SVGbtnRESIZE2 +
@@ -1445,6 +1445,8 @@ var btnBarHTML =
         infoPanel.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML + popupDIV;
         infoPanel.classList.remove("hidden");
         infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+        console.log("STYLE:",infoPanel.parentNode.style.padding);
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
