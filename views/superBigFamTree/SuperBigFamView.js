@@ -240,7 +240,7 @@
 
     SuperBigFamView.lastNumGens = 3;
     SuperBigFamView.numGensRetrieved = 3;
-    SuperBigFamView.numAncGensRetrieved = 0;
+    SuperBigFamView.numAncGensRetrieved = 2;
     SuperBigFamView.numDescGensRetrieved = 1;
     SuperBigFamView.numCuzGensRetrieved = 0;
     
@@ -2871,7 +2871,7 @@ var btnBarHTML =
         }
 
         if (SuperBigFamView.numAncGens2Display > Math.max(0, SuperBigFamView.numAncGensRetrieved) && OKtoAddAncs) {
-            // SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
+            SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
             console.log(
                 "** Calling function loadAncestorsAtLevel " +
                     SuperBigFamView.numAncGens2Display +
@@ -2963,7 +2963,7 @@ var btnBarHTML =
         }
 
         if (SuperBigFamView.numAncGens2Display > Math.max(0, SuperBigFamView.numAncGensRetrieved) && OKtoAddAncs) {
-            // SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
+            SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
             console.log(
                 "** Calling function loadAncestorsAtLevel " +
                     SuperBigFamView.numAncGens2Display +
@@ -3182,12 +3182,13 @@ var btnBarHTML =
             // which means, we're in the last group of 100 or less keys
             thisKeysIDsArray = KeysIDsArray.slice(startKeyAt);
         }
-            if (startKeyAt == 0 && startResultAt == 0) {
-                // we must be at the beginning of a phase, so we can then populate the ListOfIds
-                SuperBigFamView.ListsOfIDs[getCode + "inp"] = KeysIDsArray;
-                SuperBigFamView.ListsOfIDs[getCode + "out"] = [];
-                SuperBigFamView.ListsOfIDs[getCode + "sp"] = [];
-            }
+
+        if (startKeyAt == 0 && startResultAt == 0) {
+            // we must be at the beginning of a phase, so we can then populate the ListOfIds
+            SuperBigFamView.ListsOfIDs[getCode + "inp"] = KeysIDsArray;
+            SuperBigFamView.ListsOfIDs[getCode + "out"] = [];
+            SuperBigFamView.ListsOfIDs[getCode + "sp"] = [];
+        }
 
         console.log(
             "getPeopleCall : ",
@@ -3218,6 +3219,17 @@ var btnBarHTML =
                     flashWarningMessageBelowButtonBar(
                         getCode + " : PROCESSING: " + getPeopleParametersArray[getCode].aboveMsg
                     );
+
+                    // FOR DEBUGGING PURPOSES HERE
+                    if (1==1) {
+                        let theOldProfiles = result[1];
+                        for (const index in theOldProfiles) {
+                            const theOldID = theOldProfiles[index].Id;
+                            if (thePeopleList[theOldID]) {
+                                theOldProfiles[index]["BirthNamePrivate"] = thePeopleList[theOldID]._data.BirthNamePrivate;
+                            }
+                        }
+                    }
                     console.log("getPeopleCall (result): ", result);
 
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
@@ -3591,15 +3603,16 @@ var btnBarHTML =
         let numAncestors = Math.max(1, SuperBigFamView.numAncGensRetrieved);
 
         // condLog(theListOfIDs);
+        console.log("COUSINS: pre- getPeopleCall - newLevel:" + newLevel,"numAncestors: " + numAncestors);
 
-        for (let a = 1; a <= newLevel; a++) {
+        for (let a = 1; a <= numAncestors; a++) {
             const thinkChunk = "A" + a;
             const theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
             for (let c = 0; c < theCodesList.length; c++) {
                 const code = theCodesList[c];
                 const ancID = SuperBigFamView.theLeafCollection[code].Id;
                 // theListOfIDs.push(ancID);
-                 
+
                 theAncsOnlyIDs.push(ancID);
 
                 if (!thePeopleList[ancID]) {
@@ -3623,7 +3636,7 @@ var btnBarHTML =
                 }
             }
             for (let sp = 0; sp < theSpousesOnlyIDs.length; sp++) {
-                if ( theCodesList.indexOf(theSpousesOnlyIDs[sp]) > -1) {
+                if (theCodesList.indexOf(theSpousesOnlyIDs[sp]) > -1) {
                     // this spouse is also a direct ancestor ... no need to add his/her offspring to the list
                 } else {
                     // BUT ... if this spouse is NOT among those in the CodeList - we have a second or third (or later) husband/wife
@@ -3631,7 +3644,6 @@ var btnBarHTML =
                     theSibsOnlyIDs.push(theSpousesOnlyIDs[sp]);
                 }
             }
-            
         }
 
         //  (1)    -> getPeople keys: A(N) direct ancestors'  Siblings, and descendants based on num Cousins level,  descendants:1 + numCousins, incl. Spouses in fields list
