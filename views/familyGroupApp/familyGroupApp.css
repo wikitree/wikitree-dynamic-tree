@@ -15,6 +15,7 @@
   min-width: 730px;
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
   font-size: 16px;
+  background-color: #f7f6f0;
 }
 #view-container.familyGroupApp caption {
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
@@ -216,7 +217,6 @@ th.bioHeading {
 #view-container.familyGroupApp #fgsOptions {
   width: 80%;
   margin: 1em auto;
-  text-align: center;
   position: relative;
   background: white;
   padding-right: 2.5em;
@@ -225,6 +225,13 @@ th.bioHeading {
   padding-bottom: 1em;
   border: 1px solid forestgreen;
   border-radius: 1em;
+  font-size: 0.8em;
+}
+#view-container.familyGroupApp #fgsOptions h2 {
+  margin: 0.2em;
+  font-size: 1em;
+  font-weight: bold;
+  display: inline-block;
 }
 #view-container.familyGroupApp #fgsOptions .notesHeading {
   display: none;
@@ -236,14 +243,10 @@ th.bioHeading {
 
 #view-container.familyGroupApp #fgsOptions label {
   padding: 0.2em 1em 0.2em 0.2em;
-  border: 1px solid gray;
-  border-radius: 1em;
   display: inline-block;
 }
 #view-container.familyGroupApp #fgsOptions div {
   display: inline-block;
-  border: 1px solid gray;
-  border-radius: 1em;
 }
 #view-container.familyGroupApp #fgsOptions div label {
   border: 0;
@@ -381,16 +384,22 @@ body.app header {
   display: inline-block;
 }
 
-#view-container.familyGroupApp .bioRow .theBio,
+/*
+
 #view-container.familyGroupApp #fgsOptions #toggleBios,
 #view-container.familyGroupApp #fgsOptions #includeBiosWhenPrinting,
 #view-container.familyGroupApp #fgsOptions #showListsLabel,
 #view-container.familyGroupApp #fgsOptions #showTablesLabel,
 #view-container.familyGroupApp #fgsOptions #showGenderDiv,
 #view-container.familyGroupApp #fgsOptions #statusChoice,
-#view-container.familyGroupApp #fgsOptions,
 #view-container.familyGroupApp #husbandFirstLabel,
 #view-container.familyGroupApp #fgsOptions #showOtherLastNamesLabel {
+  display: none;
+}
+*/
+
+#view-container.familyGroupApp .bioRow .theBio,
+#view-container.familyGroupApp #fgsOptions {
   display: none;
 }
 
@@ -409,16 +418,15 @@ body.app header {
   margin: 0.2em 0.2em 1em;
 }
 #view-container.familyGroupApp caption {
-  background: rgb(221, 250, 218);
   padding: 0.2em;
+  border: 1px solid gray;
+  background-color: #fff;
 }
 #view-container.familyGroupApp caption input {
   width: 40em;
   font-size: 0.7em;
 }
-#view-container.familyGroupApp tr.marriedRow {
-  background-color: #fff2b0;
-}
+
 #view-container.familyGroupApp #privateQ {
   margin-top: 1em;
   text-align: center;
@@ -578,4 +586,37 @@ body.app header {
 }
 #view-container.familyGroupApp #familySheetFormTable .fsWTID {
   display: inline-block;
+}
+
+#view-container.familyGroupApp #familySheetFormTable tr.marriedRow,
+#view-container.familyGroupApp #familySheetFormTable caption,
+.roleRow[data-gender],
+.roleRow[data-gender] th {
+  background-color: rgb(221, 250, 218);
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+}
+#view-container.familyGroupApp #familySheetFormTable tr.marriedRow {
+  background-color: #fff2b0;
+}
+
+#view-container.familyGroupApp .roleRow[data-gender="M"],
+#view-container.familyGroupApp .roleRow[data-gender="M"] th {
+  background-color: #eef;
+}
+
+#view-container.familyGroupApp .roleRow[data-gender="F"],
+#view-container.familyGroupApp .roleRow[data-gender="F"] th {
+  background-color: #fee;
+}
+
+#view-container.familyGroupApp table {
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #fff;
+}
+
+#view-container.familyGroupApp table.citationTable {
+  width: auto;
 }
