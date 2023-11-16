@@ -2125,8 +2125,21 @@
                         SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["x"] &&
                         SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["x"]
                     ) {
-                        const dadsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RM").clientHeight;
-                        const momsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RF").clientHeight;
+                        const dadsLeaf = document.querySelector("#wedgeInfo-" + leaf.Code + "RM");
+                        const momsLeaf = document.querySelector("#wedgeInfo-" + leaf.Code + "RF");
+                        if (!dadsLeaf || !momsLeaf) {
+                            continue;
+                        }
+                        let dadsLeafHt = 200;
+                        let momsLeafHt = 200;
+                        if (dadsLeaf) {dadsLeafHt = dadsLeaf.clientHeight;} else {
+                            console.log("CLIENT HEIGHT problem: ", leaf.Code + "RM", dadsLeaf);
+                        }
+                        if (momsLeaf) {
+                            momsLeafHt = momsLeaf.clientHeight;
+                        } else {
+                            console.log("CLIENT HEIGHT problem: ", leaf.Code + "RF", momsLeaf);
+                        }
 
                         let minX = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["x"];
                         let minY = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["y"];
@@ -2163,7 +2176,18 @@
                             );
                         }
 
-                        console.log("INLAW HTS: ", dadsLeafHt, momsLeafHt, "eqY = " + eqY);
+                        console.log(
+                            "INLAW HTS: ",
+                            dadsLeafHt,
+                            momsLeafHt,
+                            "eqY = " + eqY,
+                            leaf.Code + "RM",
+                            leaf.Code + "RF",
+                            dadsLeaf,
+                            momsLeaf,
+                            dadsLeafHt,
+                            momsLeafHt
+                        );
 
                         let equalsLine =
                             `<polyline points="` +
@@ -2206,7 +2230,9 @@
                     ) {
                         let minX = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["x"];
                         let minY = SuperBigFamView.theLeafCollection[leaf.Code + "RM"]["y"];
-                        const dadsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RM").clientHeight;
+                        const dadsLeaf = document.querySelector("#wedgeInfo-" + leaf.Code + "RM");
+                        if (!dadsLeaf) { continue; }
+                        const dadsLeafHt = dadsLeaf.clientHeight;
                         let eqY = Math.min(minY + 37, minY - 85 + dadsLeafHt / 2);
                         let avgX = SuperBigFamView.theLeafCollection[leaf.Code]["x"];
                         let avgY = SuperBigFamView.theLeafCollection[leaf.Code]["y"];
@@ -2241,7 +2267,11 @@
                     ) {
                         let minX = SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["x"];
                         let minY = SuperBigFamView.theLeafCollection[leaf.Code + "RF"]["y"];
-                        const momsLeafHt = document.querySelector("#wedgeInfo-" + leaf.Code + "RF").clientHeight;
+                        const momsLeaf = document.querySelector("#wedgeInfo-" + leaf.Code + "RF");
+                        if (!momsLeaf) {
+                            continue;
+                        }
+                        const momsLeafHt = momsLeaf.clientHeight;
                         let eqY = Math.min(minY + 37, minY - 85 + momsLeafHt / 2);
                         let avgX = SuperBigFamView.theLeafCollection[leaf.Code]["x"];
                         let avgY = SuperBigFamView.theLeafCollection[leaf.Code]["y"];
@@ -3836,12 +3866,16 @@
 
         // TEMPORARILY --> SHAKE IT UP A BIT and MOVE EVERYONE to a RANDOM LOCATION (just so you know that the x,y coordinates actually DO something!)
         let tmpCount = 0;
-
+        let maxBoxHeight = 50;
         for (let l in theLeaves) {
             let thisLeaf = theLeaves[l];
             thisLeaf["x"] = Math.round(350 * (tmpCount % 20)) - 3500; //Math.round(2000 * Math.random()) - 1000;
             thisLeaf["y"] = Math.round(350 * Math.floor(tmpCount / 20)) - 3500; //Math.round(2000 * Math.random()) - 1000;
             if (thisLeaf["x"] == 0) {thisLeaf["x"] = 1;} 
+
+            // if (document.querySelector("#wedgeInfo-" + thisLeaf.Code) ){
+            //     maxBoxHeight = Math.max(maxBoxHeight, document.querySelector("#wedgeInfo-" + thisLeaf.Code).clientHeight);
+            // } 
             
             tmpCount++;
 
@@ -3854,6 +3888,10 @@
             );
         }
 
+        if (maxBoxHeight > 50) {
+            vBoxHeight = maxBoxHeight + 30 + 20 * SuperBigFamView.currentSettings["general_options_vSpacing"];
+            console.log("maxBoxHeight = ", maxBoxHeight);
+        }
         let A0dimensions = {};
 
         //            =======================
@@ -7143,9 +7181,9 @@
      */
     Tree.prototype.personPopup = function (person, xy, Code) {
         this.removePopups();
+        console.log("PERSON POPUP : ", SuperBigFamView.currentPopupID , person, Code, xy);
         let thisPeep = thePeopleList[person._data.Id];
 
-        console.log("PERSON POPUP : ", SuperBigFamView.currentPopupID , person._data.Id);
         if (SuperBigFamView.currentPopupID == person._data.Id) {
             SuperBigFamView.removePopup();
             return;
