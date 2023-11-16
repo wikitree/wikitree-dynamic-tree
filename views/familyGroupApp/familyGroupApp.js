@@ -336,7 +336,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $(".theBio").find("tr.marriedRow").remove();
         });
         */
-
+        /*
         this.$container.on("change.fgs", "#husbandFirst", (e) => {
             const husbandFirstChecked = $(e.currentTarget).prop("checked");
             const husbandContainer = $("div.tableContainer.Husband");
@@ -357,6 +357,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 wifeContainer.insertAfter(husbandContainer); // Ensure wife is first
             }
         });
+        */
 
         if ($(".nicknames").length == 0) {
             $(".showNicknamesSpan").hide();
@@ -1417,7 +1418,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderBirthRow = (birthDate, birthPlace, role) => {
         const birthRow =
             this.isOK(birthDate) || this.isOK(birthPlace)
-                ? `<tr><td class="${role.toLowerCase()} birth">Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
+                ? `<tr class="${role.toLowerCase()} birth"><td>Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
                 : "";
         return birthRow;
     };
@@ -1425,7 +1426,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderDeathRow = (deathDate, deathPlace, role) => {
         const deathRow =
             this.isOK(deathDate) || this.isOK(deathPlace)
-                ? `<tr><td class="${role.toLowerCase()} death">Died:</td><td>${deathDate}</td><td>${deathPlace}</td></tr>`
+                ? `<tr class="${role.toLowerCase()} death"><td>Died:</td><td>${deathDate}</td><td>${deathPlace}</td></tr>`
                 : "";
         return deathRow;
     };
@@ -2700,7 +2701,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             // Initialize the page
             this.initializePage();
 
-            this.sortRoles();
+            // this.sortRoles();
         }
     }
 
