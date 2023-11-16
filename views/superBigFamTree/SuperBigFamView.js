@@ -2471,7 +2471,7 @@
     }
 
     function drawLinesForFamilyOf(code, kidPrefix = "", levelNum = 0, clrNum = -1) {
-        // console.log("drawLinesForFamilyOf", code);
+        console.log("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
         let primaryLeaf = SuperBigFamView.theLeafCollection[code];
         if (!primaryLeaf) {
             return;
@@ -2551,8 +2551,12 @@
         } else if (primaryLeafPerson && primaryLeafPerson._data && !primaryLeafPerson._data.Spouses) {
             // console.log("drawLinesForFamilyOf return 2");
             return "";
-        } else if (primaryLeafPerson && primaryLeafPerson._data && primaryLeafPerson._data.Spouses.length == 0) {
-            // console.log("drawLinesForFamilyOf return 3");
+        } else if (
+            primaryLeafPerson &&
+            primaryLeafPerson._data &&
+            primaryLeafPerson._data.Spouses.length == 0 &&
+            numPrimaryChildren == 0) {
+            console.log("drawLinesForFamilyOf return 3 - no spouses - with ", numPrimaryChildren, "children");
             return "";
         }
 
@@ -2766,6 +2770,11 @@
             }
         }
 
+        if (primaryLeafPerson._data.Spouses.length == 0) {
+            console.log("drawLinesForFamilyOf - SINGLE PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ", code);
+        }
+
+     
         return allLinesPolySVG;
     }
 
@@ -3759,6 +3768,45 @@
         // };
     }
 
+    
+    function assembleChunksWithInLaws(numA,numD,numC) {
+        let chunkyILs = [];
+
+        for (let a = 1; a <= numA; a++) {
+            for (let C = 0; C <= numC; C++) {
+                const chunkID = "A" + a + "C" + C + "IL";
+                if (
+                    SuperBigFamView.theChunkCollection[chunkID] &&
+                    SuperBigFamView.theChunkCollection[chunkID].CodesList &&
+                    SuperBigFamView.theChunkCollection[chunkID].CodesList.length > 0
+                ) {
+                    chunkyILs.push(chunkID);
+                }
+            }
+        }
+        console.log("assembleChunksWithInLaws: ", chunkyILs);
+        return chunkyILs;
+    }
+
+    function assembleMaxCuzPerAncGen(numA, numD, numC) {
+        let maxCuzArray = [-1];
+
+        for (let a = 1; a <= numA; a++) {
+            for (let C = 0; C <= numC; C++) {
+                const chunkID = "A" + a + "C" + C ;
+                if (
+                    SuperBigFamView.theChunkCollection[chunkID] &&
+                    SuperBigFamView.theChunkCollection[chunkID].CodesList &&
+                    SuperBigFamView.theChunkCollection[chunkID].CodesList.length > 0
+                ) {
+                    maxCuzArray[a] = C;
+                }
+            }
+        }
+        console.log("assembleMaxCuzPerAncGen: ", maxCuzArray);
+        return maxCuzArray;
+    }
+
     // Reposition all of the People Boxes (Leaves) for the Super Big Family Tree
     function repositionLeaves() {
         console.log("TIme to repositionLeaves of these peeps !");
@@ -3772,6 +3820,15 @@
         let numA = SuperBigFamView.numAncGens2Display; // num Ancestors - going up
         let numD = SuperBigFamView.numDescGens2Display; // num Descendants - going down
         let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+
+        let showInLaws = SuperBigFamView.displayINLAWS > 0;
+        let chunksWithInLaws = [];
+        if (showInLaws) {
+            chunksWithInLaws = assembleChunksWithInLaws(numA,numD,numC);
+        }
+
+        let maxCuzArray = assembleMaxCuzPerAncGen(numA, numD, numC);
+        
         // no setting here for showing IN LAWS or not .... yet ...
 
         let vBoxHeight = 300 + 20 * SuperBigFamView.currentSettings["general_options_vSpacing"]; //330 ; //currentMaxHeight4Box;//SuperBigFamView.currentSettings["general_options_vBoxHeight"];
@@ -3856,12 +3913,15 @@
             }
             for (let a = 1; a <= numA; a++) {
                 // for each Ancestor Generation ...
+
+                // use adjusted # for maximum cousins per ancestor generation
+                cuzHeight = maxCuzArray[a] * vBoxHeight;
                 let thisMaxHeight = Math.max(vBoxHeight, AmaxHeights[a], cuzHeight);
                 if (a == numA) {
                     thisMaxHeight = vBoxHeight;
                 }
-                if (SuperBigFamView.displayINLAWS > 0) {
-                    thisMaxHeight += vBoxHeight;
+                if (showInLaws) {
+                    thisMaxHeight += 2*vBoxHeight;
                 }
                 thisY -= thisMaxHeight;
                 let thisMidWayANum = 2 ** a * 1.5;
@@ -3959,7 +4019,7 @@
         // Extraneous In-Laws
         for (let a = 1; a < 10; a++) {
             // Parents in law - need an IF around this one because there is a CHECKBOX that should determine whether they should be shown or hidden
-            if (SuperBigFamView.displayINLAWS == 0) {
+            if (!showInLaws) {
                 hideThisCode("P" + a + "R", theLeaves);
             }
 
@@ -5274,7 +5334,7 @@
                         thePerson.Id = 100 - thePerson.Id;
                         thePerson["Name"] = "Private-" + thePerson.Id;
                         thePerson["FirstName"] = "Private";
-                        thePerson["LastNameAtBirth"] = "TBD!";
+                        thePerson["LastNameAtBirth"] = "";
                     }
                     if (thePerson.Mother < 0) {
                         thePerson.Mother = 100 - thePerson.Mother;
@@ -5318,7 +5378,11 @@
                 for (var a = 1; a < 16; a++) {
                     let thisPeep = thePeopleList[SuperBigFamView.myAhnentafel.list[a]];
                     // condLog("Peep ",a, thisPeep);
-                    if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                    if (
+                        thisPeep &&
+                        thisPeep._data["LastNameAtBirth"] == "" &&
+                        thisPeep._data["FirstName"] == "Private"
+                    ) {
                         thisPeep._data["LastNameAtBirth"] = relativeName[a];
                         if (a % 2 == 0) {
                             thisPeep._data["Gender"] = "Male";
@@ -5360,7 +5424,7 @@
                     thePerson.Id = 100 - thePerson.Id;
                     thePerson["Name"] = "Private-" + thePerson.Id;
                     thePerson["FirstName"] = "Private";
-                    thePerson["LastNameAtBirth"] = "TBD!";
+                    thePerson["LastNameAtBirth"] = "";
                 }
                 if (thePerson.Mother < 0) {
                     thePerson.Mother = 100 - thePerson.Mother;
@@ -6112,6 +6176,9 @@
     function linkParentAndChild(peepID, parentID, parentType) {
         let thisPeep = thePeopleList[peepID];
         let thisRent = thePeopleList[parentID]; // Parent = RENT (using P for Partners)
+        if (peepID < 0) {
+            return;
+        }
         // console.log(
         //     thisRent._data.BirthNamePrivate,
         //     " is the ",
