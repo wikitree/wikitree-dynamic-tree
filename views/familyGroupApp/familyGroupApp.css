@@ -70,7 +70,7 @@
 }
 #view-container.familyGroupApp #familySheetFormTable tr.roleRow,
 #view-container.familyGroupApp .tableContainer tr.roleRow,
-#view-container.familyGroupApp #familySheetFormTable tr.marriedRow th {
+#view-container.familyGroupApp tr.marriedRow th {
   font-size: 1.4em;
 }
 #view-container.familyGroupApp #familySheetFormTable,
@@ -588,7 +588,7 @@ body.app header {
   display: inline-block;
 }
 
-#view-container.familyGroupApp #familySheetFormTable tr.marriedRow,
+#view-container.familyGroupApp tr.marriedRow,
 #view-container.familyGroupApp #familySheetFormTable caption,
 .roleRow[data-gender],
 .roleRow[data-gender] th {
@@ -596,7 +596,7 @@ body.app header {
   border-left: 1px solid black;
   border-right: 1px solid black;
 }
-#view-container.familyGroupApp #familySheetFormTable tr.marriedRow {
+#view-container.familyGroupApp tr.marriedRow {
   background-color: #fff2b0;
 }
 
@@ -616,7 +616,23 @@ body.app header {
   margin-right: auto;
   background-color: #fff;
 }
+#view-container.familyGroupApp table th:first-child {
+  min-width: 160px;
+  max-width: 160px;
+  width: 160px;
+}
+#view-container.familyGroupApp table th:nth-child(2),
+#view-container.familyGroupApp table td:nth-child(2) {
+  min-width: 250px;
+  max-width: 250px;
+  width: 250px;
+}
 
 #view-container.familyGroupApp table.citationTable {
   width: auto;
+}
+#view-container.familyGroupApp div.tableContainer.husband,
+#view-container.familyGroupApp div.tableContainer.wife {
+  margin-top: 0;
+  margin-bottom: 0;
 }

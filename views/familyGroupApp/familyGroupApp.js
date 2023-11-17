@@ -60,6 +60,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.wife = 0;
         this.wifeWTID = "";
         this.calledPeople = [this.person_id];
+        //this.calledPeople = [];
         this.calls = 1;
         this.privates = 0;
         this.references = [];
@@ -130,17 +131,19 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     thePeople.forEach((aPerson) => {
                         const mPerson = aPerson.person;
 
-                        // Populate spouse, children, siblings, and parents
-                        ["Spouse", "Child", "Sibling", "Parent"].forEach((relation) => {
-                            let s = "s";
-                            if (relation === "Child") {
-                                s = "ren";
-                            }
-                            const relatives = this.getRels(mPerson[`${relation}${s}`], mPerson, relation);
-                            mPerson[relation] = relatives;
-                        });
+                        // Check if the person is already in this.people
+                        if (!this.people.some((p) => p.Id === mPerson.Id)) {
+                            // Populate spouse, children, siblings, and parents
+                            ["Spouse", "Child", "Sibling", "Parent"].forEach((relation) => {
+                                let s = "s";
+                                if (relation === "Child") s = "ren";
+                                const relatives = this.getRels(mPerson[`${relation}${s}`], mPerson, relation);
+                                mPerson[relation] = relatives;
+                            });
 
-                        this.people.push(mPerson);
+                            this.people.push(mPerson);
+                        }
+
                         console.log("this.people", this.people);
 
                         // Recursive call and makeFamilySheet() as in your original code
@@ -160,6 +163,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                                 }
                             });
                         }
+
                         if (this.calledPeople.length === this.people.length) {
                             this.makeFamilySheet();
                             //  this.configureRolesAndLayout();
@@ -285,7 +289,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.init(this.$container, $this.attr("data-name"));
         });
 
-        /*
         this.$container.on("change.fgs", "#husbandFirst", (e) => {
             const $this = $(e.currentTarget);
             const husbandID = $("tr.roleRow[data-role='Husband']").attr("data-name");
@@ -302,8 +305,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             const clonedMarriage = $(".marriedRow").eq(0);
             if ($this.prop("checked") == true) {
-                $("div.tableContainer.Wife").insertAfter($("div.tableContainer.Husband"));
-                $(".marriedRow").eq(0).appendTo($("div.tableContainer.Husband tbody"));
+                $("div.tableContainer.wife").insertAfter($("div.tableContainer.husband"));
+                $(".marriedRow").eq(0).appendTo($("div.tableContainer.husband tbody"));
 
                 husbandCitations.prependTo($("#citationList"));
                 husbandNameCaption.prependTo($("caption"));
@@ -312,9 +315,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     wifeNameCaption.appendTo($("caption"));
                 }
             } else if (this.people[0].Gender == "Female") {
-                $("div.tableContainer.Husband").insertAfter($("div.tableContainer.Wife"));
-                $(".marriedRow").eq(0).appendTo($("div.tableContainer.Wife tbody"));
-                $(".marriedRow[data-role='Husband']").remove();
+                $("div.tableContainer.husband").insertAfter($("div.tableContainer.wife"));
+                $(".marriedRow").eq(0).appendTo($("div.tableContainer.wife tbody"));
                 $("#citationList li[data-wtid='" + this.htmlEntities(this.people[0].Name) + "']").prependTo(
                     $("#citationList")
                 );
@@ -328,14 +330,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             if ($(".marriedRow").eq(1).length) {
                 $(".marriedRow").eq(1).remove();
             }
-            $(".marriedRow").remove();
-            clonedMarriage.appendTo($("div.tableContainer").eq(0).find("tbody"));
+            // $(".marriedRow").remove();
+            //clonedMarriage.appendTo($("div.tableContainer").eq(0).find("tbody"));
 
             this.storeVal($this);
 
             $(".theBio").find("tr.marriedRow").remove();
         });
-        */
+
         /*
         this.$container.on("change.fgs", "#husbandFirst", (e) => {
             const husbandFirstChecked = $(e.currentTarget).prop("checked");
@@ -357,8 +359,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 wifeContainer.insertAfter(husbandContainer); // Ensure wife is first
             }
         });
-        */
-
+*/
         if ($(".nicknames").length == 0) {
             $(".showNicknamesSpan").hide();
         }
@@ -590,6 +591,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const fgsButtons = `<div id="fgsButtons"><button class="small" id="fgsOptionsButton">Options</button><button class="small" id="fgsNotesButton">Notes</button></div>`;
         if ($("#fgsButtons").length === 0) {
             $("header").append(fgsButtons);
+        }
+        if ($("#fgsOptionsButton").hasClass("active")) {
+            $("#fgsOptions").show();
         }
     }
 
@@ -1418,7 +1422,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderBirthRow = (birthDate, birthPlace, role) => {
         const birthRow =
             this.isOK(birthDate) || this.isOK(birthPlace)
-                ? `<tr class="${role.toLowerCase()} birth"><td>Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
+                ? `<tr data-role="${role}" class="${role.toLowerCase()} birth"><td>Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
                 : "";
         return birthRow;
     };
@@ -1426,13 +1430,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderDeathRow = (deathDate, deathPlace, role) => {
         const deathRow =
             this.isOK(deathDate) || this.isOK(deathPlace)
-                ? `<tr class="${role.toLowerCase()} death"><td>Died:</td><td>${deathDate}</td><td>${deathPlace}</td></tr>`
+                ? `<tr data-role="${role}" class="${role.toLowerCase()} death"><td>Died:</td><td>${deathDate}</td><td>${deathPlace}</td></tr>`
                 : "";
         return deathRow;
     };
 
     renderBaptismRow = (baptismDate, baptismPlace, role) => {
-        const baptismRow = `<tr class='baptismRow'><td class="${role.toLowerCase()} baptism">Baptized:</td><td>${baptismDate}</td><td>${baptismPlace}</td></tr>`;
+        const baptismRow = `<tr data-role="${role}" class='baptismRow'><td class="${role.toLowerCase()} baptism">Baptized:</td><td>${baptismDate}</td><td>${baptismPlace}</td></tr>`;
         return baptismRow;
     };
 
@@ -1445,7 +1449,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     };
 
     renderBurialRow = (burialDate, burialPlace, role) => {
-        const burialRow = `<tr class="burialRow"><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}</td><td>${burialPlace}</td></tr>`;
+        const burialRow = `<tr data-role="${role}" class="burialRow"><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}</td><td>${burialPlace}</td></tr>`;
         return burialRow;
     };
     renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
@@ -2158,6 +2162,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
     }
 
+    /*
     manageRoleRows() {
         const husbandRow = $("tr.roleRow[data-role='Husband']");
         const wifeRow = $("tr.roleRow[data-role='Wife']");
@@ -2186,6 +2191,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             updateLabels("Husband");
         }
     }
+    */
 
     updateLabels(role) {
         const roleRow = $(`tr.roleRow[data-role='${role}']`);
@@ -2247,6 +2253,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return JSON.parse(localStorage.getItem("familyGroupAppSettings")) || {};
     }
 
+    /*
     sortRoles() {
         const settings = this.getSettings();
         console.log("Current settings:", settings);
@@ -2265,6 +2272,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             console.log("Settings updated for non-traditional roles:", settings);
         }
     }
+    */
 
     /*
     configureRolesAndLayout() {
@@ -2395,9 +2403,21 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     makeFamilySheet() {
         console.log(this.people);
         this.researchNotes = [];
+
+        // Create separate containers for husband and wife
+        const husbandContainer = $("<div class='tableContainer husband'><table><tbody></tbody></table></div>");
+        const wifeContainer = $("<div class='tableContainer wife'><table><tbody></tbody></table></div>");
+
         const fsTable = $(
             "<table id='familySheetFormTable'><thead><tr><th></th><th>Name and/or Date</th><th>Place</th></tr></thead><tbody></tbody></table>"
         );
+
+        if (this.people[0].Name == undefined) {
+            this.privateQ();
+        } else {
+            $(this.$container).append(fsTable);
+        }
+
         let mainRole = "Wife";
         let spouseRole = "Husband";
         if (this.people[0].Gender == "Male") {
@@ -2407,9 +2427,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         } else {
             fsTable.attr("data-wife", this.people[0].Name);
         }
-
-        // const mainRoleTable = $("<div class='tableContainer'><table><tbody></tbody></table></div>");
-        //  const spouseRoleTable = $("<div class='tableContainer'><table><tbody></tbody></table></div>");
 
         const mainRow = this.familySheetPerson(this.people[0], mainRole);
 
@@ -2426,11 +2443,23 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         });
 
-        fsTable.find("> tbody").append($(mainRow));
+        // fsTable.find("> tbody").append($(mainRow));
+
+        // Determine if the main person is husband or wife and append the row to the respective container
+        if (this.people[0].Gender === "Male") {
+            husbandContainer.find("> table > tbody").append($(mainRow));
+        } else {
+            wifeContainer.find("> table > tbody").append($(mainRow));
+        }
 
         if (theSpouse) {
             const spouseRow = this.familySheetPerson(theSpouse, spouseRole);
-            fsTable.find("> tbody").append($(spouseRow));
+            //    fsTable.find("> tbody").append($(spouseRow));
+            if (spouseRole === "Husband") {
+                husbandContainer.find("> table > tbody").append($(spouseRow));
+            } else {
+                wifeContainer.find("> table > tbody").append($(spouseRow));
+            }
         } else {
             console.log("The spouse could not be found: ", matchPerson);
             setTimeout(() => {
@@ -2440,6 +2469,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     $(this).text($(this).text().replace("Husband's ", "").replace("Wife's ", ""));
                 });
             }, 500);
+        }
+
+        if (mainRole === "Husband" || $("#husbandFirst").prop("checked")) {
+            fsTable.after(husbandContainer, wifeContainer);
+            $("tr.marriedRow").appendTo($(".tableContainer.husband tbody"));
+        } else {
+            fsTable.after(wifeContainer, husbandContainer);
+            $("tr.marriedRow").appendTo($(".tableContainer.wife tbody"));
         }
 
         const oChildren = this.people[0].Child;
@@ -2457,11 +2494,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if (this.people[0].Name == undefined) {
             this.privateQ();
         } else {
-            $(this.$container).append(fsTable);
+            //$(this.$container).append(fsTable);
+
+            /*
             if (settings.husbandFirst) {
                 $("tr[data-role='Husband']").prependTo($("#familySheetFormTable > tbody"));
             }
+            */
 
+            /*
             let clonedRow = "";
             $(".marriedRow").each(function () {
                 if ($(this).text() != "Married:") {
@@ -2481,6 +2522,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
                 //				$("tr[data-role='Husband'].marriedRow").remove();
             }
+            */
 
             $("#h1Text").remove();
             let husbandName = "";
