@@ -260,7 +260,8 @@
     SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
     SuperBigFamView.linesATC = []; // the Lines (connectors) Air Traffic Controller
 
-    SuperBigFamView.currentPopupID = -1;
+    SuperBigFamView.currentPopupID = -1; // place to hold the most recent person's ID that you used for a PopUp (so you can toggle it off and on if you click the same person twice in a row)
+    SuperBigFamView.chunksWithInLawsArray = []; // array to hold the list of all current CHUNKS that end with IL so that we can space out the Super Big Fam chart nicely - not too crowded, but not too spaced out
 
     // holding spot for current list of IDs being used for keys to the getPeople API
     SuperBigFamView.currentListOfIDs = [];
@@ -3980,7 +3981,7 @@
         let chunkyILs = [];
 
         for (let a = 1; a <= numA; a++) {
-            for (let C = 0; C <= numC; C++) {
+            for (let C = 0; C < numC; C++) {
                 const chunkID = "A" + a + "C" + C + "IL";
                 if (
                     SuperBigFamView.theChunkCollection[chunkID] &&
@@ -3991,9 +3992,44 @@
                 }
             }
         }
-        console.log("assembleChunksWithInLaws: ", chunkyILs);
+        for (let a = 0; a <= 1; a++) {
+            for (let C = 0; C <= numD; C++) {
+                const chunkID = (a==0 ? "A0" : "S0") + "D" + C + "IL";
+                if (
+                    SuperBigFamView.theChunkCollection[chunkID] &&
+                    SuperBigFamView.theChunkCollection[chunkID].CodesList &&
+                    SuperBigFamView.theChunkCollection[chunkID].CodesList.length > 0
+                ) {
+                    chunkyILs.push(chunkID);
+                }
+            }
+        }
+        // console.log("assembleChunksWithInLaws: ", chunkyILs);
         return chunkyILs;
     }
+
+    function assembleMaxInLawsPerAncGen(numA, numD, numC, chunkyILs) {
+        let maxInLawsArray = {0:0, 1:0};
+        if (chunkyILs.indexOf("A0D1IL") > -1 || chunkyILs.indexOf("S0D1IL") > -1) {
+            maxInLawsArray[1]++;
+        }
+        for (let a = 1; a <= numA; a++) {            
+             maxInLawsArray[a+1] = 0;
+            for (let C = 0; C <= numC; C++) {
+                const chunkID = "A" + a + "C" + C + "IL";
+                if (chunkyILs.indexOf(chunkID) > -1 ) {
+                    if (C < 2) {
+                        maxInLawsArray[a + 1]++;
+                    } else {
+                        maxInLawsArray[a]++;
+                    }
+                }
+            }
+        }
+        // console.log("assembleMaxCuzPerAncGen: ", maxInLawsArray);
+        return maxInLawsArray;
+    }
+
 
     function assembleMaxCuzPerAncGen(numA, numD, numC) {
         let maxCuzArray = [-1];
@@ -4010,7 +4046,7 @@
                 }
             }
         }
-        console.log("assembleMaxCuzPerAncGen: ", maxCuzArray);
+        // console.log("assembleMaxCuzPerAncGen: ", maxCuzArray);
         return maxCuzArray;
     }
 
@@ -4030,9 +4066,13 @@
 
         let showInLaws = SuperBigFamView.displayINLAWS > 0;
         let chunksWithInLaws = [];
+        let maxInLawsArray = {0:0};
         if (showInLaws) {
             chunksWithInLaws = assembleChunksWithInLaws(numA,numD,numC);
+            maxInLawsArray = assembleMaxInLawsPerAncGen(numA, numD, numC, chunksWithInLaws);
+            SuperBigFamView.chunksWithInLawsArray = chunksWithInLaws;
         }
+        // console.log("CHUNKS : chunksWithInLaws = ", chunksWithInLaws, showInLaws    );
 
         let maxCuzArray = assembleMaxCuzPerAncGen(numA, numD, numC);
         
@@ -4123,9 +4163,9 @@
             // STEP 2 : Position each cluster along the primary axis, left or right of it based on paternal vs maternal lines
             let thisY = 0;
             let cuzHeight = 0;
-            if (numC > 1) {
-                cuzHeight = vBoxHeight * numC;
-            }
+            // if (numC > 1) {
+            //     cuzHeight = vBoxHeight * numC;
+            // }
             for (let a = 1; a <= numA; a++) {
                 // for each Ancestor Generation ...
 
@@ -4136,7 +4176,7 @@
                     thisMaxHeight = vBoxHeight;
                 }
                 if (showInLaws) {
-                    thisMaxHeight += 2*vBoxHeight;
+                    thisMaxHeight += maxInLawsArray[a] * vBoxHeight;
                 }
                 thisY -= thisMaxHeight;
                 let thisMidWayANum = 2 ** a * 1.5;
@@ -4762,6 +4802,45 @@
         };
     }
 
+    function extraHeightForInLawsForThisChild(nextDChunkCode) {
+        let nextLevel = 1.0 * nextDChunkCode.substr(-1) + 2;
+        let chunk2Check = nextDChunkCode.substr(0, 3) + nextLevel;
+        let chunk2Check2 = nextDChunkCode.substr(0, 3) + nextLevel;
+        let numD = SuperBigFamView.numDescGens2Display;
+        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        if (nextDChunkCode == "A0" || nextDChunkCode == "S0") {
+            if (numD > 1 && SuperBigFamView.chunksWithInLawsArray.indexOf( "A0D2IL") > -1 || SuperBigFamView.chunksWithInLawsArray.indexOf( "S0D2IL") > -1) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        if (nextDChunkCode.indexOf("C") > -1 && numC < nextLevel) {
+            return 0;
+        }  
+        if (nextDChunkCode.indexOf("D") > -1 && numD < nextLevel) {
+            return 0;
+        }
+        if (chunk2Check.substr(0, 1) == "A" || chunk2Check.substr(0, 1) == "S") {
+            chunk2Check = "A" + chunk2Check.substr(1,4)
+            chunk2Check2 = "S" + chunk2Check.substr(1,4)
+        }
+            // console.log(
+            //     "SuperBigFamView.chunksWithInLawsArray:",
+            //     SuperBigFamView.chunksWithInLawsArray,
+            //     "checking:",
+            //     chunk2Check
+            // );
+
+        if (SuperBigFamView.chunksWithInLawsArray.indexOf(chunk2Check + "IL") > -1) {
+            return 1;
+        } else if (chunk2Check2 != chunk2Check && SuperBigFamView.chunksWithInLawsArray.indexOf(chunk2Check2 + "IL") > -1) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
     function repositionThisPersonAndTheirDescendants(code, x, y, align = "C") {
         let numD = SuperBigFamView.numDescGens2Display;
         let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
@@ -4799,7 +4878,7 @@
                 );
             }
         }
-        console.log(commentPreFix + code + " : " + thisLeaf.Chunk,x,y);
+        // console.log(commentPreFix + code + " : " + thisLeaf.Chunk,x,y);
         // ASSIGN Y coordinate for THIS PERSON ...  the X coordinate will come later, after spouses and kids have been added
         thisLeaf["y"] = y;
 
@@ -4926,12 +5005,24 @@
         }
 
         // Define Kids VBoxHeight (based on whether we need to add an extra vBoxHeight to account for in-laws)
-        let kidsVBoxHeight = vBoxHeight * (1.0 + 1.0 * SuperBigFamView.displayINLAWS);
-        if (thisDnum == numD - 1) {
+        let inLawExtraHeight = SuperBigFamView.displayINLAWS;
+        if (inLawExtraHeight > 0) {
+            inLawExtraHeight = extraHeightForInLawsForThisChild(thisLeaf.Chunk);
+            // console.log(
+            //     "Looking for proper height for inlaw-able chunks labelled ",
+            //     thisLeaf.Chunk,
+            //     "for children of",
+            //     thisLeaf,
+            //     "==>",
+            //     inLawExtraHeight
+            // );
+        }
+        let kidsVBoxHeight = vBoxHeight * (1.0 + 1.0 * inLawExtraHeight);
+        if (thisDnum == numD - 1 ) { // was numD - 1
             kidsVBoxHeight = vBoxHeight;
         }
 
-        if (thisCnum > -1 && thisCnum == numC - 2) {
+        if (thisCnum > -1 && thisCnum == numC - 2) { // was numC - 2
             kidsVBoxHeight = vBoxHeight;
         }
         // PLAN TO COMPLETELY POSITION the person represented by CODE, plus all their spouses and descendants,
