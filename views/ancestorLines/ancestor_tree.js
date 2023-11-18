@@ -60,6 +60,14 @@ export class AncestorTree {
             withBios
         );
         if (!resultByKey) return [AncestorTree.root, performance.now() - starttime];
+        const status = resultByKey[wtId]?.status;
+        if (typeof status != "undefined" && status != "") {
+            wtViewRegistry.showWarning(
+                `Unexpected response from WikiTree server: "${status}".` +
+                    (status.includes("permission denied") ? " The requested ID might be private." : "")
+            );
+            return [AncestorTree.root, performance.now() - starttime];
+        }
         const rootId = resultByKey[wtId].Id;
 
         remainingDepth -= reqDepth;

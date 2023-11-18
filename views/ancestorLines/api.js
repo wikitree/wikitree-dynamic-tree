@@ -4,9 +4,11 @@ export class API {
     static GET_PERSON_LIMIT = 1000;
     static PRIMARY_FIELDS = [
         "BirthDate",
+        "BirthDateDecade",
         "BirthLocation",
         "DataStatus",
         "DeathDate",
+        "DeathDateDecade",
         "DeathLocation",
         "Derived.BirthName",
         "Derived.BirthNamePrivate",
@@ -26,11 +28,12 @@ export class API {
         "NoChildren",
         // "Photo",
         "Prefix",
+        "Privacy",
         "RealName",
         "Suffix",
     ];
 
-    static FOR_BIO_CHECK = ["Bio", "BirthDateDecade", "DeathDateDecade", "IsMember", "Manager", "Privacy"];
+    static FOR_BIO_CHECK = ["Bio", "IsMember", "Manager"];
 
     static async getPeople(ids, ancestors = 0, start = 0, limit = API.GET_PERSON_LIMIT, withBios = false) {
         const fields = withBios ? API.PRIMARY_FIELDS.concat(API.FOR_BIO_CHECK) : API.PRIMARY_FIELDS;

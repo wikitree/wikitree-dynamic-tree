@@ -259,6 +259,8 @@ export function showTree(
         const maxYear = +AncestorTree.root.getBirthYear() || +new Date().getFullYear();
         const ageSpan = maxYear - AncestorTree.minBirthYear;
         const birthScale = document.getElementById("birthScale").checked;
+        const privatise = document.getElementById("privatise").checked;
+        const anonLiving = document.getElementById("anonLiving").checked;
         nodes.forEach(function (d) {
             if (birthScale) {
                 const bYear = +d.data.getBirthYear();
@@ -302,7 +304,7 @@ export function showTree(
             .on("click", toggleChildren)
             .append("title")
             .text(function (d) {
-                return `${birthString(d.data)}\n${deathString(d.data)}`;
+                return birthAndDeathData(d.data);
             });
 
         // Flag duplicate nodes with coloured square
@@ -318,14 +320,17 @@ export function showTree(
             .on("click", toggleDuplicate)
             .append("title")
             .text(function (d) {
-                return `${birthString(d.data)}\n${deathString(d.data)}`;
+                return birthAndDeathData(d.data);
             });
 
         // Add labels for the nodes
         nodeEnter
             .append("a")
             .attr("xlink:href", function (d) {
-                return "https://www.wikitree.com/wiki/" + d.data.getWtId();
+                const wtId = d.data.getWtId();
+                return typeof wtId == "undefined"
+                    ? "https://www.wikitree.com/wiki/Help:Privacy"
+                    : `https://www.wikitree.com/wiki/${wtId}`;
             })
             .attr("target", "_blank")
             .append("text")
@@ -338,15 +343,33 @@ export function showTree(
             })
             .attr("wtId", (d) => d.data.getId())
             .text(function (d) {
-                return d.data.getDisplayName();
+                const p = d.data;
+                if (anonLiving && p.isLiving()) {
+                    return "Living";
+                }
+                if (privatise) {
+                    if (p.isUnlisted()) return "Private";
+                    if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
+                }
+                return p.getDisplayName() || "Private";
             })
             .style("fill", (d) => {
                 return d.data.isBrickWall() ? brickWallColour : "inherit";
             })
             .append("title")
             .text(function (d) {
-                return `${birthString(d.data)}\n${deathString(d.data)}`;
+                return birthAndDeathData(d.data);
             });
+
+        function birthAndDeathData(person) {
+            if ((anonLiving && person.isLiving()) || (privatise && person.isUnlisted())) {
+                return "This information is private.";
+            }
+            if (privatise && person.isPrivate()) {
+                return `${birthString(person, privatise)}\n${deathString(person, privatise)}`;
+            }
+            return `${birthString(person)}\n${deathString(person)}`;
+        }
 
         // UPDATE
         const nodeUpdate = nodeEnter.merge(node);
@@ -676,11 +699,12 @@ export const ColourArray = [
 /**
  * Generate text that display when and where the person was born
  */
-function birthString(person) {
-    const date = humanDate(person.getBirthDate());
-    const place = person.getBirthLocation();
+function birthString(person, privatise = false) {
+    const bDate = person.getBirthDate();
+    const date = privatise || !bDate ? person.getBirthDecade() : humanDate(bDate);
+    const place = privatise ? "an undisclosed place" : person.getBirthLocation();
     return `Born: ${date ? `${datePrefix(person._data.DataStatus?.BirthDate)}${date}` : "[date unknown]"} ${
-        place ? `in ${place}` : "[location unknown]"
+        place ? `in ${place}` : "[location not provided]"
     }.`;
 }
 
@@ -708,14 +732,15 @@ function datePrefix(dateStatus) {
 /**
  * Generate text that display when and where the person died
  */
-function deathString(person) {
-    const date = humanDate(person.getDeathDate());
-    const place = person.getDeathLocation();
+function deathString(person, privatise = false) {
     if (person.isLiving()) {
         return "Still living";
     }
+    const dDate = person.getDeathDate();
+    const date = privatise || !dDate ? person.getDeathDecade() : humanDate(dDate);
+    const place = privatise ? "an undisclosed place" : person.getDeathLocation();
     return `Died: ${date ? `${datePrefix(person._data.DataStatus?.DeathDate)}${date}` : "[date unknown]"} ${
-        place ? `in ${place}` : "[location unknown]"
+        place ? `in ${place}` : "[location not provided]"
     }.`;
 }
 
