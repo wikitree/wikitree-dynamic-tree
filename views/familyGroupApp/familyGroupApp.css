@@ -577,7 +577,8 @@ body.app header {
   border: 0;
   position: absolute;
   top: 0.2em;
-  right: 0.4em;
+  right: 0.5em;
+  cursor: pointer;
 }
 
 #fgsOptionsButton.active,
@@ -600,13 +601,13 @@ body.app header {
   background-color: #fff2b0;
 }
 
-#view-container.familyGroupApp .roleRow[data-gender="M"],
-#view-container.familyGroupApp .roleRow[data-gender="M"] th {
+#view-container.familyGroupApp .roleRow[data-gender="Male"],
+#view-container.familyGroupApp .roleRow[data-gender="Male"] th {
   background-color: #eef;
 }
 
-#view-container.familyGroupApp .roleRow[data-gender="F"],
-#view-container.familyGroupApp .roleRow[data-gender="F"] th {
+#view-container.familyGroupApp .roleRow[data-gender="Female"],
+#view-container.familyGroupApp .roleRow[data-gender="Female"] th {
   background-color: #fee;
 }
 

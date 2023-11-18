@@ -14,9 +14,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.colorRules = `#view-container.familyGroupApp #familySheetFormTable tr,
         #view-container.familyGroupApp #familySheetFormTable caption,
         .roleRow[data-gender],
-        .roleRow[data-gender] th  {
+        .roleRow[data-gender] th,
+        #view-container.familyGroupApp tr.marriedRow  {
             background-color: #fff !important;
-        }
+        } 
         `;
         this.showBaptismRules = `#view-container.familyGroupApp tr.baptismRow,
         #view-container.familyGroupApp #baptChrist {
@@ -259,12 +260,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.$container.on("change.fgs", "input[type=radio][name=showGender]", () => this.setShowGender());
 
         // Delegated click.fgs event listeners for options and information panels
-        this.$body.on("click.fgs", "#fgsInfo, #fgsNotesButton", function () {
+        this.$body.on("click.fgs", "#fgsNotesButton", function () {
             $("#fgsInfo").toggle();
             $("#fgsNotesButton").toggleClass("active");
         });
-        this.$body.on("click.fgs", "#fgsOptions x, #fgsOptionsButton", function () {
+        this.$body.on("click.fgs", "#fgsInfo", function () {
+            $("#fgsInfo").slideUp();
+            $("#fgsNotesButton").toggleClass("active");
+        });
+        this.$body.on("click.fgs", "#fgsOptionsButton", function () {
             $("#fgsOptions").toggle();
+            $("#fgsOptionsButton").toggleClass("active");
+        });
+        this.$body.on("click.fgs", "#fgsOptions x", function () {
+            $("#fgsOptions").slideUp();
             $("#fgsOptionsButton").toggleClass("active");
         });
 
@@ -291,6 +300,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         this.$container.on("change.fgs", "#husbandFirst", (e) => {
             const $this = $(e.currentTarget);
+            /*
             const husbandID = $("tr.roleRow[data-role='Husband']").attr("data-name");
             const husbandCitations = $("#citationList li[data-wtid='" + this.htmlEntities(husbandID) + "']");
             const husbandNameCaption = $(
@@ -303,7 +313,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 ).parent();
             }
 
-            const clonedMarriage = $(".marriedRow").eq(0);
             if ($this.prop("checked") == true) {
                 $("div.tableContainer.wife").insertAfter($("div.tableContainer.husband"));
                 $(".marriedRow").eq(0).appendTo($("div.tableContainer.husband tbody"));
@@ -330,36 +339,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             if ($(".marriedRow").eq(1).length) {
                 $(".marriedRow").eq(1).remove();
             }
-            // $(".marriedRow").remove();
-            //clonedMarriage.appendTo($("div.tableContainer").eq(0).find("tbody"));
+            */
+
+            this.manageRoleOrder();
 
             this.storeVal($this);
 
             $(".theBio").find("tr.marriedRow").remove();
         });
 
-        /*
-        this.$container.on("change.fgs", "#husbandFirst", (e) => {
-            const husbandFirstChecked = $(e.currentTarget).prop("checked");
-            const husbandContainer = $("div.tableContainer.Husband");
-            const wifeContainer = $("div.tableContainer.Wife");
-            const marriedRow = $(".marriedRow").eq(0).clone(); // Cloning to avoid duplication or loss
-
-            // Clear any existing married rows to prevent duplicates
-            $(".marriedRow").remove();
-
-            // Determine the correct order and append the married row appropriately
-            if (husbandFirstChecked) {
-                // Husband first, append married row to husband's table
-                marriedRow.appendTo(husbandContainer.find("tbody"));
-                husbandContainer.insertAfter(wifeContainer); // Ensure husband is first
-            } else {
-                // Wife first, append married row to wife's table
-                marriedRow.appendTo(wifeContainer.find("tbody"));
-                wifeContainer.insertAfter(husbandContainer); // Ensure wife is first
-            }
-        });
-*/
         if ($(".nicknames").length == 0) {
             $(".showNicknamesSpan").hide();
         }
@@ -467,6 +455,43 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
+    manageRoleOrder() {
+        const $this = $("#husbandFirst");
+        const husbandID = $("tr.roleRow[data-role='Husband']").attr("data-name");
+        const husbandCitations = $("#citationList li[data-wtid='" + this.htmlEntities(husbandID) + "']");
+        const husbandNameCaption = $("caption span.fsWTID:contains('" + this.htmlEntities(husbandID) + "')").parent();
+        let wifeNameCaption;
+        if (this.people[0].Name != husbandID) {
+            wifeNameCaption = $(
+                "caption span.fsWTID:contains('" + this.htmlEntities(this.people[0].Name) + "')"
+            ).parent();
+        }
+
+        if ($this.prop("checked") == true) {
+            $("div.tableContainer.wife").insertAfter($("div.tableContainer.husband"));
+            $(".marriedRow").eq(0).appendTo($("div.tableContainer.husband tbody"));
+
+            husbandCitations.prependTo($("#citationList"));
+            husbandNameCaption.prependTo($("caption"));
+
+            if (this.people[0].Name != husbandID) {
+                wifeNameCaption.appendTo($("caption"));
+            }
+        } else if (this.people[0].Gender == "Female") {
+            $("div.tableContainer.husband").insertAfter($("div.tableContainer.wife"));
+            $(".marriedRow").eq(0).appendTo($("div.tableContainer.wife tbody"));
+            $("#citationList li[data-wtid='" + this.htmlEntities(this.people[0].Name) + "']").prependTo(
+                $("#citationList")
+            );
+
+            husbandNameCaption.appendTo($("caption"));
+
+            if (this.people[0].Name != husbandID) {
+                wifeNameCaption.prependTo($("caption"));
+            }
+        }
+    }
+
     setStatusChoice(e) {
         const $this = $(e.currentTarget);
         this.storeVal($this);
@@ -504,7 +529,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Here, you'll use 'genderDisplayOption' to determine how to display gender
         // This could involve changing text or classes on gender labels
         // For example:
-        this.$container.find(".genderDisplay").each(function () {
+        this.$container.find(".fsGender").each(function () {
             const $this = $(this);
             switch (genderDisplayOption) {
                 case "initial":
@@ -1306,7 +1331,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if (fsPerson.Name != $("#wtid").val()) {
             roleName = "data-name='" + htmlEntities(fsPerson.Name) + "'";
         }
-        dGender = "";
+
         if (fsPerson.Gender) {
             dGender = fsPerson.Gender;
         }
@@ -1389,7 +1414,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Construct the role row with the additional details
         const roleRow = `
-            <tr data-gender='${dGender}'
+            <tr data-gender='${fsPerson.Gender}'
                 data-name='${escapedName}'
                 title='${escapedName}'
                 data-role='${role}'
@@ -1873,7 +1898,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                 // Append the child table to the DOM
                 if (childTbody.children().length > 0) {
-                    notesAndSources.before(childTable);
+                    this.$container.append(childTable);
                 }
             });
         }
@@ -2343,8 +2368,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 */
     initializePage() {
         // Show or hide 'Tables' label based on the presence of citation tables
+        console.log("checking for citation tables", $(".citationTable"));
         this.toggleDisplay("#showTablesLabel", !!$(".citationTable").length);
 
+        console.log("checking for sources", $(".sourceUL"));
         // Show or hide 'Lists' label based on the presence of source lists
         this.toggleDisplay("#showListsLabel", !!$(".sourceUL").length);
 
@@ -2403,6 +2430,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     makeFamilySheet() {
         console.log(this.people);
         this.researchNotes = [];
+        const isHusbandFirst = $("#husbandFirst").prop("checked");
 
         // Create separate containers for husband and wife
         const husbandContainer = $("<div class='tableContainer husband'><table><tbody></tbody></table></div>");
@@ -2471,7 +2499,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }, 500);
         }
 
-        if (mainRole === "Husband" || $("#husbandFirst").prop("checked")) {
+        if (mainRole === "Husband" || isHusbandFirst) {
             fsTable.after(husbandContainer, wifeContainer);
             $("tr.marriedRow").appendTo($(".tableContainer.husband tbody"));
         } else {
@@ -2486,7 +2514,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             );
         }
 
-        this.checkAndAppendChildren(oChildren);
+        this.checkAndAppendChildren(oChildren).then(() => {
+            this.appendNotesAndSources();
+            this.initializePage();
+        });
 
         $("#tree").slideUp();
 
@@ -2548,7 +2579,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             if (husbandName != "" && wifeName.match(/^\W*?$/) == null) {
                 andText = "&nbsp;and&nbsp;";
             }
-            const coupleText = husbandName + andText + wifeName;
             const husbandNameSpan = $("<span>" + husbandName + "</span>");
             const wifeNameSpan = $("<span>" + wifeName + "</span>");
             const andSpan = $("<span>" + andText + "</span>");
@@ -2562,59 +2592,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
 
             $("#familySheetFormTable caption").append(husbandNameSpan, andSpan, wifeNameSpan);
+            if (!isHusbandFirst) {
+                this.manageRoleOrder();
+            }
 
             const titleText = $("caption").text().replace(/\s+/, " ").trim();
             $("title").text("Family Group: " + titleText);
-
-            const notesAndSources = $("<section id='notesAndSources'></section>");
-            $("<div id='notes'><h2>Research Notes:</h2><div id='notesNotes'></div></div>").appendTo(notesAndSources);
-
-            if (this.researchNotes.length > 0) {
-                this.researchNotes.forEach((rNote) => {
-                    //	console.log(rNote);
-                    if (rNote[2].replace(/[\n\W\s]/, "") != "") {
-                        notesAndSources
-                            .find("#notesNotes")
-                            .append(
-                                $(
-                                    "<a class='sourcesName' href='https://www.wikitree.com/wiki/" +
-                                        rNote[0] +
-                                        "'>" +
-                                        rNote[1] +
-                                        " <span class='fsWTID'>(" +
-                                        rNote[0] +
-                                        ")</span></a>"
-                                )
-                            );
-                        notesAndSources.find("#notesNotes").append($(rNote[2].replaceAll(/<sup.*?<\/sup>/g, "")));
-                    }
-                });
-            }
-
-            let setWidth = 0;
-            if ($("#familySheetFormTable").length) {
-                setWidth = $("#familySheetFormTable")[0].scrollWidth;
-            } else if ($(".tablecontainer.husband table").length) {
-                setWidth = $(".tablecontainer.husband table")[0].scrollWidth;
-            } else {
-                setWidth = $(".tablecontainer.wife table")[0].scrollWidth;
-            }
-
-            $("<div id='sources'><h2>Sources:</h2></div>").appendTo(notesAndSources);
-            notesAndSources.appendTo($(this.$container));
-            notesAndSources.css({ "max-width": setWidth, "width": setWidth });
-            $("#familySheetFormTable").css({ "max-width": setWidth, "min-width": setWidth, "width": setWidth });
-            const mList = $("<ul id='citationList'></ul>");
-
-            this.citationTables = [];
-
-            setTimeout(() => {
-                this.appendReferences(mList);
-            }, 500);
-            // Your existing code for appending to the DOM and other logic
-            const params = new URLSearchParams(window.location.search);
-            $("#sources").append(mList);
-            $("#sources li[data-wtid='" + this.husbandWTID + "']").prependTo($("#sources ul").eq(0));
 
             this.setBaptChrist();
 
@@ -2698,14 +2681,16 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const showGenderVal = $("input[name='showGender']:checked").val();
 
                 $(".fsGender").each(function () {
-                    $this.text("");
+                    const genderBit = $(this);
+                    const theGender = genderBit.closest("tr").data("gender");
+                    genderBit.text("");
 
                     if (showGenderVal === "initial") {
-                        $this.text($this.attr("data-gender").substring(0, 1));
+                        genderBit.text(theGender.substring(0, 1) || "");
                     }
 
                     if (showGenderVal === "word") {
-                        $this.text($this.attr("data-gender"));
+                        genderBit.text(theGender);
                     }
                 });
             });
@@ -2741,10 +2726,59 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             });
 
             // Initialize the page
-            this.initializePage();
+            //   this.initializePage();
 
             // this.sortRoles();
         }
+    }
+
+    appendNotesAndSources() {
+        let setWidth = 0;
+        if ($("#familySheetFormTable").length) {
+            setWidth = $("#familySheetFormTable")[0].scrollWidth;
+        } else if ($(".tablecontainer.husband table").length) {
+            setWidth = $(".tablecontainer.husband table")[0].scrollWidth;
+        } else {
+            setWidth = $(".tablecontainer.wife table")[0].scrollWidth;
+        }
+        const notesAndSources = $("<section id='notesAndSources'></section>");
+        $("<div id='notes'><h2>Research Notes:</h2><div id='notesNotes'></div></div>").appendTo(notesAndSources);
+
+        if (this.researchNotes.length > 0) {
+            this.researchNotes.forEach((rNote) => {
+                //	console.log(rNote);
+                if (rNote[2].replace(/[\n\W\s]/, "") != "") {
+                    notesAndSources
+                        .find("#notesNotes")
+                        .append(
+                            $(
+                                "<a class='sourcesName' href='https://www.wikitree.com/wiki/" +
+                                    rNote[0] +
+                                    "'>" +
+                                    rNote[1] +
+                                    " <span class='fsWTID'>(" +
+                                    rNote[0] +
+                                    ")</span></a>"
+                            )
+                        );
+                    notesAndSources.find("#notesNotes").append($(rNote[2].replaceAll(/<sup.*?<\/sup>/g, "")));
+                }
+            });
+        }
+        $("<div id='sources'><h2>Sources:</h2></div>").appendTo(notesAndSources);
+        notesAndSources.appendTo($(this.$container));
+        notesAndSources.css({ "max-width": setWidth, "width": setWidth });
+        $("#familySheetFormTable").css({ "max-width": setWidth, "min-width": setWidth, "width": setWidth });
+        const mList = $("<ul id='citationList'></ul>");
+
+        this.citationTables = [];
+
+        setTimeout(() => {
+            this.appendReferences(mList);
+        }, 500);
+
+        $("#sources").append(mList);
+        $("#sources li[data-wtid='" + this.husbandWTID + "']").prependTo($("#sources ul").eq(0));
     }
 
     closeInputs() {
@@ -2795,7 +2829,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                 // Update the column heading and label text based on the selected value
                 $("tr.baptismRow td.baptism").text(`${selectedValue}:`);
-                $("#showBaptisedText").text(`Show ${selectedValue}`);
+                $("#showBaptisedText").text(`${selectedValue}`);
             }
         });
     }
