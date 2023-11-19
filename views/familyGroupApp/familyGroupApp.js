@@ -11,7 +11,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.initializeLocalStates(); // Call this method to set initial state
         this.$header = $("header");
         this.$body = $("body");
-        this.colorRules = `#view-container.familyGroupApp #familySheetFormTable tr,
+        this.colorRules = `#view-container.familyGroupApp table.personTable tr,
         #view-container.familyGroupApp #familySheetFormTable caption,
         .roleRow[data-gender],
         .roleRow[data-gender] th,
@@ -24,21 +24,22 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             display: none;
         }
         `;
-        this.showWTIDsRules = `#view-container.familyGroupApp #familySheetFormTable .fsWTID {
+        this.showWTIDsRules = `#view-container.familyGroupApp #familySheetFormTable .fsWTID,
+        #view-container.familyGroupApp table.personTable .fsWTID  {
             display: none;
         }
         `;
-        this.showOtherLastNamesRules = `#view-container.familyGroupApp #familySheetFormTable caption span.otherLastNames,
+        this.showOtherLastNamesRules = `#view-container.familyGroupApp table.personTable caption span.otherLastNames,
         #view-container.familyGroupApp span.otherLastNames {
             display: none;
         }
         `;
-        this.showParentsSpousesDatesRules = `#view-container.familyGroupApp #familySheetFormTable span.parentDates,
-        #view-container.familyGroupApp #familySheetFormTable span.spouseDates {
+        this.showParentsSpousesDatesRules = `#view-container.familyGroupApp table.personTable span.parentDates,
+        #view-container.familyGroupApp table.personTable span.spouseDates {
             display: none;
         }
         `;
-        this.showNicknamesRules = `#view-container.familyGroupApp #familySheetFormTable caption span.nicknames,
+        this.showNicknamesRules = `#view-container.familyGroupApp table.personTable caption span.nicknames,
         #view-container.familyGroupApp span.nicknames {
             display: none;
         }
@@ -211,7 +212,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         this.$container.on("change.fgs", "#dateFormatSelect", (e) => {
             const $this = $(e.currentTarget);
-            const dateFormat = $this.val();
+            const theClass = this;
+            $("[data-date]").each(function () {
+                const $thisThing = $(this);
+                const theDate = $thisThing.attr("data-date");
+                const dateStatus = $thisThing.attr("data-date-status");
+                const newDate = theClass.convertDate(theDate, $this.val(), dateStatus);
+                $thisThing.text(newDate);
+            });
             this.storeVal($this);
         });
 
@@ -520,13 +528,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>nicknames</span></label>
         <label id='husbandFirstLabel'><input type='checkbox' id='husbandFirst'  checked value='1'><span id='husbandFirstSpan'>husband first</span></label>
         <label id='showOtherLastNamesLabel'><input type='checkbox' id='showOtherLastNames'  checked value='1'><span id='showOtherLastNamesSpan'>other last names</span></label>
-        <select id="dateFormatSelect">
-            <option value="sMDY">MMM DD, YYYY (e.g., Nov 24, 1859)</option>
-            <option value="DsMY">DD MMM YYYY (e.g., 24 Nov 1859)</option>
-            <option value="MDY">Month DD, YYYY (e.g., November 24, 1859)</option>
-            <option value="DMY">DD Month YYYY (e.g., 24 November 1859)</option>
-            <option value="YMD">YYYY-MM-DD (e.g., 1859-11-24)</option>
-        </select>    
+ 
         <label><input type='checkbox' id='showBaptism'  checked value='1'><span id='showBaptisedText'>${spell(
             "baptized"
         )}</span></label>
@@ -537,20 +539,25 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <label><input type='checkbox' id='showBurial'  checked value='1'>buried</label>
         <label id='showWTIDsLabel'><input type='checkbox' id='showWTIDs'><span>WikiTree IDs</span></label>
         <label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'><span>parents' and spouses' dates</span></label>
-        
-        <div id='showGenderDiv' class='radios'><span>children's genders:</span> 
-        <label><input type='radio' name='showGender' checked value='initial'>initial</label>
-        <label><input type='radio' name='showGender' value='word'>word</label>
-        <label><input type='radio' name='showGender' value='none'>none</label>
-        </div>
-
         <label id='showTablesLabel'><input type='checkbox' id='showTables'  checked value='1'>tables in 'Sources'</label>
         <label id='showListsLabel'><input type='checkbox' id='showLists'  checked value='1'>lists in 'Sources'</label>
         <label><input type='checkbox' id='useColour' checked value='1'>${spell("color")}</label>
         <label id='toggleBios'><input type='checkbox' id='showBios'><span>all biographies</span></label>
         <label id='includeBiosWhenPrinting'><input type='checkbox' id='includeBios'><span>biographies when printing</span></label>
-        <div id='statusChoice' class='radios'><span class='label'>status</span>:
+        <select id="dateFormatSelect">
+            <option value="sMDY">MMM DD, YYYY (e.g., Nov 24, 1859)</option>
+            <option value="DsMY">DD MMM YYYY (e.g., 24 Nov 1859)</option>
+            <option value="MDY">Month DD, YYYY (e.g., November 24, 1859)</option>
+            <option value="DMY">DD Month YYYY (e.g., 24 November 1859)</option>
+            <option value="YMD">YYYY-MM-DD (e.g., 1859-11-24)</option>
+        </select>   
+        <div id='statusChoice' class='radios'><span class='label'>Date status</span>:
         <label><input type='radio' name='statusChoice' checked value='symbols'>~, &lt;, &gt;</label><label><input type='radio' name='statusChoice' value='abbreviations'>abt., bef., aft.</label>
+        </div>
+        <div id='showGenderDiv' class='radios'><span>children's genders:</span> 
+        <label><input type='radio' name='showGender' checked value='initial'>initial</label>
+        <label><input type='radio' name='showGender' value='word'>word</label>
+        <label><input type='radio' name='showGender' value='none'>none</label>
         </div>
 
         </div>
@@ -585,23 +592,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const replaceStr = replaceMode ? "\n" : "";
         // Includes <br>, <BR>, <br />, </br>
         return str.replace(/<\s*\/?br\s*[\/]?>/gi, replaceStr);
-    }
-
-    capitalizeFirstLetter(string, only = 0) {
-        // only = only change the first letter
-        if (only === 0) {
-            string = string.toLowerCase();
-        }
-        const bits = string.split(" ");
-        let out = "";
-        bits.forEach(function (abit) {
-            out += abit.charAt(0).toUpperCase() + abit.slice(1) + " ";
-        });
-        function replacer(match, p1) {
-            return "-" + p1.toUpperCase();
-        }
-        out = out.replace(/\-([a-z])/, replacer);
-        return out.trim();
     }
 
     htmlEntities(str) {
@@ -989,7 +979,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const decadeMidpoint = fPerson["DeathDateDecade"].slice(0, -2) + 5;
         }
 
-        const fDates = `(${bdStatus}${fbd} - ${ddStatus}${fdd})`;
+        const fDates = `(${bdStatus}${fbd} &ndash; ${ddStatus}${fdd})`;
 
         return fDates;
     }
@@ -1350,16 +1340,18 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     };
 
     formatDateAndCreateRow = (date, place, role, rowType, rowLabel, dateStatus = "") => {
+        console.log("formatDateAndCreateRow: ", date, place, role, rowType, rowLabel, dateStatus);
+
         const settings = this.getSettings();
         const dateFormat = settings.dateFormatSelect;
-        const formattedDate = this.isOK(date) ? convertDate(date, dateFormat, dateStatus) : "";
+        const formattedDate = this.isOK(date) ? this.convertDate(date, dateFormat, dateStatus) : "";
 
         const rowClass = `${role.toLowerCase()} ${rowType}`;
         const dateClass = `${rowType}Date date`;
 
         return `<tr data-role="${role}" class="${rowClass}">
                     <th class="${rowClass}">${rowLabel}:</th>
-                    <td class="${dateClass}" data-date="${date}">${formattedDate}</td>
+                    <td class="${dateClass}" data-date="${date}" data-date-status="${dateStatus}">${formattedDate}</td>
                     <td class="${rowType}Place">${place}</td>
                 </tr>`;
     };
@@ -1378,7 +1370,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     renderMarriageRow = (marriageDate, marriagePlace, role) => {
         const formattedMarriageDate = this.isOK(marriageDate)
-            ? convertDate(marriageDate, this.getSettings().dateFormatSelect)
+            ? this.convertDate(marriageDate, this.getSettings().dateFormatSelect)
             : "";
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
@@ -1388,102 +1380,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return marriageRow;
     };
 
-    /*
-    renderMarriageRow = (marriageDate, marriagePlace, role) => {
-        if (this.isOK(marriageDate) || this.isOK(marriagePlace)) {
-            return this.formatDateAndCreateRow(marriageDate, marriagePlace, role, "marriedRow", "Married");
-        }
-        return "";
-    };
-*/
     renderBurialRow = (burialDate, burialPlace, role) => {
         return this.formatDateAndCreateRow(burialDate, burialPlace, role, "burialRow", "Buried");
     };
-    /*
-    renderMarriageRow = (marriageDate, marriagePlace, role) => {
-        //const formattedMarriageDate = this.isOK(marriageDate) ? this.getDateFormat(marriageDate.split("-")) : "";
-
-        const settings = this.getSettings();
-        const dateFormat = settings.dateFormatSelect;
-        const formattedMarriageDate = this.isOK(marriageDate) ? convertDate(marriageDate, dateFormat) : "";
-
-        const marriageRow =
-            this.isOK(marriageDate) || this.isOK(marriagePlace)
-                ? `<tr class='marriedRow'><th class="${role.toLowerCase()} marriage">Married:</th>
-                <td  class='date marriedDate' data-date="${marriageDate}">${formattedMarriageDate}</td><td>${marriagePlace}</td></tr>`
-                : "";
-        return marriageRow;
-    };
-    */
-
-    /*
-    renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
-        let otherMarriageRow = "";
-
-        // Check if value is OK (not null or undefined)
-        const isOK = (value) => value !== null && value !== undefined;
-
-        if (otherSpouses.length === 0 && fsPerson.Spouse && fsPerson.Spouse.length > 1) {
-            // Log the condition being checked
-            otherSpouses.push(
-                ...fsPerson.Spouse.filter((anoSpouse) => {
-                    const isDifferentSpouse =
-                        anoSpouse.Name !== this.people[0].Name &&
-                        anoSpouse.Name !== mainSpouse.Name &&
-                        anoSpouse.Name !== this.keepSpouse;
-                    return isDifferentSpouse;
-                })
-            );
-        }
-
-        if (otherSpouses.length > 0) {
-            otherSpouses.forEach((oSpouse, index) => {
-                const { marriage_date, marriage_end_date, marriage_location, Name } = oSpouse;
-
-                const formattedMarriageDate = this.isOK(marriage_date)
-                    ? this.getDateFormat(marriage_date.split("-"))
-                    : "";
-                let otherSpouseMarriageDate = this.isOK(marriage_date)
-                    ? `<span class='marriageDate date' data-date="${marriage_date}">${formattedMarriageDate}</span>`
-                    : "";
-
-                const formattedMarriageEndDate = this.isOK(marriage_end_date)
-                    ? this.getDateFormat(marriage_end_date.split("-"))
-                    : "";
-                let otherSpouseMarriageEndDate = this.isOK(marriage_end_date)
-                    ? `<span class='marriageEndDate date' data-date="${marriage_end_date}">&nbsp;- ${formattedMarriageEndDate}</span>`
-                    : "";
-                let otherSpouseName = this.displayName(oSpouse)[0];
-                let otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
-
-                const oSpousesHeadingText =
-                    index === 0 ? (otherSpouses.length > 1 ? "Other Marriages:" : "Other Marriage:") : "";
-
-                otherMarriageRow += `
-                <tr data-person='${htmlEntities(fsPerson.Name)}' data-role='${role}' class='otherMarriageRow'>
-                    <th class='otherMarriageHeading heading'>${oSpousesHeadingText}</th>
-                    <td class='otherMarriageDate'>
-                        <span class='otherSpouseName' data-name='${this.htmlEntities(Name)}'>${otherSpouseName.replace(
-                    /(“.+”)/,
-                    "<span class='nicknames'>$1</span>"
-                )}</span>,
-                        <span class='marriageDate date'>${otherSpouseMarriageDate}</span>${otherSpouseMarriageEndDate}
-                    </td>
-                    <td class='otherMarriagePlace'>${otherSpouseMarriageLocation}</td>
-                </tr>`;
-            });
-        } else {
-            otherMarriageRow = `
-            <tr data-role='${role}' class='otherMarriageRow'>
-                <th class='otherMarriageHeading heading'>Other Marriage:</th>
-                <td class='otherMarriageDate date editable empty' data-date=""></td>
-                <td class='otherMarriagePlace empty editable'></td>
-            </tr>`;
-        }
-
-        return otherMarriageRow;
-    };
-    */
 
     renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
         let otherMarriageRow = "";
@@ -1506,9 +1405,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const settings = this.getSettings();
                 const dateFormat = settings.dateFormatSelect;
 
-                const formattedMarriageDate = this.isOK(marriage_date) ? convertDate(marriage_date, dateFormat) : "";
+                const formattedMarriageDate = this.isOK(marriage_date)
+                    ? this.convertDate(marriage_date, dateFormat)
+                    : "";
                 const formattedMarriageEndDate = this.isOK(marriage_end_date)
-                    ? convertDate(marriage_end_date, dateFormat)
+                    ? this.convertDate(marriage_end_date, dateFormat)
                     : "";
                 const otherSpouseName = this.displayName(oSpouse)[0];
                 const otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
@@ -1524,7 +1425,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     /(“.+”)/,
                     "<span class='nicknames'>$1</span>"
                 )}</span>,
-                        ${formattedMarriageDate}${formattedMarriageEndDate && " - " + formattedMarriageEndDate}
+                        ${formattedMarriageDate}${formattedMarriageEndDate && " &ndash; " + formattedMarriageEndDate}
                     </td>
                     <td class='otherMarriagePlace'>${otherSpouseMarriageLocation}</td>
                 </tr>`;
@@ -1579,11 +1480,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const fsFatherWTID = fsFather ? `<span class='fsWTID'>(${this.htmlEntities(fsFather.Name)})</span>` : "";
             const fsMotherWTID = fsMother ? `<span class='fsWTID'>(${this.htmlEntities(fsMother.Name)})</span>` : "";
 
+            const settings = this.getSettings();
+            const dateFormat = settings.dateFormatSelect;
+
             const fsFatherDates = fsFather
-                ? `<span class='parentDates date'>${this.displayDates(fsFather)}</span>`
+                ? `<span class='parentDates date'>${this.formatParentDates(fsFather, dateFormat)}</span>`
                 : "";
             const fsMotherDates = fsMother
-                ? `<span class='parentDates date'>${this.displayDates(fsMother)}</span>`
+                ? `<span class='parentDates date'>${this.formatParentDates(fsMother, dateFormat)}</span>`
                 : "";
 
             parentsRow = `
@@ -1603,6 +1507,19 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         return parentsRow;
     };
+
+    // Helper function to format parent dates
+    formatParentDates(parent, dateFormat) {
+        const birthDate = this.isOK(parent.BirthDate)
+            ? this.convertDate(parent.BirthDate, dateFormat, parent?.DataStatus?.BirthDate)
+            : "";
+        const deathDate = this.isOK(parent.DeathDate)
+            ? this.convertDate(parent.DeathDate, dateFormat, parent?.DataStatus?.DeathDate)
+            : "";
+
+        return `(<span class="date" data-date="${parent.BirthDate}" data-date-status="${parent?.DataStatus?.BirthDate}">${birthDate}</span> &ndash; <span data-date="${parent.DeathDate}" data-date-status="${parent?.DataStatus?.DeathDate}">${deathDate}</span>)`;
+    }
+
     renderSpouseRow = (fsPerson, role) => {
         let spouseRow = "";
 
@@ -1610,15 +1527,34 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             if (fsPerson.Spouse.length > 0) {
                 fsPerson.Spouse.forEach((fsSp, index) => {
                     const theSpouse = this.displayName(fsSp)[0].replace(/(“.+”)/, "<span class='nicknames'>$1</span>");
+
+                    // Formatting the marriage and end-of-marriage dates
                     let theMarriage = this.isOK(fsSp.marriage_date)
-                        ? `<span class='marriageDate date'>${this.getDateFormat(fsSp.marriage_date.split("-"))}</span>`
+                        ? `<span class='marriageDate date'>${this.convertDate(fsSp.marriage_date, "Y").trim()}</span>`
                         : "";
 
                     let theMarriageEnd = this.isOK(fsSp.marriage_end_date)
-                        ? `<span class='marriageDate date'> - ${this.getDateFormat(
-                              fsSp.marriage_end_date.split("-")
-                          )}</span>`
+                        ? `<span class='marriageDate date'> &ndash; ${this.convertDate(
+                              fsSp.marriage_end_date,
+                              "Y"
+                          ).trim()}</span>`
                         : "";
+
+                    // Formatting the birth and death dates (only years)
+                    let birthYear = fsSp.BirthDate
+                        ? this.convertDate(fsSp.BirthDate, "Y", fsSp?.DataStatus?.BirthDate)
+                        : "";
+                    if (!this.isOK(birthYear)) {
+                        birthYear = fsSp.BirthDateDecade ? fsSp.BirthDateDecade : "";
+                    }
+                    let deathYear = fsSp.DeathDate
+                        ? this.convertDate(fsSp.DeathDate, "Y", fsSp?.DataStatus?.DeathDate)
+                        : "";
+                    if (!this.isOK(deathYear)) {
+                        deathYear = fsSp.DeathDateDecade ? fsSp.DeathDateDecade : "";
+                    }
+
+                    let formattedDates = `(${birthYear.trim()} &ndash; ${deathYear.trim()})`;
 
                     const theSpouseName = `data-name='${this.htmlEntities(fsSp.Name)}'`;
 
@@ -1630,10 +1566,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     }
 
                     spouseRow += `
-                    <tr data-person='${htmlEntities(fsPerson.Name)}' data-role='${role}' class='spouseRow'>
+                    <tr data-person='${this.htmlEntities(fsPerson.Name)}' data-role='${role}' class='spouseRow'>
                         <th class='spouseHeading heading'>${spouseHeading} </th>
                         <td class='spouseName' ${theSpouseName}>${theSpouse} 
-                            <span class='spouseDates date'>${this.displayDates(fsSp)}</span>
+                            <span class='spouseDates date'>${formattedDates}</span>
                         </td>
                         <td class='dateOfMarriage'>
                             <span class='dateOfMarriageHeading heading ${mClass}'>Date of Marriage: </span>
@@ -1656,6 +1592,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         return spouseRow;
     };
+
     renderBioRow = (fsPerson, role) => {
         let bioRow = "";
 
@@ -1762,13 +1699,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         break;
                     // Add additional cases for other checkboxes as needed
                 }
-            } else if (negativeOnes.includes(id)) {
+            } /*else if (negativeOnes.includes(id)) {
                 switch (id) {
                     case "showWTIDs":
                         this.toggleStyle(id, this.showWTIDsRules, false);
                         break;
                 }
-            } else {
+            } */ else {
                 settings[id] = true;
             }
 
@@ -2742,6 +2679,224 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Return the complete family array.
         return familyArr;
     }
+
+    convertDate(dateString, outputFormat, status = "") {
+        console.log("convertDate called with:", dateString, outputFormat, status);
+
+        dateString = dateString.replaceAll(/-00/g, "");
+        // Split the input date string into components
+        if (!dateString) {
+            return "";
+        }
+        let components = dateString.split(/[\s,-]+/);
+
+        // Determine the format of the input date string
+        let inputFormat;
+        if (components.length == 1 && /^\d{4}$/.test(components[0])) {
+            // Year-only format (e.g. "2023")
+            inputFormat = "Y";
+        } else if (
+            components.length == 2 &&
+            /^[A-Za-z]{3}$/.test(components[0]) &&
+            !/^[A-Za-z]{4,}$/.test(components[0])
+        ) {
+            // Short month and year format (e.g. "Jul 2023")
+            inputFormat = "MY";
+        } else if (components.length == 2 && /^[A-Za-z]+/.test(components[0])) {
+            // Long month and year format (e.g. "July 2023")
+            inputFormat = "MDY";
+        } else if (components.length == 3 && /^[A-Za-z]+/.test(components[0])) {
+            // Long month, day, and year format (e.g. "July 23, 2023")
+            inputFormat = "MDY";
+        } else if (
+            components.length == 3 &&
+            /^[A-Za-z]{3}$/.test(components[1]) &&
+            !/^[A-Za-z]{4,}$/.test(components[1])
+        ) {
+            // Short month, day, and year format (e.g. "23 Jul 2023")
+            inputFormat = "DMY";
+        } else if (components.length == 3 && /^[A-Za-z]+/.test(components[1])) {
+            // Day, long month, and year format (e.g. "10 July 1936")
+            inputFormat = "DMY";
+        } else if (components.length == 3 && /^\d{2}$/.test(components[1]) && /^\d{2}$/.test(components[2])) {
+            // ISO format with no day (e.g. "2023-07-23")
+            inputFormat = "ISO";
+        } else if (components.length == 2 && /^\d{4}$/.test(components[0]) && /^\d{2}$/.test(components[1])) {
+            // NEW: Year and month format with no day (e.g. "1910-10")
+            inputFormat = "ISO";
+            components.push("00");
+        } else {
+            // Invalid input format
+            return null;
+        }
+
+        // Convert the input date components to a standard format (YYYY-MM-DD)
+        let year,
+            month = 0,
+            day = 0;
+        try {
+            if (inputFormat == "Y") {
+                year = parseInt(components[0]);
+                outputFormat = "Y";
+            } else if (inputFormat == "MY") {
+                year = parseInt(components[1]);
+                month = this.convertMonth(components[0]);
+                if (!outputFormat) {
+                    outputFormat = "MY";
+                }
+            } else if (inputFormat == "MDY") {
+                year = parseInt(components[components.length - 1]);
+                month = this.convertMonth(components[0]);
+                day = parseInt(components[1]);
+            } else if (inputFormat == "DMY") {
+                year = parseInt(components[2]);
+                month = this.convertMonth(components[1]);
+                day = parseInt(components[0]);
+            } else if (inputFormat == "ISO") {
+                year = parseInt(components[0]);
+                month = parseInt(components[1]);
+                day = parseInt(components[2]);
+            }
+        } catch (err) {
+            console.error("Error during conversion:", err);
+            return null;
+        }
+
+        // Convert the date components to the output format
+        let outputDate;
+
+        const ISOdate = year.toString() + "-" + this.padNumberStart(month || 0) + "-" + this.padNumberStart(day || 0);
+
+        if (outputFormat == "Y") {
+            outputDate = year.toString();
+        } else if (outputFormat == "MY") {
+            outputDate = this.convertMonth(month) + " " + year.toString();
+        } else if (outputFormat == "MDY") {
+            outputDate = this.convertMonth(month, "long") + " " + day + ", " + year.toString();
+        } else if (outputFormat == "DMY") {
+            outputDate = day + " " + this.convertMonth(month, "long") + " " + year.toString();
+        } else if (outputFormat == "sMDY") {
+            outputDate = this.convertMonth(month, "short");
+            if (day !== 0) {
+                outputDate += " " + day + ",";
+            }
+            outputDate += " " + year.toString();
+        } else if (outputFormat == "DsMY") {
+            outputDate = "";
+            if (day !== 0) {
+                outputDate += day + " ";
+            }
+            outputDate += this.convertMonth(month).slice(0, 3) + " " + year.toString();
+        } else if (outputFormat == "YMD" || outputFormat == "ISO") {
+            outputDate = ISOdate;
+        } else {
+            // Invalid output format
+            return null;
+        }
+
+        console.log(status, ISOdate, outputFormat, outputDate);
+        if (status) {
+            let onlyYears = false;
+            if (outputFormat == "Y") {
+                onlyYears = true;
+            }
+            let statusOut = "";
+            try {
+                statusOut = this.dataStatusWord(status, ISOdate, { needOnIn: false, onlyYears: onlyYears });
+            } catch (error) {
+                console.log("dataStatusWord error:", error);
+            }
+            if (["<", ">", "~"].includes(statusOut.trim())) {
+                outputDate = statusOut + outputDate.trim();
+            } else {
+                outputDate = statusOut + " " + outputDate;
+            }
+        }
+        console.log("outputDate:", outputDate);
+
+        outputDate = outputDate.replace(/\s?\b00/, ""); // Remove 00 as a day or month
+        outputDate = outputDate.replace(/([A-Za-z]+) (\d{4})/, "$1 $2"); // Remove comma if there's a month followed directly by a year
+
+        return outputDate;
+    }
+
+    padNumberStart(number) {
+        // Add leading zeros to a single-digit number
+        return (number < 10 ? "0" : "") + number.toString();
+    }
+
+    capitalizeFirstLetter(string) {
+        return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
+    }
+
+    dataStatusWord(status, ISOdate, options = { needOnIn: false, onlyYears: false }) {
+        const needOnIn = options.needOnIn;
+        const onlyYears = options.onlyYears;
+        let day = ISOdate.slice(8, 10);
+        if (day == "00") {
+            day = "";
+        }
+        let statusOut =
+            status == "before"
+                ? "before"
+                : status == "after"
+                ? "after"
+                : status == "guess"
+                ? "about"
+                : status == "certain" || status == "on" || status == undefined || status == ""
+                ? day
+                    ? "on"
+                    : "in"
+                : "";
+
+        const settings = this.getSettings();
+        const thisStatusFormat = settings.dateStatusFormat || "abbreviations";
+
+        if (thisStatusFormat == "abbreviations") {
+            statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
+        } else if (thisStatusFormat == "symbols") {
+            statusOut = statusOut.replace("before", "<").replace("after", ">").replace("about", "~");
+        }
+        if (needOnIn == false && ["on", "in"].includes(statusOut)) {
+            return "";
+        } else {
+            return statusOut;
+        }
+    }
+
+    convertMonth(monthString, outputFormat = "short") {
+        // Convert a month string to a numeric month value
+        var shortNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        var longNames = [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+        ];
+        let index;
+        if (!isNaN(monthString)) {
+            index = monthString - 1;
+            let month = shortNames[index];
+            if (outputFormat == "long") {
+                month = longNames[index];
+            }
+            return this.capitalizeFirstLetter(month);
+        } else {
+            index = shortNames.indexOf(monthString?.toLowerCase());
+            if (index == -1) {
+                index = longNames.indexOf(monthString?.toLowerCase());
+            }
+            return index + 1;
+        }
+    }
 };
 
 // This function returns a promise that resolves when the specified element is added to the DOM
@@ -2980,215 +3135,4 @@ function spell(text) {
             return word;
         })
         .join("");
-}
-
-function convertDate(dateString, outputFormat, status = "") {
-    console.log("convertDate called with:", dateString, outputFormat, status);
-
-    dateString = dateString.replaceAll(/-00/g, "");
-    // Split the input date string into components
-    if (!dateString) {
-        return "";
-    }
-    let components = dateString.split(/[\s,-]+/);
-
-    // Determine the format of the input date string
-    let inputFormat;
-    if (components.length == 1 && /^\d{4}$/.test(components[0])) {
-        // Year-only format (e.g. "2023")
-        inputFormat = "Y";
-    } else if (components.length == 2 && /^[A-Za-z]{3}$/.test(components[0]) && !/^[A-Za-z]{4,}$/.test(components[0])) {
-        // Short month and year format (e.g. "Jul 2023")
-        inputFormat = "MY";
-    } else if (components.length == 2 && /^[A-Za-z]+/.test(components[0])) {
-        // Long month and year format (e.g. "July 2023")
-        inputFormat = "MDY";
-    } else if (components.length == 3 && /^[A-Za-z]+/.test(components[0])) {
-        // Long month, day, and year format (e.g. "July 23, 2023")
-        inputFormat = "MDY";
-    } else if (components.length == 3 && /^[A-Za-z]{3}$/.test(components[1]) && !/^[A-Za-z]{4,}$/.test(components[1])) {
-        // Short month, day, and year format (e.g. "23 Jul 2023")
-        inputFormat = "DMY";
-    } else if (components.length == 3 && /^[A-Za-z]+/.test(components[1])) {
-        // Day, long month, and year format (e.g. "10 July 1936")
-        inputFormat = "DMY";
-    } else if (components.length == 3 && /^\d{2}$/.test(components[1]) && /^\d{2}$/.test(components[2])) {
-        // ISO format with no day (e.g. "2023-07-23")
-        inputFormat = "ISO";
-    } else if (components.length == 2 && /^\d{4}$/.test(components[0]) && /^\d{2}$/.test(components[1])) {
-        // NEW: Year and month format with no day (e.g. "1910-10")
-        inputFormat = "ISO";
-        components.push("00");
-    } else {
-        // Invalid input format
-        return null;
-    }
-
-    // Convert the input date components to a standard format (YYYY-MM-DD)
-    let year,
-        month = 0,
-        day = 0;
-    try {
-        if (inputFormat == "Y") {
-            year = parseInt(components[0]);
-            outputFormat = "Y";
-        } else if (inputFormat == "MY") {
-            year = parseInt(components[1]);
-            month = convertMonth(components[0]);
-            if (!outputFormat) {
-                outputFormat = "MY";
-            }
-        } else if (inputFormat == "MDY") {
-            year = parseInt(components[components.length - 1]);
-            month = convertMonth(components[0]);
-            day = parseInt(components[1]);
-        } else if (inputFormat == "DMY") {
-            year = parseInt(components[2]);
-            month = convertMonth(components[1]);
-            day = parseInt(components[0]);
-        } else if (inputFormat == "ISO") {
-            year = parseInt(components[0]);
-            month = parseInt(components[1]);
-            day = parseInt(components[2]);
-        }
-    } catch (err) {
-        console.error("Error during conversion:", err);
-        return null;
-    }
-
-    // Convert the date components to the output format
-    let outputDate;
-
-    const ISOdate = year.toString() + "-" + padNumberStart(month || 0) + "-" + padNumberStart(day || 0);
-
-    if (outputFormat == "Y") {
-        outputDate = year.toString();
-    } else if (outputFormat == "MY") {
-        outputDate = convertMonth(month) + " " + year.toString();
-    } else if (outputFormat == "MDY") {
-        outputDate = convertMonth(month, "long") + " " + day + ", " + year.toString();
-    } else if (outputFormat == "DMY") {
-        outputDate = day + " " + convertMonth(month, "long") + " " + year.toString();
-    } else if (outputFormat == "sMDY") {
-        outputDate = convertMonth(month, "short");
-        if (day !== 0) {
-            outputDate += " " + day + ",";
-        }
-        outputDate += " " + year.toString();
-    } else if (outputFormat == "DsMY") {
-        outputDate = "";
-        if (day !== 0) {
-            outputDate += day + " ";
-        }
-        outputDate += convertMonth(month).slice(0, 3) + " " + year.toString();
-    } else if (outputFormat == "YMD" || outputFormat == "ISO") {
-        outputDate = ISOdate;
-    } else {
-        // Invalid output format
-        return null;
-    }
-
-    if (status) {
-        let onlyYears = false;
-        if (outputFormat == "Y") {
-            onlyYears = true;
-        }
-        let statusOut = "";
-        try {
-            statusOut = dataStatusWord(status, ISOdate, { needInOn: true, onlyYears: onlyYears });
-            // Check if the statusOut is a symbol, and if so, don't add space
-        } catch (error) {
-            console.log("dataStatusWord error:", error);
-        }
-        if (["<", ">", "~"].includes(statusOut.trim())) {
-            outputDate = statusOut + outputDate.trim();
-        } else {
-            outputDate = statusOut + " " + outputDate;
-        }
-    }
-
-    outputDate = outputDate.replace(/\s?\b00/, ""); // Remove 00 as a day or month
-    outputDate = outputDate.replace(/(\w+),/, "$1"); // Remove comma if there's a month but no day
-    //outputDate = outputDate.replace(/^,/, ""); // Remove random comma at the beginning
-
-    return outputDate;
-}
-
-function convertMonth(monthString, outputFormat = "short") {
-    // Convert a month string to a numeric month value
-    var shortNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-    var longNames = [
-        "january",
-        "february",
-        "march",
-        "april",
-        "may",
-        "june",
-        "july",
-        "august",
-        "september",
-        "october",
-        "november",
-        "december",
-    ];
-    let index;
-    if (!isNaN(monthString)) {
-        index = monthString - 1;
-        let month = shortNames[index];
-        if (outputFormat == "long") {
-            month = longNames[index];
-        }
-        return capitalizeFirstLetter(month);
-    } else {
-        index = shortNames.indexOf(monthString?.toLowerCase());
-        if (index == -1) {
-            index = longNames.indexOf(monthString?.toLowerCase());
-        }
-        return index + 1;
-    }
-}
-
-function padNumberStart(number) {
-    // Add leading zeros to a single-digit number
-    return (number < 10 ? "0" : "") + number.toString();
-}
-
-function capitalizeFirstLetter(string) {
-    return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
-}
-
-function dataStatusWord(status, ISOdate, options = { needOnIn: false, onlyYears: false }) {
-    const needOnIn = options.needOnIn;
-    const onlyYears = options.onlyYears;
-    let day = ISOdate.slice(8, 10);
-    if (day == "00") {
-        day = "";
-    }
-    let statusOut =
-        status == "before"
-            ? "before"
-            : status == "after"
-            ? "after"
-            : status == "guess"
-            ? "about"
-            : status == "certain" || status == "on" || status == undefined || status == ""
-            ? day
-                ? "on"
-                : "in"
-            : "";
-
-    const thisStatusFormat = onlyYears
-        ? window.autoBioOptions?.yearsDateStatusFormat
-        : window.autoBioOptions?.dateStatusFormat || "abbreviations";
-
-    if (thisStatusFormat == "abbreviations") {
-        statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
-    } else if (thisStatusFormat == "symbols") {
-        statusOut = statusOut.replace("before", "<").replace("after", ">").replace("about", "~");
-    }
-    if (needOnIn == false && ["on", "in"].includes(statusOut)) {
-        return "";
-    } else {
-        return statusOut;
-    }
 }

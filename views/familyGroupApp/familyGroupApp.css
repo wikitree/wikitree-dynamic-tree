@@ -1,10 +1,10 @@
 #view-container.familyGroupApp #tree {
   display: block;
-  height: 5em;
+  height: 10em;
   border-radius: 50%;
   border: 3px solid forestgreen;
-  width: 5em;
-  margin: auto;
+  width: 10em;
+  margin: 2em auto;
 }
 
 /* 
@@ -369,7 +369,6 @@ body.app header {
 }
 #view-container.familyGroupApp .fsWTID {
   font-size: small;
-  display: none;
 }
 #view-container.familyGroupApp h1 input {
   z-index: 10000;
@@ -581,7 +580,7 @@ body.app header {
 }
 
 #fgsButtons {
-  display: inline-block;
+  display: block;
   text-align: center;
   margin: auto;
 }
@@ -607,7 +606,7 @@ body.app header {
   border-right: 1px solid black;
 }
 #view-container.familyGroupApp tr.marriedRow {
-  background-color: #fff2b0;
+  background-color: #fdf5cd;
 }
 
 #view-container.familyGroupApp .roleRow[data-gender="Male"],
