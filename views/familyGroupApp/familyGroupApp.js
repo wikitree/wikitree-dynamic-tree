@@ -200,7 +200,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     startIt() {
         this.keepSpouse = "";
-        $("#familySheetFormTable,#tree,#notesAndSources,.tableContainer,#privateQ").remove();
+        $("#familySheetFormTable,#tree,#notesAndSources,#privateQ").remove();
         $("<img id='tree' src='views/familyGroupApp/images/tree.gif'>").appendTo($(this.$container));
         this.getFamily(this.person_id);
     }
@@ -208,6 +208,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     setupEventListeners() {
         this.$body.off("click.fgs change.fgs");
         // Delegated event listeners for checkbox changes
+
+        this.$container.on("change.fgs", "#dateFormatSelect", (e) => {
+            const $this = $(e.currentTarget);
+            const dateFormat = $this.val();
+            this.storeVal($this);
+        });
+
         this.$container.on("change.fgs", "#showBaptism", (e) => {
             // logging
             console.log("checkbox changed");
@@ -278,12 +285,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         // Delegated change.fgs event listener for the long month display setting
-        this.$container.on("change.fgs", "#longMonth", (event) => {
-            const isChecked = $(event.target).is(":checked");
-            $(".date").each((index, element) => {
-                $(element).text(this.monthFormat($(element).text(), isChecked ? "full" : "short"));
-            });
-        });
 
         this.$container.on("click.fgs", ".fsName a, caption a", function (e) {
             e.preventDefault();
@@ -293,53 +294,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const $this = $(e.currentTarget);
             const dTR = $this.closest("tr");
             this.keepSpouse = dTR.attr("data-name") || "";
-
+            localStorage.setItem("familyGroupApp_keepSpouse", this.keepSpouse);
             $("#wt-id-text").val($this.attr("data-name"));
             this.init(this.$container, $this.attr("data-name"));
         });
 
         this.$container.on("change.fgs", "#husbandFirst", (e) => {
             const $this = $(e.currentTarget);
-            /*
-            const husbandID = $("tr.roleRow[data-role='Husband']").attr("data-name");
-            const husbandCitations = $("#citationList li[data-wtid='" + this.htmlEntities(husbandID) + "']");
-            const husbandNameCaption = $(
-                "caption span.fsWTID:contains('" + this.htmlEntities(husbandID) + "')"
-            ).parent();
-            let wifeNameCaption;
-            if (this.people[0].Name != husbandID) {
-                wifeNameCaption = $(
-                    "caption span.fsWTID:contains('" + this.htmlEntities(this.people[0].Name) + "')"
-                ).parent();
-            }
-
-            if ($this.prop("checked") == true) {
-                $("div.tableContainer.wife").insertAfter($("div.tableContainer.husband"));
-                $(".marriedRow").eq(0).appendTo($("div.tableContainer.husband tbody"));
-
-                husbandCitations.prependTo($("#citationList"));
-                husbandNameCaption.prependTo($("caption"));
-
-                if (this.people[0].Name != husbandID) {
-                    wifeNameCaption.appendTo($("caption"));
-                }
-            } else if (this.people[0].Gender == "Female") {
-                $("div.tableContainer.husband").insertAfter($("div.tableContainer.wife"));
-                $(".marriedRow").eq(0).appendTo($("div.tableContainer.wife tbody"));
-                $("#citationList li[data-wtid='" + this.htmlEntities(this.people[0].Name) + "']").prependTo(
-                    $("#citationList")
-                );
-
-                husbandNameCaption.appendTo($("caption"));
-
-                if (this.people[0].Name != husbandID) {
-                    wifeNameCaption.prependTo($("caption"));
-                }
-            }
-            if ($(".marriedRow").eq(1).length) {
-                $(".marriedRow").eq(1).remove();
-            }
-            */
 
             this.manageRoleOrder();
 
@@ -351,18 +312,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if ($(".nicknames").length == 0) {
             $(".showNicknamesSpan").hide();
         }
-
-        this.$container.on("change.fgs", "#longMonth", (e) => {
-            const $this = $(e.currentTarget);
-            this.storeVal($this);
-            let opt = "short";
-            if ($this.prop("checked") == true) {
-                opt = "full";
-            }
-            $(".date").each(() => {
-                $this.text(this.monthFormat($this.text(), opt));
-            });
-        });
 
         this.$container.on("change.fgs", "#showOtherLastNames", (e) => {
             const $this = $(e.currentTarget);
@@ -402,7 +351,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         this.$container.on(
             "click.fgs",
-            ".BaptismDate, .BaptismPlace, .buriedDate, .buriedPlace, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable",
+            ".BaptismDate, .BaptismPlace, .buriedDate, .buriedPlace, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable, .marriedRow td",
             (e) => {
                 const $this = $(e.currentTarget);
                 let theEl = $this;
@@ -428,7 +377,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                     // Event handlers for the input box
                     inputBox.keypress((e) => {
-                        if (e.which === 13) {
+                        if (e.key === "Enter") {
                             // Enter key
                             this.closeInputs();
                         }
@@ -453,6 +402,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 });
             }
         });
+        this.$container.on("click.fgs", ".bioHeading", (e) => {
+            const $this = $(e.currentTarget);
+            $this.next().find(".theBio").toggle();
+        });
     }
 
     manageRoleOrder() {
@@ -468,8 +421,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
 
         if ($this.prop("checked") == true) {
-            $("div.tableContainer.wife").insertAfter($("div.tableContainer.husband"));
-            $(".marriedRow").eq(0).appendTo($("div.tableContainer.husband tbody"));
+            $("table.wife").insertAfter($("table.husband"));
+            $(".marriedRow").eq(0).appendTo($("table.husband tbody"));
 
             husbandCitations.prependTo($("#citationList"));
             husbandNameCaption.prependTo($("caption"));
@@ -478,8 +431,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 wifeNameCaption.appendTo($("caption"));
             }
         } else if (this.people[0].Gender == "Female") {
-            $("div.tableContainer.husband").insertAfter($("div.tableContainer.wife"));
-            $(".marriedRow").eq(0).appendTo($("div.tableContainer.wife tbody"));
+            $("table.husband").insertAfter($("table.wife"));
+            $(".marriedRow").eq(0).appendTo($("table.wife tbody"));
             $("#citationList li[data-wtid='" + this.htmlEntities(this.people[0].Name) + "']").prependTo(
                 $("#citationList")
             );
@@ -519,16 +472,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     setShowGender() {
         // Get the value of the selected radio button for showGender
         const showGenderValue = this.$container.find('input[name="showGender"]:checked').val();
-
-        // Apply this value to change how genders are displayed in your UI
-        // For example, if you're updating text or classes, it might look like this:
         this.updateGenderDisplay(showGenderValue);
     }
 
     updateGenderDisplay(genderDisplayOption) {
-        // Here, you'll use 'genderDisplayOption' to determine how to display gender
-        // This could involve changing text or classes on gender labels
-        // For example:
         this.$container.find(".fsGender").each(function () {
             const $this = $(this);
             switch (genderDisplayOption) {
@@ -549,11 +496,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     toggleBios() {
-        // Assuming you have a checkbox with id 'showBios' to control the visibility of bios
         const shouldShowBios = this.$container.find("#showBios").is(":checked");
-
-        // Toggle the visibility based on the checkbox state
-        // Assuming bios are marked with a specific class in your HTML, e.g., 'bio'
         this.$container.find(".bio").each(function () {
             if (shouldShowBios) {
                 $(this).slideDown();
@@ -577,10 +520,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>nicknames</span></label>
         <label id='husbandFirstLabel'><input type='checkbox' id='husbandFirst'  checked value='1'><span id='husbandFirstSpan'>husband first</span></label>
         <label id='showOtherLastNamesLabel'><input type='checkbox' id='showOtherLastNames'  checked value='1'><span id='showOtherLastNamesSpan'>other last names</span></label>
-                <label><input type='checkbox' id='longMonth' value='1'><span id='longMonthSpan'>full months</span></label>
-        <label><input type='checkbox' id='showBaptism'  checked value='1'><span id='showBaptisedText'>baptized</span></label>
+        <select id="dateFormatSelect">
+            <option value="sMDY">MMM DD, YYYY (e.g., Nov 24, 1859)</option>
+            <option value="DsMY">DD MMM YYYY (e.g., 24 Nov 1859)</option>
+            <option value="MDY">Month DD, YYYY (e.g., November 24, 1859)</option>
+            <option value="DMY">DD Month YYYY (e.g., 24 November 1859)</option>
+            <option value="YMD">YYYY-MM-DD (e.g., 1859-11-24)</option>
+        </select>    
+        <label><input type='checkbox' id='showBaptism'  checked value='1'><span id='showBaptisedText'>${spell(
+            "baptized"
+        )}</span></label>
         <div id='baptChrist' class='radios'>
-        <label><input type='radio' name='baptismChristening' checked value='Baptized'>'Baptized'</label><label><input type='radio' name='baptismChristening' value='Christened'>'Christened'</label></div>
+        <label><input type='radio' name='baptismChristening' checked value='${spell("Baptized")}'>'${spell(
+            "Baptized"
+        )}'</label><label><input type='radio' name='baptismChristening' value='Christened'>'Christened'</label></div>
         <label><input type='checkbox' id='showBurial'  checked value='1'>buried</label>
         <label id='showWTIDsLabel'><input type='checkbox' id='showWTIDs'><span>WikiTree IDs</span></label>
         <label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'><span>parents' and spouses' dates</span></label>
@@ -593,7 +546,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         <label id='showTablesLabel'><input type='checkbox' id='showTables'  checked value='1'>tables in 'Sources'</label>
         <label id='showListsLabel'><input type='checkbox' id='showLists'  checked value='1'>lists in 'Sources'</label>
-        <label><input type='checkbox' id='useColour' checked value='1'>color</label>
+        <label><input type='checkbox' id='useColour' checked value='1'>${spell("color")}</label>
         <label id='toggleBios'><input type='checkbox' id='showBios'><span>all biographies</span></label>
         <label id='includeBiosWhenPrinting'><input type='checkbox' id='includeBios'><span>biographies when printing</span></label>
         <div id='statusChoice' class='radios'><span class='label'>status</span>:
@@ -789,46 +742,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
     }
 
-    getDateFormat(fbds) {
-        let fullDateFormat, fbdsDate, fbd;
-
-        // Retrieve date format from cookies, or use a default
-        const dateFormat = Cookies.get("w_dateFormat") || 0;
-        switch (dateFormat) {
-            case "1":
-                fullDateFormat = "j M Y";
-                break;
-            case "2":
-                fullDateFormat = "F j, Y";
-                break;
-            case "3":
-                fullDateFormat = "j F Y";
-                break;
-            default:
-                fullDateFormat = "M j, Y";
-        }
-
-        // Format date based on the existence of year, month, and day
-        if (fbds[0] !== "00") {
-            fbdsDate = new Date(fbds[0], fbds[1] !== "00" ? parseInt(fbds[1]) - 1 : 0, fbds[2] !== "00" ? fbds[2] : 1);
-            if (fbds[2] !== "00") {
-                // Full date is available
-                fbd = fbdsDate.format(fullDateFormat);
-            } else if (fbds[1] !== "00") {
-                // Only year and month are available
-                fbd = fbdsDate.format(dateFormat > 1 ? "F Y" : "M Y");
-            } else {
-                // Only year is available
-                fbd = fbdsDate.format("Y");
-            }
-        } else {
-            // If year is "00", then default to an empty string or a placeholder
-            fbd = ""; // or some placeholder like "Unknown Date"
-        }
-
-        return fbd;
-    }
-
     bdDatesStatus(person, statusChoice = "symbols") {
         // Define a helper function to get the status
         const getStatus = (dateStatus, abbreviations) => {
@@ -851,6 +764,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     displayFullDates(fPerson, showStatus = true) {
+        const settings = this.getSettings();
+        const dateFormat = settings.dateFormatSelect;
         // Get the date status symbols or abbreviations for birth and death dates
         const [bdStatus, ddStatus] = this.bdDatesStatus(fPerson);
         let fbd = "";
@@ -1003,24 +918,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return !isNaN(parseFloat(n)) && isFinite(n);
     }
 
-    location2ways(locationText) {
-        // Split the location text by commas
-        const alSplit = locationText.split(",");
-
-        // Remove leading and trailing whitespaces from each part
-        const alSplit2 = alSplit.map((string) => string.trim());
-
-        // Join the trimmed parts back into a string
-        const s2b = alSplit2.join(", ");
-
-        // Reverse the order of parts and join them back into a string
-        const b2s = alSplit2.reverse().join(", ");
-
-        return [s2b, b2s];
-    }
-
     getDateFormat(fbds) {
         let fullDateFormat = "j M Y";
+
+        console.log("getDateFormat: ", fbds);
 
         // Retrieve date format setting from cookies
 
@@ -1290,6 +1191,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if (fsPerson.Name == this.people[0].Name) {
             mainPerson = true;
 
+            if (localStorage.getItem("familyGroupApp_keepSpouse")) {
+                this.keepSpouse = localStorage.getItem("familyGroupApp_keepSpouse");
+                localStorage.removeItem("familyGroupApp_keepSpouse");
+            }
             if (fsPerson.Spouse.length) {
                 if (this.keepSpouse) {
                     mainSpouseName = this.keepSpouse;
@@ -1374,8 +1279,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         let marriageRow;
 
         const roleRow = this.renderRoleRow(fsPerson, role);
-        const birthRow = this.renderBirthRow(BirthDate, BirthLocation, role);
-        const deathRow = this.renderDeathRow(DeathDate, DeathLocation, role);
+        const birthRow = this.renderBirthRow(BirthDate, BirthLocation, role, fsPerson?.DataStatus?.BirthDate);
+        const deathRow = this.renderDeathRow(DeathDate, DeathLocation, role, fsPerson?.DataStatus?.DeathDate);
         const baptismRow = this.renderBaptismRow(baptismDate, baptismPlace, role);
 
         if (mainSpouse?.marriage_date || mainSpouse?.marriage_location) {
@@ -1444,39 +1349,74 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return roleRow;
     };
 
-    renderBirthRow = (birthDate, birthPlace, role) => {
-        const birthRow =
-            this.isOK(birthDate) || this.isOK(birthPlace)
-                ? `<tr data-role="${role}" class="${role.toLowerCase()} birth"><td>Born:</td><td>${birthDate}</td><td>${birthPlace}</td></tr>`
-                : "";
-        return birthRow;
+    formatDateAndCreateRow = (date, place, role, rowType, rowLabel, dateStatus = "") => {
+        const settings = this.getSettings();
+        const dateFormat = settings.dateFormatSelect;
+        const formattedDate = this.isOK(date) ? convertDate(date, dateFormat, dateStatus) : "";
+
+        const rowClass = `${role.toLowerCase()} ${rowType}`;
+        const dateClass = `${rowType}Date date`;
+
+        return `<tr data-role="${role}" class="${rowClass}">
+                    <th class="${rowClass}">${rowLabel}:</th>
+                    <td class="${dateClass}" data-date="${date}">${formattedDate}</td>
+                    <td class="${rowType}Place">${place}</td>
+                </tr>`;
     };
 
-    renderDeathRow = (deathDate, deathPlace, role) => {
-        const deathRow =
-            this.isOK(deathDate) || this.isOK(deathPlace)
-                ? `<tr data-role="${role}" class="${role.toLowerCase()} death"><td>Died:</td><td>${deathDate}</td><td>${deathPlace}</td></tr>`
-                : "";
-        return deathRow;
+    renderBirthRow = (birthDate, birthPlace, role, birthDateStatus) => {
+        return this.formatDateAndCreateRow(birthDate, birthPlace, role, "birthRow", "Born", birthDateStatus);
+    };
+
+    renderDeathRow = (deathDate, deathPlace, role, deathDateStatus) => {
+        return this.formatDateAndCreateRow(deathDate, deathPlace, role, "deathRow", "Died", deathDateStatus);
     };
 
     renderBaptismRow = (baptismDate, baptismPlace, role) => {
-        const baptismRow = `<tr data-role="${role}" class='baptismRow'><td class="${role.toLowerCase()} baptism">Baptized:</td><td>${baptismDate}</td><td>${baptismPlace}</td></tr>`;
-        return baptismRow;
+        return this.formatDateAndCreateRow(baptismDate, baptismPlace, role, "baptismRow", spell("Baptized"));
     };
 
     renderMarriageRow = (marriageDate, marriagePlace, role) => {
+        const formattedMarriageDate = this.isOK(marriageDate)
+            ? convertDate(marriageDate, this.getSettings().dateFormatSelect)
+            : "";
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
-                ? `<tr class='marriedRow'><th class="${role.toLowerCase()} marriage">Married:</th><td>${marriageDate}</td><td>${marriagePlace}</td></tr>`
+                ? `<tr class='marriedRow'><th class="${role.toLowerCase()} marriage">Married:</th>
+               <td class='date marriedDate' data-date="${marriageDate}">${formattedMarriageDate}</td><td>${marriagePlace}</td></tr>`
                 : "";
         return marriageRow;
     };
 
-    renderBurialRow = (burialDate, burialPlace, role) => {
-        const burialRow = `<tr data-role="${role}" class="burialRow"><td class="${role.toLowerCase()} burial">Buried:</td><td>${burialDate}</td><td>${burialPlace}</td></tr>`;
-        return burialRow;
+    /*
+    renderMarriageRow = (marriageDate, marriagePlace, role) => {
+        if (this.isOK(marriageDate) || this.isOK(marriagePlace)) {
+            return this.formatDateAndCreateRow(marriageDate, marriagePlace, role, "marriedRow", "Married");
+        }
+        return "";
     };
+*/
+    renderBurialRow = (burialDate, burialPlace, role) => {
+        return this.formatDateAndCreateRow(burialDate, burialPlace, role, "burialRow", "Buried");
+    };
+    /*
+    renderMarriageRow = (marriageDate, marriagePlace, role) => {
+        //const formattedMarriageDate = this.isOK(marriageDate) ? this.getDateFormat(marriageDate.split("-")) : "";
+
+        const settings = this.getSettings();
+        const dateFormat = settings.dateFormatSelect;
+        const formattedMarriageDate = this.isOK(marriageDate) ? convertDate(marriageDate, dateFormat) : "";
+
+        const marriageRow =
+            this.isOK(marriageDate) || this.isOK(marriagePlace)
+                ? `<tr class='marriedRow'><th class="${role.toLowerCase()} marriage">Married:</th>
+                <td  class='date marriedDate' data-date="${marriageDate}">${formattedMarriageDate}</td><td>${marriagePlace}</td></tr>`
+                : "";
+        return marriageRow;
+    };
+    */
+
+    /*
     renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
         let otherMarriageRow = "";
 
@@ -1499,13 +1439,19 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if (otherSpouses.length > 0) {
             otherSpouses.forEach((oSpouse, index) => {
                 const { marriage_date, marriage_end_date, marriage_location, Name } = oSpouse;
+
+                const formattedMarriageDate = this.isOK(marriage_date)
+                    ? this.getDateFormat(marriage_date.split("-"))
+                    : "";
                 let otherSpouseMarriageDate = this.isOK(marriage_date)
-                    ? `<span class='marriageDate'>${this.getDateFormat(marriage_date.split("-"))}</span>`
+                    ? `<span class='marriageDate date' data-date="${marriage_date}">${formattedMarriageDate}</span>`
+                    : "";
+
+                const formattedMarriageEndDate = this.isOK(marriage_end_date)
+                    ? this.getDateFormat(marriage_end_date.split("-"))
                     : "";
                 let otherSpouseMarriageEndDate = this.isOK(marriage_end_date)
-                    ? `<span class='marriageEndDate date'>&nbsp;- ${this.getDateFormat(
-                          marriage_end_date.split("-")
-                      )}</span>`
+                    ? `<span class='marriageEndDate date' data-date="${marriage_end_date}">&nbsp;- ${formattedMarriageEndDate}</span>`
                     : "";
                 let otherSpouseName = this.displayName(oSpouse)[0];
                 let otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
@@ -1530,7 +1476,64 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             otherMarriageRow = `
             <tr data-role='${role}' class='otherMarriageRow'>
                 <th class='otherMarriageHeading heading'>Other Marriage:</th>
-                <td class='otherMarriageDate date editable empty'></td>
+                <td class='otherMarriageDate date editable empty' data-date=""></td>
+                <td class='otherMarriagePlace empty editable'></td>
+            </tr>`;
+        }
+
+        return otherMarriageRow;
+    };
+    */
+
+    renderOtherMarriageRow = (fsPerson, mainSpouse, otherSpouses, role) => {
+        let otherMarriageRow = "";
+
+        if (otherSpouses.length === 0 && fsPerson.Spouse && fsPerson.Spouse.length > 1) {
+            otherSpouses.push(
+                ...fsPerson.Spouse.filter((anoSpouse) => {
+                    return (
+                        anoSpouse.Name !== this.people[0].Name &&
+                        anoSpouse.Name !== mainSpouse.Name &&
+                        anoSpouse.Name !== this.keepSpouse
+                    );
+                })
+            );
+        }
+
+        if (otherSpouses.length > 0) {
+            otherSpouses.forEach((oSpouse, index) => {
+                const { marriage_date, marriage_end_date, marriage_location, Name } = oSpouse;
+                const settings = this.getSettings();
+                const dateFormat = settings.dateFormatSelect;
+
+                const formattedMarriageDate = this.isOK(marriage_date) ? convertDate(marriage_date, dateFormat) : "";
+                const formattedMarriageEndDate = this.isOK(marriage_end_date)
+                    ? convertDate(marriage_end_date, dateFormat)
+                    : "";
+                const otherSpouseName = this.displayName(oSpouse)[0];
+                const otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
+
+                const oSpousesHeadingText =
+                    index === 0 ? (otherSpouses.length > 1 ? "Other Marriages:" : "Other Marriage:") : "";
+
+                otherMarriageRow += `
+                <tr data-person='${htmlEntities(fsPerson.Name)}' data-role='${role}' class='otherMarriageRow'>
+                    <th class='otherMarriageHeading heading'>${oSpousesHeadingText}</th>
+                    <td class='otherMarriageDate'>
+                        <span class='otherSpouseName' data-name='${this.htmlEntities(Name)}'>${otherSpouseName.replace(
+                    /(“.+”)/,
+                    "<span class='nicknames'>$1</span>"
+                )}</span>,
+                        ${formattedMarriageDate}${formattedMarriageEndDate && " - " + formattedMarriageEndDate}
+                    </td>
+                    <td class='otherMarriagePlace'>${otherSpouseMarriageLocation}</td>
+                </tr>`;
+            });
+        } else {
+            otherMarriageRow = `
+            <tr data-role='${role}' class='otherMarriageRow'>
+                <th class='otherMarriageHeading heading'>Other Marriage:</th>
+                <td class='otherMarriageDate date editable empty' data-date=""></td>
                 <td class='otherMarriagePlace empty editable'></td>
             </tr>`;
         }
@@ -1663,7 +1666,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             // Handle research notes if they exist
             const rNotesSplit = mainBio.split(/<h2.*?research note.*?h2>/i);
             if (rNotesSplit[1]) {
-                this.researchNotes.push([fsPerson.Name, this.displayName(fsPerson)[0], rNotesSplit[1]]);
+                this.researchNotes.push({
+                    name: fsPerson.Name,
+                    displayName: this.displayName(fsPerson)[0],
+                    researchNotes: rNotesSplit[1],
+                });
             }
             mainBio = rNotesSplit[0];
 
@@ -1689,26 +1696,28 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     storeVal(jq) {
         const id = jq.attr("id");
-        const type = jq.attr("type");
-        const name = jq.attr("name");
+        const tagName = jq.prop("tagName").toLowerCase();
 
         // Retrieve the storage object if it exists
         const settings = this.getSettings();
 
-        // Handle checkboxes
-        if (type === "checkbox") {
-            const isChecked = jq.prop("checked");
-            settings[id] = isChecked; // Use boolean value directly
+        if (tagName === "input") {
+            const type = jq.attr("type");
+
+            // Handle checkboxes
+            if (type === "checkbox") {
+                settings[id] = jq.prop("checked");
+            }
+            // Handle radio buttons
+            else if (type === "radio") {
+                settings[id] = jq.val();
+            }
         }
-        // Handle radio buttons
-        else if (type === "radio") {
-            $("input[name='" + name + "']").each(function () {
-                const radio = $(this);
-                if (radio.prop("checked")) {
-                    settings[name] = radio.val();
-                }
-            });
+        // Handle select boxes
+        else if (tagName === "select") {
+            settings[id] = jq.val();
         }
+
         this.setSettings(settings);
     }
 
@@ -1776,6 +1785,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 radio.prop("checked", true).change();
             }
         });
+
+        // Handle select boxes
+        $("#fgsOptions select").each(function () {
+            const select = $(this);
+            const id = select.attr("id");
+
+            // Check if the storage object has a value for this select box and update it
+            if (settings.hasOwnProperty(id)) {
+                select.val(settings[id]);
+            }
+        });
     }
 
     privateQ() {
@@ -1786,68 +1806,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     isLeapYear(year) {
         return year % 100 === 0 ? year % 400 === 0 : year % 4 === 0;
     }
-    /*
-    async checkAndAppendChildren(oChildren) {
-        const childRows = [];
-        if (oChildren.length > 0) {
-            this.people[0].Child.forEach((aChild, index) => {
-                const childTable = $("<table class='childTable'>></table>");
-
-                this.people.forEach((cPerson) => {
-                    // Initialize husband and wife if undefined
-                    this.husband = this.husband || 0;
-                    this.wife = this.wife || 0;
-
-                    // Check for matching child and parent relationship
-                    if (
-                        cPerson.Name === aChild.Name &&
-                        ((cPerson.Father === this.husband && cPerson.Mother === this.wife) ||
-                            (!this.husband && cPerson.Mother === this.wife) ||
-                            (this.husband === cPerson.Father && !this.wife))
-                    ) {
-                        // Check if child is already processed
-                        if (!this.doneKids.includes(aChild.Name)) {
-                            const theChildRow = this.familySheetPerson(cPerson, this.ordinal(index + 1) + " Child");
-                            childRows.push(theChildRow);
-                            this.doneKids.push(cPerson.Name);
-                        }
-                    }
-                });
-            });
-            const table = await waitForElement("#familySheetFormTable");
-            const tbody = table.querySelector("tbody");
-
-            // Append child rows
-            if (childRows.length > 0) {
-                return new Promise((resolve) => {
-                    //  const $tbody = $("#familySheetFormTable > tbody");
-                    childRows.forEach((aRow, index) => {
-                        childTbody.append($(aRow));
-                        // Check if it's the last row being appended
-                        if (index === childRows.length - 1) {
-                            // Allow the browser to render the appended elements
-                            setTimeout(() => {
-                                resolve();
-                            }, 0);
-                        }
-                    });
-                    table.after(childTable);
-                });
-            } else {
-                // If there are no child rows, resolve the promise immediately
-                return Promise.resolve();
-            }
-
-            // Now that children are appended, you can perform any additional actions
-        }
-    }
-*/
 
     async checkAndAppendChildren(oChildren) {
         if (oChildren.length > 0) {
             // Wait for the main family sheet table to be available
             await waitForElement("#familySheetFormTable");
-            const notesAndSources = $("#notesAndSources");
             const mainTable = $("#familySheetFormTable");
 
             // Get column widths from the main table
@@ -1859,8 +1822,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 .get();
 
             this.people[0].Child.forEach((aChild, index) => {
-                const childTable = $("<div class='tableContainer'><table class='childTable'></table></div>");
-                const childTbody = $("<tbody></tbody>").appendTo(childTable.find("table"));
+                const childTable = $("<table class='childTable personTable'></table>");
+                const childTbody = $("<tbody></tbody>").appendTo(childTable);
 
                 this.people.forEach((cPerson) => {
                     // Initialize husband and wife if undefined
@@ -2152,11 +2115,19 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     getFormattedName(anID) {
+        const clone = $("tr[data-name='" + this.htmlEntities(anID) + "'] .fsName")
+            .eq(0)
+            .clone(true);
+        clone.find(".fsWTID").remove();
+        clone.find(".fsGender").remove();
+        return clone.text().trim();
+        /*
         return $("tr[data-name='" + this.htmlEntities(anID) + "'] .fsName")
             .eq(0)
             .text()
             .replace(/(Female)|(Male)\b/, "")
             .replace(/([a-z])(\)\s)?[MF]\b/, "$1$2");
+            */
     }
 
     getWtidSpan(thisName) {
@@ -2186,37 +2157,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             anLI2.appendTo(aUL);
         }
     }
-
-    /*
-    manageRoleRows() {
-        const husbandRow = $("tr.roleRow[data-role='Husband']");
-        const wifeRow = $("tr.roleRow[data-role='Wife']");
-        const husbandFirstLabel = $("#husbandFirstLabel");
-
-        // Check for undefined Husband and Wife roles and hide labels accordingly
-        if (husbandRow.attr("data-name") === "undefined") {
-            husbandRow.remove();
-            husbandFirstLabel.hide();
-        } else if (wifeRow.attr("data-name") === "undefined") {
-            wifeRow.remove();
-            husbandFirstLabel.hide();
-        } else if (people[0].Gender === "Male") {
-            husbandFirstLabel.hide();
-        } else {
-            husbandFirstLabel.css("display", "inline-block");
-        }
-
-        // Update Wife labels if conditions are met
-        if (wifeRow.attr("data-gender") === "" || husbandRow.length === 0) {
-            updateLabels("Wife");
-        }
-
-        // Update Husband labels if conditions are met
-        if (husbandRow.attr("data-gender") === "" || wifeRow.length === 0) {
-            updateLabels("Husband");
-        }
-    }
-    */
 
     updateLabels(role) {
         const roleRow = $(`tr.roleRow[data-role='${role}']`);
@@ -2278,94 +2218,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return JSON.parse(localStorage.getItem("familyGroupAppSettings")) || {};
     }
 
-    /*
-    sortRoles() {
-        const settings = this.getSettings();
-        console.log("Current settings:", settings);
-
-        let roles = ["Husband", "Wife"];
-
-        if ($("tr.roleRow[data-role='Wife']").attr("data-name") === this.person_id && !settings.husbandFirst) {
-            roles = ["Wife", "Husband"];
-            console.log("Roles swapped to:", roles);
-        }
-
-        if ($("tr[data-gender='Female'][data-role='Husband'],tr[data-gender='Male'][data-role='Wife']").length) {
-            settings.husbandFirst = false;
-            this.setSettings(settings);
-            $("#husbandFirstLabel").hide();
-            console.log("Settings updated for non-traditional roles:", settings);
-        }
-    }
-    */
-
-    /*
-    configureRolesAndLayout() {
-        let roles = ["Husband", "Wife"];
-        console.log("Configuring roles and layout");
-
-        const settings = this.getSettings();
-        console.log("Current settings:", settings);
-
-        if ($("tr.roleRow[data-role='Wife']").attr("data-name") === $("#wtid").val() && settings.husbandFirst !== "1") {
-            roles = ["Wife", "Husband"];
-            console.log("Roles swapped to:", roles);
-        }
-
-        if ($("tr[data-gender='Female'][data-role='Husband'],tr[data-gender='Male'][data-role='Wife']").length) {
-            settings.husbandFirst = 0;
-            this.setSettings(settings);
-            $("#husbandFirstLabel").hide();
-            console.log("Settings updated for non-traditional roles:", settings);
-        }
-
-        for (let i = 1; i < 31; i++) {
-            roles.push(this.ordinal(i) + " Child");
-        }
-        console.log("Roles with children:", roles);
-
-        const divWidth = $("#familySheetFormTable")[0].scrollWidth;
-        const th1Width = $("#familySheetFormTable > thead > tr > th")[0].scrollWidth;
-        const th2Width = $("#familySheetFormTable > thead > tr > th:nth-child(2)")[0].scrollWidth;
-        const th3Width = $("#familySheetFormTable > thead > tr > th:nth-child(3)")[0].scrollWidth;
-
-        console.log(
-            `Table dimensions: divWidth=${divWidth}, th1Width=${th1Width}, th2Width=${th2Width}, th3Width=${th3Width}`
-        );
-
-        this.updateDOMAndOrganizeTable(divWidth, th2Width, th3Width, roles);
-    }
-
-    updateDOMAndOrganizeTable(divWidth, th2Width, th3Width, roles) {
-        console.log("Updating DOM and organizing table for roles:", roles);
-
-        $(
-            `<style id='newDivs'>
-                #familySheetFormTable, .tableContainer, .tableContainer table { width: ${divWidth}px; margin: auto; }
-                .birthHeading, .BirthDate, #familySheetFormTable > thead > tr > th:nth-child(2) { width: ${th2Width}px; max-width: ${th2Width}px; }
-                .BirthPlace { width: ${th3Width - 3}px; }
-            </style>`
-        ).appendTo(this.$container);
-
-        roles.forEach((aRole) => {
-            console.log("Organizing table for role:", aRole);
-
-            const newDiv = $(`<div class='tableContainer ${aRole}'></div>`);
-            const newTable = $("<table></table>");
-            const newTbody = $("<tbody></tbody>");
-            $("#familySheetFormTable > tbody > tr[data-role='" + aRole + "']").appendTo(newTbody);
-
-            if (newTbody.find("tr").length) {
-                newTbody.appendTo(newTable);
-                newTable.appendTo(newDiv);
-                newDiv.insertBefore("#notesAndSources");
-                console.log(`Table organized for role: ${aRole}`);
-            } else {
-                console.log(`No data found for role: ${aRole}`);
-            }
-        });
-    }
-*/
     initializePage() {
         // Show or hide 'Tables' label based on the presence of citation tables
         console.log("checking for citation tables", $(".citationTable"));
@@ -2433,8 +2285,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const isHusbandFirst = $("#husbandFirst").prop("checked");
 
         // Create separate containers for husband and wife
-        const husbandContainer = $("<div class='tableContainer husband'><table><tbody></tbody></table></div>");
-        const wifeContainer = $("<div class='tableContainer wife'><table><tbody></tbody></table></div>");
+        const husbandTable = $("<table class='personTable husband'><tbody></tbody></table>");
+        const wifeTable = $("<table class='personTable wife'><tbody></tbody></table>");
 
         const fsTable = $(
             "<table id='familySheetFormTable'><thead><tr><th></th><th>Name and/or Date</th><th>Place</th></tr></thead><tbody></tbody></table>"
@@ -2471,22 +2323,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         });
 
-        // fsTable.find("> tbody").append($(mainRow));
-
         // Determine if the main person is husband or wife and append the row to the respective container
         if (this.people[0].Gender === "Male") {
-            husbandContainer.find("> table > tbody").append($(mainRow));
+            husbandTable.find("> tbody").append($(mainRow));
         } else {
-            wifeContainer.find("> table > tbody").append($(mainRow));
+            wifeTable.find("> tbody").append($(mainRow));
         }
 
         if (theSpouse) {
             const spouseRow = this.familySheetPerson(theSpouse, spouseRole);
             //    fsTable.find("> tbody").append($(spouseRow));
             if (spouseRole === "Husband") {
-                husbandContainer.find("> table > tbody").append($(spouseRow));
+                husbandTable.find("> tbody").append($(spouseRow));
             } else {
-                wifeContainer.find("> table > tbody").append($(spouseRow));
+                wifeTable.find("> tbody").append($(spouseRow));
             }
         } else {
             console.log("The spouse could not be found: ", matchPerson);
@@ -2500,11 +2350,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
 
         if (mainRole === "Husband" || isHusbandFirst) {
-            fsTable.after(husbandContainer, wifeContainer);
-            $("tr.marriedRow").appendTo($(".tableContainer.husband tbody"));
+            fsTable.after(husbandTable, wifeTable);
+            $("tr.marriedRow").appendTo($("table.husband tbody"));
         } else {
-            fsTable.after(wifeContainer, husbandContainer);
-            $("tr.marriedRow").appendTo($(".tableContainer.wife tbody"));
+            fsTable.after(wifeTable, husbandTable);
+            $("tr.marriedRow").appendTo($("table.wife tbody"));
         }
 
         const oChildren = this.people[0].Child;
@@ -2521,40 +2371,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         $("#tree").slideUp();
 
-        const settings = this.getSettings();
         if (this.people[0].Name == undefined) {
             this.privateQ();
         } else {
-            //$(this.$container).append(fsTable);
-
-            /*
-            if (settings.husbandFirst) {
-                $("tr[data-role='Husband']").prependTo($("#familySheetFormTable > tbody"));
-            }
-            */
-
-            /*
-            let clonedRow = "";
-            $(".marriedRow").each(function () {
-                if ($(this).text() != "Married:") {
-                    clonedRow = $(this); //.clone(true)
-                }
-            });
-            if (clonedRow == "") {
-                clonedRow = $(".marriedRow").eq(0); //.clone(true);
-            }
-
-            if ($("tr.roleRow[data-role='Wife']").attr("data-name") == this.person_id && settings.husbandFirst) {
-                clonedRow.insertBefore($("tr.roleRow[data-role='Husband']"));
-            } else {
-                clonedRow.insertBefore($("tr.roleRow[data-role='Wife']"));
-                if ($("tr[data-role='Husband'].marriedRow").length == 2) {
-                    $("tr[data-role='Husband'].marriedRow").eq(1).remove();
-                }
-                //				$("tr[data-role='Husband'].marriedRow").remove();
-            }
-            */
-
             $("#h1Text").remove();
             let husbandName = "";
             let wifeName = "";
@@ -2601,10 +2420,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             this.setBaptChrist();
 
-            $(".bioHeading").click(function () {
-                $(this).next().find(".theBio").slideToggle();
-            });
-
             /**
              * Toggles the visibility of citation tables based on the state of the "#showTables" checkbox.
              * If the checkbox is checked, citation tables are hidden.
@@ -2616,7 +2431,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
              */
             $("#showTables").change((e) => {
                 const $this = $(e.target);
-                toggleTables();
+                this.toggleTables();
                 this.storeVal($this);
             });
 
@@ -2624,7 +2439,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
              * Updates the state of lists based on checkbox state and stores the state.
              */
             $("#showLists").change((e) => {
-                toggleLists();
+                this.toggleLists();
                 this.storeVal($this);
             });
 
@@ -2640,7 +2455,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     $this.html(newTextarea);
                     newTextarea.focus();
                     newTextarea.on("blur", (ev) => {
-                        const $thisn = $(ev.target);
                         if ($this.val() === "") {
                             $this.parent().remove();
                         } else {
@@ -2724,11 +2538,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     }
                 });
             });
-
-            // Initialize the page
-            //   this.initializePage();
-
-            // this.sortRoles();
         }
     }
 
@@ -2736,10 +2545,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         let setWidth = 0;
         if ($("#familySheetFormTable").length) {
             setWidth = $("#familySheetFormTable")[0].scrollWidth;
-        } else if ($(".tablecontainer.husband table").length) {
-            setWidth = $(".tablecontainer.husband table")[0].scrollWidth;
+        } else if ($("table.husband").length) {
+            setWidth = $("table.husband")[0].scrollWidth;
         } else {
-            setWidth = $(".tablecontainer.wife table")[0].scrollWidth;
+            setWidth = $("table.wife")[0].scrollWidth;
         }
         const notesAndSources = $("<section id='notesAndSources'></section>");
         $("<div id='notes'><h2>Research Notes:</h2><div id='notesNotes'></div></div>").appendTo(notesAndSources);
@@ -2747,59 +2556,66 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         if (this.researchNotes.length > 0) {
             this.researchNotes.forEach((rNote) => {
                 //	console.log(rNote);
-                if (rNote[2].replace(/[\n\W\s]/, "") != "") {
+                if (rNote.researchNotes.replace(/[\n\W\s]/, "") != "") {
                     notesAndSources
                         .find("#notesNotes")
                         .append(
                             $(
-                                "<a class='sourcesName' href='https://www.wikitree.com/wiki/" +
-                                    rNote[0] +
-                                    "'>" +
-                                    rNote[1] +
-                                    " <span class='fsWTID'>(" +
-                                    rNote[0] +
-                                    ")</span></a>"
+                                `<a class='sourcesName' href='https://www.wikitree.com/wiki/${rNote.name}'>${rNote.displayName} <span class='fsWTID'>(${rNote.name})</span></a>`
                             )
                         );
-                    notesAndSources.find("#notesNotes").append($(rNote[2].replaceAll(/<sup.*?<\/sup>/g, "")));
+                    notesAndSources
+                        .find("#notesNotes")
+                        .append($(rNote.researchNotes.replaceAll(/<sup.*?<\/sup>/g, "")));
                 }
             });
         }
         $("<div id='sources'><h2>Sources:</h2></div>").appendTo(notesAndSources);
         notesAndSources.appendTo($(this.$container));
         notesAndSources.css({ "max-width": setWidth, "width": setWidth });
-        $("#familySheetFormTable").css({ "max-width": setWidth, "min-width": setWidth, "width": setWidth });
+        $("#familySheetFormTable").css({ "max-width": setWidth, "width": setWidth });
         const mList = $("<ul id='citationList'></ul>");
 
         this.citationTables = [];
-
-        setTimeout(() => {
-            this.appendReferences(mList);
-        }, 500);
+        this.appendReferences(mList);
 
         $("#sources").append(mList);
         $("#sources li[data-wtid='" + this.husbandWTID + "']").prependTo($("#sources ul").eq(0));
     }
 
     closeInputs() {
-        $(".edit").each((e) => {
-            const $this = $(e.target);
+        console.log("closeInputs called");
+
+        // Set theClass = this to capture the class instance context
+        const theClass = this;
+
+        $(".edit").each(function () {
+            const $this = $(this);
             const isTextarea = $this.prop("tagName") === "TEXTAREA";
             const isCaption = $this.parent().prop("tagName") === "CAPTION";
 
+            console.log("Processing element:", $this, "Is Textarea:", isTextarea, "Is Caption:", isCaption);
+
             let newValue = $this.val();
+            console.log("New value:", newValue);
 
             // Check for unsafe "script" tags
             if (!/script/i.test(newValue)) {
+                console.log("Value is safe. Updating content.");
                 if (isTextarea || isCaption) {
-                    $this.parent().html(this.nl2br(newValue));
+                    $this.parent().html(theClass.nl2br(newValue));
                 } else {
                     $this.parent().text(newValue);
                 }
+            } else {
+                console.log("Unsafe content detected. Not updating.");
             }
 
             $this.remove();
+            console.log("Element removed.");
         });
+
+        console.log("closeInputs completed");
     }
 
     ordinal(i) {
@@ -2831,103 +2647,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 $("tr.baptismRow td.baptism").text(`${selectedValue}:`);
                 $("#showBaptisedText").text(`${selectedValue}`);
             }
-        });
-    }
-    excelOut() {
-        const today = new Date().toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-
-        let fileName;
-
-        // Determine the file name based on the context
-        if ($("#missingParents").length) {
-            fileName = `Missing Parents - ${$("#wtid").val()}`;
-        }
-
-        // Initialize workbook
-        const wb = XLSX.utils.book_new();
-        wb.Props = {
-            Title: fileName,
-            Subject: fileName,
-            Author: "WikiTree",
-            CreatedDate: new Date(),
-        };
-
-        wb.SheetNames.push(fileName);
-
-        const ws_data = [];
-
-        // Populate the worksheet data if the missingParents element is present
-        if ($("#missingParents").length) {
-            const thVals = [
-                "ID",
-                "First Name",
-                "LNAB",
-                "CLN",
-                "Birth Date",
-                "Birth Location",
-                "Death Date",
-                "Death Location",
-                "Missing",
-            ];
-
-            ws_data.push(thVals);
-
-            const rows = $("#peopleList tbody tr");
-            rows.each(function () {
-                if ($(this).css("display") !== "none") {
-                    const rowValues = [
-                        $(this).attr("data-name"),
-                        $(this).attr("data-first-name"),
-                        $(this).attr("data-lnab"),
-                        $(this).attr("data-lnc"),
-                        $(this).attr("data-birth-date"),
-                        $(this).attr("data-birth-location"),
-                        $(this).attr("data-death-date"),
-                        $(this).attr("data-death-location"),
-                        $(this).attr("data-missing"),
-                    ];
-                    ws_data.push(rowValues);
-                }
-            });
-        }
-
-        // Create the worksheet and attach it to the workbook
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        wb.Sheets[fileName] = ws;
-
-        // Convert string to array buffer
-        function s2ab(s) {
-            const buf = new ArrayBuffer(s.length);
-            const view = new Uint8Array(buf);
-            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
-            return buf;
-        }
-
-        $("#downloadLines, .downloadLines").unbind();
-        $("#downloadLines, .downloadLines").click(function () {
-            if ($("#missingParents").length) {
-                const wscols = [
-                    { wch: 15 },
-                    { wch: 15 },
-                    { wch: 15 },
-                    { wch: 15 },
-                    { wch: 10 },
-                    { wch: 30 },
-                    { wch: 10 },
-                    { wch: 30 },
-                    { wch: 10 },
-                ];
-                ws["!cols"] = wscols;
-            }
-
-            const wbout = XLSX.write(wb, { bookType: "xlsx", type: "binary" });
-            saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), `${fileName}.xlsx`);
         });
     }
 
@@ -3040,4 +2759,436 @@ function waitForElement(selector) {
             subtree: true,
         });
     });
+}
+
+function spell(text) {
+    const americanToBritishSpelling = {
+        // A
+        acknowledgment: "acknowledgement",
+        acknowledgments: "acknowledgements",
+        aging: "ageing",
+        analog: "analogue",
+        analyze: "analyse",
+        analyzed: "analysed",
+        analyzes: "analyses",
+        analyzing: "analysing",
+        anglicize: "anglicise",
+        anglicized: "anglicised",
+        anglicizes: "anglicises",
+        anglicizing: "anglicising",
+        anonymize: "anonymise",
+        anonymized: "anonymised",
+        anonymizes: "anonymises",
+        anonymizing: "anonymising",
+        apologize: "apologise",
+        apologized: "apologised",
+        apologizes: "apologises",
+        apologizing: "apologising",
+        arbor: "arbour",
+        arbors: "arbours",
+        ax: "axe",
+
+        // B
+        baptize: "baptise",
+        baptized: "baptised",
+        baptizes: "baptises",
+        baptizing: "baptising",
+        behavior: "behaviour",
+        behaviors: "behaviours",
+
+        // C
+        catalog: "catalogue",
+        catalogs: "catalogues",
+        center: "centre",
+        centers: "centres",
+        color: "colour",
+        colored: "coloured",
+        colorful: "colourful",
+        colorfully: "colourfully",
+        coloring: "colouring",
+        colors: "colours",
+
+        // D
+        dialog: "dialogue",
+        dialogs: "dialogues",
+        draft: "draught",
+        drafts: "draughts",
+        defense: "defence",
+        defenses: "defences",
+
+        // E
+        enroll: "enrol",
+        enrolled: "enrolled",
+        enrolling: "enrolling",
+        enrollment: "enrolment",
+        enrollments: "enrolments",
+        encyclopedia: "encyclopaedia",
+        encyclopedias: "encyclopaedias",
+        esophagus: "oesophagus",
+        esthetic: "aesthetic",
+
+        // F
+        favor: "favour",
+        favored: "favoured",
+        favoring: "favouring",
+        favors: "favours",
+        fiber: "fibre",
+        fibers: "fibres",
+        fulfill: "fulfil",
+        fulfilled: "fulfilled",
+        fulfilling: "fulfilling",
+        fulfillment: "fulfilment",
+        fulfillments: "fulfilments",
+
+        // G
+        gray: "grey",
+        grays: "greys",
+
+        // H
+        honor: "honour",
+        honored: "honoured",
+        honoring: "honouring",
+        honors: "honours",
+        humor: "humour",
+        humored: "humoured",
+        humoring: "humouring",
+        humors: "humours",
+
+        // I-J
+        inquiry: "enquiry",
+        inquiries: "enquiries",
+        jewelry: "jewellery",
+        judgment: "judgement",
+        judgments: "judgements",
+
+        // L
+        labor: "labour",
+        labors: "labours",
+        license: "licence",
+        licenses: "licences",
+        liter: "litre",
+        liters: "litres",
+        luster: "lustre",
+
+        // M
+        marveled: "marvelled",
+        marveling: "marvelling",
+        meager: "meagre",
+        modeled: "modelled",
+        modeling: "modelling",
+        models: "models",
+        mold: "mould",
+        molds: "moulds",
+        mom: "mum",
+        moms: "mums",
+
+        // N
+        neighbor: "neighbour",
+        neighboring: "neighbouring",
+        neighbors: "neighbours",
+
+        // O
+        organization: "organisation",
+        organizations: "organisations",
+        organize: "organise",
+        organized: "organised",
+        organizes: "organises",
+        organizing: "organising",
+
+        // P
+        personalize: "personalise",
+        personalized: "personalised",
+        personalizes: "personalises",
+        personalizing: "personalising",
+        plow: "plough",
+        plows: "ploughs",
+        practicing: "practising",
+        privatize: "privatise",
+        privatized: "privatised",
+        privatizes: "privatises",
+        privatizing: "privatising",
+
+        // R
+        realization: "realisation",
+        realizations: "realisations",
+        realize: "realise",
+        realized: "realised",
+        realizes: "realises",
+        realizing: "realising",
+        recognize: "recognise",
+        recognized: "recognised",
+        recognizes: "recognises",
+        recognizing: "recognising",
+        rumor: "rumour",
+        rumors: "rumours",
+
+        // S
+        saber: "sabre",
+        sabers: "sabres",
+        skillful: "skilful",
+        skillfully: "skilfully",
+        somber: "sombre",
+        sulfur: "sulphur",
+
+        // T
+        theater: "theatre",
+        theaters: "theatres",
+
+        // Traveling
+        traveled: "travelled",
+        traveler: "traveller",
+        travelers: "travellers",
+        traveling: "travelling",
+
+        // V
+        valor: "valour",
+        vapor: "vapour",
+        vapors: "vapours",
+
+        // W
+        willful: "wilful",
+        willfully: "wilfully",
+
+        // Add more as needed
+    };
+
+    const userLanguage = navigator.language || navigator.userLanguage;
+    const useBritishEnglish = ["en-GB", "en-AU", "en-NZ", "en-ZA", "en-IE", "en-IN", "en-SG", "en-MT"].includes(
+        userLanguage
+    );
+
+    function matchCase(original, transformed) {
+        if (original === original.toUpperCase()) {
+            return transformed.toUpperCase();
+        }
+        if (original[0] === original[0].toUpperCase()) {
+            return transformed[0].toUpperCase() + transformed.slice(1);
+        }
+        return transformed;
+    }
+
+    return text
+        .split(/\b/)
+        .map((word) => {
+            const lowerCaseWord = word.toLowerCase();
+
+            if (americanToBritishSpelling.hasOwnProperty(lowerCaseWord)) {
+                const converted = americanToBritishSpelling[lowerCaseWord];
+                return useBritishEnglish ? matchCase(word, converted) : word;
+            }
+
+            return word;
+        })
+        .join("");
+}
+
+function convertDate(dateString, outputFormat, status = "") {
+    console.log("convertDate called with:", dateString, outputFormat, status);
+
+    dateString = dateString.replaceAll(/-00/g, "");
+    // Split the input date string into components
+    if (!dateString) {
+        return "";
+    }
+    let components = dateString.split(/[\s,-]+/);
+
+    // Determine the format of the input date string
+    let inputFormat;
+    if (components.length == 1 && /^\d{4}$/.test(components[0])) {
+        // Year-only format (e.g. "2023")
+        inputFormat = "Y";
+    } else if (components.length == 2 && /^[A-Za-z]{3}$/.test(components[0]) && !/^[A-Za-z]{4,}$/.test(components[0])) {
+        // Short month and year format (e.g. "Jul 2023")
+        inputFormat = "MY";
+    } else if (components.length == 2 && /^[A-Za-z]+/.test(components[0])) {
+        // Long month and year format (e.g. "July 2023")
+        inputFormat = "MDY";
+    } else if (components.length == 3 && /^[A-Za-z]+/.test(components[0])) {
+        // Long month, day, and year format (e.g. "July 23, 2023")
+        inputFormat = "MDY";
+    } else if (components.length == 3 && /^[A-Za-z]{3}$/.test(components[1]) && !/^[A-Za-z]{4,}$/.test(components[1])) {
+        // Short month, day, and year format (e.g. "23 Jul 2023")
+        inputFormat = "DMY";
+    } else if (components.length == 3 && /^[A-Za-z]+/.test(components[1])) {
+        // Day, long month, and year format (e.g. "10 July 1936")
+        inputFormat = "DMY";
+    } else if (components.length == 3 && /^\d{2}$/.test(components[1]) && /^\d{2}$/.test(components[2])) {
+        // ISO format with no day (e.g. "2023-07-23")
+        inputFormat = "ISO";
+    } else if (components.length == 2 && /^\d{4}$/.test(components[0]) && /^\d{2}$/.test(components[1])) {
+        // NEW: Year and month format with no day (e.g. "1910-10")
+        inputFormat = "ISO";
+        components.push("00");
+    } else {
+        // Invalid input format
+        return null;
+    }
+
+    // Convert the input date components to a standard format (YYYY-MM-DD)
+    let year,
+        month = 0,
+        day = 0;
+    try {
+        if (inputFormat == "Y") {
+            year = parseInt(components[0]);
+            outputFormat = "Y";
+        } else if (inputFormat == "MY") {
+            year = parseInt(components[1]);
+            month = convertMonth(components[0]);
+            if (!outputFormat) {
+                outputFormat = "MY";
+            }
+        } else if (inputFormat == "MDY") {
+            year = parseInt(components[components.length - 1]);
+            month = convertMonth(components[0]);
+            day = parseInt(components[1]);
+        } else if (inputFormat == "DMY") {
+            year = parseInt(components[2]);
+            month = convertMonth(components[1]);
+            day = parseInt(components[0]);
+        } else if (inputFormat == "ISO") {
+            year = parseInt(components[0]);
+            month = parseInt(components[1]);
+            day = parseInt(components[2]);
+        }
+    } catch (err) {
+        console.error("Error during conversion:", err);
+        return null;
+    }
+
+    // Convert the date components to the output format
+    let outputDate;
+
+    const ISOdate = year.toString() + "-" + padNumberStart(month || 0) + "-" + padNumberStart(day || 0);
+
+    if (outputFormat == "Y") {
+        outputDate = year.toString();
+    } else if (outputFormat == "MY") {
+        outputDate = convertMonth(month) + " " + year.toString();
+    } else if (outputFormat == "MDY") {
+        outputDate = convertMonth(month, "long") + " " + day + ", " + year.toString();
+    } else if (outputFormat == "DMY") {
+        outputDate = day + " " + convertMonth(month, "long") + " " + year.toString();
+    } else if (outputFormat == "sMDY") {
+        outputDate = convertMonth(month, "short");
+        if (day !== 0) {
+            outputDate += " " + day + ",";
+        }
+        outputDate += " " + year.toString();
+    } else if (outputFormat == "DsMY") {
+        outputDate = "";
+        if (day !== 0) {
+            outputDate += day + " ";
+        }
+        outputDate += convertMonth(month).slice(0, 3) + " " + year.toString();
+    } else if (outputFormat == "YMD" || outputFormat == "ISO") {
+        outputDate = ISOdate;
+    } else {
+        // Invalid output format
+        return null;
+    }
+
+    if (status) {
+        let onlyYears = false;
+        if (outputFormat == "Y") {
+            onlyYears = true;
+        }
+        let statusOut = "";
+        try {
+            statusOut = dataStatusWord(status, ISOdate, { needInOn: true, onlyYears: onlyYears });
+            // Check if the statusOut is a symbol, and if so, don't add space
+        } catch (error) {
+            console.log("dataStatusWord error:", error);
+        }
+        if (["<", ">", "~"].includes(statusOut.trim())) {
+            outputDate = statusOut + outputDate.trim();
+        } else {
+            outputDate = statusOut + " " + outputDate;
+        }
+    }
+
+    outputDate = outputDate.replace(/\s?\b00/, ""); // Remove 00 as a day or month
+    outputDate = outputDate.replace(/(\w+),/, "$1"); // Remove comma if there's a month but no day
+    //outputDate = outputDate.replace(/^,/, ""); // Remove random comma at the beginning
+
+    return outputDate;
+}
+
+function convertMonth(monthString, outputFormat = "short") {
+    // Convert a month string to a numeric month value
+    var shortNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    var longNames = [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+    ];
+    let index;
+    if (!isNaN(monthString)) {
+        index = monthString - 1;
+        let month = shortNames[index];
+        if (outputFormat == "long") {
+            month = longNames[index];
+        }
+        return capitalizeFirstLetter(month);
+    } else {
+        index = shortNames.indexOf(monthString?.toLowerCase());
+        if (index == -1) {
+            index = longNames.indexOf(monthString?.toLowerCase());
+        }
+        return index + 1;
+    }
+}
+
+function padNumberStart(number) {
+    // Add leading zeros to a single-digit number
+    return (number < 10 ? "0" : "") + number.toString();
+}
+
+function capitalizeFirstLetter(string) {
+    return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
+}
+
+function dataStatusWord(status, ISOdate, options = { needOnIn: false, onlyYears: false }) {
+    const needOnIn = options.needOnIn;
+    const onlyYears = options.onlyYears;
+    let day = ISOdate.slice(8, 10);
+    if (day == "00") {
+        day = "";
+    }
+    let statusOut =
+        status == "before"
+            ? "before"
+            : status == "after"
+            ? "after"
+            : status == "guess"
+            ? "about"
+            : status == "certain" || status == "on" || status == undefined || status == ""
+            ? day
+                ? "on"
+                : "in"
+            : "";
+
+    const thisStatusFormat = onlyYears
+        ? window.autoBioOptions?.yearsDateStatusFormat
+        : window.autoBioOptions?.dateStatusFormat || "abbreviations";
+
+    if (thisStatusFormat == "abbreviations") {
+        statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
+    } else if (thisStatusFormat == "symbols") {
+        statusOut = statusOut.replace("before", "<").replace("after", ">").replace("about", "~");
+    }
+    if (needOnIn == false && ["on", "in"].includes(statusOut)) {
+        return "";
+    } else {
+        return statusOut;
+    }
 }

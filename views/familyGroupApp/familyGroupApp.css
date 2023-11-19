@@ -47,47 +47,46 @@
   margin-left: 0.5em;
 }
 #view-container.familyGroupApp #familySheetFormTable {
-  min-width: 50em;
   margin-bottom: 0.5em;
   background-color: #fff;
 }
 
 #view-container.familyGroupApp #familySheetFormTable,
-#view-container.familyGroupApp .tableContainer {
+#view-container.familyGroupApp table.personTable {
   text-align: left;
   margin: auto;
 }
-#view-container.familyGroupApp .tableContainer.Child {
+#view-container.familyGroupApp table.childTable.Child {
   margin: 0.5em auto;
 }
 
 #view-container.familyGroupApp #familySheetFormTable th,
 #view-container.familyGroupApp #familySheetFormTable .heading,
-#view-container.familyGroupApp .tableContainer th,
-#view-container.familyGroupApp .tableContainer .heading {
+#view-container.familyGroupApp table.personTable th,
+#view-container.familyGroupApp table.personTable .heading {
   font-weight: bold;
   text-align: left;
 }
 #view-container.familyGroupApp #familySheetFormTable tr.roleRow,
-#view-container.familyGroupApp .tableContainer tr.roleRow,
+#view-container.familyGroupApp table.personTable tr.roleRow,
 #view-container.familyGroupApp tr.marriedRow th {
   font-size: 1.4em;
 }
 #view-container.familyGroupApp #familySheetFormTable,
-#view-container.familyGroupApp .tableContainer table,
+#view-container.familyGroupApp table.personTable,
 #view-container.familyGroupApp .citationTable {
   border-collapse: collapse;
   border-spacing: 0;
 }
 #view-container.familyGroupApp #familySheetFormTable tr.roleRow td,
 #view-container.familyGroupApp #familySheetFormTable tr.roleRow th,
-#view-container.familyGroupApp .tableContainer tr.roleRow td,
-#view-container.familyGroupApp .tableContainer tr.roleRow th {
+#view-container.familyGroupApp table.personTable tr.roleRow td,
+#view-container.familyGroupApp table.personTable tr.roleRow th {
   border-top: 2px solid black;
   padding-top: 5px;
 }
 #view-container.familyGroupApp #familySheetFormTable tr.roleRow .fsGender,
-#view-container.familyGroupApp .tableContainer tr.roleRow .fsGender {
+#view-container.familyGroupApp table.personTable tr.roleRow .fsGender {
   float: right;
   font-size: 0.7em;
   font-weight: 500;
@@ -126,7 +125,7 @@ th.bioHeading {
   visibility: hidden;
 }
 #view-container.familyGroupApp #familySheetFormTable caption,
-#view-container.familyGroupApp .tableContainer caption {
+#view-container.familyGroupApp table.personTable caption {
   font-weight: bold;
   font-size: 1.5em;
   border-top: 2px solid black;
@@ -403,15 +402,16 @@ body.app header {
   display: none;
 }
 
-#view-container.familyGroupApp .tableContainer table.wikitable {
+#view-container.familyGroupApp table.personTable table.wikitable {
   width: auto;
   margin-left: 1em;
 }
-#view-container.familyGroupApp .tableContainer {
+#view-container.familyGroupApp table.personTable {
   margin: 0.5em auto;
 }
-#view-container.familyGroupApp .tableContainer.Wife,
-#view-container.familyGroupApp .tableContainer.Husband {
+
+#view-container.familyGroupApp table.personTable.Wife,
+#view-container.familyGroupApp table.personTable.Husband {
   margin: 0 auto;
 }
 #view-container.familyGroupApp #notesNotes p {
@@ -449,7 +449,7 @@ body.app header {
 }
 
 #view-container.familyGroupApp #familySheetFormTable tr th:first-child,
-.tableContainer tr th:first-child {
+#view-container.familyGroupApp table.personTable tr th:first-child {
   width: 160px;
   max-width: 160px;
 }
@@ -546,7 +546,7 @@ body.app header {
   #view-container.familyGroupApp #citationList > li,
   #view-container.familyGroupApp #sources,
   #view-container.familyGroupApp #familySheetFormTable > tbody,
-  .tableContainer {
+  #view-container.familyGroupApp table.personTable {
     break-inside: avoid-page;
   }
 
@@ -564,9 +564,8 @@ body.app header {
   }
 
   #view-container.familyGroupApp #familySheetFormTable,
-  #view-container.familyGroupApp div.tableContainer,
   #view-container.familyGroupApp #notesAndSources,
-  #view-container.familyGroupApp div.tableContainer table {
+  #view-container.familyGroupApp table.personTable {
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -581,6 +580,16 @@ body.app header {
   cursor: pointer;
 }
 
+#fgsButtons {
+  display: inline-block;
+  text-align: center;
+  margin: auto;
+}
+
+#fgsButtons button {
+  margin: 0.2em 0.5em;
+}
+
 #fgsOptionsButton.active,
 #fgsNotesButton.active {
   background-color: orange;
@@ -591,8 +600,8 @@ body.app header {
 
 #view-container.familyGroupApp tr.marriedRow,
 #view-container.familyGroupApp #familySheetFormTable caption,
-.roleRow[data-gender],
-.roleRow[data-gender] th {
+#view-container.familyGroupApp .roleRow[data-gender],
+#view-container.familyGroupApp .roleRow[data-gender] th {
   background-color: rgb(221, 250, 218);
   border-left: 1px solid black;
   border-right: 1px solid black;
@@ -632,8 +641,13 @@ body.app header {
 #view-container.familyGroupApp table.citationTable {
   width: auto;
 }
-#view-container.familyGroupApp div.tableContainer.husband,
-#view-container.familyGroupApp div.tableContainer.wife {
+
+#view-container.familyGroupApp table.personTable.husband,
+#view-container.familyGroupApp table.personTable.wife {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+#view-container.familyGroupApp #dateFormatSelect {
+  padding: 0.2em 5em 0.2em 0.2em;
 }
