@@ -16,6 +16,7 @@
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
   font-size: 16px;
   background-color: #f7f6f0;
+  min-height: auto;
 }
 #view-container.familyGroupApp caption {
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
@@ -286,6 +287,7 @@ th.bioHeading {
   top: 0;
   left: 0;
   position: relative;
+  background-color: #fff;
 }
 
 #view-container.familyGroupApp #fgsInfo ul {
@@ -593,7 +595,7 @@ body.app header {
 #fgsNotesButton.active {
   background-color: orange;
 }
-#view-container.familyGroupApp #familySheetFormTable .fsWTID {
+#view-container.familyGroupApp .fsWTID {
   display: inline-block;
 }
 
