@@ -45,6 +45,6 @@ export class API {
         if (status != "") {
             console.warn(`getpeople returned status: ${status}`);
         }
-        return [resultByKey, people];
+        return [status, resultByKey, people];
     }
 }

@@ -263,7 +263,7 @@ window.ViewRegistry = class ViewRegistry {
             infoPanel.classList.add("hidden");
             if (wtID) {
                 const status = data[0]["status"];
-                if (status == "Illegal WikiTree ID") {
+                if (["Illegal WikiTree ID", "Invalid user"].includes(status)) {
                     this.showError(`Person not found for WikiTree ID ${wtID}.`);
                 } else {
                     const help = status.toLowerCase().includes("limit exceeded")

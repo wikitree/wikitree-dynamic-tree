@@ -121,10 +121,14 @@ export class AncestorTree {
     static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset, withBios) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
         let starttime = performance.now();
-        const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+        let [status, resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
         let callTime = performance.now() - starttime;
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
         console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
+        if (typeof status != "undefined" && status != "") {
+            wtViewRegistry.showWarning(`Unexpected response from WikiTree server: "${status}".`);
+        }
+
         const notLoaded = new Set();
 
         let nrPrivateIds = 0;
@@ -167,7 +171,7 @@ export class AncestorTree {
                 `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
             );
             starttime = performance.now();
-            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+            [status, , ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
             callTime = performance.now() - starttime;
             profiles = Object.values(ancestor_json);
             console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
