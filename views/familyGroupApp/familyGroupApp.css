@@ -214,7 +214,7 @@ th.bioHeading {
   color: navy;
   font-weight: bold;
 }
-#view-container.familyGroupApp #fgsOptions {
+#view-container.familyGroupApp #fgaOptions {
   width: 80%;
   margin: 1em auto;
   position: relative;
@@ -227,13 +227,13 @@ th.bioHeading {
   border-radius: 1em;
   font-size: 0.8em;
 }
-#view-container.familyGroupApp #fgsOptions h2 {
+#view-container.familyGroupApp #fgaOptions h2 {
   margin: 0.2em;
   font-size: 1em;
   font-weight: bold;
   display: inline-block;
 }
-#view-container.familyGroupApp #fgsOptions .notesHeading {
+#view-container.familyGroupApp #fgaOptions .notesHeading {
   display: none;
 }
 
@@ -241,18 +241,18 @@ th.bioHeading {
   position: relative;
 }
 
-#view-container.familyGroupApp #fgsOptions label {
+#view-container.familyGroupApp #fgaOptions label {
   padding: 0.2em 1em 0.2em 0.2em;
   display: inline-block;
 }
-#view-container.familyGroupApp #fgsOptions div {
+#view-container.familyGroupApp #fgaOptions div {
   display: inline-block;
 }
-#view-container.familyGroupApp #fgsOptions div label {
+#view-container.familyGroupApp #fgaOptions div label {
   border: 0;
 }
 
-#view-container.familyGroupApp #fgsOptions input {
+#view-container.familyGroupApp #fgaOptions input {
   margin-left: 0.5em;
   margin-right: 0.2em;
 }
@@ -274,7 +274,7 @@ th.bioHeading {
   width: 90%;
   height: 4em;
 }
-#view-container.familyGroupApp #fgsInfo {
+#view-container.familyGroupApp #fgaInfo {
   width: 35em;
   margin: 0.5em auto;
   border: 1px solid forestgreen;
@@ -290,7 +290,7 @@ th.bioHeading {
   background-color: #fff;
 }
 
-#view-container.familyGroupApp #fgsInfo ul {
+#view-container.familyGroupApp #fgaInfo ul {
   margin-top: 0.5em;
 }
 #view-container.familyGroupApp .notesHeading {
@@ -386,20 +386,20 @@ body.app header {
 
 /*
 
-#view-container.familyGroupApp #fgsOptions #toggleBios,
-#view-container.familyGroupApp #fgsOptions #includeBiosWhenPrinting,
-#view-container.familyGroupApp #fgsOptions #showListsLabel,
-#view-container.familyGroupApp #fgsOptions #showTablesLabel,
-#view-container.familyGroupApp #fgsOptions #showGenderDiv,
-#view-container.familyGroupApp #fgsOptions #statusChoice,
+#view-container.familyGroupApp #fgaOptions #toggleBios,
+#view-container.familyGroupApp #fgaOptions #includeBiosWhenPrinting,
+#view-container.familyGroupApp #fgaOptions #showListsLabel,
+#view-container.familyGroupApp #fgaOptions #showTablesLabel,
+#view-container.familyGroupApp #fgaOptions #showGenderDiv,
+#view-container.familyGroupApp #fgaOptions #statusChoice,
 #view-container.familyGroupApp #husbandFirstLabel,
-#view-container.familyGroupApp #fgsOptions #showOtherLastNamesLabel {
+#view-container.familyGroupApp #fgaOptions #showOtherLastNamesLabel {
   display: none;
 }
 */
 
 #view-container.familyGroupApp .bioRow .theBio,
-#view-container.familyGroupApp #fgsOptions {
+#view-container.familyGroupApp #fgaOptions {
   display: none;
 }
 
@@ -458,7 +458,7 @@ body.app header {
   width: 50%;
 }
 
-#fgsPrintIcon {
+#fgaPrintIcon {
   float: right;
   height: 30px;
   margin-top: 0.5em;
@@ -467,10 +467,10 @@ body.app header {
   border: 1px solid white;
   padding: 0.3em;
 }
-#fgsPrintIcon:hover {
+#fgaPrintIcon:hover {
   box-shadow: 0.2em 0.2em 0.2em gray;
 }
-#fgsPrintIcon:active {
+#fgaPrintIcon:active {
   box-shadow: 0.1em 0.1em 0.1em gold;
 }
 #view-container.familyGroupApp .fsName a,
@@ -530,8 +530,8 @@ body.app header {
   #view-container.familyGroupApp #h1Text,
   #view-container.familyGroupApp #wtidLabel,
   #view-container.familyGroupApp #loginForm,
-  #view-container.familyGroupApp #fgsOptions,
-  #view-container.familyGroupApp #fgsInfo,
+  #view-container.familyGroupApp #fgaOptions,
+  #view-container.familyGroupApp #fgaInfo,
   #view-container.familyGroupApp #wtLogo,
   #view-container.familyGroupApp #printIcon {
     display: none !important;
@@ -572,8 +572,8 @@ body.app header {
   }
 }
 
-#fgsOptions x,
-#fgsInfo x {
+#fgaOptions x,
+#fgaInfo x {
   border: 0;
   position: absolute;
   top: 0.2em;
@@ -581,18 +581,18 @@ body.app header {
   cursor: pointer;
 }
 
-#fgsButtons {
+#fgaButtons {
   display: block;
   text-align: center;
   margin: auto;
 }
 
-#fgsButtons button {
+#fgaButtons button {
   margin: 0.2em 0.5em;
 }
 
-#fgsOptionsButton.active,
-#fgsNotesButton.active {
+#fgaOptionsButton.active,
+#fgaNotesButton.active {
   background-color: orange;
 }
 #view-container.familyGroupApp .fsWTID {

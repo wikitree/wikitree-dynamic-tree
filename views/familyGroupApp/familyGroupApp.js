@@ -117,6 +117,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.calls = 1;
         this.privates = 0;
         this.references = [];
+        this.htmlReferences = [];
         this.doneKids = [];
     }
 
@@ -275,10 +276,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     setupEventListeners() {
-        this.$body.off("click.fgs change.fgs");
+        this.$container.off("click.fga change.fga");
+        this.$body.off("click.fga change.fga");
+
         // Delegated event listeners for checkbox changes
 
-        this.$container.on("change.fgs", "#dateFormatSelect", (e) => {
+        this.$container.on("change.fga", "#dateFormatSelect", (e) => {
             const $this = $(e.currentTarget);
             const theClass = this;
             $("[data-date]").each(function () {
@@ -291,7 +294,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.storeVal($this);
         });
 
-        this.$container.on("change.fgs", "#showBaptism", (e) => {
+        this.$container.on("change.fga", "#showBaptism", (e) => {
             // logging
             console.log("checkbox changed");
             console.log("this", this);
@@ -299,82 +302,82 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             this.toggleStyle("showBaptism", this.showBaptismRules, isChecked, "#baptChrist");
         });
-        this.$container.on("change.fgs", "#showBurial", (event) => {
+        this.$container.on("change.fga", "#showBurial", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("showBurial", "#view-container.familyGroupApp tr.burialRow{display:none;}", isChecked);
             this.storeVal($(event.target));
         });
 
-        this.$container.on("change.fgs", "#showNicknames", (event) => {
+        this.$container.on("change.fga", "#showNicknames", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("showNicknames", this.showNicknamesRules, isChecked);
             this.storeVal($(event.target));
         });
 
-        this.$container.on("change.fgs", "#showParentsSpousesDates", (event) => {
+        this.$container.on("change.fga", "#showParentsSpousesDates", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("showParentsSpousesDates", this.showParentsSpousesDatesRules, isChecked);
             this.storeVal($(event.target));
         });
 
-        this.$container.on("change.fgs", "#showOtherLastNames", (event) => {
+        this.$container.on("change.fga", "#showOtherLastNames", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("showOtherLastNames", this.showOtherLastNamesRules, isChecked);
             this.storeVal($(event.target));
         });
 
-        this.$container.on("change.fgs", "#useColour", (event) => {
+        this.$container.on("change.fga", "#useColour", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("useColour", this.colorRules, isChecked);
             this.storeVal($(event.target));
         });
 
-        this.$container.on("change.fgs", "#showWTIDs", (event) => {
+        this.$container.on("change.fga", "#showWTIDs", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("showWTIDs", this.showWTIDsRules, isChecked);
             this.storeVal($(event.target));
         });
-        this.$container.on("change.fgs", "#includeBiosWhenPrinting", (event) => {
+        this.$container.on("change.fga", "#includeBiosWhenPrinting", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("includeBiosWhenPrinting", this.includeBiosWhenPrintingRules, !isChecked);
             this.storeVal($(event.target));
         });
 
-        this.$container.on("change.fgs", "#showBios", (event) => {
+        this.$container.on("change.fga", "#showBios", (event) => {
             this.toggleStyle("showBios", this.showBiosRules, !$(event.target).prop("checked"));
             this.storeVal($(event.target));
         });
 
         // Delegated event listeners for radio button changes
-        this.$container.on("change.fgs", "input[type=radio][name=baptismChristening]", () => this.setBaptChrist());
-        this.$container.on("change.fgs", "input[type=radio][name=statusChoice]", (e) => this.setStatusChoice(e));
-        this.$container.on("change.fgs", "input[type=radio][name=showGender]", () => this.setShowGender());
+        this.$container.on("change.fga", "input[type=radio][name=baptismChristening]", () => this.setBaptChrist());
+        this.$container.on("change.fga", "input[type=radio][name=statusChoice]", (e) => this.setStatusChoice(e));
+        this.$container.on("change.fga", "input[type=radio][name=showGender]", () => this.setShowGender());
 
-        // Delegated click.fgs event listeners for options and information panels
-        this.$body.on("click.fgs", "#fgsNotesButton", function () {
-            $("#fgsInfo").toggle();
-            $("#fgsNotesButton").toggleClass("active");
+        // Delegated click.fga event listeners for options and information panels
+        this.$body.on("click.fga", "#fgaNotesButton", function () {
+            $("#fgaInfo").toggle();
+            $("#fgaNotesButton").toggleClass("active");
         });
-        this.$body.on("click.fgs", "#fgsInfo", function () {
-            $("#fgsInfo").slideUp();
-            $("#fgsNotesButton").toggleClass("active");
+        this.$body.on("click.fga", "#fgaInfo", function () {
+            $("#fgaInfo").slideUp();
+            $("#fgaNotesButton").toggleClass("active");
         });
-        this.$body.on("click.fgs", "#fgsOptionsButton", function () {
-            $("#fgsOptions").toggle();
-            $("#fgsOptionsButton").toggleClass("active");
+        this.$body.on("click.fga", "#fgaOptionsButton", function () {
+            $("#fgaOptions").toggle();
+            $("#fgaOptionsButton").toggleClass("active");
         });
-        this.$body.on("click.fgs", "#fgsOptions x", function () {
-            $("#fgsOptions").slideUp();
-            $("#fgsOptionsButton").toggleClass("active");
+        this.$body.on("click.fga", "#fgaOptions x", function () {
+            $("#fgaOptions").slideUp();
+            $("#fgaOptionsButton").toggleClass("active");
         });
 
-        // Delegated change.fgs event listener for the long month display setting
+        // Delegated change.fga event listener for the long month display setting
 
-        this.$container.on("click.fgs", ".fsName a, caption a", function (e) {
+        this.$container.on("click.fga", ".fsName a, caption a", function (e) {
             e.preventDefault();
         });
 
-        this.$container.on("click.fgs", "td[data-name],span[data-name]", (e) => {
+        this.$container.on("click.fga", "td[data-name],span[data-name]", (e) => {
             const $this = $(e.currentTarget);
             const dTR = $this.closest("tr");
             this.keepSpouse = dTR.attr("data-name") || "";
@@ -400,7 +403,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             //            this.init(this.$container, parseInt($this.attr("data-id")));
         });
 
-        this.$container.on("change.fgs", "#husbandFirst", (e) => {
+        this.$container.on("change.fga", "#husbandFirst", (e) => {
             const $this = $(e.currentTarget);
 
             this.manageRoleOrder();
@@ -414,7 +417,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $(".showNicknamesSpan").hide();
         }
 
-        this.$container.on("change.fgs", "#showOtherLastNames", (e) => {
+        this.$container.on("change.fga", "#showOtherLastNames", (e) => {
             const $this = $(e.currentTarget);
             if ($this.prop("checked") == false) {
                 $(
@@ -426,14 +429,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.storeVal($this);
         });
 
-        this.$container.on("change.fgs", "input[type=radio][name=baptismChristening]", (e) => {
+        this.$container.on("change.fga", "input[type=radio][name=baptismChristening]", (e) => {
             const $this = $(e.currentTarget);
             this.setBaptChrist();
             this.storeVal($this);
         });
 
         this.$container.on(
-            "click.fgs",
+            "click.fga",
             ".BaptismDate, .BaptismPlace, .buriedDate, .buriedPlace, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable, .marriedRow td",
             (e) => {
                 const $this = $(e.currentTarget);
@@ -472,7 +475,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
             }
         );
-        this.$container.on("click.fgs", "#notesNotes", (e) => {
+        this.$container.on("click.fga", "#notesNotes", (e) => {
             const $this = $(e.currentTarget);
             if ($this.find("textarea").length == 0) {
                 const textBox = $("<textarea class='edit'>" + this.br2nl($this.html()) + "</textarea>");
@@ -485,7 +488,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 });
             }
         });
-        this.$container.on("click.fgs", ".bioHeading", (e) => {
+        this.$container.on("click.fga", ".bioHeading", (e) => {
             const $this = $(e.currentTarget);
             $this.next().find(".theBio").toggle();
         });
@@ -597,7 +600,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     loadFamilyGroupSheetHTML() {
         const familyGroupSheetHTML = `
-        <div id='fgsOptions'>
+        <div id='fgaOptions'>
         <x>&#10005;</x>
         <h2>Show:</h2> 
         <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>nicknames</span></label>
@@ -637,7 +640,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         </div>
         
-        <div id='fgsInfo'>
+        <div id='fgaInfo'>
         <x>&#10005;</x>
         <span class='notesHeading'>Notes</span>
         <ul>
@@ -649,12 +652,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         </ul>
         </div>`;
         this.$container.html(familyGroupSheetHTML);
-        const fgsButtons = `<div id="fgsButtons"><button class="small" id="fgsOptionsButton">Options</button><button class="small" id="fgsNotesButton">Notes</button></div>`;
-        if ($("#fgsButtons").length === 0) {
-            $("header").append(fgsButtons);
+        const fgaButtons = `<div id="fgaButtons"><button class="small" id="fgaOptionsButton">Options</button><button class="small" id="fgaNotesButton">Notes</button></div>`;
+        if ($("#fgaButtons").length === 0) {
+            $("header").append(fgaButtons);
         }
-        if ($("#fgsOptionsButton").hasClass("active")) {
-            $("#fgsOptions").show();
+        if ($("#fgaOptionsButton").hasClass("active")) {
+            $("#fgaOptions").show();
         }
     }
 
@@ -1128,6 +1131,34 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     familySheetPerson = (fsPerson, role) => {
+        // Get Sources section from bioHTML
+
+        // Create a new DOM parser
+        const parser = new DOMParser();
+        // Parse the string into a document
+        const doc = parser.parseFromString(fsPerson.bioHTML, "text/html");
+        // Find the 'Sources' section header
+        const sourcesHeader = doc.querySelector('a[name="Sources"]').parentElement;
+
+        // String to hold the HTML content of the 'Sources' section
+        let sourcesHtml = "";
+
+        // Check if the sourcesHeader is found
+        if (sourcesHeader) {
+            let currentElement = sourcesHeader;
+
+            // Traverse the siblings until the next header is reached
+            while (currentElement && !$(currentElement.nextElementSibling).hasClass("EDIT")) {
+                sourcesHtml += currentElement.outerHTML;
+                currentElement = currentElement.nextElementSibling;
+            }
+
+            console.log(sourcesHtml);
+        } else {
+            console.log("Sources section not found");
+        }
+        // end that bit
+
         fsPerson.BioSections = this.parseWikiText(fsPerson.bio);
         console.log("fsPerson.BioSections", fsPerson.BioSections);
 
@@ -1495,6 +1526,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             date = "";
         }
 
+        place = place !== undefined ? place : "";
+
         return `<tr data-role="${role}" class="${rowClass}">
                     <th class="${rowClass}">${rowLabel}:</th>
                     <td class="${dateClass}" data-date="${date}" data-date-status="${dateStatus}">${formattedDate}</td>
@@ -1843,7 +1876,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const settings = this.getSettings();
 
         // Handle checkboxes
-        $("#fgsOptions input[type='checkbox']").each((index, element) => {
+        $("#fgaOptions input[type='checkbox']").each((index, element) => {
             const checkbox = $(element);
             const id = checkbox.attr("id");
             checkbox.prop("checked", settings[id]);
@@ -1902,7 +1935,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         // Handle radio buttons
-        $("#fgsOptions input[type='radio']").each(function () {
+        $("#fgaOptions input[type='radio']").each(function () {
             const radio = $(this);
             const name = radio.attr("name");
 
@@ -1913,7 +1946,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         // Handle select boxes
-        $("#fgsOptions select").each(function () {
+        $("#fgaOptions select").each(function () {
             const select = $(this);
             const id = select.attr("id");
 
@@ -2376,9 +2409,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
 
         // Add print icon if not already present
-        if ($("#fgsPrintIcon").length === 0) {
-            $("<img id='fgsPrintIcon' src='views/familyGroupApp/images/print50.png'>").appendTo("header");
-            $("#fgsPrintIcon").click(() => window.print());
+        if ($("#fgaPrintIcon").length === 0) {
+            $("<img id='fgaPrintIcon' src='views/familyGroupApp/images/print50.png'>").appendTo("header");
+            $("#fgaPrintIcon").click(() => window.print());
         }
     }
 
@@ -2399,16 +2432,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     sortSpouses() {
-        console.log("Sorting spouses...");
-        console.log(this.people);
         this.people.forEach((person) => {
             if (person.Spouse && Array.isArray(person.Spouse)) {
-                console.log(
-                    "Before sorting:",
-                    person.Name,
-                    person.Spouse.map((s) => s.marriage_date)
-                );
-
                 person.Spouse.sort((a, b) => {
                     // Replace '00' parts with '01' for comparison
                     const dateA = (a.marriage_date || "").replace(/-00/g, "-01");
@@ -2417,12 +2442,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     // Compare dates as strings
                     return dateA.localeCompare(dateB);
                 });
-
-                console.log(
-                    "After sorting:",
-                    person.Name,
-                    person.Spouse.map((s) => s.marriage_date)
-                );
             }
         });
     }
