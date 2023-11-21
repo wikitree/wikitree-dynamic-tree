@@ -233,9 +233,13 @@
     SuperBigFamView.numGens2Display = 3;
 
     SuperBigFamView.numAncGens2Display = 2;
+    SuperBigFamView.numAncGens2DisplayBeforePedigree = 1;
     SuperBigFamView.numDescGens2Display = 1;
     SuperBigFamView.numCuzGens2Display = 0;
+    SuperBigFamView.displaySIBLINGS = 1;
     SuperBigFamView.displayINLAWS = 0;
+    SuperBigFamView.displayPedigreeOnly = 0;
+    SuperBigFamView.displayPedigreeOnlyPrevious = 0;
     SuperBigFamView.displayPrivatize = 0;
 
     SuperBigFamView.lastNumGens = 3;
@@ -1276,6 +1280,7 @@
         var btnBarHTML =
             '<div id="btnBarDIV"><DIV border=0 style="background-color: #f8a51d80;" width="100%">' +
             "&nbsp;" +
+            "&nbsp;&nbsp;&nbsp;&nbsp;" +
             '<span class="fontDarkGreen fontBold">ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
             SVGbtnDOWN +
             "</button> " +
@@ -1283,24 +1288,30 @@
             ' <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display +=1; SuperBigFamView.redrawAncs();">' +
             SVGbtnUP +
             "</button> " +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">DESCENDANTS:</span> <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display -=1; SuperBigFamView.redrawDescs();">' +
+            '<span id=CousinUpDownSpan>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">BRANCHES:</span> <button id=CousinsBtnSVGdown class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
+            SVGbtnDOWN +
+            "</button> " +
+            "[ <span id=numCuzGensInBBar>none</span> ]" +
+            ' <button id=CousinsBtnSVGup class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
+            SVGbtnUP +
+            "</button></span> " +
+            //
+            "<br/>" +
+            '<span class="fontDarkGreen fontBold">DESCENDANTS:</span> <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display -=1; SuperBigFamView.redrawDescs();">' +
             SVGbtnDOWN +
             "</button> " +
             "[ <span id=numDescGensInBBar>1 generation</span> ]" +
             ' <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display +=1; SuperBigFamView.redrawDescs();">' +
             SVGbtnUP +
             "</button> " +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">COUSINS:</span> <button class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
-            SVGbtnDOWN +
-            "</button> " +
-            "[ <span id=numCuzGensInBBar>none</span> ]" +
-            ' <button class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
-            SVGbtnUP +
-            "</button> " +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">IN-LAWS:</span> <input  class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();">  ' +
+            "<span id=SiblingsInLawsSpan>" +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">SIBLINGS:</span> <input id=SiblingsBtnSVG class="btnSVG" checked type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displaySIBLINGS = 1 - SuperBigFamView.displaySIBLINGS; SuperBigFamView.redraw();">  ' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">IN-LAWS:</span> <input id=InLawsBtnSVG class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();">  ' +
+            "</span>" +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Pedigree Only:</span> <input  class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPedigreeOnly = 1 - SuperBigFamView.displayPedigreeOnly; SuperBigFamView.redraw();">  ' +
             '&nbsp;&nbsp;&nbsp;<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
             "&nbsp;&nbsp;&nbsp;" +
-            '<div style="display: inline-block; float: right; position: absolute; top: -0.5em; right: 0.5em;">' +
+            '<div style="display: inline-block; float: right; position: absolute; top: 0.5em; right: 0.5em;">' +
             '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
             LEGEND_CLIPBOARD +
             "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
@@ -2028,19 +2039,31 @@
         let linesDIV = document.getElementById("theConnectors");
 
         linesDIV.innerHTML =
-           (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true ? drawBoxesAround() : "" )+
+            (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
+                ? drawBoxesAround()
+                : "") +
             drawLinesForFamilyOf("A0") +
             drawLinesForDirectAncestors() +
             drawLinesForDescendants("A0") +
-            drawLinesForSiblings("S0") +
-            drawLinesForInLaws() 
-            ;
+            drawLinesForA0StepParents() +
+            (SuperBigFamView.displaySIBLINGS > 0 ? drawLinesForSiblings("S0") : "") +
+            (SuperBigFamView.displayPedigreeOnly > 0 || SuperBigFamView.displaySIBLINGS == 0
+                ? drawLinesForPrimaryOnlyAndParents()
+                : "") +
+            drawLinesForInLaws();
 
         // console.log(drawLinesForFamilyOf("A0") );
         // console.log(drawLinesForDirectAncestors());
         // console.log(drawLinesForDescendants("A0"));
         // console.log(drawLinesForSiblings("S0"));
         endisableButtons(true);
+        if (SuperBigFamView.displayPedigreeOnly == 1) {
+            document.getElementById("CousinsBtnSVGup").classList.add("disabled");
+            document.getElementById("CousinsBtnSVGdown").classList.add("disabled");
+            // document.getElementById("InLawsBtnSVG").checked = false;
+            // document.getElementById("SiblingsBtnSVG").checked = false;
+        }
+
     };
 
     function drawBoxesAround() {
@@ -2096,12 +2119,220 @@
         return boxesCode;
     }
 
+     function siftOutA0StepChunk() {
+        let parentCodes = ["A0RM","A0RF"];
+
+        console.log("siftOutA0StepChunk : GO TIME ");
+
+        for (let pNum = 0; pNum < 2 ; pNum++) {
+            let code = parentCodes[pNum];
+            let primaryLeaf = SuperBigFamView.theLeafCollection[code];
+            let primaryLeafPerson = null;
+            if (primaryLeaf && primaryLeaf.Id && thePeopleList[primaryLeaf.Id] && thePeopleList[primaryLeaf.Id]._data.Spouses) {
+                primaryLeafPerson = thePeopleList[primaryLeaf.Id];
+            } else {
+                continue;
+            }
+
+            let primaryLeafID = primaryLeaf.Id;
+            for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                let primarySpouseCode = code + "P" + (sp + 1);
+                let primarySpouse = SuperBigFamView.theLeafCollection[primarySpouseCode];
+                let thisSpouseDIV = document.getElementById("wedgeInfo-" + primarySpouseCode);
+
+                if (!primarySpouse) {
+                    continue; /// go back to the next value of sp
+                }
+                let primarySpouseID = primarySpouse.Id;
+                let numSharedKids = 0;
+                for (let ch = 0; ch < primaryLeafPerson._data.Children.length; ch++) {
+                    let kidEntry = primaryLeafPerson._data.Children[ch];
+                    if (kidEntry.coParent == primarySpouseID) {
+                        numSharedKids++;
+                    }
+                }
+
+                if (numSharedKids == 0) {
+                    console.log("THIS PERSON DOES NOT NEED THE A0 STEP PARENT CHUNK ASSIGNED !", primarySpouse.Who);
+
+                    // SBFV.theChunkCollection: Remove from A0step CHUNK and add into A1C1 chunk  (create A1C1 chunk if needed)
+                    // SBFV.theLeafCollection: change Chunk to A1C1
+                    // thePeopleList --> change Chunk to A1C1
+                    moveFromOneChunkToAnother("A0step", "A1C1", primarySpouseCode);
+                    
+                    // Similar for Father and Mother --> A0stepIL --> A1C1IL
+                    if (SuperBigFamView.theLeafCollection[primarySpouseCode + "RM"]) {
+                        moveFromOneChunkToAnother("A0stepIL", "A1C1IL", primarySpouseCode + "RM");
+                    }
+                    if (SuperBigFamView.theLeafCollection[primarySpouseCode + "RF"]) {
+                        moveFromOneChunkToAnother("A0stepIL", "A1C1IL", primarySpouseCode + "RF");
+                    }
+
+
+
+                } else  {
+                    console.log("THIS PERSON IS WORTHY of the  A0 STEP PARENT CHUNK !", primarySpouse.Who);
+                }
+
+            }
+        }
+    }
+
+    function moveFromOneChunkToAnother(oldChunk, newChunk,theCode) {
+        // SBFV.theChunkCollection: Remove from A0step CHUNK and add into A1C1 chunk  (create A1C1 chunk if needed)
+        if (SuperBigFamView.theChunkCollection[oldChunk] && SuperBigFamView.theChunkCollection[oldChunk].CodesList) {
+            let whereThisCodeInOldChunk =
+                SuperBigFamView.theChunkCollection[oldChunk].CodesList.indexOf(theCode);
+            if (whereThisCodeInOldChunk > -1) {
+                SuperBigFamView.theChunkCollection[oldChunk].CodesList.splice(whereThisCodeInOldChunk, 1);
+                console.log(
+                    "REMOVED the code ",
+                    theCode,
+                    " from the old CHUNK:", oldChunk,
+                    " at position ",
+                    whereThisCodeInOldChunk
+                );
+            }
+        }
+        if (SuperBigFamView.theChunkCollection[newChunk] && SuperBigFamView.theChunkCollection[newChunk].CodesList) {
+            SuperBigFamView.theChunkCollection[newChunk].CodesList.push(theCode);
+        } else if (SuperBigFamView.theChunkCollection[newChunk]) {
+            SuperBigFamView.theChunkCollection[newChunk].CodesList = [theCode];
+        } else {
+            SuperBigFamView.theChunkCollection[newChunk] = {
+                Chunk: newChunk,
+                CodesList: [theCode],
+                Settings: "",
+            };
+        }
+
+        // SBFV.theLeafCollection: change Chunk to A1C1
+        SuperBigFamView.theLeafCollection[theCode].Chunk = newChunk;
+
+        // thePeopleList --> change Chunk to A1C1
+        if (thePeopleList[SuperBigFamView.theLeafCollection[theCode].Id]) {
+            thePeopleList[SuperBigFamView.theLeafCollection[theCode].Id]._data.Chunk = newChunk;
+        }
+    }
+
+    function drawLinesForA0StepParents() {
+        let allLinesPolySVG = "";
+        let spouseColours = ["blue", "red", "darkgreen", "chocolate", "indigo", "darkorange", "navy"];
+        let parentCodes = ["A0RM","A0RF"];
+
+        console.log(
+            "drawLinesForA0StepParents : GO TIME "        
+        );
+
+        for (let pNum = 0; pNum < 2 ; pNum++) {
+            let code = parentCodes[pNum];
+            let primaryLeaf = SuperBigFamView.theLeafCollection[code];
+            let primaryLeafPerson = null;
+            if (primaryLeaf && primaryLeaf.Id && thePeopleList[primaryLeaf.Id] && thePeopleList[primaryLeaf.Id]._data.Spouses) {
+                primaryLeafPerson = thePeopleList[primaryLeaf.Id];
+            } else {
+                continue;
+            }
+            for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+                let clrNum = sp + 1;
+
+                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+
+                if (!primarySpouse) {
+                    continue; /// go back to the next value of sp
+                }
+                let primarySpouseID = primarySpouse.Id;
+
+                if (!thisSpouseDIV) {
+                    continue;
+                } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                    continue;
+                }
+
+                let minX = Math.min(primaryLeaf.x, primarySpouse.x);
+                let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
+                let minY = Math.min(primaryLeaf.y, primarySpouse.y);
+
+                const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+                const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
+
+                if (thisLeafHt < 170 || otherLeafHt < 170) {
+                    minY =
+                        minY -
+                        85 +
+                        Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
+                        37;
+                }
+                // console.log("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
+
+                let drawColour = spouseColours[(sp + clrNum) % spouseColours.length];
+                 
+                  
+                let equalsLine =
+                    `<polyline points="` +
+                    (minX + 20) +
+                    "," +
+                    (minY + 30 - sp * 60) +
+                    " " +
+                    (maxX - 20) +
+                    "," +
+                    (minY + 30 - sp * 60) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3"/>` +
+                    `<polyline points="` +
+                    (minX + 20) +
+                    "," +
+                    (minY + 45 - sp * 60) +
+                    " " +
+                    (maxX - 20) +
+                    "," +
+                    (minY + 45 - sp * 60) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3" />`;
+
+                if (equalsLine.indexOf("NaN") > -1) {
+                    console.log(
+                        "DANGER DANGER:",
+                        equalsLine,
+                        primaryLeaf.x,
+                        primarySpouse.x,
+                        primaryLeaf.y,
+                        primarySpouse.y
+                    );
+                }
+                // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
+                let centreX = (minX + maxX) / 2;
+                if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
+                    centreX = primarySpouse.x - 150 - 50;
+                }
+
+                 
+                    allLinesPolySVG += equalsLine;
+                
+            }
+        }
+
+         
+        if (allLinesPolySVG.indexOf("NaN") > -1) {
+            console.log(" DANGER DANGER WILL ROBINSON - DRAW A0 STEP PARENTS LINES CONTAINS * NOT A NUMBER * !!!!", code);
+            return "";
+        }
+        return allLinesPolySVG;
+    }
+
     function drawLinesForInLaws() {
+        console.log("* drawLinesForInLaws : START");
         let numA = SuperBigFamView.numAncGens2Display; // num Ancestors - going up
         let numD = SuperBigFamView.numDescGens2Display; // num Descendants - going down
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
-        let showInLaws = SuperBigFamView.displayINLAWS > 0;
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
+        let showInLaws = SuperBigFamView.displayINLAWS > 0 /*  && SuperBigFamView.displayPedigreeOnly == 0 */;
+        let showSiblings = SuperBigFamView.displaySIBLINGS > 0;
         if (!showInLaws) {
+            console.log("* drawLinesForInLaws : LEAVING EARLY");
             return "";
         }
 
@@ -2112,12 +2343,19 @@
         }
 
         let descLinesSVG = "";
-        // console.log("drawLinesForInLaws:");
+        console.log("* drawLinesForInLaws: READY !");
         for (var leafID in SuperBigFamView.theLeafCollection) {
             let leaf = SuperBigFamView.theLeafCollection[leafID];
             if (leaf && leaf.Code) {
                 if (leaf.Code.substr(-2).indexOf("P") > -1) {
-                    // console.log(leafID, leaf.Code, "*" + leaf.Code.substr(-2) + "*");
+                    console.log(
+                        "inlaw-able leaf: ",
+                        leafID,
+                        leaf.Code,
+                        "*" + leaf.Code.substr(-2) + "*",
+                        SuperBigFamView.theLeafCollection[leaf.Code + "RM"],
+                        document.querySelector("#wedgeInfo-" + leaf.Code + "RM")
+                    );
 
                     
                     if (
@@ -2311,33 +2549,40 @@
     }
 
     function drawLinesForDescendants(code) {
+        console.log("** drawLinesForDescendants : BEGIN",code);
         let numA = SuperBigFamView.numAncGens2Display; // num Ancestors - going up
         let numD = SuperBigFamView.numDescGens2Display; // num Descendants - going down
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
         if (numD < 1) {
+            console.log("** drawLinesForDescendants : END early",code);
             return "";
         }
 
         let descLinesSVG = "";
         let thisLeaf = SuperBigFamView.theLeafCollection[code];
         if (!thisLeaf) {
+            console.log("** drawLinesForDescendants : END early",code);
             return "";
         }
         let thisLeafDIV = document.getElementById("wedgeInfo-" + thisLeaf.Code);
         if (!thisLeafDIV) {
+            console.log("** drawLinesForDescendants : END early",code);
             return "";
         } else if (thisLeafDIV.parentNode.parentNode.style.display == "none") {
+            console.log("** drawLinesForDescendants : END early",code);
             return "";
         }
 
         let thisLeafPerson = thePeopleList[thisLeaf.Id];
         if (!thisLeafPerson) {
+            console.log("** drawLinesForDescendants : END early",code);
             return "";
         }
         let primaryChildren = thisLeafPerson._data.Children;
 
         if (primaryChildren.length == 0) {
+            console.log("** drawLinesForDescendants : END early",code);
             return "";
         } else {
             for (let k = 0; k < primaryChildren.length; k++) {
@@ -2346,11 +2591,12 @@
                 descLinesSVG += drawLinesForDescendants(code + "K" + make2Digit(k + 1));
             }
         }
-
+        console.log("** drawLinesForDescendants : END",code);
         return descLinesSVG;
     }
 
     function drawLinesForSiblings(code) {
+        console.log("** drawLinesForSiblings : BEGIN");
         let numD = SuperBigFamView.numDescGens2Display; // num Descendants - going down
         let sibLinesSVG = "";
 
@@ -2372,10 +2618,11 @@
     }
 
     function drawLinesForDirectAncestors() {
+        console.log("** drawLinesForDirectAncestors : BEGIN");
         let numA = SuperBigFamView.numAncGens2Display; // num Ancestors - going up
         let numD = SuperBigFamView.numDescGens2Display; // num Descendants - going down
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
-
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
+        let showSiblings = SuperBigFamView.displaySIBLINGS; 
         if (numA < 1) {
             return "";
         }
@@ -2383,9 +2630,13 @@
         SuperBigFamView.linesATC = [];
 
         let ancLinesSVG = drawLinesForFamilyOf("A0", "R", 0); // nuclear family around A0
-        ancLinesSVG += drawLinesForFamilyOf("A0RM", "A0S", 1); // plus paternal half siblings if applicable
-        ancLinesSVG += drawLinesForFamilyOf("A0RF", "A0S", 2); // plus maternal half siblings if applicable
-
+        if (showSiblings == 0){
+            ancLinesSVG = ""; 
+        } else {
+            ancLinesSVG += drawLinesForFamilyOf("A0RM", "A0S", 1); // plus paternal half siblings if applicable
+            ancLinesSVG += drawLinesForFamilyOf("A0RF", "A0S", 2); // plus maternal half siblings if applicable
+        };
+            
         for (let a = 1; a < numA; a++) {
             let begNum = 2 ** a;
             for (let ahNum = 1.5 * begNum; ahNum < 2 * begNum; ahNum++) {
@@ -2432,14 +2683,17 @@
                 }
             }
         }
-
+        if (ancLinesSVG.indexOf("NaN") > -1) {
+            console.log(" DANGER DANGER WILL ROBINSON - ANCESTOR LINES CONTAINS * NOT A NUMBER * !!!!");
+        }
+        console.log("** drawLinesForDirectAncestors : END");
         return ancLinesSVG;
     }
 
     function drawLinesForCousins(code, Cnum) {
         let maxNumOfKids = 25;
         let cuzLinesSVG = "";
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
         for (let k = 1; k <= maxNumOfKids; k++) {
             if (SuperBigFamView.theLeafCollection[code + make2Digit(k)]) {
@@ -2512,7 +2766,7 @@
         let childPrefix = code + "K";
         let doingDirectAncestorCode = "";
         let numPrimaryChildren = primaryChildren.length;
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
         if (clrNum == -1) {
             clrNum = levelNum;
         }
@@ -2741,7 +2995,7 @@
                 drawColour +
                 `" stroke-width="3" />`;
 
-            // console.log(equalsLine);
+            if (equalsLine.indexOf("NaN") > -1){console.log("DANGER DANGER:", equalsLine, primaryLeaf.x, primarySpouse.x, primaryLeaf.y, primarySpouse.y);}
             // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
             let centreX = (minX + maxX) / 2;
             if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
@@ -2965,8 +3219,159 @@
             } 
         }
 
-     
+        if (allLinesPolySVG.indexOf("NaN") > -1) {
+            console.log(" DANGER DANGER WILL ROBINSON - DRAW FAMILY LINES CONTAINS * NOT A NUMBER * !!!!", code);
+            return "";
+        }
         return allLinesPolySVG;
+    }
+
+    function drawLinesForPrimaryOnlyAndParents() {
+        console.log("** drawLinesForPrimaryOnlyAndParents : BEGIN");
+               // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+        let primaryLeaf = SuperBigFamView.theLeafCollection["A0"]
+        let dadLeaf = SuperBigFamView.theLeafCollection["A0RM"]
+        let momLeaf = SuperBigFamView.theLeafCollection["A0RF"]
+        
+        let minX = primaryLeaf.x;
+        let maxX = primaryLeaf.x;
+        let minY = primaryLeaf.y;
+
+        let leaf1Ht = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+        let leaf2Ht = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+
+        if (dadLeaf && momLeaf) {
+            minX = dadLeaf.x;
+            maxX = momLeaf.x;
+            minY = dadLeaf.y;
+            let leaf1 = document.querySelector("#wedgeInfo-" + dadLeaf.Code);
+            if (leaf1) {
+                leaf1Ht = leaf1.clientHeight;
+            } else {
+                return "";
+            }
+            leaf2Ht = document.querySelector("#wedgeInfo-" + momLeaf.Code).clientHeight;
+        } else if (dadLeaf) {
+            minX = dadLeaf.x;
+            maxX = dadLeaf.x;
+            minY = dadLeaf.y;
+            let leaf1 = document.querySelector("#wedgeInfo-" + dadLeaf.Code);
+            if (leaf1) {
+                leaf1Ht = leaf1.clientHeight;
+            }
+            leaf2Ht = document.querySelector("#wedgeInfo-" + dadLeaf.Code).clientHeight;
+        } else if (momLeaf) {
+            minX = momLeaf.x;
+            maxX = momLeaf.x;
+            minY = momLeaf.y;
+            let leaf1 = document.querySelector("#wedgeInfo-" + momLeaf.Code);
+            if (leaf1) {
+                leaf1Ht = leaf1.clientHeight;
+            }
+            leaf2Ht = document.querySelector("#wedgeInfo-" + momLeaf.Code).clientHeight;
+        } else {
+            return "";
+        }
+
+
+              
+        if (leaf1Ht < 170 || leaf2Ht < 170) {
+            minY =
+                minY -
+                85 +
+                Math.min((leaf1Ht * 2) / 3, (leaf2Ht * 2) / 3, (leaf1Ht + leaf2Ht) / 2) -
+                37;
+        }
+        
+
+        let drawColour = "black";
+               
+               
+        let defaultChildX = primaryLeaf.x;
+        
+        let equalsLine =
+            `<polyline points="` +
+            (minX + 20) +
+            "," +
+            (minY + 30) +
+            " " +
+            (maxX - 20) +
+            "," +
+            (minY + 30) +
+            `" fill="none" stroke="` +
+            drawColour +
+            `" stroke-width="3"/>` +
+            `<polyline points="` +
+            (minX + 20) +
+            "," +
+            (minY + 45) +
+            " " +
+            (maxX - 20) +
+            "," +
+            (minY + 45) +
+            `" fill="none" stroke="` +
+            drawColour +
+            `" stroke-width="3" />`;
+
+        // console.log(equalsLine);
+        // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
+        let centreX = (minX + maxX) / 2;
+        
+
+               
+
+        let tBarVertLine =
+            `<polyline points="` +
+            centreX +
+            "," +
+            (minY + 45) +
+            " " +
+            centreX +
+            "," +
+            (primaryLeaf.y - 80) +
+            `" fill="none" stroke="` +
+            drawColour +
+            `" stroke-width="3"/>` ;
+
+            //  +
+            // `<polyline points="` +
+            // childrenMinX +
+            // "," +
+            // crossBarY +
+            // " " +
+            // childrenMaxX +
+            // "," +
+            // crossBarY +
+            // `" fill="none" stroke="` +
+            // drawColour +
+            // `" stroke-width="3"/>`;
+
+               // console.log(tBarVertLine);
+
+            //    let dropLines = "";
+            //    for (let ch = 0; ch < childrenXs.length; ch++) {
+            //        dropLines +=
+            //            `<polyline points="` +
+            //            childrenXs[ch] +
+            //            "," +
+            //            crossBarY +
+            //            " " +
+            //            childrenXs[ch] +
+            //            "," +
+            //            (childrenY - 80) +
+            //            `" fill="none" stroke="` +
+            //            drawColour +
+            //            `" stroke-width="3"/>`;
+            //    }
+            //    // console.log(dropLines);
+            //    if (childrenXs.length > 0) {
+            //        allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+            //    } else {
+
+        console.log("** drawLinesForPrimaryOnlyAndParents : END");
+        return equalsLine + tBarVertLine;
+            //    }
+           
     }
 
     // Flash a message in the WarningMessageBelowButtonBar DIV
@@ -3048,7 +3453,7 @@
                 (SuperBigFamView.numAncGens2Display != 1 ? "s" : "");
         }
 
-        if (SuperBigFamView.numAncGens2Display > Math.max(0, SuperBigFamView.numAncGensRetrieved) && OKtoAddAncs) {
+        if (SuperBigFamView.displayPedigreeOnly == 0 && SuperBigFamView.numAncGens2Display > Math.max(0, SuperBigFamView.numAncGensRetrieved) && OKtoAddAncs) {
             SuperBigFamView.numAncGensRetrieved = SuperBigFamView.numAncGens2Display;
             console.log(
                 "** Calling function loadAncestorsAtLevel " +
@@ -3237,6 +3642,7 @@
             },
             C2: { params: { ancestors: 1 }, aboveMsg: "spouses and in-laws" },
             I0: { params: { ancestors: 1 }, aboveMsg: "parents of nieces- and nephews-in-law" },
+            I1: { params: { ancestors: 7, minGeneration:4 }, aboveMsg: "4xgreats -> 7xgreats" },
         };
 
         let thisGetPeopleOptions = getPeopleParametersArray[getCode].params;
@@ -3354,7 +3760,9 @@
                         if (getCode == "C1") {
                             getPeopleCall(SuperBigFamView.ListsOfIDs["C1sp"], "C2", 0);
                         } else if (getCode == "C2") {
-                            postGetPeopleProcessing(getCode[0], numCousinDescendants);
+                            let doSift = numCousinDescendants < 3;
+                            postGetPeopleProcessing(getCode[0], numCousinDescendants, doSift);
+                            
                         } else if (getCode == "D1") {
                             getPeopleCall(SuperBigFamView.ListsOfIDs["D1sp"], "D2", 0);
                         } else if (getCode == "D2") {
@@ -3380,8 +3788,11 @@
                                     }
                                 }
                             }
-                            clearMessageBelowButtonBar();
-                            loadingTD.innerHTML = "&nbsp;";
+                            getPeopleCall([SuperBigFamView.theLeafCollection["A0"].Id], "I1", 0);
+                        } else if (getCode == "I1") {
+                            // clearMessageBelowButtonBar();
+                            // loadingTD.innerHTML = "&nbsp;";
+                            postGetPeopleProcessing("A", 4);
                         }
                     }
                 }
@@ -3397,7 +3808,7 @@
 
     */
 
-    function postGetPeopleProcessing(codeLetter, newLevel) {
+    function postGetPeopleProcessing(codeLetter, newLevel, doSift = false) {
         for (let peepID in thePeopleList) {
             let thisPeep = thePeopleList[peepID];
 
@@ -3422,46 +3833,36 @@
             addToLeafCollectionAtLevel(NL);
         }
 
-        // SuperBigFamView.numGensRetrieved = newLevel;
-        // SuperBigFamView.workingMaxNumCuzGens = Math.min(
-        //     SuperBigFamView.maxNumCuzGens,
-        //     SuperBigFamView.numGensRetrieved + 1
-        // );
 
         // ============================================
         // ANCESTORS version of GET PEOPLE PROCESSING
         // ============================================
         if (codeLetter == "A") {
             const thinkChunk = "A" + newLevel;
-            const theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
-            let theAncsOnlyIDs = [];
+            if (SuperBigFamView.theChunkCollection[thinkChunk] && SuperBigFamView.theChunkCollection[thinkChunk].CodesList){
+                const theCodesList = SuperBigFamView.theChunkCollection[thinkChunk].CodesList;
+                let theAncsOnlyIDs = [];
 
-            for (let c = 0; c < theCodesList.length; c++) {
-                const code = theCodesList[c];
-                const ancID = SuperBigFamView.theLeafCollection[code].Id;
-                theAncsOnlyIDs.push(ancID);
-                
-                if (thePeopleList[ancID] && thePeopleList[ancID].Father && thePeopleList[ancID].Father > 0) {
-                    theAncsOnlyIDs.push(thePeopleList[ancID].Father);
+                for (let c = 0; c < theCodesList.length; c++) {
+                    const code = theCodesList[c];
+                    const ancID = SuperBigFamView.theLeafCollection[code].Id;
+                    theAncsOnlyIDs.push(ancID);
+                    
+                    if (thePeopleList[ancID] && thePeopleList[ancID].Father && thePeopleList[ancID].Father > 0) {
+                        theAncsOnlyIDs.push(thePeopleList[ancID].Father);
+                    }
+                    if (thePeopleList[ancID] && thePeopleList[ancID].Mother && thePeopleList[ancID].Mother > 0) {
+                        theAncsOnlyIDs.push(thePeopleList[ancID].Mother);
+                    }                
                 }
-                if (thePeopleList[ancID] && thePeopleList[ancID].Mother && thePeopleList[ancID].Mother > 0) {
-                    theAncsOnlyIDs.push(thePeopleList[ancID].Mother);
-                }                
-            }
 
-            assembleSiblingsFor(theAncsOnlyIDs);
+                assembleSiblingsFor(theAncsOnlyIDs);
+            }
         }
         
-
-        // ============================================
-        // DESCENDANTS version of GET PEOPLE PROCESSING
-        // ============================================
-
-        //assembleSiblingsFor(theAncsOnlyIDs);
-
-        // ============================================
-        // COUSINS version of GET PEOPLE PROCESSING
-        // ============================================
+        if (doSift) {
+            siftOutA0StepChunk();
+        }
 
         // ====================
         // THE END
@@ -3872,6 +4273,10 @@
             const ancID = SuperBigFamView.theLeafCollection[code].Id;
             theListOfIDs.push(ancID);
             theAncsOnlyIDs.push(ancID);
+            if (!thePeopleList[ancID]) {
+                continue;
+            }
+
             if (thePeopleList[ancID] && thePeopleList[ancID].Father && thePeopleList[ancID].Father > 0) {
                 theAncsParentsIDs.push(thePeopleList[ancID].Father);
             }
@@ -4035,6 +4440,7 @@
         let maxCuzArray = [-1];
 
         for (let a = 1; a <= numA; a++) {
+            maxCuzArray[a] = 0;
             for (let C = 0; C <= numC; C++) {
                 const chunkID = "A" + a + "C" + C ;
                 if (
@@ -4046,7 +4452,7 @@
                 }
             }
         }
-        // console.log("assembleMaxCuzPerAncGen: ", maxCuzArray);
+        console.log("assembleMaxCuzPerAncGen: ", maxCuzArray);
         return maxCuzArray;
     }
 
@@ -4058,24 +4464,51 @@
             thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
             " Children"
         );
+        console.log("SuperBigFamView.displayPedigreeOnly : ", SuperBigFamView.displayPedigreeOnly);
         // console.trace("Here");
         let theLeaves = getAllLeafNodes();
         let numA = SuperBigFamView.numAncGens2Display; // num Ancestors - going up
         let numD = SuperBigFamView.numDescGens2Display; // num Descendants - going down
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
-        let showInLaws = SuperBigFamView.displayINLAWS > 0;
+        let showInLaws = SuperBigFamView.displayINLAWS /* * (1 - SuperBigFamView.displayPedigreeOnly) */;
+        let showSiblings = SuperBigFamView.displaySIBLINGS /* * (1 - SuperBigFamView.displayPedigreeOnly) */;
+
+        if (SuperBigFamView.displayPedigreeOnly != SuperBigFamView.displayPedigreeOnlyPrevious ) {
+            if (SuperBigFamView.displayPedigreeOnly == 0) {
+                // REVERT the # of Ancestors to the Pre-Pedigree display
+                SuperBigFamView.numAncGens2Display = SuperBigFamView.numAncGens2DisplayBeforePedigree;
+                numA = SuperBigFamView.numAncGens2Display;
+                var numGensSpan = document.querySelector("#numAncGensInBBar");
+                if (SuperBigFamView.numAncGens2Display == 0) {
+                    numGensSpan.textContent = "none";
+                } else {
+                    numGensSpan.textContent =
+                        SuperBigFamView.numAncGens2Display +
+                        " generation" +
+                        (SuperBigFamView.numAncGens2Display != 1 ? "s" : "");
+                }
+
+            } else {
+                SuperBigFamView.numAncGens2DisplayBeforePedigree = SuperBigFamView.numAncGens2Display;
+                showInLaws = 0; // INITIALLY ... turn OFF InLaws and Siblings when entering Pedigree Only mode
+                showSiblings = 0;
+                SuperBigFamView.displayINLAWS = 0; 
+                SuperBigFamView.displaySIBLINGS = 0; 
+            }
+        }
+
         let chunksWithInLaws = [];
-        let maxInLawsArray = {0:0};
+        let maxInLawsArray = { 0: 0 };
         if (showInLaws) {
-            chunksWithInLaws = assembleChunksWithInLaws(numA,numD,numC);
+            chunksWithInLaws = assembleChunksWithInLaws(numA, numD, numC);
             maxInLawsArray = assembleMaxInLawsPerAncGen(numA, numD, numC, chunksWithInLaws);
             SuperBigFamView.chunksWithInLawsArray = chunksWithInLaws;
         }
         // console.log("CHUNKS : chunksWithInLaws = ", chunksWithInLaws, showInLaws    );
 
         let maxCuzArray = assembleMaxCuzPerAncGen(numA, numD, numC);
-        
+
         // no setting here for showing IN LAWS or not .... yet ...
 
         let vBoxHeight = 300 + 20 * SuperBigFamView.currentSettings["general_options_vSpacing"]; //330 ; //currentMaxHeight4Box;//SuperBigFamView.currentSettings["general_options_vBoxHeight"];
@@ -4088,12 +4521,14 @@
             let thisLeaf = theLeaves[l];
             thisLeaf["x"] = Math.round(350 * (tmpCount % 20)) - 3500; //Math.round(2000 * Math.random()) - 1000;
             thisLeaf["y"] = Math.round(350 * Math.floor(tmpCount / 20)) - 3500; //Math.round(2000 * Math.random()) - 1000;
-            if (thisLeaf["x"] == 0) {thisLeaf["x"] = 1;} 
+            if (thisLeaf["x"] == 0) {
+                thisLeaf["x"] = 1;
+            }
 
             // if (document.querySelector("#wedgeInfo-" + thisLeaf.Code) ){
             //     maxBoxHeight = Math.max(maxBoxHeight, document.querySelector("#wedgeInfo-" + thisLeaf.Code).clientHeight);
-            // } 
-            
+            // }
+
             tmpCount++;
 
             console.log(
@@ -4111,10 +4546,35 @@
         }
         let A0dimensions = {};
 
-        //            =======================
-        // A0 logic - POSITION PRIMARY PERSON ... AND THEIR DESCENDANTS, IF D > 0 according to NumDs stepper value
-        //            =======================
+        // CHECK for SuperBigFamView.displayPedigreeOnly value - and if changed (to NOT pedigree only), then make Siblings and Cousins show themselves once more.
+        if (SuperBigFamView.displayPedigreeOnly != SuperBigFamView.displayPedigreeOnlyPrevious) {
+            if (SuperBigFamView.displayPedigreeOnly == 0) {
+                // document.getElementById("CousinUpDownSpan").style.display = "inline-block";
+                // document.getElementById("SiblingsInLawsSpan").style.display = "inline-block";
+                showSiblingsAndCousinsAgain(theLeaves);
+            } else {
+                // document.getElementById("CousinUpDownSpan").style.display = "none";
+                // document.getElementById("SiblingsInLawsSpan").style.display = "none";
+                document.getElementById("CousinsBtnSVGup").classList.add("disabled");
+                document.getElementById("CousinsBtnSVGdown").classList.add("disabled");
+                document.getElementById("InLawsBtnSVG").checked = false;
+                document.getElementById("SiblingsBtnSVG").checked = false;
+            }
+         } else {
+            if (showSiblings) {
+                showSiblingsAndCousinsAgain(theLeaves,"S");
+            }
+            if (showInLaws) {
+                showInLawsAgain(theLeaves);
+            }
+         }
+        
+        SuperBigFamView.displayPedigreeOnlyPrevious = SuperBigFamView.displayPedigreeOnly; 
+
         if (numD > 0 /*  && SuperBigFamView.theLeafCollection['A0P1'] */) {
+            //            =======================
+            // A0 logic - POSITION PRIMARY PERSON ... AND THEIR DESCENDANTS, IF D > 0 according to NumDs stepper value
+            //            =======================
             console.log(
                 "Calling the repositionThisPersonAndTheirDescendants peeps from repositionLeaves function if numD > 0 to find A0dimensions "
             );
@@ -4129,7 +4589,7 @@
         //             ===========================
         // SIB logic - POSITION PRIMARY's SIBLINGS ... AND THEIR DESCENDANTS, IF D > 0 according to NumDs stepper value
         //             ===========================
-        if (numA > 0) {
+        if (numA > 0 && showSiblings > 0) {
             let thePrimarySiblings = thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data["Siblings"];
             if (thePrimarySiblings && thePrimarySiblings.length > 0) {
                 // do nothing, the Siblings have already been assembled ...
@@ -4137,8 +4597,8 @@
                 // but ... just in case the Primary person forgot who they were .. we might need to re-assemble the sibling gang
                 assembleSiblingsFor([SuperBigFamView.theLeafCollection["A0"].Id]);
             }
-
             repositionThisPersonsSiblingsAndTheirDescendants("A0", 1, 1, "C", A0dimensions);
+            
         }
 
         //             ============================
@@ -4153,7 +4613,7 @@
                 let thisMaxHeight = 0;
                 for (let ahNum = 2 ** a; ahNum < 2 ** (a + 1); ahNum++) {
                     let theseDimensions = repositionThisAncestorAndTheirSiblingsFamily(ahNum);
-                    // console.log("Repositioning this anc: ", ahNum, "Dimensions:", theseDimensions);
+                    console.log("Repositioning this anc: ", ahNum, "Dimensions:", theseDimensions);
                     thisMaxHeight = Math.max(thisMaxHeight, theseDimensions.height);
                     Adimensions[ahNum] = theseDimensions;
                 }
@@ -4266,8 +4726,9 @@
         // Just Kidding chunks, where people who had no where else to go were thrown
         hideThisChunk("JK", theLeaves);
 
-        // SIBLINGS, if no Ancestors (ie - no parents to hang them on)
-        if (numA == 0) {
+        // SIBLINGS, if no Ancestors (ie - no parents to hang them on) - hide siblings
+        // OR ... if showSIBLINGS checkbox is turned off
+        if (numA == 0 || showSiblings == 0) {
             hideThisChunk("S", theLeaves);
         }
 
@@ -4289,6 +4750,13 @@
         }
 
         SuperBigFamView.Adimensions = Adimensions;
+        console.log("** ALL DONE REPOSITION LEAVES **");
+    }
+
+    function showInLawsAgain(theLeaves) {
+        for (let a = 1; a < 10; a++) {
+            showThisCode("P" + a + "R", theLeaves);
+        }
     }
 
     function hideThisChunk(chunkPrefix, theLeaves) {
@@ -4306,14 +4774,51 @@
         }
     }
 
+    function showSiblingsAndCousinsAgain(theLeaves,thisChunkOnly = "") {
+        console.log("SHOWING THE SIBLINGS +/- COUSINS ", thisChunkOnly);
+        // const chunkPrefix = "S";
+        let chunk1 = "S";
+        let chunk2 = "C";
+        if (thisChunkOnly > "") {
+            chunk1 = thisChunkOnly;
+            chunk2 = thisChunkOnly;
+        }
+        for (let l in theLeaves) {
+            let thisLeaf = theLeaves[l];
+            if (thisLeaf.Chunk.indexOf(chunk1) > -1 || thisLeaf.Chunk.indexOf(chunk2) > -1) {
+                let thisLeafDIV = document.getElementById("wedgeInfo-" + thisLeaf.Code);
+                if (thisLeafDIV && thisLeafDIV.parentNode && thisLeafDIV.parentNode.parentNode) {
+                    thisLeafDIV.parentNode.parentNode.style.display = "block";
+                } else {
+                    console.log("Cannot SHOW the leaf:", thisLeaf.Code);
+                }
+            }
+        }
+    }
+
     function hideThisCode(codeString, theLeaves) {
-        // console.log("HIDING THE CODES that match ", codeString);
+        console.log("HIDING THE CODES that match ", codeString);
         for (let l in theLeaves) {
             let thisLeaf = theLeaves[l];
             if (thisLeaf.Code.indexOf(codeString) > -1) {
                 let thisLeafDIV = document.getElementById("wedgeInfo-" + thisLeaf.Code);
                 if (thisLeafDIV && thisLeafDIV.parentNode && thisLeafDIV.parentNode.parentNode) {
                     thisLeafDIV.parentNode.parentNode.style.display = "none";
+                } else {
+                    console.log("Cannot HIDE the leaf:", codeString, thisLeaf.Code);
+                }
+            }
+        }
+    }
+    
+    function showThisCode(codeString, theLeaves) {
+        console.log("SHOWING THE CODES that match ", codeString);
+        for (let l in theLeaves) {
+            let thisLeaf = theLeaves[l];
+            if (thisLeaf.Code.indexOf(codeString) > -1) {
+                let thisLeafDIV = document.getElementById("wedgeInfo-" + thisLeaf.Code);
+                if (thisLeafDIV && thisLeafDIV.parentNode && thisLeafDIV.parentNode.parentNode) {
+                    thisLeafDIV.parentNode.parentNode.style.display = "block";
                 } else {
                     console.log("Cannot HIDE the leaf:", codeString, thisLeaf.Code);
                 }
@@ -4380,12 +4885,13 @@
     }
 
     function repositionThisAncestorAndTheirSiblingsFamily(ahnenNum) {
+        console.log("* repositionThisAncestorAndTheirSiblingsFamily - BEGIN for ", ahnenNum);
         let x = 1;
         let y = 1;
         let align = ahnenNum % 2 == 0 ? "R" : "L";
         let numA = SuperBigFamView.numAncGens2Display;
         let numD = SuperBigFamView.numDescGens2Display;
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly) ; // num Cousins - going wide
 
         let vBoxHeight = 300 + 20 * SuperBigFamView.currentSettings["general_options_vSpacing"]; // 440 ; //currentMaxHeight4Box;//SuperBigFamView.currentSettings["general_options_vBoxHeight"];
         let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"]; // 400
@@ -4467,10 +4973,18 @@
         }
 
         console.log("Bit: ", ahnenNum, bits, newCode);
+        console.log("* repositionThisAncestorAndTheirSiblingsFamily - END for ", ahnenNum, bits, newCode, thisLeaf.x, thisLeaf.y);
         return { width: thisWidth, height: thisHeight, genDims: [0] };
     }
 
     function repositionThisSpousesFamily(thisLeaf, thisCode) {
+        console.log(
+            "repositionThisSpousesFamily(thisLeaf, thisCode)",
+            thisCode,
+            SuperBigFamView.theLeafCollection[thisCode + "RM"] , 
+            document.getElementById("wedgeInfo-" + thisCode + "RM"));
+        
+
         let vBoxHeight = 300 + 20 * SuperBigFamView.currentSettings["general_options_vSpacing"]; //330 ; //currentMaxHeight4Box;//SuperBigFamView.currentSettings["general_options_vBoxHeight"];
         let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
 
@@ -4490,7 +5004,7 @@
         console.log("repositionThisPersonsSiblingsAndTheirDescendants : ", code, x, y, align, primarysDims);
         let numA = SuperBigFamView.numAncGens2Display;
         let numD = SuperBigFamView.numDescGens2Display;
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
         let thisDnum = 0;
         let thisCnum = 0;
         let thisAnum = 0;
@@ -4807,7 +5321,7 @@
         let chunk2Check = nextDChunkCode.substr(0, 3) + nextLevel;
         let chunk2Check2 = nextDChunkCode.substr(0, 3) + nextLevel;
         let numD = SuperBigFamView.numDescGens2Display;
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
         if (nextDChunkCode == "A0" || nextDChunkCode == "S0") {
             if (numD > 1 && SuperBigFamView.chunksWithInLawsArray.indexOf( "A0D2IL") > -1 || SuperBigFamView.chunksWithInLawsArray.indexOf( "S0D2IL") > -1) {
                 return 1;
@@ -4843,7 +5357,7 @@
 
     function repositionThisPersonAndTheirDescendants(code, x, y, align = "C") {
         let numD = SuperBigFamView.numDescGens2Display;
-        let numC = SuperBigFamView.numCuzGens2Display; // num Cousins - going wide
+        let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
         let thisDnum = -1;
         let thisCnum = -1;
@@ -5005,7 +5519,7 @@
         }
 
         // Define Kids VBoxHeight (based on whether we need to add an extra vBoxHeight to account for in-laws)
-        let inLawExtraHeight = SuperBigFamView.displayINLAWS;
+        let inLawExtraHeight = SuperBigFamView.displayINLAWS * (1 - SuperBigFamView.displayPedigreeOnly);
         if (inLawExtraHeight > 0) {
             inLawExtraHeight = extraHeightForInLawsForThisChild(thisLeaf.Chunk);
             // console.log(
@@ -5345,6 +5859,7 @@
 
     /** FUNCTION used to force a redraw of the Super Big Family Tree, used when called from Button Bar after a parameter has been changed */
     function endisableButtons(makeActive) {
+        console.log("DOING EnDISABLE Buttons");
         let nameElements = document.getElementsByClassName("btnSVG");
         for (let e = 0; e < nameElements.length; e++) {
             const element = nameElements[e];
@@ -5365,7 +5880,7 @@
         console.log("function SuperBigFamView.redraw");
         // condLog("Now theAncestors = ", SuperBigFamView.theAncestors);
         // thePeopleList.listAll();
-        let id = SuperBigFamView.theLeafCollection["A0"].Id;
+        // let id = SuperBigFamView.theLeafCollection["A0"].Id;
         endisableButtons(false);
         // console.log("Calling recalcAndDisplayNumGens from inside  SuperBigFamView.redraw function  - primary has ",
         //             thePeopleList[id]._data.Children.length,
@@ -5381,7 +5896,11 @@
         console.log("function SuperBigFamView.redrawAncs");
         // condLog("Now theAncestors = ", SuperBigFamView.theAncestors);
         // thePeopleList.listAll();
-        let id = SuperBigFamView.theLeafCollection["A0"].Id;
+        // if (SuperBigFamView.displayPedigreeOnly == 1) {
+        //     SuperBigFamView.redraw();
+        //     return;
+        // }
+        // let id = SuperBigFamView.theLeafCollection["A0"].Id;
         // console.log("Calling recalcAndDisplayNumGens from inside  SuperBigFamView.redraw function  - primary has ",
         //             thePeopleList[id]._data.Children.length,
         //             " Children");
@@ -5396,7 +5915,7 @@
         console.log("function SuperBigFamView.redrawDescs");
         // condLog("Now theAncestors = ", SuperBigFamView.theAncestors);
         // thePeopleList.listAll();
-        let id = SuperBigFamView.theLeafCollection["A0"].Id;
+        // let id = SuperBigFamView.theLeafCollection["A0"].Id;
         endisableButtons(false);
         // console.log("Calling recalcAndDisplayNumGens from inside  SuperBigFamView.redraw function  - primary has ",
         //             thePeopleList[id]._data.Children.length,
@@ -5411,7 +5930,7 @@
         console.log("function SuperBigFamView.redrawCuz");
         // condLog("Now theAncestors = ", SuperBigFamView.theAncestors);
         // thePeopleList.listAll();
-        let id = SuperBigFamView.theLeafCollection["A0"].Id;
+        // let id = SuperBigFamView.theLeafCollection["A0"].Id;
         endisableButtons(false);
         // console.log("Calling recalcAndDisplayNumGens from inside  SuperBigFamView.redraw function  - primary has ",
         //             thePeopleList[id]._data.Children.length,
@@ -5866,11 +6385,13 @@
                 }
 
                 addToLeafCollection(thisPersonsLeaf);
+                siftOutA0StepChunk();
                 if (niblingInLawParents.length > 0) {
                     getPeopleCall(niblingInLawParents, "I0");
                     self.drawTree(person);
                     clearMessageBelowButtonBar();
                 } else {
+                    getPeopleCall([SuperBigFamView.theLeafCollection["A0"].Id], "I1", 0);
                     self.drawTree(person);
                     clearMessageBelowButtonBar();
                 }
@@ -6054,7 +6575,7 @@
                 newChunk4Sibs = newLeaf.Chunk + "C0";
                 newChunk4Partners = newLeaf.Chunk + "C0";
                 if (newLeaf.Chunk == "A1") {
-                    newChunk4Partners = "A1";
+                    newChunk4Partners = "A0step";
                 }
                 newChunk4Kids = newLeaf.Chunk + "C0";
                 if (newLeaf.Chunk == "A1") {
@@ -6831,7 +7352,8 @@
             SuperBigFamView.numAncGens2Display,
             SuperBigFamView.numDescGens2Display,
             SuperBigFamView.numCuzGens2Display,
-            SuperBigFamView.displayINLAWS
+            SuperBigFamView.displayINLAWS,
+            SuperBigFamView.displaySIBLINGS,
         );
 
         let goodChunks = ["A0"];
@@ -6859,12 +7381,17 @@
             }
         }
 
-        if (SuperBigFamView.displayINLAWS > 0) {
+        if (SuperBigFamView.displaySIBLINGS > 0 || (SuperBigFamView.numCuzGens2Display > 1 && SuperBigFamView.displayPedigreeOnly == 0)) {
+            goodChunks.push("A0step");
+        }
+
+        if (SuperBigFamView.displayINLAWS > 0 ) {
             let currChunkLength = goodChunks.length;
             for (let ch = currChunkLength - 1; ch >= 0; ch--) {
                 goodChunks.push(goodChunks[ch] + "IL");
             }
         }
+
 
         //console.log("LeafyChunks : ", goodChunks);
         for (let ch = 0; ch < goodChunks.length; ch++) {
@@ -6878,9 +7405,11 @@
             }
         }
 
-        // Last bit ... take the TOP row of Ancestors- and IF we have any Cousin levels at all (incl. showing Aunts & Uncles)
-        // ... THEN ... find all R?C0 peeps and display them as well.
+       
+
         if (SuperBigFamView.numCuzGens2Display > 0) {
+            // Last bit ... take the TOP row of Ancestors- and IF we have any Cousin levels at all (incl. showing Aunts & Uncles)
+            // ... THEN ... find all R?C0 peeps and display them as well.
             let lastChunkCode = "A" + SuperBigFamView.numAncGens2Display + "C0";
             if (SuperBigFamView.theChunkCollection[lastChunkCode]) {
                 for (let c = 0; c < SuperBigFamView.theChunkCollection[lastChunkCode].CodesList.length; c++) {
@@ -6899,6 +7428,15 @@
                 }
             }
         }
+
+        // ADD Spouses of Primary's Parents if they begat Half-Siblings when showSiblings = 1 && numA > 0
+        if (SuperBigFamView.numAncGens2Display > 0 && SuperBigFamView.displaySIBLINGS > 0) {
+            console.log("SHOULD BE SHOWING LYNDA BENHAM");
+            console.log("SHOULD BE SHOWING LYNDA BENHAM", thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Siblings);
+        } else {
+            console.log("NO GO LYNDA BENHAM");
+        }
+        
 
         console.log("All the Leafy Bits of Nodes:", theNodes);
         return theNodes;
