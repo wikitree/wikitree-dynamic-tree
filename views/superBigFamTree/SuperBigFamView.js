@@ -4419,7 +4419,7 @@
         if (chunkyILs.indexOf("A0D1IL") > -1 || chunkyILs.indexOf("S0D1IL") > -1) {
             maxInLawsArray[1]++;
         }
-        for (let a = 1; a <= numA; a++) {            
+        for (let a = 1; a < numA; a++) {            
              maxInLawsArray[a+1] = 0;
             for (let C = 0; C <= numC; C++) {
                 const chunkID = "A" + a + "C" + C + "IL";
@@ -4660,7 +4660,7 @@
                     maxInLawsArray[a], numC
                 );
                 cuzHeight = maxCuzArray[a] * vBoxHeight;
-                let thisMaxHeight = Math.max(vBoxHeight, AmaxHeights[a], cuzHeight);
+                let thisMaxHeight = Math.max(vBoxHeight, AmaxHeights[a]);
 
                 console.log( "maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
                 if (maxCuzArray[a] > 0 && numC > 1) {
