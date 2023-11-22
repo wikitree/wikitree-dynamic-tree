@@ -4442,18 +4442,37 @@
 
         for (let a = 1; a <= numA; a++) {
             maxCuzArray[a] = 0;
-            for (let C = 0; C <= numC; C++) {
+            for (let C = 1; C <= Math.max(1, numC - 1); C++) {
                 const chunkID = "A" + a + "C" + C ;
                 if (
                     SuperBigFamView.theChunkCollection[chunkID] &&
                     SuperBigFamView.theChunkCollection[chunkID].CodesList &&
                     SuperBigFamView.theChunkCollection[chunkID].CodesList.length > 0
                 ) {
-                    maxCuzArray[a] = C;
+                    let foundKidAtLevelC = false;
+                    for (
+                        let Lnum = 0;
+                        !foundKidAtLevelC && Lnum < SuperBigFamView.theChunkCollection[chunkID].CodesList.length;
+                        Lnum++
+                    ) {
+                        if (SuperBigFamView.theChunkCollection[chunkID].CodesList[Lnum].substr(-3,1) == "K") {
+                            foundKidAtLevelC = true;
+                        } else {
+                            console.log(
+                                "maxh - found @ -3 : ",
+                                SuperBigFamView.theChunkCollection[chunkID].CodesList[Lnum].substr(-3)
+                            );
+                        };
+                    }
+                    if (foundKidAtLevelC) {
+                        maxCuzArray[a] = C;
+                    } 
+                        
+                    console.log("maxH - assembleMaxCuz - found chunk:", chunkID);
                 }
             }
         }
-        console.log("assembleMaxCuzPerAncGen: ", maxCuzArray);
+        console.log("assembleMaxCuzPerAncGen: maxH", maxCuzArray);
         return maxCuzArray;
     }
 
@@ -4631,14 +4650,31 @@
                 // for each Ancestor Generation ...
 
                 // use adjusted # for maximum cousins per ancestor generation
+                console.log(
+                    "maxHeights for ",
+                    a,
+                    ": vBoxHeight, AmaxHeights[a], maxCuzArray[a], maxInLawsArray[a], numC = ",
+                    vBoxHeight,
+                    AmaxHeights[a],
+                    maxCuzArray[a],
+                    maxInLawsArray[a], numC
+                );
                 cuzHeight = maxCuzArray[a] * vBoxHeight;
                 let thisMaxHeight = Math.max(vBoxHeight, AmaxHeights[a], cuzHeight);
+
+                console.log( "maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
+                if (maxCuzArray[a] > 0 && numC > 1) {
+                    thisMaxHeight += maxCuzArray[a] * vBoxHeight;
+                }
                 if (a == numA) {
                     thisMaxHeight = vBoxHeight;
                 }
+                console.log("maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
                 if (showInLaws) {
-                    thisMaxHeight += maxInLawsArray[a] * vBoxHeight;
+                    thisMaxHeight += maxInLawsArray[a] * AmaxHeights[a];
                 }
+               
+                console.log("maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
                 thisY -= thisMaxHeight;
                 let thisMidWayANum = 2 ** a * 1.5;
 
