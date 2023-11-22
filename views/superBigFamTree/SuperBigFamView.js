@@ -2120,6 +2120,7 @@
     }
 
      function siftOutA0StepChunk() {
+        
         let parentCodes = ["A0RM","A0RF"];
 
         console.log("siftOutA0StepChunk : GO TIME ");
@@ -2155,17 +2156,17 @@
                 if (numSharedKids == 0) {
                     console.log("THIS PERSON DOES NOT NEED THE A0 STEP PARENT CHUNK ASSIGNED !", primarySpouse.Who);
 
-                    // SBFV.theChunkCollection: Remove from A0step CHUNK and add into A1C1 chunk  (create A1C1 chunk if needed)
-                    // SBFV.theLeafCollection: change Chunk to A1C1
-                    // thePeopleList --> change Chunk to A1C1
-                    moveFromOneChunkToAnother("A0step", "A1C1", primarySpouseCode);
+                    // SBFV.theChunkCollection: Remove from A0step CHUNK and add into A1C0 chunk  (create A1C0 chunk if needed)
+                    // SBFV.theLeafCollection: change Chunk to A1C0
+                    // thePeopleList --> change Chunk to A1C0
+                    moveFromOneChunkToAnother("A0step", "A1C0", primarySpouseCode);
                     
-                    // Similar for Father and Mother --> A0stepIL --> A1C1IL
+                    // Similar for Father and Mother --> A0stepIL --> A1C0IL
                     if (SuperBigFamView.theLeafCollection[primarySpouseCode + "RM"]) {
-                        moveFromOneChunkToAnother("A0stepIL", "A1C1IL", primarySpouseCode + "RM");
+                        moveFromOneChunkToAnother("A0stepIL", "A1C0IL", primarySpouseCode + "RM");
                     }
                     if (SuperBigFamView.theLeafCollection[primarySpouseCode + "RF"]) {
-                        moveFromOneChunkToAnother("A0stepIL", "A1C1IL", primarySpouseCode + "RF");
+                        moveFromOneChunkToAnother("A0stepIL", "A1C0IL", primarySpouseCode + "RF");
                     }
 
 
@@ -4843,6 +4844,7 @@
         let dy = thisY - thisLeaf.y;
         thisLeaf.x = thisX;
         thisLeaf.y = thisY;
+        if (thisLeaf.x == 0) {thisLeaf.x = 1;}
 
         for (let l in SuperBigFamView.theLeafCollection) {
             let leaf = SuperBigFamView.theLeafCollection[l];
@@ -4850,6 +4852,9 @@
                 // console.log("--> (B4 ", l, leaf.Code, " @ ", leaf.x, ",", leaf.y, ")");
                 leaf.x += dx;
                 leaf.y += dy;
+                if (leaf.x == 0) {
+                    leaf.x = 1;
+                }
                 // console.log("--> NOW: ", l, leaf.Code, " @ ", leaf.x, ",", leaf.y);
             }
         }
@@ -4870,6 +4875,9 @@
         let dy = thisY - thisLeaf.y;
         thisLeaf.x = thisX;
         thisLeaf.y = thisY;
+        if (thisLeaf.x == 0) {
+            thisLeaf.x = 1;
+        }
 
         for (let l in SuperBigFamView.theLeafCollection) {
             let leaf = SuperBigFamView.theLeafCollection[l];
@@ -6575,7 +6583,7 @@
                 newChunk4Sibs = newLeaf.Chunk + "C0";
                 newChunk4Partners = newLeaf.Chunk + "C0";
                 if (newLeaf.Chunk == "A1") {
-                    newChunk4Partners = "A0step";
+                    newChunk4Partners = "A0step"; //A0step // A1C0
                 }
                 newChunk4Kids = newLeaf.Chunk + "C0";
                 if (newLeaf.Chunk == "A1") {
@@ -7364,7 +7372,7 @@
 
             // get all the cousin levels with this direct ancestor - unless the top A level
             for (
-                let cNum = 1;
+                let cNum = 1; SuperBigFamView.displayPedigreeOnly == 0 &&
                 aNum < SuperBigFamView.numAncGens2Display && cNum <= SuperBigFamView.numCuzGens2Display;
                 cNum++
             ) {
