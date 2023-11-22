@@ -118,7 +118,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.privates = 0;
         this.references = [];
         this.htmlReferences = [];
+        this.htmlResearchNotes = [];
         this.doneKids = [];
+        this.researchNotes = [];
     }
 
     toggleStyle(styleId, styleContent, isChecked, optionalElement = null) {
@@ -223,7 +225,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                             if (this.calledPeople.length === this.people.length) {
                                 this.makeFamilySheet();
-                                console.log(this.person_id, WTID);
+                                //  console.log(this.person_id, WTID);
                                 personDataCache.setPersonData(this.person_id, this.people);
                             }
                         });
@@ -1133,27 +1135,65 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     familySheetPerson = (fsPerson, role) => {
         // Get Sources section from bioHTML
 
-        // Create a new DOM parser
-        const parser = new DOMParser();
-        // Parse the string into a document
-        const doc = parser.parseFromString(fsPerson.bioHTML, "text/html");
-        // Find the 'Sources' section header
-        const sourcesHeader = doc.querySelector('a[name="Sources"]').parentElement;
+        // Create a dummy div element and set its HTML content
+        const dummyDiv = $("<div></div>").html(fsPerson.bioHTML);
+        dummyDiv.find("sup").remove(); // Remove the <sup> tags
+        dummyDiv.find("a:contains('↑')").remove();
 
-        // String to hold the HTML content of the 'Sources' section
-        let sourcesHtml = "";
+        // Find the 'Sources' section header
+        const sourcesHeader = dummyDiv.find("h2").filter(function () {
+            return $(this).text().includes("Sources");
+        });
+
+        // Find the 'Sources' section header
+        const researchNotesHeader = dummyDiv.find("h2").filter(function () {
+            return $(this).text().includes("Research Notes");
+        });
+
+        // console.log(dummyDiv.html());
+
+        // Div to hold the references
+        const refsContainer = $("<div class='citationList'></div>");
+        const researchNotesContainer = $("<div class='researchNotes'></div>");
+
+        // If the Research Notes heading is found, add the content to the researchNotesContainer until $("a[name="Sources"]") or the next h2 is reached
+        if (researchNotesHeader.length > 0) {
+            let currentElement = researchNotesHeader.next();
+
+            // Traverse the siblings until the Sources div is reached
+            while (currentElement.length > 0 && !currentElement.is("h2") && !currentElement.is("a[name='Sources']")) {
+                researchNotesContainer.append($(currentElement));
+                currentElement = currentElement.next();
+            }
+        }
+        //  console.log("researchNotesContainer", researchNotesContainer.html());
 
         // Check if the sourcesHeader is found
-        if (sourcesHeader) {
-            let currentElement = sourcesHeader;
+        if (sourcesHeader.length > 0) {
+            // Iterate over all following siblings of the sourcesHeader
+            sourcesHeader.nextAll().each(function () {
+                const currentElement = $(this);
+                // console.log("Current element: ", currentElement.prop("outerHTML"));
 
-            // Traverse the siblings until the next header is reached
-            while (currentElement && !$(currentElement.nextElementSibling).hasClass("EDIT")) {
-                sourcesHtml += currentElement.outerHTML;
-                currentElement = currentElement.nextElementSibling;
-            }
+                // Check if the current element is the EDIT div
+                if (currentElement.hasClass("EDIT")) {
+                    //  console.log("Reached EDIT div, stopping iteration");
+                    return false; // Break the loop
+                }
 
-            console.log(sourcesHtml);
+                // Process the current element
+                if (currentElement.is("OL")) {
+                    // Convert OL to UL
+                    const newUL = $("<ul class='inlineReferences'></ul>");
+                    currentElement.find("li").each(function () {
+                        newUL.append($(this));
+                    });
+                    refsContainer.append(newUL);
+                } else {
+                    // Append other types of elements directly
+                    refsContainer.append(currentElement);
+                }
+            });
         } else {
             console.log("Sources section not found");
         }
@@ -1252,6 +1292,16 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Store references
         this.references.push([fsPerson.Name, myRefs, mSeeAlso]);
+        this.htmlReferences.push({
+            id: fsPerson.Name,
+            displayName: this.displayName(fsPerson)[0],
+            refs: refsContainer,
+        });
+        this.htmlResearchNotes.push({
+            id: fsPerson.Name,
+            displayName: this.displayName(fsPerson)[0],
+            researchNotes: researchNotesContainer,
+        });
 
         // Check if value is OK (not null or undefined)
         // const isOK = (value) => value !== null && value !== undefined;
@@ -1511,7 +1561,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     };
 
     formatDateAndCreateRow = (date, place, role, rowType, rowLabel, dateStatus = "") => {
-        console.log(date, place, role, rowType, rowLabel, dateStatus);
+        //  console.log(date, place, role, rowType, rowLabel, dateStatus);
 
         const settings = this.getSettings();
         let dateFormat = settings.dateFormatSelect;
@@ -2253,6 +2303,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     appendReferences(mList) {
+        /*
         this.references.forEach((pRefs) => {
             const anID = pRefs[0];
             let thisName = this.getFormattedName(anID);
@@ -2270,6 +2321,31 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
             aUL.appendTo(anLI);
             anLI.appendTo(mList);
+        });
+        */
+
+        this.htmlReferences.forEach((pRefs) => {
+            const anID = pRefs.id;
+            /*
+            const anLI = this.createListItem(anID, thisName, wtidSpan);
+            const aUL = $("<ul></ul>");
+
+            pRefs[1].forEach((aRef) => {
+                aUL.append($("<li>" + this.fixCitation(aRef) + "</li>"));
+            });
+
+            this.appendSeeAlso(aUL, pRefs[2]);
+
+            aUL.appendTo(anLI);
+            anLI.appendTo(mList);
+            */
+
+            const nameHeading = $(
+                `<a class='sourcesName' href='https://www.wikitree.com/wiki/${pRefs.id}'>${pRefs.displayName} <span class='fsWTID'>(${pRefs.id})</span></a>`
+            );
+            const refDiv = pRefs.refs;
+            refDiv.prepend(nameHeading);
+            $("#sources").append(refDiv);
         });
     }
 
@@ -2413,6 +2489,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $("<img id='fgaPrintIcon' src='views/familyGroupApp/images/print50.png'>").appendTo("header");
             $("#fgaPrintIcon").click(() => window.print());
         }
+
+        this.fixLinks();
+        this.fixImageLinks();
     }
 
     toggleDisplay(selector, condition) {
@@ -2451,7 +2530,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         $("#notesAndSources").remove();
         console.log(this.people);
 
-        this.researchNotes = [];
         this.references = [];
         const isHusbandFirst = $("#husbandFirst").prop("checked");
 
@@ -2510,14 +2588,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 wifeTable.find("> tbody").append($(spouseRow));
             }
         } else {
-            console.log("The spouse could not be found: ", matchPerson);
-            setTimeout(() => {
-                $("th.role.heading a").text("Name");
-                $("tr.otherMarriageRow").remove();
-                $("tr.HusbandParentsRow th, tr.WifeParentsRow th").each(function () {
-                    $(this).text($(this).text().replace("Husband's ", "").replace("Wife's ", ""));
-                });
-            }, 500);
+            // console.log("The spouse could not be found: ", matchPerson);
+            //  setTimeout(() => {
+            $("th.role.heading a").text("Name");
+            $("tr.otherMarriageRow").remove();
+            $("tr.HusbandParentsRow th, tr.WifeParentsRow th").each(function () {
+                $(this).text($(this).text().replace("Husband's ", "").replace("Wife's ", ""));
+            });
+            //  }, 500);
         }
 
         if (mainRole === "Husband" || isHusbandFirst) {
@@ -2692,6 +2770,31 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.openLinksInNewTab();
     }
 
+    fixLinks() {
+        $("#view-container a").each(function () {
+            const $this = $(this);
+            const href = $this.attr("href");
+            console.log("Processing link: ", href); // Debugging
+
+            // Find links without a domain and add the domain
+            if (href && !href.match(/http/)) {
+                $this.attr("href", "https://www.wikitree.com" + href);
+                console.log("Updated link: ", $this.attr("href")); // Debugging
+            }
+        });
+    }
+
+    fixImageLinks() {
+        $("#view-container img").each(function () {
+            const $this = $(this);
+            const src = $this.attr("src");
+            // Find links without a domain and add the domain
+            if (src && !src.match(/http/) && !src.match(/familyGroupApp/)) {
+                $this.attr("src", "https://www.wikitree.com" + src);
+            }
+        });
+    }
+
     appendNotesAndSources() {
         let setWidth = 0;
         if ($("#familySheetFormTable").length) {
@@ -2704,6 +2807,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const notesAndSources = $("<section id='notesAndSources'></section>");
         $("<div id='notes'><h2>Research Notes:</h2><div id='notesNotes'></div></div>").appendTo(notesAndSources);
 
+        /*
         if (this.researchNotes.length > 0) {
             this.researchNotes.forEach((rNote) => {
                 //	console.log(rNote);
@@ -2721,6 +2825,24 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
             });
         }
+        */
+
+        if (this.htmlResearchNotes.length > 0) {
+            this.htmlResearchNotes.forEach((rNote) => {
+                //	console.log(rNote);
+                if (rNote.researchNotes.text().trim() !== "") {
+                    notesAndSources
+                        .find("#notesNotes")
+                        .append(
+                            $(
+                                `<a class='sourcesName' href='https://www.wikitree.com/wiki/${rNote.id}'>${rNote.displayName} <span class='fsWTID'>(${rNote.id})</span></a>`
+                            )
+                        );
+                    notesAndSources.find("#notesNotes").append(rNote.researchNotes);
+                }
+            });
+        }
+
         $("<div id='sources'><h2>Sources:</h2></div>").appendTo(notesAndSources);
         notesAndSources.appendTo($(this.$container));
         notesAndSources.css({ "max-width": setWidth, "width": setWidth });
@@ -2730,7 +2852,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.citationTables = [];
         this.appendReferences(mList);
 
-        $("#sources").append(mList);
         $("#sources li[data-wtid='" + this.husbandWTID + "']").prependTo($("#sources ul").eq(0));
         this.openLinksInNewTab();
     }

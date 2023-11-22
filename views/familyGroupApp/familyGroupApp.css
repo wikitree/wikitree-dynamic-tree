@@ -204,6 +204,12 @@ th.bioHeading {
   min-height: 2em;
   cursor: pointer;
 }
+#view-container #notesAndSources h2,
+#view-container #notesAndSources h3,
+#view-container #notesAndSources h4,
+#view-container #notesAndSources h5 {
+  margin-bottom: 0.2em;
+}
 
 #view-container.familyGroupApp .sourcesName,
 #view-container.familyGroupApp .role.heading a,
@@ -639,8 +645,12 @@ body.app header {
   width: 250px;
 }
 
-#view-container.familyGroupApp table.citationTable {
+#view-container.familyGroupApp table.citationTable,
+#view-container.familyGroupApp .citationList table {
   width: auto;
+}
+#view-container.familyGroupApp div.citationList ul {
+  margin-left: 2em;
 }
 
 #view-container.familyGroupApp table.personTable.husband,
