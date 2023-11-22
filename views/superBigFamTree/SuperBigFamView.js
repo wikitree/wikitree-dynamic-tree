@@ -3198,9 +3198,9 @@
                 drawColour +
                 `" stroke-width="3"/>`;
 
-            if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
-                equalsLine = "";
-            }
+            // if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+            //     equalsLine = "";
+            // }
             equalsLine +=
                 `<polyline points="` +
                 (minX + 20) +
