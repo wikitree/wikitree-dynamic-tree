@@ -7389,7 +7389,7 @@
             }
         }
 
-        if (SuperBigFamView.displaySIBLINGS > 0 || (SuperBigFamView.numCuzGens2Display > 1 && SuperBigFamView.displayPedigreeOnly == 0)) {
+        if (SuperBigFamView.displaySIBLINGS > 0 || (SuperBigFamView.numCuzGens2Display > 0 && SuperBigFamView.displayPedigreeOnly == 0)) {
             goodChunks.push("A0step");
         }
 
