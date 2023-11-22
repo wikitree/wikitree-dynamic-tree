@@ -72,11 +72,17 @@ export class Person {
         const d = this._data.BirthDate || this._data.BirthDateDecade;
         return d?.substring(0, 4) || "0000";
     }
+    getBirthDecade() {
+        return this._data.BirthDateDecade;
+    }
     getBirthLocation() {
         return this._data.BirthLocation;
     }
     getDeathDate() {
         return this._data.DeathDate;
+    }
+    getDeathDecade() {
+        return this._data.DeathDateDecade;
     }
     getDeathLocation() {
         return this._data.DeathLocation;
@@ -132,6 +138,13 @@ export class Person {
     }
     setBrickWall(what = true) {
         this.brickWall = what;
+    }
+    isPrivate() {
+        const priv = this._data.Privacy;
+        return priv >= 20 && priv <= 40;
+    }
+    isUnlisted() {
+        return this._data.Privacy == 10;
     }
 
     hasSuffix() {

@@ -1,5 +1,6 @@
 import { AncestorTree } from "./ancestor_tree.js";
 import { showTree } from "./display.js";
+import { Lang } from "./lang.js";
 
 export class AncestorLinesExplorer {
     static #COOKIE_NAME = "wt_ale_options";
@@ -83,6 +84,18 @@ export class AncestorLinesExplorer {
                   </li>
                 </ul>
             </li><li>
+                You can limit the display of names and dates/location of private profiles and/or living people by selecting
+                any of the following:
+                <ul>
+                  <li>
+                      <b>${Lang.spell("Privatize")}</b> will obey the
+                      <a href="https://www.wikitree.com/wiki/Help:Privacy" target="_blank">privacy settings</a>
+                      when displaying names and dates, even if you are on the trusted list.
+                  </li><li>
+                      <b>${Lang.spell("Anonymize the living")}</b> will not display the name of any living person, and
+                      wil not show their birth or death dates or location.
+                </ul>
+            </li><li>
                 Changes to checkbox options only take effect when <b>(Re-)Draw Tree</b> or <b>Go</b> is clicked. A colour
                 change takes effect immediately, while the remaining options can be applied immediatly by pressing enter
                 after any of them was changed.
@@ -97,10 +110,10 @@ export class AncestorLinesExplorer {
             these "lines of interest" should be displayed or not.
         </p><p>
             If you find problems with this app or have suggestions for improvements, please
-            <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641" , target="_blank"
+            <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641" target="_blank"
             >let me know</a>.
         </p><p>
-            You can double click in this box, or click the X in the top right corner to remove this About text.
+            You can double click in this box, or press ESC, or click the X in the top right corner to remove this About text.
         </p>
    `;
     static nextZLevel = 10000;
@@ -261,7 +274,7 @@ export class AncestorLinesExplorer {
                       <input id="tHFactor" type="number" min="1" value="34" title="Determines the display height of the tree." />
                     </td>
                     <td>
-                      <label for="maxLevel" title="The tree will be drawn with only this number of generations." class="left">
+                      <label for="maxLevel" title="The tree will be drawn with only this number of generations.">
                         Limit display to generation:</label
                       ><select id="maxLevel" title="The tree will be drawn with only this number of generations.">
                         <option value="0">All</option>
@@ -315,7 +328,28 @@ export class AncestorLinesExplorer {
                     </td>
                   </tr>
                   <tr>
-                    <td></td>
+                    <td>
+                      <input
+                        id="privatise"
+                        type="checkbox"
+                        title="Obey privacy settings when displaying names and dates, even if you are on the trusted list." />
+                      <label
+                        for="privatise"
+                        title="Obey privacy settings when displaying names and dates, even if you are on the trusted list."
+                        class="right">
+                        ${Lang.spell("Privatize")}</label
+                      >
+                      <input
+                        id="anonLiving"
+                        type="checkbox"
+                        title="Anonymize names of living people and remove their dates and places." />
+                      <label
+                        for="anonLiving"
+                        title="Anonymize names of living people and remove their dates and places."
+                        class="right">
+                        ${Lang.spell("Anonymize")} the living</label
+                      >
+                    </td>
                     <td></td>
                     <td>
                       <input
@@ -533,12 +567,15 @@ export class AncestorLinesExplorer {
         }
 
         AncestorTree.clear();
+        wtViewRegistry.clearStatus();
         AncestorLinesExplorer.clearDisplay();
         AncestorLinesExplorer.showShakingTree();
         const nrGenerations = $("#generation").val();
-        await AncestorLinesExplorer.retrieveAncestorsFromWT(wtId, nrGenerations);
+        const theRoot = await AncestorLinesExplorer.retrieveAncestorsFromWT(wtId, nrGenerations);
         AncestorLinesExplorer.hideShakingTree();
-        AncestorLinesExplorer.findPathsAndDrawTree(event);
+        if (theRoot) {
+            AncestorLinesExplorer.findPathsAndDrawTree(event);
+        }
     }
 
     static findPathsAndDrawTree(event) {
@@ -659,10 +696,11 @@ export class AncestorLinesExplorer {
         if (typeof file == "undefined" || file == "") {
             return;
         }
-        const reader = new FileReader();
+        wtViewRegistry.clearStatus();
         AncestorLinesExplorer.clearDisplay();
         AncestorLinesExplorer.showShakingTree();
 
+        const reader = new FileReader();
         reader.onload = async function (e) {
             const contents = e.target.result;
             let people;
@@ -739,6 +777,8 @@ export class AncestorLinesExplorer {
             noNoChildren: document.getElementById("noNoChildren").checked,
             bioCheck: document.getElementById("bioCheck").checked,
             birthScale: document.getElementById("birthScale").checked,
+            privatise: document.getElementById("privatise").checked,
+            anonLiving: document.getElementById("anonLiving").checked,
         };
         // console.log(`Saving options ${JSON.stringify(options)}`);
         AncestorLinesExplorer.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
@@ -765,6 +805,8 @@ export class AncestorLinesExplorer {
             $("#noNoChildren").attr("checked", opt.noNoChildren);
             $("#bioCheck").attr("checked", opt.bioCheck);
             $("#birthScale").attr("checked", opt.birthScale);
+            $("#privatise").attr("checked", opt.privatise);
+            $("#anonLiving").attr("checked", opt.anonLiving);
         }
     }
 

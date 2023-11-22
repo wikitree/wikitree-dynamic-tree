@@ -913,7 +913,7 @@ export class CC7 {
             }
             const profiles = peopleData ? Object.values(peopleData) : [];
             if (profiles.length == 0) {
-                const reason = keysResult[reqId]?.status || status;
+                const reason = keysResult?.[reqId]?.status || status;
                 wtViewRegistry.showError(`Could not retrieve relatives for ${reqId}. Reason: ${reason}`);
             }
             console.log(
