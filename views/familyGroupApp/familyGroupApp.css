@@ -163,6 +163,12 @@ th.bioHeading {
 }
 #view-container.familyGroupApp a.sourcesName {
   font-size: 1.2em;
+  margin: 0.5em 0;
+  display: block;
+}
+#view-container.familyGroupApp #sources,
+#view-container.familyGroupApp #notes {
+  padding: 0.5em;
 }
 
 #view-container.familyGroupApp #citationList > li > span {
@@ -187,7 +193,7 @@ th.bioHeading {
 #view-container.familyGroupApp h1 input.edit {
   width: 10em;
 }
-#view-container.familyGroupApp #sources table.citationTable td,
+#view-container.familyGroupApp #sources table td,
 #view-container.familyGroupApp #notes,
 #view-container.familyGroupApp #sources {
   border-top: 1px solid black;
@@ -204,10 +210,14 @@ th.bioHeading {
   min-height: 2em;
   cursor: pointer;
 }
-#view-container #notesAndSources h2,
-#view-container #notesAndSources h3,
-#view-container #notesAndSources h4,
-#view-container #notesAndSources h5 {
+#view-container.familyGroupApp #notesAndSources h2,
+#view-container.familyGroupApp #notesAndSources h3,
+#view-container.familyGroupApp #notesAndSources h4,
+#view-container.familyGroupApp #notesAndSources h5,
+#view-container.familyGroupApp .bioRow h2,
+#view-container.familyGroupApp .bioRow h3,
+#view-container.familyGroupApp .bioRow h4,
+#view-container.familyGroupApp .bioRow h5 {
   margin-bottom: 0.2em;
 }
 
@@ -390,19 +400,10 @@ body.app header {
   display: inline-block;
 }
 
-/*
-
-#view-container.familyGroupApp #fgaOptions #toggleBios,
-#view-container.familyGroupApp #fgaOptions #includeBiosWhenPrinting,
 #view-container.familyGroupApp #fgaOptions #showListsLabel,
-#view-container.familyGroupApp #fgaOptions #showTablesLabel,
-#view-container.familyGroupApp #fgaOptions #showGenderDiv,
-#view-container.familyGroupApp #fgaOptions #statusChoice,
-#view-container.familyGroupApp #husbandFirstLabel,
-#view-container.familyGroupApp #fgaOptions #showOtherLastNamesLabel {
+#view-container.familyGroupApp #fgaOptions #showTablesLabel {
   display: none;
 }
-*/
 
 #view-container.familyGroupApp .bioRow .theBio,
 #view-container.familyGroupApp #fgaOptions {
@@ -444,9 +445,12 @@ body.app header {
   margin: auto;
   display: none;
 }
+/*
 #view-container.familyGroupApp sup.reference {
   display: none;
 }
+*/
+
 #view-container.familyGroupApp .marriageDate {
   display: inline-block;
 }
@@ -629,9 +633,8 @@ body.app header {
 
 #view-container.familyGroupApp table {
   width: 800px;
-  margin-left: auto;
-  margin-right: auto;
   background-color: #fff;
+  margin: 0.5em;
 }
 #view-container.familyGroupApp table th:first-child {
   min-width: 160px;
@@ -650,7 +653,7 @@ body.app header {
   width: auto;
 }
 #view-container.familyGroupApp div.citationList ul {
-  margin-left: 2em;
+  margin-left: 1.5em;
 }
 
 #view-container.familyGroupApp table.personTable.husband,
@@ -661,4 +664,30 @@ body.app header {
 
 #view-container.familyGroupApp #dateFormatSelect {
   padding: 0.2em 5em 0.2em 0.2em;
+}
+
+#view-container.familyGroupApp hr {
+  margin: 0.5em 0;
+}
+
+#view-container.familyGroupApp input.edit {
+  padding: 3px;
+}
+
+#view-container.familyGroupApp div[style*="width:250px;"][style*="min-height:50px;"][style*="float:right;"] {
+  margin-right: 0.5em;
+}
+
+#view-container.familyGroupApp table[style*="margin-left:1em;"][style*="float:left;"],
+#view-container.familyGroupApp table[style*="margin-left:1em;"][style*="float:right;"] {
+  width: auto;
+}
+
+#view-container.familyGroupApp div.theBio {
+  font-weight: normal;
+  padding-right: 0.5em;
+}
+#view-container.familyGroupApp th span.bioHeading {
+  font-weight: bold;
+  cursor: pointer;
 }

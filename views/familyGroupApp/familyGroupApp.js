@@ -33,10 +33,6 @@ const personDataCache = new PersonDataCache();
 
 window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     static APP_ID = "familyGroupApp";
-    static setLinksToOpenInNewTab() {
-        $("a").attr("target", "_blank");
-    }
-
     constructor(container_selector, person_id) {
         super(); // If there is a constructor in the parent class, make sure to call it.
         this.container_selector = container_selector;
@@ -244,11 +240,36 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     openLinksInNewTab() {
-        // Add target="_blank" to all links
-        $("#view-container a").attr("target", "_blank");
+        $("#view-container a:not([href^='#'])").attr("target", "_blank");
+    }
+
+    setDefaults() {
+        // Set default values for settings
+        const defaults = {
+            showBaptism: true,
+            showBurial: true,
+            showNicknames: false,
+            showOtherLastNames: false,
+            useColour: true,
+            showWTIDs: false,
+            showParentsSpousesDates: false,
+            includeBiosWhenPrinting: false,
+            showBios: false,
+            dateFormatSelect: "sMDY",
+            statusChoice: "symbols",
+            showGender: "initial",
+            husbandFirst: true,
+            showTables: true,
+        };
+
+        // Set default values for settings
+        localStorage.setItem("familyGroupAppSettings", JSON.stringify(defaults));
     }
 
     init(container_selector, person_id) {
+        if (!localStorage.getItem("familyGroupAppSettings")) {
+            this.setDefaults();
+        }
         this.person_id = person_id;
         console.log("this.person_id", this.person_id);
         this.$container = $(container_selector); // Cache the jQuery object for the container
@@ -439,7 +460,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         this.$container.on(
             "click.fga",
-            ".BaptismDate, .BaptismPlace, .buriedDate, .buriedPlace, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable, .marriedRow td",
+            ".baptismRow td, .burialRow td, caption, h1, .birthRow td, .deathRow td, .otherMarriagePlace, span.marriageDate, .marriedPlace, .editable, .marriedRow td",
             (e) => {
                 const $this = $(e.currentTarget);
                 let theEl = $this;
@@ -492,7 +513,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
         this.$container.on("click.fga", ".bioHeading", (e) => {
             const $this = $(e.currentTarget);
-            $this.next().find(".theBio").toggle();
+            const theBio = $this.parent().find(".theBio");
+            theBio.toggle();
+            if (theBio.css("display") == "block") {
+                $this.css("font-size", "1.7143em");
+            } else {
+                $this.css("font-size", "16px");
+            }
         });
     }
 
@@ -619,8 +646,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <label><input type='checkbox' id='showBurial'  checked value='1'>Buried</label>
         <label id='showWTIDsLabel'><input type='checkbox' id='showWTIDs'><span>WikiTree IDs</span></label>
         <label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'><span>parents' and spouses' dates</span></label>
-        <label id='showTablesLabel'><input type='checkbox' id='showTables'  checked value='1'>tables in 'Sources'</label>
-        <label id='showListsLabel'><input type='checkbox' id='showLists'  checked value='1'>lists in 'Sources'</label>
+        <label id='showTablesLabel'><input type='checkbox' id='showTables' checked>tables in 'Sources'</label>
+        <label id='showListsLabel'><input type='checkbox' id='showLists' checked>lists in 'Sources'</label>
         <label><input type='checkbox' id='useColour' checked value='1'>${spell("color")}</label>
         <label id='toggleBios'><input type='checkbox' id='showBios'><span>all biographies</span></label>
         <label id='includeBiosWhenPrintingLabel'><input type='checkbox' id='includeBiosWhenPrinting'><span>biographies when printing</span></label>
@@ -1132,12 +1159,105 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return { date, place };
     }
 
+    addIdToReferences(dummyDiv, Id) {
+        dummyDiv.find("ol.references li,sup").each(function () {
+            const el = $(this);
+            const id = el.prop("id");
+            if (id) {
+                const newId = id + "_" + Id;
+                el.prop("id", newId);
+            }
+            if (el[0].tagName === "SUP") {
+                el.find("a").each(function () {
+                    const a = $(this);
+                    const href = a.attr("href");
+                    if (href) {
+                        const newHref = href + "_" + Id;
+                        a.attr("href", newHref);
+                    }
+                });
+            }
+        });
+    }
+
+    splitBioSections(fsPerson) {
+        const htmlContent = fsPerson.bioHTML;
+
+        const sections = {
+            Biography: "",
+            ResearchNotes: "",
+            Sources: "",
+            Acknowledgements: "",
+        };
+
+        // Create a dummy div element and set its HTML content
+        const dummyDiv = $("<div></div>").html(htmlContent);
+        this.addIdToReferences(dummyDiv, fsPerson.Id);
+
+        console.log("dummyDiv", dummyDiv.html());
+
+        // Function to determine if the current h2 is the expected next section
+        function isNextSection(headerText, currentSection) {
+            const expectedNextSections = {
+                Biography: ["Research Notes", "Sources"],
+                ResearchNotes: ["Sources"],
+                Sources: ["Acknowledgements"],
+            };
+
+            return expectedNextSections[currentSection].some((section) => headerText.includes(section));
+        }
+
+        let currentSection = "Biography"; // Start with Biography
+
+        dummyDiv.find("h2").each(function () {
+            const headerText = $(this).text().trim();
+
+            // Remove preceding anchor tag
+            $(this).prev("a").remove();
+
+            if (isNextSection(headerText, currentSection)) {
+                currentSection = headerText.replace(/ /g, ""); // Update current section key
+            }
+
+            let currentElement = $(this).next();
+
+            while (
+                currentElement.length > 0 &&
+                (!currentElement.is("h2") || !isNextSection(currentElement.text().trim(), currentSection))
+            ) {
+                sections[currentSection] += currentElement.prop("outerHTML");
+                currentElement = currentElement.next();
+            }
+        });
+
+        return sections;
+    }
+
     familySheetPerson = (fsPerson, role) => {
         // Get Sources section from bioHTML
 
+        fsPerson.Sections = this.splitBioSections(fsPerson);
+        console.log("fsPerson.Sections", fsPerson.Sections);
+
         // Create a dummy div element and set its HTML content
         const dummyDiv = $("<div></div>").html(fsPerson.bioHTML);
-        dummyDiv.find("sup").remove(); // Remove the <sup> tags
+        dummyDiv.find("li").each(function () {
+            const li = $(this);
+            const id = li.prop("id");
+            if (id) {
+                const newId = id + "_" + fsPerson.Id;
+                li.prop("id", newId);
+            }
+            li.find("a").each(function () {
+                const a = $(this);
+                const href = a.attr("href");
+                if (href) {
+                    const newHref = href + "_" + fsPerson.Id;
+                    a.attr("href", newHref);
+                }
+            });
+        });
+
         dummyDiv.find("a:contains('↑')").remove();
 
         // Find the 'Sources' section header
@@ -1859,6 +1979,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderBioRow = (fsPerson, role) => {
         let bioRow = "";
 
+        /*
         if (fsPerson.bioHTML) {
             // Split the bioHTML to separate out the main content and research notes
             let [mainBio, researchNotes] = fsPerson.bioHTML.split('<a name="Sources"></a>');
@@ -1890,12 +2011,38 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         } else {
             console.log(`No bio HTML found for: ${fsPerson.Name}`);
         }
+        */
+
+        /*
+        if (fsPerson?.Sections?.Biography) {
+            bioRow = `
+            <tr data-role='${role}' class='bioRow'>
+                <th class='bioHeading heading'>Biography: </th>
+                <td colspan='2'>
+                    <div class='theBio'>${fsPerson?.Sections?.Biography}
+                    </div>
+                </td>
+            </tr>
+            `;
+        }
+        */
+
+        if (fsPerson?.Sections?.Biography) {
+            bioRow = `
+            <tr data-role='${role}' class='bioRow'>
+                <th  colspan='3' class='heading'><span class='bioHeading'>Biography</span>: 
+                    <div class='theBio'>${fsPerson?.Sections?.Biography}
+                    </div>
+                </th>
+            </tr>
+            `;
+        }
 
         return bioRow;
     };
 
     storeVal(jq) {
-        const id = jq.attr("id");
+        let id = jq.attr("id");
         const tagName = jq.prop("tagName").toLowerCase();
 
         // Retrieve the storage object if it exists
@@ -1910,6 +2057,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             // Handle radio buttons
             else if (type === "radio") {
+                id = jq.attr("name");
                 settings[id] = jq.val();
             }
         }
@@ -2406,9 +2554,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Get the checked state of the "#showTables" checkbox
         const isChecked = $("#showTables").prop("checked");
 
+        const citationTables = $("#notesAndSources table");
         // Show or hide all ".citationTable" elements based on the checkbox state
-        isChecked ? $(".citationTable").hide() : $(".citationTable").show();
+        isChecked ? citationTables.show() : citationTables.hide();
+        this.storeVal($("#showTables"));
 
+        /*
         // Iterate through each nested list item in "#citationList"
         $("#citationList li li").each(function () {
             // Retrieve all text nodes within the current list item
@@ -2419,11 +2570,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 });
 
             // If there's a visible ".citationTable" in this list item
-            if ($(this).find(".citationTable:visible").length) {
+            if ($(this).find("citationTables:visible").length) {
                 let lastNode = textNodes[textNodes.length - 1];
 
                 // Remove trailing table headings from the text node if needed
-                if (lastNode.textContent.match(/:(\W|\n)*/) && !this.removedTableHeading) {
+             //space   if (lastNode.textContent.match(/:(\W|\n)* /) && !this.removedTableHeading) {
                     lastNode.textContent = lastNode.textContent.replace(/[A-Z][a-z]+:[\W\n]*?$/m, "");
                     this.removedTableHeading = true;
                 }
@@ -2437,6 +2588,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 $(this).find(".citationTable").show();
             }
         });
+        */
     }
 
     setSettings(settings) {
@@ -2449,7 +2601,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     initializePage() {
         // Show or hide 'Tables' label based on the presence of citation tables
         console.log("checking for citation tables", $(".citationTable"));
-        this.toggleDisplay("#showTablesLabel", !!$(".citationTable").length);
+        this.toggleDisplay("#showTablesLabel", !!$("#notesAndSources table").length);
 
         console.log("checking for sources", $(".sourceUL"));
         // Show or hide 'Lists' label based on the presence of source lists
@@ -2771,13 +2923,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     fixLinks() {
-        $("#view-container a").each(function () {
+        $("#view-container a:not([href^='#'])").each(function () {
             const $this = $(this);
             const href = $this.attr("href");
             console.log("Processing link: ", href); // Debugging
 
             // Find links without a domain and add the domain
-            if (href && !href.match(/http/)) {
+            if (href && !href.match(/http/) && !href.startsWith("#")) {
                 $this.attr("href", "https://www.wikitree.com" + href);
                 console.log("Updated link: ", $this.attr("href")); // Debugging
             }
