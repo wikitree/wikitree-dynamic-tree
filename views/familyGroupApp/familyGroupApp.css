@@ -691,3 +691,9 @@ body.app header {
   font-weight: bold;
   cursor: pointer;
 }
+#view-container.familyGroupApp table.personTable tbody tr.bioRow th.active {
+  padding: 0.5em;
+}
+#view-container.familyGroupApp ol.references {
+  margin-left: 1.5em;
+}

@@ -513,12 +513,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
         this.$container.on("click.fga", ".bioHeading", (e) => {
             const $this = $(e.currentTarget);
-            const theBio = $this.parent().find(".theBio");
+            const theTH = $this.closest("th");
+            const theBio = theTH.find(".theBio");
             theBio.toggle();
             if (theBio.css("display") == "block") {
+                theTH.addClass("active");
                 $this.css("font-size", "1.7143em");
             } else {
                 $this.css("font-size", "16px");
+                theTH.removeClass("active");
             }
         });
     }
@@ -612,7 +615,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     toggleBios() {
         const shouldShowBios = this.$container.find("#showBios").prop("checked");
-        this.$container.find(".bio").each(function () {
+        this.$container.find(".theBio").each(function () {
             if (shouldShowBios) {
                 $(this).slideDown();
             } else {
@@ -1160,15 +1163,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     addIdToReferences(dummyDiv, Id) {
-        dummyDiv.find("ol.references li,sup").each(function () {
+        dummyDiv.find("li[id^='_note'] a[href^='#'],sup").each(function () {
             const el = $(this);
+            console.log("el", el);
             const id = el.prop("id");
             if (id) {
                 const newId = id + "_" + Id;
                 el.prop("id", newId);
             }
             if (el[0].tagName === "SUP") {
+                console.log("el", el);
+
                 el.find("a").each(function () {
+                    console.log("el", el);
+
                     const a = $(this);
                     const href = a.attr("href");
                     if (href) {
@@ -1176,6 +1184,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         a.attr("href", newHref);
                     }
                 });
+            } else if (el[0].tagName === "A") {
+                const href = el.attr("href");
+                if (href) {
+                    const newHref = href + "_" + Id;
+                    el.attr("href", newHref);
+                }
             }
         });
     }
@@ -1193,6 +1207,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Create a dummy div element and set its HTML content
         const dummyDiv = $("<div></div>").html(htmlContent);
         this.addIdToReferences(dummyDiv, fsPerson.Id);
+
+        console.log(dummyDiv);
 
         console.log("dummyDiv", dummyDiv.html());
 
@@ -1241,6 +1257,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Create a dummy div element and set its HTML content
         const dummyDiv = $("<div></div>").html(fsPerson.bioHTML);
+
+        /*
         dummyDiv.find("li").each(function () {
             const li = $(this);
             const id = li.prop("id");
@@ -1257,8 +1275,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
             });
         });
+      
 
-        dummyDiv.find("a:contains('↑')").remove();
+        // dummyDiv.find("a:contains('↑')").remove();
 
         // Find the 'Sources' section header
         const sourcesHeader = dummyDiv.find("h2").filter(function () {
@@ -1269,13 +1288,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const researchNotesHeader = dummyDiv.find("h2").filter(function () {
             return $(this).text().includes("Research Notes");
         });
-
+  */
         // console.log(dummyDiv.html());
 
         // Div to hold the references
         const refsContainer = $("<div class='citationList'></div>");
         const researchNotesContainer = $("<div class='researchNotes'></div>");
 
+        refsContainer.append(fsPerson?.Sections?.Sources);
+        researchNotesContainer.append(fsPerson?.Sections?.ResearchNotes);
+
+        /*
         // If the Research Notes heading is found, add the content to the researchNotesContainer until $("a[name="Sources"]") or the next h2 is reached
         if (researchNotesHeader.length > 0) {
             let currentElement = researchNotesHeader.next();
@@ -1318,6 +1341,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             console.log("Sources section not found");
         }
         // end that bit
+        */
 
         fsPerson.BioSections = this.parseWikiText(fsPerson.bio);
         console.log("fsPerson.BioSections", fsPerson.BioSections);
@@ -2926,12 +2950,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         $("#view-container a:not([href^='#'])").each(function () {
             const $this = $(this);
             const href = $this.attr("href");
-            console.log("Processing link: ", href); // Debugging
+            //console.log("Processing link: ", href); // Debugging
 
             // Find links without a domain and add the domain
-            if (href && !href.match(/http/) && !href.startsWith("#")) {
+            if (href && href.match(/http/) == null && !href.startsWith("#")) {
                 $this.attr("href", "https://www.wikitree.com" + href);
-                console.log("Updated link: ", $this.attr("href")); // Debugging
+                //console.log("Updated link: ", $this.attr("href")); // Debugging
             }
         });
     }
