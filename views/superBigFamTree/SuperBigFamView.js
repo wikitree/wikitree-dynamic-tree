@@ -7505,12 +7505,12 @@
                 goodChunks.push("A" + aNum + "C" + (cNum - 1));
             }
         }
-        if (SuperBigFamView.numAncGens2Display > 0) {
+        if (SuperBigFamView.numAncGens2Display > 0 && SuperBigFamView.displaySIBLINGS > 0) {
             goodChunks.push("S0");
         }
         for (let dNum = 1; dNum <= SuperBigFamView.numDescGens2Display; dNum++) {
             goodChunks.push("A0" + "D" + dNum);
-            if (SuperBigFamView.numAncGens2Display > 0) {
+            if (SuperBigFamView.numAncGens2Display > 0 && SuperBigFamView.displaySIBLINGS > 0) {
                 goodChunks.push("S0" + "D" + dNum);
             }
         }
