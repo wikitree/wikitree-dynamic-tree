@@ -1037,12 +1037,12 @@
                     category: "colour",
                     subcategory: "options",
                     options: [
-                        {
-                            optionName: "primarySiblings",
-                            label: "Colour Primary's Siblings as Primaries",
-                            type: "checkbox",
-                            defaultValue: true,
-                        },
+                        // {
+                        //     optionName: "primarySiblings",
+                        //     label: "Colour Primary's Siblings as Primaries",
+                        //     type: "checkbox",
+                        //     defaultValue: true,
+                        // },
                         {
                             optionName: "colourBy",
                             type: "select",
@@ -1054,7 +1054,7 @@
                                 { value: "Gender", text: "Gender" },
                                 { value: "Ancestor", text: "Ancestor family" },
 
-                                { value: "Family", text: "!* Family Stats" },
+                                { value: "Family", text: "Family Stats" },
                                 // { value: "Location", text: "!* Location" },
 
                                 // { value: "Town", text: "by Place name" },
@@ -2317,8 +2317,11 @@
                 }
                 // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
                 let centreX = (minX + maxX) / 2;
+                let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
                 if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
-                    centreX = primarySpouse.x - 150 - 50;
+                    centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
+                } else if (sp > 0 && primarySpouse.x < primaryLeaf.x) {
+                    centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
                 }
 
                  
@@ -2920,7 +2923,9 @@
                 if (sp > 0) {
                     break;
                 }
-            } else if (!primarySpouse) {
+            }  
+            
+            if (!primarySpouse) {
                 continue; /// go back to the next value of sp
             }
             let primarySpouseID = primarySpouse.Id;
@@ -3047,8 +3052,11 @@
             if (equalsLine.indexOf("NaN") > -1){console.log("DANGER DANGER:", equalsLine, primaryLeaf.x, primarySpouse.x, primaryLeaf.y, primarySpouse.y);}
             // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
             let centreX = (minX + maxX) / 2;
+            let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
             if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
-                centreX = primarySpouse.x - 150 - 50;
+                centreX = primarySpouse.x - (thisBoxWidth - 100)/2 - 50;
+            } else if (sp > 0 && primarySpouse.x < primaryLeaf.x) {
+                centreX = primarySpouse.x + (thisBoxWidth - 100)/2 + 50;
             }
 
             childrenMinX = Math.min(childrenMinX, centreX);
@@ -5004,6 +5012,7 @@
             if (thisLeafPerson) {
                 // let's look to see if we have extra partners
                 if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 1 /*  && ahnenNum < 4 */) {
+                    let extraPartnerNum = 0;
                     for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                         let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
                         let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
@@ -5021,15 +5030,23 @@
                                 // OK ... we need to investigate more here to make sure they are the Ancestor's children too !
 
                                 // BUT ... assuming it's a go - then we can give them some (x,y) coords and move along
-                                thisLeafExtraPartner.x = thisLeaf.x + thisBoxWidth * (2 * (ahnenNum % 2) - 1);
+                                extraPartnerNum++;
+                                thisLeafExtraPartner.x =
+                                    thisLeaf.x + extraPartnerNum * thisBoxWidth * (2 * (ahnenNum % 2) - 1);
                                 thisLeafExtraPartner.y = thisLeaf.y;
                                 thisWidth += thisBoxWidth;
-                                repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
+                                if (thisLeafExtraPartner.x == 0) { thisLeafExtraPartner.x = 1;}
+                                    repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
                             } else {
                                 // No children - then - no show (unless we're into Cousin mode of some flavour)
                                 if (numC > 0) {
                                     // YAY - cousin mode - show the extra spouses (even if no kids involved)
-                                     thisLeafExtraPartner.x = thisLeaf.x + thisBoxWidth * (2 * (ahnenNum % 2) - 1);
+                                    extraPartnerNum++;
+                                     thisLeafExtraPartner.x =
+                                         thisLeaf.x + extraPartnerNum * thisBoxWidth * (2 * (ahnenNum % 2) - 1);
+                                    if (thisLeafExtraPartner.x == 0) {
+                                        thisLeafExtraPartner.x = 1;
+                                    }     
                                      thisLeafExtraPartner.y = thisLeaf.y;
                                      thisWidth += thisBoxWidth;
                                      repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
@@ -10878,14 +10895,14 @@
         if (theChunk.indexOf("IL") > -1) {
             return "#E5E4E2";
         } else if (settingForColourBy == "Distance") {
-            if (
-                SuperBigFamView.currentSettings["colour_options_primarySiblings"] == true &&
-                theCode.indexOf("A0S") > -1
-            ) {
-                return thisColourArray[theDegree - 1];
-            } else {
+            // if (
+            //     SuperBigFamView.currentSettings["colour_options_primarySiblings"] == true &&
+            //     theCode.indexOf("A0S") > -1
+            // ) {
+            //     return thisColourArray[theDegree - 1];
+            // } else {
                 return thisColourArray[theDegree];
-            }
+            // }
         }
 
         // if (SuperBigFamView.theLeafCollection[theDegree] && SuperBigFamView.theLeafCollection[theDegree].degree > -1) {
@@ -10894,16 +10911,18 @@
 
         if (settingForColourBy == "Gender") {
             if (person._data.Gender == "Male") {
-                return thisColourArray[1];
+                return "lightblue"; //thisColourArray[1];
             } else if (person._data.Gender == "Female") {
-                return thisColourArray[2];
+                return "lightpink";//thisColourArray[2];
             } else {
-                return thisColourArray[10];
+                return "#ECFFDC";//thisColourArray[10];
             }
         } else if (settingForColourBy == "Generation") {
             let thisGen = 0;
             if (theChunk == "A0" || theChunk == "S0") {
                 thisGen = 8;
+            } else if (theChunk == "A0step") {
+                thisGen = 9;
             } else if (theChunk.indexOf("A0D") > -1 || theChunk.indexOf("S0D") > -1) {
                 // down as many generations as there are Ds
                 thisGen = 8 - 1 * theChunk.substr(3, 1);
@@ -10915,37 +10934,103 @@
 
                 if (theChunk.indexOf("C") > -1) {
                     thisGen -= 1 * theChunk.substr(3, 1);
-                    if (theCode.substr(-2, 1).indexOf("P") > -1) {
+                    if (theCode.substr(-2, 1).indexOf("P") > -1 && theChunk.substr(3, 1) > 0) {
                         thisGen += 1; // partner, not a kid, so up one generation
                     }
                 }
             }
             return thisColourArray[1 + (thisGen % thisColourArray.length)];
         } else if (settingForColourBy == "Ancestor") {
+            let thisColourArray = [
+                "#FFFFFF",
+                "#CBC3E3",
+                // "#00BFFF",
+                // "#FF0000", "#00FF00","#0000FF","#FFFF00", "#000000", "#FFFFFF",
+                "#00BFFF",
+                "#FFC0CB",
+                "#00BFFF",
+                "#87CEEB",
+                "#FF0000",
+                "#FFC0CB",
+                "#00BFFF",
+                "#B0C4DE",
+                "#B0E0E6",
+                "#87CEEB",
+                "#FF0000",
+                "#FF6347",
+                "#FF00FF",
+                "#FFC0CB",
+                "#00BFFF",
+                "#DEB887",
+                "#B0C4DE",
+                "#E0FFFF",
+                "#B0E0E6",
+                "#7FFFD4",
+                "#87CEEB",
+                "#FFDEAD",
+                "#EEE8AA",
+                "#FF0000",
+                "#F0E68C",
+                "#FF6347",
+                "#FFFF00",
+                "#FF00FF",
+                "#FFD700",
+                "#FFC0CB",
+                "#00BFFF",
+                "#FFF8DC",
+                "#1E90FF",
+                "#DEB887",
+                "#B0C4DE",
+                "#00FFFF",
+                "#ADD8E6",
+                "#E0FFFF",
+                "#B0E0E6",
+                "#AFEEEE",
+                "#87CEFA",
+                "#7FFFD4",
+                "#87CEEB",
+                "#40E0D0",
+                "#E6E6FA",
+                "#FFDEAD",
+                "#EEE8AA",
+                "#FFA500",
+                "#FFEFD5",
+                "#FF0000",
+                "#F0E68C",
+                "#FA8072",
+                "#FFE4B5",
+                "#FF6347",
+                "#FFFF00",
+                "#FFA07A",
+                "#FFFFE0",
+                "#FF00FF",
+                "#FFD700",
+                "#DDA0DD",
+                "#FFDAB9",
+                "#FFC0CB",
+            ];
             if (theCode.indexOf("A0") > -1) {
-                let thisNum = theCode.replace("A0", "").replace(/RM/g, "1").replace(/RF/g, "0");
+                let thisNum = theCode
+                    .replace("A0", "")
+                    .replace(/\d/g, "")
+                    .replace(/RM/g, "0")
+                    .replace(/RF/g, "1")
+                    .replace(/K/g, "")
+                    .replace(/S/g, "")
+                    .replace(/P/g, "");
                 console.log("thisNum in getColourBackground : ", thisNum);
 
-                if (
-                    thisNum.substr(0, 1) == "S" &&
-                    SuperBigFamView.currentSettings["colour_options_primarySiblings"] == false
-                ) {
-                    return thisColourArray[thisColourArray.length - 1]; 
-                } else if (
-                    thisNum.substr(0, 1) == "S" &&
-                    SuperBigFamView.currentSettings["colour_options_primarySiblings"] == true
-                ) {
-                    return thisColourArray[1];
-                } else if (theCode == "A0" || thisNum.substr(0, 1) == "P" || thisNum.substr(0, 1) == "K") {
+
+                if (theCode == "A0" || thisNum.substr(0, 1) == "P" || thisNum.substr(0, 1) == "K" || thisNum.substr(0, 1) == "S"  ) {
                     return thisColourArray[1];
                 } else if (thisNum.substr(0, 1) >= "0" && thisNum.substr(0, 1) <= "9") {
                     //    if (thisNum > 1 && thisNum < 1000) {
-                    thisNum = getDecimalNumFromBinaryString("1" + thisNum);
-                    console.log("newNum : ", thisNum);
-                    return thisColourArray[thisNum % thisColourArray.length];
+                    let thisNum2 = getDecimalNumFromBinaryString( thisNum) + 2**(thisNum.length);
+                    console.log("Ancestor Colour : ", theCode, thisNum, thisNum2);
+                    return thisColourArray[thisNum2 % thisColourArray.length];
                 }
 
-                return thisColourArray[0];
+                return thisColourArray[1];
             } else {
                 return thisColourArray[1];
             }
@@ -10965,9 +11050,9 @@
             return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "Family") {
             if (settingForSpecifyByFamily == "age") {
-                let thisAge = thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]]._data.age;
+                let thisAge = person._data.age;
                 if (thisAge == undefined) {
-                    let thePerp = thePeopleList[SuperBigFamView.myAhnentafel.list[ahnNum]];
+                    let thePerp = person;
                     thisAge = theAge(thePerp);
                     thePerp._data["age"] = thisAge;
                     condLog("thisAge - WAS undefined - now is:", thisAge);
