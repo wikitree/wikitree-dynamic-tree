@@ -107,6 +107,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.husband = 0;
         this.husbandWTID = "";
         this.wife = 0;
+        this.single = 0;
         this.wifeWTID = "";
         this.calledPeople = [this.person_id];
         //this.calledPeople = [];
@@ -643,9 +644,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <div id='fgaOptions'>
         <x>&#10005;</x>
         <h2>Show:</h2> 
-        <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'><span id='showNicknamesSpan'>nicknames</span></label>
-        <label id='husbandFirstLabel'><input type='checkbox' id='husbandFirst'  checked value='1'><span id='husbandFirstSpan'>husband first</span></label>
-        <label id='showOtherLastNamesLabel'><input type='checkbox' id='showOtherLastNames'  checked value='1'><span id='showOtherLastNamesSpan'>other last names</span></label>
+        <label id='showNicknamesLabel'><input type='checkbox' id='showNicknames'  checked value='1'>
+        <span id='showNicknamesSpan'>nicknames</span></label>
+        <label id='husbandFirstLabel'><input type='checkbox' id='husbandFirst'  checked value='1'>
+        <span id='husbandFirstSpan'>husband first</span></label>
+        <label id='showOtherLastNamesLabel'><input type='checkbox' id='showOtherLastNames' checked value='1'>
+        <span id='showOtherLastNamesSpan'>other last names</span></label>
  
         <label><input type='checkbox' id='showBaptism'  checked value='1'><span id='showBaptisedText'>${spell(
             "baptized"
@@ -653,15 +657,18 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <div id='baptChrist' class='radios'>
         <label><input type='radio' name='baptismChristening' checked value='${spell("Baptized")}'>'${spell(
             "Baptized"
-        )}'</label><label><input type='radio' name='baptismChristening' value='Christened'>'Christened'</label></div>
+        )}'</label>
+        <label><input type='radio' name='baptismChristening' value='Christened'>'Christened'</label></div>
         <label><input type='checkbox' id='showBurial'  checked value='1'>Buried</label>
         <label id='showWTIDsLabel'><input type='checkbox' id='showWTIDs'><span>WikiTree IDs</span></label>
-        <label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'><span>parents' and spouses' dates</span></label>
+        <label id='showParentsSpousesDatesLabel'><input type='checkbox' checked id='showParentsSpousesDates'>
+        <span>parents' and spouses' dates</span></label>
         <label id='showTablesLabel'><input type='checkbox' id='showTables' checked>tables in 'Sources'</label>
         <label id='showListsLabel'><input type='checkbox' id='showLists' checked>lists in 'Sources'</label>
         <label><input type='checkbox' id='useColour' checked value='1'>${spell("color")}</label>
         <label id='toggleBios'><input type='checkbox' id='showBios'><span>all biographies</span></label>
-        <label id='includeBiosWhenPrintingLabel'><input type='checkbox' id='includeBiosWhenPrinting'><span>biographies when printing</span></label>
+        <label id='includeBiosWhenPrintingLabel'><input type='checkbox' id='includeBiosWhenPrinting'>
+        <span>biographies when printing</span></label>
         <select id="dateFormatSelect">
             <option value="sMDY">MMM DD, YYYY (e.g., Nov 24, 1859)</option>
             <option value="DsMY">DD MMM YYYY (e.g., 24 Nov 1859)</option>
@@ -670,7 +677,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             <option value="YMD">YYYY-MM-DD (e.g., 1859-11-24)</option>
         </select>   
         <div id='statusChoice' class='radios'><span class='label'>Date status</span>:
-        <label><input type='radio' name='statusChoice' checked value='symbols'>~, &lt;, &gt;</label><label><input type='radio' name='statusChoice' value='abbreviations'>abt., bef., aft.</label>
+        <label><input type='radio' name='statusChoice' checked value='symbols'>~, &lt;, &gt;</label><label>
+        <input type='radio' name='statusChoice' value='abbreviations'>abt., bef., aft.</label>
         </div>
         <div id='showGenderDiv' class='radios'><span>children's genders:</span> 
         <label><input type='radio' name='showGender' checked value='initial'>initial</label>
@@ -687,12 +695,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <li id='bioInstructions'>Click 'Biography' (bottom left) to see each biography.</li>
         <li>The roles ('Husband', 'Wife', etc.) link to WikiTree profiles.</li>
         <li>Click a name to see that person's family group.</li>
-        <li>Most of the page is editable for printing. If you see some HTML (e.g. &lt;span&gt;John Brown&lt;/span&gt;), just edit the text between the tags.
-            <br>Note: Any edits here are only for tweaking the page for printing. This will not change any actual profiles.</li>
+        <li>Most of the page is editable for printing. 
+        If you see some HTML (e.g. &lt;span&gt;John Brown&lt;/span&gt;), 
+        just edit the text inside the tags.
+            <br>Note: Any edits here are only for tweaking the page for printing. 
+            This will not change any actual profiles.</li>
         </ul>
-        </div>`;
+        </div>
+        `;
         this.$container.html(familyGroupSheetHTML);
-        const fgaButtons = `<div id="fgaButtons"><button class="small" id="fgaOptionsButton">Options</button><button class="small" id="fgaNotesButton">Notes</button></div>`;
+        const fgaButtons = `<div id="fgaButtons"><button class="small" id="fgaOptionsButton">Options</button>
+        <button class="small" id="fgaNotesButton">Notes</button></div>`;
         if ($("#fgaButtons").length === 0) {
             $("header").append(fgaButtons);
         }
@@ -1271,93 +1284,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         fsPerson.Sections = this.splitBioSections(fsPerson);
         console.log("fsPerson.Sections", fsPerson.Sections);
 
-        // Create a dummy div element and set its HTML content
-        const dummyDiv = $("<div></div>").html(fsPerson.bioHTML);
-
-        /*
-        dummyDiv.find("li").each(function () {
-            const li = $(this);
-            const id = li.prop("id");
-            if (id) {
-                const newId = id + "_" + fsPerson.Id;
-                li.prop("id", newId);
-            }
-            li.find("a").each(function () {
-                const a = $(this);
-                const href = a.attr("href");
-                if (href) {
-                    const newHref = href + "_" + fsPerson.Id;
-                    a.attr("href", newHref);
-                }
-            });
-        });
-      
-
-        // dummyDiv.find("a:contains('↑')").remove();
-
-        // Find the 'Sources' section header
-        const sourcesHeader = dummyDiv.find("h2").filter(function () {
-            return $(this).text().includes("Sources");
-        });
-
-        // Find the 'Sources' section header
-        const researchNotesHeader = dummyDiv.find("h2").filter(function () {
-            return $(this).text().includes("Research Notes");
-        });
-  */
-        // console.log(dummyDiv.html());
-
         // Div to hold the references
         const refsContainer = $("<div class='citationList'></div>");
         const researchNotesContainer = $("<div class='researchNotes'></div>");
 
         refsContainer.append(fsPerson?.Sections?.Sources);
         researchNotesContainer.append(fsPerson?.Sections?.ResearchNotes);
-
-        /*
-        // If the Research Notes heading is found, add the content to the researchNotesContainer until $("a[name="Sources"]") or the next h2 is reached
-        if (researchNotesHeader.length > 0) {
-            let currentElement = researchNotesHeader.next();
-
-            // Traverse the siblings until the Sources div is reached
-            while (currentElement.length > 0 && !currentElement.is("h2") && !currentElement.is("a[name='Sources']")) {
-                researchNotesContainer.append($(currentElement));
-                currentElement = currentElement.next();
-            }
-        }
-        //  console.log("researchNotesContainer", researchNotesContainer.html());
-
-        // Check if the sourcesHeader is found
-        if (sourcesHeader.length > 0) {
-            // Iterate over all following siblings of the sourcesHeader
-            sourcesHeader.nextAll().each(function () {
-                const currentElement = $(this);
-                // console.log("Current element: ", currentElement.prop("outerHTML"));
-
-                // Check if the current element is the EDIT div
-                if (currentElement.hasClass("EDIT")) {
-                    //  console.log("Reached EDIT div, stopping iteration");
-                    return false; // Break the loop
-                }
-
-                // Process the current element
-                if (currentElement.is("OL")) {
-                    // Convert OL to UL
-                    const newUL = $("<ul class='inlineReferences'></ul>");
-                    currentElement.find("li").each(function () {
-                        newUL.append($(this));
-                    });
-                    refsContainer.append(newUL);
-                } else {
-                    // Append other types of elements directly
-                    refsContainer.append(currentElement);
-                }
-            });
-        } else {
-            console.log("Sources section not found");
-        }
-        // end that bit
-        */
 
         fsPerson.BioSections = this.parseWikiText(fsPerson.bio);
         console.log("fsPerson.BioSections", fsPerson.BioSections);
@@ -1597,6 +1529,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         }
 
+        if (!fsPerson.Gender) {
+            fsPerson.Gender = "undefined";
+        }
         let genderSpan = "";
         if (role != "Husband" && role != "Wife") {
             genderSpan = "<span data-gender='" + fsPerson.Gender + "' class='fsGender'>" + dGender + "</span>";
@@ -1674,6 +1609,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     renderRoleRow = (fsPerson, role) => {
         // Escape the Name for HTML entities
         const escapedName = this.htmlEntities(fsPerson.Name);
+        let roleText = role;
 
         // Determine the gender span and other last names display
         const showGenderVal = $("input[name='showGender']:checked").val();
@@ -1694,7 +1630,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             // Find if there is a spouse without do_not_display; if not, change the role to Name
             const spouse = fsPerson.Spouse.find((spouse) => spouse?.do_not_display != "1");
             if (!spouse) {
-                role = "Name";
+                role = "Single";
+                roleText = "Name";
             }
         }
         fsPerson.Role = role;
@@ -1708,7 +1645,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 data-role='${role}'
                 class='roleRow'>
                 <th class='role heading'>
-                    <a href='https://www.wikiTree.com/wiki/${escapedName}'>${role}</a>:
+                    <a href='https://www.wikiTree.com/wiki/${escapedName}'>${roleText}</a>:
                 </th>
                 <td class='fsName'  colspan='2'>
                     <span data-name="${escapedName}" data-id='${fsPerson.Id}'>
@@ -1727,6 +1664,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         } else if (role === "Wife") {
             this.wife = fsPerson.Id;
             this.wifeWTID = fsPerson.Name;
+        } else if (role === "Single") {
+            this.single = fsPerson.Id;
+            this.singleWTID = fsPerson.Name;
         }
 
         return roleRow;
@@ -1776,7 +1716,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
                 ? `<tr class='marriedRow'><th class="${role.toLowerCase()} marriage">Married:</th>
-               <td class='date marriedDate' data-date="${marriageDate}">${formattedMarriageDate}</td><td>${marriagePlace}</td></tr>`
+               <td class='date marriedDate' data-date="${marriageDate}">${formattedMarriageDate}</td>
+               <td>${marriagePlace}</td></tr>`
                 : "";
         return marriageRow;
     };
@@ -1887,7 +1828,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 : "";
 
             let whose = `${role}'s `;
-            if ((fsPerson.Role = "Name")) {
+            if ((fsPerson.Role = "Single")) {
                 whose = "";
             }
 
@@ -2036,54 +1977,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     renderBioRow = (fsPerson, role) => {
         let bioRow = "";
-
-        /*
-        if (fsPerson.bioHTML) {
-            // Split the bioHTML to separate out the main content and research notes
-            let [mainBio, researchNotes] = fsPerson.bioHTML.split('<a name="Sources"></a>');
-
-            // Handle research notes if they exist
-            const rNotesSplit = mainBio.split(/<h2.*?research note.*?h2>/i);
-            if (rNotesSplit[1]) {
-                this.researchNotes.push({
-                    name: fsPerson.Name,
-                    displayName: this.displayName(fsPerson)[0],
-                    researchNotes: rNotesSplit[1],
-                });
-            }
-            mainBio = rNotesSplit[0];
-
-            // Prepare the bio row HTML
-            bioRow = `
-            <tr data-role='${role}' class='bioRow'>
-                <th class='bioHeading heading'>Biography: </th>
-                <td colspan='2'>
-                    <div class='theBio'>${mainBio
-                        .replace(/<h2>.*?<\/h2>/, "")
-                        .trim()
-                        .replaceAll(/(src|href)="\//g, '$1="https://www.wikitree.com/')
-                        .replaceAll(/href="#_/g, `href="https://www.wikitree.com/wiki/${fsPerson.Name}#_"`)}
-                    </div>
-                </td>
-            </tr>`;
-        } else {
-            console.log(`No bio HTML found for: ${fsPerson.Name}`);
-        }
-        */
-
-        /*
-        if (fsPerson?.Sections?.Biography) {
-            bioRow = `
-            <tr data-role='${role}' class='bioRow'>
-                <th class='bioHeading heading'>Biography: </th>
-                <td colspan='2'>
-                    <div class='theBio'>${fsPerson?.Sections?.Biography}
-                    </div>
-                </td>
-            </tr>
-            `;
-        }
-        */
 
         if (fsPerson?.Sections?.Biography) {
             bioRow = `
@@ -2240,22 +2133,27 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const childTable = $("<table class='childTable personTable'></table>");
                 const childTbody = $("<tbody></tbody>").appendTo(childTable);
 
-                this.people.forEach((cPerson) => {
-                    // Initialize husband and wife if undefined
-                    this.husband = this.husband || 0;
-                    this.wife = this.wife || 0;
+                // Initialize husband and wife if undefined
+                this.husband = this.husband || 0;
+                this.wife = this.wife || 0;
+                this.single = this.single || 0;
 
-                    if (
-                        cPerson.Name === aChild.Name &&
-                        ((cPerson.Father === this.husband && cPerson.Mother === this.wife) ||
-                            (!this.husband && cPerson.Mother === this.wife) ||
-                            (this.husband === cPerson.Father && !this.wife))
-                    ) {
-                        if (!this.doneKids.includes(aChild.Name)) {
-                            const theChildRow = this.familySheetPerson(cPerson, this.ordinal(index + 1) + " Child");
-                            childTbody.append(theChildRow); // Append the row jQuery object directly
-                            this.doneKids.push(cPerson.Name);
-                        }
+                this.people.forEach((cPerson) => {
+                    // Check if the current person is the child being processed
+                    if (cPerson.Name !== aChild.Name || this.doneKids.includes(cPerson.Name)) {
+                        return; // Skip to the next person if not the child being processed or already processed
+                    }
+
+                    let isChildOfCouple = cPerson.Father === this.husband && cPerson.Mother === this.wife;
+                    let isChildOfSingleParent =
+                        (!this.husband && cPerson.Mother === this.wife) ||
+                        (this.husband === cPerson.Father && !this.wife);
+                    let isChildOfSingle = this.single && [cPerson.Father, cPerson.Mother].includes(this.single);
+
+                    if (isChildOfCouple || isChildOfSingleParent || isChildOfSingle) {
+                        const theChildRow = this.familySheetPerson(cPerson, this.ordinal(index + 1) + " Child");
+                        childTbody.append(theChildRow);
+                        this.doneKids.push(cPerson.Name);
                     }
                 });
 
@@ -2509,43 +2407,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     appendReferences(mList) {
-        /*
-        this.references.forEach((pRefs) => {
-            const anID = pRefs[0];
-            let thisName = this.getFormattedName(anID);
-            const wtidSpan = this.getWtidSpan(thisName);
-            thisName = thisName.replace(/\(\b[^\s]+\-[0-9]+\)/, "");
-
-            const anLI = this.createListItem(anID, thisName, wtidSpan);
-            const aUL = $("<ul></ul>");
-
-            pRefs[1].forEach((aRef) => {
-                aUL.append($("<li>" + this.fixCitation(aRef) + "</li>"));
-            });
-
-            this.appendSeeAlso(aUL, pRefs[2]);
-
-            aUL.appendTo(anLI);
-            anLI.appendTo(mList);
-        });
-        */
-
         this.htmlReferences.forEach((pRefs) => {
             const anID = pRefs.id;
-            /*
-            const anLI = this.createListItem(anID, thisName, wtidSpan);
-            const aUL = $("<ul></ul>");
-
-            pRefs[1].forEach((aRef) => {
-                aUL.append($("<li>" + this.fixCitation(aRef) + "</li>"));
-            });
-
-            this.appendSeeAlso(aUL, pRefs[2]);
-
-            aUL.appendTo(anLI);
-            anLI.appendTo(mList);
-            */
-
             const nameHeading = $(
                 `<a class='sourcesName' href='https://www.wikitree.com/wiki/${pRefs.id}'>${pRefs.displayName} <span class='fsWTID'>(${pRefs.id})</span></a>`
             );
@@ -2616,37 +2479,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Show or hide all ".citationTable" elements based on the checkbox state
         isChecked ? citationTables.show() : citationTables.hide();
         this.storeVal($("#showTables"));
-
-        /*
-        // Iterate through each nested list item in "#citationList"
-        $("#citationList li li").each(function () {
-            // Retrieve all text nodes within the current list item
-            const textNodes = $(this)
-                .contents()
-                .filter(function () {
-                    return this.nodeType === Node.TEXT_NODE;
-                });
-
-            // If there's a visible ".citationTable" in this list item
-            if ($(this).find("citationTables:visible").length) {
-                let lastNode = textNodes[textNodes.length - 1];
-
-                // Remove trailing table headings from the text node if needed
-             //space   if (lastNode.textContent.match(/:(\W|\n)* /) && !this.removedTableHeading) {
-                    lastNode.textContent = lastNode.textContent.replace(/[A-Z][a-z]+:[\W\n]*?$/m, "");
-                    this.removedTableHeading = true;
-                }
-
-                // Hide the citation table
-                $(this).find(".citationTable").hide();
-            }
-            // If there's a ".citationTable" but it's not visible
-            else if ($(this).find(".citationTable").length) {
-                // Show the citation table
-                $(this).find(".citationTable").show();
-            }
-        });
-        */
     }
 
     setSettings(settings) {
@@ -2736,6 +2568,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     makeFamilySheet() {
+        // for each person in this.people, if .DataStatus.Gender == "blank", .Gender = "undefined"
+        this.people.forEach((aPerson) => {
+            if (aPerson?.DataStatus?.Gender == "blank") {
+                aPerson.Gender = "undefined";
+            }
+        });
+
         this.sortSpouses();
         $("#notesAndSources").remove();
         console.log(this.people);
@@ -2837,7 +2676,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             let husbandName = "";
             let wifeName = "";
             let andText = "";
-            let nameText = "";
+            let singleText = "";
 
             if ($("tr.roleRow[data-role='Husband'] td.fsName").length) {
                 husbandName = $("tr.roleRow[data-role='Husband'] td.fsName").eq(0).html();
@@ -2856,17 +2695,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     wifeName = "";
                 }
             }
-            if ($("tr.roleRow[data-role='Name'] td.fsName").length) {
-                nameText = $("tr.roleRow[data-role='Name'] td.fsName").html();
-                if ($("tr.roleRow[data-role='Name'] td.fsName").eq(0).text() + " ".trim() == "") {
-                    nameText = "";
+            if ($("tr.roleRow[data-role='Single'] td.fsName").length) {
+                singleText = $("tr.roleRow[data-role='Single'] td.fsName").html();
+                if ($("tr.roleRow[data-role='Single'] td.fsName").eq(0).text() + " ".trim() == "") {
+                    singleText = "";
                 }
             }
             if (husbandName != "" && wifeName.match(/^\W*?$/) == null) {
                 andText = "&nbsp;and&nbsp;";
             }
 
-            let husbandNameSpan, wifeNameSpan, andSpan, nameSpan;
+            let husbandNameSpan, wifeNameSpan, andSpan, singleSpan;
 
             if (husbandName) {
                 husbandNameSpan = $("<span id='husbandName'>" + husbandName + "</span>");
@@ -2877,8 +2716,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             if (andText) {
                 andSpan = $("<span id='and'>" + andText + "</span>");
             }
-            if (nameText) {
-                nameSpan = $("<span id='name'>" + nameText + "</span>");
+            if (singleText) {
+                singleSpan = $("<span id='name'>" + singleText + "</span>");
             }
 
             if (husbandName.match(/^\W*$/) != null || wifeName.match(/^\W*$/) != null) {
@@ -2889,7 +2728,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 $("#familySheetFormTable").prepend($("<caption></caption>"));
             }
 
-            $("#familySheetFormTable caption").append(husbandNameSpan, andSpan, wifeNameSpan, nameSpan);
+            $("#familySheetFormTable caption").append(husbandNameSpan, andSpan, wifeNameSpan, singleSpan);
             if (!isHusbandFirst) {
                 this.manageRoleOrder();
             }
@@ -3035,29 +2874,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             setWidth = $("table.wife")[0].scrollWidth;
         }
         const notesAndSources = $("<section id='notesAndSources'></section>");
-        $("<div id='notes'><h2>Research Notes:</h2><div id='notesNotes'></div></div>").appendTo(notesAndSources);
-
-        /*
-        if (this.researchNotes.length > 0) {
-            this.researchNotes.forEach((rNote) => {
-                //	console.log(rNote);
-                if (rNote.researchNotes.replace(/[\n\W\s]/, "") != "") {
-                    notesAndSources
-                        .find("#notesNotes")
-                        .append(
-                            $(
-                                `<a class='sourcesName' href='https://www.wikitree.com/wiki/${rNote.name}'>${rNote.displayName} <span class='fsWTID'>(${rNote.name})</span></a>`
-                            )
-                        );
-                    notesAndSources
-                        .find("#notesNotes")
-                        .append($(rNote.researchNotes.replaceAll(/<sup.*?<\/sup>/g, "")));
-                }
-            });
-        }
-        */
+        $(`<div id='notes' class='empty'>
+        <h2>Research Notes:</h2>
+        <div id='notesNotes'></div>
+        </div>`).appendTo(notesAndSources);
 
         if (this.htmlResearchNotes.length > 0) {
+            $("#notes").removeClass("empty");
             this.htmlResearchNotes.forEach((rNote) => {
                 //	console.log(rNote);
                 if (rNote.researchNotes.text().trim() !== "") {
@@ -3113,6 +2936,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             } else {
                 console.log("Unsafe content detected. Not updating.");
             }
+            if ($("#notesNotes").text()) {
+                $("#notes").removeClass("empty");
+            }
 
             $this.remove();
             console.log("Element removed.");
@@ -3152,29 +2978,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         });
     }
-
-    // Function to toggle bios and update localStorage
-    /*
-    toggleBios() {
-        const self = this; // Capture the class instance context
-        return function () {
-            if ($(this).prop("checked") === true) {
-                $(".theBio").slideDown();
-                setTimeout(() => {
-                    $(`<style id='showBiosStyle'>.familySheetForm .bioRow div.theBio{display:block;}</style>`).appendTo(
-                        self.$container // Use 'self' to refer to the class instance
-                    );
-                }, 1000);
-            } else {
-                $(".theBio").slideUp();
-                setTimeout(() => {
-                    $("#showBiosStyle").remove();
-                }, 1000);
-            }
-            self.storeVal($(this)); // Use 'self' to call 'storeVal'
-        };
-    }
-    */
 
     async getSomeRelatives(id, fields = "*") {
         try {
