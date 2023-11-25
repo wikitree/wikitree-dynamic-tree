@@ -684,7 +684,7 @@ body.app header {
     display: block;
   }
 
-  #view-container.familyGroupApp .citationList,
+  #view-container.familyGroupApp .citationList:not(:nth-of-type(1)),
   #view-container.familyGroupApp #sources,
   #view-container.familyGroupApp table.personTable:not(.husband):not(.wife) {
     break-inside: avoid-page;
@@ -717,6 +717,7 @@ body.app header {
   }
   #view-container.familyGroupApp {
     background-color: #fff;
+    margin-bottom: 5em;
   }
 
   #view-container.familyGroupApp::after {
@@ -727,8 +728,9 @@ body.app header {
     left: 0;
     width: 100%;
     text-align: center;
-    border-top: 1px solid gray;
+    border-top: 0px solid gray;
     font-size: small;
+    padding-top: 0.5em;
     /* additional styling as needed */
   }
 }
