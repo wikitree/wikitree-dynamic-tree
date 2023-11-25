@@ -255,6 +255,7 @@
     SuperBigFamView.workingMaxNumAncGens = 3;
     SuperBigFamView.workingMaxNumDescGens = 2;
     SuperBigFamView.workingMaxNumCuzGens = 1;
+    
 
     SuperBigFamView.maxDiamPerGen = []; // used to store the diameter of the spokes for the Super Big Family Tree
     SuperBigFamView.currentScaleFactor = 1;
@@ -2357,7 +2358,7 @@
                 const spouseRecord = sp1Data.Spouses[spNum];
                 if (spouseRecord.Id == sp2ID) {
                     foundSpouse = true;
-                    console.log("INSIDE the doNotDisplayMarriageEquals: ", sp1Data.Spouses[spNum]);
+                    // console.log("INSIDE the doNotDisplayMarriageEquals: ", sp1Data.Spouses[spNum]);
                     if (sp1Data.Spouses[spNum].DoNotDisplay == "0" || !sp1Data.Spouses[spNum].DoNotDisplay ) {
                         return false;
                     } else {
@@ -3824,7 +3825,8 @@
                         } else if (getCode == "D1") {
                             getPeopleCall(SuperBigFamView.ListsOfIDs["D1sp"], "D2", 0);
                         } else if (getCode == "D2") {
-                            postGetPeopleProcessing(getCode[0], newDescLevel);
+                            let doSift = numDescendants < 3;
+                            postGetPeopleProcessing(getCode[0], newDescLevel, doSift);
                         } else if (getCode == "A1") {
                             getPeopleCall(NextKeysIDsArray, "A2", 0);
                         } else if (getCode == "A2") {
@@ -4752,6 +4754,7 @@
                             );
                         }
                     }
+                    if (thisX == 0) { thisX = 1;}
                     repositionThisAncestorsCluster(ahNum, thisX, thisY);
                     Adimensions[ahNum].X = thisX;
                     Adimensions[ahNum].Y = thisY;
@@ -4763,6 +4766,9 @@
                         thisX += thisBoxWidth;
                     } else {
                         thisX += Adimensions[ahNum].width + thisBoxWidth / 2;
+                    }
+                    if (thisX == 0) {
+                        thisX = 1;
                     }
                 }
 
@@ -4783,6 +4789,9 @@
                             );
                         }
                     }
+                    if (thisX == 0) {
+                        thisX = 1;
+                    }
                     repositionThisAncestorsCluster(ahNum, thisX, thisY);
                     Adimensions[ahNum].X = thisX;
                     Adimensions[ahNum].Y = thisY;
@@ -4798,6 +4807,22 @@
                     }
                 }
             }
+        }
+    
+        // FINAL DOUBLE CHECK about non-zero x coordinates
+        for (let l in theLeaves) {
+            let thisLeaf = theLeaves[l];
+            if (thisLeaf["x"] == 0) {
+                thisLeaf["x"] = 1;
+            }
+            if (thisLeaf["y"] == 0) {
+                thisLeaf["y"] = 1;
+            }
+            console.log(
+                "Leaf Check : " + thisLeaf.Chunk, thisLeaf.Code,
+                "( " + thisLeaf.x + " , " + thisLeaf.y + " )"
+                
+            );
         }
 
         // HIDE THE CHUNKS THAT ARE NOT NEEDED
@@ -4941,7 +4966,7 @@
 
         for (let l in SuperBigFamView.theLeafCollection) {
             let leaf = SuperBigFamView.theLeafCollection[l];
-            if (leaf && leaf.x && leaf.Code != newCode && leaf.Code.indexOf(newCode) > -1) {
+            if (leaf && !isNaN(leaf.x) && leaf.Code != newCode && leaf.Code.indexOf(newCode) > -1) {
                 // console.log("--> (B4 ", l, leaf.Code, " @ ", leaf.x, ",", leaf.y, ")");
                 leaf.x += dx;
                 leaf.y += dy;
@@ -4974,7 +4999,7 @@
 
         for (let l in SuperBigFamView.theLeafCollection) {
             let leaf = SuperBigFamView.theLeafCollection[l];
-            if (leaf && leaf.x && leaf.Code != newCode && leaf.Code.indexOf(newCode) > -1) {
+            if (leaf && !isNaN(leaf.x) && leaf.Code != newCode && leaf.Code.indexOf(newCode) > -1) {
                 leaf.x += dx;
                 leaf.y += dy;
                 if (leaf.x == 0) {
@@ -5006,6 +5031,9 @@
         if (thisLeaf) {
             thisLeaf.y = 0 - vBoxHeight;
             thisLeaf.x = thisBoxWidth * ahnenNum;
+            if (thisLeaf.x == 0) {
+                thisLeaf.x = 1;
+            }
 
             let thisLeafPerson = thePeopleList[thisLeaf.Id];
 
@@ -5102,11 +5130,17 @@
             SuperBigFamView.theLeafCollection[thisCode + "RM"].x = thisLeaf.x - thisBoxWidth * .30; // should be / 2
             SuperBigFamView.theLeafCollection[thisCode + "RM"].y = thisLeaf.y - vBoxHeight;
             SuperBigFamView.theLeafCollection[thisCode + "RM"]["slimLaw"] = true;
+            if (SuperBigFamView.theLeafCollection[thisCode + "RM"].x == 0) {
+                SuperBigFamView.theLeafCollection[thisCode + "RM"].x = 1;
+            }
         }
         if (SuperBigFamView.theLeafCollection[thisCode + "RF"]) {
             SuperBigFamView.theLeafCollection[thisCode + "RF"].x = thisLeaf.x + thisBoxWidth * .30; // should be / 2
             SuperBigFamView.theLeafCollection[thisCode + "RF"].y = thisLeaf.y - vBoxHeight;
             SuperBigFamView.theLeafCollection[thisCode + "RF"]["slimLaw"] = true;
+            if (SuperBigFamView.theLeafCollection[thisCode + "RF"].x == 0) {
+                SuperBigFamView.theLeafCollection[thisCode + "RF"].x = 1;
+            }
         }
     }
 
@@ -5211,7 +5245,7 @@
 
         for (let s = 0; (numD > 0 || numC > 0) && s < thisLeafPerson._data.Spouses.length; s++) {
             let thisLeafPartner = SuperBigFamView.theLeafCollection[code + "P" + (s + 1)];
-            if (thisLeafPartner && thisLeafPartner.x) {
+            if (thisLeafPartner && !isNaN(thisLeafPartner.x)) {
                 // console.log("ALERT : partner.x : ", thisLeafPartner.x, " vs thisLeaf",thisLeaf.x);
                 rightSideMaxX = Math.max(rightSideMaxX, thisLeafPartner.x);
                 leftSideMinX = Math.min(leftSideMinX, thisLeafPartner.x);
@@ -5537,11 +5571,11 @@
             //     thisLeaf
             // );
             
-            console.log(
-                commentPreFix + code + " : " + thisLeaf.Chunk,
-                "( " + thisLeaf.x + " , " + thisLeaf.y + " )",
-                dims
-            );
+                console.log(
+                    commentPreFix + code + " : " + thisLeaf.Chunk,
+                    "( " + thisLeaf.x + " , " + thisLeaf.y + " )",
+                    dims
+                );
             return dims;
         }
 
@@ -5749,7 +5783,7 @@
             console.log(
                 "Calling the repositionThisPersonAndTheirDescendants from inside for loop of Step 3 - rep # ",
                 ok,
-                theKsByID[okID].code,
+                theKsByID[okID].code, "x = " + currentKidX,
                 "assign y=",
                 y + vBoxHeight,
                 "=",
@@ -5757,6 +5791,9 @@
                 "+",
                 vBoxHeight
             );
+            if (currentKidX == 0) {
+                currentKidX = 1;
+            }
             theKsByID[okID]["dims"] = repositionThisPersonAndTheirDescendants(
                 theKsByID[okID].code,
                 currentKidX,
@@ -5766,6 +5803,7 @@
             SuperBigFamView.theLeafCollection[theKsByID[okID].code].y = y + kidsVBoxHeight;
             console.log("returned: ", theKsByID[okID]["dims"]);
             currentKidX = currentKidX * 1.0 + theKsByID[okID]["dims"].width + 1*0 * 20;
+            if (currentKidX == 0) {currentKidX = 1; }
         }
         theMaxX = currentKidX;
 
@@ -5777,7 +5815,7 @@
         thisLeaf.x = x + (dims.width - 20) / 2 - thisBoxWidth / 2; // WILL CENTRE THIS PERSON ABOVE KIDS (if alone and without a spouse)
         let spouseWidth = 0;
         let lastPartnerX = x;
-
+        if (thisLeaf.x == 0) {thisLeaf.x = 1;}
         // NOTE: orderedPartners includes a default PsByID[0] for children with NO other parent
         //  - so - if there ARE partner spouses, then the orderedPartners.length > 1   !!!!
         if (orderedPartners.length > 1) {
@@ -5785,13 +5823,22 @@
                 (orderedPartners.length - 1) * (1.0 * thisBoxWidth + 20) +
                 (orderedPartners.length - 1 - 1) * 50 +
                 thisBoxWidth;
-            console.log("0. thisLeaf.x:", thisLeaf.x, thisLeaf.Who, dims.width, spouseWidth);
+            console.log("0. thisLeaf.x:", thisLeaf.x, "x = " + x , thisLeaf.Who, dims.width, spouseWidth);
+            // if (dims.width + 20 == spouseWidth) {
+            //     thisLeaf.x = Math.max(x, thisLeaf.x - (thisBoxWidth - 100) / 2);
+            //     console.log(
+            //         commentPreFix + code + " : " + thisLeaf.Chunk,
+            //         "children same size as  self + spouse  + buffer",
+            //         dims.width + " + 20 =  " + spouseWidth,
+            //         "new X: " + thisLeaf.x
+            //     );
+            // } else 
             if (dims.width > spouseWidth) {
                 thisLeaf.x = Math.max(x, thisLeaf.x - spouseWidth / 2);
                 console.log(
                     commentPreFix + code + " : " + thisLeaf.Chunk,
                     "children wider than self + spouse ",
-                    dims.width + " > " + spouseWidth,
+                    dims.width + " + 20 = " + spouseWidth,
                     "new X: " + thisLeaf.x
                 );
             } else if (dims.width > 0) {
@@ -5801,32 +5848,44 @@
                     commentPreFix + code + " : " + thisLeaf.Chunk,
                     "children slimmer than self + spouse ",
                     dims.width + " <= " + spouseWidth,
-                    "new X: " + thisLeaf.x
+                    "new X: " + thisLeaf.x,
+                    "orderedKids.length = " + orderedKids.length
                 );
 
                 if (orderedKids.length == 1) {
                     const okString = orderedKids[0];
                     let okID = okString.substring(okString.indexOf("|") + 1);
                     console.log(
-                        "Calling the repositionThisPersonAndTheirDescendants from inside if stmt of Step 5 - 1 orderedKid "
+                        "Calling the repositionThisPersonAndTheirDescendants from inside if stmt of Step 5 - 1 orderedKid ",
+                        code,
+                        okID,
+                        theKsByID[okID]["dims"]
                     );
 
-                    // CHANGE TO REPOSITION THIS PERSONS CLUSTER - 2023-10-19 - GPC - Lot less calculation heavy than recalling the whole repositionThisPersonAndTheirDescendants again - assuming it did it's job in the first place properly!
-                    // let tmpDims = repositionThisPersonAndTheirDescendants(
+                    if (theKsByID[okID]["dims"].width < spouseWidth) {
                     
-                    console.log(
-                        commentPreFix + code + " : " + thisLeaf.Chunk,
-                        "repositionThisPersonsCluster ",
-                        thisLeaf.x + thisBoxWidth / 2 + 10
-                    );
-                    repositionThisPersonsCluster(
-                        theKsByID[okID].code,
-                        thisLeaf.x + thisBoxWidth / 2 + 10, // changed x + to thisLeaf.x +
-                        y + kidsVBoxHeight,
-                        "C"
-                    );
+
+
+                        // CHANGE TO REPOSITION THIS PERSONS CLUSTER - 2023-10-19 - GPC - Lot less calculation heavy than recalling the whole repositionThisPersonAndTheirDescendants again - assuming it did it's job in the first place properly!
+                        // let tmpDims = repositionThisPersonAndTheirDescendants(
+
+                        console.log(
+                            commentPreFix + code + " : " + thisLeaf.Chunk,
+                            "repositionThisPersonsCluster ",
+                            thisLeaf.x + thisBoxWidth / 2 + 10
+                        );
+                        repositionThisPersonsCluster(
+                            theKsByID[okID].code,
+                            thisLeaf.x + thisBoxWidth / 2 + 10, // changed x + to thisLeaf.x +
+                            y + kidsVBoxHeight,
+                            "C"
+                        );
+
+                    }
                 }
-            
+                if (thisLeaf.x == 0) {
+                    thisLeaf.x = 1;
+                }
             }
             console.log("orderedPartners:", orderedPartners);
             console.log("1. thisLeaf.x:", thisLeaf.x, "|", orderedPartners.length, thisBoxWidth);
@@ -6648,14 +6707,14 @@
     // THIS Function will ADD a NEW LEAF to the Leaf Collection, assuming it's not already in there
     // AND ... will then recursively call itself adding more leaves until it runs out
     function addToLeafCollection(newLeaf, dontAddIDsList = []) {
-        console.log(
-            " --> ADDING LEAF: ",
-            newLeaf.Code,
-            newLeaf.Who,
-            newLeaf.Chunk,
-            "with DO NOT list of:",
-            dontAddIDsList
-        );
+        // console.log(
+        //     " --> ADDING LEAF: ",
+        //     newLeaf.Code,
+        //     newLeaf.Who,
+        //     newLeaf.Chunk,
+        //     "with DO NOT list of:",
+        //     dontAddIDsList
+        // );
 
         // CHUNKS are used to GROUP together people who are the same distance from the Primary Person
         // and whose appearance or disappearance can be turned on or off by adjusting one of the -1 / +1 steppers in the button bar
@@ -6816,13 +6875,13 @@
         }
 
         if (SuperBigFamView.theLeafCollection[newLeaf.Code]) {
-            console.log(
-                "CANNOT ADD LEAF:",
-                newLeaf.Code,
-                "ALREADY EXISTS:",
-                SuperBigFamView.theLeafCollection[newLeaf.Code]
-                // , thePeopleList[newLeaf.Id].data.BirthNamePrivate
-            );
+            // console.log(
+            //     "CANNOT ADD LEAF:",
+            //     newLeaf.Code,
+            //     "ALREADY EXISTS:",
+            //     SuperBigFamView.theLeafCollection[newLeaf.Code]
+            //     // , thePeopleList[newLeaf.Id].data.BirthNamePrivate
+            // );
 
             if (SuperBigFamView.theLeafCollection[newLeaf.Code].Chunk != newLeaf.Chunk) {
                 let oldChunk = SuperBigFamView.theLeafCollection[newLeaf.Code].Chunk;
@@ -7550,10 +7609,39 @@
             if (SuperBigFamView.theChunkCollection[chunkCode]) {
                 console.log("chunky bits:", chunkCode, SuperBigFamView.theChunkCollection[chunkCode].CodesList);
                 for (let c = 0; c < SuperBigFamView.theChunkCollection[chunkCode].CodesList.length; c++) {
-                    theNodes.push(
+                    if (
                         SuperBigFamView.theLeafCollection[SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]]
-                    );
-                }
+                            .Who &&
+                        SuperBigFamView.theLeafCollection[
+                            SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
+                        ].Who.indexOf("Mother of") > -1
+                    ) {
+                        console.log(
+                            "WARNING WARNING : ",
+                            SuperBigFamView.theLeafCollection[
+                                SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
+                            ]
+                        );
+                    } else if (
+                        SuperBigFamView.theLeafCollection[SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]]
+                            .Who &&
+                        SuperBigFamView.theLeafCollection[
+                            SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
+                        ].Who.indexOf("Father of") > -1
+                    ) {
+                        console.log(
+                            "WARNING WARNING : ",
+                            SuperBigFamView.theLeafCollection[
+                                SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
+                            ]
+                        );
+                    } else {   
+                        theNodes.push(
+                                SuperBigFamView.theLeafCollection[
+                                    SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
+                                ]
+                            );
+                    }}
             }
         }
 
@@ -7583,10 +7671,10 @@
 
         // ADD Spouses of Primary's Parents if they begat Half-Siblings when showSiblings = 1 && numA > 0
         // if (SuperBigFamView.numAncGens2Display > 0 && SuperBigFamView.displaySIBLINGS > 0) {
-        //     console.log("SHOULD BE SHOWING LYNDA BENHAM");
-        //     console.log("SHOULD BE SHOWING LYNDA BENHAM", thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Siblings);
+        //     console.log("SHOULD BE SHOWING HALF SIB PARENT");
+        //     console.log("SHOULD BE SHOWING HALF SIB PARENT", thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Siblings);
         // } else {
-        //     console.log("NO GO LYNDA BENHAM");
+        //     console.log("NO GO HALF SIB PARENT");
         // }
         
 
