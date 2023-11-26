@@ -2602,7 +2602,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Add print icon if not already present
         if ($("#fgaPrintIcon").length === 0) {
             $("<img id='fgaPrintIcon' src='views/familyGroupApp/images/print50.png'>").appendTo("header");
-            $("#fgaPrintIcon").click(() => window.print());
+            $("#fgaPrintIcon").click(() => {
+                if ($("#explainer").length === 0) {
+                    this.addExplainer();
+                }
+                window.print();
+            });
         }
 
         this.fixLinks();
@@ -2910,7 +2915,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             });
         }
         this.openLinksInNewTab();
-        this.addExplainer();
     }
 
     addExplainer() {

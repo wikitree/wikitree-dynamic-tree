@@ -622,14 +622,10 @@ body.app header {
 #view-container.familyGroupApp #explainer {
   display: none;
   text-align: center;
-  position: fixed;
-  bottom: 0em;
-  left: 0;
   border-top: 1px solid gray;
-  width: 100%;
-  padding: 0;
+  padding: 0.5em;
   font-size: 10px;
-  margin: 0;
+  margin: 1em 0;
 }
 
 @media print {
