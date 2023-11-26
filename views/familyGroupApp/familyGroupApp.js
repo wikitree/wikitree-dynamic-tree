@@ -91,6 +91,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         #view-container.familyGroupApp .bioRow div.theBio {
             display:block;
         }`;
+        this.showResearchNotesRules = `
+        #view-container.familyGroupApp #notes {
+            display:none;
+        }`;
     }
 
     meta() {
@@ -266,6 +270,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             showGender: "initial",
             husbandFirst: true,
             showTables: true,
+            showNotes: true,
         };
 
         // Set default values for settings
@@ -321,6 +326,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 $thisThing.text(newDate);
             });
             this.storeVal($this);
+        });
+
+        this.$container.on("change.fga", "#showNotes", (event) => {
+            const $this = $(event.currentTarget);
+            const isChecked = $this.prop("checked");
+            this.toggleStyle("showNotes", this.showResearchNotesRules, isChecked);
+            this.storeVal($(event.target));
         });
 
         this.$container.on("change.fga", "#showBaptism", (e) => {
@@ -669,6 +681,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <label id='showTablesLabel'><input type='checkbox' id='showTables' checked>tables in 'Sources'</label>
         <label id='showListsLabel'><input type='checkbox' id='showLists' checked>lists in 'Sources'</label>
         <label><input type='checkbox' id='useColour' checked value='1'>${spell("color")}</label>
+        <label><input type='checkbox' id='showNotes' value='1'>Research Notes</label>
         <label id='toggleBios'><input type='checkbox' id='showBios'><span>all biographies</span></label>
         <label id='includeBiosWhenPrintingLabel'><input type='checkbox' id='includeBiosWhenPrinting'>
         <span>biographies when printing</span></label>
@@ -1189,17 +1202,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     addIdToReferences(dummyDiv, Id) {
         dummyDiv.find("li[id^='_note'] a[href^='#'],sup").each(function () {
             const el = $(this);
-            console.log("el", el);
+            //  console.log("el", el);
             const id = el.prop("id");
             if (id) {
                 const newId = id + "_" + Id;
                 el.prop("id", newId);
             }
             if (el[0].tagName === "SUP") {
-                console.log("el", el);
+                //  console.log("el", el);
 
                 el.find("a").each(function () {
-                    console.log("el", el);
+                    //    console.log("el", el);
 
                     const a = $(this);
                     const href = a.attr("href");
@@ -1219,7 +1232,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     processSubSections(section) {
-        console.log("Processing section");
+        // console.log("Processing section");
         const dummyDiv = $("<div></div>").html(section);
 
         // Function to create a div and return it
@@ -1266,7 +1279,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         section = dummyDiv.html();
-        console.log("Finished processing section");
+        //console.log("Finished processing section");
         return section;
     }
 
@@ -1284,9 +1297,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const dummyDiv = $("<div></div>").html(htmlContent);
         this.addIdToReferences(dummyDiv, fsPerson.Id);
 
-        console.log(dummyDiv);
+        //    console.log(dummyDiv);
 
-        console.log("dummyDiv", dummyDiv.html());
+        //    console.log("dummyDiv", dummyDiv.html());
 
         // Function to determine if the current h2 is the expected next section
         function isNextSection(headerText, currentSection) {
@@ -1319,7 +1332,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     break; // Exit the loop if a new section begins
                 }
 
-                console.log("Appending element: ", currentElement.prop("outerHTML"));
+                //  console.log("Appending element: ", currentElement.prop("outerHTML"));
 
                 // Check if the element has already been processed
                 if (!currentElement.data("processed")) {
@@ -1342,7 +1355,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Get Sources section from bioHTML
 
         fsPerson.Sections = this.splitBioSections(fsPerson);
-        console.log("fsPerson.Sections", fsPerson.Sections);
+        //    console.log("fsPerson.Sections", fsPerson.Sections);
 
         // Div to hold the references
         const refsContainer = $("<div class='citationList'></div>");
@@ -1352,7 +1365,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         researchNotesContainer.append(fsPerson?.Sections?.ResearchNotes);
 
         fsPerson.BioSections = this.parseWikiText(fsPerson.bio);
-        console.log("fsPerson.BioSections", fsPerson.BioSections);
+        // console.log("fsPerson.BioSections", fsPerson.BioSections);
 
         // Initialize variables
         fsPerson.BaptismDate = "";
@@ -2550,10 +2563,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     initializePage() {
         // Show or hide 'Tables' label based on the presence of citation tables
-        console.log("checking for citation tables", $(".citationTable"));
+        // console.log("checking for citation tables", $(".citationTable"));
         this.toggleDisplay("#showTablesLabel", !!$("#notesAndSources table").length);
 
-        console.log("checking for sources", $(".sourceUL"));
+        // console.log("checking for sources", $(".sourceUL"));
         // Show or hide 'Lists' label based on the presence of source lists
         this.toggleDisplay("#showListsLabel", !!$(".sourceUL").length);
 
@@ -2897,6 +2910,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             });
         }
         this.openLinksInNewTab();
+        this.addExplainer();
+    }
+
+    addExplainer() {
+        let todaysDate = new Date().toISOString().split("T")[0];
+        todaysDate = this.convertDate(todaysDate);
+        const explainerText = `Generated by the WikiTree Family Group App from data on WikiTree on ${todaysDate}. Post-generation editing may have occurred.`;
+        const explainer = $("<p id='explainer'>" + explainerText + "</p>");
+        $(this.$container).append(explainer);
     }
 
     fixLinks() {
@@ -3112,6 +3134,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     convertDate(dateString, outputFormat, status = "") {
+        if (!outputFormat) {
+            const settings = this.getSettings();
+            outputFormat = settings.dateFormatSelect;
+        }
         if (!dateString) {
             return "";
         }

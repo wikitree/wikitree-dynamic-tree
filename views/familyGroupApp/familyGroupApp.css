@@ -619,6 +619,19 @@ body.app header {
   display: none;
 }
 
+#view-container.familyGroupApp #explainer {
+  display: none;
+  text-align: center;
+  position: fixed;
+  bottom: 0em;
+  left: 0;
+  border-top: 1px solid gray;
+  width: 100%;
+  padding: 0;
+  font-size: 10px;
+  margin: 0;
+}
+
 @media print {
   #view-container.familyGroupApp * {
     color: #000 !important;
@@ -631,6 +644,10 @@ body.app header {
   /* Hide navigation */
   #view-container.familyGroupApp nav {
     display: none;
+  }
+
+  #view-container.familyGroupApp #explainer {
+    display: block;
   }
 
   /* Show link destinations in brackets after the link text */
@@ -678,13 +695,14 @@ body.app header {
   #view-container.familyGroupApp table.personTable:not(.husband):not(.wife) {
     break-inside: avoid-page;
   }
-
-  #view-container.familyGroupApp div.level3_subsection,
-  #view-container.familyGroupApp div.level4_subsection,
+  #view-container.familyGroupApp div.level3_subsection:not(:nth-of-type(1)),
+  #view-container.familyGroupApp div.level4_subsection:not(:nth-of-type(1)),
+  #view-container.familyGroupApp div.level5_subsection:not(:nth-of-type(1)),
+  #view-container.familyGroupApp div.level6_subsection:not(:nth-of-type(1)),
   #view-container.familyGroupApp ul,
   #view-container.familyGroupApp div[style*="width:250px"],
   #view-container.familyGroupApp blockquote {
-    break-inside: avoid-page;
+    break-inside: avoid-page !important;
   }
 
   #view-container.familyGroupApp table.personTable:not(.husband):not(.wife) .birthRow,
