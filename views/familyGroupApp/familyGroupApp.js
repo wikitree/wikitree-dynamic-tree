@@ -197,6 +197,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                                     mPerson[relation] = relatives;
                                 });
 
+                                // Strip javascript from biography
+                                mPerson.bioHTML = this.stripScripts(mPerson.bioHTML);
+
                                 this.people.push(mPerson);
                             }
 
@@ -1215,6 +1218,58 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
+    processSubSections(section) {
+        console.log("Processing section");
+        const dummyDiv = $("<div></div>").html(section);
+
+        // Function to create a div and return it
+        function createDivWithClass(level) {
+            return $("<div></div>").addClass(`level${level}_subsection`);
+        }
+
+        // Initialize an array to keep track of the current open divs for each level
+        let openDivs = [];
+
+        dummyDiv.contents().each(function () {
+            const element = $(this);
+
+            // Check if the element is a header
+            if (element.is("h2, h3, h4, h5, h6")) {
+                const level = parseInt(element.prop("tagName").substring(1));
+
+                // Close any open divs at this level or higher
+                while (openDivs.length && openDivs[openDivs.length - 1].level >= level) {
+                    openDivs.pop(); // Remove the last div from the array
+                }
+
+                // Create a new div for this level
+                const newDiv = createDivWithClass(level);
+
+                // Append the new div to the appropriate parent
+                if (level > 2 && openDivs.length) {
+                    // Append the new div to the last open div of the previous level
+                    openDivs[openDivs.length - 1].div.append(newDiv);
+                } else {
+                    // If this is a top-level section or no divs are open, append to dummyDiv
+                    dummyDiv.append(newDiv);
+                }
+
+                // Add the new div to the open divs array with its level
+                openDivs.push({ div: newDiv, level: level });
+                newDiv.append(element);
+            } else {
+                // Append non-header elements to the last open div, if any
+                if (openDivs.length) {
+                    openDivs[openDivs.length - 1].div.append(element);
+                }
+            }
+        });
+
+        section = dummyDiv.html();
+        console.log("Finished processing section");
+        return section;
+    }
+
     splitBioSections(fsPerson) {
         const htmlContent = fsPerson.bioHTML;
 
@@ -1273,6 +1328,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
                 currentElement = currentElement.next();
             }
+        });
+
+        // Process value of each section
+        Object.keys(sections).forEach((section) => {
+            sections[section] = this.processSubSections(sections[section]);
         });
 
         return sections;
@@ -3281,6 +3341,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
             return index + 1;
         }
+    }
+
+    stripScripts(html) {
+        var div = document.createElement("div");
+        div.innerHTML = html;
+        var scripts = div.getElementsByTagName("script");
+        var i = scripts.length;
+        while (i--) {
+            scripts[i].parentNode.removeChild(scripts[i]);
+        }
+        return div.innerHTML;
     }
 };
 
