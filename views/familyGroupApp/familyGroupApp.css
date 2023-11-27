@@ -155,9 +155,7 @@ th.bioHeading {
 #view-container.familyGroupApp #citationList > li {
   list-style: none;
 }
-#view-container.familyGroupApp #citationList {
-  padding-inline-start: 0;
-}
+
 #view-container.familyGroupApp #citationList ul li,
 #view-container.familyGroupApp #citationList ul {
   margin-top: 0.5em;
@@ -170,6 +168,10 @@ th.bioHeading {
 #view-container.familyGroupApp #sources,
 #view-container.familyGroupApp #notes {
   padding: 0.5em;
+}
+
+#view-container.familyGroupApp #notes .researchNotes {
+  border-top: 1px solid gray;
 }
 
 #view-container.familyGroupApp #citationList > li > span {
@@ -569,6 +571,10 @@ body.app header {
 #view-container.familyGroupApp div.citationList ul {
   margin-left: 1.5em;
 }
+#view-container.familyGroupApp .citationList {
+  padding-inline-start: 0;
+  border-top: 1px solid gray;
+}
 
 #view-container.familyGroupApp table.personTable.husband,
 #view-container.familyGroupApp table.personTable.wife {
@@ -627,12 +633,45 @@ body.app header {
   font-size: 10px;
   margin: 1em 0;
 }
+#view-container.familyGroupApp #notesAndSources .marriedRow,
+#view-container.familyGroupApp .theBio .marriedRow {
+  display: none;
+}
+
+#view-container.familyGroupApp button.collapseButton,
+#view-container.familyGroupApp button.sectionCollapseButton,
+#view-container.familyGroupApp button.globalCollapseButton {
+  padding: 0.1em;
+  width: 1.5em;
+  position: absolute;
+  left: 50%;
+  margin-left: -438px;
+  margin-top: 0.5em;
+}
+#view-container.familyGroupApp button.sectionCollapseButton {
+  padding: 0.5em;
+  width: 2em;
+  font-size: larger;
+  margin-left: -443px;
+  margin-top: 0.3em;
+}
+#view-container.familyGroupApp button.globalCollapseButton {
+  padding: 0.7em;
+  width: 2.5em;
+  font-size: 25px;
+  margin-left: -500px;
+  margin-top: 0.1em;
+}
+#view-container.familyGroupApp button.collapseButton.firstChild {
+  margin-top: 0.8em;
+}
 
 @media print {
   #view-container.familyGroupApp * {
     color: #000 !important;
     box-shadow: none !important;
     text-shadow: none !important;
+    font-size: 12pt;
   }
   html #view-container.familyGroupApp {
     background-color: #fff;
@@ -645,6 +684,9 @@ body.app header {
   #view-container.familyGroupApp #explainer {
     display: block;
   }
+  #view-container.familyGroupApp span.bioHeading {
+    font-size: 1.2em;
+  }
 
   /* Show link destinations in brackets after the link text */
   /* a[href]:after { content: " (" attr(href) ") "; }*/
@@ -653,6 +695,7 @@ body.app header {
     text-decoration: underline;
     color: #06c;
     border: none;
+    text-decoration: none;
   }
   /* Don't show link destinations for JavaScript or internal links */
   #view-container.familyGroupApp a[href^="javascript:"]:after,
@@ -672,11 +715,20 @@ body.app header {
   #view-container.familyGroupApp #fgaOptions,
   #view-container.familyGroupApp #fgaInfo,
   #view-container.familyGroupApp #wtLogo,
-  #view-container.familyGroupApp #printIcon {
+  #view-container.familyGroupApp #printIcon,
+  #view-container.familyGroupApp button.collapseButton,
+  #view-container.familyGroupApp button.sectionCollapseButton,
+  #view-container.familyGroupApp button.globalCollapseButton {
     display: none !important;
   }
   #view-container.familyGroupApp .bioRow {
     display: none;
+  }
+  #view-container.familyGroupApp .bioRow.active {
+    display: table-row !important;
+  }
+  #view-container.familyGroupApp .bioHeading {
+    font-size: 1em !important;
   }
   #view-container.familyGroupApp #notes.empty {
     display: none;
@@ -686,7 +738,7 @@ body.app header {
     display: block;
   }
 
-  #view-container.familyGroupApp .citationList:not(:nth-of-type(1)),
+  /* #view-container.familyGroupApp .citationList:not(:nth-of-type(1)), */
   #view-container.familyGroupApp #sources,
   #view-container.familyGroupApp table.personTable:not(.husband):not(.wife) {
     break-inside: avoid-page;
@@ -699,6 +751,9 @@ body.app header {
   #view-container.familyGroupApp div[style*="width:250px"],
   #view-container.familyGroupApp blockquote {
     break-inside: avoid-page !important;
+  }
+  #view-container.familyGroupApp #sources ul {
+    break-inside: auto !important;
   }
 
   #view-container.familyGroupApp table.personTable:not(.husband):not(.wife) .birthRow,

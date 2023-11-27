@@ -78,6 +78,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             display: none;
         }
         `;
+        /*
         this.includeBiosWhenPrintingRules = `
         @media print {
             #view-container.familyGroupApp table.personTable .bioRow{
@@ -87,12 +88,21 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 display:block !important;
             }
         }`;
+        */
         this.showBiosRules = `
         #view-container.familyGroupApp .bioRow div.theBio {
             display:block;
         }`;
         this.showResearchNotesRules = `
         #view-container.familyGroupApp #notes {
+            display:none;
+        }`;
+        this.showListsRules = `
+        #view-container.familyGroupApp .citationList dl {
+            display:none;
+        }`;
+        this.showTablesRules = `
+        #view-container.familyGroupApp .citationList table {
             display:none;
         }`;
     }
@@ -263,13 +273,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             useColour: true,
             showWTIDs: false,
             showParentsSpousesDates: false,
-            includeBiosWhenPrinting: false,
+            //includeBiosWhenPrinting: false,
             showBios: false,
             dateFormatSelect: "sMDY",
             statusChoice: "symbols",
             showGender: "initial",
             husbandFirst: true,
             showTables: true,
+            showLists: true,
             showNotes: true,
         };
 
@@ -303,6 +314,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     startIt() {
         this.keepSpouse = "";
+        $(".collapseButton,.sectionCollapseButton,.globalCollapseButton").off().remove();
         $("#familySheetFormTable,#tree,#notesAndSources,#privateQ").remove();
         $("<img id='tree' src='views/familyGroupApp/images/tree.gif'>").appendTo($(this.$container));
         console.log("this.person_id", this.person_id);
@@ -332,6 +344,20 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const $this = $(event.currentTarget);
             const isChecked = $this.prop("checked");
             this.toggleStyle("showNotes", this.showResearchNotesRules, isChecked);
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fga", "#showTables", (event) => {
+            const $this = $(event.currentTarget);
+            const isChecked = $this.prop("checked");
+            this.toggleStyle("showTables", this.showTablesRules, isChecked);
+            this.storeVal($(event.target));
+        });
+
+        this.$container.on("change.fga", "#showLists", (event) => {
+            const $this = $(event.currentTarget);
+            const isChecked = $this.prop("checked");
+            this.toggleStyle("showLists", this.showListsRules, isChecked);
             this.storeVal($(event.target));
         });
 
@@ -378,11 +404,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.toggleStyle("showWTIDs", this.showWTIDsRules, isChecked);
             this.storeVal($(event.target));
         });
+        /*
         this.$container.on("change.fga", "#includeBiosWhenPrinting", (event) => {
             const isChecked = $(event.target).prop("checked");
             this.toggleStyle("includeBiosWhenPrinting", this.includeBiosWhenPrintingRules, !isChecked);
             this.storeVal($(event.target));
         });
+*/
 
         this.$container.on("change.fga", "#showBios", (event) => {
             this.toggleStyle("showBios", this.showBiosRules, !$(event.target).prop("checked"));
@@ -516,8 +544,24 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
             }
         );
+        this.$container.on("click.fga", ".researchNotesContent", (e) => {
+            const $this = $(e.currentTarget);
+            if ($this.find("textarea").length == 0) {
+                const textBox = $("<textarea class='edit'>" + this.br2nl($this.html()) + "</textarea>");
+                $this.text("");
+                $this.append(textBox);
+                textBox.focus();
+
+                textBox.focusout(() => {
+                    this.closeInputs();
+                });
+            }
+        });
         this.$container.on("click.fga", "#notesNotes", (e) => {
             const $this = $(e.currentTarget);
+            if ($this.find(".researchNotesContent").length) {
+                return;
+            }
             if ($this.find("textarea").length == 0) {
                 const textBox = $("<textarea class='edit'>" + this.br2nl($this.html()) + "</textarea>");
                 $this.text("");
@@ -533,12 +577,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const $this = $(e.currentTarget);
             const theTH = $this.closest("th");
             const theBio = theTH.find(".theBio");
+            const bioRow = theTH.closest("tr");
             theBio.toggle();
             if (theBio.css("display") == "block") {
                 theTH.addClass("active");
+                bioRow.addClass("active");
                 $this.css("font-size", "1.7143em");
             } else {
                 $this.css("font-size", "16px");
+                bioRow.removeClass("active");
                 theTH.removeClass("active");
             }
         });
@@ -683,8 +730,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         <label><input type='checkbox' id='useColour' checked value='1'>${spell("color")}</label>
         <label><input type='checkbox' id='showNotes' value='1'>Research Notes</label>
         <label id='toggleBios'><input type='checkbox' id='showBios'><span>all biographies</span></label>
-        <label id='includeBiosWhenPrintingLabel'><input type='checkbox' id='includeBiosWhenPrinting'>
-        <span>biographies when printing</span></label>
+        <!--<label id='includeBiosWhenPrintingLabel'><input type='checkbox' id='includeBiosWhenPrinting'>
+        <span>biographies when printing</span></label>-->
         <select id="dateFormatSelect">
             <option value="sMDY">MMM DD, YYYY (e.g., Nov 24, 1859)</option>
             <option value="DsMY">DD MMM YYYY (e.g., 24 Nov 1859)</option>
@@ -1361,8 +1408,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const refsContainer = $("<div class='citationList'></div>");
         const researchNotesContainer = $("<div class='researchNotes'></div>");
 
-        refsContainer.append(fsPerson?.Sections?.Sources);
-        researchNotesContainer.append(fsPerson?.Sections?.ResearchNotes);
+        refsContainer.append($(`<div class='citationListContent'>${fsPerson?.Sections?.Sources}</div>`));
+        researchNotesContainer.append(
+            $(`<div class='researchNotesContent'>${fsPerson?.Sections?.ResearchNotes}</div>`)
+        );
 
         fsPerson.BioSections = this.parseWikiText(fsPerson.bio);
         // console.log("fsPerson.BioSections", fsPerson.BioSections);
@@ -2131,9 +2180,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     case "showWTIDs":
                         this.toggleStyle(id, this.showWTIDsRules, settings[id]);
                         break;
+                    case "showLists":
+                        this.toggleStyle(id, this.showListsRules, settings[id]);
+                        break;
+                    case "showTables":
+                        this.toggleStyle(id, this.showTablesRules, settings[id]);
+                        break;
+                    /*
                     case "includeBiosWhenPrinting":
                         this.toggleStyle(id, this.includeBiosWhenPrintingRules, !settings[id]);
                         break;
+                        */
                     case "showBios":
                         this.toggleStyle(id, this.showBiosRules, !settings[id]);
                         break;
@@ -2544,6 +2601,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
     }
 
+    /*
     toggleTables() {
         // Get the checked state of the "#showTables" checkbox
         const isChecked = $("#showTables").prop("checked");
@@ -2553,6 +2611,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         isChecked ? citationTables.show() : citationTables.hide();
         this.storeVal($("#showTables"));
     }
+*/
 
     setSettings(settings) {
         localStorage.setItem("familyGroupAppSettings", JSON.stringify(settings));
@@ -2568,7 +2627,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // console.log("checking for sources", $(".sourceUL"));
         // Show or hide 'Lists' label based on the presence of source lists
-        this.toggleDisplay("#showListsLabel", !!$(".sourceUL").length);
+        this.toggleDisplay("#showListsLabel", !!$(".citationListContent dl").length);
 
         // Show or hide 'Gender' div based on the presence of '1st Child'
         this.toggleDisplay("#showGenderDiv", !!$("tr[data-role='1st Child']").length);
@@ -2582,15 +2641,18 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.toggleDisplay("#statusChoice", uncertain);
 
         // Remove the second married row if it exists
-        if ($(".marriedRow").eq(1)) {
-            $(".marriedRow").eq(1).remove();
-        }
+        $(".marriedRow").each(function (index) {
+            if (index > 0) {
+                $(this).remove();
+            }
+        });
+        $("#sources .marriedRow, #theBio .marriedRow").remove();
 
         // Show or hide 'Nicknames' label based on the presence of nicknames
         this.toggleDisplay("#showNicknamesLabel", !!$(".nicknames").length);
 
         // Call toggleTables function
-        this.toggleTables();
+        // this.toggleTables();
 
         // Handle query parameters
         const searchParams = new URLSearchParams(window.location.search);
@@ -2612,6 +2674,25 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         this.fixLinks();
         this.fixImageLinks();
+        this.addCollapseButtons();
+        this.addGlobalToggle();
+        this.removeEmptyAnchors();
+    }
+
+    createTOC() {
+        const toc = $("<div id='toc'></div>");
+        const tocList = $("<ul></ul>");
+        toc.append(tocList);
+        // const sections = ["Person","Research Notes","Sources"];
+    }
+
+    removeEmptyAnchors() {
+        $("a").each(function () {
+            const a = $(this);
+            if (a.text().trim() === "") {
+                a.remove();
+            }
+        });
     }
 
     toggleDisplay(selector, condition) {
@@ -2622,13 +2703,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
     }
 
+    /*
     toggleLists() {
         // Get the checked state of the "#showLists" checkbox
         const isChecked = $("#showLists").prop("checked");
-
+        const citationLists = $("#notesAndSources dl");
         // Show or hide all ".sourceUL" elements based on the checkbox state
-        isChecked ? $(".sourceUL").show() : $(".sourceUL").hide();
+        isChecked ? citationLists.show() : citationLists.hide();
     }
+    */
 
     sortSpouses() {
         this.people.forEach((person) => {
@@ -2817,29 +2900,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.setBaptChrist();
 
             /**
-             * Toggles the visibility of citation tables based on the state of the "#showTables" checkbox.
-             * If the checkbox is checked, citation tables are hidden.
-             * Otherwise, citation tables are shown.
-             */
-
-            /**
-             * Updates the state of tables based on checkbox state and stores the state.
-             */
-            $("#showTables").change((e) => {
-                const $this = $(e.target);
-                this.toggleTables();
-                this.storeVal($this);
-            });
-
-            /**
-             * Updates the state of lists based on checkbox state and stores the state.
-             */
-            $("#showLists").change((e) => {
-                this.toggleLists();
-                this.storeVal($this);
-            });
-
-            /**
              * Allows editing of citation list items.
              * Creates a textarea for editing when a list item is clicked.
              */
@@ -2967,16 +3027,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         if (this.htmlResearchNotes.length > 0) {
             $("#notes").removeClass("empty");
+
             this.htmlResearchNotes.forEach((rNote) => {
                 //	console.log(rNote);
+                const thisHeading = $(
+                    `<a class='sourcesName' href='https://www.wikitree.com/wiki/${rNote.id}'>${rNote.displayName} <span class='fsWTID'>(${rNote.id})</span></a>`
+                );
                 if (rNote.researchNotes.text().trim() !== "") {
-                    notesAndSources
-                        .find("#notesNotes")
-                        .append(
-                            $(
-                                `<a class='sourcesName' href='https://www.wikitree.com/wiki/${rNote.id}'>${rNote.displayName} <span class='fsWTID'>(${rNote.id})</span></a>`
-                            )
-                        );
+                    rNote.researchNotes.prepend(thisHeading);
+
                     notesAndSources.find("#notesNotes").append(rNote.researchNotes);
                 }
             });
@@ -3382,6 +3441,184 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             scripts[i].parentNode.removeChild(scripts[i]);
         }
         return div.innerHTML;
+    }
+
+    addCollapseButtons() {
+        // Add buttons for .personTable
+        const personTables = document.querySelectorAll(".personTable");
+        personTables.forEach((table) => {
+            this.createAndAddButton(table, "tr:not(.roleRow)", "table");
+        });
+
+        // Add buttons for .researchNotes
+        const researchNotesElements = document.querySelectorAll(".researchNotes");
+        researchNotesElements.forEach((element) => {
+            this.createAndAddButton(element, ".researchNotesContent", "researchNotes");
+        });
+
+        // Add buttons for .citationList
+        const citationListElements = document.querySelectorAll(".citationList");
+        citationListElements.forEach((element) => {
+            this.createAndAddButton(element, ".citationListContent", "sources");
+        });
+
+        // Add section-level collapse buttons
+        this.addSectionCollapseButton("#familySheetFormTable", ".personTable", "table", true); // True for table section
+        this.addSectionCollapseButton("#notes > h2", ".researchNotes", "researchNotes");
+        this.addSectionCollapseButton("#sources > h2", ".citationList", "sources");
+    }
+
+    addSectionCollapseButton(selector, toggleSelector, aClass, isTableSection = false) {
+        const sectionHeader = $(selector);
+        if (sectionHeader.length) {
+            const button = $("<button>", {
+                text: "-",
+                title: "Collapse or expand all items in this section",
+                class: "sectionCollapseButton " + aClass,
+                css: { fontSize: "larger" },
+            });
+            button.insertBefore(sectionHeader);
+
+            button.on("click", () => {
+                const isCollapsing = button.text() === "-";
+                const tables = $(toggleSelector); // This now selects .personTable
+
+                if (isTableSection) {
+                    // Handle the table section
+                    tables.each(function () {
+                        const table = $(this);
+                        const rowsToToggle = table.find("tr:not(.roleRow)");
+                        rowsToToggle.toggle(!isCollapsing);
+
+                        const tableButton = table.prev(".collapseButton");
+                        tableButton.text(isCollapsing ? "+" : "-");
+                    });
+                } else {
+                    // Handle other sections (Research Notes, Citation List)
+                    $(toggleSelector).each(function () {
+                        const itemContent = $(this).find(".researchNotesContent, .citationListContent");
+                        const itemButton = $(this).prev(".collapseButton");
+
+                        itemContent.toggle(!isCollapsing);
+                        itemButton.text(isCollapsing ? "+" : "-");
+                    });
+                }
+
+                button.text(isCollapsing ? "+" : "-");
+                this.updateGlobalButtonState();
+            });
+        }
+    }
+
+    addGlobalToggle() {
+        const globalButton = $("<button>", {
+            text: "-",
+            title: "Collapse or expand all",
+            class: "globalCollapseButton",
+            css: { fontSize: "larger" },
+        });
+
+        // Append the global button to a suitable location on your page
+        $("#familySheetFormTable").before(globalButton);
+
+        globalButton.on("click", () => {
+            const isCollapsing = globalButton.text() === "-";
+            const allItems = $(".personTable, .researchNotes, .citationList");
+            const allButtons = $(".collapseButton, .sectionCollapseButton");
+
+            if (isCollapsing) {
+                allItems.find("tr:not(.roleRow), .researchNotesContent, .citationListContent").hide();
+                allButtons.text("+");
+                globalButton.text("+");
+            } else {
+                allItems.find("tr, .researchNotesContent, .citationListContent").show();
+                allButtons.text("-");
+                globalButton.text("-");
+            }
+        });
+    }
+    /*
+    createAndAddButton(element, contentSelector, aClass) {
+        const button = $("<button>").text("-");
+        button.addClass("collapseButton").addClass(aClass);
+        const $element = $(element);
+        $element.before(button);
+
+        button.on("click", () => {
+            const contentToToggle = $element.find(contentSelector);
+            if (contentToToggle.length) {
+                contentToToggle.toggle();
+                button.text(button.text() === "-" ? "+" : "-");
+
+                // Update the section button
+                this.updateSectionButtonState($(".sectionCollapseButton." + aClass), aClass);
+
+                // Update the global button
+                this.updateGlobalButtonState();
+            }
+        });
+    }
+*/
+
+    createAndAddButton(element, contentSelector, aClass) {
+        const $element = $(element);
+        // if element is a table and it's empty, don't add a button
+        if ($element.is("table") && $element.find("tr").length === 0) {
+            return;
+        }
+
+        const button = $("<button>").text("-");
+        button.addClass("collapseButton " + aClass);
+
+        if ($element.find(".roleRow").attr("data-role") == "1st Child") {
+            button.addClass("firstChild");
+        }
+        $element.before(button);
+
+        button.on("click", () => {
+            const contentToToggle = $element.find(contentSelector);
+            contentToToggle.toggle();
+            button.text(button.text() === "-" ? "+" : "-");
+
+            // Find the associated section collapse button using the class
+            const sectionCollapseButton = $("button.sectionCollapseButton." + aClass);
+            this.updateSectionButtonState(sectionCollapseButton, aClass);
+
+            // Update the global button
+            this.updateGlobalButtonState();
+        });
+    }
+
+    updateSectionButtonState(sectionCollapseButton, aClass) {
+        const buttons = $(".collapseButton." + aClass);
+        const allCollapsed =
+            buttons.length > 0 &&
+            buttons.filter(function () {
+                return $(this).text() === "-";
+            }).length === 0;
+        const allExpanded =
+            buttons.length > 0 &&
+            buttons.filter(function () {
+                return $(this).text() === "+";
+            }).length === 0;
+
+        sectionCollapseButton.text(allCollapsed ? "+" : allExpanded ? "-" : sectionCollapseButton.text());
+    }
+
+    updateGlobalButtonState() {
+        const buttons = $(".collapseButton");
+        const allCollapsed =
+            buttons.length > 0 &&
+            buttons.filter(function () {
+                return $(this).text() === "-";
+            }).length === 0;
+        const allExpanded =
+            buttons.length > 0 &&
+            buttons.filter(function () {
+                return $(this).text() === "+";
+            }).length === 0;
+
+        $(".globalCollapseButton").text(allCollapsed ? "+" : allExpanded ? "-" : $(".globalCollapseButton").text());
     }
 };
 
