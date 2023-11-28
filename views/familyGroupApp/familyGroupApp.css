@@ -647,6 +647,8 @@ body.app header {
   left: 50%;
   margin-left: -438px;
   margin-top: 0.5em;
+  background-color: transparent;
+  color: forestgreen;
 }
 #view-container.familyGroupApp button.sectionCollapseButton {
   padding: 0.5em;

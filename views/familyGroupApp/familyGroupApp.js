@@ -3472,7 +3472,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const sectionHeader = $(selector);
         if (sectionHeader.length) {
             const button = $("<button>", {
-                text: "-",
+                text: "▼",
                 title: "Collapse or expand all items in this section",
                 class: "sectionCollapseButton " + aClass,
                 css: { fontSize: "larger" },
@@ -3480,7 +3480,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             button.insertBefore(sectionHeader);
 
             button.on("click", () => {
-                const isCollapsing = button.text() === "-";
+                const isCollapsing = button.text() === "▼";
                 const tables = $(toggleSelector); // This now selects .personTable
 
                 if (isTableSection) {
@@ -3491,7 +3491,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         rowsToToggle.toggle(!isCollapsing);
 
                         const tableButton = table.prev(".collapseButton");
-                        tableButton.text(isCollapsing ? "+" : "-");
+                        tableButton.text(isCollapsing ? "▶" : "▼");
                     });
                 } else {
                     // Handle other sections (Research Notes, Citation List)
@@ -3500,11 +3500,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                         const itemButton = $(this).prev(".collapseButton");
 
                         itemContent.toggle(!isCollapsing);
-                        itemButton.text(isCollapsing ? "+" : "-");
+                        itemButton.text(isCollapsing ? "▶" : "▼");
                     });
                 }
 
-                button.text(isCollapsing ? "+" : "-");
+                button.text(isCollapsing ? "▶" : "▼");
                 this.updateGlobalButtonState();
             });
         }
@@ -3512,7 +3512,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     addGlobalToggle() {
         const globalButton = $("<button>", {
-            text: "-",
+            text: "▼",
             title: "Collapse or expand all",
             class: "globalCollapseButton",
             css: { fontSize: "larger" },
@@ -3522,18 +3522,18 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         $("#familySheetFormTable").before(globalButton);
 
         globalButton.on("click", () => {
-            const isCollapsing = globalButton.text() === "-";
+            const isCollapsing = globalButton.text() === "▼";
             const allItems = $(".personTable, .researchNotes, .citationList");
             const allButtons = $(".collapseButton, .sectionCollapseButton");
 
             if (isCollapsing) {
                 allItems.find("tr:not(.roleRow), .researchNotesContent, .citationListContent").hide();
-                allButtons.text("+");
-                globalButton.text("+");
+                allButtons.text("▶");
+                globalButton.text("▶");
             } else {
                 allItems.find("tr, .researchNotesContent, .citationListContent").show();
-                allButtons.text("-");
-                globalButton.text("-");
+                allButtons.text("▼");
+                globalButton.text("▼");
             }
         });
     }
@@ -3567,7 +3567,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             return;
         }
 
-        const button = $("<button>").text("-");
+        const button = $("<button>").text("▼");
         button.addClass("collapseButton " + aClass);
 
         if ($element.find(".roleRow").attr("data-role") == "1st Child") {
@@ -3578,7 +3578,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         button.on("click", () => {
             const contentToToggle = $element.find(contentSelector);
             contentToToggle.toggle();
-            button.text(button.text() === "-" ? "+" : "-");
+            button.text(button.text() === "▼" ? "▶" : "▼");
 
             // Find the associated section collapse button using the class
             const sectionCollapseButton = $("button.sectionCollapseButton." + aClass);
@@ -3594,15 +3594,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const allCollapsed =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "-";
+                return $(this).text() === "▼";
             }).length === 0;
         const allExpanded =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "+";
+                return $(this).text() === "▶";
             }).length === 0;
 
-        sectionCollapseButton.text(allCollapsed ? "+" : allExpanded ? "-" : sectionCollapseButton.text());
+        sectionCollapseButton.text(allCollapsed ? "▶" : allExpanded ? "▼" : sectionCollapseButton.text());
     }
 
     updateGlobalButtonState() {
@@ -3610,15 +3610,15 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const allCollapsed =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "-";
+                return $(this).text() === "▼";
             }).length === 0;
         const allExpanded =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "+";
+                return $(this).text() === "▶";
             }).length === 0;
 
-        $(".globalCollapseButton").text(allCollapsed ? "+" : allExpanded ? "-" : $(".globalCollapseButton").text());
+        $(".globalCollapseButton").text(allCollapsed ? "▶" : allExpanded ? "▼" : $(".globalCollapseButton").text());
     }
 };
 
