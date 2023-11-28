@@ -605,7 +605,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         if ($this.prop("checked") == true) {
             $("table.wife").insertAfter($("table.husband"));
-            $(".marriedRow").eq(0).appendTo($("table.husband tbody"));
+            $(".marriedRow").eq(0).appendTo($("table.husband > tbody"));
 
             husbandCitations.prependTo($("#citationList"));
             husbandNameCaption.prependTo($("caption"));
@@ -615,7 +615,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         } else if (this.people[0].Gender == "Female") {
             $("table.husband").insertAfter($("table.wife"));
-            $(".marriedRow").eq(0).appendTo($("table.wife tbody"));
+            $(".marriedRow").eq(0).appendTo($("table.wife > tbody"));
             $("#citationList li[data-wtid='" + this.htmlEntities(this.people[0].Name) + "']").prependTo(
                 $("#citationList")
             );
@@ -1247,11 +1247,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     addIdToReferences(dummyDiv, Id) {
-        dummyDiv.find("li[id^='_note'] a[href^='#'],sup").each(function () {
+        dummyDiv.find("li[id^='_note'] a[href^='#'],sup,ol.references li[id^='_note']").each(function () {
             const el = $(this);
             //  console.log("el", el);
             const id = el.prop("id");
-            if (id) {
+            if (id && !id.includes(Id)) {
                 const newId = id + "_" + Id;
                 el.prop("id", newId);
             }
@@ -1263,14 +1263,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                     const a = $(this);
                     const href = a.attr("href");
-                    if (href) {
+                    if (href && !href.includes(Id)) {
                         const newHref = href + "_" + Id;
                         a.attr("href", newHref);
                     }
                 });
             } else if (el[0].tagName === "A") {
                 const href = el.attr("href");
-                if (href) {
+                if (href && !href.includes(Id)) {
                     const newHref = href + "_" + Id;
                     el.attr("href", newHref);
                 }
@@ -2250,7 +2250,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             // Wait for the main family sheet table to be available
             await waitForElement("#familySheetFormTable");
             const mainTable = $("#familySheetFormTable");
-
             // Get column widths from the main table
             const colWidths = mainTable
                 .find("thead tr th")
@@ -2689,7 +2688,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     removeEmptyAnchors() {
         $("a").each(function () {
             const a = $(this);
-            if (a.text().trim() === "") {
+            if (a.attr("href") === undefined && a.text().trim() === "" && a.find("img").length === 0) {
                 a.remove();
             }
         });
@@ -2810,10 +2809,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         if (mainRole === "Husband" || isHusbandFirst) {
             fsTable.after(husbandTable, wifeTable);
-            $("tr.marriedRow").appendTo($("table.husband tbody"));
+            $("tr.marriedRow").appendTo($("table.husband > tbody"));
         } else {
             fsTable.after(wifeTable, husbandTable);
-            $("tr.marriedRow").appendTo($("table.wife tbody"));
+            $("tr.marriedRow").appendTo($("table.wife > tbody"));
         }
 
         const oChildren = this.people[0].Child;
