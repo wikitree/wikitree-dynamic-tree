@@ -1,35 +1,13 @@
-class PersonDataCache {
-    constructor(maxSize = 50) {
-        this.cache = new Map();
-        this.maxSize = maxSize;
-    }
-
-    getPersonData(id) {
-        const data = this.cache.get(id);
-        return data;
-    }
-
-    setPersonData(id, data) {
-        if (!this.cache.has(id)) {
-            if (this.cache.size >= this.maxSize) {
-                const firstKey = this.cache.keys().next().value;
-                this.cache.delete(firstKey);
-                console.log(`[Cache] Cache limit reached. Evicting oldest entry: ${firstKey}`);
-            }
-            this.cache.set(id, data);
-            console.log(`[Cache] Setting data for ${id}`);
-        } else {
-            console.log(`[Cache] Data for ${id} already exists in cache. Not updating.`);
-        }
-    }
-
-    // This method can be used to inspect the current state of the cache.
-    logCacheState() {
-        console.log("Current cache state:", Array.from(this.cache.entries()));
-    }
-}
+import { spell, waitForElement } from "../../lib/utilities.js";
+import { PersonDataCache } from "./js/personDataCache.js";
+import { Collapse } from "./js/collapse.js";
+import { HandleLinks } from "./js/handleLinks.js";
+import { HandleDates } from "./js/handleDates.js";
 
 const personDataCache = new PersonDataCache();
+const collapse = new Collapse();
+const handleLinks = new HandleLinks();
+const handleDates = new HandleDates();
 
 window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     static APP_ID = "familyGroupApp";
@@ -117,7 +95,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.single = 0;
         this.wifeWTID = "";
         this.calledPeople = [this.person_id];
-        //this.calledPeople = [];
         this.calls = 1;
         this.privates = 0;
         this.references = [];
@@ -162,6 +139,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             peeps.push(aPerson);
         });
         return peeps;
+    }
+
+    stripScripts(html) {
+        const div = document.createElement("div");
+        div.innerHTML = html;
+        const scripts = div.getElementsByTagName("script");
+        let i = scripts.length;
+        while (i--) {
+            scripts[i].parentNode.removeChild(scripts[i]);
+        }
+        return div.innerHTML;
     }
 
     getFamily(WTID) {
@@ -252,35 +240,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
     }
 
-    openLinksInNewTab() {
-        $("#view-container a:not([href^='#'])").attr("target", "_blank");
-    }
-
-    setDefaults() {
-        // Set default values for settings
-        const defaults = {
-            showBaptism: true,
-            showBurial: true,
-            showNicknames: false,
-            showOtherLastNames: false,
-            useColour: true,
-            showWTIDs: false,
-            showParentsSpousesDates: false,
-            //includeBiosWhenPrinting: false,
-            showBios: false,
-            dateFormatSelect: "sMDY",
-            statusChoice: "symbols",
-            showGender: "initial",
-            husbandFirst: true,
-            showTables: true,
-            showLists: true,
-            showNotes: true,
-        };
-
-        // Set default values for settings
-        localStorage.setItem("familyGroupAppSettings", JSON.stringify(defaults));
-    }
-
     init(container_selector, person_id) {
         if (!localStorage.getItem("familyGroupAppSettings")) {
             this.setDefaults();
@@ -367,7 +326,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const $thisThing = $(this);
                 const theDate = $thisThing.attr("data-date");
                 const dateStatus = $thisThing.attr("data-date-status");
-                const newDate = theClass.convertDate(theDate, $this.val(), dateStatus);
+                const newDate = handleDates.convertDate(theDate, $this.val(), dateStatus);
                 $thisThing.text(newDate);
             });
             this.storeVal($this);
@@ -437,13 +396,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.toggleStyle("showWTIDs", this.showWTIDsRules, isChecked);
             this.storeVal($(event.target));
         });
-        /*
-        this.$container.on("change.fga", "#includeBiosWhenPrinting", (event) => {
-            const isChecked = $(event.target).prop("checked");
-            this.toggleStyle("includeBiosWhenPrinting", this.includeBiosWhenPrintingRules, !isChecked);
-            this.storeVal($(event.target));
-        });
-*/
 
         this.$container.on("change.fga", "#showBios", (event) => {
             this.toggleStyle("showBios", this.showBiosRules, !$(event.target).prop("checked"));
@@ -473,8 +425,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $("#fgaOptionsButton").toggleClass("active");
         });
 
-        // Delegated change.fga event listener for the long month display setting
-
         this.$container.on("click.fga", ".fsName a, caption a", function (e) {
             e.preventDefault();
         });
@@ -502,7 +452,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.startIt();
             // Initialize values
             this.setVals();
-            //            this.init(this.$container, parseInt($this.attr("data-id")));
         });
 
         this.$container.on("change.fga", "#husbandFirst", (e) => {
@@ -717,17 +666,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
     }
 
-    toggleBios() {
-        const shouldShowBios = this.$container.find("#showBios").prop("checked");
-        this.$container.find(".theBio").each(function () {
-            if (shouldShowBios) {
-                $(this).slideDown();
-            } else {
-                $(this).slideUp();
-            }
-        });
-    }
-
     handleWTIDKeydown(event) {
         if (event.keyCode === 13) {
             this.handleFamilySheetGoClick();
@@ -881,40 +819,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         return [fName, sName];
     }
 
-    monthFormat(aDate, opt) {
-        // Short and long month names
-        const sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const lMonths = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ];
-
-        // Decide which direction of conversion based on 'opt'
-        const fromMonths = opt === "short" ? lMonths : sMonths;
-        const toMonths = opt === "short" ? sMonths : lMonths;
-
-        // Replace month name with corresponding short or long form
-        for (let i = 0; i < fromMonths.length; i++) {
-            const reg = new RegExp(fromMonths[i], "gi"); // Case-insensitive match
-            if (reg.test(aDate)) {
-                return aDate.replace(reg, toMonths[i]);
-            }
-        }
-
-        // Return the original date if no conversion was made
-        return aDate;
-    }
-
     async getRelatives(id) {
         // If all people are fetched, simply return
         if (this.people.length === this.categoryProfiles.length) {
@@ -979,116 +883,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         const ddStatus = getStatus(person.DataStatus?.DeathDate, useAbbreviations);
 
         return [bdStatus, ddStatus];
-    }
-
-    displayFullDates(fPerson, showStatus = true) {
-        const settings = this.getSettings();
-        const dateFormat = settings.dateFormatSelect;
-        // Get the date status symbols or abbreviations for birth and death dates
-        const [bdStatus, ddStatus] = this.bdDatesStatus(fPerson);
-        let fbd = "";
-        let fdd = "";
-        const fDates = [];
-
-        // Handle Birth Date
-        if (fPerson["BirthDate"] && fPerson["BirthDate"] !== "0000-00-00") {
-            const fbds = fPerson["BirthDate"].split("-");
-            fbd = fbds[0] === "unkno5" ? "" : this.getDateFormat(fbds);
-        } else if (fPerson["BirthDateDecade"]) {
-            fbd = fPerson["BirthDateDecade"];
-        }
-
-        fDates.push(showStatus && fbd ? bdStatus + fbd : fbd);
-
-        // Handle Death Date
-        if (fPerson["IsLiving"] === 1) {
-            fdd = "living";
-        } else if (fPerson["DeathDate"] && fPerson["DeathDate"] !== "0000-00-00") {
-            const fdds = fPerson["DeathDate"].split("-");
-            fdd = fdds[0] === "unkno5" ? "" : this.getDateFormat(fdds);
-        } else if (fPerson["DeathDateDecade"] && fPerson["DeathDateDecade"] !== "unknown") {
-            fdd = fPerson["DeathDateDecade"];
-        }
-
-        fDates.push(showStatus && fdd ? ddStatus + fdd : fdd);
-
-        return fDates;
-    }
-
-    monthFormat(aDate, opt) {
-        // Short and long month names
-        const sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const lMonths = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ];
-
-        let gotit = false; // Flag to indicate if a month name was found and replaced
-        let theDate = aDate; // The final date string with the converted month name
-
-        // Convert long month names to short
-        if (opt === "short") {
-            lMonths.forEach((aMonth, i) => {
-                const reg = new RegExp(aMonth, "g");
-                if (theDate.match(reg)) {
-                    theDate = theDate.replace(reg, sMonths[i]);
-                    gotit = true;
-                }
-            });
-        }
-        // Convert short month names to long
-        else {
-            sMonths.forEach((aMonth, i) => {
-                const reg = new RegExp(`\\b${aMonth}\\b`, "i");
-                if (theDate.match(reg)) {
-                    theDate = theDate.replace(reg, lMonths[i]);
-                    gotit = true;
-                }
-            });
-        }
-
-        // Return the converted date or the original date if no conversion was made
-        return gotit ? theDate : aDate;
-    }
-
-    ymdFix(date) {
-        if (!date) {
-            return "";
-        }
-
-        const sMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let outDate = date;
-
-        // Try to match the date format "DD Month YYYY"
-        const dateParts = date.match(/(\b\d{1,2}\b) ([A-Za-z]+) (\b\d{4}\b)/);
-        if (dateParts) {
-            const day = dateParts[1].padStart(2, "0");
-            const monthName = dateParts[2];
-            const year = dateParts[3];
-            const monthIndex = sMonths.findIndex((m) => monthName.toLowerCase().startsWith(m.toLowerCase()));
-            if (monthIndex !== -1) {
-                const month = (monthIndex + 1).toString().padStart(2, "0");
-                return `${year}-${month}-${day}`;
-            }
-        } else {
-            // Try to match the date format "YYYY-MM-DD"
-            const dateBits = date.split("-");
-            if (dateBits[1] === "00" && dateBits[2] === "00") {
-                outDate = dateBits[0] === "0000" ? "" : dateBits[0];
-            }
-        }
-
-        return outDate;
     }
 
     isOK(thing) {
@@ -1178,70 +972,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         return fbd;
     }
-    displayDates(fPerson) {
-        const mbdDatesStatus = this.bdDatesStatus(fPerson);
-        const bdStatus = mbdDatesStatus[0];
-        const ddStatus = mbdDatesStatus[1];
-
-        let fbd = ""; // Formatted Birth Date
-        let fdd = ""; // Formatted Death Date
-
-        // Handling Birth Date
-        if (fPerson["BirthDate"] && fPerson["BirthDate"] !== "0000-00-00" && fPerson["BirthDate"] !== "unknown") {
-            fbd = fPerson["BirthDate"].split("-")[0];
-        } else if (fPerson["BirthDateDecade"] && fPerson["BirthDateDecade"] !== "unknown") {
-            fbd = fPerson["BirthDateDecade"];
-            const decadeMidpoint = fPerson["BirthDateDecade"].slice(0, -2) + 5;
-        }
-
-        // Handling Death Date
-        if (fPerson["IsLiving"] !== undefined && fPerson["IsLiving"] === 1) {
-            fdd = "living";
-        } else if (fdd === "" && fPerson["DeathDate"] && fPerson["DeathDate"] !== "0000-00-00") {
-            fdd = fPerson["DeathDate"].split("-")[0];
-        } else if (fPerson["DeathDateDecade"] && fPerson["DeathDateDecade"] !== "unknown") {
-            fdd = fPerson["DeathDateDecade"];
-            const decadeMidpoint = fPerson["DeathDateDecade"].slice(0, -2) + 5;
-        }
-
-        const fDates = `(${bdStatus}${fbd} &ndash; ${ddStatus}${fdd})`;
-
-        return fDates;
-    }
-    displayFullDates(fPerson, showStatus = true) {
-        const mbdDatesStatus = this.bdDatesStatus(fPerson);
-        const bdStatus = mbdDatesStatus[0];
-        const ddStatus = mbdDatesStatus[1];
-
-        let fbd = "";
-        let fdd = "";
-
-        const fDates = [];
-
-        // Handle Birth Date
-        if (fPerson["BirthDate"] && fPerson["BirthDate"] !== "0000-00-00") {
-            const fbds = fPerson["BirthDate"].split("-");
-            fbd = fbds[0] === "unkno5" ? "" : this.getDateFormat(fbds);
-        } else if (fPerson["BirthDateDecade"]) {
-            fbd = fPerson["BirthDateDecade"];
-        }
-
-        fDates.push(showStatus && fbd ? bdStatus + fbd : fbd);
-
-        // Handle Death Date
-        if (fPerson["IsLiving"] !== undefined && fPerson["IsLiving"] === 1) {
-            fdd = "living";
-        } else if (!fdd && fPerson["DeathDate"] && fPerson["DeathDate"] !== "0000-00-00") {
-            const fdds = fPerson["DeathDate"].split("-");
-            fdd = fdds[0] === "unkno5" ? "" : this.getDateFormat(fdds);
-        } else if (fPerson["DeathDateDecade"] && fPerson["DeathDateDecade"] !== "unknown") {
-            fdd = fPerson["DeathDateDecade"];
-        }
-
-        fDates.push(showStatus && fdd ? ddStatus + fdd : fdd);
-
-        return fDates;
-    }
 
     parseWikiText(text) {
         const sectionRegex = /(={2,})\s*(.*?)\s*\1([\s\S]*?)(?=\n={2,}|$)/g;
@@ -1277,38 +1007,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         let place = placeMatch ? placeMatch[1].trim() : "Unknown";
 
         return { date, place };
-    }
-
-    addIdToReferences(dummyDiv, Id) {
-        dummyDiv.find("li[id^='_note'] a[href^='#'],sup,ol.references li[id^='_note']").each(function () {
-            const el = $(this);
-            //  console.log("el", el);
-            const id = el.prop("id");
-            if (id && !id.includes(Id)) {
-                const newId = id + "_" + Id;
-                el.prop("id", newId);
-            }
-            if (el[0].tagName === "SUP") {
-                //  console.log("el", el);
-
-                el.find("a").each(function () {
-                    //    console.log("el", el);
-
-                    const a = $(this);
-                    const href = a.attr("href");
-                    if (href && !href.includes(Id)) {
-                        const newHref = href + "_" + Id;
-                        a.attr("href", newHref);
-                    }
-                });
-            } else if (el[0].tagName === "A") {
-                const href = el.attr("href");
-                if (href && !href.includes(Id)) {
-                    const newHref = href + "_" + Id;
-                    el.attr("href", newHref);
-                }
-            }
-        });
     }
 
     processSubSections(section) {
@@ -1375,11 +1073,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         // Create a dummy div element and set its HTML content
         const dummyDiv = $("<div></div>").html(htmlContent);
-        this.addIdToReferences(dummyDiv, fsPerson.Id);
-
-        //    console.log(dummyDiv);
-
-        //    console.log("dummyDiv", dummyDiv.html());
+        handleLinks.addIdToReferences(dummyDiv, fsPerson.Id);
 
         // Function to determine if the current h2 is the expected next section
         function isNextSection(headerText, currentSection) {
@@ -1411,9 +1105,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 if (currentElement.is("h2") && isNextSection(currentElement.text().trim(), currentSection)) {
                     break; // Exit the loop if a new section begins
                 }
-
-                //  console.log("Appending element: ", currentElement.prop("outerHTML"));
-
                 // Check if the element has already been processed
                 if (!currentElement.data("processed")) {
                     sections[currentSection] += currentElement.prop("outerHTML");
@@ -1433,9 +1124,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     familySheetPerson = (fsPerson, role) => {
         // Get Sources section from bioHTML
-
         fsPerson.Sections = this.splitBioSections(fsPerson);
-        //    console.log("fsPerson.Sections", fsPerson.Sections);
 
         // Div to hold the references
         const refsContainer = $("<div class='citationList'></div>");
@@ -1550,9 +1239,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             researchNotes: researchNotesContainer,
         });
 
-        // Check if value is OK (not null or undefined)
-        // const isOK = (value) => value !== null && value !== undefined;
-
         myRefs.forEach(function (anRef) {
             if (anRef.match(/(burial\b)|(Grave\b)/i) != null) {
                 const burialDateMatch = anRef.match(/Burial Date.*(\b[0-9]+.*[0-9]{4})/);
@@ -1632,15 +1318,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         }
 
-        const bdDates = this.displayFullDates(fsPerson);
-        let bDate = bdDates[0];
-        let dDate = bdDates[1];
-        if (!this.isOK(bDate)) {
-            bDate = "";
-        }
-        if (!this.isOK(dDate)) {
-            dDate = "";
-        }
         let mainPerson = false;
         const otherSpouses = [];
         let mainSpouse = "";
@@ -1838,15 +1515,13 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     };
 
     formatDateAndCreateRow = (date, place, role, rowType, rowLabel, dateStatus = "") => {
-        //  console.log(date, place, role, rowType, rowLabel, dateStatus);
-
         const settings = this.getSettings();
         let dateFormat = settings.dateFormatSelect;
         if (!dateFormat) {
             settings.dateFormatSelect = dateFormat = "MDY";
             this.setSettings(settings);
         }
-        const formattedDate = this.isOK(date) ? this.convertDate(date, dateFormat, dateStatus) : "";
+        const formattedDate = this.isOK(date) ? handleDates.convertDate(date, dateFormat, dateStatus) : "";
         const rowClass = `${role.toLowerCase()} ${rowType}`;
         const dateClass = `${rowType}Date date`;
         if (!this.isOK(date)) {
@@ -1876,7 +1551,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     renderMarriageRow = (marriageDate, marriagePlace, role) => {
         const formattedMarriageDate = this.isOK(marriageDate)
-            ? this.convertDate(marriageDate, this.getSettings().dateFormatSelect)
+            ? handleDates.convertDate(marriageDate, this.getSettings().dateFormatSelect)
             : "";
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
@@ -1914,10 +1589,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const dateFormat = settings.dateFormatSelect;
 
                 const formattedMarriageDate = this.isOK(marriage_date)
-                    ? this.convertDate(marriage_date, dateFormat)
+                    ? handleDates.convertDate(marriage_date, dateFormat)
                     : "";
                 const formattedMarriageEndDate = this.isOK(marriage_end_date)
-                    ? this.convertDate(marriage_end_date, dateFormat)
+                    ? handleDates.convertDate(marriage_end_date, dateFormat)
                     : "";
                 const otherSpouseName = this.displayName(oSpouse)[0];
                 const otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
@@ -2038,10 +1713,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     // Helper function to format parent dates
     formatParentDates(parent, dateFormat) {
         const birthDate = this.isOK(parent.BirthDate)
-            ? this.convertDate(parent.BirthDate, dateFormat, parent?.DataStatus?.BirthDate)
+            ? handleDates.convertDate(parent.BirthDate, dateFormat, parent?.DataStatus?.BirthDate)
             : "";
         const deathDate = this.isOK(parent.DeathDate)
-            ? this.convertDate(parent.DeathDate, dateFormat, parent?.DataStatus?.DeathDate)
+            ? handleDates.convertDate(parent.DeathDate, dateFormat, parent?.DataStatus?.DeathDate)
             : "";
 
         if (parent.BirthDate === "0000-00-00") {
@@ -2071,21 +1746,22 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                     // Formatting the marriage and end-of-marriage dates
                     let theMarriage = this.isOK(fsSp.marriage_date)
-                        ? `<span class='marriageDate date'>${this.convertDate(fsSp.marriage_date, "Y").trim()}</span>`
+                        ? `<span class='marriageDate date'>${handleDates
+                              .convertDate(fsSp.marriage_date, "Y")
+                              .trim()}</span>`
                         : "";
 
                     let theMarriageEnd = this.isOK(fsSp.marriage_end_date)
-                        ? `<span class='marriageDate date'>&nbsp;&ndash; ${this.convertDate(
-                              fsSp.marriage_end_date,
-                              "Y"
-                          ).trim()}</span>`
+                        ? `<span class='marriageDate date'>&nbsp;&ndash; ${handleDates
+                              .convertDate(fsSp.marriage_end_date, "Y")
+                              .trim()}</span>`
                         : "";
 
                     // Formatting the birth and death dates (only years)
                     let birthYear = "";
                     if (this.isOK(fsSp.BirthDate) || this.isOK(fsSp.BirthDateDecade)) {
                         birthYear = fsSp.BirthDate
-                            ? this.convertDate(fsSp.BirthDate, "Y", fsSp?.DataStatus?.BirthDate)
+                            ? handleDates.convertDate(fsSp.BirthDate, "Y", fsSp?.DataStatus?.BirthDate)
                             : "";
                         if (!this.isOK(birthYear)) {
                             birthYear = fsSp.BirthDateDecade ? fsSp.BirthDateDecade : "";
@@ -2094,7 +1770,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     let deathYear = "";
                     if (this.isOK(fsSp.DeathDate) || this.isOK(fsSp.DeathDateDecade)) {
                         deathYear = fsSp.DeathDate
-                            ? this.convertDate(fsSp.DeathDate, "Y", fsSp?.DataStatus?.DeathDate)
+                            ? handleDates.convertDate(fsSp.DeathDate, "Y", fsSp?.DataStatus?.DeathDate)
                             : "";
                         if (!this.isOK(deathYear)) {
                             deathYear = fsSp.DeathDateDecade ? fsSp.DeathDateDecade : "";
@@ -2229,15 +1905,9 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     case "showTables":
                         this.toggleStyle(id, this.showTablesRules, settings[id]);
                         break;
-                    /*
-                    case "includeBiosWhenPrinting":
-                        this.toggleStyle(id, this.includeBiosWhenPrintingRules, !settings[id]);
-                        break;
-                        */
                     case "showBios":
                         this.toggleStyle(id, this.showBiosRules, !settings[id]);
                         break;
-                    // Add additional cases for other checkboxes as needed
                 }
             } else {
                 settings[id] = true;
@@ -2284,8 +1954,22 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             "<div id='privateQ'><p>Is this a private profile?</p><p>Maybe you need to log in?</p></div>"
         );
     }
-    isLeapYear(year) {
-        return year % 100 === 0 ? year % 400 === 0 : year % 4 === 0;
+
+    ordinal(i) {
+        const j = i % 10;
+        const k = i % 100;
+
+        if (j === 1 && k !== 11) {
+            return `${i}st`;
+        }
+        if (j === 2 && k !== 12) {
+            return `${i}nd`;
+        }
+        if (j === 3 && k !== 13) {
+            return `${i}rd`;
+        }
+
+        return `${i}th`;
     }
 
     async checkAndAppendChildren(oChildren) {
@@ -2352,235 +2036,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         }
     }
 
-    fixCitation(citation) {
-        // Find all tables and lists in the citation
-        const tableMatches = Array.from(citation.matchAll(/\{\|[^]+?\|\}/gm));
-        const listMatches = Array.from(citation.matchAll(/\n:+[A-z]+.*/gm));
-
-        // Process lists
-        let madeList = false;
-        if (listMatches.length > 0) {
-            let aList = "\n<ul class='sourceUL'>\n";
-            for (const lMatch of listMatches) {
-                aList += `<li>${lMatch[0].replace(/\n:+/, "")}</li>\n`;
-                madeList = true;
-            }
-            aList += "</ul>\n";
-            if (madeList) {
-                citation += aList;
-                citation = citation.replace(/\n:+[A-z]+.*/gm, "");
-            }
-        }
-
-        // Process tables
-        if (tableMatches.length > 0) {
-            const newTables = [];
-            for (const aMatch of tableMatches) {
-                let aTable = `<table class='citationTable' id='citationTable_${this.citationTables.length}'>`;
-                const lines = Array.from(
-                    aMatch[0].matchAll(
-                        /[|!](.*?)\|\|(.*?)(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?(\|\|.*?)?\n/g
-                    )
-                );
-
-                for (const line of lines) {
-                    let aTableRow = "<tr>";
-                    for (let i = 1; i < 10; i++) {
-                        if (line[i] !== undefined) {
-                            aTableRow += `<td>${line[i].replace("||", "")}</td>`;
-                        }
-                    }
-                    aTableRow += "</tr>\n";
-                    aTable += aTableRow;
-                }
-                aTable += "</table>";
-                newTables.push(aTable);
-                const newMatch = aMatch[0].replace(/([!|{}()\-.\[\]])/g, "\\$1");
-                citation = citation.replace(new RegExp(newMatch, "m"), aTable);
-            }
-            this.citationTables.push(...newTables);
-        }
-
-        citation = citation
-            .replaceAll(/(^|\s|\()(https?:\/\/[^\s)\]]+?)($|\s)/gm, "$1<a href='$2'>$2</a>$3")
-            .replaceAll(/\[(https?:\/\/.+?)(\s.*?)?\]/gm, "$2: <a href='$1'>$1</a>")
-            .replaceAll(
-                /\{\{Ancestry Record\s*\|\s*(.+)\|([0-9]+)\}\}/gm,
-                "Ancestry Record: <a href='https://www.ancestry.com/discoveryui-content/view/$2:$1'>https://www.ancestry.com/discoveryui-content/view/$2:$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch Record\s*\|\s*(.*?)\}\}/gm,
-                "<a href='https://www.familysearch.org/ark:/61903/1:1:$1'>https://www.familysearch.org/ark:/61903/1:1:$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch\|(.+?\-.+?)\s*\|\s*(discovery)\}\}/gm,
-                "FamilySearch Person Discovery: <a href='https://ancestors.familysearch.org/en/$1'>https://ancestors.familysearch.org/en/$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch\|(.+?\-.+?)s*\|\s*(timeline)\}\}/gm,
-                "FamilySearch Person Timeline: <a href='https://www.familysearch.org/tree/person/timeline/$1'>https://www.familysearch.org/tree/person/timeline/$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch\|(.+?\-.+?)s*\|\s*(sources)\}\}/gm,
-                "FamilySearch Person Sources: <a href='https://www.familysearch.org/tree/person/sources/$1'>https://www.familysearch.org/tree/person/sources/$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearchs*\|\s*(.+?\-.+?)\|(.+?)\}\}/gm,
-                "FamilySearch Person $2: <a href='https://www.familysearch.org/tree/person/$2/$1'>https://www.familysearch.org/tree/person/$2/$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch Book\s*\|\s*(.+?)\}\}/gm,
-                "FamilySearch Book $1: <a href='http://www.familysearch.org/library/books/idurl/1/$1'>http://www.familysearch.org/library/books/idurl/1/$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch Image\s*\|\s*(.+?)\}\}/gm,
-                "FamilySearch Image $1: <a href='https://www.familysearch.org/ark:/61903/3:1:$1'>https://www.familysearch.org/ark:/61903/3:1:$1</a>"
-            )
-            .replaceAll(
-                /\{\{FamilySearch\s*\|\s*(.+?\-.+?)\}\}/gm,
-                "FamilySearch Person: <a href='https://www.familysearch.org/tree/person/$1'>https://www.familysearch.org/tree/person/$1</a>"
-            )
-            .replaceAll(
-                /\{\{FindAGrave\s*\|\s*([0-9]+)(\|sameas.*?)?\}\}/gim,
-                "Find a Grave Memorial #$1: <a href='https://www.findagrave.com/memorial/$1'>https://www.findagrave.com/memorial/$1</a>"
-            )
-            .replaceAll(
-                /\[\[Wikipedia:(.*?)\]\]/g,
-                "Wikipedia: <a href='https://en.wikipedia.org/wiki/$1'>https://en.wikipedia.org/wiki/$1</a>"
-            )
-            .replaceAll(/\/wiki\/(.*?)\s(.*?)/g, "/wiki/$1_$2")
-            .replaceAll(
-                /\{\{Wikidatas*\|\s*(.*?)\}\}/g,
-                "Wikidata: <a href='https://www.wikidata.org/wiki/$1'>https://www.wikidata.org/wiki/$1</a>"
-            )
-            .replaceAll(
-                /\[\[(Space:.*?)\]\]/g,
-                "<a href='https://www.wikitree.com/wiki/$1'>https://www.wikitree.com/wiki/$1</a>"
-            )
-            .replaceAll(
-                /\[\[(.*?\-[0-9]+)s*\|\s*(.*?)\]\]/g,
-                "$2 (<a href='https://www.wikitree.com/wiki/$1'>https://www.wikitree.com/wiki/$1</a>)"
-            )
-            .replaceAll(
-                /\{\{Ancestry Sharings*\|\s*(.+?)\|(.+?)\}\}/g,
-                "Ancestry Sharing: <a href='https://www.ancestry.com/sharing/$1?h=$2'>https://www.ancestry.com/sharing/$1?h=$2</a>"
-            )
-            .replaceAll(
-                /\{\{DAR\-grs\|(.+?)s*\|\s*(.+?)\s*?\|(.+?)\}\}/g,
-                "Daughters of the American Revolution, DAR Genealogical Research Databases, database online, (<a href='http://services.dar.org/Public/DAR_Research/search_adb/?action=full&p_id=$1'>http://www.dar.org/</a> : accessed $3), \"Record of $2\", Ancestor # $1."
-            )
-            .replaceAll(
-                /\{\{Ancestry Images*\|\s*(.+?)\|(.+?)\}\}/g,
-                "Ancestry Image: <a href='https://www.ancestry.com/interactive/$1/$2'>https://www.ancestry.com/interactive/$1/$2</a>"
-            )
-            .replaceAll(
-                /\{\{Ancestry Trees*\|\s*(.+?)\|(.+?)\}\}/g,
-                "Ancestry Tree: <a href='https://www.ancestry.com/family-tree/person/tree/$1/person/$2/facts'>https://www.ancestry.com/family-tree/person/tree/$1/person/$2/facts</a>"
-            )
-            .replaceAll(
-                /\{\{Ancestry Tree Media\|(.+?)s*\|\s*(.+?)\}\}/g,
-                "Ancestry Tree: <a href='https://www.ancestry.com/family-tree/tree/$1/media/$2'>https://www.ancestry.com/family-tree/tree/$1/media/$2</a>"
-            )
-            .replaceAll(
-                /\{\{National Archives Australias*\|\s*(.+?)\}\}/g,
-                "<a href='https://recordsearch.naa.gov.au/scripts/AutoSearch.asp?O=I&Number=$1'>https://recordsearch.naa.gov.au/scripts/AutoSearch.asp?O=I&Number=$1</a>"
-            )
-            .replaceAll(
-                /\{\{ODMPs*\|\s*(.+?)\}\}/g,
-                "The Officer Down Memorial Page: <a href='https://www.odmp.org/officer/$1'>https://www.odmp.org/officer/$1</a>"
-            )
-            .replaceAll(
-                /\{\{SBLs*\|\s*(.+?)(\|(.*?))?\}\}/g,
-                "Svenkst Biografiskt Lexikon: <a href='https://sok.riksarkivet.se/SBL/Presentation.aspx?id=$1'>https://sok.riksarkivet.se/SBL/Presentation.aspx?id=$1</a> $3"
-            )
-            .replaceAll(
-                /\{\{SQ\-NOs*\|\s*(.+?)\}\}/g,
-                "Profile $1 sur Nos Origines: <a href='http://www.nosorigines.qc.ca/GenealogieQuebec.aspx?pid=$1'>http://www.nosorigines.qc.ca/GenealogieQuebec.aspx?pid=$1</a>"
-            )
-            .replaceAll(
-                /\{\{TexasHistorys*\|\s*(.+?)\}\}/g,
-                "The Portal to Texas History: ERC Record #$1: <a href='https://texashistory.unt.edu/ark%3A/67531/metapth$1'>https://texashistory.unt.edu/ark%3A/67531/metapth$1</a>"
-            )
-            .replaceAll(
-                /\{\{Newspapers.com\|(.+?)\}\}/g,
-                "<a href='https://www.newspapers.com/clip/$1'>https://www.newspapers.com/clip/$1</a>"
-            )
-            .replaceAll(/\'\'\'(.+?)\'\'\'/g, "<b>$1</b>")
-            .replaceAll(/\'\'(.+?)\'\'/g, "<i>$1</i>");
-
-        const eeMatch = citation.match(/\{\{EE source[\s\S]*?\}\}/gm);
-        if (eeMatch != null) {
-            const eeData = {};
-            const dataBits = eeMatch[0].replaceAll(/[{}\n]/g, "").split("|");
-            dataBits.forEach((aBit) => {
-                const aBitBits = aBit.split("=");
-                if (aBitBits[1]) {
-                    eeData[aBitBits[0].replace("-", "_")] = aBitBits[1];
-                }
-            });
-
-            let eeName = "";
-            if (eeData.last) {
-                let punc = "";
-                if (eeData.first1) {
-                    punc = ", ";
-                }
-                eeName += eeData.last + ", " + eeData.first + punc;
-            }
-            if (eeData.last1) {
-                punc = "";
-                if (eeData.first2) {
-                    punc = ", ";
-                }
-                eeName += eeData.last1 + ", " + eeData.first1 + punc;
-            }
-            if (eeData.last2) {
-                punc = "";
-                if (eeData.first3) {
-                    punc = ", ";
-                }
-                eeName += eeData.last2 + ", " + eeData.first2 + punc;
-            }
-            if (eeData.last3) {
-                punc = "";
-                if (eeData.first4) {
-                    punc = ", ";
-                }
-                eeName += eeData.last3 + ", " + eeData.first3 + punc;
-            }
-            if (eeData.last4) {
-                eeName += eeData.last4 + ", " + eeData.first4 + "";
-            }
-
-            const eeCitation =
-                (eeData.author ? eeData.author + ", " : "") +
-                (eeData.editor ? "Ed.: " + eeData.editor + ", " : "") +
-                eeName +
-                " " +
-                (eeData.title ? eeData.title + " " : "") +
-                (eeData.journal ? eeData.journal + " " : "") +
-                (eeData.periodical ? eeData.periodical + " " : "") +
-                (eeData.newspaper ? eeData.newspaper + " " : "") +
-                (eeData.repository ? eeData.repository + " " : "") +
-                (eeData.volume ? eeData.volume + " " : "") +
-                (eeData.publication_place ? eeData.publication_place + ": " : "") +
-                (eeData.publisher ? eeData.publisher + ", " : "") +
-                (eeData.isbn ? "ISBN: " + eeData.isbn + "; " : "") +
-                (eeData.month ? eeData.month + " " : "") +
-                (eeData.year ? eeData.year + ". " : "") +
-                (eeData.pages ? "pp." + eeData.pages + ". " : "") +
-                (eeData.accessdate ? "Accessed: " + eeData.accessdate + ". " : "") +
-                (eeData.url ? "<a href='" + eeData.url + "'>" + eeData.url + "</a>" : "");
-            const reg = new RegExp(eeMatch[0].replaceAll(/([!|{}()\-.\[\]])/g, "\\$1"), "m");
-            citation = citation.replace(reg, eeCitation);
-        }
-
-        return citation;
-    }
-
-    appendReferences(mList) {
+    appendReferences() {
         this.htmlReferences.forEach((pRefs) => {
-            const anID = pRefs.id;
             const nameHeading = $(
                 `<a class='sourcesName' href='https://www.wikitree.com/wiki/${pRefs.id}'>${pRefs.displayName} <span class='fsWTID'>(${pRefs.id})</span></a>`
             );
@@ -2614,46 +2071,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         anLI.find("a").append(wtidSpan);
         return anLI;
     }
-
-    appendSeeAlso(aUL, seeAlsoRefs) {
-        if (seeAlsoRefs !== "") {
-            const anLI2 = $("<li><span>See also:</span></li>");
-            const aUL2 = $("<ul></ul>");
-            seeAlsoRefs.forEach((aSA) => {
-                aUL2.append($("<li>" + this.fixCitation(aSA) + "</li>"));
-            });
-            aUL2.appendTo(anLI2);
-            anLI2.appendTo(aUL);
-        }
-    }
-
-    updateLabels(role) {
-        const roleRow = $(`tr.roleRow[data-role='${role}']`);
-        const fatherHeading = $(`tr.${role}ParentsRow[data-role='${role}'] th.${role}FatherHeading`);
-        const motherHeading = $(`tr.${role}ParentsRow[data-role='${role}'] th.${role}MotherHeading`);
-
-        roleRow.find("th a").text("Name");
-        fatherHeading.find("a").text("Father");
-        if (fatherHeading.find("a").length === 0) {
-            fatherHeading.text("Father:");
-        }
-        motherHeading.find("a").text("Mother");
-        if (motherHeading.find("a").length === 0) {
-            motherHeading.text("Mother:");
-        }
-    }
-
-    /*
-    toggleTables() {
-        // Get the checked state of the "#showTables" checkbox
-        const isChecked = $("#showTables").prop("checked");
-
-        const citationTables = $("#notesAndSources table");
-        // Show or hide all ".citationTable" elements based on the checkbox state
-        isChecked ? citationTables.show() : citationTables.hide();
-        this.storeVal($("#showTables"));
-    }
-*/
 
     setSettings(settings) {
         localStorage.setItem("familyGroupAppSettings", JSON.stringify(settings));
@@ -2693,9 +2110,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Show or hide 'Nicknames' label based on the presence of nicknames
         this.toggleDisplay("#showNicknamesLabel", !!$(".nicknames").length);
 
-        // Call toggleTables function
-        // this.toggleTables();
-
         // Handle query parameters
         const searchParams = new URLSearchParams(window.location.search);
         const testing = searchParams.get("test");
@@ -2714,18 +2128,12 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             });
         }
 
-        this.fixLinks();
-        this.fixImageLinks();
-        this.addCollapseButtons();
-        this.addGlobalToggle();
+        handleLinks.fixLinks();
+        handleLinks.fixImageLinks();
+        collapse.addCollapseButtons();
+        collapse.addGlobalToggle();
         this.removeEmptyAnchors();
-    }
-
-    createTOC() {
-        const toc = $("<div id='toc'></div>");
-        const tocList = $("<ul></ul>");
-        toc.append(tocList);
-        // const sections = ["Person","Research Notes","Sources"];
+        handleLinks.openLinksInNewTab();
     }
 
     removeEmptyAnchors() {
@@ -2744,16 +2152,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $(selector).hide();
         }
     }
-
-    /*
-    toggleLists() {
-        // Get the checked state of the "#showLists" checkbox
-        const isChecked = $("#showLists").prop("checked");
-        const citationLists = $("#notesAndSources dl");
-        // Show or hide all ".sourceUL" elements based on the checkbox state
-        isChecked ? citationLists.show() : citationLists.hide();
-    }
-    */
 
     sortSpouses() {
         this.people.forEach((person) => {
@@ -2833,21 +2231,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         if (theSpouse) {
             const spouseRow = this.familySheetPerson(theSpouse, spouseRole);
-            //    fsTable.find("> tbody").append($(spouseRow));
             if (spouseRole === "Husband") {
                 husbandTable.find("> tbody").append($(spouseRow));
             } else {
                 wifeTable.find("> tbody").append($(spouseRow));
             }
         } else {
-            // console.log("The spouse could not be found: ", matchPerson);
-            //  setTimeout(() => {
             $("th.role.heading a").text("Name");
             $("tr.otherMarriageRow").remove();
             $("tr.HusbandParentsRow th, tr.WifeParentsRow th").each(function () {
                 $(this).text($(this).text().replace("Husband's ", "").replace("Wife's ", ""));
             });
-            //  }, 500);
         }
 
         if (mainRole === "Husband" || isHusbandFirst) {
@@ -3016,40 +2410,14 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 });
             });
         }
-        this.openLinksInNewTab();
     }
 
     addExplainer() {
         let todaysDate = new Date().toISOString().split("T")[0];
-        todaysDate = this.convertDate(todaysDate);
+        todaysDate = handleDates.convertDate(todaysDate);
         const explainerText = `Generated by the WikiTree Family Group App from data on WikiTree on ${todaysDate}. Post-generation editing may have occurred.`;
         const explainer = $("<p id='explainer'>" + explainerText + "</p>");
         $(this.$container).append(explainer);
-    }
-
-    fixLinks() {
-        $("#view-container a:not([href^='#'])").each(function () {
-            const $this = $(this);
-            const href = $this.attr("href");
-            //console.log("Processing link: ", href); // Debugging
-
-            // Find links without a domain and add the domain
-            if (href && href.match(/http/) == null && !href.startsWith("#")) {
-                $this.attr("href", "https://www.wikitree.com" + href);
-                //console.log("Updated link: ", $this.attr("href")); // Debugging
-            }
-        });
-    }
-
-    fixImageLinks() {
-        $("#view-container img").each(function () {
-            const $this = $(this);
-            const src = $this.attr("src");
-            // Find links without a domain and add the domain
-            if (src && !src.match(/http/) && !src.match(/familyGroupApp/)) {
-                $this.attr("src", "https://www.wikitree.com" + src);
-            }
-        });
     }
 
     appendNotesAndSources() {
@@ -3093,15 +2461,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.appendReferences(mList);
 
         $("#sources li[data-wtid='" + this.husbandWTID + "']").prependTo($("#sources ul").eq(0));
-        this.openLinksInNewTab();
+        handleLinks.openLinksInNewTab();
     }
 
     closeInputs() {
-        console.log("closeInputs called");
-
-        // Set theClass = this to capture the class instance context
         const theClass = this;
-
         $(".edit").each(function () {
             const $this = $(this);
             const isTextarea = $this.prop("tagName") === "TEXTAREA";
@@ -3134,23 +2498,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         console.log("closeInputs completed");
     }
 
-    ordinal(i) {
-        const j = i % 10;
-        const k = i % 100;
-
-        if (j === 1 && k !== 11) {
-            return `${i}st`;
-        }
-        if (j === 2 && k !== 12) {
-            return `${i}nd`;
-        }
-        if (j === 3 && k !== 13) {
-            return `${i}rd`;
-        }
-
-        return `${i}th`;
-    }
-
     setBaptChrist() {
         // Loop through each radio button to find the one that is checked
         $("input[type=radio][name=baptismChristening]").each(function () {
@@ -3165,720 +2512,4 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         });
     }
-
-    async getSomeRelatives(id, fields = "*") {
-        try {
-            const result = await $.ajax({
-                url: "https://api.wikitree.com/api.php",
-                crossDomain: true,
-                xhrFields: { withCredentials: true },
-                type: "POST",
-                dataType: "json",
-                data: {
-                    action: "getRelatives",
-                    keys: id,
-                    bioFormat: "html",
-                    fields: fields,
-                    getParents: 1,
-                    getSiblings: 1,
-                    getSpouses: 1,
-                    getChildren: 1,
-                },
-            });
-            return result[0].items;
-        } catch (error) {
-            console.error(error);
-            // Consider additional error-handling logic here
-        }
-    }
-
-    // Make the family member arrays easier to handle
-    extractRelatives(rel, theRelation = false) {
-        // Initialize an empty array to hold person objects.
-        let people = [];
-
-        // Check if rel is undefined or null and return false if it is.
-        if (typeof rel === "undefined" || rel === null) {
-            return false;
-        }
-
-        // Get keys from the rel object.
-        const pKeys = Object.keys(rel);
-
-        // Loop through each key to get person object and optionally add relation type.
-        pKeys.forEach((pKey) => {
-            let aPerson = rel[pKey];
-            if (theRelation !== false) {
-                aPerson.Relation = theRelation;
-            }
-            people.push(aPerson);
-        });
-
-        // Return the array of person objects.
-        return people;
-    }
-
-    familyArray(person) {
-        // Define the types of relationships to look for.
-        const rels = ["Parents", "Siblings", "Spouses", "Children"];
-
-        // Initialize the familyArr array with the main person.
-        let familyArr = [person];
-
-        // Loop through each type of relationship.
-        rels.forEach((rel) => {
-            // Remove trailing 's' or 'ren' to get the singular form of the relation.
-            const relation = rel.replace(/s$/, "").replace(/ren$/, "");
-
-            // Concatenate the relatives of the current type to the familyArr.
-            familyArr = familyArr.concat(this.extractRelatives(person[rel], relation));
-        });
-
-        // Return the complete family array.
-        return familyArr;
-    }
-
-    convertDate(dateString, outputFormat, status = "") {
-        if (!outputFormat) {
-            const settings = this.getSettings();
-            outputFormat = settings.dateFormatSelect;
-        }
-        if (!dateString) {
-            return "";
-        }
-        dateString = dateString.replaceAll(/-00/g, "");
-        // Split the input date string into components
-        if (!dateString) {
-            return "";
-        }
-        let components = dateString.split(/[\s,-]+/);
-
-        // Determine the format of the input date string
-        let inputFormat;
-        if (components.length == 1 && /^\d{4}$/.test(components[0])) {
-            // Year-only format (e.g. "2023")
-            inputFormat = "Y";
-        } else if (
-            components.length == 2 &&
-            /^[A-Za-z]{3}$/.test(components[0]) &&
-            !/^[A-Za-z]{4,}$/.test(components[0])
-        ) {
-            // Short month and year format (e.g. "Jul 2023")
-            inputFormat = "MY";
-        } else if (components.length == 2 && /^[A-Za-z]+/.test(components[0])) {
-            // Long month and year format (e.g. "July 2023")
-            inputFormat = "MDY";
-        } else if (components.length == 3 && /^[A-Za-z]+/.test(components[0])) {
-            // Long month, day, and year format (e.g. "July 23, 2023")
-            inputFormat = "MDY";
-        } else if (
-            components.length == 3 &&
-            /^[A-Za-z]{3}$/.test(components[1]) &&
-            !/^[A-Za-z]{4,}$/.test(components[1])
-        ) {
-            // Short month, day, and year format (e.g. "23 Jul 2023")
-            inputFormat = "DMY";
-        } else if (components.length == 3 && /^[A-Za-z]+/.test(components[1])) {
-            // Day, long month, and year format (e.g. "10 July 1936")
-            inputFormat = "DMY";
-        } else if (components.length == 3 && /^\d{2}$/.test(components[1]) && /^\d{2}$/.test(components[2])) {
-            // ISO format with no day (e.g. "2023-07-23")
-            inputFormat = "ISO";
-        } else if (components.length == 2 && /^\d{4}$/.test(components[0]) && /^\d{2}$/.test(components[1])) {
-            // NEW: Year and month format with no day (e.g. "1910-10")
-            inputFormat = "ISO";
-            components.push("00");
-        } else {
-            // Invalid input format
-            return null;
-        }
-
-        // Convert the input date components to a standard format (YYYY-MM-DD)
-        let year,
-            month = 0,
-            day = 0;
-        try {
-            if (inputFormat == "Y") {
-                year = parseInt(components[0]);
-                outputFormat = "Y";
-            } else if (inputFormat == "MY") {
-                year = parseInt(components[1]);
-                month = this.convertMonth(components[0]);
-                if (!outputFormat) {
-                    outputFormat = "MY";
-                }
-            } else if (inputFormat == "MDY") {
-                year = parseInt(components[components.length - 1]);
-                month = this.convertMonth(components[0]);
-                day = parseInt(components[1]);
-            } else if (inputFormat == "DMY") {
-                year = parseInt(components[2]);
-                month = this.convertMonth(components[1]);
-                day = parseInt(components[0]);
-            } else if (inputFormat == "ISO") {
-                year = parseInt(components[0]);
-                month = parseInt(components[1]);
-                day = parseInt(components[2]);
-            }
-        } catch (err) {
-            console.error("Error during conversion:", err);
-            return null;
-        }
-
-        // Convert the date components to the output format
-        let outputDate;
-
-        const ISOdate = year.toString() + "-" + this.padNumberStart(month || 0) + "-" + this.padNumberStart(day || 0);
-
-        if (outputFormat == "Y") {
-            outputDate = year.toString();
-        } else if (outputFormat == "MY") {
-            outputDate = this.convertMonth(month) + " " + year.toString();
-        } else if (outputFormat == "MDY") {
-            if (day === 0) {
-                // If day is 0, exclude the day and the comma from the output
-                outputDate = this.convertMonth(month, "long") + " " + year.toString();
-            } else {
-                outputDate = this.convertMonth(month, "long") + " " + day + ", " + year.toString();
-            }
-        } else if (outputFormat == "DMY") {
-            if (day === 0) {
-                // If day is 0, exclude the day from the output
-                outputDate = this.convertMonth(month, "long") + " " + year.toString();
-            } else {
-                outputDate = day + " " + this.convertMonth(month, "long") + " " + year.toString();
-            }
-        } else if (outputFormat == "sMDY") {
-            outputDate = this.convertMonth(month, "short");
-            if (day !== 0) {
-                outputDate += " " + day + ",";
-            }
-            outputDate += " " + year.toString();
-        } else if (outputFormat == "DsMY") {
-            outputDate = "";
-            if (day !== 0) {
-                outputDate += day + " ";
-            }
-            outputDate += this.convertMonth(month).slice(0, 3) + " " + year.toString();
-        } else if (outputFormat == "YMD" || outputFormat == "ISO") {
-            if (day === 0) {
-                // If day is 0, exclude the day and trailing hyphen from the output
-                outputDate = year.toString() + "-" + this.padNumberStart(month || 0);
-            } else {
-                outputDate = ISOdate;
-            }
-        } else {
-            // Invalid output format
-            return null;
-        }
-
-        if (status) {
-            let onlyYears = false;
-            if (outputFormat == "Y") {
-                onlyYears = true;
-            }
-            let statusOut = "";
-            try {
-                statusOut = this.dataStatusWord(status, ISOdate, { needOnIn: false, onlyYears: onlyYears });
-            } catch (error) {
-                console.log("dataStatusWord error:", error);
-            }
-            if (["<", ">", "~"].includes(statusOut.trim())) {
-                outputDate = statusOut + outputDate.trim();
-            } else {
-                outputDate = statusOut + " " + outputDate;
-            }
-        }
-
-        outputDate = outputDate.replace(/\s?\b00/, ""); // Remove 00 as a day or month
-        outputDate = outputDate.replace(/([A-Za-z]+) (\d{4})/, "$1 $2"); // Remove comma if there's a month followed directly by a year
-
-        return outputDate;
-    }
-
-    padNumberStart(number) {
-        // Add leading zeros to a single-digit number
-        return (number < 10 ? "0" : "") + number.toString();
-    }
-
-    capitalizeFirstLetter(string) {
-        return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
-    }
-
-    dataStatusWord(status, ISOdate, options = { needOnIn: false, onlyYears: false }) {
-        const needOnIn = options.needOnIn;
-        const onlyYears = options.onlyYears;
-        let day = ISOdate.slice(8, 10);
-        if (day == "00") {
-            day = "";
-        }
-        let statusOut =
-            status == "before"
-                ? "before"
-                : status == "after"
-                ? "after"
-                : status == "guess"
-                ? "about"
-                : status == "certain" || status == "on" || status == undefined || status == ""
-                ? day
-                    ? "on"
-                    : "in"
-                : "";
-
-        const settings = this.getSettings();
-        const thisStatusFormat = settings.dateStatusFormat || "symbols";
-
-        if (thisStatusFormat == "abbreviations") {
-            statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
-        } else if (thisStatusFormat == "symbols") {
-            statusOut = statusOut.replace("before", "<").replace("after", ">").replace("about", "~");
-        }
-        if (needOnIn == false && ["on", "in"].includes(statusOut)) {
-            return "";
-        } else {
-            return statusOut;
-        }
-    }
-
-    convertMonth(monthString, outputFormat = "short") {
-        // Convert a month string to a numeric month value
-        var shortNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-        var longNames = [
-            "january",
-            "february",
-            "march",
-            "april",
-            "may",
-            "june",
-            "july",
-            "august",
-            "september",
-            "october",
-            "november",
-            "december",
-        ];
-        let index;
-        if (!isNaN(monthString)) {
-            index = monthString - 1;
-            let month = shortNames[index];
-            if (outputFormat == "long") {
-                month = longNames[index];
-            }
-            return this.capitalizeFirstLetter(month);
-        } else {
-            index = shortNames.indexOf(monthString?.toLowerCase());
-            if (index == -1) {
-                index = longNames.indexOf(monthString?.toLowerCase());
-            }
-            return index + 1;
-        }
-    }
-
-    stripScripts(html) {
-        var div = document.createElement("div");
-        div.innerHTML = html;
-        var scripts = div.getElementsByTagName("script");
-        var i = scripts.length;
-        while (i--) {
-            scripts[i].parentNode.removeChild(scripts[i]);
-        }
-        return div.innerHTML;
-    }
-
-    addCollapseButtons() {
-        // Add buttons for .personTable
-        const personTables = document.querySelectorAll(".personTable");
-        personTables.forEach((table) => {
-            this.createAndAddButton(table, "tr:not(.roleRow)", "table");
-        });
-
-        // Add buttons for .researchNotes
-        const researchNotesElements = document.querySelectorAll(".researchNotes");
-        researchNotesElements.forEach((element) => {
-            this.createAndAddButton(element, ".researchNotesContent", "researchNotes");
-        });
-
-        // Add buttons for .citationList
-        const citationListElements = document.querySelectorAll(".citationList");
-        citationListElements.forEach((element) => {
-            const $this = $(element);
-            if ($this.find("div.citationListContent").text().trim() != "") {
-                this.createAndAddButton(element, ".citationListContent", "sources");
-            }
-        });
-
-        // Add section-level collapse buttons
-        this.addSectionCollapseButton("#familySheetFormTable", ".personTable", "table", true); // True for table section
-        if ($("#notesNotes div.researchNotes").length) {
-            this.addSectionCollapseButton("#notes > h2", ".researchNotes", "researchNotes");
-        }
-        this.addSectionCollapseButton("#sources > h2", ".citationList", "sources");
-    }
-
-    addSectionCollapseButton(selector, toggleSelector, aClass, isTableSection = false) {
-        const sectionHeader = $(selector);
-        if (sectionHeader.length) {
-            const button = $("<button>", {
-                text: "▼",
-                title: "Collapse or expand all items in this section",
-                class: "sectionCollapseButton " + aClass,
-            });
-            button.insertBefore(sectionHeader);
-
-            button.on("click", () => {
-                const isCollapsing = button.text() === "▼";
-                const tables = $(toggleSelector); // This now selects .personTable
-
-                if (isTableSection) {
-                    // Handle the table section
-                    tables.each(function () {
-                        const table = $(this);
-                        const rowsToToggle = table.find("tr:not(.roleRow)");
-                        rowsToToggle.toggle(!isCollapsing);
-
-                        const tableButton = table.prev(".collapseButton");
-                        tableButton.text(isCollapsing ? "▶" : "▼");
-                    });
-                } else {
-                    // Handle other sections (Research Notes, Citation List)
-                    $(toggleSelector).each(function () {
-                        const itemContent = $(this).find(".researchNotesContent, .citationListContent");
-                        const itemButton = $(this).prev(".collapseButton");
-
-                        itemContent.toggle(!isCollapsing);
-                        itemButton.text(isCollapsing ? "▶" : "▼");
-                    });
-                }
-
-                button.text(isCollapsing ? "▶" : "▼");
-                this.updateGlobalButtonState();
-            });
-        }
-    }
-
-    addGlobalToggle() {
-        const globalButton = $("<button>", {
-            text: "▼",
-            title: "Collapse or expand all",
-            class: "globalCollapseButton",
-        });
-
-        // Append the global button to a suitable location on your page
-        $("#familySheetFormTable").before(globalButton);
-
-        globalButton.on("click", () => {
-            const isCollapsing = globalButton.text() === "▼";
-            const allItems = $(".personTable, .researchNotes, .citationList");
-            const allButtons = $(".collapseButton, .sectionCollapseButton");
-
-            if (isCollapsing) {
-                allItems.find("tr:not(.roleRow), .researchNotesContent, .citationListContent").hide();
-                allButtons.text("▶");
-                globalButton.text("▶");
-            } else {
-                allItems.find("tr, .researchNotesContent, .citationListContent").show();
-                allButtons.text("▼");
-                globalButton.text("▼");
-            }
-        });
-    }
-
-    createAndAddButton(element, contentSelector, aClass) {
-        const $element = $(element);
-        // if element is a table and it's empty, don't add a button
-        if ($element.is("table") && $element.find("tr").length === 0) {
-            return;
-        }
-
-        const button = $("<button>").text("▼");
-        button.addClass("collapseButton " + aClass);
-
-        if ($element.find(".roleRow").attr("data-role") == "1st Child") {
-            button.addClass("firstChild");
-        }
-        $element.before(button);
-
-        button.on("click", () => {
-            const contentToToggle = $element.find(contentSelector);
-            contentToToggle.toggle();
-            button.text(button.text() === "▼" ? "▶" : "▼");
-
-            // Find the associated section collapse button using the class
-            const sectionCollapseButton = $("button.sectionCollapseButton." + aClass);
-            this.updateSectionButtonState(sectionCollapseButton, aClass);
-
-            // Update the global button
-            this.updateGlobalButtonState();
-        });
-    }
-
-    updateSectionButtonState(sectionCollapseButton, aClass) {
-        const buttons = $(".collapseButton." + aClass);
-        const allCollapsed =
-            buttons.length > 0 &&
-            buttons.filter(function () {
-                return $(this).text() === "▼";
-            }).length === 0;
-        const allExpanded =
-            buttons.length > 0 &&
-            buttons.filter(function () {
-                return $(this).text() === "▶";
-            }).length === 0;
-
-        sectionCollapseButton.text(allCollapsed ? "▶" : allExpanded ? "▼" : sectionCollapseButton.text());
-    }
-
-    updateGlobalButtonState() {
-        const buttons = $(".collapseButton");
-        const allCollapsed =
-            buttons.length > 0 &&
-            buttons.filter(function () {
-                return $(this).text() === "▼";
-            }).length === 0;
-        const allExpanded =
-            buttons.length > 0 &&
-            buttons.filter(function () {
-                return $(this).text() === "▶";
-            }).length === 0;
-
-        $(".globalCollapseButton").text(allCollapsed ? "▶" : allExpanded ? "▼" : $(".globalCollapseButton").text());
-    }
 };
-
-// This function returns a promise that resolves when the specified element is added to the DOM
-function waitForElement(selector) {
-    return new Promise((resolve, reject) => {
-        const observer = new MutationObserver((mutations, obs) => {
-            const element = document.querySelector(selector);
-            if (element) {
-                resolve(element);
-                obs.disconnect();
-            }
-        });
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
-    });
-}
-
-function spell(text) {
-    const americanToBritishSpelling = {
-        // A
-        acknowledgment: "acknowledgement",
-        acknowledgments: "acknowledgements",
-        aging: "ageing",
-        analog: "analogue",
-        analyze: "analyse",
-        analyzed: "analysed",
-        analyzes: "analyses",
-        analyzing: "analysing",
-        anglicize: "anglicise",
-        anglicized: "anglicised",
-        anglicizes: "anglicises",
-        anglicizing: "anglicising",
-        anonymize: "anonymise",
-        anonymized: "anonymised",
-        anonymizes: "anonymises",
-        anonymizing: "anonymising",
-        apologize: "apologise",
-        apologized: "apologised",
-        apologizes: "apologises",
-        apologizing: "apologising",
-        arbor: "arbour",
-        arbors: "arbours",
-        ax: "axe",
-
-        // B
-        baptize: "baptise",
-        baptized: "baptised",
-        baptizes: "baptises",
-        baptizing: "baptising",
-        behavior: "behaviour",
-        behaviors: "behaviours",
-
-        // C
-        catalog: "catalogue",
-        catalogs: "catalogues",
-        center: "centre",
-        centers: "centres",
-        color: "colour",
-        colored: "coloured",
-        colorful: "colourful",
-        colorfully: "colourfully",
-        coloring: "colouring",
-        colors: "colours",
-
-        // D
-        dialog: "dialogue",
-        dialogs: "dialogues",
-        draft: "draught",
-        drafts: "draughts",
-        defense: "defence",
-        defenses: "defences",
-
-        // E
-        enroll: "enrol",
-        enrolled: "enrolled",
-        enrolling: "enrolling",
-        enrollment: "enrolment",
-        enrollments: "enrolments",
-        encyclopedia: "encyclopaedia",
-        encyclopedias: "encyclopaedias",
-        esophagus: "oesophagus",
-        esthetic: "aesthetic",
-
-        // F
-        favor: "favour",
-        favored: "favoured",
-        favoring: "favouring",
-        favors: "favours",
-        fiber: "fibre",
-        fibers: "fibres",
-        fulfill: "fulfil",
-        fulfilled: "fulfilled",
-        fulfilling: "fulfilling",
-        fulfillment: "fulfilment",
-        fulfillments: "fulfilments",
-
-        // G
-        gray: "grey",
-        grays: "greys",
-
-        // H
-        honor: "honour",
-        honored: "honoured",
-        honoring: "honouring",
-        honors: "honours",
-        humor: "humour",
-        humored: "humoured",
-        humoring: "humouring",
-        humors: "humours",
-
-        // I-J
-        inquiry: "enquiry",
-        inquiries: "enquiries",
-        jewelry: "jewellery",
-        judgment: "judgement",
-        judgments: "judgements",
-
-        // L
-        labor: "labour",
-        labors: "labours",
-        license: "licence",
-        licenses: "licences",
-        liter: "litre",
-        liters: "litres",
-        luster: "lustre",
-
-        // M
-        marveled: "marvelled",
-        marveling: "marvelling",
-        meager: "meagre",
-        modeled: "modelled",
-        modeling: "modelling",
-        models: "models",
-        mold: "mould",
-        molds: "moulds",
-        mom: "mum",
-        moms: "mums",
-
-        // N
-        neighbor: "neighbour",
-        neighboring: "neighbouring",
-        neighbors: "neighbours",
-
-        // O
-        organization: "organisation",
-        organizations: "organisations",
-        organize: "organise",
-        organized: "organised",
-        organizes: "organises",
-        organizing: "organising",
-
-        // P
-        personalize: "personalise",
-        personalized: "personalised",
-        personalizes: "personalises",
-        personalizing: "personalising",
-        plow: "plough",
-        plows: "ploughs",
-        practicing: "practising",
-        privatize: "privatise",
-        privatized: "privatised",
-        privatizes: "privatises",
-        privatizing: "privatising",
-
-        // R
-        realization: "realisation",
-        realizations: "realisations",
-        realize: "realise",
-        realized: "realised",
-        realizes: "realises",
-        realizing: "realising",
-        recognize: "recognise",
-        recognized: "recognised",
-        recognizes: "recognises",
-        recognizing: "recognising",
-        rumor: "rumour",
-        rumors: "rumours",
-
-        // S
-        saber: "sabre",
-        sabers: "sabres",
-        skillful: "skilful",
-        skillfully: "skilfully",
-        somber: "sombre",
-        sulfur: "sulphur",
-
-        // T
-        theater: "theatre",
-        theaters: "theatres",
-
-        // Traveling
-        traveled: "travelled",
-        traveler: "traveller",
-        travelers: "travellers",
-        traveling: "travelling",
-
-        // V
-        valor: "valour",
-        vapor: "vapour",
-        vapors: "vapours",
-
-        // W
-        willful: "wilful",
-        willfully: "wilfully",
-
-        // Add more as needed
-    };
-
-    const userLanguage = navigator.language || navigator.userLanguage;
-    const useBritishEnglish = ["en-GB", "en-AU", "en-NZ", "en-ZA", "en-IE", "en-IN", "en-SG", "en-MT"].includes(
-        userLanguage
-    );
-
-    function matchCase(original, transformed) {
-        if (original === original.toUpperCase()) {
-            return transformed.toUpperCase();
-        }
-        if (original[0] === original[0].toUpperCase()) {
-            return transformed[0].toUpperCase() + transformed.slice(1);
-        }
-        return transformed;
-    }
-
-    return text
-        .split(/\b/)
-        .map((word) => {
-            const lowerCaseWord = word.toLowerCase();
-
-            if (americanToBritishSpelling.hasOwnProperty(lowerCaseWord)) {
-                const converted = americanToBritishSpelling[lowerCaseWord];
-                return useBritishEnglish ? matchCase(word, converted) : word;
-            }
-
-            return word;
-        })
-        .join("");
-}
