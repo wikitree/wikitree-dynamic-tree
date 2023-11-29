@@ -33,38 +33,33 @@ export class Collapse {
         const sectionHeader = $(selector);
         if (sectionHeader.length) {
             const button = $("<button>", {
-                text: "▼",
                 title: "Collapse or expand all items in this section",
                 class: "sectionCollapseButton " + aClass,
             });
+            const icon = $("<span>").addClass("triangle");
+            button.append(icon);
             button.insertBefore(sectionHeader);
 
             button.on("click", () => {
-                const isCollapsing = button.text() === "▼";
-                const tables = $(toggleSelector); // This now selects .personTable
+                const wasCollapsed = icon.hasClass("rotated");
+                const items = $(toggleSelector);
 
-                if (isTableSection) {
-                    // Handle the table section
-                    tables.each(function () {
-                        const table = $(this);
-                        const rowsToToggle = table.find("tr:not(.roleRow)");
-                        rowsToToggle.toggle(!isCollapsing);
+                items.each(function () {
+                    const item = $(this);
+                    const itemButtonIcon = item.prev(".collapseButton").find(".triangle");
+                    const contentToToggle = isTableSection
+                        ? item.find("tr:not(.roleRow)")
+                        : item.find(".researchNotesContent, .citationListContent");
+                    if (wasCollapsed) {
+                        contentToToggle.show();
+                        itemButtonIcon.removeClass("rotated");
+                    } else {
+                        contentToToggle.hide();
+                        itemButtonIcon.addClass("rotated");
+                    }
+                });
 
-                        const tableButton = table.prev(".collapseButton");
-                        tableButton.text(isCollapsing ? "▶" : "▼");
-                    });
-                } else {
-                    // Handle other sections (Research Notes, Citation List)
-                    $(toggleSelector).each(function () {
-                        const itemContent = $(this).find(".researchNotesContent, .citationListContent");
-                        const itemButton = $(this).prev(".collapseButton");
-
-                        itemContent.toggle(!isCollapsing);
-                        itemButton.text(isCollapsing ? "▶" : "▼");
-                    });
-                }
-
-                button.text(isCollapsing ? "▶" : "▼");
+                icon.toggleClass("rotated");
                 this.updateGlobalButtonState();
             });
         }
@@ -72,28 +67,30 @@ export class Collapse {
 
     addGlobalToggle() {
         const globalButton = $("<button>", {
-            text: "▼",
             title: "Collapse or expand all",
             class: "globalCollapseButton",
         });
-
-        // Append the global button to a suitable location on your page
+        const globalIcon = $("<span>").addClass("triangle");
+        globalButton.append(globalIcon);
         $("#familySheetFormTable").before(globalButton);
 
         globalButton.on("click", () => {
-            const isCollapsing = globalButton.text() === "▼";
+            const isCollapsing = globalIcon.hasClass("rotated");
             const allItems = $(".personTable, .researchNotes, .citationList");
-            const allButtons = $(".collapseButton, .sectionCollapseButton");
 
-            if (isCollapsing) {
-                allItems.find("tr:not(.roleRow), .researchNotesContent, .citationListContent").hide();
-                allButtons.text("▶");
-                globalButton.text("▶");
-            } else {
-                allItems.find("tr, .researchNotesContent, .citationListContent").show();
-                allButtons.text("▼");
-                globalButton.text("▼");
-            }
+            allItems.each(function () {
+                const item = $(this);
+                const contentToToggle = item.find("tr:not(.roleRow), .researchNotesContent, .citationListContent");
+                contentToToggle.toggle(!isCollapsing);
+            });
+
+            const allButtons = $(".collapseButton, .sectionCollapseButton");
+            allButtons.each(function () {
+                const buttonIcon = $(this).find(".triangle");
+                buttonIcon.toggleClass("rotated", !isCollapsing);
+            });
+
+            globalIcon.toggleClass("rotated");
         });
     }
 
@@ -104,7 +101,9 @@ export class Collapse {
             return;
         }
 
-        const button = $("<button>").text("▼");
+        const button = $("<button>");
+        const icon = $("<span>").addClass("triangle");
+        button.append(icon);
         button.addClass("collapseButton " + aClass);
 
         if ($element.find(".roleRow").attr("data-role") == "1st Child") {
@@ -113,9 +112,11 @@ export class Collapse {
         $element.before(button);
 
         button.on("click", () => {
+            icon.toggleClass("rotated");
+
             const contentToToggle = $element.find(contentSelector);
             contentToToggle.toggle();
-            button.text(button.text() === "▼" ? "▶" : "▼");
+            //            button.text(button.text() === "▼" ? "▶" : "▼");
 
             // Find the associated section collapse button using the class
             const sectionCollapseButton = $("button.sectionCollapseButton." + aClass);
@@ -131,15 +132,30 @@ export class Collapse {
         const allCollapsed =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "▼";
+                return $(this).find(".triangle").hasClass("rotated");
             }).length === 0;
         const allExpanded =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "▶";
+                return !$(this).find(".triangle").hasClass("rotated");
             }).length === 0;
 
-        sectionCollapseButton.text(allCollapsed ? "▶" : allExpanded ? "▼" : sectionCollapseButton.text());
+        // Logging
+        console.log("Updating section button state for:", aClass);
+        console.log("Total buttons:", buttons.length);
+        console.log("All collapsed:", allCollapsed);
+        console.log("All expanded:", allExpanded);
+
+        const icon = sectionCollapseButton.find(".triangle");
+        if (allCollapsed) {
+            icon.addClass("rotated");
+            console.log("Adding 'rotated' class to section button icon.");
+        } else if (allExpanded) {
+            icon.removeClass("rotated");
+            console.log("Removing 'rotated' class from section button icon.");
+        } else {
+            console.log("Mixed state, no change to section button icon.");
+        }
     }
 
     updateGlobalButtonState() {
@@ -147,14 +163,19 @@ export class Collapse {
         const allCollapsed =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "▼";
+                return $(this).find(".triangle").hasClass("rotated");
             }).length === 0;
         const allExpanded =
             buttons.length > 0 &&
             buttons.filter(function () {
-                return $(this).text() === "▶";
+                return !$(this).find(".triangle").hasClass("rotated");
             }).length === 0;
 
-        $(".globalCollapseButton").text(allCollapsed ? "▶" : allExpanded ? "▼" : $(".globalCollapseButton").text());
+        const globalButtonIcon = $(".globalCollapseButton").find(".triangle");
+        if (allCollapsed) {
+            globalButtonIcon.addClass("rotated");
+        } else if (allExpanded) {
+            globalButtonIcon.removeClass("rotated");
+        }
     }
 }

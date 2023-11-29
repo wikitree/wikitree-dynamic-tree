@@ -670,6 +670,31 @@ body.app header {
   margin-top: 0.8em;
 }
 
+#view-container.familyGroupApp .triangle {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 10px solid black; /* Triangle pointing down */
+  transition: transform 0.3s ease; /* Add this line */
+}
+
+#view-container.familyGroupApp .rotated {
+  transform: rotate(-90deg); /* Rotate the triangle */
+}
+
+#view-container.familyGroupApp .sectionCollapseButton .triangle {
+  border-left-width: 10px;
+  border-right-width: 10px;
+  border-top-width: 20px;
+}
+#view-container.familyGroupApp .globalCollapseButton .triangle {
+  border-left-width: 15px;
+  border-right-width: 15px;
+  border-top-width: 30px;
+}
+
 @media print {
   #view-container.familyGroupApp * {
     color: #000 !important;

@@ -2,12 +2,10 @@ import { spell, waitForElement } from "../../lib/utilities.js";
 import { PersonDataCache } from "./js/personDataCache.js";
 import { Collapse } from "./js/collapse.js";
 import { HandleLinks } from "./js/handleLinks.js";
-import { HandleDates } from "./js/handleDates.js";
 
 const personDataCache = new PersonDataCache();
 const collapse = new Collapse();
 const handleLinks = new HandleLinks();
-const handleDates = new HandleDates();
 
 window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     static APP_ID = "familyGroupApp";
@@ -326,7 +324,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const $thisThing = $(this);
                 const theDate = $thisThing.attr("data-date");
                 const dateStatus = $thisThing.attr("data-date-status");
-                const newDate = handleDates.convertDate(theDate, $this.val(), dateStatus);
+                const newDate = this.convertDate(theDate, $this.val(), dateStatus);
                 $thisThing.text(newDate);
             });
             this.storeVal($this);
@@ -1521,7 +1519,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             settings.dateFormatSelect = dateFormat = "MDY";
             this.setSettings(settings);
         }
-        const formattedDate = this.isOK(date) ? handleDates.convertDate(date, dateFormat, dateStatus) : "";
+        const formattedDate = this.isOK(date) ? this.convertDate(date, dateFormat, dateStatus) : "";
         const rowClass = `${role.toLowerCase()} ${rowType}`;
         const dateClass = `${rowType}Date date`;
         if (!this.isOK(date)) {
@@ -1551,7 +1549,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     renderMarriageRow = (marriageDate, marriagePlace, role) => {
         const formattedMarriageDate = this.isOK(marriageDate)
-            ? handleDates.convertDate(marriageDate, this.getSettings().dateFormatSelect)
+            ? this.convertDate(marriageDate, this.getSettings().dateFormatSelect)
             : "";
         const marriageRow =
             this.isOK(marriageDate) || this.isOK(marriagePlace)
@@ -1589,10 +1587,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const dateFormat = settings.dateFormatSelect;
 
                 const formattedMarriageDate = this.isOK(marriage_date)
-                    ? handleDates.convertDate(marriage_date, dateFormat)
+                    ? this.convertDate(marriage_date, dateFormat)
                     : "";
                 const formattedMarriageEndDate = this.isOK(marriage_end_date)
-                    ? handleDates.convertDate(marriage_end_date, dateFormat)
+                    ? this.convertDate(marriage_end_date, dateFormat)
                     : "";
                 const otherSpouseName = this.displayName(oSpouse)[0];
                 const otherSpouseMarriageLocation = this.isOK(marriage_location) ? marriage_location : "";
@@ -1713,10 +1711,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     // Helper function to format parent dates
     formatParentDates(parent, dateFormat) {
         const birthDate = this.isOK(parent.BirthDate)
-            ? handleDates.convertDate(parent.BirthDate, dateFormat, parent?.DataStatus?.BirthDate)
+            ? this.convertDate(parent.BirthDate, dateFormat, parent?.DataStatus?.BirthDate)
             : "";
         const deathDate = this.isOK(parent.DeathDate)
-            ? handleDates.convertDate(parent.DeathDate, dateFormat, parent?.DataStatus?.DeathDate)
+            ? this.convertDate(parent.DeathDate, dateFormat, parent?.DataStatus?.DeathDate)
             : "";
 
         if (parent.BirthDate === "0000-00-00") {
@@ -1746,22 +1744,21 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                     // Formatting the marriage and end-of-marriage dates
                     let theMarriage = this.isOK(fsSp.marriage_date)
-                        ? `<span class='marriageDate date'>${handleDates
-                              .convertDate(fsSp.marriage_date, "Y")
-                              .trim()}</span>`
+                        ? `<span class='marriageDate date'>${this.convertDate(fsSp.marriage_date, "Y").trim()}</span>`
                         : "";
 
                     let theMarriageEnd = this.isOK(fsSp.marriage_end_date)
-                        ? `<span class='marriageDate date'>&nbsp;&ndash; ${handleDates
-                              .convertDate(fsSp.marriage_end_date, "Y")
-                              .trim()}</span>`
+                        ? `<span class='marriageDate date'>&nbsp;&ndash; ${this.convertDate(
+                              fsSp.marriage_end_date,
+                              "Y"
+                          ).trim()}</span>`
                         : "";
 
                     // Formatting the birth and death dates (only years)
                     let birthYear = "";
                     if (this.isOK(fsSp.BirthDate) || this.isOK(fsSp.BirthDateDecade)) {
                         birthYear = fsSp.BirthDate
-                            ? handleDates.convertDate(fsSp.BirthDate, "Y", fsSp?.DataStatus?.BirthDate)
+                            ? this.convertDate(fsSp.BirthDate, "Y", fsSp?.DataStatus?.BirthDate)
                             : "";
                         if (!this.isOK(birthYear)) {
                             birthYear = fsSp.BirthDateDecade ? fsSp.BirthDateDecade : "";
@@ -1770,7 +1767,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                     let deathYear = "";
                     if (this.isOK(fsSp.DeathDate) || this.isOK(fsSp.DeathDateDecade)) {
                         deathYear = fsSp.DeathDate
-                            ? handleDates.convertDate(fsSp.DeathDate, "Y", fsSp?.DataStatus?.DeathDate)
+                            ? this.convertDate(fsSp.DeathDate, "Y", fsSp?.DataStatus?.DeathDate)
                             : "";
                         if (!this.isOK(deathYear)) {
                             deathYear = fsSp.DeathDateDecade ? fsSp.DeathDateDecade : "";
@@ -2414,7 +2411,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     addExplainer() {
         let todaysDate = new Date().toISOString().split("T")[0];
-        todaysDate = handleDates.convertDate(todaysDate);
+        todaysDate = this.convertDate(todaysDate);
         const explainerText = `Generated by the WikiTree Family Group App from data on WikiTree on ${todaysDate}. Post-generation editing may have occurred.`;
         const explainer = $("<p id='explainer'>" + explainerText + "</p>");
         $(this.$container).append(explainer);
@@ -2511,5 +2508,243 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 $("#showBaptisedText").text(`${selectedValue}`);
             }
         });
+    }
+    convertDate(dateString, outputFormat, status = "") {
+        if (!outputFormat) {
+            const settings = this.getSettings();
+            outputFormat = settings.dateFormatSelect;
+        }
+        if (!dateString) {
+            return "";
+        }
+        dateString = dateString.replaceAll(/-00/g, "");
+        // Split the input date string into components
+        if (!dateString) {
+            return "";
+        }
+        let components = dateString.split(/[\s,-]+/);
+
+        // Determine the format of the input date string
+        let inputFormat;
+        if (components.length == 1 && /^\d{4}$/.test(components[0])) {
+            // Year-only format (e.g. "2023")
+            inputFormat = "Y";
+        } else if (
+            components.length == 2 &&
+            /^[A-Za-z]{3}$/.test(components[0]) &&
+            !/^[A-Za-z]{4,}$/.test(components[0])
+        ) {
+            // Short month and year format (e.g. "Jul 2023")
+            inputFormat = "MY";
+        } else if (components.length == 2 && /^[A-Za-z]+/.test(components[0])) {
+            // Long month and year format (e.g. "July 2023")
+            inputFormat = "MDY";
+        } else if (components.length == 3 && /^[A-Za-z]+/.test(components[0])) {
+            // Long month, day, and year format (e.g. "July 23, 2023")
+            inputFormat = "MDY";
+        } else if (
+            components.length == 3 &&
+            /^[A-Za-z]{3}$/.test(components[1]) &&
+            !/^[A-Za-z]{4,}$/.test(components[1])
+        ) {
+            // Short month, day, and year format (e.g. "23 Jul 2023")
+            inputFormat = "DMY";
+        } else if (components.length == 3 && /^[A-Za-z]+/.test(components[1])) {
+            // Day, long month, and year format (e.g. "10 July 1936")
+            inputFormat = "DMY";
+        } else if (components.length == 3 && /^\d{2}$/.test(components[1]) && /^\d{2}$/.test(components[2])) {
+            // ISO format with no day (e.g. "2023-07-23")
+            inputFormat = "ISO";
+        } else if (components.length == 2 && /^\d{4}$/.test(components[0]) && /^\d{2}$/.test(components[1])) {
+            // NEW: Year and month format with no day (e.g. "1910-10")
+            inputFormat = "ISO";
+            components.push("00");
+        } else {
+            // Invalid input format
+            return null;
+        }
+
+        // Convert the input date components to a standard format (YYYY-MM-DD)
+        let year,
+            month = 0,
+            day = 0;
+        try {
+            if (inputFormat == "Y") {
+                year = parseInt(components[0]);
+                outputFormat = "Y";
+            } else if (inputFormat == "MY") {
+                year = parseInt(components[1]);
+                month = this.convertMonth(components[0]);
+                if (!outputFormat) {
+                    outputFormat = "MY";
+                }
+            } else if (inputFormat == "MDY") {
+                year = parseInt(components[components.length - 1]);
+                month = this.convertMonth(components[0]);
+                day = parseInt(components[1]);
+            } else if (inputFormat == "DMY") {
+                year = parseInt(components[2]);
+                month = this.convertMonth(components[1]);
+                day = parseInt(components[0]);
+            } else if (inputFormat == "ISO") {
+                year = parseInt(components[0]);
+                month = parseInt(components[1]);
+                day = parseInt(components[2]);
+            }
+        } catch (err) {
+            console.error("Error during conversion:", err);
+            return null;
+        }
+
+        // Convert the date components to the output format
+        let outputDate;
+
+        const ISOdate = year.toString() + "-" + this.padNumberStart(month || 0) + "-" + this.padNumberStart(day || 0);
+
+        if (outputFormat == "Y") {
+            outputDate = year.toString();
+        } else if (outputFormat == "MY") {
+            outputDate = this.convertMonth(month) + " " + year.toString();
+        } else if (outputFormat == "MDY") {
+            if (day === 0) {
+                // If day is 0, exclude the day and the comma from the output
+                outputDate = this.convertMonth(month, "long") + " " + year.toString();
+            } else {
+                outputDate = this.convertMonth(month, "long") + " " + day + ", " + year.toString();
+            }
+        } else if (outputFormat == "DMY") {
+            if (day === 0) {
+                // If day is 0, exclude the day from the output
+                outputDate = this.convertMonth(month, "long") + " " + year.toString();
+            } else {
+                outputDate = day + " " + this.convertMonth(month, "long") + " " + year.toString();
+            }
+        } else if (outputFormat == "sMDY") {
+            outputDate = this.convertMonth(month, "short");
+            if (day !== 0) {
+                outputDate += " " + day + ",";
+            }
+            outputDate += " " + year.toString();
+        } else if (outputFormat == "DsMY") {
+            outputDate = "";
+            if (day !== 0) {
+                outputDate += day + " ";
+            }
+            outputDate += this.convertMonth(month).slice(0, 3) + " " + year.toString();
+        } else if (outputFormat == "YMD" || outputFormat == "ISO") {
+            if (day === 0) {
+                // If day is 0, exclude the day and trailing hyphen from the output
+                outputDate = year.toString() + "-" + this.padNumberStart(month || 0);
+            } else {
+                outputDate = ISOdate;
+            }
+        } else {
+            // Invalid output format
+            return null;
+        }
+
+        if (status) {
+            let onlyYears = false;
+            if (outputFormat == "Y") {
+                onlyYears = true;
+            }
+            let statusOut = "";
+            try {
+                statusOut = this.dataStatusWord(status, ISOdate, {
+                    needOnIn: false,
+                    onlyYears: onlyYears,
+                });
+            } catch (error) {
+                console.log("dataStatusWord error:", error);
+            }
+            if (["<", ">", "~"].includes(statusOut.trim())) {
+                outputDate = statusOut + outputDate.trim();
+            } else {
+                outputDate = statusOut + " " + outputDate;
+            }
+        }
+
+        outputDate = outputDate.replace(/\s?\b00/, ""); // Remove 00 as a day or month
+        outputDate = outputDate.replace(/([A-Za-z]+) (\d{4})/, "$1 $2"); // Remove comma if there's a month followed directly by a year
+
+        return outputDate;
+    }
+
+    padNumberStart(number) {
+        // Add leading zeros to a single-digit number
+        return (number < 10 ? "0" : "") + number.toString();
+    }
+
+    capitalizeFirstLetter(string) {
+        return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
+    }
+
+    dataStatusWord(status, ISOdate, options = { needOnIn: false, onlyYears: false }) {
+        const needOnIn = options.needOnIn;
+        const onlyYears = options.onlyYears;
+        let day = ISOdate.slice(8, 10);
+        if (day == "00") {
+            day = "";
+        }
+        let statusOut =
+            status == "before"
+                ? "before"
+                : status == "after"
+                ? "after"
+                : status == "guess"
+                ? "about"
+                : status == "certain" || status == "on" || status == undefined || status == ""
+                ? day
+                    ? "on"
+                    : "in"
+                : "";
+
+        const settings = this.getSettings();
+        const thisStatusFormat = settings.dateStatusFormat || "symbols";
+
+        if (thisStatusFormat == "abbreviations") {
+            statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
+        } else if (thisStatusFormat == "symbols") {
+            statusOut = statusOut.replace("before", "<").replace("after", ">").replace("about", "~");
+        }
+        if (needOnIn == false && ["on", "in"].includes(statusOut)) {
+            return "";
+        } else {
+            return statusOut;
+        }
+    }
+
+    convertMonth(monthString, outputFormat = "short") {
+        // Convert a month string to a numeric month value
+        var shortNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        var longNames = [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+        ];
+        let index;
+        if (!isNaN(monthString)) {
+            index = monthString - 1;
+            let month = shortNames[index];
+            if (outputFormat == "long") {
+                month = longNames[index];
+            }
+            return this.capitalizeFirstLetter(month);
+        } else {
+            index = shortNames.indexOf(monthString?.toLowerCase());
+            if (index == -1) {
+                index = longNames.indexOf(monthString?.toLowerCase());
+            }
+            return index + 1;
+        }
     }
 };

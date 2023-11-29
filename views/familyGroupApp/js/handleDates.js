@@ -1,7 +1,7 @@
 export class HandleDates {
     convertDate(dateString, outputFormat, status = "") {
         if (!outputFormat) {
-            const settings = this.getSettings();
+            const settings = FamilyGroupAppView.getSettings();
             outputFormat = settings.dateFormatSelect;
         }
         if (!dateString) {
@@ -140,7 +140,10 @@ export class HandleDates {
             }
             let statusOut = "";
             try {
-                statusOut = this.dataStatusWord(status, ISOdate, { needOnIn: false, onlyYears: onlyYears });
+                statusOut = FamilyGroupAppView.dataStatusWord(status, ISOdate, {
+                    needOnIn: false,
+                    onlyYears: onlyYears,
+                });
             } catch (error) {
                 console.log("dataStatusWord error:", error);
             }
@@ -186,7 +189,7 @@ export class HandleDates {
                     : "in"
                 : "";
 
-        const settings = this.getSettings();
+        const settings = FamilyGroupAppView.getSettings();
         const thisStatusFormat = settings.dateStatusFormat || "symbols";
 
         if (thisStatusFormat == "abbreviations") {
