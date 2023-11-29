@@ -12,11 +12,16 @@ export class AncestorTree {
     static maxGeneration;
     static duplicates = new Map();
     static genCounts = [];
+    static profileCount = 0;
+    static requestedGen = 0;
+    static minBirthYear = 0;
 
     static init() {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
+        AncestorTree.profileCount = 0;
+        AncestorTree.requestedGen = 0;
     }
 
     static clear() {
@@ -26,6 +31,8 @@ export class AncestorTree {
         AncestorTree.root = undefined;
         AncestorTree.maxGeneration = 0;
         AncestorTree.genCounts = [];
+        AncestorTree.profileCount = 0;
+        AncestorTree.requestedGen = 0;
     }
 
     static replaceWith(treeArray) {
@@ -37,8 +44,9 @@ export class AncestorTree {
         AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
     }
 
-    static async buildTreeWithGetPeople(wtId, depth) {
+    static async buildTreeWithGetPeople(wtId, depth, withBios) {
         const starttime = performance.now();
+        AncestorTree.requestedGen = depth + 1;
         let remainingDepth = depth;
         let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
         let start = 0;
@@ -48,9 +56,18 @@ export class AncestorTree {
             reqDepth,
             start,
             API.GET_PERSON_LIMIT,
-            privateIdOffset
+            privateIdOffset,
+            withBios
         );
         if (!resultByKey) return [AncestorTree.root, performance.now() - starttime];
+        const status = resultByKey[wtId]?.status;
+        if (typeof status != "undefined" && status != "") {
+            wtViewRegistry.showWarning(
+                `Unexpected response from WikiTree server: "${status}".` +
+                    (status.includes("permission denied") ? " The requested ID might be private." : "")
+            );
+            return [AncestorTree.root, performance.now() - starttime];
+        }
         const rootId = resultByKey[wtId].Id;
 
         remainingDepth -= reqDepth;
@@ -80,7 +97,8 @@ export class AncestorTree {
                     reqDepth,
                     start,
                     API.GET_PERSON_LIMIT,
-                    privateIdOffset
+                    privateIdOffset,
+                    withBios
                 );
                 const newTreeSize = AncestorTree.#people.size;
                 console.log(
@@ -100,11 +118,17 @@ export class AncestorTree {
         return [AncestorTree.root, performance.now() - starttime];
     }
 
-    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset) {
+    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset, withBios) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
-        const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+        let starttime = performance.now();
+        let [status, resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+        let callTime = performance.now() - starttime;
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
-        console.log(`Received ${profiles.length} profiles`);
+        console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
+        if (typeof status != "undefined" && status != "") {
+            wtViewRegistry.showWarning(`Unexpected response from WikiTree server: "${status}".`);
+        }
+
         const notLoaded = new Set();
 
         let nrPrivateIds = 0;
@@ -146,9 +170,11 @@ export class AncestorTree {
             console.log(
                 `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
             );
-            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+            starttime = performance.now();
+            [status, , ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+            callTime = performance.now() - starttime;
             profiles = Object.values(ancestor_json);
-            console.log(`Received ${profiles.length} profiles`);
+            console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
         }
         return [resultByKey, notLoaded, nrPrivateIds];
     }
@@ -159,6 +185,7 @@ export class AncestorTree {
         AncestorTree.root = AncestorTree.#people.get(rootId);
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.genCounts = [0];
+        AncestorTree.minBirthYear = 5000;
         // Clear each person's generation info and add them to the byWtId map
         for (const person of AncestorTree.#people.values()) {
             person.clearGenerations();
@@ -167,14 +194,20 @@ export class AncestorTree {
         const m = AncestorTree.#validate_and_set_generations(rootId, 1, new Set(), 0);
         AncestorTree.maxGeneration = m;
         AncestorTree.duplicates.clear();
+        AncestorTree.profileCount = 0;
         let n = 0;
         for (const p of AncestorTree.#people.values()) {
             const id = p.getId();
             if (p.isDuplicate() && !AncestorTree.duplicates.has(id)) {
                 AncestorTree.duplicates.set(id, ++n);
             }
+            AncestorTree.profileCount += p.getNrCopies(AncestorTree.requestedGen);
+            const bYear = +p.getBirthYear();
+            if (bYear > 0 && bYear < AncestorTree.minBirthYear) {
+                AncestorTree.minBirthYear = bYear;
+            }
         }
-        console.log(`nr duplicates=${AncestorTree.duplicates.size}`);
+        console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
     }
 
@@ -304,6 +337,56 @@ export class AncestorTree {
         }
     }
 
+    static markAndCountBricks(opt) {
+        let nrNoParents = 0;
+        let nrOneParent = 0;
+        let nrNoNoSpouses = 0;
+        let nrNoNoChildren = 0;
+        let nrBioIssue = 0;
+        AncestorTree.#people.forEach((person) => {
+            let isBrick = false;
+            if (!person.hasAParent()) {
+                ++nrNoParents;
+                isBrick ||= opt.noParents;
+            }
+            if ((person.getFatherId() && !person.getMotherId()) || (!person.getFatherId() && person.getMotherId())) {
+                ++nrOneParent;
+                isBrick ||= opt.oneParent;
+            }
+            if (person._data.DataStatus?.Spouse != "blank") {
+                ++nrNoNoSpouses;
+                isBrick ||= opt.noNoSpouses;
+            }
+            if (person._data.NoChildren != 1) {
+                ++nrNoNoChildren;
+                isBrick ||= opt.noNoChildren;
+            }
+            if (person.hasBioIssues) {
+                ++nrBioIssue;
+                isBrick ||= opt.bioCheck;
+            }
+            person.setBrickWall(isBrick);
+        });
+        return {
+            noParents: nrNoParents,
+            oneParent: nrOneParent,
+            noNoSpouses: nrNoNoSpouses,
+            noNoChildren: nrNoNoChildren,
+            bioCheck: window.aleBiosLoaded ? nrBioIssue : "?",
+        };
+    }
+
+    static nrDuplicatesUpToGen(gen) {
+        let cnt = 0;
+        for (const dId of AncestorTree.duplicates.keys()) {
+            const dPerson = AncestorTree.#people.get(+dId);
+            if (dPerson.getNrCopies(gen) > 1) {
+                ++cnt;
+            }
+        }
+        return cnt;
+    }
+
     static toArray() {
         // Add tree nodes to the array while doing a breadth-first walk of the tree.
         // This is done to ensure the root node is at the front of the array.
@@ -350,8 +433,10 @@ export class AncestorTree {
 
     static getD3Children(person, alreadyInTree) {
         const parents = [];
-        addParent(+person.getFatherId());
-        addParent(+person.getMotherId());
+        if (!(person instanceof LinkToPerson)) {
+            addParent(+person.getFatherId());
+            addParent(+person.getMotherId());
+        }
         return parents;
 
         function addParent(id) {

@@ -1,7 +1,7 @@
-    const SVGbtnDOWN =
-        '<SVG width=18 height=14 ><polyline points="0,0 18,0 9,14 0,0" fill="blue" stroke="blue"/><polyline points="5,7 13,7" fill="none" stroke="white" stroke-width=2 /></SVG>';
-    const SVGbtnUP =
-        '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
+const SVGbtnDOWN =
+    '<SVG width=18 height=14 ><polyline points="0,0 18,0 9,14 0,0" fill="blue" stroke="blue"/><polyline points="5,7 13,7" fill="none" stroke="white" stroke-width=2 /></SVG>';
+const SVGbtnUP =
+    '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 /*
  * The WikiTree Dynamic Tree Viewer itself uses the D3.js library to render the graph.
  * Fractal Tree uses the D3 function for zooming and panning, but customizes the positioning of each leaf in the tree.
@@ -18,14 +18,9 @@
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FractalView, then calls a redraw
  */
 
-import { BioCheckTemplateManager } from "../../lib/biocheck-api/src/BioCheckTemplateManager.js";
 import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
-
-// initialization - just once
-let bioCheckTemplateManager = new BioCheckTemplateManager();
-bioCheckTemplateManager.load();
 
 (function () {
     const APP_ID = "FractalTree";
@@ -49,7 +44,7 @@ bioCheckTemplateManager.load();
     const AboutAdditionalProgrammers =
         "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
     const AboutAssistants = "Rob Pavey & Kay Knight";
-    const AboutLatestG2G = "";// "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutLatestG2G = ""; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = ""; // "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -62,7 +57,7 @@ bioCheckTemplateManager.load();
     const SVGbtnUP =
         '<SVG width=18 height=14 ><polyline points="0,14 18,14 9,0 0,14" fill="red" stroke="red"/><polyline points="5,8 13,8" fill="none" stroke="white" stroke-width=2 /> <polyline points="9,3 9,13" fill="none" stroke="white" stroke-width=2 /> </SVG>';
 
-    const SVGbtnSETTINGS = `<svg height="16" width="16" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+    const SVGbtnSETTINGS = `<svg height="16" width="16" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             viewBox="0 0 512 512"  xml:space="preserve">
         <style type="text/css">
             .st0{fill:#000000;}
@@ -87,9 +82,9 @@ bioCheckTemplateManager.load();
                 C511.995,216.122,506.472,210.32,499.453,210.004z M256.01,339.618c-46.164,0-83.622-37.438-83.622-83.612
                 c0-46.184,37.458-83.622,83.622-83.622s83.602,37.438,83.602,83.622C339.612,302.179,302.174,339.618,256.01,339.618z"/>
         </g>
-        </svg>`;    
-        
-    const SVGbtnINFO = `<svg fill="#0000FF" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+        </svg>`;
+
+    const SVGbtnINFO = `<svg fill="#0000FF" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             width="16" height="16" viewBox="0 0 45.818 45.818"
             xml:space="preserve">
         <g>
@@ -99,7 +94,7 @@ bioCheckTemplateManager.load();
                 c0-2.12,1.718-3.836,3.837-3.836c2.118,0,3.837,1.716,3.837,3.836C26.746,12.133,25.027,13.851,22.909,13.851z"/>
         </g>
         </svg>`;
-    const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+    const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
             width="16" height="16" viewBox="0 0 95.334 95.334"
             xml:space="preserve">
         <g>
@@ -112,7 +107,7 @@ bioCheckTemplateManager.load();
                 c-0.292-0.303-0.448-0.71-0.434-1.13c0.444-12.341,10.47-22.008,22.823-22.008c12.593,0,22.837,10.245,22.837,22.837
                 C70.497,42.54,65.421,46.885,61.342,50.376z"/>
         </g>
-        </svg>`;        
+        </svg>`;
     /**
      * Constructor
      */
@@ -1111,38 +1106,32 @@ bioCheckTemplateManager.load();
             "&nbsp;&nbsp;</td>" +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fractal Tree is loading ...</DIV>';
 
-            var aboutHTML =
-                '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
-                `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FractalView.toggleAbout();">` +
-                SVGbtnCLOSE +
-                "</a></span>" +
-                "<H3>About the " +
-                FullAppName +
-                "</H3>" +
-                AboutPreamble +
-                "<br>" +
-                "<br>Last updated: " +
-                AboutUpdateDate +
-                "<br>App Icon: " +
-                AboutAppIcon +
-                "<br>Original Author: " +
-                AboutOriginalAuthor +
-                (AboutAdditionalProgrammers > ""
-                    ? "<br>Additional Programming by: " + AboutAdditionalProgrammers
-                    : "") +
-                "<br>Assistance and Code borrowed from: " +
-                AboutAssistants +
-                "<br/>" +
-                (AboutLatestG2G > ""
-                    ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>"
-                    : "") +
-                (AboutHelpDoc > ""
-                    ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>"
-                    : "") +
-                (AboutOtherApps > ""
-                    ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
-                    : "") +
-                "</div>";
+        var aboutHTML =
+            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FractalView.toggleAbout();">` +
+            SVGbtnCLOSE +
+            "</a></span>" +
+            "<H3>About the " +
+            FullAppName +
+            "</H3>" +
+            AboutPreamble +
+            "<br>" +
+            "<br>Last updated: " +
+            AboutUpdateDate +
+            "<br>App Icon: " +
+            AboutAppIcon +
+            "<br>Original Author: " +
+            AboutOriginalAuthor +
+            (AboutAdditionalProgrammers > "" ? "<br>Additional Programming by: " + AboutAdditionalProgrammers : "") +
+            "<br>Assistance and Code borrowed from: " +
+            AboutAssistants +
+            "<br/>" +
+            (AboutLatestG2G > "" ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>" : "") +
+            (AboutHelpDoc > "" ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>" : "") +
+            (AboutOtherApps > ""
+                ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
+                : "") +
+            "</div>";
 
         var settingsHTML = "";
 
@@ -1181,7 +1170,7 @@ bioCheckTemplateManager.load();
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
-        
+
         FractalView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
@@ -2079,7 +2068,7 @@ bioCheckTemplateManager.load();
                         let hasSources = biography.validate();
                         thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
                         thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
-                        
+
                         console.log(
                             "async adding ",
                             thePerson.getReportName(),
@@ -2090,9 +2079,7 @@ bioCheckTemplateManager.load();
                             biography.hasStyleIssues(),
                             biography.isMissingSourcesHeading(),
                             thePeopleList[thePerson.getProfileId()].biocheck
-                            );
-
-
+                        );
                     }
                     FractalView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
@@ -3192,7 +3179,6 @@ bioCheckTemplateManager.load();
         }
 
         let zoomFactor = Math.max(1, 1 / FractalView.currentScaleFactor);
- 
 
         var popup = this.svg
             .append("g")
@@ -3415,7 +3401,8 @@ bioCheckTemplateManager.load();
         condLog("findCategoriesOfAncestors");
         categoryList = [];
         stickerList = [];
-        let stickerInnerHTML = '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
+        let stickerInnerHTML =
+            '<option selected value="-999">Do not use Badge #666#</option><option>CATEGORIES</option>';
         for (let index = 1; index < 2 ** FractalView.numGens2Display; index++) {
             const thisPerp = thePeopleList[FractalView.myAhnentafel.list[index]];
             if (thisPerp) {
