@@ -91,6 +91,7 @@
   float: right;
   font-size: 0.7em;
   font-weight: 500;
+  padding-right: 3px;
 }
 #view-container.familyGroupApp thead th {
   border-top: 1px solid black;
@@ -649,20 +650,21 @@ body.app header {
   margin-top: 0.5em;
   background-color: transparent;
   color: forestgreen;
+  border: 0 !important;
 }
 #view-container.familyGroupApp button.sectionCollapseButton {
-  padding: 0.5em;
+  padding: 0;
   width: 2em;
-  font-size: larger;
-  margin-left: -443px;
+  font-size: 30px !important;
+  margin-left: -451px;
   margin-top: 0.3em;
 }
 #view-container.familyGroupApp button.globalCollapseButton {
-  padding: 0.7em;
-  width: 2.5em;
-  font-size: 25px;
-  margin-left: -500px;
-  margin-top: 0.1em;
+  padding: 0;
+  width: 1em;
+  font-size: 40px !important;
+  margin-left: -490px;
+  margin-top: 2px;
 }
 #view-container.familyGroupApp button.collapseButton.firstChild {
   margin-top: 0.8em;

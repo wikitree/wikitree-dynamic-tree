@@ -78,17 +78,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             display: none;
         }
         `;
-        /*
-        this.includeBiosWhenPrintingRules = `
-        @media print {
-            #view-container.familyGroupApp table.personTable .bioRow{
-                display:table-row !important;
-            } 
-            #view-container.familyGroupApp table.personTable .theBio {
-                display:block !important;
-            }
-        }`;
-        */
         this.showBiosRules = `
         #view-container.familyGroupApp .bioRow div.theBio {
             display:block;
@@ -113,6 +102,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             description: `Produce a printer-friendly Family Group Sheet with the Family Group App.`,
             docs: "",
         };
+    }
+
+    close() {
+        $("#view-container").removeClass("familyGroupApp");
     }
 
     initializeLocalStates() {
@@ -326,6 +319,46 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         this.$body.off("click.fga change.fga");
 
         // Delegated event listeners for checkbox changes
+
+        this.$container.on("click.fga", "a[href^='#_ref']", (e) => {
+            e.preventDefault();
+            const $this = $(e.currentTarget);
+            const targetId = $this.attr("href").replace("#", "");
+            const target = $(`#${targetId}`);
+            // If target is hidden in a hidden biography and/or collapsed section
+            // show the biography and expand the section
+            if (target.closest(".theBio").css("display") == "none") {
+                target.closest(".theBio").slideDown();
+            }
+            if (target.closest(".personTable").find("tr.birthRow").css("display") == "none") {
+                target.closest(".personTable").prev().trigger("click");
+            }
+            // Scroll to the target
+            $("html, body").animate(
+                {
+                    scrollTop: target.offset().top - 100,
+                },
+                500
+            );
+        });
+
+        this.$container.on("click.fga", "a[href^='#_note']", (e) => {
+            e.preventDefault();
+            const $this = $(e.currentTarget);
+            const targetId = $this.attr("href").replace("#", "");
+            const target = $(`#${targetId}`);
+            // If target is hidden in a collapsed section expand the section
+            if (target.closest(".citationListContent").css("display") == "none") {
+                target.closest(".citationList").prev().trigger("click");
+            }
+            // Scroll to the target
+            $("html, body").animate(
+                {
+                    scrollTop: target.offset().top - 100,
+                },
+                500
+            );
+        });
 
         this.$container.on("change.fga", "#dateFormatSelect", (e) => {
             const $this = $(e.currentTarget);
@@ -1750,7 +1783,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         if (["Husband", "Wife"].includes(role)) {
             // Find if there is a spouse without do_not_display; if not, change the role to Name
-            const spouse = fsPerson.Spouse.find((spouse) => spouse?.do_not_display != "1");
+            // Check that fsPerson.Spouse is not undefined
+            let spouse = true;
+            if (!fsPerson.Spouse) {
+                spouse = false;
+            } else if (fsPerson.Spouse.length === 0) {
+                spouse = false;
+            } else if (!Array.isArray(fsPerson.Spouse)) {
+                spouse = false;
+            } else {
+                spouse = fsPerson?.Spouse.find((spouse) => spouse?.do_not_display != "1");
+            }
             if (!spouse) {
                 role = "Single";
                 roleText = "Name";
@@ -3458,12 +3501,17 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         // Add buttons for .citationList
         const citationListElements = document.querySelectorAll(".citationList");
         citationListElements.forEach((element) => {
-            this.createAndAddButton(element, ".citationListContent", "sources");
+            const $this = $(element);
+            if ($this.find("div.citationListContent").text().trim() != "") {
+                this.createAndAddButton(element, ".citationListContent", "sources");
+            }
         });
 
         // Add section-level collapse buttons
         this.addSectionCollapseButton("#familySheetFormTable", ".personTable", "table", true); // True for table section
-        this.addSectionCollapseButton("#notes > h2", ".researchNotes", "researchNotes");
+        if ($("#notesNotes div.researchNotes").length) {
+            this.addSectionCollapseButton("#notes > h2", ".researchNotes", "researchNotes");
+        }
         this.addSectionCollapseButton("#sources > h2", ".citationList", "sources");
     }
 
@@ -3474,7 +3522,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 text: "▼",
                 title: "Collapse or expand all items in this section",
                 class: "sectionCollapseButton " + aClass,
-                css: { fontSize: "larger" },
             });
             button.insertBefore(sectionHeader);
 
@@ -3514,7 +3561,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             text: "▼",
             title: "Collapse or expand all",
             class: "globalCollapseButton",
-            css: { fontSize: "larger" },
         });
 
         // Append the global button to a suitable location on your page
@@ -3536,28 +3582,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
         });
     }
-    /*
-    createAndAddButton(element, contentSelector, aClass) {
-        const button = $("<button>").text("-");
-        button.addClass("collapseButton").addClass(aClass);
-        const $element = $(element);
-        $element.before(button);
-
-        button.on("click", () => {
-            const contentToToggle = $element.find(contentSelector);
-            if (contentToToggle.length) {
-                contentToToggle.toggle();
-                button.text(button.text() === "-" ? "+" : "-");
-
-                // Update the section button
-                this.updateSectionButtonState($(".sectionCollapseButton." + aClass), aClass);
-
-                // Update the global button
-                this.updateGlobalButtonState();
-            }
-        });
-    }
-*/
 
     createAndAddButton(element, contentSelector, aClass) {
         const $element = $(element);
