@@ -75,22 +75,31 @@ export class Collapse {
         $("#familySheetFormTable").before(globalButton);
 
         globalButton.on("click", () => {
-            const isCollapsing = globalIcon.hasClass("rotated");
-            const allItems = $(".personTable, .researchNotes, .citationList");
-
-            allItems.each(function () {
-                const item = $(this);
-                const contentToToggle = item.find("tr:not(.roleRow), .researchNotesContent, .citationListContent");
-                contentToToggle.toggle(!isCollapsing);
-            });
-
-            const allButtons = $(".collapseButton, .sectionCollapseButton");
-            allButtons.each(function () {
-                const buttonIcon = $(this).find(".triangle");
-                buttonIcon.toggleClass("rotated", !isCollapsing);
-            });
-
+            // Determine the desired state based on the current state of the global button icon
+            const shouldCollapse = !globalIcon.hasClass("rotated");
             globalIcon.toggleClass("rotated");
+
+            $(".personTable, .researchNotes, .citationList").each(function () {
+                const section = $(this);
+                const items = section.find("tr:not(.roleRow), .researchNotesContent, .citationListContent");
+
+                if (shouldCollapse) {
+                    items.hide();
+                    $(".sectionCollapseButton .triangle").addClass("rotated");
+                } else {
+                    items.show();
+                    $(".sectionCollapseButton .triangle").removeClass("rotated");
+                }
+            });
+
+            $(".collapseButton").each(function () {
+                const buttonIcon = $(this).find(".triangle");
+                if (shouldCollapse) {
+                    buttonIcon.addClass("rotated");
+                } else {
+                    buttonIcon.removeClass("rotated");
+                }
+            });
         });
     }
 
@@ -116,6 +125,12 @@ export class Collapse {
 
             const contentToToggle = $element.find(contentSelector);
             contentToToggle.toggle();
+            if ($("#showBaptism").prop("checked") == false) {
+                $("tr.baptismRow").hide();
+            }
+            if ($("#showBurial").prop("checked") == false) {
+                $("tr.burialRow").hide();
+            }
             //            button.text(button.text() === "▼" ? "▶" : "▼");
 
             // Find the associated section collapse button using the class
@@ -129,43 +144,35 @@ export class Collapse {
 
     updateSectionButtonState(sectionCollapseButton, aClass) {
         const buttons = $(".collapseButton." + aClass);
-        const allCollapsed =
+        const allExpanded =
             buttons.length > 0 &&
             buttons.filter(function () {
                 return $(this).find(".triangle").hasClass("rotated");
             }).length === 0;
-        const allExpanded =
+        const allCollapsed =
             buttons.length > 0 &&
             buttons.filter(function () {
                 return !$(this).find(".triangle").hasClass("rotated");
             }).length === 0;
 
-        // Logging
-        console.log("Updating section button state for:", aClass);
-        console.log("Total buttons:", buttons.length);
-        console.log("All collapsed:", allCollapsed);
-        console.log("All expanded:", allExpanded);
-
         const icon = sectionCollapseButton.find(".triangle");
         if (allCollapsed) {
             icon.addClass("rotated");
-            console.log("Adding 'rotated' class to section button icon.");
         } else if (allExpanded) {
             icon.removeClass("rotated");
-            console.log("Removing 'rotated' class from section button icon.");
-        } else {
-            console.log("Mixed state, no change to section button icon.");
         }
     }
 
     updateGlobalButtonState() {
-        const buttons = $(".collapseButton");
-        const allCollapsed =
+        const buttons = $(".sectionCollapseButton");
+
+        const allExpanded =
             buttons.length > 0 &&
             buttons.filter(function () {
                 return $(this).find(".triangle").hasClass("rotated");
             }).length === 0;
-        const allExpanded =
+
+        const allCollapsed =
             buttons.length > 0 &&
             buttons.filter(function () {
                 return !$(this).find(".triangle").hasClass("rotated");

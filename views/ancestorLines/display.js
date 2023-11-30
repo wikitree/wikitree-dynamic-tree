@@ -4,6 +4,7 @@
 // the code I "stole" from you to make this app better.
 //
 import { AncestorTree } from "./ancestor_tree.js";
+import { AncestorLinesExplorer } from "./ancestor_lines_explorer.js";
 
 export function showTree(
     theTree,
@@ -253,9 +254,24 @@ export function showTree(
         const nodes = treeData.descendants();
         const links = treeData.descendants().slice(1);
 
-        // Normalize for fixed-depth.
+        // Calculate y position of each node.
+        const tWidth = edgeFactor * (currentMaxShowDepth - 1);
+        const maxYear = +AncestorTree.root.getBirthYear() || +new Date().getFullYear();
+        const ageSpan = maxYear - AncestorTree.minBirthYear;
+        const birthScale = document.getElementById("birthScale").checked;
+        const privatise = document.getElementById("privatise").checked;
+        const anonLiving = document.getElementById("anonLiving").checked;
         nodes.forEach(function (d) {
-            d.y = d.depth * edgeFactor;
+            if (birthScale) {
+                const bYear = +d.data.getBirthYear();
+                if (bYear == 0) {
+                    d.y = d.depth * edgeFactor;
+                } else {
+                    d.y = (tWidth * (maxYear - d.data.getBirthYear())) / ageSpan;
+                }
+            } else {
+                d.y = d.depth * edgeFactor;
+            }
         });
 
         // ****************** Nodes section ***************************
@@ -288,7 +304,7 @@ export function showTree(
             .on("click", toggleChildren)
             .append("title")
             .text(function (d) {
-                return `${birthString(d.data)}\n${deathString(d.data)}`;
+                return birthAndDeathData(d.data);
             });
 
         // Flag duplicate nodes with coloured square
@@ -304,14 +320,17 @@ export function showTree(
             .on("click", toggleDuplicate)
             .append("title")
             .text(function (d) {
-                return `${birthString(d.data)}\n${deathString(d.data)}`;
+                return birthAndDeathData(d.data);
             });
 
         // Add labels for the nodes
         nodeEnter
             .append("a")
             .attr("xlink:href", function (d) {
-                return "https://www.wikitree.com/wiki/" + d.data.getWtId();
+                const wtId = d.data.getWtId();
+                return typeof wtId == "undefined"
+                    ? "https://www.wikitree.com/wiki/Help:Privacy"
+                    : `https://www.wikitree.com/wiki/${wtId}`;
             })
             .attr("target", "_blank")
             .append("text")
@@ -324,15 +343,33 @@ export function showTree(
             })
             .attr("wtId", (d) => d.data.getId())
             .text(function (d) {
-                return d.data.getDisplayName();
+                const p = d.data;
+                if (anonLiving && p.isLiving()) {
+                    return "Living";
+                }
+                if (privatise) {
+                    if (p.isUnlisted()) return "Private";
+                    if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
+                }
+                return p.getDisplayName() || "Private";
             })
             .style("fill", (d) => {
-                return d.data.hasAParent() ? "inherit" : brickWallColour;
+                return d.data.isBrickWall() ? brickWallColour : "inherit";
             })
             .append("title")
             .text(function (d) {
-                return `${birthString(d.data)}\n${deathString(d.data)}`;
+                return birthAndDeathData(d.data);
             });
+
+        function birthAndDeathData(person) {
+            if ((anonLiving && person.isLiving()) || (privatise && person.isUnlisted())) {
+                return "This information is private.";
+            }
+            if (privatise && person.isPrivate()) {
+                return `${birthString(person, privatise)}\n${deathString(person, privatise)}`;
+            }
+            return `${birthString(person)}\n${deathString(person)}`;
+        }
 
         // UPDATE
         const nodeUpdate = nodeEnter.merge(node);
@@ -443,8 +480,13 @@ export function showTree(
 
         // Toggle children on click.
         function toggleChildren(event, d) {
-            if (event.altKey) {
+            if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
                 console.log(d.data.toString(), d);
+                return;
+            }
+            if (event.altKey) {
+                showBioCheckReport($(this), d);
                 return;
             }
             if (event.shiftKey) {
@@ -517,6 +559,91 @@ export function showTree(
             }
         }
     }
+
+    function showBioCheckReport(jqClicked, d) {
+        let person = d.data;
+        if (typeof person.bioCheckReport == "undefined" || person.bioCheckReport.length == 0) {
+            return;
+        }
+        const theClickedName = person.getWtId();
+        const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
+        if ($(`#${familyId}`).length) {
+            $(`#${familyId}`).css("z-index", `${AncestorLinesExplorer.nextZLevel++}`).slideToggle();
+            return;
+        }
+
+        const bioReportTable = getBioCheckReportTable(person);
+        bioReportTable.attr("id", familyId);
+        showTable(jqClicked, bioReportTable, 10, 10);
+    }
+
+    function getBioCheckReportTable(person) {
+        const issueWord = person.bioCheckReport.length == 1 ? "issue" : "issues";
+        const bioCheckTable = $(
+            `<div class='bioReport' data-wtid='${person.getWtId()}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
+                `<caption>Bio Check found the following ${issueWord} with the biography of ${person.getDisplayName()}</caption>` +
+                "<tbody><tr><td><ol></ol></td></tr></tbody></table></div>"
+        );
+
+        const ol = bioCheckTable.find("tbody ol");
+        for (const [msg, subLines] of person.bioCheckReport) {
+            let msgLI = $("<li></li>").text(msg);
+            if (subLines && subLines.length > 0) {
+                const subList = $("<ul></ul>");
+                for (const line of subLines) {
+                    subList.append($("<li></li>").text(line));
+                }
+                msgLI = msgLI.append(subList);
+            }
+            ol.append(msgLI);
+        }
+        return bioCheckTable;
+    }
+
+    function showTable(jqClicked, theTable, lOffset, tOffset) {
+        // Attach the table to the container div
+        theTable.prependTo($("#aleContainer"));
+        theTable.draggable();
+        theTable.off("dblclick").on("dblclick", function () {
+            $(this).slideUp();
+        });
+
+        setOffset(jqClicked, theTable, lOffset, tOffset);
+        $(window).resize(function () {
+            if (theTable.length) {
+                setOffset(jqClicked, theTable, lOffset, tOffset);
+            }
+        });
+
+        theTable.css("z-index", `${AncestorLinesExplorer.nextZLevel++}`);
+        theTable.slideDown("slow");
+        theTable
+            .find("x")
+            .off("click")
+            .on("click", function () {
+                theTable.slideUp();
+            });
+        theTable
+            .find("w")
+            .off("click")
+            .on("click", function () {
+                theTable.toggleClass("wrap");
+            });
+    }
+
+    function getOffset(el) {
+        const rect = el.getBoundingClientRect();
+        return {
+            left: rect.left + window.scrollX,
+            top: rect.top + window.scrollY,
+        };
+    }
+
+    function setOffset(theClicked, elem, lOffset, tOffset) {
+        const theClickedOffset = getOffset(theClicked[0]);
+        const theLeft = theClickedOffset.left + lOffset;
+        elem.css({ top: theClickedOffset.top + tOffset, left: theLeft });
+    }
 }
 
 function aColour(n) {
@@ -572,11 +699,12 @@ export const ColourArray = [
 /**
  * Generate text that display when and where the person was born
  */
-function birthString(person) {
-    const date = humanDate(person.getBirthDate());
-    const place = person.getBirthLocation();
+function birthString(person, privatise = false) {
+    const bDate = person.getBirthDate();
+    const date = privatise || !bDate ? person.getBirthDecade() : humanDate(bDate);
+    const place = privatise ? "an undisclosed place" : person.getBirthLocation();
     return `Born: ${date ? `${datePrefix(person._data.DataStatus?.BirthDate)}${date}` : "[date unknown]"} ${
-        place ? `in ${place}` : "[location unknown]"
+        place ? `in ${place}` : "[location not provided]"
     }.`;
 }
 
@@ -604,14 +732,15 @@ function datePrefix(dateStatus) {
 /**
  * Generate text that display when and where the person died
  */
-function deathString(person) {
-    const date = humanDate(person.getDeathDate());
-    const place = person.getDeathLocation();
+function deathString(person, privatise = false) {
     if (person.isLiving()) {
         return "Still living";
     }
+    const dDate = person.getDeathDate();
+    const date = privatise || !dDate ? person.getDeathDecade() : humanDate(dDate);
+    const place = privatise ? "an undisclosed place" : person.getDeathLocation();
     return `Died: ${date ? `${datePrefix(person._data.DataStatus?.DeathDate)}${date}` : "[date unknown]"} ${
-        place ? `in ${place}` : "[location unknown]"
+        place ? `in ${place}` : "[location not provided]"
     }.`;
 }
 

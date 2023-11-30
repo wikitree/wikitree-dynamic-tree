@@ -220,7 +220,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
                             if (this.calledPeople.length === this.people.length) {
                                 this.makeFamilySheet();
-                                //  console.log(this.person_id, WTID);
                                 personDataCache.setPersonData(this.person_id, this.people);
                             }
                         });
@@ -243,7 +242,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             this.setDefaults();
         }
         this.person_id = person_id;
-        console.log("this.person_id", this.person_id);
         this.$container = $(container_selector); // Cache the jQuery object for the container
         $(this.$container).addClass(FamilyGroupAppView.APP_ID);
 
@@ -267,7 +265,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         $(".collapseButton,.sectionCollapseButton,.globalCollapseButton").off().remove();
         $("#familySheetFormTable,#tree,#notesAndSources,#privateQ").remove();
         $("<img id='tree' src='views/familyGroupApp/images/tree.gif'>").appendTo($(this.$container));
-        console.log("this.person_id", this.person_id);
         this.getFamily(this.person_id);
     }
 
@@ -324,7 +321,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 const $thisThing = $(this);
                 const theDate = $thisThing.attr("data-date");
                 const dateStatus = $thisThing.attr("data-date-status");
-                const newDate = this.convertDate(theDate, $this.val(), dateStatus);
+                const newDate = theClass.convertDate(theDate, $this.val(), dateStatus);
                 $thisThing.text(newDate);
             });
             this.storeVal($this);
@@ -352,11 +349,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         this.$container.on("change.fga", "#showBaptism", (e) => {
-            // logging
-            console.log("checkbox changed");
-            console.log("this", this);
             const isChecked = $(e.target).prop("checked");
-
             this.toggleStyle("showBaptism", this.showBaptismRules, isChecked, "#baptChrist");
         });
         this.$container.on("change.fga", "#showBurial", (event) => {
@@ -1008,7 +1001,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
     }
 
     processSubSections(section) {
-        // console.log("Processing section");
         const dummyDiv = $("<div></div>").html(section);
 
         // Function to create a div and return it
@@ -1055,7 +1047,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         });
 
         section = dummyDiv.html();
-        //console.log("Finished processing section");
         return section;
     }
 
@@ -1134,7 +1125,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
         );
 
         fsPerson.BioSections = this.parseWikiText(fsPerson.bio);
-        // console.log("fsPerson.BioSections", fsPerson.BioSections);
 
         // Initialize variables
         fsPerson.BaptismDate = "";
@@ -2078,10 +2068,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     initializePage() {
         // Show or hide 'Tables' label based on the presence of citation tables
-        // console.log("checking for citation tables", $(".citationTable"));
         this.toggleDisplay("#showTablesLabel", !!$("#notesAndSources table").length);
 
-        // console.log("checking for sources", $(".sourceUL"));
         // Show or hide 'Lists' label based on the presence of source lists
         this.toggleDisplay("#showListsLabel", !!$(".citationListContent dl").length);
 
@@ -2175,8 +2163,6 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         this.sortSpouses();
         $("#notesAndSources").remove();
-        console.log(this.people);
-
         this.references = [];
         const isHusbandFirst = $("#husbandFirst").prop("checked");
 
@@ -2436,13 +2422,11 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             $("#notes").removeClass("empty");
 
             this.htmlResearchNotes.forEach((rNote) => {
-                //	console.log(rNote);
                 const thisHeading = $(
                     `<a class='sourcesName' href='https://www.wikitree.com/wiki/${rNote.id}'>${rNote.displayName} <span class='fsWTID'>(${rNote.id})</span></a>`
                 );
                 if (rNote.researchNotes.text().trim() !== "") {
                     rNote.researchNotes.prepend(thisHeading);
-
                     notesAndSources.find("#notesNotes").append(rNote.researchNotes);
                 }
             });
@@ -2468,14 +2452,10 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             const isTextarea = $this.prop("tagName") === "TEXTAREA";
             const isCaption = $this.parent().prop("tagName") === "CAPTION";
 
-            console.log("Processing element:", $this, "Is Textarea:", isTextarea, "Is Caption:", isCaption);
-
             let newValue = $this.val();
-            console.log("New value:", newValue);
 
             // Check for unsafe "script" tags
             if (!/script/i.test(newValue)) {
-                console.log("Value is safe. Updating content.");
                 if (isTextarea || isCaption) {
                     $this.parent().html(theClass.nl2br(newValue));
                 } else {
@@ -2489,10 +2469,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             }
 
             $this.remove();
-            console.log("Element removed.");
         });
-
-        console.log("closeInputs completed");
     }
 
     setBaptChrist() {

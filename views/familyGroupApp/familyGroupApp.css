@@ -317,10 +317,7 @@ th.bioHeading {
   font-weight: bold;
   margin-left: 1em;
   cursor: pointer;
-} /*
-  #view-container.familyGroupApp .theBio dd{
-     font-weight:bold; 
-  }*/
+}
 #view-container.familyGroupApp .theBio dd dl dd {
   font-weight: normal;
 }
@@ -608,6 +605,9 @@ body.app header {
   font-weight: normal;
   padding-right: 0.5em;
 }
+#view-container.familyGroupApp div.theBio table {
+  max-width: 765px;
+}
 #view-container.familyGroupApp th span.bioHeading {
   font-weight: bold;
   cursor: pointer;
@@ -676,8 +676,8 @@ body.app header {
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 10px solid black; /* Triangle pointing down */
-  transition: transform 0.3s ease; /* Add this line */
+  border-top: 10px solid #25422d; /* Triangle pointing down */
+  transition: transform 0.3s ease;
 }
 
 #view-container.familyGroupApp .rotated {

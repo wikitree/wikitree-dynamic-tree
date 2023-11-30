@@ -7,6 +7,40 @@ window.DescendantsView = class DescendantsView extends View {
         };
     }
 
+    close() {
+        // Another view is about to be activated, retore the original overflow value of view-container
+        $("#view-container").css("overflow", "auto");
+        $("body").removeClass("descendants");
+
+        function removeEventListeners() {
+            const container_selector = "#view-container";
+            for (let key of ["Childless", "WTID", "Aboville", "Dates", "Spouses"]) {
+                $(container_selector).off("click", `#show${key}`);
+            }
+            $(container_selector).off("click", "#showBios");
+            $(container_selector).off("click", "#checkboxIndicator");
+            $(container_selector).off("click", "#showHelp,#closeHelp");
+            $(container_selector).off("click", "li");
+            $(document).off("click", ".profileLink");
+            $(container_selector).off("click", ".load-more");
+            $(container_selector).off("change click", "#generationSelect");
+            $(container_selector).off("click", "#excelOut");
+            $(container_selector).off("click", "#showPlaces");
+            $(container_selector).off("click", ".collapse");
+            $(container_selector).off("click", "a.switch");
+            $(container_selector).off("click", "#xButton");
+            $(container_selector).off("click", "#yButton");
+            $(container_selector).off("click", "#mtButton");
+            $(container_selector).off("click", ".moreDetailsEye");
+            $(container_selector).off("click", "#downloadCSV");
+            $(container_selector).off("click", ".highlightCheckbox");
+            $(container_selector).off("change", "#dateFormatSelect,#dateDataStatusSelect");
+            $("#remove").off("click");
+        }
+
+        removeEventListeners();
+    }
+
     init(container_selector, person_id) {
         window.descendantsSettings = {
             dateFormat: localStorage.getItem("descendantsDateFormat") || "ISO",
@@ -482,11 +516,6 @@ window.DescendantsView = class DescendantsView extends View {
         });
 
         $("#view-container").css("overflow", "inherit");
-
-        $(container_selector).off("change", "#view-select");
-        $("#view-select").on("change", function (e) {
-            $("#view-container").css("overflow", "auto");
-        });
     }
 }
 
