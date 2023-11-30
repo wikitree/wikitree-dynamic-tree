@@ -1,3 +1,5 @@
+import { Utils } from "../shared/Utils";
+
 window.StatsView = class StatsView extends View {
     static #helpText = `
     <xx>[ x ]</xx>
@@ -144,7 +146,7 @@ window.StatsView = class StatsView extends View {
         gatherStats(person_id);
 
         async function gatherStats(id) {
-            window.StatsView.showShakingTree();
+            Utils.showShakingTree();
 
             GENERATIONS = $("#generations").val();
             if ($("#ancestor").is(":checked")) {
@@ -378,7 +380,7 @@ window.StatsView = class StatsView extends View {
                     avgSiblingsCounts: avgSiblingsCounts,
                 });
 
-                window.StatsView.hideShakingTree();
+                Utils.hideShakingTree();
             }
 
             // sort birth years by earliest to latest
@@ -622,26 +624,5 @@ window.StatsView = class StatsView extends View {
         function sortByYear(a, b) {
             return a - b;
         }
-    }
-
-    static showShakingTree(callback) {
-        if ($("#tree").length) {
-            $("#tree").slideDown("fast", "swing", callback);
-        } else {
-            const treeGIF = $("<img id='tree' src='./views/cc7/images/tree.gif'>");
-            treeGIF.appendTo("#statsContainer");
-            $("#tree").css({
-                "display": "block",
-                "margin": "auto",
-                "height": "50px",
-                "width": "50px",
-                "border-radius": "50%",
-                "border": "3px solid forestgreen",
-            });
-        }
-    }
-
-    static hideShakingTree() {
-        $("#tree").slideUp("fast");
     }
 };

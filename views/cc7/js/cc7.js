@@ -11,7 +11,7 @@ import { BioCheckPerson } from "../../../lib/biocheck-api/src/BioCheckPerson.js"
 import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
 import { PeopleTable } from "./PeopleTable.js";
 import { Settings } from "./Settings.js";
-import { Utils } from "./Utils.js";
+import { Utils } from "../../shared/Utils.js";
 
 export class CC7 {
     static LONG_LOAD_WARNING =

@@ -1,6 +1,7 @@
 import { AncestorTree } from "./ancestor_tree.js";
 import { showTree } from "./display.js";
 import { Lang } from "./lang.js";
+import { Utils } from "../../lib/shared/Utils.js";
 
 export class AncestorLinesExplorer {
     static #COOKIE_NAME = "wt_ale_options";
@@ -569,10 +570,10 @@ export class AncestorLinesExplorer {
         AncestorTree.clear();
         wtViewRegistry.clearStatus();
         AncestorLinesExplorer.clearDisplay();
-        AncestorLinesExplorer.showShakingTree();
+        Utils.showShakingTree();
         const nrGenerations = $("#generation").val();
         const theRoot = await AncestorLinesExplorer.retrieveAncestorsFromWT(wtId, nrGenerations);
-        AncestorLinesExplorer.hideShakingTree();
+        Utils.hideShakingTree();
         if (theRoot) {
             AncestorLinesExplorer.findPathsAndDrawTree(event);
         }
@@ -698,7 +699,7 @@ export class AncestorLinesExplorer {
         }
         wtViewRegistry.clearStatus();
         AncestorLinesExplorer.clearDisplay();
-        AncestorLinesExplorer.showShakingTree();
+        Utils.showShakingTree();
 
         const reader = new FileReader();
         reader.onload = async function (e) {
@@ -707,12 +708,12 @@ export class AncestorLinesExplorer {
             try {
                 people = JSON.parse(contents);
             } catch (error) {
-                AncestorLinesExplorer.hideShakingTree();
+                Utils.hideShakingTree();
                 console.error(`The input file is not valid: ${error}`);
                 return;
             }
             AncestorTree.replaceWith(people);
-            AncestorLinesExplorer.hideShakingTree();
+            Utils.hideShakingTree();
             $(wtViewRegistry.WT_ID_TEXT).val(AncestorTree.root.getWtId());
             const maxGen = Math.min(AncestorTree.maxGeneration, 20);
             $("#generation").val(maxGen);
@@ -723,40 +724,9 @@ export class AncestorLinesExplorer {
         try {
             reader.readAsText(file);
         } catch (error) {
-            AncestorLinesExplorer.hideShakingTree();
+            Utils.hideShakingTree();
             console.error(`The input file is not valid: ${error}`);
         }
-    }
-
-    static showShakingTree() {
-        if ($("#tree").length) {
-            $("#tree").slideDown();
-        } else {
-            const treeGIF = $("<img id='tree' src='./views/ancestorLines/tree.gif'>");
-            treeGIF.prependTo("#svgContainer");
-            $("#tree").css({
-                "display": "block",
-                "margin": "auto",
-                "height": "50px",
-                "width": "50px",
-                "border-radius": "50%",
-                "border": "3px solid forestgreen",
-                "position": "relative",
-                "top": "0",
-            });
-        }
-    }
-
-    static hideShakingTree() {
-        $("#tree").slideUp();
-    }
-
-    static getCookie(name) {
-        return WikiTreeAPI.cookie(name) || null;
-    }
-
-    static setCookie(cookieName, value) {
-        return WikiTreeAPI.cookie(cookieName, value, { expires: 365 });
     }
 
     static saveOptionCookies() {
@@ -781,11 +751,11 @@ export class AncestorLinesExplorer {
             anonLiving: document.getElementById("anonLiving").checked,
         };
         // console.log(`Saving options ${JSON.stringify(options)}`);
-        AncestorLinesExplorer.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
+        Utils.setCookie(AncestorLinesExplorer.#COOKIE_NAME, JSON.stringify(options));
     }
 
     static retrieveOptionsFromCookie() {
-        const optionsJson = AncestorLinesExplorer.getCookie(AncestorLinesExplorer.#COOKIE_NAME);
+        const optionsJson = Utils.getCookie(AncestorLinesExplorer.#COOKIE_NAME);
         // console.log(`Retrieved options ${optionsJson}`);
         if (optionsJson) {
             const opt = JSON.parse(optionsJson);

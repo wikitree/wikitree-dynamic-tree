@@ -1,7 +1,7 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
 import { Settings } from "./Settings.js";
-import { Utils } from "./Utils.js";
+import { Utils } from "../../shared/Utils.js";
 
 export class PeopleTable {
     static EXCEL = "xlsx";

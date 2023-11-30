@@ -1,4 +1,4 @@
-import { Utils } from "./Utils.js";
+import { Utils } from "../../shared/Utils.js";
 
 export class Settings {
     static APP_ID = "CC7";
