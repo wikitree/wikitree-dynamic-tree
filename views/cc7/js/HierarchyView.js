@@ -1,3 +1,4 @@
+import { CC7Utils } from "./Utils.js";
 import { Utils } from "../../shared/Utils.js";
 
 export class HierarchyView {
@@ -13,15 +14,15 @@ export class HierarchyView {
 
         const aPerson = window.people.get(window.rootId);
         const aName = new PersonName(aPerson);
-        const theName = Utils.formDisplayName(aPerson, aName);
+        const theName = CC7Utils.formDisplayName(aPerson, aName);
         const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
         const theLNAB = theParts.get("LastNameAtBirth");
         const theFirstName = theParts.get("FirstName");
-        const linkName = Utils.htmlEntities(aPerson.Name);
+        const linkName = CC7Utils.htmlEntities(aPerson.Name);
         const anLi = $(
             `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Meta.Degrees}' ` +
                 `data-name=\"${aPerson.Name}\" data-first-name='${theFirstName}'>${aPerson.Meta.Degrees}° ` +
-                Utils.profileLink(linkName, theName) +
+                CC7Utils.profileLink(linkName, theName) +
                 "<ul></ul></li>"
         );
         hierarchySection.children("ul").append(anLi);
@@ -33,12 +34,12 @@ export class HierarchyView {
             if ($(this).find("ul li").length) {
                 aButton = $("<button class='toggler'>+</button>");
                 $(this).prepend(aButton);
-                Utils.showMissingCounts(aButton);
+                CC7Utils.showMissingCounts(aButton);
                 aButton.on("click", function (e) {
                     e.preventDefault();
                     $(this).parent().children("ul").toggle();
                     $(this).text($(this).text() == "+" ? "−" : "+");
-                    Utils.showMissingCounts($(this));
+                    CC7Utils.showMissingCounts($(this));
                 });
             } else {
                 aButton = $("<button class='nonToggler'></button>");
@@ -143,36 +144,36 @@ export class HierarchyView {
             const aPerson = window.people.get(+id);
 
             if (aPerson) {
-                Utils.assignRelationshipsFor(aPerson);
+                CC7Utils.assignRelationshipsFor(aPerson);
                 const familyMembers = [].concat(aPerson.Parent, aPerson.Sibling, aPerson.Spouse, aPerson.Child);
 
                 familyMembers.forEach(function (aMember) {
-                    Utils.addMissingBits(aMember);
+                    CC7Utils.addMissingBits(aMember);
 
                     if (thisLI.closest('li[data-name="' + aMember.Name + '"]').length == 0) {
                         const theDegree = aMember.Meta.Degrees;
                         if (theDegree > aPerson.Meta.Degrees) {
                             const aName = new PersonName(aMember);
-                            const theName = Utils.formDisplayName(aMember, aName);
+                            const theName = CC7Utils.formDisplayName(aMember, aName);
                             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
                             const theLNAB = theParts.get("LastNameAtBirth");
                             const theFirstName = theParts.get("FirstName");
 
                             let relation = aMember.Relation;
                             if (relation == "Child") {
-                                relation = Utils.mapGender(aMember.Gender, "Son", "Daughter", "Child");
+                                relation = CC7Utils.mapGender(aMember.Gender, "Son", "Daughter", "Child");
                             } else if (relation == "Sibling") {
-                                relation = Utils.mapGender(aMember.Gender, "Brother", "Sister", "Sibling");
+                                relation = CC7Utils.mapGender(aMember.Gender, "Brother", "Sister", "Sibling");
                             } else if (relation == "Parent") {
-                                relation = Utils.mapGender(aMember.Gender, "Father", "Mother", "Parent");
+                                relation = CC7Utils.mapGender(aMember.Gender, "Father", "Mother", "Parent");
                             } else if (relation == "Spouse") {
-                                relation = Utils.mapGender(aMember.Gender, "Husband", "Wife", "Spouse");
+                                relation = CC7Utils.mapGender(aMember.Gender, "Husband", "Wife", "Spouse");
                             }
 
-                            const missing = Utils.missingThings(aMember);
+                            const missing = CC7Utils.missingThings(aMember);
                             const missingBit = missing.missingBit;
                             const missingIcons = missing.missingIcons;
-                            const linkName = Utils.htmlEntities(aMember.Name);
+                            const linkName = CC7Utils.htmlEntities(aMember.Name);
                             const bdDates = HierarchyView.displayDates(aMember);
                             const anLi = $(
                                 `<li data-birth-date='${aMember.BirthDate}' data-father='${aMember.Father}' ` +
@@ -180,7 +181,7 @@ export class HierarchyView {
                                     `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Meta.Degrees}' ` +
                                     `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Meta.Degrees}° ` +
                                     `<span class='relation ${relation}'>${relation}</span>: ` +
-                                    Utils.profileLink(linkName, theName) +
+                                    CC7Utils.profileLink(linkName, theName) +
                                     ` <span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
                             );
                             thisLI.children("ul").append(anLi);
