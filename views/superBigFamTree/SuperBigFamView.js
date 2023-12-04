@@ -262,7 +262,9 @@
     SuperBigFamView.zoomCounter = 0;
 
     SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
-    SuperBigFamView.linesATC = []; // the Lines (connectors) Air Traffic Controller
+    SuperBigFamView.HlinesATC = []; // the Horizontal Lines (connectors) Air Traffic Controller
+    SuperBigFamView.VlinesATC = []; // the Vertical Lines (drop lines) Air Traffic Controller
+    SuperBigFamView.VlinesATCpeep = []; // the Vertical Lines (drop lines) Air Traffic Controller - PEEP array - for debugging purposes
 
     SuperBigFamView.currentPopupID = -1; // place to hold the most recent person's ID that you used for a PopUp (so you can toggle it off and on if you click the same person twice in a row)
     SuperBigFamView.chunksWithInLawsArray = []; // array to hold the list of all current CHUNKS that end with IL so that we can space out the Super Big Fam chart nicely - not too crowded, but not too spaced out
@@ -2050,6 +2052,10 @@
 
         let linesDIV = document.getElementById("theConnectors");
 
+        SuperBigFamView.HlinesATC = [];
+        SuperBigFamView.VlinesATC = [];
+        SuperBigFamView.VlinesATCpeep = [];        
+
         linesDIV.innerHTML =
             (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
                 ? drawBoxesAround()
@@ -2701,7 +2707,9 @@
             return "";
         }
 
-        SuperBigFamView.linesATC = [];
+        // SuperBigFamView.HlinesATC = [];
+        // SuperBigFamView.VlinesATC = [];        
+        // SuperBigFamView.VlinesATCpeep = [];        
 
         let ancLinesSVG = drawLinesForFamilyOf("A0", "R", 0); // nuclear family around A0
         if (showSiblings == 0) {
@@ -2781,6 +2789,127 @@
         return cuzLinesSVG;
     }
 
+    SuperBigFamView.VlinesATCpeep = [];
+    function checkDropLineXwithATC(thisY, bigDropX, kidXsArray, thisLeaf) {
+        let hasChanged = false;
+        condLog("checkDropLineXwithATC",thisY, bigDropX, kidXsArray, thisLeaf.Who);
+        if (thisY == 0) {
+            return {hasChanged:false};
+        }
+        if (SuperBigFamView.VlinesATC[thisY]) {
+            // NOT the first rodeo at this Y value (Y value of the parent, where the bigDrop originates from)
+            if (
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 3) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 2) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 1) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX - 3) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX - 2) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX - 1) == -1
+            ) {
+                SuperBigFamView.VlinesATC[thisY].push(bigDropX);
+                SuperBigFamView.VlinesATCpeep[thisY].push({ x: bigDropX, y:thisY, leaf: thisLeaf.Who, code: thisLeaf.Code });
+            } else {
+                condLog(
+                    "WE HAVE A DROP LINE CONFLICT HERE !",
+                    thisLeaf,
+                    thisY,
+                    bigDropX,
+                    kidXsArray,
+                    SuperBigFamView.VlinesATC
+                );
+                let conflictingPeepIndex = SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX);
+                condLog(
+                    "Location # ",
+                    conflictingPeepIndex,
+                    SuperBigFamView.VlinesATC[thisY][conflictingPeepIndex],
+                    SuperBigFamView.VlinesATCpeep[thisY][conflictingPeepIndex]
+                );
+
+                if (
+                    SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 0) == -1 &&
+                    SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 3) == -1 &&
+                    SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 2) == -1 &&
+                    SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 1) == -1 
+                ) {
+                    // CONFLICT is NOT to the RIGHT ... so, we can safely add 10 pixels to that side to avoid the run on
+                    bigDropX += 10;
+                } else {
+                    // CONFLICT is ON THE RIGHT ... so, we should be able to safely subtract 10 pixels to that side to avoid the run on
+                    bigDropX -= 10;
+                }
+                hasChanged = true;
+                SuperBigFamView.VlinesATC[thisY].push(bigDropX);
+                SuperBigFamView.VlinesATCpeep[thisY].push({
+                    x: bigDropX,
+                    y: thisY,
+                    leaf: thisLeaf.Who,
+                    code: thisLeaf.Code,
+                });
+                
+            } 
+
+        } else {
+            // First entry at this generation
+            SuperBigFamView.VlinesATC[thisY] = [bigDropX];
+            SuperBigFamView.VlinesATCpeep[thisY] = [{x:bigDropX, y:thisY, leaf:thisLeaf.Who, code:thisLeaf.Code}];
+            
+        }
+
+        // CHECK THE KIDS X values now !
+        for (let k = 0; k  < kidXsArray.length; k++) {
+            let kidX = kidXsArray[k]   ;
+            if (
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 1) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 2) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 3) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX - 1) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX - 2) == -1 &&
+                SuperBigFamView.VlinesATC[thisY].indexOf(kidX - 3) == -1
+            ) {
+                SuperBigFamView.VlinesATC[thisY].push(kidX);
+            } else {
+                if (kidX == bigDropX) {
+                    // condLog("NO PROBLEM - we have a KID and its PARENT drop line at the same X location - super coolio");
+                } else {
+                    condLog(
+                        "WE HAVE A DROP LINE CONFLICT HERE with a KID !",
+                        thisY,
+                        kidX,
+                        SuperBigFamView.VlinesATC
+                    );
+
+                    if (
+                        SuperBigFamView.VlinesATC[thisY].indexOf(kidX) == -1 &&
+                        SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 1) == -1 &&
+                        SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 2) == -1 &&
+                        SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 3) == -1
+                    ) {
+                        // CONFLICT is NOT to the RIGHT ... so, we can safely add 10 pixels to that side to avoid the run on
+                        kidX += 10;
+                        
+                    } else {
+                        // CONFLICT is ON THE RIGHT ... so, we should be able to safely subtract 10 pixels to that side to avoid the run on
+                        kidX -= 10;
+                    }
+
+                    hasChanged = true;
+                    kidXsArray[k] = kidX;
+                    SuperBigFamView.VlinesATC[thisY].push(kidX);
+                    SuperBigFamView.VlinesATCpeep[thisY].push({
+                        x: kidX,
+                        y: thisY,
+                        leaf: thisLeaf.Who + "'s kid",
+                        code: thisLeaf.Code + "_K",
+                    });
+                }
+            }         
+        }     
+        
+        return { hasChanged: hasChanged, centre: bigDropX, kids: kidXsArray };
+    }
+
     function checkCrossBarYwithATC(theY, minX, maxX) {
         let doLoop = true;
         let loopCounter = 0;
@@ -2791,10 +2920,10 @@
             doLoop = false; // start off assuming there will be no collisions
             loopCounter++;
             // condLog("testing Y = ", thisY);
-            if (SuperBigFamView.linesATC[thisY]) {
+            if (SuperBigFamView.HlinesATC[thisY]) {
                 // do the check now
-                for (let c = 0; doLoop == false && c < SuperBigFamView.linesATC[thisY].length; c++) {
-                    const pts = SuperBigFamView.linesATC[thisY][c];
+                for (let c = 0; doLoop == false && c < SuperBigFamView.HlinesATC[thisY].length; c++) {
+                    const pts = SuperBigFamView.HlinesATC[thisY][c];
                     if (pts.min < minX && minX < pts.max) {
                         doLoop = true;
                         // condLog("Conflict with [", pts.min, pts.max, "] and ", minX);
@@ -2819,10 +2948,10 @@
                     thisY -= 40;
                 } else {
                     // yay - we're out of this endless loop ... so let's record where we ended up into the Air Traffic Controller, and move on
-                    SuperBigFamView.linesATC[thisY].push({ min: minX, max: maxX });
+                    SuperBigFamView.HlinesATC[thisY].push({ min: minX, max: maxX });
                 }
             } else {
-                SuperBigFamView.linesATC[thisY] = [{ min: minX, max: maxX }];
+                SuperBigFamView.HlinesATC[thisY] = [{ min: minX, max: maxX }];
             }
         }
         // condLog("OK with ", thisY);
@@ -2841,6 +2970,7 @@
         let doingDirectAncestorCode = "";
         let numPrimaryChildren = primaryChildren.length;
         let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
+        let foundChildWithNoCoParent = false;
         if (clrNum == -1) {
             clrNum = levelNum;
         }
@@ -2940,6 +3070,16 @@
         );
 
         let doNotDisplaySpousesList = [];
+        for (let k = 0; !foundChildWithNoCoParent && k < primaryLeafPerson._data.Children.length; k++) {
+            if (primaryLeafPerson._data.Children[k].coParent == 0) {
+                foundChildWithNoCoParent = true;
+            }
+        }
+        if (foundChildWithNoCoParent==true) {
+            doNotDisplaySpousesList.push(0);
+        }
+
+        
         for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
             // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
 
@@ -3057,7 +3197,7 @@
                     childrenXs.push(kidLeaf.x);
                 }
             }
-
+                        
             // condLog(
             //     "FOUND actually ",
             //     childrenXs.length,
@@ -3116,6 +3256,20 @@
 
             childrenMinX = Math.min(childrenMinX, centreX);
             childrenMaxX = Math.max(childrenMaxX, centreX);
+
+            let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+            if (checkResult.hasChanged) {
+                centreX = checkResult.centre;
+                childrenXs = checkResult.kids;
+                childrenMinX = centreX;
+                childrenMaxX = centreX;
+                for (let ch = 0; ch < childrenXs.length; ch++) {
+                    childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
+                    childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
+                }
+            }
+
+
             let crossBarY = checkCrossBarYwithATC(childrenY - 130 - (sp + levelNum) * 30, childrenMinX, childrenMaxX);
 
             let tBarVertLine =
@@ -3283,6 +3437,19 @@
 
             childrenMinX = Math.min(childrenMinX, centreX);
             childrenMaxX = Math.max(childrenMaxX, centreX);
+
+             let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+             if (checkResult.hasChanged) {
+                 centreX = checkResult.centre;
+                 childrenXs = checkResult.kids;
+                 childrenMinX = centreX;
+                 childrenMaxX = centreX;
+                 for (let ch = 0; ch < childrenXs.length; ch++) {
+                     childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
+                     childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
+                 }
+             }
+
             let crossBarY = checkCrossBarYwithATC(childrenY - 130 - levelNum * 30, childrenMinX, childrenMaxX);
 
             let tBarVertLine =
@@ -3330,7 +3497,7 @@
             if (childrenXs.length > 0) {
                 allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
             }
-        } else if (doNotDisplaySpousesList.length > 0) {
+        }  else if (doNotDisplaySpousesList.length > 0) {
             condLog("INSERT DRAWING LINES TO KIDS ROUTINE HERE :")
 
             for (let dnd = 0; dnd< doNotDisplaySpousesList.length; dnd++) {
@@ -3338,7 +3505,10 @@
              
                 condLog("drawLinesForFamilyOf - DO NOT DISPLAY PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ", code);
 
-                let drawColour = "teal";
+                let drawColour = "orange";
+                if (dndSpouseID == 0) {
+                    drawColour = "chocolate";
+                }
 
                 let childrenXs = [];
                 let childrenY = 0;
@@ -3352,11 +3522,12 @@
 
                 const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
 
-                // condLog("PRIMARY CHILDREN : ", primaryChildren);
+                condLog("PRIMARY CHILDREN : ", numPrimaryChildren);
                 // for (let ch = 0; ch < primaryChildren.length; ch++) {
                 for (let ch = 0; ch < numPrimaryChildren; ch++) {
                     let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + make2Digit(ch + 1)];
                     if (kidLeaf) {
+                        condLog("kidLeaf:",kidLeaf);
                         if (!kidLeaf["x"]) {
                             if (kidLeaf["x"] === 0) {
                                 kidLeaf["x"] = 1;
@@ -3368,14 +3539,17 @@
                         }
 
                         const kid = thePeopleList[kidLeaf.Id];
-                        // condLog("kid " + ch, kid._data.Father, kid._data.Mother, primarySpouseID, kid);
+                        condLog("kid " + ch, kid._data.Father, kid._data.Mother, dndSpouseID, kid);
 
                         if (
-                            kid &&
-                            ((kid._data.Father && kid._data.Father == dndSpouseID) ||
-                                (kid._data.Mother && kid._data.Mother == dndSpouseID)) &&
-                            ((kid._data.Father && kid._data.Father == primaryLeaf.Id) ||
-                                (kid._data.Mother && kid._data.Mother == primaryLeaf.Id))
+                            (kid && dndSpouseID == 0 && (kid._data.Father == 0 || kid._data.Mother == 0)) ||
+                            (kid && dndSpouseID > 0
+                                     && (
+                                        (kid._data.Father && kid._data.Father == dndSpouseID) ||
+                                            (kid._data.Mother && kid._data.Mother == dndSpouseID)
+                                    ) &&
+                                ((kid._data.Father && kid._data.Father == primaryLeaf.Id) ||
+                                    (kid._data.Mother && kid._data.Mother == primaryLeaf.Id)))
                         ) {
                             // let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + (ch + 1)];
                             // condLog("kidLeaf:", childPrefix + (ch + 1), kidLeaf, childrenMinX, kidLeaf.x, childrenMaxX);
@@ -3400,7 +3574,18 @@
                 // );
                 if (doingDirectAncestorCode > "") {
                     let kidLeaf = SuperBigFamView.theLeafCollection[code];
+                    condLog("DOING Direct Ancestor:", kidLeaf)
                     if (kidLeaf) {
+                        // NEED to add CHECK for Direct Ancestor that they REALLY belong here ...
+                        // i.e. .. they have a parent == 0 (i.e. single parent family)
+                        // OR ... they have a parent on the no-fly-zone list  (and since 0 would be added to the list, we only have to do one check)
+
+                        let OKtoDrawLine = false;
+                        const thisKid = thePeopleList[kidLeaf.Id];
+                        if (doNotDisplaySpousesList.indexOf(thisKid._data.Mother) > -1 || doNotDisplaySpousesList.indexOf(thisKid._data.Father) > -1) {
+                            OKtoDrawLine = true;
+                        }
+
                         if (childrenXs.length == 0) {
                             childrenMinX = kidLeaf.x;
                             childrenMaxX = kidLeaf.x;
@@ -3409,7 +3594,9 @@
                             childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
                         }
                         childrenY = kidLeaf.y;
-                        childrenXs.push(kidLeaf.x);
+                        if (OKtoDrawLine){ 
+                            childrenXs.push(kidLeaf.x);
+                        }
                     }
                 }
 
@@ -3457,6 +3644,19 @@
 
                 childrenMinX = Math.min(childrenMinX, centreX);
                 childrenMaxX = Math.max(childrenMaxX, centreX);
+
+                 let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+                 if (checkResult.hasChanged) {
+                     centreX = checkResult.centre;
+                     childrenXs = checkResult.kids;
+                     childrenMinX = centreX;
+                     childrenMaxX = centreX;
+                     for (let ch = 0; ch < childrenXs.length; ch++) {
+                         childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
+                         childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
+                     }
+                 }
+
                 let crossBarY = checkCrossBarYwithATC(childrenY - 130 - levelNum * 30, childrenMinX, childrenMaxX);
 
                 let tBarVertLine =
@@ -6496,7 +6696,8 @@
 
         // RESET some defaults
         SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
-        SuperBigFamView.linesATC = []; // the Lines (connectors) Air Traffic Controller
+        SuperBigFamView.HlinesATC = []; // the Horiz Lines (connectors) Air Traffic Controller
+        SuperBigFamView.VlinesATC = []; // the Vert Lines (connectors) Air Traffic Controller
         // SuperBigFamView.myAhnentafel = new AhnenTafel.Ahnentafel();
         // SuperBigFamView.theAncestors = [];
         // SuperBigFamView.XAncestorList = [];
