@@ -2792,6 +2792,7 @@
     SuperBigFamView.VlinesATCpeep = [];
     function checkDropLineXwithATC(thisY, bigDropX, kidXsArray, thisLeaf) {
         let hasChanged = false;
+        bigDropX = Math.round(bigDropX);
         condLog("checkDropLineXwithATC",thisY, bigDropX, kidXsArray, thisLeaf.Who);
         if (thisY == 0) {
             return {hasChanged:false};
@@ -2959,7 +2960,7 @@
     }
 
     function drawLinesForFamilyOf(code, kidPrefix = "", levelNum = 0, clrNum = -1) {
-        condLog("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
+        // condLog("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
         let primaryLeaf = SuperBigFamView.theLeafCollection[code];
         if (!primaryLeaf) {
             return;
@@ -2985,7 +2986,7 @@
                 primaryChildren = tempLeafPerson._data.Siblings;
                 numPrimaryChildren = primaryChildren.length + 1;
             } else if (kidPrefix.substring(kidPrefix.length - 1) == "R") {
-                // condLog("WANT TO CONNECT PARENTS & SIBLINGS TO THIS ANCESTOR: ", code);
+                // condLog("WANT TO CONNECT PARENTS & FULL SIBLINGS TO THIS ANCESTOR: ", code);
                 let extraChildren = 0;
                 let origPrimaryLeafPerson = primaryLeafPerson;
 
@@ -3058,7 +3059,7 @@
         }
 
         let allLinesPolySVG = "";
-        let spouseColours = ["blue", "red", "darkgreen", "chocolate", "indigo", "darkorange", "navy"];
+        let spouseColours = ["blue", "red", "darkgreen", "brown", "indigo", "darkorange", "navy"];
 
         condLog(
             "drawLinesForFamilyOf : GO TIME (Spouses, Siblings, Children) ...\n",
@@ -3076,7 +3077,12 @@
             }
         }
         if (foundChildWithNoCoParent==true) {
-            doNotDisplaySpousesList.push(0);
+            if(primaryLeafPerson._data.Gender == "Male") {
+                doNotDisplaySpousesList.push(-1);
+            } else  {
+                doNotDisplaySpousesList.push(-2);
+            }
+
         }
 
         
@@ -3503,11 +3509,17 @@
             for (let dnd = 0; dnd< doNotDisplaySpousesList.length; dnd++) {
                 const dndSpouseID = doNotDisplaySpousesList[dnd];
              
-                condLog("drawLinesForFamilyOf - DO NOT DISPLAY PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ", code);
+                condLog(
+                    "drawLinesForFamilyOf - DO NOT DISPLAY PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ",
+                    code,
+                    dndSpouseID
+                );
 
                 let drawColour = "orange";
-                if (dndSpouseID == 0) {
-                    drawColour = "chocolate";
+                if (dndSpouseID == -1) {
+                    drawColour = "blue";
+                } else if (dndSpouseID == -2) {
+                    drawColour = "deeppink";
                 }
 
                 let childrenXs = [];
@@ -3522,7 +3534,7 @@
 
                 const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
 
-                condLog("PRIMARY CHILDREN : ", numPrimaryChildren);
+                condLog("# PRIMARY CHILDREN : ", numPrimaryChildren);
                 // for (let ch = 0; ch < primaryChildren.length; ch++) {
                 for (let ch = 0; ch < numPrimaryChildren; ch++) {
                     let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + make2Digit(ch + 1)];
@@ -3542,7 +3554,8 @@
                         condLog("kid " + ch, kid._data.Father, kid._data.Mother, dndSpouseID, kid);
 
                         if (
-                            (kid && dndSpouseID == 0 && (kid._data.Father == 0 || kid._data.Mother == 0)) ||
+                            (kid && dndSpouseID == -1 && kid._data.Mother == 0 ) ||
+                            (kid && dndSpouseID == -2 && kid._data.Father == 0 ) ||
                             (kid && dndSpouseID > 0
                                      && (
                                         (kid._data.Father && kid._data.Father == dndSpouseID) ||
@@ -3582,8 +3595,14 @@
 
                         let OKtoDrawLine = false;
                         const thisKid = thePeopleList[kidLeaf.Id];
-                        if (doNotDisplaySpousesList.indexOf(thisKid._data.Mother) > -1 || doNotDisplaySpousesList.indexOf(thisKid._data.Father) > -1) {
+                        if (
+                            (thisKid && dndSpouseID == -1 && thisKid._data.Mother == 0) ||
+                            (thisKid && dndSpouseID == -2 && thisKid._data.Father == 0) ||
+                            doNotDisplaySpousesList.indexOf(thisKid._data.Mother) > -1 ||
+                            doNotDisplaySpousesList.indexOf(thisKid._data.Father) > -1
+                        ) {
                             OKtoDrawLine = true;
+                            condLog("OKtoDrawLIne !! YES");
                         }
 
                         if (childrenXs.length == 0) {
@@ -3645,7 +3664,10 @@
                 childrenMinX = Math.min(childrenMinX, centreX);
                 childrenMaxX = Math.max(childrenMaxX, centreX);
 
-                 let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+                condLog("checkDropLineXwithATC",childrenY, centreX, childrenXs, primaryLeaf);
+                let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+                condLog("checkResult:",checkResult);
+
                  if (checkResult.hasChanged) {
                      centreX = checkResult.centre;
                      childrenXs = checkResult.kids;
@@ -3701,7 +3723,13 @@
                         `" stroke-width="3"/>`;
                 }
                 // condLog(dropLines);
-                if (childrenXs.length > 0) {
+                if (childrenXs.length > 0/*  && kidPrefix != "R" */) {
+                    condLog(
+                        "DRAWING non-traditional family lines using colour:",
+                        drawColour,
+                        "for " + childrenXs.length + " kids",
+                        "childrenMaxX: " + childrenMaxX
+                    );
                     allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
                 }
             }
@@ -7640,7 +7668,7 @@
         // condLog("type of dontAddIDsList is:", typeof dontAddIDsList);
         for (let dont = 0; dont < dontAddIDsList.length; dont++) {
             const element = dontAddIDsList[dont];
-            if (typeof element === "object") {
+            if (typeof element === "object" && element && element.length) {
                 for (let index = 0; index < element.length; index++) {
                     const item = element[index];
                     if (theObjId == item) {
@@ -7652,7 +7680,7 @@
             } else {
                 if (theObjId == element) {
                     return true;
-                } else if (element.Id && theObjId == element.Id) {
+                } else if (element && element.Id && theObjId == element.Id) {
                     return true;
                 }
             }
@@ -8717,7 +8745,7 @@
                 theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
             }
 
-            if (leafObject.x || leafObject.x === 0) {
+            if (!isNaN(leafObject.x) || leafObject.x === 0) {
                 newX = leafObject.x;
             } else {
                 newX = Math.round(2000 * Math.random()) - 1000;
