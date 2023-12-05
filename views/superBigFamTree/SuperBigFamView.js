@@ -137,10 +137,10 @@
     let font4Name = "Arial";
     let font4Info = "Arial";
 
-    const FullAppName = "Super Big Family Tree app";
+    const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "2 December 2023";
+    const AboutUpdateDate = "5 December 2023";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -662,7 +662,7 @@
 
     SuperBigFamView.prototype.meta = function () {
         return {
-            title: "Super Big Family Tree",
+            title: "Super Tree",
             description: "Click on the tree and use your mouse wheel to zoom. Click and drag to pan around.",
             docs: "https://www.WikiTree.com/wiki/Dynamic_Tree",
         };
