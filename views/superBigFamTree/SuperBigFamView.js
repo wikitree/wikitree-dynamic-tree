@@ -795,7 +795,7 @@
                                 { value: "WikiTreeNum", text: "WikiTree #" },
                                 { value: "both", text: "all" },
                             ],
-                            defaultValue: "none",
+                            defaultValue: "all",
                         },
                         {
                             optionName: "showDebugInfoOnPopup",
@@ -806,7 +806,7 @@
                                 { value: "No", text: "No" },
                                 
                             ],
-                            defaultValue: "No",
+                            defaultValue: "Yes",
                         },
                         { optionName: "break1", type: "br" },
                         {
@@ -2960,7 +2960,7 @@
     }
 
     function drawLinesForFamilyOf(code, kidPrefix = "", levelNum = 0, clrNum = -1) {
-        // condLog("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
+        condLog ("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
         let primaryLeaf = SuperBigFamView.theLeafCollection[code];
         if (!primaryLeaf) {
             return;
@@ -3740,10 +3740,15 @@
             condLog(" DANGER DANGER WILL ROBINSON - DRAW FAMILY LINES CONTAINS * NOT A NUMBER * !!!!", code);
             return "";
         }
+        condLog("drawLinesForFamilyOf", code, "DONE", (code == "A0" || code == "A0RF" )? allLinesPolySVG : "!");
         return allLinesPolySVG;
     }
 
     function drawLinesForPrimaryOnlyAndParents() {
+        let numA = SuperBigFamView.numAncGens2Display; // num Ancestors - going up
+        if (numA == 0) {
+            return "";
+        }
         condLog("** drawLinesForPrimaryOnlyAndParents : BEGIN");
         // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
         let primaryLeaf = SuperBigFamView.theLeafCollection["A0"];
@@ -3825,6 +3830,11 @@
         // condLog(equalsLine);
         // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
         let centreX = (minX + maxX) / 2;
+        let childrenMinX = Math.min(minX, primaryLeaf.x);
+        let childrenMaxX = Math.max(maxX, primaryLeaf.x);
+        let crossBarY = primaryLeaf.y - 130; //minY + 45;
+
+        condLog("primary, min, max X-values:", primaryLeaf.x, minX, maxX);
 
         let tBarVertLine =
             `<polyline points="` +
@@ -3839,18 +3849,46 @@
             drawColour +
             `" stroke-width="3"/>`;
 
-        //  +
-        // `<polyline points="` +
-        // childrenMinX +
-        // "," +
-        // crossBarY +
-        // " " +
-        // childrenMaxX +
-        // "," +
-        // crossBarY +
-        // `" fill="none" stroke="` +
-        // drawColour +
-        // `" stroke-width="3"/>`;
+        if (minX < primaryLeaf.x && primaryLeaf.x < maxX) {
+            // use the above tBarVertLine - we're all OK
+        } else {
+            // we need to REDEFINE the tBar - we have a child with single parent (likely) - and drop line is not where you'd expect it to be
+
+            tBarVertLine =
+                `<polyline points="` +
+                centreX +
+                "," +
+                (minY + 45) +
+                " " +
+                centreX +
+                "," +
+                crossBarY +
+                `" fill="none" stroke="` +
+                drawColour +
+                `" stroke-width="3"/>` +
+                `<polyline points="` +
+                childrenMinX +
+                "," +
+                crossBarY +
+                " " +
+                childrenMaxX +
+                "," +
+                crossBarY +
+                `" fill="none" stroke="` +
+                drawColour +
+                `" stroke-width="3"/>` +
+                `<polyline points="` +
+                primaryLeaf.x +
+                "," +
+                crossBarY +
+                " " +
+                primaryLeaf.x +
+                "," +
+                (primaryLeaf.y - 80) +
+                `" fill="none" stroke="` +
+                drawColour +
+                `" stroke-width="3"/>`;
+        }
 
         // condLog(tBarVertLine);
 
@@ -5398,6 +5436,7 @@
     }
 
     function repositionThisAncestorsCluster(ahnenNum, thisX, thisY) {
+        condLog("repositionThisAncestorsCluster",ahnenNum, thisX, thisY);
         // let align = ahNum % 2 == 0 ? "R" : "L";
         // let numA = SuperBigFamView.numAncGens2Display;
         // let numD = SuperBigFamView.numDescGens2Display;
@@ -5433,6 +5472,7 @@
     }
 
     function repositionThisPersonsCluster(newCode, thisX, thisY) {
+        condLog("repositionThisPersonsCluster", newCode, thisX, thisY);
         // let align = ahNum % 2 == 0 ? "R" : "L";
         // let numA = SuperBigFamView.numAncGens2Display;
         // let numD = SuperBigFamView.numDescGens2Display;
@@ -5465,7 +5505,7 @@
     }
 
     function repositionThisAncestorAndTheirSiblingsFamily(ahnenNum) {
-        condLog("* repositionThisAncestorAndTheirSiblingsFamily - BEGIN for ", ahnenNum);
+        condLog("repositionThisAncestorAndTheirSiblingsFamily - BEGIN for ", ahnenNum);
         let x = 1;
         let y = 1;
         let align = ahnenNum % 2 == 0 ? "R" : "L";
@@ -5493,7 +5533,10 @@
 
             if (thisLeafPerson) {
                 // let's look to see if we have extra partners
-                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 1 /*  && ahnenNum < 4 */) {
+                // LOGIC ERROR:  Assuming that there IS a legit Spouse (direct ancestor spouse) -> 
+                // IF there is ONLY 1 parent direct ancestor, but there is one extra spouse (parent of half-siblings) - then 
+                // the CURRENT IF condition will FAIL ! (see Wambolt-1 for evidence of that)
+                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 /*  && ahnenNum < 4 */) {
                     let extraPartnerNum = 0;
                     for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                         let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
@@ -5580,7 +5623,7 @@
     function repositionThisSpousesFamily(thisLeaf, thisCode) {
         condLog(
             "repositionThisSpousesFamily(thisLeaf, thisCode)",
-            thisCode,
+            thisLeaf, thisCode,
             SuperBigFamView.theLeafCollection[thisCode + "RM"],
             document.getElementById("wedgeInfo-" + thisCode + "RM")
         );
@@ -5965,6 +6008,7 @@
     }
 
     function repositionThisPersonAndTheirDescendants(code, x, y, align = "C") {
+        condLog("repositionThisPersonAndTheirDescendants", code, x, y, align);
         let numD = SuperBigFamView.numDescGens2Display;
         let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
