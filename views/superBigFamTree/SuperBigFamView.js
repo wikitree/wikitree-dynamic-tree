@@ -265,7 +265,7 @@
     SuperBigFamView.HlinesATC = []; // the Horizontal Lines (connectors) Air Traffic Controller
     SuperBigFamView.VlinesATC = []; // the Vertical Lines (drop lines) Air Traffic Controller
     SuperBigFamView.VlinesATCpeep = []; // the Vertical Lines (drop lines) Air Traffic Controller - PEEP array - for debugging purposes
-
+    
     SuperBigFamView.currentPopupID = -1; // place to hold the most recent person's ID that you used for a PopUp (so you can toggle it off and on if you click the same person twice in a row)
     SuperBigFamView.chunksWithInLawsArray = []; // array to hold the list of all current CHUNKS that end with IL so that we can space out the Super Big Fam chart nicely - not too crowded, but not too spaced out
 
@@ -793,7 +793,7 @@
                                 { value: "ahnNum", text: "Leaf Code" },
                                 { value: "WikiTreeID", text: "WikiTree ID" },
                                 { value: "WikiTreeNum", text: "WikiTree #" },
-                                { value: "both", text: "all" },
+                                { value: "all", text: "all" },
                             ],
                             defaultValue: "all",
                         },
@@ -917,6 +917,12 @@
                             type: "checkbox",
                             defaultValue: true,
                         },
+                        {
+                            optionName: "showMarriage",
+                            label: "Show Marriage Date",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
                         // {
                         //     optionName: "showLifeSpan",
                         //     label: "!* Show LifeSpan (replaces birth & death dates)",
@@ -970,7 +976,13 @@
                             type: "checkbox",
                             defaultValue: true,
                         },
-                        { optionName: "break0", comment: "Birth/Death Location Format:", type: "br" },
+                        {
+                            optionName: "showMarriage",
+                            label: "Show Marriage Location",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        { optionName: "break0", comment: "Location Format:", type: "br" },
                         {
                             optionName: "locationFormatBD",
                             type: "radio",
@@ -2245,7 +2257,7 @@
         let spouseColours = ["blue", "red", "darkgreen", "chocolate", "indigo", "darkorange", "navy"];
         let parentCodes = ["A0RM", "A0RF"];
 
-        condLog("drawLinesForA0StepParents : GO TIME ");
+        console.log("drawLinesForA0StepParents : GO TIME ");
 
         for (let pNum = 0; pNum < 2; pNum++) {
             let code = parentCodes[pNum];
@@ -2290,6 +2302,7 @@
                 const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
                 const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
 
+                let topEqualsY = minY - 120 + (sp*60);
                 if (thisLeafHt < 170 || otherLeafHt < 170) {
                     minY =
                         minY -
@@ -2297,19 +2310,28 @@
                         Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
                         37;
                 }
-                condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
+                console.log(
+                    "FAMILY HT : " + primaryLeaf.Code,
+                    "hts:",
+                    thisLeafHt,
+                    otherLeafHt,
+                    "orig minY:",
+                    Math.min(primaryLeaf.y, primarySpouse.y),
+                    "new topEqualsY:",
+                    topEqualsY
+                );
 
-                let drawColour = spouseColours[(sp + clrNum) % spouseColours.length];
+                let drawColour = spouseColours[(sp + 0*clrNum) % spouseColours.length];
 
                 let equalsLine =
                     `<polyline points="` +
                     (minX + 20) +
                     "," +
-                    (minY + 30 - sp * 60) +
+                    (topEqualsY + 30) +
                     " " +
                     (maxX - 20) +
                     "," +
-                    (minY + 30 - sp * 60) +
+                    (topEqualsY + 30) +
                     `" fill="none" stroke="` + drawColour + `" stroke-width="3"/>`;
 
                 if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
@@ -2320,11 +2342,11 @@
                     `<polyline points="` +
                     (minX + 20) +
                     "," +
-                    (minY + 45 - sp * 60) +
+                    (topEqualsY + 45) +
                     " " +
                     (maxX - 20) +
                     "," +
-                    (minY + 45 - sp * 60) +
+                    (topEqualsY + 45) +
                     `" fill="none" stroke="` +
                     drawColour +
                     `" stroke-width="3" />`;
@@ -2359,7 +2381,7 @@
             );
             return "";
         }
-        
+        console.log(allLinesPolySVG);
         return allLinesPolySVG;
     }
 
@@ -2789,7 +2811,7 @@
         return cuzLinesSVG;
     }
 
-    SuperBigFamView.VlinesATCpeep = [];
+    
     function checkDropLineXwithATC(thisY, bigDropX, kidXsArray, thisLeaf) {
         let hasChanged = false;
         bigDropX = Math.round(bigDropX);
@@ -8329,7 +8351,7 @@
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
                     extraInfoForThisAnc = person._data.Id;
                     extraBR = "<br/>";
-                } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "both") {
+                } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
                     if (person && person._data) {
                         extraInfoForThisAnc = "[ " + 0 + " ] " + person._data.Id + "<br/>" + person._data.Name;
                         extraBR = "<br/>";
@@ -8435,6 +8457,7 @@
 						  </div>
 						  <div class="birth vital font${font4Info}" id=birthDiv-${leafObject.Code}>${getSettingsDateAndPlace(person, "B")}</div>
 						  <div class="death vital font${font4Info}" id=deathDiv-${leafObject.Code}>${getSettingsDateAndPlace(person, "D")}</div>
+						  <div class="marriage vital font${font4Info}" id=marriageDiv-${leafObject.Code}>` + getSettingsDateAndPlace(person, "M", leafObject.Code) + `</div>
 						</div>
 					</div>
                     `;
@@ -8588,6 +8611,11 @@
             thisDIVtoUpdate = document.getElementById("deathDiv-" + leafObject.Code);
             if (thisDIVtoUpdate) {
                 thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "D");
+            }
+            // LET'S UPDATE THE MARRIAGE INFO !
+            thisDIVtoUpdate = document.getElementById("marriageDiv-" + leafObject.Code);
+            if (thisDIVtoUpdate) {
+                thisDIVtoUpdate.innerHTML = getSettingsDateAndPlace(d, "M", leafObject.Code);
             }
             // let thisDeathDIV = thisDIVtoUpdate;
 
@@ -8771,7 +8799,7 @@
             } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
                 extraInfoForThisAnc = d._data.Id;
                 extraBR = "<br/>";
-            } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "both") {
+            } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
                 extraInfoForThisAnc =
                     "[ " +
                     leafObject.Code +
@@ -8896,6 +8924,7 @@
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
 						  <div class="death vital">${deathString(person)}</div>						  
+						  
                             ${extrasAtBottom}
                             ${bioCheckLink}
 						</div>
@@ -9502,10 +9531,13 @@
     /**
      * Return the date as required by the Settings options.
      */
-    function getSettingsDateAndPlace(person, dateType) {
+    function getSettingsDateAndPlace(person, dateType, code) {
         let datePlaceString = "";
         let thisDate = "";
         let thisPlace = "";
+        let theMarriageDate = "0000-00-00";
+        let theMarriagePlace = "";
+
         if (!person || !person._data) {
             return "Unknown";
         }
@@ -9524,25 +9556,25 @@
                     person._data.BirthDate,
                     SuperBigFamView.currentSettings["date_options_dateFormat"]
                 );
-                if (SuperBigFamView.currentSettings["date_options_dateTypes"] != "detailed") {
+                if (SuperBigFamView.currentSettings["date_options_dateTypes"] == "none") {
                     thisDate = "";
                 }
+            }
 
-                if (
-                    SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
-                    SuperBigFamView.currentSettings["place_options_showBirth"] == true
-                ) {
-                    thisPlace = settingsStyleLocation(
-                        person.getBirthLocation(),
-                        SuperBigFamView.currentSettings["place_options_locationFormatBD"]
-                    );
-                } else {
-                    thisPlace = "";
-                }
+            if (
+                SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                SuperBigFamView.currentSettings["place_options_showBirth"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    person.getBirthLocation(),
+                    SuperBigFamView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }
 
-                if (thisDate > "" || thisPlace > "") {
-                    datePlaceString += "b. ";
-                }
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "b. ";
             }
         } else if (dateType == "D") {
             if (person._data.DeathDate == "0000-00-00") {
@@ -9556,22 +9588,120 @@
                 if (SuperBigFamView.currentSettings["date_options_dateTypes"] != "detailed") {
                     thisDate = "";
                 }
-                if (
-                    SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
-                    SuperBigFamView.currentSettings["place_options_showDeath"] == true
-                ) {
-                    thisPlace = settingsStyleLocation(
-                        person.getDeathLocation(),
-                        SuperBigFamView.currentSettings["place_options_locationFormatBD"]
-                    );
-                } else {
-                    thisPlace = "";
-                }
-                if (thisDate > "" || thisPlace > "") {
-                    datePlaceString += "d. ";
-                }
             }
+            if (
+                SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                SuperBigFamView.currentSettings["place_options_showDeath"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    person.getDeathLocation(),
+                    SuperBigFamView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "d. ";
+            }
+        } else if (dateType == "M") {
+            let codeType = code.substr(-2, 1);
+            let spouseID = 0; 
+            
+            if (codeType == "P") {
+                console.log("Marriage request for ", code, code.substr(-2, 1));
+                // YAY  - we will show the marriage dates for direct ancestors AND Partners of direct relatives - but not on the relatives cards themselves (except for direct ancestors)
+                console.log(
+                    SuperBigFamView.theLeafCollection[code].FullCode,
+                    thePeopleList[SuperBigFamView.theLeafCollection[code].Id]._data.Spouses
+                );
+                let theFullCode = SuperBigFamView.theLeafCollection[code].FullCode;
+                let lastCodeType = theFullCode.lastIndexOf(codeType);
+                let lastColonBeforeCodeType = theFullCode.substring(0, lastCodeType - 2).lastIndexOf(":");
+                 spouseID = theFullCode.substring(lastColonBeforeCodeType + 1, lastCodeType - 1);
+                console.log("SPOUSE ID: from " + theFullCode, lastColonBeforeCodeType, lastCodeType, spouseID);
+            } else if (codeType == "R") {
+                console.log("Marriage request for ", code, code.substr(-2, 1));
+                // YAY  - we will show the marriage dates for direct ancestors AND Partners of direct relatives - but not on the relatives cards themselves (except for direct ancestors)
+                console.log(
+                    SuperBigFamView.theLeafCollection[code].FullCode,
+                    thePeopleList[SuperBigFamView.theLeafCollection[code].Id]._data.Spouses
+                );
+                let theFullCode = SuperBigFamView.theLeafCollection[code].FullCode;
+                let lastCodeType = code.lastIndexOf(codeType);
+                let newCode = "";
+                if (code.substr(-2) == "RM") {
+                    newCode = code.substring(0,lastCodeType) + "RF";
+                } else  {
+                    newCode = code.substring(0, lastCodeType) + "RM";
+                }
+
+                spouseID = SuperBigFamView.theLeafCollection[newCode].Id;
+                // let lastColonBeforeCodeType = theFullCode.substring(0, lastCodeType - 2).lastIndexOf(":");
+                // let spouseID = theFullCode.substring(lastColonBeforeCodeType + 1, lastCodeType - 1);
+                console.log("SPOUSE ID: from " + theFullCode, code.substr(-2) , lastCodeType, spouseID);
+            } 
+            
+            if (codeType == "P" || codeType == "R") {
+                for (
+                    let m = 0;
+                    m < thePeopleList[SuperBigFamView.theLeafCollection[code].Id]._data.Spouses.length;
+                    m++
+                ) {
+                    const thisMarriage = thePeopleList[SuperBigFamView.theLeafCollection[code].Id]._data.Spouses[m];
+                    console.log(
+                        "Spouse marriage # ",
+                        m,
+                        "for " + code,
+                        thisMarriage.Id,
+                        spouseID,
+                        thisMarriage.Id == spouseID,
+                        thisMarriage
+                    );
+                    if (thisMarriage.Id == spouseID) {
+                        theMarriageDate = thisMarriage.marriage_date;
+                        theMarriagePlace = thisMarriage.marriage_location;
+                        break;
+                    }
+                }
+                console.log("SPOUSE marriage info raw : ", code, theMarriageDate, theMarriagePlace);
+            } else {
+                return "";
+            }
+
+            if (theMarriageDate == "0000-00-00") {
+                return "";
+            }
+            if (SuperBigFamView.currentSettings["date_options_showMarriage"] == true) {
+               
+                thisDate = settingsStyleDate(
+                    theMarriageDate,
+                    SuperBigFamView.currentSettings["date_options_dateFormat"]
+                );
+                if (SuperBigFamView.currentSettings["date_options_dateTypes"] == "none") {
+                    thisDate = "";
+                }
+                
+            }
+            if (
+                SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
+                SuperBigFamView.currentSettings["place_options_showMarriage"] == true
+            ) {
+                thisPlace = settingsStyleLocation(
+                    theMarriagePlace,
+                    SuperBigFamView.currentSettings["place_options_locationFormatBD"]
+                );
+            } else {
+                thisPlace = "";
+            }
+            // thisDate = "28 Aug 1987";
+            // thisPlace = "Orillia, Ontario, Canada";
+            if (thisDate > "" || thisPlace > "") {
+                datePlaceString += "m. ";
+            }
+            // 
         }
+
+
         if (thisDate > "" || thisPlace > "") {
             if (thisDate > "") {
                 datePlaceString += thisDate;
@@ -9583,7 +9713,7 @@
                 datePlaceString += thisPlace;
             }
         }
-        // condLog("SENDING getSettingsDate: ", datePlaceString);
+        if (dateType == "M") {console.log("SENDING getSettingsDate: ", code, dateType +  ": ",  datePlaceString);}
         return datePlaceString;
     }
 
