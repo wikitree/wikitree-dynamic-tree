@@ -2297,7 +2297,7 @@
                         Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
                         37;
                 }
-                // condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
+                condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
 
                 let drawColour = spouseColours[(sp + clrNum) % spouseColours.length];
 
@@ -2310,8 +2310,7 @@
                     (maxX - 20) +
                     "," +
                     (minY + 30 - sp * 60) +
-                    `" fill="none" stroke="`;
-                drawColour + `" stroke-width="3"/>`;
+                    `" fill="none" stroke="` + drawColour + `" stroke-width="3"/>`;
 
                 if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
                     equalsLine = "";
@@ -2331,8 +2330,8 @@
                     `" stroke-width="3" />`;
 
                 if (equalsLine.indexOf("NaN") > -1) {
-                    condLog(
-                        "DANGER DANGER:",
+                    console.log(
+                        "DANGER DANGER: NaN warning:",
                         equalsLine,
                         primaryLeaf.x,
                         primarySpouse.x,
@@ -2354,12 +2353,13 @@
         }
 
         if (allLinesPolySVG.indexOf("NaN") > -1) {
-            condLog(
+            console.log(
                 " DANGER DANGER WILL ROBINSON - DRAW A0 STEP PARENTS LINES CONTAINS * NOT A NUMBER * !!!!",
                 code
             );
             return "";
         }
+        
         return allLinesPolySVG;
     }
 
