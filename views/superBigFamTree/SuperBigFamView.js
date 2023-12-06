@@ -795,7 +795,7 @@
                                 { value: "WikiTreeNum", text: "WikiTree #" },
                                 { value: "all", text: "all" },
                             ],
-                            defaultValue: "all",
+                            defaultValue: "none",
                         },
                         {
                             optionName: "showDebugInfoOnPopup",
@@ -806,7 +806,7 @@
                                 { value: "No", text: "No" },
                                 
                             ],
-                            defaultValue: "Yes",
+                            defaultValue: "No",
                         },
                         { optionName: "break1", type: "br" },
                         {
