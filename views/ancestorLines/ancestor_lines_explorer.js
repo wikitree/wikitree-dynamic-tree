@@ -1,7 +1,7 @@
 import { AncestorTree } from "./ancestor_tree.js";
 import { showTree } from "./display.js";
 import { Lang } from "./lang.js";
-import { Utils } from "../../lib/shared/Utils.js";
+import { Utils } from "../shared/Utils.js";
 
 export class AncestorLinesExplorer {
     static #COOKIE_NAME = "wt_ale_options";
