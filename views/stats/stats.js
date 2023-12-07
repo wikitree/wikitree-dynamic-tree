@@ -1,4 +1,4 @@
-import { Utils } from "../shared/Utils";
+import { Utils } from "../shared/Utils.js";
 
 window.StatsView = class StatsView extends View {
     static #helpText = `
