@@ -11,7 +11,8 @@ import { BioCheckPerson } from "../../../lib/biocheck-api/src/BioCheckPerson.js"
 import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
 import { PeopleTable } from "./PeopleTable.js";
 import { Settings } from "./Settings.js";
-import { Utils } from "./Utils.js";
+import { CC7Utils } from "./Utils.js";
+import { Utils } from "../../shared/Utils.js";
 
 export class CC7 {
     static LONG_LOAD_WARNING =
@@ -360,8 +361,8 @@ export class CC7 {
         // console.log("current settings:", Settings.current);
         if (Settings.hasSettingsChanged()) {
             // console.log(`new settings: ${String(Settings.current)}`, Settings.current);
-            const veryYoungImg = Utils.imagePath(Settings.current["icons_options_veryYoung"]);
-            const youngImg = Utils.imagePath(Settings.current["icons_options_young"]);
+            const veryYoungImg = CC7Utils.imagePath(Settings.current["icons_options_veryYoung"]);
+            const youngImg = CC7Utils.imagePath(Settings.current["icons_options_young"]);
             $("img.diedVeryYoungImg").each(function () {
                 const it = $(this);
                 it.attr("src", veryYoungImg);
@@ -976,7 +977,7 @@ export class CC7 {
         const ABOVE = true;
         const BELOW = false;
         const collator = new Intl.Collator();
-        Utils.fixBirthDate(theRoot);
+        CC7Utils.fixBirthDate(theRoot);
         theRoot.isAncestor = false;
         theRoot.isAbove = false;
         // Note: unlike the usual case, where the queue contains nodes still to be "visited" and processed,
@@ -1016,7 +1017,7 @@ export class CC7 {
                 const person = window.people.get(pId);
                 if (person) {
                     if (typeof person.fixedBirthDate === "undefined") {
-                        Utils.fixBirthDate(person);
+                        CC7Utils.fixBirthDate(person);
                     }
                     // Add this person's relatives to the queue
                     const rels = firstIteration
@@ -1083,7 +1084,7 @@ export class CC7 {
                 const person = window.people.get(pId);
                 if (person) {
                     if (typeof person.fixedBirthDate === "undefined") {
-                        Utils.fixBirthDate(person);
+                        CC7Utils.fixBirthDate(person);
                     }
                     // Add this person's relatives to the queue
                     const rels = firstIteration

@@ -1,4 +1,4 @@
-import { Utils } from "./Utils.js";
+import { CC7Utils } from "./Utils.js";
 
 export class LanceView {
     static async build() {
@@ -58,16 +58,16 @@ export class LanceView {
                     break;
             }
             if (!aPerson.Missing) {
-                Utils.addMissingBits(aPerson);
+                CC7Utils.addMissingBits(aPerson);
             }
             const theDegree = aPerson.Meta.Degrees;
             const aName = new PersonName(aPerson);
-            const theName = Utils.formDisplayName(aPerson, aName);
+            const theName = CC7Utils.formDisplayName(aPerson, aName);
             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
             const theLNAB = theParts.get("LastNameAtBirth");
             const theFirstName = theParts.get("FirstName");
 
-            if (Utils.isOK(theDegree) && theDegree <= window.cc7Degree) {
+            if (CC7Utils.isOK(theDegree) && theDegree <= window.cc7Degree) {
                 if (!surnames["degree_" + theDegree].includes(theLNAB)) {
                     // Add the LNAB to the appropriate degree column header
                     surnames["degree_" + theDegree].push(theLNAB);
@@ -115,8 +115,8 @@ export class LanceView {
                         });
                 }
                 // Add the person to the appropriate column
-                const linkName = Utils.htmlEntities(aPerson.Name);
-                const missing = Utils.missingThings(aPerson);
+                const linkName = CC7Utils.htmlEntities(aPerson.Name);
+                const missing = CC7Utils.missingThings(aPerson);
                 const anLi = $(
                     "<li " +
                         missing.missingBit +
@@ -127,7 +127,7 @@ export class LanceView {
                         "' data-name=\"" +
                         aPerson.Name +
                         '">' +
-                        Utils.profileLink(linkName, theName) +
+                        CC7Utils.profileLink(linkName, theName) +
                         " " +
                         missing.missingIcons +
                         "</li>"
