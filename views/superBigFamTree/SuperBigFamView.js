@@ -2317,100 +2317,124 @@
             if (!document.querySelector("#wedgeInfo-" + primaryLeaf.Code)) {
                 continue;
             }
-            for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
-                // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
-                let clrNum = sp + 1;
 
-                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
-
-                if (!primarySpouse) {
-                    continue; /// go back to the next value of sp
+            if (!primaryLeafPerson._data.SpousesOrdered) {
+                let orderedPartners = [];
+                for (let sp in primaryLeafPerson._data.Spouses) {
+                    const thisPartner = primaryLeafPerson._data.Spouses[sp];
+                    orderedPartners.push(thisPartner.marriage_date + "|" + thisPartner.Id);
                 }
-                let primarySpouseID = primarySpouse.Id;
+                orderedPartners = orderedPartners.sort();
+                thePeopleList[primaryLeafPerson._data.Id]._data.SpousesOrdered = orderedPartners;
+                primaryLeafPerson._data.SpousesOrdered = orderedPartners;
+            }
 
-                if (!thisSpouseDIV) {
-                    continue;
-                } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
-                    continue;
-                }
+            for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
+                const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
+                let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
+                console.log("spID = ", spID);
+                
+                // if (spID > 0) {
 
-                let minX = Math.min(primaryLeaf.x, primarySpouse.x);
-                let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
-                let minY = Math.min(primaryLeaf.y, primarySpouse.y);
+                for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                    // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+                    let clrNum = sp + 1;
 
-                const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
-                const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
+                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
-                let topEqualsY = minY - 120 + (sp*60);
-                if (thisLeafHt < 170 || otherLeafHt < 170) {
-                    minY =
-                        minY -
-                        85 +
-                        Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
-                        37;
-                }
-                console.log(
-                    "FAMILY HT : " + primaryLeaf.Code,
-                    "hts:",
-                    thisLeafHt,
-                    otherLeafHt,
-                    "orig minY:",
-                    Math.min(primaryLeaf.y, primarySpouse.y),
-                    "new topEqualsY:",
-                    topEqualsY
-                );
+                    if (!primarySpouse) {
+                        continue; /// go back to the next value of sp
+                    }
+                    let primarySpouseID = primarySpouse.Id;
 
-                let drawColour = spouseColours[(sp + 0*clrNum) % spouseColours.length];
+                    if (!thisSpouseDIV) {
+                        continue;
+                    } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                        continue;
+                    } else if (primarySpouseID != spID) {
+                        continue;
+                    }
 
-                let equalsLine =
-                    `<polyline points="` +
-                    (minX + 20) +
-                    "," +
-                    (topEqualsY + 30) +
-                    " " +
-                    (maxX - 20) +
-                    "," +
-                    (topEqualsY + 30) +
-                    `" fill="none" stroke="` + drawColour + `" stroke-width="3"/>`;
+                    let minX = Math.min(primaryLeaf.x, primarySpouse.x);
+                    let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
+                    let minY = Math.min(primaryLeaf.y, primarySpouse.y);
 
-                if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
-                    equalsLine = "";
-                }
+                    const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+                    const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
 
-                equalsLine +=
-                    `<polyline points="` +
-                    (minX + 20) +
-                    "," +
-                    (topEqualsY + 45) +
-                    " " +
-                    (maxX - 20) +
-                    "," +
-                    (topEqualsY + 45) +
-                    `" fill="none" stroke="` +
-                    drawColour +
-                    `" stroke-width="3" />`;
-
-                if (equalsLine.indexOf("NaN") > -1) {
+                    let topEqualsY = minY - 120 + sp * 60;
+                    if (thisLeafHt < 170 || otherLeafHt < 170) {
+                        minY =
+                            minY -
+                            85 +
+                            Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
+                            37;
+                    }
                     console.log(
-                        "DANGER DANGER: NaN warning:",
-                        equalsLine,
-                        primaryLeaf.x,
-                        primarySpouse.x,
-                        primaryLeaf.y,
-                        primarySpouse.y
+                        "FAMILY HT : " + primaryLeaf.Code,
+                        "hts:",
+                        thisLeafHt,
+                        otherLeafHt,
+                        "orig minY:",
+                        Math.min(primaryLeaf.y, primarySpouse.y),
+                        "new topEqualsY:",
+                        topEqualsY
                     );
-                }
-                // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
-                let centreX = (minX + maxX) / 2;
-                let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
-                if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
-                    centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
-                } else if (sp > 0 && primarySpouse.x < primaryLeaf.x) {
-                    centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
-                }
 
-                allLinesPolySVG += equalsLine;
+                    let drawColour = spouseColours[(sp + 0 * clrNum) % spouseColours.length];
+
+                    let equalsLine =
+                        `<polyline points="` +
+                        (minX + 20) +
+                        "," +
+                        (topEqualsY + 30) +
+                        " " +
+                        (maxX - 20) +
+                        "," +
+                        (topEqualsY + 30) +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>`;
+
+                    if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                        equalsLine = "";
+                    }
+
+                    equalsLine +=
+                        `<polyline points="` +
+                        (minX + 20) +
+                        "," +
+                        (topEqualsY + 45) +
+                        " " +
+                        (maxX - 20) +
+                        "," +
+                        (topEqualsY + 45) +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3" />`;
+
+                    if (equalsLine.indexOf("NaN") > -1) {
+                        console.log(
+                            "DANGER DANGER: NaN warning:",
+                            equalsLine,
+                            primaryLeaf.x,
+                            primarySpouse.x,
+                            primaryLeaf.y,
+                            primarySpouse.y
+                        );
+                    }
+                    // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
+                    let centreX = (minX + maxX) / 2;
+                    let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
+                    if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
+                        centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
+                    } else if (sp > 0 && primarySpouse.x < primaryLeaf.x) {
+                        centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
+                    }
+
+                    allLinesPolySVG += equalsLine;
+                }
             }
         }
 
@@ -5601,20 +5625,28 @@
 
                 let orderedPartners = []; // concatenate their Marriage Date + tack on their ID at the end, not part of sort, but way to link back to original record afterwards
 
-                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 /*  && ahnenNum < 4 */) {
+                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 ) {
                     let extraPartnerNum = 0;
                     for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                         let thisPartner = thisLeafPerson._data.Spouses[i];
                         orderedPartners.push(thisPartner.marriage_date + "|" + thisPartner.Id);
+                    }
 
+                }
+
+                orderedPartners = orderedPartners.sort();
+                thePeopleList[thisLeaf.Id]._data.SpousesOrdered = orderedPartners;
+                thisLeafPerson._data.SpousesOrdered = orderedPartners;
+
+                let totalNumExtraPartners = 0;
+                if (ahnenNum % 2 == 0) {
+                    for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                         let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
                         let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
+
                         if (thisLeafExtraPartner) {
-                            let thisLeafExtraPartnerDIV = document.getElementById(
-                                "wedgeInfo-" + thisLeafExtraPartnerCode
-                            );
+                            
                             let thisLeafExtraPartnerPerson = thePeopleList[thisLeafExtraPartner.Id];
-                            condLog("thisLeafExtraPartnerPerson:", thisLeafExtraPartnerPerson);
                             if (
                                 thisLeafExtraPartnerPerson &&
                                 thisLeafExtraPartnerPerson._data.Children &&
@@ -5623,36 +5655,101 @@
                                 // OK ... we need to investigate more here to make sure they are the Ancestor's children too !
 
                                 // BUT ... assuming it's a go - then we can give them some (x,y) coords and move along
-                                extraPartnerNum++;
-                                thisLeafExtraPartner.x =
-                                    thisLeaf.x + extraPartnerNum * thisBoxWidth * (2 * (ahnenNum % 2) - 1);
-                                thisLeafExtraPartner.y = thisLeaf.y;
-                                thisWidth += thisBoxWidth;
-                                if (thisLeafExtraPartner.x == 0) {
-                                    thisLeafExtraPartner.x = 1;
-                                }
-                                repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
+                                totalNumExtraPartners++;
+                                
                             } else {
                                 // No children - then - no show (unless we're into Cousin mode of some flavour)
                                 if (numC > 0) {
                                     // YAY - cousin mode - show the extra spouses (even if no kids involved)
+                                    totalNumExtraPartners++;
+                                    
+                                } else {
+                                    // NO cousin mode - no extra spouses without children                                   
+                                }
+                            }
+                        }
+                    }
+                }
+
+                console.log("Ordering Ancestor:", thisLeafPerson._data.Name);
+                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 ) {
+                    let extraPartnerNum = 0;
+                    for (let ord = 0; ord < thisLeafPerson._data.SpousesOrdered.length; ord++) {
+                        let thisOrdered = thisLeafPerson._data.SpousesOrdered[ord];
+                        let orderedSPid = thisOrdered.substr(thisOrdered.indexOf("|") + 1);
+                        for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
+                            let thisPartner = thisLeafPerson._data.Spouses[i];
+                              
+                            console.log("Ordering " , thisOrdered);
+
+                            let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
+                            let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
+                           
+                            if (thisLeafExtraPartner) {
+                                 if (thisLeafExtraPartner.Id != orderedSPid) {
+                                    continue;
+                                } 
+                                let thisLeafExtraPartnerDIV = document.getElementById(
+                                    "wedgeInfo-" + thisLeafExtraPartnerCode
+                                );
+                                let thisLeafExtraPartnerPerson = thePeopleList[thisLeafExtraPartner.Id];
+                                condLog("thisLeafExtraPartnerPerson:", thisLeafExtraPartnerPerson);
+                                if (
+                                    thisLeafExtraPartnerPerson &&
+                                    thisLeafExtraPartnerPerson._data.Children &&
+                                    thisLeafExtraPartnerPerson._data.Children.length > 0
+                                ) {
+                                    // OK ... we need to investigate more here to make sure they are the Ancestor's children too !
+
+                                    // BUT ... assuming it's a go - then we can give them some (x,y) coords and move along
                                     extraPartnerNum++;
-                                    thisLeafExtraPartner.x =
-                                        thisLeaf.x + extraPartnerNum * thisBoxWidth * (2 * (ahnenNum % 2) - 1);
-                                    if (thisLeafExtraPartner.x == 0) {
-                                        thisLeafExtraPartner.x = 1;
+                                    if (ahnenNum % 2 == 1) {
+                                        thisLeafExtraPartner.x =
+                                            thisLeaf.x + extraPartnerNum * thisBoxWidth ;
+
+                                    } else {
+                                        thisLeafExtraPartner.x =
+                                            thisLeaf.x - (totalNumExtraPartners + 1 - extraPartnerNum) * thisBoxWidth ;
                                     }
                                     thisLeafExtraPartner.y = thisLeaf.y;
                                     thisWidth += thisBoxWidth;
+                                    if (thisLeafExtraPartner.x == 0) {
+                                        thisLeafExtraPartner.x = 1;
+                                    }
+                                    console.log("x = ", thisLeafExtraPartner.x, thisLeafExtraPartnerPerson._data.Name);
                                     repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
                                 } else {
-                                    // NO cousin mode - no extra spouses without children
-                                    if (
-                                        thisLeafExtraPartnerDIV &&
-                                        thisLeafExtraPartnerDIV.parentNode &&
-                                        thisLeafExtraPartnerDIV.parentNode.parentNode
-                                    ) {
-                                        thisLeafExtraPartnerDIV.parentNode.parentNode.style.display = "none";
+                                    // No children - then - no show (unless we're into Cousin mode of some flavour)
+                                    if (numC > 0) {
+                                        // YAY - cousin mode - show the extra spouses (even if no kids involved)
+                                        extraPartnerNum++;
+                                        if (ahnenNum % 2 == 1) {
+                                            thisLeafExtraPartner.x = thisLeaf.x + extraPartnerNum * thisBoxWidth;
+                                        } else {
+                                            thisLeafExtraPartner.x =
+                                                thisLeaf.x -
+                                                (totalNumExtraPartners + 1 - extraPartnerNum) * thisBoxWidth;
+                                        }
+                                        if (thisLeafExtraPartner.x == 0) {
+                                            thisLeafExtraPartner.x = 1;
+                                        }
+                                        console.log(
+                                            "x = ",
+                                            thisLeafExtraPartner.x,
+                                            thisLeafExtraPartnerPerson._data.Name
+                                        );
+                                        thisLeafExtraPartner.y = thisLeaf.y;
+                                        thisWidth += thisBoxWidth;
+                                        repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
+                                    } else {
+                                        // NO cousin mode - no extra spouses without children
+                                        if (
+                                            thisLeafExtraPartnerDIV &&
+                                            thisLeafExtraPartnerDIV.parentNode &&
+                                            thisLeafExtraPartnerDIV.parentNode.parentNode
+                                        ) {
+                                            thisLeafExtraPartnerDIV.parentNode.parentNode.style.display = "none";
+                                        }
                                     }
                                 }
                             }
@@ -5664,9 +5761,7 @@
                 //     const thisPartner = thePsByID[sp];
                 //     orderedPartners.push(thisPartner.mDate + "-" + thisPartner.bDate + "|" + thisPartner.Id);
                 // }
-                orderedPartners = orderedPartners.sort();
-                thePeopleList[thisLeaf.Id]._data.SpousesOrdered = orderedPartners;
-
+                
                 
 
                 // OK .... so now let's add their Siblings
@@ -6085,7 +6180,7 @@
     }
 
     function repositionThisPersonAndTheirDescendants(code, x, y, align = "C") {
-        condLog("repositionThisPersonAndTheirDescendants", code, x, y, align);
+        console.log("repositionThisPersonAndTheirDescendants", code, x, y, align);
         let numD = SuperBigFamView.numDescGens2Display;
         let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
@@ -6428,7 +6523,7 @@
                     thisLeaf.x = 1;
                 }
             }
-            condLog("orderedPartners:", orderedPartners);
+            console.log("orderedPartners:", orderedPartners);
             condLog("1. thisLeaf.x:", thisLeaf.x, "|", orderedPartners.length, thisBoxWidth);
             let thePartnerNum = 0;
             lastPartnerX = thisLeaf.x;
