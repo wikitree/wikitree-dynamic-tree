@@ -213,7 +213,7 @@ export class CC7Utils {
     static profileLink(wtRef, text) {
         return wtRef.startsWith("Private")
             ? text
-            : `<a target='_blank' href='https://www.wikitree.com/wiki/${wtRef}'>${text}</a>`;
+            : `<a target='_blank' href='https://www.wikitree.com/wiki/${this.htmlEntities(wtRef)}'>${text}</a>`;
     }
 
     static setOverflow(value) {
