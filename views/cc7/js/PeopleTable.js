@@ -1,7 +1,8 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
 import { Settings } from "./Settings.js";
-import { Utils } from "./Utils.js";
+import { CC7Utils } from "./Utils.js";
+import { Utils } from "../../shared/Utils.js";
 
 export class PeopleTable {
     static EXCEL = "xlsx";
@@ -76,7 +77,7 @@ export class PeopleTable {
                 .map((k) => {
                     const mPerson = window.people.get(k);
                     if (typeof mPerson.fixedBirthDate === "undefined") {
-                        Utils.fixBirthDate(mPerson);
+                        CC7Utils.fixBirthDate(mPerson);
                     }
                     const degree = +mPerson.Meta.Degrees;
                     return [+k, degree < 0 ? 100 : degree, mPerson.fixedBirthDate];
@@ -144,7 +145,7 @@ export class PeopleTable {
                 return val;
             }
 
-            let deathDate = Utils.ymdFix(mPerson.DeathDate);
+            let deathDate = CC7Utils.ymdFix(mPerson.DeathDate);
             if (deathDate == "") {
                 if (mPerson.deathDateDecade) {
                     deathDate = mPerson.DeathDateDecade;
@@ -224,13 +225,13 @@ export class PeopleTable {
                 }
             }
 
-            const oLink = Utils.profileLink(mPerson.Name, firstName);
+            const oLink = CC7Utils.profileLink(mPerson.Name, firstName);
             let managerLink;
             let dManager;
             if (mPerson.Manager) {
                 const mgrWtId = mPerson.Managers?.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
-                dManager = Utils.htmlEntities(mgrWtId);
-                managerLink = Utils.profileLink(dManager, dManager);
+                dManager = CC7Utils.htmlEntities(mgrWtId);
+                managerLink = CC7Utils.profileLink(dManager, dManager);
             } else {
                 managerLink = mPerson.Name.startsWith("Private") ? "Unknown" : "Orphaned";
                 dManager = managerLink;
@@ -273,8 +274,8 @@ export class PeopleTable {
                     created = "<td class='created aDate'></td>";
                 }
 
-                let mAgeAtDeath = Utils.ageAtDeath(mPerson);
-                let mAgeAtDeathNum = Utils.ageAtDeath(mPerson, false);
+                let mAgeAtDeath = CC7Utils.ageAtDeath(mPerson);
+                let mAgeAtDeathNum = CC7Utils.ageAtDeath(mPerson, false);
 
                 if (mAgeAtDeath === false && mAgeAtDeath !== "0") {
                     mAgeAtDeath = "";
@@ -328,7 +329,7 @@ export class PeopleTable {
                         word = "Children";
                         if (diedYoung && relNums[aR] == "") {
                             const imgClass = diedVeryYoung ? "diedVeryYoungImg" : "diedYoungImg";
-                            relNums[aR] = `<img class="${imgClass}" src="${Utils.imagePath(diedYoungIcon)}" />`;
+                            relNums[aR] = `<img class="${imgClass}" src="${CC7Utils.imagePath(diedYoungIcon)}" />`;
                             cellClass = "class='number diedYoung'";
                             word = diedYoungTitle;
                         } else if (mPerson.NoChildren == 1) {
@@ -396,25 +397,25 @@ export class PeopleTable {
                     " data-id='" +
                     mPerson.Id +
                     "' data-name='" +
-                    Utils.htmlEntities(mPerson.Name) +
+                    CC7Utils.htmlEntities(mPerson.Name) +
                     "' data-firstname='" +
-                    Utils.htmlEntities(firstName) +
+                    CC7Utils.htmlEntities(firstName) +
                     "' data-lnab='" +
-                    Utils.htmlEntities(mPerson.LastNameAtBirth) +
+                    CC7Utils.htmlEntities(mPerson.LastNameAtBirth) +
                     "'  data-lnc='" +
-                    Utils.htmlEntities(mPerson.LastNameCurrent) +
+                    CC7Utils.htmlEntities(mPerson.LastNameCurrent) +
                     "' data-birthdate='" +
                     dBirthDate +
                     "' data-deathdate='" +
                     dDeathDate +
                     "' data-birthlocation='" +
-                    Utils.htmlEntities(birthLocation) +
+                    CC7Utils.htmlEntities(birthLocation) +
                     "' data-birthlocation-reversed='" +
-                    Utils.htmlEntities(birthLocationReversed) +
+                    CC7Utils.htmlEntities(birthLocationReversed) +
                     "' data-deathlocation='" +
-                    Utils.htmlEntities(deathLocation) +
+                    CC7Utils.htmlEntities(deathLocation) +
                     "' data-deathlocation-reversed='" +
-                    Utils.htmlEntities(deathLocationReversed) +
+                    CC7Utils.htmlEntities(deathLocationReversed) +
                     "' data-manager='" +
                     dManager +
                     "' class='" +
@@ -442,22 +443,22 @@ export class PeopleTable {
                     (mPerson.LastNameAtBirth.startsWith("Private")
                         ? mPerson.LastNameAtBirth
                         : "<a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
-                          Utils.htmlEntities(mPerson.LastNameAtBirth) +
+                          CC7Utils.htmlEntities(mPerson.LastNameAtBirth) +
                           "'>" +
                           mPerson.LastNameAtBirth +
                           "</a>") +
                     "</td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
-                    Utils.htmlEntities(mPerson.LastNameCurrent) +
+                    CC7Utils.htmlEntities(mPerson.LastNameCurrent) +
                     "'>" +
                     mPerson.LastNameCurrent +
                     "</a></td><td class='aDate birthdate'>" +
                     birthDate +
                     "</td><td class='location birthlocation'>" +
-                    Utils.htmlEntities(birthLocation) +
+                    CC7Utils.htmlEntities(birthLocation) +
                     "</td><td  class='aDate deathdate'>" +
                     deathDate +
                     "</td><td class='location deathlocation'>" +
-                    Utils.htmlEntities(deathLocation) +
+                    CC7Utils.htmlEntities(deathLocation) +
                     "</td>" +
                     ageAtDeathCell +
                     "<td class='managerCell'>" +
@@ -472,9 +473,9 @@ export class PeopleTable {
         }
 
         if (Utils.getCookie("w_wideTable") == "0") {
-            Utils.setOverflow("visible");
+            CC7Utils.setOverflow("visible");
         } else {
-            Utils.setOverflow("auto");
+            CC7Utils.setOverflow("auto");
         }
 
         // Provide a way to examine the data record of a specific person
@@ -759,7 +760,7 @@ export class PeopleTable {
                     if (Utils.getCookie("w_wideTable") == "1") {
                         // Display a normal table
                         Utils.setCookie("w_wideTable", 0, { expires: 365 });
-                        Utils.setOverflow("visible");
+                        CC7Utils.setOverflow("visible");
                         dTable.removeClass("wide");
                         $(this).text("Wide table");
                         $("#peopleTable").attr("title", "");
@@ -772,7 +773,7 @@ export class PeopleTable {
                     } else {
                         // Display a wide table
                         Utils.setCookie("w_wideTable", 1, { expires: 365 });
-                        Utils.setOverflow("auto");
+                        CC7Utils.setOverflow("auto");
                         $(this).text("Normal Table");
                         $("#peopleTable").attr("title", "Drag to scroll left or right");
                         dTable.addClass("wide");
@@ -815,7 +816,7 @@ export class PeopleTable {
         const person = window.people.get(window.rootId);
         let displName;
         if (person) {
-            displName = new PersonName(person).withParts(Utils.WANTED_NAME_PARTS);
+            displName = new PersonName(person).withParts(CC7Utils.WANTED_NAME_PARTS);
         } else {
             displName = wtViewRegistry.getCurrentWtId();
         }
@@ -959,7 +960,7 @@ export class PeopleTable {
                         const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
                         if (dateMatch) {
                             isDate++;
-                        } else if (Utils.isNumeric(cellTextStripped)) {
+                        } else if (CC7Utils.isNumeric(cellTextStripped)) {
                             isNumeric++;
                         } else if (cellText !== "") {
                             isText++;
@@ -1260,18 +1261,18 @@ export class PeopleTable {
                     const theRelation = aPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
                     const gender = aPerson.Gender;
                     if (theRelation == "Child") {
-                        aPerson.Relation = Utils.mapGender(gender, "son", "daughter", "child");
+                        aPerson.Relation = CC7Utils.mapGender(gender, "son", "daughter", "child");
                     } else if (theRelation == "Sibling") {
-                        aPerson.Relation = Utils.mapGender(gender, "brother", "sister", "sibling");
+                        aPerson.Relation = CC7Utils.mapGender(gender, "brother", "sister", "sibling");
                     } else if (theRelation == "Parent") {
-                        aPerson.Relation = Utils.mapGender(gender, "father", "mother", "parent");
+                        aPerson.Relation = CC7Utils.mapGender(gender, "father", "mother", "parent");
                     } else if (theRelation == "Spouse") {
-                        aPerson.Relation = Utils.mapGender(gender, "husband", "wife", "spouse");
+                        aPerson.Relation = CC7Utils.mapGender(gender, "husband", "wife", "spouse");
                     } else {
                         aPerson.Relation = theRelation;
                     }
                 }
-                if (evDate != "" && evDate != "0000" && Utils.isOK(evDate)) {
+                if (evDate != "" && evDate != "0000" && CC7Utils.isOK(evDate)) {
                     let fName = aPerson.FirstName;
                     if (!aPerson.FirstName) {
                         fName = aPerson.RealName;
@@ -1335,7 +1336,7 @@ export class PeopleTable {
                             const aBitField = aBitBits[0].trim();
                             if (aBitBits[1]) {
                                 const aBitFact = aBitBits[1].trim().replaceAll(/\n/g, "");
-                                if (warTemplates.includes(templateTitle) && Utils.isOK(aBitFact)) {
+                                if (warTemplates.includes(templateTitle) && CC7Utils.isOK(aBitFact)) {
                                     if (aBitField == "startdate") {
                                         evDateStart = PeopleTable.dateToYMD(aBitFact);
                                         evStart = "joined " + templateTitle;
@@ -1358,7 +1359,7 @@ export class PeopleTable {
                                 }
                             }
                         });
-                        if (Utils.isOK(evDateStart)) {
+                        if (CC7Utils.isOK(evDateStart)) {
                             evDate = evDateStart;
                             ev = evStart;
                             timeLineEvent.push({
@@ -1374,7 +1375,7 @@ export class PeopleTable {
                                 wtId: aPerson.Name,
                             });
                         }
-                        if (Utils.isOK(evDateEnd)) {
+                        if (CC7Utils.isOK(evDateEnd)) {
                             evDate = evDateEnd;
                             ev = evEnd;
                             timeLineEvent.push({
@@ -1398,13 +1399,13 @@ export class PeopleTable {
     }
 
     static getTheYear(theDate, ev, person) {
-        if (!Utils.isOK(theDate)) {
+        if (!CC7Utils.isOK(theDate)) {
             if (ev == "Birth" || ev == "Death") {
                 theDate = person[ev + "DateDecade"];
             }
         }
         let theDateM = theDate.match(/[0-9]{4}/);
-        if (Utils.isOK(theDateM)) {
+        if (CC7Utils.isOK(theDateM)) {
             return parseInt(theDateM[0]);
         } else {
             return false;
@@ -1503,7 +1504,7 @@ export class PeopleTable {
             if (evDate.Approx == true) {
                 aboutAge = "~";
             }
-            const bpAgeAtEvent = Utils.getAge(new Date(bpBD.Date), new Date(evDate.Date));
+            const bpAgeAtEvent = CC7Utils.getAge(new Date(bpBD.Date), new Date(evDate.Date));
             let bpAge;
             if (bpAgeAtEvent == 0) {
                 bpAge = "";
@@ -1542,13 +1543,13 @@ export class PeopleTable {
                 fNames = tPerson.FirstName + " and " + aFact.firstName;
                 relation = "";
             }
-            const tlFirstName = Utils.profileLink(aFact.wtId, fNames);
+            const tlFirstName = CC7Utils.profileLink(aFact.wtId, fNames);
             const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
 
             if (aPersonBD.Approx == true) {
                 aboutAge = "~";
             }
-            let aPersonAge = Utils.getAge(new Date(aPersonBD.Date), new Date(evDate.Date));
+            let aPersonAge = CC7Utils.getAge(new Date(aPersonBD.Date), new Date(evDate.Date));
             if (aPersonAge == 0 || aPersonBD.Date.match(/0000/) != null) {
                 aPersonAge = "";
                 aboutAge = "";
@@ -1563,7 +1564,7 @@ export class PeopleTable {
             let descr;
             if (PeopleTable.#BMD_EVENTS.includes(aFact.evnt)) {
                 descr =
-                    Utils.capitalizeFirstLetter(eventName) +
+                    CC7Utils.capitalizeFirstLetter(eventName) +
                     " of " +
                     (relation == "" ? relation : relation + ", ") +
                     tlFirstName +
@@ -1572,7 +1573,7 @@ export class PeopleTable {
                 const who =
                     relation == ""
                         ? tlFirstName
-                        : Utils.capitalizeFirstLetter(relation) +
+                        : CC7Utils.capitalizeFirstLetter(relation) +
                           " " +
                           tlFirstName +
                           (theAge == "" ? "" : ", " + theAge + ",");
@@ -1609,7 +1610,7 @@ export class PeopleTable {
             return;
         }
 
-        Utils.assignRelationshipsFor(tPerson);
+        CC7Utils.assignRelationshipsFor(tPerson);
         const familyFacts = PeopleTable.getTimelineEvents(tPerson);
         // Sort the events
         familyFacts.sort((a, b) => {
@@ -1718,7 +1719,7 @@ export class PeopleTable {
                 disName = disName.replace(personOfInterest.MiddleName + " ", "");
             }
         }
-        const captionHTML = Utils.profileLink(Utils.htmlEntities(kPeople[0].Name), disName);
+        const captionHTML = CC7Utils.profileLink(CC7Utils.htmlEntities(kPeople[0].Name), disName);
         const kTable = $(
             `<div class='familySheet'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
                 "<thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead>" +
@@ -1777,15 +1778,15 @@ export class PeopleTable {
                 }
             }
             if (oName) {
-                let oBDate = Utils.ymdFix(bDate);
-                let oDDate = Utils.ymdFix(dDate);
+                let oBDate = CC7Utils.ymdFix(bDate);
+                let oDDate = CC7Utils.ymdFix(dDate);
                 if (isDecades == true) {
                     oBDate = kPers.BirthDateDecade;
                     if (oDDate != "") {
                         oDDate = kPers.DeathDateDecade;
                     }
                 }
-                const linkName = Utils.htmlEntities(kPers.Name);
+                const linkName = CC7Utils.htmlEntities(kPers.Name);
                 const aLine = $(
                     "<tr data-name='" +
                         kPers.Name +
@@ -1800,7 +1801,7 @@ export class PeopleTable {
                         "'><td>" +
                         kPers.RelationShow +
                         "</td><td>" +
-                        Utils.profileLink(linkName, oName) +
+                        CC7Utils.profileLink(linkName, oName) +
                         "</td><td class='aDate'>" +
                         oBDate +
                         "</td><td>" +
@@ -1819,11 +1820,11 @@ export class PeopleTable {
                 let marriageDeets = "m.";
                 const marriageData = personOfInterest.Marriage[kPers.Id];
                 if (marriageData) {
-                    const dMdate = Utils.ymdFix(marriageData.MarriageDate);
+                    const dMdate = CC7Utils.ymdFix(marriageData.MarriageDate);
                     if (dMdate != "") {
                         marriageDeets += " " + dMdate;
                     }
-                    if (Utils.isOK(marriageData.MarriageLocation)) {
+                    if (CC7Utils.isOK(marriageData.MarriageLocation)) {
                         marriageDeets += " " + marriageData.MarriageLocation;
                     }
                     if (marriageDeets != "m.") {
@@ -1867,7 +1868,7 @@ export class PeopleTable {
             return;
         }
 
-        Utils.assignRelationshipsFor(fPerson);
+        CC7Utils.assignRelationshipsFor(fPerson);
         const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
 
         const kkTable = PeopleTable.peopleToTable(thisFamily);

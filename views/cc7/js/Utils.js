@@ -1,4 +1,4 @@
-export class Utils {
+export class CC7Utils {
     static addMissingBits(aPerson) {
         aPerson.Missing = [];
         if (!aPerson.Father) {
@@ -9,7 +9,7 @@ export class Utils {
         }
 
         if (
-            (Utils.ageAtDeath(aPerson, false) > 15 ||
+            (CC7Utils.ageAtDeath(aPerson, false) > 15 ||
                 aPerson?.DeathDate == "0000-00-00" ||
                 aPerson?.BirthDate == "0000-00-00") &&
             ((aPerson?.DataStatus.Spouse != "known" && aPerson?.DataStatus.Spouse != "blank") ||
@@ -55,7 +55,7 @@ export class Utils {
                     about = "~";
                 }
 
-                diedAged = Utils.getAge(
+                diedAged = CC7Utils.getAge(
                     new Date(obDateBits[0], obDateBits[1], obDateBits[2]),
                     new Date(odDateBits[0], odDateBits[1], odDateBits[2])
                 );
@@ -94,7 +94,7 @@ export class Utils {
     }
 
     static fixBirthDate(person) {
-        let birthDate = Utils.ymdFix(person.BirthDate);
+        let birthDate = CC7Utils.ymdFix(person.BirthDate);
         if (birthDate == "" && person.BirthDateDecade) {
             birthDate = person.BirthDateDecade || "";
         }
@@ -116,7 +116,7 @@ export class Utils {
     static formDisplayName(aPerson, aName) {
         return aPerson.Name.startsWith("Private")
             ? aPerson.LastNameAtBirth || "Private"
-            : aName.withParts(Utils.WANTED_NAME_PARTS);
+            : aName.withParts(CC7Utils.WANTED_NAME_PARTS);
     }
 
     static getAge(birth, death) {
@@ -127,35 +127,6 @@ export class Utils {
             age--;
         }
         return age;
-    }
-
-    static getCookie(name) {
-        return WikiTreeAPI.cookie(name) || null;
-    }
-
-    static setCookie(name, value, options) {
-        return WikiTreeAPI.cookie(name, value, options);
-    }
-
-    static hideShakingTree() {
-        $("#tree").slideUp("fast");
-    }
-
-    static showShakingTree(callback) {
-        if ($("#tree").length) {
-            $("#tree").slideDown("fast", "swing", callback);
-        } else {
-            const treeGIF = $("<img id='tree' src='./views/cc7/images/tree.gif'>");
-            treeGIF.appendTo("#cc7Container");
-            $("#tree").css({
-                "display": "block",
-                "margin": "auto",
-                "height": "50px",
-                "width": "50px",
-                "border-radius": "50%",
-                "border": "3px solid forestgreen",
-            });
-        }
     }
 
     static htmlEntities(str) {
@@ -191,7 +162,7 @@ export class Utils {
             "-1",
         ];
         if (!excludeValues.includes(thing)) {
-            if (Utils.isNumeric(thing)) {
+            if (CC7Utils.isNumeric(thing)) {
                 return true;
             } else {
                 if (jQuery.type(thing) === "string") {

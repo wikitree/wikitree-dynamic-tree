@@ -65,6 +65,8 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "descendants": new DescendantsView(),
         "xtree": new XTreeView(),
         "familyGroupApp": new FamilyGroupAppView(),
+        "superbig": new SuperBigFamView(),
+
         "stats": new StatsView(),
         "wtPlusMaps": new WtPlusMaps(),
     };
