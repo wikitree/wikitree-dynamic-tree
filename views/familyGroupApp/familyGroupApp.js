@@ -82,6 +82,8 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
     close() {
         $("#view-container").removeClass("familyGroupApp");
+        $("#fgaButtons").remove();
+        $("#fgaPrintIcon").remove();
     }
 
     initializeLocalStates() {
