@@ -223,7 +223,10 @@
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Super Big Family Tree
 
     /** Static variable to hold unique ids for private persons **/
-    SuperBigFamView.nextPrivateId = -1;
+    SuperBigFamView.nextPrivateId = 50000000;
+
+    /** Placeholder to hold EXTRA SPOUSES that aren't showing up during regular getPeople searches - like unmarried spouses - but children link to both parents. */
+    SuperBigFamView.listOfExtraSpousesToAddToList = [];
 
     /** Static variable to hold the Maximum Angle for the Super Big Family Tree (360 full circle / 240 partial / 180 semicircle)   **/
     SuperBigFamView.maxAngle = 240;
@@ -663,7 +666,7 @@
 
 
     function invokeCreatorCustomSettings() {
-        console.log("APP CREATOR CUSTOM SETTINGS INVOKED NOW !!!!", SuperBigFamView.currentSettings);
+        condLog("APP CREATOR CUSTOM SETTINGS INVOKED NOW !!!!", SuperBigFamView.currentSettings);
         SuperBigFamView.currentSettings["general_options_extraInfo"] = "all";
         SuperBigFamView.currentSettings["general_options_showExtraInfoOnPopup"] = "Yes";
         SuperBigFamView.currentSettings["date_options_showMarriage"] = true;
@@ -1603,7 +1606,7 @@
                 updateFontsIfNeeded();
                 adjustHeightsIfNeeded();
 
-                console.log(
+                condLog(
                     "RE DO POPUP if ",
                     SuperBigFamView.currentPopupID,
                     thePeopleList[SuperBigFamView.currentPopupID]
@@ -1923,7 +1926,7 @@
             let whereCOLON = possibleWTuserID.indexOf(":");
             let whereBracket = possibleWTuserID.indexOf("(");
             let youID = possibleWTuserID.substring(whereCOLON + 1, whereBracket).trim(); 
-            console.log("You are:", youID);
+            condLog("You are:", youID);
             if (youID == "Clarke-11007") {
                 invokeCreatorCustomSettings();
             }
@@ -2294,10 +2297,23 @@
 
     function drawLinesForA0StepParents() {
         let allLinesPolySVG = "";
-        let spouseColours = ["blue", "red", "darkgreen", "chocolate", "indigo", "darkorange", "navy"];
+        let spouseColours = [
+            "blue",
+            "red",
+            "darkgreen",
+            "darkorange",
+            "indigo",
+            "chocolate",
+            "forestgreen",
+            "magenta",
+            "navy",
+            "firebrick",
+            "darkgray",
+            "violet", "tan"
+        ];
         let parentCodes = ["A0RM", "A0RF"];
 
-        console.log("drawLinesForA0StepParents : GO TIME ");
+        condLog("drawLinesForA0StepParents : GO TIME ");
 
         for (let pNum = 0; pNum < 2; pNum++) {
             let code = parentCodes[pNum];
@@ -2329,10 +2345,41 @@
                 primaryLeafPerson._data.SpousesOrdered = orderedPartners;
             }
 
+            let totalNumExtraSpouses = 0;
+
             for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
                 const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
                 let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
-                console.log("spID = ", spID);
+                
+                
+                for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                    // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+                
+                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+
+                    if (!primarySpouse) {
+                        continue; /// go back to the next value of sp
+                    }
+                    let primarySpouseID = primarySpouse.Id;
+
+                    if (!thisSpouseDIV) {
+                        continue;
+                    } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                        continue;
+                    } else if (primarySpouseID != spID) {
+                        continue;
+                    }
+
+                    totalNumExtraSpouses++;
+                }
+            }
+
+            let currentSpNum = 0;
+            for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
+                const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
+                let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
+                condLog("spID = ", spID);
                 
                 // if (spID > 0) {
 
@@ -2356,14 +2403,51 @@
                         continue;
                     }
 
+                    currentSpNum++;
+
                     let minX = Math.min(primaryLeaf.x, primarySpouse.x);
                     let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
                     let minY = Math.min(primaryLeaf.y, primarySpouse.y);
 
+                    let theMod3 =
+                        (301 -
+                            pNum +
+                            (1 - pNum) * primaryLeafPerson._data.SpousesOrdered.length -
+                            (2 * pNum - 1) * currentSpNum) %
+                        3;
+                    let theTweak4Max = 0;
+                    let theTweak4Min = 0;
+                    let theTweak4MaxAngle = 0;
+                    if (totalNumExtraSpouses > 3) {
+                        if (pNum == 0) {
+                            // Step Parents on Father's Side, so maxX is may need to be shortened if # of currentSpNum > 3
+                            maxX = Math.min(
+                                maxX,
+                                primaryLeaf.x - 3 * Math.ceil((totalNumExtraSpouses - 2 - currentSpNum) / 3) * boxWidth 
+                            );
+                            if (theMod3 < 2 ){
+                                if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                                    theTweak4Max = 0 - boxWidth;
+                                }
+                            } else {
+                                if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                                    theTweak4Max = 0 - boxWidth/2;
+                                }
+                                // theTweak4MaxAngle = 30;
+                            }
+
+
+                        } else {
+                            // Step Parents on Mother's Side, so minX is may need to be lengthened if # of currentSpNum > 3
+                            minX = Math.max(minX, primaryLeaf.x + 3 * Math.ceil((currentSpNum - 3) / 3) * boxWidth);
+                            if (currentSpNum > 3){ theTweak4Min = boxWidth / 4;}
+                        }
+                    }
                     const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
                     const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
 
-                    let topEqualsY = minY - 120 + sp * 60;
+                    let topEqualsY = minY - 120 + theMod3 * 60;
+
                     if (thisLeafHt < 170 || otherLeafHt < 170) {
                         minY =
                             minY -
@@ -2371,7 +2455,7 @@
                             Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
                             37;
                     }
-                    console.log(
+                    condLog(
                         "FAMILY HT : " + primaryLeaf.Code,
                         "hts:",
                         thisLeafHt,
@@ -2382,15 +2466,15 @@
                         topEqualsY
                     );
 
-                    let drawColour = spouseColours[(sp + 0 * clrNum) % spouseColours.length];
+                    let drawColour = spouseColours[currentSpNum % spouseColours.length];
 
                     let equalsLine =
                         `<polyline points="` +
-                        (minX + 20) +
+                        (minX + theTweak4Min) /*  + 20 */ +
                         "," +
                         (topEqualsY + 30) +
                         " " +
-                        (maxX - 20) +
+                        (maxX /* - 20 */ + theTweak4Max) +
                         "," +
                         (topEqualsY + 30) +
                         `" fill="none" stroke="` +
@@ -2401,21 +2485,127 @@
                         equalsLine = "";
                     }
 
+                    if (pNum == 0) {
+                        if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                            // Step Parents on Father's Side, so maxX  may need to be shortened if # of currentSpNum > 3
+                            // maxX = Math.min(maxX, primarySpouse.x + 3 * boxWidth);
+                            condLog(
+                                "StepA0 :",
+                                primaryLeaf.Code + " @ " + primaryLeaf.x,
+                                primarySpouse.Code + " @ " + primarySpouse.x,
+                                "eq: " + minX + " to " + maxX
+                            );
+                            equalsLine +=
+                                `<polyline points="` +
+                                primaryLeaf.x /* - 20 */ +
+                                "," +
+                                (primaryLeaf.y - 100) +
+                                " " +
+                                primaryLeaf.x /* - 20 */ +
+                                "," +
+                                (primaryLeaf.y + 120 - currentSpNum) +
+                                " " +
+                                (maxX + (3 * boxWidth) / 2 + 20) +
+                                "," +
+                                (primaryLeaf.y + 120 - currentSpNum) +
+                                " " +
+                                (maxX + boxWidth / 4 + theTweak4Max) +
+                                "," +
+                                (topEqualsY + 45 + (5 * theTweak4MaxAngle) / 6) +
+                                " " +
+                                (maxX /* - 20 */ + theTweak4Max) +
+                                "," +
+                                (topEqualsY + 45) +
+                                `" fill="none" stroke="` +
+                                drawColour +
+                                `" stroke-width="3" />`;
+
+                             equalsLine +=
+                                 `<polyline points="` +
+                                 (maxX + (3 * boxWidth) / 2 + 20) +
+                                 "," +
+                                 (primaryLeaf.y + 120 - currentSpNum) +
+                                 " " +
+                                 (maxX + boxWidth / 4 + theTweak4Max) +
+                                 "," +
+                                 (topEqualsY + 30 + theTweak4MaxAngle) +
+                                 " " +
+                                 (maxX /* - 20 */ + theTweak4Max) +
+                                 "," +
+                                 (topEqualsY + 30) +
+                                 `" fill="none" stroke="` +
+                                 drawColour +
+                                 `" stroke-width="3" />`;
+                        } 
+                    } else if (pNum == 1) {
+                        if (currentSpNum > 3) {
+                            // Step Parents on Mother's Side, so minX may need to be lengthened if # of currentSpNum > 3
+                            // minX = Math.max(minX, primaryLeaf.x + 3 * boxWidth);
+
+                            equalsLine +=
+                                `<polyline points="` +
+                                primaryLeaf.x /* - 20 */ +
+                                "," +
+                                (primaryLeaf.y - 100) +
+                                " " +
+                                primaryLeaf.x +
+                                "," +
+                                (primaryLeaf.y + 120 - currentSpNum) +
+                                " " +
+                                (minX - (3 * boxWidth) / 2 - 20) +
+                                "," +
+                                (primaryLeaf.y + 120 - currentSpNum) +
+                                " " +
+                                (minX + boxWidth / 4) +
+                                "," +
+                                (topEqualsY + 45) +
+                                `" fill="none" stroke="` +
+                                drawColour +
+                                `" stroke-width="3" />`;
+
+                            equalsLine +=
+                                `<polyline points="` +
+                                (minX - (3 * boxWidth/2) - 20) +
+                                "," +
+                                (primaryLeaf.y + 120 - currentSpNum) +
+                                " " +
+                                (minX + boxWidth / 4) +
+                                "," +
+                                (topEqualsY + 30) +
+                                `" fill="none" stroke="` +
+                                drawColour +
+                                `" stroke-width="3" />`;
+                        }
+                    }
+
                     equalsLine +=
                         `<polyline points="` +
-                        (minX + 20) +
+                        (minX + theTweak4Min) /* + 20 */ +
                         "," +
                         (topEqualsY + 45) +
                         " " +
-                        (maxX - 20) +
+                        (maxX /* - 20 */ + theTweak4Max) +
                         "," +
                         (topEqualsY + 45) +
                         `" fill="none" stroke="` +
                         drawColour +
                         `" stroke-width="3" />`;
 
+                    equalsLine +=
+                        `<polyline points="` +
+                        primarySpouse.x +
+                        "," +
+                        (topEqualsY + 45) +
+                        " " +
+                        primarySpouse.x +
+                        "," +
+                        (primarySpouse.y - 100) +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="5" />`;
+
                     if (equalsLine.indexOf("NaN") > -1) {
-                        console.log(
+                        condLog(
                             "DANGER DANGER: NaN warning:",
                             equalsLine,
                             primaryLeaf.x,
@@ -2427,9 +2617,9 @@
                     // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
                     let centreX = (minX + maxX) / 2;
                     let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
-                    if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
+                    if (/* sp > 0 &&  */primarySpouse.x > primaryLeaf.x) {
                         centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
-                    } else if (sp > 0 && primarySpouse.x < primaryLeaf.x) {
+                    } else if (/* sp > 0 &&  */primarySpouse.x < primaryLeaf.x) {
                         centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
                     }
 
@@ -2439,13 +2629,13 @@
         }
 
         if (allLinesPolySVG.indexOf("NaN") > -1) {
-            console.log(
+            condLog(
                 " DANGER DANGER WILL ROBINSON - DRAW A0 STEP PARENTS LINES CONTAINS * NOT A NUMBER * !!!!",
                 code
             );
             return "";
         }
-        // console.log(allLinesPolySVG);
+        // condLog(allLinesPolySVG);
         return allLinesPolySVG;
     }
 
@@ -3145,7 +3335,21 @@
         }
 
         let allLinesPolySVG = "";
-        let spouseColours = ["blue", "red", "darkgreen", "brown", "indigo", "darkorange", "navy"];
+        let spouseColours = [
+            "blue",
+            "red",
+            "darkgreen",
+            "darkorange",
+            "indigo",
+            "chocolate",
+            "forestgreen",
+            "magenta",
+            "navy",
+            "firebrick",
+            "darkgray",
+            "violet",
+            "tan",
+        ];
 
         condLog(
             "drawLinesForFamilyOf : GO TIME (Spouses, Siblings, Children) ...\n",
@@ -3171,91 +3375,199 @@
 
         }
 
-        
-        for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
-            // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+        if (!primaryLeafPerson._data.SpousesOrdered) {
+            let orderedPartners = [];
+            for (let sp in primaryLeafPerson._data.Spouses) {
+                const thisPartner = primaryLeafPerson._data.Spouses[sp];
+                orderedPartners.push(thisPartner.marriage_date + "|" + thisPartner.Id);
+            }
+            orderedPartners = orderedPartners.sort();
+            thePeopleList[primaryLeafPerson._data.Id]._data.SpousesOrdered = orderedPartners;
+            primaryLeafPerson._data.SpousesOrdered = orderedPartners;
+        }
 
-            let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-            let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+        let totalNumExtraSpouses = 0;
 
-            if (doingDirectAncestorCode > "") {
-                primarySpouse = SuperBigFamView.theLeafCollection[doingDirectAncestorCode];
-                thisSpouseDIV = document.getElementById("wedgeInfo-" + doingDirectAncestorCode);
-                if (sp > 0) {
-                    break;
+        for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
+            const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
+            let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
+
+            for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+
+                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+
+                if (!primarySpouse) {
+                    continue; /// go back to the next value of sp
                 }
-            }
+                let primarySpouseID = primarySpouse.Id;
 
-            if (!primarySpouse) {
-                condLog("NO Primary Spouse exists in theLeafCollection !")
-                if (
-                    primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
-                    primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
-                ) {
-                    doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
-                    condLog(
-                        "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
-                        primaryLeafPerson._data.Spouses[sp]
-                    );
+                if (!thisSpouseDIV) {
+                    continue;
+                } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                    continue;
+                } else if (primarySpouseID != spID) {
+                    continue;
                 }
-                continue; /// go back to the next value of sp
+
+                totalNumExtraSpouses++;
             }
-            let primarySpouseID = primarySpouse.Id;
+        }
 
-            if (!thisSpouseDIV) {
-                condLog("NO Primary Spouse exists in WedgeInfo- DIVs collection !");
-                continue;
-            } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
-                continue;
-            }
+        let currentSpNum = 0;
 
-            let minX = Math.min(primaryLeaf.x, primarySpouse.x);
-            let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
-            let minY = Math.min(primaryLeaf.y, primarySpouse.y);
+        for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
+                const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
+                let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
+            
 
-            const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
-            const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
+            for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
 
-            if (thisLeafHt < 170 || otherLeafHt < 170) {
-                minY =
-                    minY -
-                    85 +
-                    Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
-                    37;
-            }
-            // condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
+                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
-            let drawColour = spouseColours[(sp + clrNum) % spouseColours.length];
-            if (doingDirectAncestorCode > "") {
-                drawColour = "black";
-            }
-            let childrenXs = [];
-            let childrenY = 0;
-            let childrenMinX = 0;
-            let childrenMaxX = 0;
-            let defaultChildX = (primaryLeaf.x + primarySpouse.x) / 2;
-            // condLog("PRIMARY CHILDREN : ", primaryChildren);
-            // for (let ch = 0; ch < primaryChildren.length; ch++) {
-            for (let ch = 0; ch < numPrimaryChildren; ch++) {
-                let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + make2Digit(ch + 1)];
-                if (kidLeaf) {
-                    if (!kidLeaf["x"]) {
-                        continue;
-                        // kidLeaf['x'] = defaultChildX;
+                if (doingDirectAncestorCode > "") {
+                    primarySpouse = SuperBigFamView.theLeafCollection[doingDirectAncestorCode];
+                    thisSpouseDIV = document.getElementById("wedgeInfo-" + doingDirectAncestorCode);
+                    if (sp > 0) {
+                        break;
                     }
+                }
 
-                    const kid = thePeopleList[kidLeaf.Id];
-                    // condLog("kid " + ch, kid._data.Father, kid._data.Mother, primarySpouseID, kid);
-
+                if (!primarySpouse) {
+                    condLog("NO Primary Spouse exists in theLeafCollection !");
                     if (
-                        kid &&
-                        ((kid._data.Father && kid._data.Father == primarySpouseID) ||
-                            (kid._data.Mother && kid._data.Mother == primarySpouseID)) &&
-                        ((kid._data.Father && kid._data.Father == primaryLeaf.Id) ||
-                            (kid._data.Mother && kid._data.Mother == primaryLeaf.Id))
+                        primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
+                        primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
                     ) {
-                        // let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + (ch + 1)];
-                        // condLog("kidLeaf:", childPrefix + (ch + 1), kidLeaf, childrenMinX, kidLeaf.x, childrenMaxX);
+                        doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
+                        condLog(
+                            "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
+                            primaryLeafPerson._data.Spouses[sp]
+                        );
+                    }
+                    continue; /// go back to the next value of sp
+                }
+                let primarySpouseID = primarySpouse.Id;
+
+                if (!thisSpouseDIV) {
+                    condLog("NO Primary Spouse exists in WedgeInfo- DIVs collection !");
+                    continue;
+                } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                    continue;
+                } else if (primarySpouseID != spID) {
+                    continue;
+                }
+
+                currentSpNum++;
+
+                let minX = Math.min(primaryLeaf.x, primarySpouse.x);
+                let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
+                let minY = Math.min(primaryLeaf.y, primarySpouse.y);
+
+                 let theMod3 = (300 - currentSpNum) %3;
+                 if ((primaryLeaf.x > primarySpouse.x)) {
+                    theMod3 = (301 + primaryLeafPerson._data.SpousesOrdered.length  + currentSpNum) % 3;
+                 }
+                 let theTweak4Max = 0;
+                 let theTweak4Min = 0;
+                 let theTweak4MaxAngle = 0;
+                 if (totalNumExtraSpouses > 3) {
+                     if ((primaryLeaf.x > primarySpouse.x)) {
+                         // Step Parents on Father's Side, so maxX is may need to be shortened if # of currentSpNum > 3
+                         maxX = Math.min(
+                             maxX,
+                             primaryLeaf.x - 3 * Math.ceil((totalNumExtraSpouses - 2 - currentSpNum) / 3) * boxWidth
+                         );
+                         if (theMod3 < 2) {
+                             if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                                 theTweak4Max = 0 - boxWidth;
+                             }
+                         } else {
+                             if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                                 theTweak4Max = 0 - boxWidth / 2;
+                             }
+                             // theTweak4MaxAngle = 30;
+                         }
+                     } else {
+                         // Step Parents on Mother's Side, so minX is may need to be lengthened if # of currentSpNum > 3
+                         minX = Math.max(minX, primaryLeaf.x + 3 * Math.ceil((currentSpNum - 3) / 3) * boxWidth);
+                         if (currentSpNum > 3) {
+                             theTweak4Min = boxWidth / 4;
+                         }
+                     }
+                 }
+                 const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+                 const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
+
+                 let topEqualsY = minY - 120 + theMod3 * 60;
+
+                if (thisLeafHt < 170 || otherLeafHt < 170) {
+                    minY =
+                        minY -
+                        85 +
+                        Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
+                        37;
+                }
+                // condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
+
+                let drawColour = spouseColours[currentSpNum % spouseColours.length];
+                if (doingDirectAncestorCode > "") {
+                    drawColour = "black";
+                } else {
+                    // drawColour = "yellow";
+                }
+                let childrenXs = [];
+                let childrenY = 0;
+                let childrenMinX = 0;
+                let childrenMaxX = 0;
+                let defaultChildX = primarySpouse.x - boxWidth/2; // (primaryLeaf.x + primarySpouse.x) / 2;
+                // condLog("PRIMARY CHILDREN : ", primaryChildren);
+                // for (let ch = 0; ch < primaryChildren.length; ch++) {
+                for (let ch = 0; ch < numPrimaryChildren; ch++) {
+                    let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + make2Digit(ch + 1)];
+                    if (kidLeaf) {
+                        if (!kidLeaf["x"]) {
+                            continue;
+                            // kidLeaf['x'] = defaultChildX;
+                        }
+
+                        const kid = thePeopleList[kidLeaf.Id];
+                        // condLog("kid " + ch, kid._data.Father, kid._data.Mother, primarySpouseID, kid);
+
+                        if (
+                            kid &&
+                            ((kid._data.Father && kid._data.Father == primarySpouseID) ||
+                                (kid._data.Mother && kid._data.Mother == primarySpouseID)) &&
+                            ((kid._data.Father && kid._data.Father == primaryLeaf.Id) ||
+                                (kid._data.Mother && kid._data.Mother == primaryLeaf.Id))
+                        ) {
+                            // let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + (ch + 1)];
+                            // condLog("kidLeaf:", childPrefix + (ch + 1), kidLeaf, childrenMinX, kidLeaf.x, childrenMaxX);
+                            if (childrenXs.length == 0) {
+                                childrenMinX = kidLeaf.x;
+                                childrenMaxX = kidLeaf.x;
+                            } else {
+                                childrenMinX = Math.min(childrenMinX, kidLeaf.x);
+                                childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
+                            }
+                            childrenY = kidLeaf.y;
+                            childrenXs.push(kidLeaf.x);
+                        }
+                    }
+                }
+                // condLog(
+                //     "After reg loop - FOUND ",
+                //     childrenXs.length,
+                //     "children to connect",
+                //     childrenMinX,
+                //     childrenMaxX
+                // );
+                if (doingDirectAncestorCode > "") {
+                    let kidLeaf = SuperBigFamView.theLeafCollection[code];
+                    if (kidLeaf) {
                         if (childrenXs.length == 0) {
                             childrenMinX = kidLeaf.x;
                             childrenMaxX = kidLeaf.x;
@@ -3267,149 +3579,238 @@
                         childrenXs.push(kidLeaf.x);
                     }
                 }
-            }
-            // condLog(
-            //     "After reg loop - FOUND ",
-            //     childrenXs.length,
-            //     "children to connect",
-            //     childrenMinX,
-            //     childrenMaxX
-            // );
-            if (doingDirectAncestorCode > "") {
-                let kidLeaf = SuperBigFamView.theLeafCollection[code];
-                if (kidLeaf) {
-                    if (childrenXs.length == 0) {
-                        childrenMinX = kidLeaf.x;
-                        childrenMaxX = kidLeaf.x;
-                    } else {
-                        childrenMinX = Math.min(childrenMinX, kidLeaf.x);
-                        childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
-                    }
-                    childrenY = kidLeaf.y;
-                    childrenXs.push(kidLeaf.x);
-                }
-            }
-                        
-            // condLog(
-            //     "FOUND actually ",
-            //     childrenXs.length,
-            //     "children to connect",
-            //     childrenMinX,
-            //     childrenMaxX,
-            //     primaryLeaf.Code
-            // );
-            let equalsLine =
-                `<polyline points="` +
-                (minX + 20) +
-                "," +
-                (minY + 30 - sp * 60) +
-                " " +
-                (maxX - 20) +
-                "," +
-                (minY + 30 - sp * 60) +
-                `" fill="none" stroke="` +
-                drawColour +
-                `" stroke-width="3"/>`;
 
-            if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
-                equalsLine = "";
-            }
-            equalsLine +=
-                `<polyline points="` +
-                (minX + 20) +
-                "," +
-                (minY + 45 - sp * 60) +
-                " " +
-                (maxX - 20) +
-                "," +
-                (minY + 45 - sp * 60) +
-                `" fill="none" stroke="` +
-                drawColour +
-                `" stroke-width="3" />`;
-
-            if (equalsLine.indexOf("NaN") > -1) {
-                condLog(
-                    "DANGER DANGER:",
-                    equalsLine,
-                    primaryLeaf.x,
-                    primarySpouse.x,
-                    primaryLeaf.y,
-                    primarySpouse.y
-                );
-            }
-            // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
-            let centreX = (minX + maxX) / 2;
-            let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
-            if (sp > 0 && primarySpouse.x > primaryLeaf.x) {
-                centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
-            } else if (sp > 0 && primarySpouse.x < primaryLeaf.x) {
-                centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
-            }
-
-            childrenMinX = Math.min(childrenMinX, centreX);
-            childrenMaxX = Math.max(childrenMaxX, centreX);
-
-            let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
-            if (checkResult.hasChanged) {
-                centreX = checkResult.centre;
-                childrenXs = checkResult.kids;
-                childrenMinX = centreX;
-                childrenMaxX = centreX;
-                for (let ch = 0; ch < childrenXs.length; ch++) {
-                    childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
-                    childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
-                }
-            }
-
-
-            let crossBarY = checkCrossBarYwithATC(childrenY - 130 - (sp + levelNum) * 30, childrenMinX, childrenMaxX);
-
-            let tBarVertLine =
-                `<polyline points="` +
-                centreX +
-                "," +
-                (minY + 45 - sp * 60) +
-                " " +
-                centreX +
-                "," +
-                crossBarY +
-                `" fill="none" stroke="` +
-                drawColour +
-                `" stroke-width="3"/>` +
-                `<polyline points="` +
-                childrenMinX +
-                "," +
-                crossBarY +
-                " " +
-                childrenMaxX +
-                "," +
-                crossBarY +
-                `" fill="none" stroke="` +
-                drawColour +
-                `" stroke-width="3"/>`;
-
-            // condLog(tBarVertLine);
-
-            let dropLines = "";
-            for (let ch = 0; ch < childrenXs.length; ch++) {
-                dropLines +=
+                // condLog(
+                //     "FOUND actually ",
+                //     childrenXs.length,
+                //     "children to connect",
+                //     childrenMinX,
+                //     childrenMaxX,
+                //     primaryLeaf.Code
+                // );
+                let equalsLine =
                     `<polyline points="` +
-                    childrenXs[ch] +
+                    (minX + theTweak4Min) /*  + 20 */ +
                     "," +
-                    crossBarY +
+                    (topEqualsY + 30) +
                     " " +
-                    childrenXs[ch] +
+                    (maxX /* - 20 */ + theTweak4Max) +
                     "," +
-                    (childrenY - 80) +
+                    (topEqualsY + 30) +
                     `" fill="none" stroke="` +
                     drawColour +
                     `" stroke-width="3"/>`;
-            }
-            // condLog(dropLines);
-            if (childrenXs.length > 0) {
-                allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
-            } else {
-                allLinesPolySVG += equalsLine;
+
+                if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                    equalsLine = "";
+                }
+                if (primaryLeaf.x > primarySpouse.x) {
+                    if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                        // Step Parents on Father's Side, so maxX  may need to be shortened if # of currentSpNum > 3
+                        // maxX = Math.min(maxX, primarySpouse.x + 3 * boxWidth);
+                        condLog(
+                            "StepA0 :",
+                            primaryLeaf.Code + " @ " + primaryLeaf.x,
+                            primarySpouse.Code + " @ " + primarySpouse.x,
+                            "eq: " + minX + " to " + maxX
+                        );
+                        equalsLine +=
+                            `<polyline points="` +
+                            primaryLeaf.x /* - 20 */ +
+                            "," +
+                            (primaryLeaf.y - 100) +
+                            " " +
+                            primaryLeaf.x /* - 20 */ +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (maxX + (3 * boxWidth) / 2 + 20) +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (maxX + boxWidth / 4 + theTweak4Max) +
+                            "," +
+                            (topEqualsY + 45 + (5 * theTweak4MaxAngle) / 6) +
+                            " " +
+                            (maxX /* - 20 */ + theTweak4Max) +
+                            "," +
+                            (topEqualsY + 45) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3" />`;
+
+                        equalsLine +=
+                            `<polyline points="` +
+                            (maxX + (3 * boxWidth) / 2 + 20) +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (maxX + boxWidth / 4 + theTweak4Max) +
+                            "," +
+                            (topEqualsY + 30 + theTweak4MaxAngle) +
+                            " " +
+                            (maxX /* - 20 */ + theTweak4Max) +
+                            "," +
+                            (topEqualsY + 30) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3" />`;
+                    } 
+                } else {
+                    if (currentSpNum > 3) {
+                        // Step Parents on Mother's Side, so minX may need to be lengthened if # of currentSpNum > 3
+                        // minX = Math.max(minX, primaryLeaf.x + 3 * boxWidth);
+
+                        equalsLine +=
+                            `<polyline points="` +
+                            primaryLeaf.x /* - 20 */ +
+                            "," +
+                            (primaryLeaf.y - 100) +
+                            " " +
+                            primaryLeaf.x +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (minX - (3 * boxWidth) / 2 - 20) +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (minX + boxWidth / 4) +
+                            "," +
+                            (topEqualsY + 45) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3" />`;
+
+                        equalsLine +=
+                            `<polyline points="` +
+                            (minX - (3 * boxWidth) / 2 - 20) +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (minX + boxWidth / 4) +
+                            "," +
+                            (topEqualsY + 30) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3" />`;
+                    }
+                }
+
+                equalsLine +=
+                    `<polyline points="` +
+                    (minX + theTweak4Min) /* + 20 */ +
+                    "," +
+                    (topEqualsY + 45) +
+                    " " +
+                    (maxX /* - 20 */ + theTweak4Max) +
+                    "," +
+                    (topEqualsY + 45) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3" />`;
+
+                equalsLine +=
+                    `<polyline points="` +
+                    primarySpouse.x +
+                    "," +
+                    (topEqualsY + 45) +
+                    " " +
+                    primarySpouse.x +
+                    "," +
+                    (primarySpouse.y - 100) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="5" />`;
+
+                if (equalsLine.indexOf("NaN") > -1) {
+                    condLog(
+                        "DANGER DANGER:",
+                        equalsLine,
+                        primaryLeaf.x,
+                        primarySpouse.x,
+                        primaryLeaf.y,
+                        primarySpouse.y
+                    );
+                }
+                // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
+                let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
+                let centreX =  primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;// (minX + maxX) / 2;
+                if (/* sp > 0 && */ primarySpouse.x > primaryLeaf.x) {
+                    centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
+                } else if (/* sp > 0 && */ primarySpouse.x < primaryLeaf.x) {
+                    centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
+                }
+
+                childrenMinX = Math.min(childrenMinX, centreX);
+                childrenMaxX = Math.max(childrenMaxX, centreX);
+
+                let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+                if (checkResult.hasChanged) {
+                    // centreX = checkResult.centre;
+                    childrenXs = checkResult.kids;
+                    childrenMinX = centreX;
+                    childrenMaxX = centreX;
+                    for (let ch = 0; ch < childrenXs.length; ch++) {
+                        childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
+                        childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
+                    }
+                }
+
+                let crossBarY = checkCrossBarYwithATC(
+                    childrenY - 130 - (sp + levelNum) * 30,
+                    childrenMinX,
+                    childrenMaxX
+                );
+
+                let tBarVertLine =
+                    `<polyline points="` +
+                    centreX +
+                    "," +
+                    // (minY + 45 - sp * 60) +
+                    (topEqualsY + 45) +
+                    " " +
+                    centreX +
+                    "," +
+                    crossBarY +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3"/>` +
+                    `<polyline points="` +
+                    childrenMinX +
+                    "," +
+                    crossBarY +
+                    " " +
+                    childrenMaxX +
+                    "," +
+                    crossBarY +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3"/>`;
+
+                // condLog(tBarVertLine);
+
+                let dropLines = "";
+                for (let ch = 0; ch < childrenXs.length; ch++) {
+                    dropLines +=
+                        `<polyline points="` +
+                        childrenXs[ch] +
+                        "," +
+                        crossBarY +
+                        " " +
+                        childrenXs[ch] +
+                        "," +
+                        (childrenY - 80) +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>`;
+                }
+                // condLog(dropLines);
+                if (childrenXs.length > 0) {
+                    allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+                } else {
+                    allLinesPolySVG += equalsLine;
+                }
             }
         }
 
@@ -4288,6 +4689,15 @@
         };
 
         loadingTD.innerHTML = "loading...";
+
+        let codesOKtoLoadExtraSpouses = ["A3","A4","D2","C2"];
+        if (codesOKtoLoadExtraSpouses.indexOf(getCode) > -1 && SuperBigFamView.listOfExtraSpousesToAddToList.length > 0) {
+            for (let ex = 0; ex < SuperBigFamView.listOfExtraSpousesToAddToList.length; ex++) {
+                KeysIDsArray.push( SuperBigFamView.listOfExtraSpousesToAddToList[ex]);
+            }
+             SuperBigFamView.listOfExtraSpousesToAddToList = [];
+        }
+
 
         let thisKeysIDsArray = KeysIDsArray;
         if (KeysIDsArray.length > 100) {
@@ -5671,7 +6081,7 @@
                     }
                 }
 
-                console.log("Ordering Ancestor:", thisLeafPerson._data.Name);
+                condLog("Ordering Ancestor:", thisLeafPerson._data.Name);
                 if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 ) {
                     let extraPartnerNum = 0;
                     for (let ord = 0; ord < thisLeafPerson._data.SpousesOrdered.length; ord++) {
@@ -5680,7 +6090,7 @@
                         for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                             let thisPartner = thisLeafPerson._data.Spouses[i];
                               
-                            console.log("Ordering " , thisOrdered);
+                            condLog("Ordering " , thisOrdered);
 
                             let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
                             let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
@@ -5716,7 +6126,7 @@
                                     if (thisLeafExtraPartner.x == 0) {
                                         thisLeafExtraPartner.x = 1;
                                     }
-                                    console.log("x = ", thisLeafExtraPartner.x, thisLeafExtraPartnerPerson._data.Name);
+                                    condLog("x = ", thisLeafExtraPartner.x, thisLeafExtraPartnerPerson._data.Name);
                                     repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
                                 } else {
                                     // No children - then - no show (unless we're into Cousin mode of some flavour)
@@ -5733,7 +6143,7 @@
                                         if (thisLeafExtraPartner.x == 0) {
                                             thisLeafExtraPartner.x = 1;
                                         }
-                                        console.log(
+                                        condLog(
                                             "x = ",
                                             thisLeafExtraPartner.x,
                                             thisLeafExtraPartnerPerson._data.Name
@@ -6180,7 +6590,7 @@
     }
 
     function repositionThisPersonAndTheirDescendants(code, x, y, align = "C") {
-        console.log("repositionThisPersonAndTheirDescendants", code, x, y, align);
+        condLog("repositionThisPersonAndTheirDescendants", code, x, y, align);
         let numD = SuperBigFamView.numDescGens2Display;
         let numC = SuperBigFamView.numCuzGens2Display * (1 - SuperBigFamView.displayPedigreeOnly); // num Cousins - going wide
 
@@ -6438,7 +6848,7 @@
             );
             SuperBigFamView.theLeafCollection[theKsByID[okID].code].y = y + kidsVBoxHeight;
             condLog("returned: ", theKsByID[okID]["dims"]);
-            currentKidX = currentKidX * 1.0 + theKsByID[okID]["dims"].width + 1 * 0 * 20;
+            currentKidX = currentKidX * 1.0 + theKsByID[okID]["dims"].width;// + 1 * 0 * 20;
             if (currentKidX == 0) {
                 currentKidX = 1;
             }
@@ -6456,6 +6866,15 @@
         if (thisLeaf.x == 0) {
             thisLeaf.x = 1;
         }
+
+        condLog(
+            commentPreFix + code + " after STEP 5 - thisLeaf @ ",
+            thisLeaf.x + "," + thisLeaf.y,
+            "currentKidX = " + currentKidX,
+            "OP length:" +
+            orderedPartners.length
+        );
+
         // NOTE: orderedPartners includes a default PsByID[0] for children with NO other parent
         //  - so - if there ARE partner spouses, then the orderedPartners.length > 1   !!!!
         if (orderedPartners.length > 1) {
@@ -6523,7 +6942,7 @@
                     thisLeaf.x = 1;
                 }
             }
-            console.log("orderedPartners:", orderedPartners);
+            condLog("orderedPartners:", orderedPartners);
             condLog("1. thisLeaf.x:", thisLeaf.x, "|", orderedPartners.length, thisBoxWidth);
             let thePartnerNum = 0;
             lastPartnerX = thisLeaf.x;
@@ -6552,13 +6971,25 @@
         // (STEP 6) Calculate and Return overall Dimensions of entire package
         dims.width = Math.max(thisBoxWidth, dims.width, spouseWidth);
         dims.maxX = Math.max(x + thisBoxWidth, theMaxX, lastPartnerX + thisBoxWidth);
+
+        condLog(
+            commentPreFix + code + " after STEP 6 - thisLeaf @ ",
+            thisLeaf.x + "," + thisLeaf.y,
+            "currentKidX = " + currentKidX
+        );
         condLog(
             commentPreFix + code + " : " + thisLeaf.Chunk,
-            "( " + thisLeaf.x + " , " + thisLeaf.y + " )",
+            "( " + thisLeaf.x + " , " + thisLeaf.y + " )", thisLeafPerson._data.Spouses.length,
             orderedPartners.length,
             orderedKids.length,
             dims
         );
+
+        // SPECIAL CASE:  If # of spouses == 0 AND # of kids > 0 ... then back up the main Leaf.x by half a BoxWidth ???  To avoid the weird half-offset look
+        if (thisLeafPerson._data.Spouses.length == 0 && orderedKids.length > 0) {
+            thisLeaf.x -= thisBoxWidth/2 - 10;
+        } 
+        
         return dims;
     }
 
@@ -6968,17 +7399,28 @@
             let numPeeps = 0;
             for (const ancNum in SuperBigFamView.theAncestors) {
                 let thePerson = SuperBigFamView.theAncestors[ancNum];
+
+                // GPC: Dec 10th, 2023
+                // CHANGE in way of dealing with PRIVATE PEOPLE
+                // Instead of making ID#s positive, and assigning > 0,
+                // Let's try KEEPING them negative (so they don't conflict with the very low numbered ACTUAL WikiTree ID #s for Chris W's family, for example)
+
+                let currentPrivateIDstarter = SuperBigFamView.nextPrivateId;
                 if (thePerson.Id < 0) {
-                    thePerson.Id = 100 - thePerson.Id;
-                    thePerson["Name"] = "Private-" + thePerson.Id;
+                    thePerson.Id = currentPrivateIDstarter - thePerson.Id;
+                    SuperBigFamView.nextPrivateId = Math.min(SuperBigFamView.nextPrivateId, thePerson.Id);
+                    // use SuperBigFamView.nextPrivateId to track the lowest PrivateID used so far ... so that in future GETPEOPLE attempts, we can avoid re-using the same #s
+
+                    thePerson["Name"] = "Priv8-" + ( thePerson.Id);  // use Priv8 as the "Name" prefix to avoid any conflicts with Private which is used for a few WikiTreer last names
                     thePerson["FirstName"] = "Private";
                     thePerson["LastNameAtBirth"] = "";
+                    condLog("Private person:", thePerson);
                 }
                 if (thePerson.Mother < 0) {
-                    thePerson.Mother = 100 - thePerson.Mother;
+                    thePerson.Mother = currentPrivateIDstarter - thePerson.Mother;
                 }
                 if (thePerson.Father < 0) {
-                    thePerson.Father = 100 - thePerson.Father;
+                    thePerson.Father = currentPrivateIDstarter - thePerson.Father;
                 }
                 thePeopleList.add(thePerson);
                 numPeeps++;
@@ -7052,19 +7494,23 @@
             condLog("theAncestors:", GGGparentSiblings);
             // condLog("load function : person with which to drawTree:", person);
             let numPeeps2 = 0;
+
+            let basePrivateID = SuperBigFamView.nextPrivateId;
             for (const ancNum2 in GGGparentSiblings) {
                 let thePerson = GGGparentSiblings[ancNum2];
                 if (thePerson.Id < 0) {
-                    thePerson.Id = 100 - thePerson.Id;
-                    thePerson["Name"] = "Private-" + thePerson.Id;
+                    // thePerson.Id = 100 - thePerson.Id; // DO NOT RE-WRITE history and assign a positive number - that could conflict with early WikiTree profiles, like Chris W's family, for example
+                    thePerson.Id = basePrivateID - thePerson.Id; 
+                    SuperBigFamView.nextPrivateId = Math.min(SuperBigFamView.nextPrivateId, thePerson.Id);
+                    thePerson["Name"] = "Priv8-" +  thePerson.Id;
                     thePerson["FirstName"] = "Private";
                     thePerson["LastNameAtBirth"] = "";
                 }
                 if (thePerson.Mother < 0) {
-                    thePerson.Mother = 100 - thePerson.Mother;
+                    thePerson.Mother = basePrivateID - thePerson.Mother;
                 }
                 if (thePerson.Father < 0) {
-                    thePerson.Father = 100 - thePerson.Father;
+                    thePerson.Father = basePrivateID - thePerson.Father;
                 }
                 thePeopleList.addIfNeeded(thePerson);
                 numPeeps2++;
@@ -7870,7 +8316,7 @@
         let thisPeep = thePeopleList[peepID];
         let thisRent = thePeopleList[parentID]; // Parent = RENT (using P for Partners)
         if (peepID < 0) {
-            return;
+            // return;  // NOT
         }
         // condLog(
         //     thisRent._data.BirthNamePrivate,
@@ -7900,11 +8346,7 @@
         } else if (parentType == "M") {
             thisRent._data.Gender = "Male";
         } else {
-            condLog(
-                "No need to assign Gender to ",
-                thisRent._data.BirthNamePrivate,
-                "Gender:" + thisRent._data.Gender
-            );
+            condLog("No need to assign Gender to ", thisRent._data.BirthNamePrivate, "Gender:" + thisRent._data.Gender);
         }
 
         let birthOrder = 0;
@@ -7927,10 +8369,26 @@
         if (thisRent && thePeopleList[otherParentID]) {
             checkForSpouseRecord(parentID, otherParentID);
         }
+
+        // WHAT IF ... the Primary DOES exist ... but Spouse does NOT ... maybe we should look them up?
+        if (
+            thisRent &&
+            !thePeopleList[otherParentID] &&
+            otherParentID > 0 &&
+            SuperBigFamView.listOfExtraSpousesToAddToList.indexOf(otherParentID) == -1
+        ) {
+            SuperBigFamView.listOfExtraSpousesToAddToList.push(otherParentID);
+        }
     }
 
     function checkForSpouseRecord(sp1ID, sp2ID) {
-        if (!thePeopleList[sp1ID] || !thePeopleList[sp2ID]) {
+        // IF the PRIMARY parent does not exist ... doesn't really need to go any further - do we ?
+        if (!thePeopleList[sp1ID] ) {
+            return;
+        }
+        // BUT ... if Primay DOES exist ... but Spouse does NOT ... maybe we should look them up?
+        if (!thePeopleList[sp2ID]) {
+            SuperBigFamView.listOfExtraSpousesToAddToList.push(sp2ID);
             return;
         }
 
@@ -8941,7 +9399,7 @@
      */
     SuperBigFamView.personPopup = Tree.prototype.personPopup = function (person, xy, Code) {
         this.removePopups();
-        console.log("PERSON POPUP : ", SuperBigFamView.currentPopupID, person, Code, xy);
+        condLog("PERSON POPUP : ", SuperBigFamView.currentPopupID, person, Code, xy);
         // let thisPeep = thePeopleList[person._data.Id];
 
         if (SuperBigFamView.currentPopupID == person._data.Id) {
@@ -9056,7 +9514,7 @@
         for (let ord = 0; ord < person._data.SpousesOrdered.length; ord++) {
             const spouseOrdered = person._data.SpousesOrdered[ord];
             let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
-            console.log("spID = ", spID);
+            condLog("spID = ", spID);
             if (ord > 0 && spID > 0) {
                 marriageInfo += "<br/>";
             }
@@ -9146,7 +9604,7 @@
         
 
         if (person._data.FirstName == "Private" && person._data.LastNameAtBirth == "") {
-            console.log("PRIVATE PERSON HERE !!!");
+            condLog("PRIVATE PERSON HERE !!!");
             // We're dealing with a PRIVATE PERSON here ... so ... the only thing we can show is the silhouette, PRIVATE, and Code, if desired
             if (extrasAtBottom > "" && SuperBigFamView.currentSettings["general_options_extraInfo"] == "ahnNum") {
                 extrasAtBottom = `<div class="death vital"><hr/>`;
@@ -9878,6 +10336,9 @@
                 let newCode = "";
                 if (code.substr(-2) == "RF") {
                     newCode = code.substring(0,lastCodeType) + "RM";
+                    if (!SuperBigFamView.theLeafCollection[newCode]) {
+                        return "";
+                    }
                 } else  {
                     return "";
                 }
@@ -9952,7 +10413,7 @@
                 datePlaceString += thisPlace;
             }
         }
-        // if (dateType == "M") {console.log("SENDING getSettingsDate: ", code, dateType +  ": ",  datePlaceString);}
+        // if (dateType == "M") {condLog("SENDING getSettingsDate: ", code, dateType +  ": ",  datePlaceString);}
         return datePlaceString;
     }
 
