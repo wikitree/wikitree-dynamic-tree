@@ -224,6 +224,8 @@
 
     /** Static variable to hold unique ids for private persons **/
     SuperBigFamView.nextPrivateId = 50000000;
+    SuperBigFamView.maxPrivateId = 50000000;
+    SuperBigFamView.privateChildren2ParentsTracker = {};
 
     /** Placeholder to hold EXTRA SPOUSES that aren't showing up during regular getPeople searches - like unmarried spouses - but children link to both parents. */
     SuperBigFamView.listOfExtraSpousesToAddToList = [];
@@ -793,9 +795,9 @@
 
                         {
                             optionName: "vSpacing",
-                            label: "Vertical Spacing (from 1 to 10)",
+                            label: "Vertical Spacing (from 1 to 20)",
                             type: "number",
-                            defaultValue: 7,
+                            defaultValue: 10,
                         },
                         { optionName: "break0.5", type: "br" },
                         {
@@ -2520,22 +2522,26 @@
                                 drawColour +
                                 `" stroke-width="3" />`;
 
-                             equalsLine +=
-                                 `<polyline points="` +
-                                 (maxX + (3 * boxWidth) / 2 + 20) +
-                                 "," +
-                                 (primaryLeaf.y + 120 - currentSpNum) +
-                                 " " +
-                                 (maxX + boxWidth / 4 + theTweak4Max) +
-                                 "," +
-                                 (topEqualsY + 30 + theTweak4MaxAngle) +
-                                 " " +
-                                 (maxX /* - 20 */ + theTweak4Max) +
-                                 "," +
-                                 (topEqualsY + 30) +
-                                 `" fill="none" stroke="` +
-                                 drawColour +
-                                 `" stroke-width="3" />`;
+                             if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                                // do nothing
+                            } else {
+                                equalsLine +=
+                                    `<polyline points="` +
+                                    (maxX + (3 * boxWidth) / 2 + 20) +
+                                    "," +
+                                    (primaryLeaf.y + 120 - currentSpNum) +
+                                    " " +
+                                    (maxX + boxWidth / 4 + theTweak4Max) +
+                                    "," +
+                                    (topEqualsY + 30 + theTweak4MaxAngle) +
+                                    " " +
+                                    (maxX /* - 20 */ + theTweak4Max) +
+                                    "," +
+                                    (topEqualsY + 30) +
+                                    `" fill="none" stroke="` +
+                                    drawColour +
+                                    `" stroke-width="3" />`;
+                            }
                         } 
                     } else if (pNum == 1) {
                         if (currentSpNum > 3) {
@@ -2563,18 +2569,22 @@
                                 drawColour +
                                 `" stroke-width="3" />`;
 
-                            equalsLine +=
-                                `<polyline points="` +
-                                (minX - (3 * boxWidth/2) - 20) +
-                                "," +
-                                (primaryLeaf.y + 120 - currentSpNum) +
-                                " " +
-                                (minX + boxWidth / 4) +
-                                "," +
-                                (topEqualsY + 30) +
-                                `" fill="none" stroke="` +
-                                drawColour +
-                                `" stroke-width="3" />`;
+                             if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                                // do nothing
+                            } else {
+                                equalsLine +=
+                                    `<polyline points="` +
+                                    (minX - (3 * boxWidth/2) - 20) +
+                                    "," +
+                                    (primaryLeaf.y + 120 - currentSpNum) +
+                                    " " +
+                                    (minX + boxWidth / 4) +
+                                    "," +
+                                    (topEqualsY + 30) +
+                                    `" fill="none" stroke="` +
+                                    drawColour +
+                                    `" stroke-width="3" />`;
+                            }
                         }
                     }
 
@@ -2640,6 +2650,7 @@
     }
 
     function doNotDisplayMarriageEquals(sp1ID, sp2ID) {
+        condLog("doNotDisplayMarriageEquals", sp1ID, sp2ID);
         if (!thePeopleList[sp1ID] || !thePeopleList[sp2ID]) {
             return true;
         }
@@ -2657,7 +2668,9 @@
                 const spouseRecord = sp1Data.Spouses[spNum];
                 if (spouseRecord.Id == sp2ID) {
                     foundSpouse = true;
-                    if (
+                    if (sp1Data.Spouses[spNum].NotMarried == "1" ) {
+                            return true;
+                    } else if (
                         sp1Data.Spouses[spNum].NotMarried == "0" ||
                         
                         sp1Data.Spouses[spNum].DoNotDisplay == "0" ||
@@ -3639,7 +3652,11 @@
                             drawColour +
                             `" stroke-width="3" />`;
 
-                        equalsLine +=
+
+                        if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                            // do nothing
+                        } else {
+                            equalsLine +=
                             `<polyline points="` +
                             (maxX + (3 * boxWidth) / 2 + 20) +
                             "," +
@@ -3655,6 +3672,7 @@
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="3" />`;
+                        }
                     } 
                 } else {
                     if (currentSpNum > 3) {
@@ -3682,18 +3700,22 @@
                             drawColour +
                             `" stroke-width="3" />`;
 
-                        equalsLine +=
-                            `<polyline points="` +
-                            (minX - (3 * boxWidth) / 2 - 20) +
-                            "," +
-                            (primaryLeaf.y + 120 - currentSpNum) +
-                            " " +
-                            (minX + boxWidth / 4) +
-                            "," +
-                            (topEqualsY + 30) +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3" />`;
+                         if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                            // do nothing
+                        } else {
+                            equalsLine +=
+                                `<polyline points="` +
+                                (minX - (3 * boxWidth) / 2 - 20) +
+                                "," +
+                                (primaryLeaf.y + 120 - currentSpNum) +
+                                " " +
+                                (minX + boxWidth / 4) +
+                                "," +
+                                (topEqualsY + 30) +
+                                `" fill="none" stroke="` +
+                                drawColour +
+                                `" stroke-width="3" />`;
+                        }
                     }
                 }
 
@@ -4759,7 +4781,7 @@
                 );
 
                 // FOR DEBUGGING PURPOSES HERE
-                if (1 == 1) {
+                if (1 == 2) {
                     let theOldProfiles = result[1];
                     for (const index in theOldProfiles) {
                         const theOldID = theOldProfiles[index].Id;
@@ -4777,14 +4799,33 @@
                 let numNewPeeps = 0;
                 let numNewSpouses = 0;
 
+                let basePrivateID = SuperBigFamView.nextPrivateId;
+
                 for (const index in theNewProfiles) {
                     numNewPeeps++;
-                    thePeopleList.addIfNeeded(theNewProfiles[index]);
+                    let thePerson = theNewProfiles[index];
+
+                    if (thePerson.Id < 0) {
+                        // thePerson.Id = 100 - thePerson.Id; // DO NOT RE-WRITE history and assign a small positive number - that could conflict with early WikiTree profiles, like Chris W's family, for example - GO HUGE !!!
+                        thePerson.Id = basePrivateID - thePerson.Id;
+                        SuperBigFamView.maxPrivateId = Math.max(SuperBigFamView.nextPrivateId, thePerson.Id) ;
+                        thePerson["Name"] = "Priv8-" + thePerson.Id;
+                        thePerson["FirstName"] = "Private";
+                        thePerson["LastNameAtBirth"] = "";
+                    }
+                    if (thePerson.Mother < 0) {
+                        thePerson.Mother = basePrivateID - thePerson.Mother;
+                    }
+                    if (thePerson.Father < 0) {
+                        thePerson.Father = basePrivateID - thePerson.Father;
+                    }
+
+                    thePeopleList.addIfNeeded(thePerson);
                     SuperBigFamView.ListsOfIDs[getCode + "out"].push(index);
 
-                    if (theNewProfiles[index].Spouses && theNewProfiles[index].Spouses.length > 0) {
-                        for (let s = 0; s < theNewProfiles[index].Spouses.length; s++) {
-                            const sp = theNewProfiles[index].Spouses[s];
+                    if (thePerson.Spouses && thePerson.Spouses.length > 0) {
+                        for (let s = 0; s < thePerson.Spouses.length; s++) {
+                            const sp = thePerson.Spouses[s];
                             SuperBigFamView.ListsOfIDs[getCode + "sp"].push(sp.Id);
                             numNewSpouses++;
                         }
@@ -4854,6 +4895,7 @@
     */
 
     function postGetPeopleProcessing(codeLetter, newLevel, doSift = false) {
+        SuperBigFamView.nextPrivateId = SuperBigFamView.maxPrivateId + 1;
         for (let peepID in thePeopleList) {
             let thisPeep = thePeopleList[peepID];
 
@@ -7501,7 +7543,7 @@
                 if (thePerson.Id < 0) {
                     // thePerson.Id = 100 - thePerson.Id; // DO NOT RE-WRITE history and assign a positive number - that could conflict with early WikiTree profiles, like Chris W's family, for example
                     thePerson.Id = basePrivateID - thePerson.Id; 
-                    SuperBigFamView.nextPrivateId = Math.min(SuperBigFamView.nextPrivateId, thePerson.Id);
+                    SuperBigFamView.maxPrivateId = Math.max(SuperBigFamView.nextPrivateId, thePerson.Id) ;
                     thePerson["Name"] = "Priv8-" +  thePerson.Id;
                     thePerson["FirstName"] = "Private";
                     thePerson["LastNameAtBirth"] = "";
@@ -8317,6 +8359,7 @@
         let thisRent = thePeopleList[parentID]; // Parent = RENT (using P for Partners)
         if (peepID < 0) {
             // return;  // NOT
+            // console.log("WARNING WARNING ---> peepID < 0 in linkParentAndChild :", peepID, parentID, parentType);
         }
         // condLog(
         //     thisRent._data.BirthNamePrivate,
@@ -8415,6 +8458,26 @@
     }
 
     function thisChildAlreadyInChildrenList(kidID, kidList) {
+        if (thePeopleList[kidID]._data.Name.indexOf("Priv8") > -1) {
+
+            let appMode = SuperBigFamView.numAncGens2Display + "|" + SuperBigFamView.numDescGens2Display + "|" + SuperBigFamView.numCuzGens2Display;
+            let parentComboKey = thePeopleList[kidID]._data.Father + "|" + thePeopleList[kidID]._data.Mother;
+            // console.log(
+            //     thePeopleList[kidID]._data.Name,
+            //     thePeopleList[kidID]._data.Father,
+            //     thePeopleList[kidID]._data.Mother,
+            //     appMode,
+            //     parentComboKey
+            // );
+            
+            if (SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] && SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] > "" && SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] != appMode) {
+                return true;
+            } else {
+                SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] = appMode;
+            }
+
+        }
+
         for (let C = 0; C < kidList.length; C++) {
             const kidObj = kidList[C];
             if (kidID == kidObj.Id) {
