@@ -21,7 +21,8 @@ export function showTree(
 ) {
     const theRoot = theTree.root;
     const duplicates = theTree.duplicates;
-    const markedNodes = new Set();
+    const markedNodes = new Set(); // All the marked (highlighted duplicate) nodes in the tree, represented by their ids
+    // All the highlighted paths with key=node id of destination node and value = the set of paths to the node
     const markedPaths = new Map();
 
     // Set the dimensions and margins of the diagram
@@ -301,7 +302,7 @@ export function showTree(
             .style("fill", function (d) {
                 return d._children ? "lightsteelblue" : "#fff";
             })
-            .on("click", toggleChildren)
+            .on("click", toggleAncestors)
             .append("title")
             .text(function (d) {
                 return birthAndDeathData(d.data);
@@ -478,8 +479,8 @@ export function showTree(
               ${d.y} ${d.x}`;
         }
 
-        // Toggle children on click.
-        function toggleChildren(event, d) {
+        // Collapse/expand ancestors on click.
+        function toggleAncestors(event, d) {
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
                 console.log(d.data.toString(), d);
@@ -533,11 +534,6 @@ export function showTree(
 
             // toggle the 'marked' class on all edges leading to this duplicate person
             // unless they are part of another marked path
-            for (const path of markedPaths.values()) {
-                //console.log(`marking link ${lnk}`);
-                if (path.has()) d3.selectAll(`path.link[lnk='${lnk}']`).classed("marked", setMarked);
-            }
-
             if (linksToMark) {
                 for (const lnk of linksToMark.keys()) {
                     d3.selectAll(`path.link[lnk='${lnk}']`).classed("marked", true);

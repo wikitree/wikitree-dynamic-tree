@@ -1,7 +1,7 @@
 import { AncestorTree } from "./ancestor_tree.js";
 import { showTree } from "./display.js";
-import { Lang } from "./lang.js";
 import { Utils } from "../shared/Utils.js";
+import { spell } from "../../lib/utilities.js";
 
 export class AncestorLinesExplorer {
     static #COOKIE_NAME = "wt_ale_options";
@@ -89,11 +89,11 @@ export class AncestorLinesExplorer {
                 any of the following:
                 <ul>
                   <li>
-                      <b>${Lang.spell("Privatize")}</b> will obey the
+                      <b>${spell("Privatize")}</b> will obey the
                       <a href="https://www.wikitree.com/wiki/Help:Privacy" target="_blank">privacy settings</a>
                       when displaying names and dates, even if you are on the trusted list.
                   </li><li>
-                      <b>${Lang.spell("Anonymize the living")}</b> will not display the name of any living person, and
+                      <b>${spell("Anonymize the living")}</b> will not display the name of any living person, and
                       wil not show their birth or death dates or location.
                 </ul>
             </li><li>
@@ -338,7 +338,7 @@ export class AncestorLinesExplorer {
                         for="privatise"
                         title="Obey privacy settings when displaying names and dates, even if you are on the trusted list."
                         class="right">
-                        ${Lang.spell("Privatize")}</label
+                        ${spell("Privatize")}</label
                       >
                       <input
                         id="anonLiving"
@@ -348,7 +348,7 @@ export class AncestorLinesExplorer {
                         for="anonLiving"
                         title="Anonymize names of living people and remove their dates and places."
                         class="right">
-                        ${Lang.spell("Anonymize")} the living</label
+                        ${spell("Anonymize")} the living</label
                       >
                     </td>
                     <td></td>
@@ -516,7 +516,7 @@ export class AncestorLinesExplorer {
             .on("click", function () {
                 $(this).parent().slideUp();
             });
-        $(document).off("keyup", AncestorLinesExplorer.closePopup).on("keyup", AncestorLinesExplorer.closePopUp);
+        $(document).off("keyup", AncestorLinesExplorer.closePopUp).on("keyup", AncestorLinesExplorer.closePopUp);
         $("#getAncestorsButton").click();
     }
 
@@ -570,7 +570,7 @@ export class AncestorLinesExplorer {
         AncestorTree.clear();
         wtViewRegistry.clearStatus();
         AncestorLinesExplorer.clearDisplay();
-        Utils.showShakingTree();
+        Utils.showShakingTree("controlBlock");
         const nrGenerations = $("#generation").val();
         const theRoot = await AncestorLinesExplorer.retrieveAncestorsFromWT(wtId, nrGenerations);
         Utils.hideShakingTree();
@@ -699,7 +699,7 @@ export class AncestorLinesExplorer {
         }
         wtViewRegistry.clearStatus();
         AncestorLinesExplorer.clearDisplay();
-        Utils.showShakingTree();
+        Utils.showShakingTree("controlBlock");
 
         const reader = new FileReader();
         reader.onload = async function (e) {

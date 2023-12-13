@@ -1,4 +1,6 @@
 export class CC7Utils {
+    static CC7_CONTAINER_ID = "cc7Container";
+    
     static addMissingBits(aPerson) {
         aPerson.Missing = [];
         if (!aPerson.Father) {

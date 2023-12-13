@@ -27,6 +27,7 @@
 import { PeopleCache } from "./people_cache.js";
 import { CacheLoader } from "./cache_loader.js";
 import { CachedPerson } from "./cached_person.js";
+import { Utils } from "../shared/Utils.js";
 
 window.CouplesTreeView = class CouplesTreeView extends View {
     static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
@@ -347,6 +348,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     const CouplesTreeViewer = (window.CouplesTreeViewer = class CouplesTreeViewer {
         constructor(containerSelector) {
             const viewContainer = document.querySelector(containerSelector);
+            viewContainer.classList.add("cvtc");
             const width = viewContainer.offsetWidth;
             const height = viewContainer.offsetHeight;
 
@@ -603,7 +605,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 }
             }
             const isNowExpanded = oldPerson && oldPerson.isFullyEnriched();
-            // if (oldPerson && !oldPerson.isFullyEnriched()) {
             if (wasNotExpanded) {
                 if (!isNowExpanded) {
                     await self.richLoad(
@@ -1067,9 +1068,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 item.appendChild(
                     aDivWith(
                         "aChild",
-                        aProfileLink(childName, child.getName()),
+                        aProfileLink(childName, child.getWtId()),
                         document.createTextNode(" "),
-                        aTreeLink(childName, child.getName())
+                        aTreeLink(childName, child.getWtId())
                     )
                 );
                 childrenList.appendChild(item);
@@ -1229,7 +1230,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             }
 
             let photoUrl = person.getPhotoUrl(75),
-                treeUrl = window.location.pathname + "?id=" + person.getName();
+                treeUrl = window.location.pathname + "?id=" + person.getWtId();
 
             // Use generic gender photos if there is no profile photo available
             if (!photoUrl) {
@@ -1262,10 +1263,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
 						<div class="vital-info">
 						  <div class="name">
-						    <a href="https://www.wikitree.com/wiki/${person.getName()}" title="Open the profile of ${displayName} on a new page" target="_blank">${displayName}</a>
+						    <a href="https://www.wikitree.com/wiki/${person.getWtId()}" title="Open the profile of ${displayName} on a new page" target="_blank">${displayName}</a>
 						    <span class="tree-links">
-                                <a href="#name=${person.getName()}" title="Make ${person.getDisplayName()} the centre of the tree"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a>
-                                <a href="#name=${person.getName()}&view=fanchart"  title="Open a fan chart for ${displayName} on a new page" target="_blank"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a>
+                                <a href="#name=${person.getWtId()}" title="Make ${person.getDisplayName()} the centre of the tree"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a>
+                                <a href="#name=${person.getWtId()}&view=fanchart"  title="Open a fan chart for ${displayName} on a new page" target="_blank"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a>
                             </span>
 						  </div>
 						  <div class="birth vital">${birthString(person)}</div>
@@ -1586,37 +1587,26 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         return nameToReturn.substring(0, maxLength - 3) + "...";
     }
 
-    function dateObject(dateStr) {
-        const parts = (dateStr || "9999-12-31").split("-");
-        // Unknown year goes last
-        if (parts[0] && parts[0] == 0) parts[0] = 9999;
-        if (parts[1] && parts[1] > 0) parts[1] -= 1;
-        if (parts.length == 1) {
-            parts[1] = 0;
-        }
-        return new Date(...parts);
-    }
-
     /**
      * Sort a list of people by their birth date from earliest to latest.
      * People with no birth year is put last.
      */
     function sortByBirthDate(list) {
         return list.sort((a, b) => {
-            const aBirthDate = dateObject(a.getBirthDate());
-            const bBirthDate = dateObject(b.getBirthDate());
+            const aBirthDate = Utils.dateObject(a.getBirthDate());
+            const bBirthDate = Utils.dateObject(b.getBirthDate());
 
             return aBirthDate - bBirthDate;
         });
     }
 
     /**
-     * For the given couple, conisting of person and currentSpouse, determine the list of all
-     * spouses of currentSpouse. This list will therefore contain person as well as the possible
-     * other spouses of their spouse currentSpouse.
-     * @param {*} couple The couple containing the partner and currentSpouse
-     * @param {*} person The current partner of currentSpouse in couple
-     * @param {*} currentSpouse The current spouse of person in couple
+     * For the given couple, conisting of 'person' and 'currentSpouse', determine the list of all
+     * spouses of currentSpouse. This list will therefore contain 'person' as well as the possible
+     * other spouses of their spouse 'currentSpouse'.
+     * @param {*} couple The couple containing 'person' and 'currentSpouse'
+     * @param {*} person The current partner of 'currentSpouse' in couple
+     * @param {*} currentSpouse The current spouse of 'person' in couple
      * @param {*} mayChangeSpouse true iff we are allowed to add a 'change partner' button
      * @returns [botton, spouseList] where button is a 'show other spouses' button and will be
      *          undefined if there is only one spouse
@@ -1636,9 +1626,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     id: spouse.getId(),
                     name: getShortName(spouse),
                     lifespan: lifespan(spouse),
-                    wtId: spouse.getName(),
+                    wtId: spouse.getWtId(),
                     mDate: mDate,
-                    msDate: dateObject(mDate),
+                    msDate: Utils.dateObject(mDate),
                 });
             }
         }

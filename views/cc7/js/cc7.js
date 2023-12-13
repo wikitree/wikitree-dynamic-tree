@@ -235,7 +235,7 @@ export class CC7 {
         this.selector = selector;
         Settings.restoreSettings();
         $(selector).html(
-            `<div id="cc7Container" class="cc7Table">
+            `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
             <button
                 id="getPeopleButton"
                 class="small button"
@@ -289,7 +289,7 @@ export class CC7 {
             .on("dblclick", function () {
                 $(this).slideToggle();
             });
-        $("#cc7Container #explanation x")
+        $(`#${CC7Utils.CC7_CONTAINER_ID} #explanation x`)
             .off("click")
             .on("click", function () {
                 $(this).parent().slideUp();
@@ -327,7 +327,7 @@ export class CC7 {
                 $("#fileInput").trigger("click");
             });
         $("#getPeopleButton").trigger("click");
-        $(document).off("keyup", CC7.closePopup).on("keyup", CC7.closePopUp);
+        $(document).off("keyup", CC7.closePopUp).on("keyup", CC7.closePopUp);
     }
 
     static setInfoPanelMessage() {
@@ -465,8 +465,8 @@ export class CC7 {
             $("#cancelLoad").show();
             CC7.cancelLoadController = new AbortController();
             CC7.clearDisplay();
-            Utils.showShakingTree();
-            $("#cc7Container").addClass("degreeView");
+            Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID);
+            $(`#${CC7Utils.CC7_CONTAINER_ID}`).addClass("degreeView");
             const theDegree = +$("#cc7Degree").val();
             const degreeCounts = []; // currently this is being ignored
 
@@ -501,7 +501,7 @@ export class CC7 {
                 Utils.hideShakingTree();
                 $("#degreesTable").remove();
                 $("#ancReport").remove();
-                $("#cc7Container").append(
+                $(`#${CC7Utils.CC7_CONTAINER_ID}`).append(
                     $(
                         "<table id='degreesTable'>" +
                             "<tr id='trDeg'><th>Degrees</th></tr>" +
@@ -714,7 +714,7 @@ export class CC7 {
         const theDegree = +$("#cc7Degree").val();
         const wtId = wtViewRegistry.getCurrentWtId();
         event.preventDefault();
-        $("#cc7Container").removeClass("degreeView");
+        $(`#${CC7Utils.CC7_CONTAINER_ID}`).removeClass("degreeView");
         window.people = new Map();
         window.rootId = 0;
         window.cc7MinPrivateId = 0;
@@ -787,7 +787,7 @@ export class CC7 {
         $("#getDegreeButton").prop("disabled", true);
         $("#cancelLoad").show();
         CC7.cancelLoadController = new AbortController();
-        Utils.showShakingTree();
+        Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID);
         const wtId = wtViewRegistry.getCurrentWtId();
         const degreeCounts = {};
         const [resultByKey, isPartial, actualMaxDegree] = await CC7.makePagedCallAndAddPeople(
@@ -818,7 +818,7 @@ export class CC7 {
                 $("#ancReport").remove();
             }
             const maxNrPeople = 2 ** (maxWantedDegree + 3) - 2;
-            $("#cc7Container").append(
+            $(`#${CC7Utils.CC7_CONTAINER_ID}`).append(
                 $(
                     "<table id='degreesTable'>" +
                         "<tr id='trDeg'><th>Degrees</th></tr>" +
@@ -861,7 +861,7 @@ export class CC7 {
         // correctly.
         const upToDegreeToGet = upToDegree + 1;
         if ($("#degreesTable").length == 0) {
-            $("#cc7Container").append(
+            $(`#${CC7Utils.CC7_CONTAINER_ID}`).append(
                 $(
                     "<table id='degreesTable'>" +
                         "<tr><th colspan=2>Collecting Profiles</th></tr>" +
@@ -1198,7 +1198,7 @@ export class CC7 {
                         window.rootId,
                         window.cc7Degree,
                         $(wtViewRegistry.WT_ID_TEXT).val(),
-                        $("#cc7Container").hasClass("degreeView"),
+                        $(`#${CC7Utils.CC7_CONTAINER_ID}`).hasClass("degreeView"),
                     ],
                     ...window.people.entries(),
                 ],
@@ -1302,13 +1302,13 @@ export class CC7 {
             if (window.cc7Degree == 0) window.cc7Degree = Math.min(maxDegree - 1, CC7.MAX_DEGREE);
             // const theDegree = Math.min(window.cc7Degree, CC7.MAX_DEGREE);
             if (isOneDegree) {
-                $("#cc7Container").addClass("degreeView");
+                $(`#${CC7Utils.CC7_CONTAINER_ID}`).addClass("degreeView");
             } else {
-                $("#cc7Container").removeClass("degreeView");
+                $(`#${CC7Utils.CC7_CONTAINER_ID}`).removeClass("degreeView");
             }
             Utils.hideShakingTree();
             PeopleTable.addPeopleTable(PeopleTable.tableCaption());
-            $("#cc7Container #cc7Subset").before(
+            $(`#${CC7Utils.CC7_CONTAINER_ID} #cc7Subset`).before(
                 $(
                     "<table id='degreesTable'>" +
                         "<tr id='trDeg'><th>Degrees</th></tr>" +
@@ -1322,7 +1322,7 @@ export class CC7 {
 
         try {
             CC7.clearDisplay();
-            Utils.showShakingTree(() => reader.readAsText(file));
+            Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, () => reader.readAsText(file));
         } catch (error) {
             Utils.hideShakingTree();
             wtViewRegistry.showError(`The input file is not valid: ${error}`);

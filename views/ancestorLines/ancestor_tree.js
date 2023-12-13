@@ -261,35 +261,25 @@ export class AncestorTree {
     static findPaths(otherWtIds) {
         const paths = AncestorTree.findAllPaths(AncestorTree.root, otherWtIds);
 
-        // Convert the [[node1, node2, ...], [node-k, node-l, ...], ...] paths obtained from the above
-        // into nodes {id: group: name:} and links {source: target: value:}, but we put the nodes in a
-        // map with person.wiId as key and the links in a map with 'src-id:dst-id' as key so we can do
-        // quick checks for existence.  (group and value in the above is/was used in some of the no-longer
-        // used display methods)
-        const pathsRoot = {
-            id: AncestorTree.root.getWtId(),
-            group: 1,
-            name: AncestorTree.root.getDisplayName(),
-        };
-        const nodes = new Map([[pathsRoot.id, pathsRoot]]);
-        const links = new Map();
+        // Convert the paths of the form [[id-1, id-2, ...], [id-1, id-k, ...], ...] obtained from the above
+        // into a graph with a set of wtIds representing the nodes, and a set of "<src-wtId>:<dst-wtId>"
+        // strings representing the links so we can do quick checks for existence.
+        const rootOfAllPaths = AncestorTree.root.getWtId();
+        const nodes = new Set([rootOfAllPaths]);
+        const links = new Set();
 
         for (const path of paths) {
-            let src = pathsRoot;
-            for (const id of path.slice(1)) {
-                const p = AncestorTree.get(id);
-                const dst = {
-                    id: p.getWtId(),
-                    group: otherWtIds.includes(p.getWtId()) ? 3 : p.isMale() ? 4 : 2,
-                    name: p.getDisplayName(),
-                };
-                if (!nodes.has(dst.id)) nodes.set(dst.id, dst);
-                const lnkId = `${src.id}:${dst.id}`;
-                if (!links.has(lnkId)) links.set(lnkId, { source: src.id, target: dst.id, value: 1 });
-                src = dst;
+            let srcWtId = AncestorTree.get(path.shift()).getWtId();
+            if (!nodes.has(srcWtId)) nodes.add(srcWtId);
+            for (const dstId of path) {
+                const dstWtId = AncestorTree.get(dstId).getWtId();
+                if (!nodes.has(dstWtId)) nodes.add(dstWtId);
+                const lnkId = `${srcWtId}:${dstWtId}`;
+                if (!links.has(lnkId)) links.add(lnkId);
+                srcWtId = dstWtId;
             }
         }
-        return [pathsRoot, nodes, links, otherWtIds, AncestorTree.getGenCountsForPaths(paths)];
+        return [rootOfAllPaths, nodes, links, otherWtIds, AncestorTree.getGenCountsForPaths(paths)];
     }
 
     static getGenCountsForPaths(paths) {
@@ -306,6 +296,13 @@ export class AncestorTree {
         return genCounts;
     }
 
+    /**
+     *
+     * @param {*} srcNode
+     * @param {*} dstWtIds
+     * @returns All paths from srcNode (a person) to their ancestors (if any) with WT id in dstWtIds
+     *          in the form [[id-1, id-2, ...], [id-1, id-k, ...], ...]
+     */
     static findAllPaths(srcNode, dstWtIds) {
         const allPaths = [];
         for (const dstWtId of dstWtIds) {
@@ -318,21 +315,20 @@ export class AncestorTree {
             path.push(srcNode.getId());
 
             // Use depth first search (with backtracking) to find all the paths in the graph
-            AncestorTree.DFS(srcNode, dstWtId, path, allPaths);
+            DFS(srcNode, dstWtId, path, allPaths);
         }
 
         return allPaths;
-    }
 
-    // This function uses depth-first search at its core to find all the paths in a graph
-    static DFS(srcNode, dstWtId, path, allPaths) {
-        if (srcNode.getWtId() == dstWtId) {
-            allPaths.push([...path]);
-        } else {
-            for (const adjnode of AncestorTree.getD3Children(srcNode)) {
-                path.push(adjnode.getId());
-                AncestorTree.DFS(adjnode, dstWtId, path, allPaths);
-                path.pop();
+        function DFS(srcNode, dstWtId, path, allPaths) {
+            if (srcNode.getWtId() == dstWtId) {
+                allPaths.push([...path]);
+            } else {
+                for (const adjnode of AncestorTree.getD3Children(srcNode)) {
+                    path.push(adjnode.getId());
+                    DFS(adjnode, dstWtId, path, allPaths);
+                    path.pop();
+                }
             }
         }
     }
@@ -452,7 +448,9 @@ export class AncestorTree {
         }
     }
 
-    // convert tree into a graph
+    // Convert tree into a graph, with the latter being represented as 2 arrays: nodes and edges.
+    // This is not currently being used, but might be useful if we want to use a display
+    // method dependent on a graph representation (as has been experimented with in the past).
     static makeGraph() {
         const rootNode = {
             id: AncestorTree.root.getWtId(),

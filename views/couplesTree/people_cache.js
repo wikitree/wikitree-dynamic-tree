@@ -85,4 +85,8 @@ export class PeopleCache {
         const reqRichness = Richness.fromFields(reqFields);
         return (person.getRichness() & reqRichness) == reqRichness;
     }
+
+    getMap() {
+        return this.#cache;
+    }
 }
