@@ -3389,8 +3389,15 @@
         }
 
         if (!primaryLeafPerson._data.SpousesOrdered) {
+               condLog(
+            "drawLines:" +
+                code +
+                "-" +
+                kidPrefix +
+                "- creating orderedPartners:");
+
             let orderedPartners = [];
-            for (let sp in primaryLeafPerson._data.Spouses) {
+            for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
                 const thisPartner = primaryLeafPerson._data.Spouses[sp];
                 orderedPartners.push(thisPartner.marriage_date + "|" + thisPartner.Id);
             }
@@ -3401,43 +3408,91 @@
 
         let totalNumExtraSpouses = 0;
 
+        condLog(
+            code,
+            "DNDlist:",
+            doNotDisplaySpousesList,
+            "ordPs",
+            primaryLeafPerson._data.SpousesOrdered,
+            "Spouses:",
+            primaryLeafPerson._data.Spouses
+        );
         for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
             const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
             let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
 
-            for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
+            for (let sp = 0; /* spID > 0 && */ sp < primaryLeafPerson._data.Spouses.length; sp++) {
                 // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
 
-                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+                if (spID > 0){
+                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
-                if (!primarySpouse) {
-                    continue; /// go back to the next value of sp
+                    if (!primarySpouse) {
+                        continue; /// go back to the next value of sp
+                    }
+                    let primarySpouseID = primarySpouse.Id;
+
+                    if (!thisSpouseDIV) {
+                        continue;
+                    } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                        continue;
+                    } else if (primarySpouseID != spID) {
+                        continue;
+                    }
+
+                    totalNumExtraSpouses++;
                 }
-                let primarySpouseID = primarySpouse.Id;
-
-                if (!thisSpouseDIV) {
-                    continue;
-                } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
-                    continue;
-                } else if (primarySpouseID != spID) {
-                    continue;
+            
+                if (
+                    primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
+                    primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
+                ) {
+                    doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
+                    condLog(
+                        "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
+                        primaryLeafPerson._data.Spouses[sp]
+                    );
                 }
 
-                totalNumExtraSpouses++;
             }
         }
 
         let currentSpNum = 0;
+        condLog(
+            "drawLines:" +
+                code +
+                "-" +
+                kidPrefix +
+                "-spOrd:" +
+                primaryLeafPerson._data.SpousesOrdered.length +
+                "-Sp:" +
+                primaryLeafPerson._data.Spouses.length +
+                "-DND:" +
+                doNotDisplaySpousesList.length +
+                "-total:" +
+                totalNumExtraSpouses +
+                ":3441 - " + primaryLeafPerson._data.BirthNamePrivate
+        );
 
         for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
                 const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
                 let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
-            
+             condLog(
+                 "drawLines:" +
+                     code +
+                     "-" +
+                     kidPrefix +
+                     "-" +
+                     spID +
+                     "-" +
+                     spouseOrdered +
+                     ":3446"
+             );
 
             for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
                 // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
-
+                condLog("drawLines:" + code + "-" + kidPrefix +"-" + spID + "-" + sp + "-" + primaryLeafPerson._data.Spouses[sp].Id + ":3449");
                 let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
                 let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
@@ -3448,23 +3503,23 @@
                         break;
                     }
                 }
-
+                condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3460");
                 if (!primarySpouse) {
                     condLog("NO Primary Spouse exists in theLeafCollection !");
-                    if (
-                        primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
-                        primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
-                    ) {
-                        doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
-                        condLog(
-                            "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
-                            primaryLeafPerson._data.Spouses[sp]
-                        );
-                    }
+                    // if (
+                    //     primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
+                    //     primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
+                    // ) {
+                    //     doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
+                    //     condLog(
+                    //         "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
+                    //         primaryLeafPerson._data.Spouses[sp]
+                    //     );
+                    // }
                     continue; /// go back to the next value of sp
                 }
                 let primarySpouseID = primarySpouse.Id;
-
+                condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3476");
                 if (!thisSpouseDIV) {
                     condLog("NO Primary Spouse exists in WedgeInfo- DIVs collection !");
                     continue;
@@ -3475,7 +3530,12 @@
                 }
 
                 currentSpNum++;
-
+                condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3487 ==> spouse # "+ currentSpNum);
+                condLog(
+                    "Let's display ",
+                    primaryLeafPerson._data.Spouses[sp].DoNotDisplay , primaryLeafPerson._data.BirthNamePrivate + " + ",
+                    primarySpouse
+                );
                 let minX = Math.min(primaryLeaf.x, primarySpouse.x);
                 let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
                 let minY = Math.min(primaryLeaf.y, primarySpouse.y);
@@ -6919,6 +6979,7 @@
 
         // NOTE: orderedPartners includes a default PsByID[0] for children with NO other parent
         //  - so - if there ARE partner spouses, then the orderedPartners.length > 1   !!!!
+        let numSpousesDisplayed = 0;
         if (orderedPartners.length > 1) {
             spouseWidth =
                 (orderedPartners.length - 1) * (1.0 * thisBoxWidth + 20) +
@@ -7009,6 +7070,7 @@
                     repositionThisSpousesFamily(thisPartner, thisPcode);
                 }
             }
+            numSpousesDisplayed = thePartnerNum;
         }
         // (STEP 6) Calculate and Return overall Dimensions of entire package
         dims.width = Math.max(thisBoxWidth, dims.width, spouseWidth);
@@ -7030,6 +7092,11 @@
         // SPECIAL CASE:  If # of spouses == 0 AND # of kids > 0 ... then back up the main Leaf.x by half a BoxWidth ???  To avoid the weird half-offset look
         if (thisLeafPerson._data.Spouses.length == 0 && orderedKids.length > 0) {
             thisLeaf.x -= thisBoxWidth/2 - 10;
+            
+            
+        // SPECIAL CASE:  If # of spouses displayed == 0 AND # of kids > 0 ... then back up the main Leaf.x by half a BoxWidth ???  To avoid the weird half-offset look
+        } else if (thisLeafPerson._data.Spouses.length > 0 && numSpousesDisplayed == 0 && orderedKids.length > 0) {
+            thisLeaf.x -= thisBoxWidth / 2 - 10;
         } 
         
         return dims;
@@ -8462,7 +8529,7 @@
 
             let appMode = SuperBigFamView.numAncGens2Display + "|" + SuperBigFamView.numDescGens2Display + "|" + SuperBigFamView.numCuzGens2Display;
             let parentComboKey = thePeopleList[kidID]._data.Father + "|" + thePeopleList[kidID]._data.Mother;
-            // console.log(
+            // condLog(
             //     thePeopleList[kidID]._data.Name,
             //     thePeopleList[kidID]._data.Father,
             //     thePeopleList[kidID]._data.Mother,
