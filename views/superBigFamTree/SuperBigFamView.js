@@ -3213,7 +3213,7 @@
     }
 
     function extraHeightForChunk(Chunk) {
-        if (!SuperBigFamView.theChunkCollection[Chunk].YsList) {
+        if (!SuperBigFamView.theChunkCollection[Chunk] || !SuperBigFamView.theChunkCollection[Chunk].YsList) {
             return 0;
         } else if (SuperBigFamView.theChunkCollection[Chunk].YsList.length < 2) {
             return 0;
@@ -4112,6 +4112,14 @@
             for (let dnd = 0; dnd< doNotDisplaySpousesList.length; dnd++) {
                 const dndSpouseID = doNotDisplaySpousesList[dnd];
              
+                // AVOID duplicate lines from Direct Ancestors
+                // --> Will draw the single parent family of the Direct Ancestor from one of his parents (e.g. A0RM w kidPrefix = "R")
+                // --> Would RE-DRAW the single parent family as a Sibling of Direct Ancestor (e.g. A0RMRM w kidPrefix = "A0RMS")
+                if (code.substr(-2)== "RM" && kidPrefix.substr(-1) == "S") {
+                    continue;
+                }
+
+
                 condLog(
                     "drawLinesForFamilyOf - DO NOT DISPLAY PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ",
                     code,
@@ -4121,6 +4129,7 @@
                 let drawColour = "orange";
                 if (dndSpouseID == -1) {
                     drawColour = "blue";
+                    console.log("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum, code.substr(-2), kidPrefix.substr(-3));
                 } else if (dndSpouseID == -2) {
                     drawColour = "deeppink";
                 }
@@ -5827,7 +5836,7 @@
             // STEP 1.5 : Do an initial pass of drawLines to figure out any extra heights needed because of crossing lines
             SuperBigFamView.drawLines;
             endisableButtons(false);
-            
+
             // STEP 2 : Position each cluster along the primary axis, left or right of it based on paternal vs maternal lines
             let thisY = 0;
             let cuzHeight = 0;
