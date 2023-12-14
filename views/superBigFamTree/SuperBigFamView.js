@@ -7279,7 +7279,23 @@
             document.getElementById("PedigreeOnlyBtn").checked, SuperBigFamView.displayPedigreeOnly
         );
 
-        document.getElementById("PedigreeOnlyBtn").checked =  (SuperBigFamView.displayPedigreeOnly == 1);
+        if (document.getElementById("PedigreeOnlyBtn").checked) {
+            SuperBigFamView.displayPedigreeOnly = 1;
+        } else {
+            SuperBigFamView.displayPedigreeOnly = 0;
+
+        } 
+        if (document.getElementById("SiblingsBtnSVG").checked) {
+            SuperBigFamView.displaySIBLINGS = 1;
+        } else {
+            SuperBigFamView.displaySIBLINGS = 0;
+        } 
+        if (document.getElementById("InLawsBtnSVG").checked) {
+            SuperBigFamView.displayINLAWS = 1;
+        } else {
+            SuperBigFamView.displayINLAWS = 0;
+        } 
+
 
         
         // condLog("Now theAncestors = ", SuperBigFamView.theAncestors);
@@ -7506,6 +7522,10 @@
         SuperBigFamView.workingMaxNumAncGens = 3;
         SuperBigFamView.workingMaxNumDescGens = 2;
         SuperBigFamView.workingMaxNumCuzGens = 1;
+
+        SuperBigFamView.displayPedigreeOnly = 0;
+        SuperBigFamView.displaySIBLINGS = 1;
+        SuperBigFamView.displayINLAWS = 0;
 
         self._load(id).then(function (person) {
             // condLog("SuperBigFamView.prototype.load : self._load(id) ");
