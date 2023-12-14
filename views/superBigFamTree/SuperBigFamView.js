@@ -2113,6 +2113,10 @@
         SuperBigFamView.VlinesATC = [];
         SuperBigFamView.VlinesATCpeep = [];        
 
+        for (var ChunkID in SuperBigFamView.theChunkCollection) {
+            SuperBigFamView.theChunkCollection[ChunkID]["YsList"] = [];
+        }
+
         linesDIV.innerHTML =
             (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
                 ? drawBoxesAround()
@@ -2279,6 +2283,7 @@
                 Chunk: newChunk,
                 CodesList: [theCode],
                 Settings: "",
+                YsList : []
             };
         }
 
@@ -3200,6 +3205,31 @@
         return { hasChanged: hasChanged, centre: bigDropX, kids: kidXsArray };
     }
 
+    
+    function addCrossBarYtoChunkYsList(Chunk, crossBarY) {
+        if (SuperBigFamView.theChunkCollection[Chunk].YsList.indexOf(crossBarY) == -1){
+            SuperBigFamView.theChunkCollection[Chunk].YsList.push(crossBarY);
+        }
+    }
+
+    function extraHeightForChunk(Chunk) {
+        if (!SuperBigFamView.theChunkCollection[Chunk].YsList) {
+            return 0;
+        } else if (SuperBigFamView.theChunkCollection[Chunk].YsList.length < 2) {
+            return 0;
+        } else {
+            let theMin = SuperBigFamView.theChunkCollection[Chunk].YsList[0];
+            let theMax = SuperBigFamView.theChunkCollection[Chunk].YsList[0];
+            for (let y = 0; y < SuperBigFamView.theChunkCollection[Chunk].YsList.length; y++) {
+                const thisY = SuperBigFamView.theChunkCollection[Chunk].YsList[y];
+                theMin = Math.min(theMin, thisY);
+                theMax = Math.max(theMax, thisY);
+            }
+            return (theMax - theMin);
+        }
+        
+    }
+
     function checkCrossBarYwithATC(theY, minX, maxX) {
         let doLoop = true;
         let loopCounter = 0;
@@ -3224,11 +3254,11 @@
                         // condLog("Conflict with [", pts.min, pts.max, "] and ", minX, maxX);
                         doLoop = true;
                     } else if (minX == pts.max) {
-                        // condLog("Conflict bprder with [", pts.min, pts.max, "] and ", minX);
+                        // condLog("Conflict border with [", pts.min, pts.max, "] and ", minX);
                         doLoop = true;
                         thisY += 50;
                     } else if (maxX == pts.min) {
-                        // condLog("Conflict bprder with [", pts.min, pts.max, "] and ", minX);
+                        // condLog("Conflict border with [", pts.min, pts.max, "] and ", minX);
                         doLoop = true;
                         thisY += 50;
                     }
@@ -3247,6 +3277,7 @@
         // condLog("OK with ", thisY);
         return thisY;
     }
+
 
     function drawLinesForFamilyOf(code, kidPrefix = "", levelNum = 0, clrNum = -1) {
         condLog ("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
@@ -3890,6 +3921,8 @@
                 // condLog(dropLines);
                 if (childrenXs.length > 0) {
                     allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+                    addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
+
                 } else {
                     allLinesPolySVG += equalsLine;
                 }
@@ -4071,6 +4104,7 @@
             // condLog(dropLines);
             if (childrenXs.length > 0) {
                 allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+                addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
             }
         }  else if (doNotDisplaySpousesList.length > 0) {
             condLog("INSERT DRAWING LINES TO KIDS ROUTINE HERE :")
@@ -4300,6 +4334,7 @@
                         "childrenMaxX: " + childrenMaxX
                     );
                     allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+                    addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
                 }
             }
         }
@@ -4481,6 +4516,7 @@
         //        allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
         //    } else {
 
+    
         condLog("** drawLinesForPrimaryOnlyAndParents : END");
         return equalsLine + tBarVertLine;
         //    }
@@ -5788,6 +5824,10 @@
                 AmaxHeights[a] = thisMaxHeight;
             }
 
+            // STEP 1.5 : Do an initial pass of drawLines to figure out any extra heights needed because of crossing lines
+            SuperBigFamView.drawLines;
+            endisableButtons(false);
+            
             // STEP 2 : Position each cluster along the primary axis, left or right of it based on paternal vs maternal lines
             let thisY = 0;
             let cuzHeight = 0;
@@ -5818,6 +5858,8 @@
                 if (a == numA) {
                     thisMaxHeight = vBoxHeight;
                 }
+                thisMaxHeight += extraHeightForChunk("A" + a);
+
                 condLog("maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
                 if (showInLaws) {
                     thisMaxHeight += maxInLawsArray[a] * AmaxHeights[a];
@@ -8075,6 +8117,7 @@
                         Chunk: newLeaf.Chunk,
                         CodesList: [newLeaf.Code],
                         Settings: "",
+                        YsList:[]
                     };
                 } else if (!SuperBigFamView.theChunkCollection[newLeaf.Chunk].CodesList) {
                     SuperBigFamView.theChunkCollection[newLeaf.Chunk].CodesList = [newLeaf.Code];
@@ -8127,6 +8170,7 @@
                     Chunk: newLeaf.Chunk,
                     CodesList: [newLeaf.Code],
                     Settings: "",
+                    YsList:[]
                 };
             }
         }
