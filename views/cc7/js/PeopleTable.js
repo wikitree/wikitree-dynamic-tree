@@ -478,7 +478,6 @@ export class PeopleTable {
             CC7Utils.setOverflow("auto");
         }
 
-        // Provide a way to examine the data record of a specific person
         $("img.privacyImage, .bioIssue")
             .off("click")
             .on("click", function (event) {
@@ -486,6 +485,7 @@ export class PeopleTable {
                 const id = $(this).closest("tr").attr("data-id");
                 const p = window.people.get(+id);
                 if (event.altKey) {
+                    // Provide a way to examine the data record of a specific person
                     console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
                 } else if (p.hasBioIssues) {
                     PeopleTable.showBioCheckReport($(this));
@@ -1605,8 +1605,11 @@ export class PeopleTable {
         let tPerson = window.people.get(id);
         const theClickedName = tPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_timeLine";
-        if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).css("z-index", `${Settings.getNextZLevel()}`).slideToggle();
+        const $timelineTable = $(`#${familyId}`);
+        if ($timelineTable.length) {
+            $timelineTable.css("z-index", `${Settings.getNextZLevel()}`).slideToggle(() => {
+                PeopleTable.setOffset(jqClicked, $timelineTable, 30, 30);
+            });
             return;
         }
 
@@ -1678,8 +1681,11 @@ export class PeopleTable {
         }
         const theClickedName = person.Name;
         const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
-        if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).css("z-index", `${Settings.getNextZLevel()}`).slideToggle();
+        const $bioReportTable = $(`#${familyId}`);
+        if ($bioReportTable.length) {
+            $bioReportTable.css("z-index", `${Settings.getNextZLevel()}`).slideToggle(() => {
+                PeopleTable.setOffset(jqClicked, $bioReportTable, 30, 30);
+            });
             return;
         }
 
@@ -1860,20 +1866,23 @@ export class PeopleTable {
         return kTable;
     }
 
-    static doFamilySheet(fPerson, theClicked) {
+    static doFamilySheet(fPerson, jqClicked) {
         const theClickedName = fPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_family";
-        if ($(`#${familyId}`).length) {
-            $(`#${familyId}`).css("z-index", `${Settings.getNextZLevel()}`).slideToggle();
+        const $famSheet = $(`#${familyId}`);
+        if ($famSheet.length) {
+            $famSheet.css("z-index", `${Settings.getNextZLevel()}`).slideToggle(() => {
+                PeopleTable.setOffset(jqClicked, $famSheet, 30, 30);
+            });
             return;
         }
 
         CC7Utils.assignRelationshipsFor(fPerson);
         const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
 
-        const kkTable = PeopleTable.peopleToTable(thisFamily);
-        kkTable.attr("id", familyId);
-        PeopleTable.showTable(theClicked, kkTable, 30, 30);
+        const famSheet = PeopleTable.peopleToTable(thisFamily);
+        famSheet.attr("id", familyId);
+        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
     }
 
     static showFamilySheet(jqClicked) {
