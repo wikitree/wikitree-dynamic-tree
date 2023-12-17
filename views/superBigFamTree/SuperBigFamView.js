@@ -223,6 +223,9 @@
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Super Big Family Tree
 
     /** Static variable to hold unique ids for private persons **/
+    SuperBigFamView.previousAnum = 0;
+
+
     SuperBigFamView.nextPrivateId = 50000000;
     SuperBigFamView.maxPrivateId = 50000000;
     SuperBigFamView.privateChildren2ParentsTracker = {};
@@ -1093,6 +1096,7 @@
                                 { value: "Generation", text: "Generation" },
                                 { value: "Gender", text: "Gender" },
                                 { value: "Ancestor", text: "Ancestor family" },
+                                { value: "AncsAndDescs", text: "Ancestor / Descendant family" },
 
                                 { value: "Family", text: "Family Stats" },
                                 // { value: "Location", text: "!* Location" },
@@ -1102,7 +1106,7 @@
                                 // { value: "Country", text: "by Country" },
                                 { value: "random", text: "random chaos" },
                             ],
-                            defaultValue: "Ancestor",
+                            defaultValue: "AncsAndDescs",
                         },
                         {
                             optionName: "specifyByFamily",
@@ -5868,7 +5872,15 @@
                     thisMaxHeight = vBoxHeight;
                 }
                 thisMaxHeight += extraHeightForChunk("A" + a);
-
+                
+                if (SuperBigFamView.previousAnum == numA - 1 && a == numA && extraHeightForChunk("A" + a) == 0)  {
+                    thisMaxHeight += extraHeightForChunk("A" + (a - 1));                    
+                }
+                
+                if (a == numA) {
+                    SuperBigFamView.previousAnum = numA;
+                }
+                
                 condLog("maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
                 if (showInLaws) {
                     thisMaxHeight += maxInLawsArray[a] * AmaxHeights[a];
@@ -12608,7 +12620,7 @@
                 }
             }
             return thisColourArray[1 + (thisGen % thisColourArray.length)];
-        } else if (settingForColourBy == "Ancestor") {
+        } else if (settingForColourBy == "Ancestor" || settingForColourBy == "AncsAndDescs") {
             let thisColourArray = [
                 "#FFFFFF",
                 "#CBC3E3",
@@ -12686,15 +12698,127 @@
                     .replace(/K/g, "")
                     .replace(/S/g, "")
                     .replace(/P/g, "");
-                condLog("thisNum in getColourBackground : ", thisNum);
+                console.log("thisNum in getColourBackground : ", theCode, thisNum);
 
                 if (
                     theCode == "A0" ||
-                    thisNum.substr(0, 1) == "P" ||
-                    thisNum.substr(0, 1) == "K" ||
-                    thisNum.substr(0, 1) == "S"
+                    theCode.indexOf("A0P") > -1  ||
+                    theCode.indexOf("A0K") > -1  ||
+                    theCode.indexOf("A0S") > -1 
                 ) {
-                    return thisColourArray[1];
+                    console.log("Need colour for ", theCode, thisNum);
+
+                    if (settingForColourBy == "Ancestor") {
+                        return thisColourArray[1];
+                    } else {
+                        // WE MUST be in the land of ANCESTORS & DESCENDANTS ... and specifically, in the DESCENDANTS BAILEYWICK
+                        if ( theCode == "A0" || theCode.indexOf("A0P") > -1  || theCode.indexOf("A0K") > -1 ) {
+                            let A0person = thePeopleList[ SuperBigFamView.theLeafCollection["A0"].Id];
+                            let Knum0 = -1;
+                            let Knum = -1;
+                            if (theCode.length >= 5 && theCode.substring(0,3) == "A0K" ) {
+                                Knum0 = theCode.substring(3,5);
+                            }
+                            if (theCode.length >= 8 && theCode.substring(0,3) == "A0K" && theCode.substring(5,6) == "K") {
+                                Knum = theCode.substring(6,8);
+                            }
+                            console.log("Code:",theCode, theCode.substring(3,5), theCode.substr(3,2),
+                                
+                                  "Knum:",Knum
+                            );
+                            if (Knum > -1 && SuperBigFamView.numDescGens2Display >= 3) {
+                                let Kperson =
+                                    thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 8)].Id];
+                                if (Kperson._data.Gender == "Male") {
+                                    return thisColourArray[33 + (5.0 * Knum0 + Knum * 1.0) % 16 ];
+                                } else if (Kperson._data.Gender == "Female") {
+                                    return thisColourArray[33 + (5.0 * Knum0 + Knum * 1.0) % 16  + 16];
+                                } else {
+                                    return thisColourArray[1];
+                                }
+                            } else if (Knum0 > -1 && SuperBigFamView.numDescGens2Display == 2) {
+                                let Kperson =
+                                    thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 5)].Id];
+                                if (Kperson._data.Gender == "Male") {
+                                    return thisColourArray[33 + ((5.0 * 0 + Knum0 * 1.0) % 16)];
+                                } else if (Kperson._data.Gender == "Female") {
+                                    return thisColourArray[33 + ((5.0 * 0 + Knum0 * 1.0) % 16) + 16];
+                                } else {
+                                    return thisColourArray[1];
+                                }
+                            } else {
+                                if (A0person._data.Gender == "Male") {
+                                    return thisColourArray[2];
+                                } else if (A0person._data.Gender == "Female") {
+                                    return thisColourArray[3];
+                                } else {
+                                    return thisColourArray[1];
+                                }
+                            }
+                            
+                        } else {
+                            // must be a Sibling ...
+                            let S0person = thePeopleList[SuperBigFamView.theLeafCollection[ theCode.substring(0,5) ].Id];
+                            let Snum = theCode.substring(3, 5);
+                         
+                            let Knum0 = -1;
+                            let Knum = -1;
+                            if (theCode.length >= 8 && theCode.substring(0,3) == "A0S" && theCode.substring(5,6) == "K") {
+                                Knum0 = theCode.substring(6,8);
+                            }
+                            if (
+                                theCode.length >= 11 &&
+                                theCode.substring(0, 3) == "A0S" &&
+                                theCode.substring(5, 6) == "K" &&
+                                theCode.substring(8, 9) == "K"
+                            ) {
+                                Knum = theCode.substring(9, 11);
+                            }
+                            console.log("Code:",theCode, theCode.substring(3,5), theCode.substr(3,2),
+                                " Snum = ",
+                                Snum,
+                                "clrIndex:",
+                                33 + 1.0 * Snum,
+                                "clr:",
+                                thisColourArray[33 + 1.0 * Snum], "Knum:",Knum
+                            );
+                            if (Knum > -1 && SuperBigFamView.numDescGens2Display >= 3) {
+                                let Kperson =
+                                    thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 8)].Id];
+                                if (Kperson._data.Gender == "Male") {
+                                    return thisColourArray[33 + ((5.0 * Snum + Knum0 * 3.0 + Knum * 1.0) % 16)];
+                                } else if (Kperson._data.Gender == "Female") {
+                                    return thisColourArray[33 + ((5.0 * Snum + Knum0 * 3.0 + Knum * 1.0) % 16) + 16];
+                                } else {
+                                    return thisColourArray[1];
+                                }
+
+                            } else if (Knum0 > -1 && SuperBigFamView.numDescGens2Display == 2) {
+                                let Kperson =
+                                    thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 5)].Id];
+                                if (Kperson._data.Gender == "Male") {
+                                    return thisColourArray[33 + ((5.0 * Snum + Knum0 * 1.0) % 16)];
+                                } else if (Kperson._data.Gender == "Female") {
+                                    return thisColourArray[33 + ((5.0 * Snum + Knum0 * 1.0) % 16) + 16];
+                                } else {
+                                    return thisColourArray[1];
+                                }
+
+                            } else {
+                                if (S0person._data.Gender == "Male") {
+                                    return thisColourArray[33 + 1.0 * Snum];
+                                } else if (S0person._data.Gender == "Female") {
+                                    return thisColourArray[33 + 1.0 * Snum + 16];
+                                } else {
+                                    return thisColourArray[1];
+                                }
+                            }
+
+                        }
+
+
+                    }
+                    
                 } else if (thisNum.substr(0, 1) >= "0" && thisNum.substr(0, 1) <= "9") {
                     let thisNum2 = getDecimalNumFromBinaryString(thisNum) + 2 ** thisNum.length;
                     condLog("Ancestor Colour : ", theCode, thisNum, thisNum2);
@@ -12722,47 +12846,109 @@
                         }
                     } else if (thisNum2 >= 96 && thisNum2 < 128) {
                         if (thisNum2 % 2 == 1) {
-                            condLog("ANC_COLOUR : ",thisNum2, thisColourArray[((thisNum2 - 1) / 2) % thisColourArray.length]);
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                thisColourArray[((thisNum2 - 1) / 2) % thisColourArray.length]
+                            );
                             return thisColourArray[((thisNum2 - 1) / 2) % thisColourArray.length];
                         } else {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor(thisColourArray[(thisNum2 / 2) % thisColourArray.length], -20));
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[(thisNum2 / 2) % thisColourArray.length], -20)
+                            );
                             return LightenDarkenColor(thisColourArray[(thisNum2 / 2) % thisColourArray.length], -20);
                         }
                     } else if (thisNum2 < 192) {
                         if (thisNum2 % 4 == 0) {
-                            condLog("ANC_COLOUR : ",thisNum2, thisColourArray[(thisNum2 / 4) % thisColourArray.length]);
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                thisColourArray[(thisNum2 / 4) % thisColourArray.length]
+                            );
                             return thisColourArray[(thisNum2 / 4) % thisColourArray.length];
                         } else if (thisNum2 % 4 == 1) {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor( thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length],  10 ));
-                            return LightenDarkenColor( thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length],  10 );
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length], 10)
+                            );
+                            return LightenDarkenColor(
+                                thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length],
+                                10
+                            );
                         } else if (thisNum2 % 4 == 2) {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor( thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length], -20));
-                            return LightenDarkenColor( thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length], -20);
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length], -20)
+                            );
+                            return LightenDarkenColor(
+                                thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length],
+                                -20
+                            );
                         } else if (thisNum2 % 4 == 3) {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor(                                thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length],                                30                            ));
-                            return LightenDarkenColor(                                thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length],                                30                            );
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length], 30)
+                            );
+                            return LightenDarkenColor(
+                                thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length],
+                                30
+                            );
                         }
                     } else if (thisNum2 >= 192) {
                         if (thisNum2 % 4 == 0) {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor(                                thisColourArray[((thisNum2 - 0) / 4) % thisColourArray.length],                                30                            ));
-                            return LightenDarkenColor(                                thisColourArray[((thisNum2 - 0) / 4) % thisColourArray.length],                                30                            );
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[((thisNum2 - 0) / 4) % thisColourArray.length], 30)
+                            );
+                            return LightenDarkenColor(
+                                thisColourArray[((thisNum2 - 0) / 4) % thisColourArray.length],
+                                30
+                            );
                         } else if (thisNum2 % 4 == 2) {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor(                                thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length],                                10                            ));
-                            return LightenDarkenColor(                                thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length],                                10                            );
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length], 10)
+                            );
+                            return LightenDarkenColor(
+                                thisColourArray[((thisNum2 - 2) / 4) % thisColourArray.length],
+                                10
+                            );
                         } else if (thisNum2 % 4 == 1) {
-                            condLog("ANC_COLOUR : ",thisNum2, LightenDarkenColor(                                thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length],                                -20                            ));
-                            return LightenDarkenColor(                                thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length],                                -20                            );
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                LightenDarkenColor(thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length], -20)
+                            );
+                            return LightenDarkenColor(
+                                thisColourArray[((thisNum2 - 1) / 4) % thisColourArray.length],
+                                -20
+                            );
                         } else if (thisNum2 % 4 == 3) {
-                            condLog("ANC_COLOUR : ",thisNum2, thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length]);
+                            condLog(
+                                "ANC_COLOUR : ",
+                                thisNum2,
+                                thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length]
+                            );
                             return thisColourArray[((thisNum2 - 3) / 4) % thisColourArray.length];
                         }
                     }
                 }
 
                 return thisColourArray[1];
+           
+
             } else {
-                return thisColourArray[1];
+                // Not quite sure ... using default colour
+                return thisColourArray[2];
             }
+
         } else if (settingForColourBy == "Grand") {
             return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGrand") {
