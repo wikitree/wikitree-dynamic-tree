@@ -203,10 +203,10 @@ export class AncestorLinesExplorer {
                       <input
                         id="hideTreeHeader"
                         type="checkbox"
-                        title="Remove the Parents, GrandParetns, etc header above the tree." />
+                        title="Remove the Parents, Grandparents, etc header above the tree." />
                       <label
                         for="hideTreeHeader"
-                        title="Remove the Parents, GrandParetns, etc header above the tree."
+                        title="Remove the Parents, Grandparents, etc header above the tree."
                         class="right">
                         Hide tree header</label
                       >

@@ -3,45 +3,70 @@ import { CachedPerson } from "./cached_person.js";
 export class CacheLoader {
     static APP_ID = "CouplesTree";
     static DEFAULT_PRIMARY_FIELDS = [
-        "Id",
-        "Name",
-        "FirstName",
-        "LastNameCurrent",
-        "LastNameAtBirth",
-        "Suffix",
+        "BirthDate",
+        "BirthLocation",
+        "DataStatus",
+        "DeathDate",
+        "DeathLocation",
         "Derived.BirthName",
         "Derived.BirthNamePrivate",
-        "MiddleInitial",
-        "BirthDate",
-        "DeathDate",
-        "BirthLocation",
-        "DeathLocation",
-        "Gender",
-        "Mother",
         "Father",
+        "FirstName",
+        "Gender",
         "HasChildren",
-        "DataStatus",
+        "Id",
+        "LastNameAtBirth",
+        "LastNameCurrent",
+        "MiddleInitial",
+        "Mother",
+        "Name",
         "Photo",
+        "Suffix",
     ];
-    static DEFAULT_RECURSIVE_FIELDS = ["Parents", "Spouses", "Children"];
+    static DEFAULT_VARIABLE_FIELDS = ["Parents", "Spouses", "Children"];
 
-    #allFields = [...CacheLoader.DEFAULT_PRIMARY_FIELDS, ...CacheLoader.DEFAULT_RECURSIVE_FIELDS];
+    #allFields = [...new Set([...CacheLoader.DEFAULT_PRIMARY_FIELDS, ...CacheLoader.DEFAULT_VARIABLE_FIELDS])];
 
     #primaryFields;
-    #recursiveFields;
-    constructor(primaryFields, recursiveFields) {
+    #variableFields;
+
+    /**
+     * Construct the loader with two sets of fields to load:
+     *
+     * @param {*} primaryFields (optional) fields that will always be retrieved.
+     *            See CacheLoader.DEFAULT_PRIMARY_FIELDS for the default
+     * @param {*} variableFields (optional) additional fields that will be retrieved by default, but the user
+     *             can change these per get() call. The default value is ["Parents", "Spouses", "Children"]
+     */
+    constructor(primaryFields, variableFields) {
         this.#primaryFields =
-            typeof this.#primaryFields === "undefined" ? CacheLoader.DEFAULT_PRIMARY_FIELDS : primaryFields;
-        this.#recursiveFields =
-            typeof this.#recursiveFields === "undefined" ? CacheLoader.DEFAULT_RECURSIVE_FIELDS : recursiveFields;
-        this.#allFields = [...this.#primaryFields, ...this.#recursiveFields];
+            typeof primaryFields === "undefined" ? CacheLoader.DEFAULT_PRIMARY_FIELDS : [...new Set(primaryFields)];
+        this.#variableFields =
+            typeof variableFields === "undefined" ? CacheLoader.DEFAULT_VARIABLE_FIELDS : [...new Set(variableFields)];
+        this.#allFields = [...new Set([...this.#primaryFields, ...this.#variableFields])];
     }
 
-    async get(id, requestedRecursiveFields) {
-        if (!requestedRecursiveFields) {
+    /**
+     * Retrieve the indicated profile using getPerson. By default all the fields (primary and variable) specified
+     * in the constructor will be retrieved.
+     * @param {*} id The profile id to retrieve
+     * @param {*} requestedVariableFields (optional) If not specified, all the primary and variable fields defined
+     *            in the constructor, plus any additionalFields specfied, will be retrieved. If specified, these
+     *            fields will replace the set of variable fields specified in the constructor.
+     * @param {*} additionalFields (optional) Additional fields to be included in the retrieval.
+     * @returns
+     */
+    async get(id, requestedVariableFields, additionalFields) {
+        if (!additionalFields && !requestedVariableFields) {
             return await this.getPersonViaAPI(id, this.#allFields);
         } else {
-            return await this.getPersonViaAPI(id, [...this.#primaryFields, ...requestedRecursiveFields]);
+            return await this.getPersonViaAPI(id, [
+                ...new Set([
+                    ...this.#primaryFields,
+                    ...(requestedVariableFields ? requestedVariableFields : CacheLoader.DEFAULT_VARIABLE_FIELDS),
+                    ...(additionalFields ? additionalFields : []),
+                ]),
+            ]);
         }
     }
 

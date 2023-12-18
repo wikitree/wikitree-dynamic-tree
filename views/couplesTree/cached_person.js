@@ -54,8 +54,8 @@ export class CachedPerson {
         return CachedPerson.#peopleCache.getIfPresent(id);
     }
 
-    static async getWithLoad(id, mustHaveFields) {
-        return await CachedPerson.#peopleCache.getWithLoad(id, mustHaveFields);
+    static async getWithLoad(id, mustHaveFields, additionalFields) {
+        return await CachedPerson.#peopleCache.getWithLoad(id, mustHaveFields, additionalFields);
     }
 
     static makePerson(data) {
@@ -86,7 +86,7 @@ export class CachedPerson {
                 if (ids.length > 0) {
                     createAndCachePeople(value);
                 }
-            } else if (!["marriage_date", "marriage_location", "marriage_end_date"].includes(key)) {
+            } else if (!["marriage_date", "marriage_location", "marriage_end_date", "bio"].includes(key)) {
                 // The above fields are only present in spouses and are handled in setSpouses.
                 // Other keys are handled here by copying them to this person object
                 this._data[key] = value;
@@ -179,19 +179,15 @@ export class CachedPerson {
     //
     getFather() {
         // Get the actual father person object, not their id
-        if (this._data.Father) {
-            return CachedPerson.#peopleCache.getIfPresent(this.getFatherId());
-        }
-        return undefined;
+        const fId = this.getFatherId();
+        return fId ? CachedPerson.#peopleCache.getIfPresent(fId) : undefined;
     }
     getFatherId() {
         return this._data.Father;
     }
     async getFatherWithLoad() {
-        if (this._data.Father) {
-            return await CachedPerson.#peopleCache.getWithLoad(this.getFatherId());
-        }
-        return CachedPerson.aPromiseFor(undefined);
+        const fId = this.getFatherId();
+        return fId ? await CachedPerson.#peopleCache.getWithLoad(fId) : CachedPerson.aPromiseFor(undefined);
     }
 
     // -----------------------------------
@@ -251,19 +247,15 @@ export class CachedPerson {
     //
     getMother() {
         // Get the actual mother person object, not their id
-        if (this._data.Mother) {
-            return CachedPerson.#peopleCache.getIfPresent(this.getMotherId());
-        }
-        return undefined;
+        const mId = this.getMotherId();
+        return mId ? CachedPerson.#peopleCache.getIfPresent(mId) : undefined;
     }
     getMotherId() {
         return this._data.Mother;
     }
     async getMotherWithLoad() {
-        if (this._data.Mother) {
-            return await CachedPerson.#peopleCache.getWithLoad(this.getMotherId());
-        }
-        return CachedPerson.aPromiseFor(undefined);
+        const mId = this.getMotherId();
+        return mId ? await CachedPerson.#peopleCache.getWithLoad(mId) : CachedPerson.aPromiseFor(undefined);
     }
 
     // -----------------------------------
@@ -271,6 +263,24 @@ export class CachedPerson {
     //
     getParentIds() {
         return this._data.Parents;
+    }
+    getLoadedParentIds() {
+        // Get the ids of parents that are present in the cache regardless of whether this person has been
+        // "full-loaded"
+        const pIds = [];
+        let pId = this.getFatherId();
+        if (pId && CachedPerson.#peopleCache.has(pId)) pIds.push(pId);
+        pId = this.getMotherId();
+        if (pId && CachedPerson.#peopleCache.has(pId)) pIds.push(pId);
+        return pIds;
+    }
+    getAltParentIds() {
+        const pIds = [];
+        let pId = this.getFatherId();
+        if (pId) pIds.push(pId);
+        pId = this.getMotherId();
+        if (pId) pIds.push(pId);
+        return pIds;
     }
     hasAParent() {
         return this.getFatherId() || this.getMotherId();

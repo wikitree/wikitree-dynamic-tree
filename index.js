@@ -44,8 +44,10 @@ window.addEventListener("DOMContentLoaded", (event) => {
     // The default view is the first one (but this is only used if the user has
     // not used the page before, since the last view used is saved in a cookie
     // and used the next time the user goes to this page).
+    // Note: the keyword is used as part of the URL to get to the app.
     const views = {
         "couples": new CouplesTreeView(),
+        "cctree": new CCTView(),
         "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
         "timeline": new TimelineView(),
         "fanchart": new FanChartView(),
