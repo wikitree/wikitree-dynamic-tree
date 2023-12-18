@@ -261,7 +261,8 @@ export class CachedPerson {
     // -----------------------------------
     // Parents
     //
-    getParentIds() {
+    getExpandedParentIds() {
+        // Will return undefined if this person has not been fully loaded
         return this._data.Parents;
     }
     getLoadedParentIds() {
@@ -274,7 +275,8 @@ export class CachedPerson {
         if (pId && CachedPerson.#peopleCache.has(pId)) pIds.push(pId);
         return pIds;
     }
-    getAltParentIds() {
+    getParentIds() {
+        // Get the parent ids regardles of whether loaded or pesent in the cache
         const pIds = [];
         let pId = this.getFatherId();
         if (pId) pIds.push(pId);

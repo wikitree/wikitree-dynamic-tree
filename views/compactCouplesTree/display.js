@@ -75,20 +75,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    if (!hideTreeHeader) {
-        d3.select("#theSvg table.treeHeader").remove();
-        const tbl = d3
-            .select("#theSvg")
-            .insert("table", ":first-child")
-            .attr("class", "treeHeader")
-            .attr("width", edgeFactor * (currentMaxShowGen - 1))
-            .style("margin-left", `${margin.left}px`);
-        const tr = tbl.append("tr");
-        for (let lvl = 2; lvl <= currentMaxShowGen; ++lvl) {
-            tr.append("td").style("width", `${edgeFactor}px`).attr("align", "right").text(genHeader(lvl));
-        }
-    }
-
     const duration = 750;
 
     // declare a tree layout and assign the size
@@ -212,6 +198,20 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         //console.log("treeData", treeData);
         console.log(`d3Root updated: (x,y)=(${d3Root.x},${d3Root.y}) (x0,y0)=(${d3Root.x0},${d3Root.y0})`, d3Root);
 
+        if (!hideTreeHeader) {
+            d3.select("#theSvg table.treeHeader").remove();
+            const tbl = d3
+                .select("#theSvg")
+                .insert("table", ":first-child")
+                .attr("class", "treeHeader")
+                .attr("width", edgeFactor * (currentMaxShowGen - 1))
+                .style("margin-left", `${margin.left}px`);
+            const tr = tbl.append("tr");
+            for (let lvl = 2; lvl <= currentMaxShowGen; ++lvl) {
+                tr.append("td").style("width", `${edgeFactor}px`).attr("align", "right").text(genHeader(lvl));
+            }
+        }
+
         // Compute the new tree layout.
         const nodes = treeData.descendants();
         const links = treeData.descendants().slice(1);
@@ -324,12 +324,13 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                     const nrC = jointChildrenIds.length;
                     const nrA = couple.a?.getChildrenIds()?.size || 0;
                     const nrB = couple.b?.getChildrenIds()?.size || 0;
-                    const cWord = nrC == 1 ? "child" : "children";
+                    let cWord = nrC == 1 ? "child" : "children";
                     let nrLabel = `${nrC}`;
                     let tooltip = `Show the ${nrC} ${cWord} of ${combinedName}`;
-                    if (nrA != nrB || nrA != nrC) {
+                    if (nrA != 0 && nrB != 0 && (nrA != nrB || nrA != nrC)) {
                         nrLabel += `[${nrA},${nrB}]`;
-                        tooltip += ` (who had ${nrA} and ${nrB} children respectively)`;
+                        cWord = nrA == 1 ? "child" : "children in total";
+                        tooltip += ` (${aName} had ${nrA} ${cWord} and ${bName} ${nrB})`;
                     }
                     // Draw the triangle and make it clickable to show the children names
                     d3.select(self)
@@ -471,12 +472,29 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             .selectAll("circle.node")
             .attr("r", 6)
             .style("fill", function (d) {
-                const result =
-                    (this.classList.contains("a") && d[savedChildrenFieldFor("a")]) ||
-                    (this.classList.contains("b") && d[savedChildrenFieldFor("b")])
-                        ? "lightsteelblue"
-                        : "#fff";
+                const side = this.classList.contains("a") ? "a" : "b";
+                const result = colourOf(d.data, side);
+                // Assigning this to result will colour the the circels the same for load-expand
+                // BUT currently if the partner is not a person, the load-expand won't happen
+                // (this.classList.contains("a") && d[savedChildrenFieldFor("a")]) ||
+                // (this.classList.contains("b") && d[savedChildrenFieldFor("b")])
+                //     ? "yellowgreen"
+                //     : !d.data.isExpanded() && d.data.hasAParent()
+                //     ? "lightsteelblue" // load-expand
+                //     : "#fff";
                 return result;
+
+                // Colour the circles independently for load-expand.
+                function colourOf(cpl, side) {
+                    if (d[savedChildrenFieldFor(side)]) return "yellowgreen"; // branch expand
+                    if (
+                        (side == "a" && !cpl.isAExpanded() && cpl.a.hasAParent()) ||
+                        (side == "b" && !cpl.isBExpanded() && cpl.b.hasAParent())
+                    ) {
+                        return "lightsteelblue"; // load-expand
+                    }
+                    return "#fff";
+                }
             })
             .attr("cursor", "pointer");
 
@@ -617,29 +635,28 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         function toggleAncestors(event, d, side, jqClicked) {
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                console.log(d.data.toString(), d);
+                console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
             if (event.altKey) {
                 showBioCheckReport(jqClicked, d.data[side]);
                 return;
             }
-            const pIds = d.data[side]?.getParentIds();
-            const expandedPIds = pIds ? [...pIds.values()].sort() : "noneLoaded";
-            const paIds = d.data[side]?.getAltParentIds().sort();
-            const allParentsLoaded = paIds.toString() == expandedPIds.toString();
-            // (d.data[side]?.getParentIds() || []).toString() == d.data[side]?.getAltParentIds().toString();
+            const epIds = d.data[side]?.getExpandedParentIds();
+            const expandedPIds = epIds ? [...epIds.values()].sort() : "noneLoaded";
+            const pIds = (d.data[side]?.getParentIds() || []).sort();
+            const isAllParentsLoaded = pIds.toString() == expandedPIds.toString();
             if (event.shiftKey) {
                 expandSubtree(d);
                 const newDepth = d.depth + d.data.getNrOlderGenerations();
                 currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-            } else if (allParentsLoaded && d.children && !d[savedChildrenFieldFor(side)]) {
+            } else if (isAllParentsLoaded && d.children && !d[savedChildrenFieldFor(side)]) {
                 // contract
                 collapseBranch(d, side);
-            } else if (allParentsLoaded && d[savedChildrenFieldFor(side)]) {
+            } else if (isAllParentsLoaded && d[savedChildrenFieldFor(side)]) {
                 // expand
                 expandBranch(d, side);
-            } else if (!allParentsLoaded && d.data[side]) {
+            } else if (!isAllParentsLoaded && d.data[side]) {
                 expandBranchWithLoad(d, side);
             }
         }
@@ -1136,7 +1153,7 @@ function birthString(person, privatise = false) {
     const date = privatise || !bDate ? person?.getBirthDecade() : humanDate(bDate);
     const place = privatise ? "an undisclosed place" : person?.getBirthLocation();
     return `Born: ${date ? `${datePrefix(person._data.DataStatus?.BirthDate)}${date}` : "[date unknown]"} ${
-        place ? `in ${place}` : "[location not provided]"
+        place ? `in ${place}` : ""
     }.`;
 }
 
@@ -1199,7 +1216,7 @@ function deathString(person, privatise = false) {
     const date = privatise || !dDate ? person?.getDeathDecade() : humanDate(dDate);
     const place = privatise ? "an undisclosed place" : person?.getDeathLocation();
     return `Died: ${date ? `${datePrefix(person._data.DataStatus?.DeathDate)}${date}` : "[date unknown]"} ${
-        place ? `in ${place}` : "[location not provided]"
+        place ? `in ${place}` : ""
     }.`;
 }
 

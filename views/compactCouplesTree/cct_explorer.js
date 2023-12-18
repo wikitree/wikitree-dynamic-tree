@@ -448,9 +448,11 @@ export class CCTE {
             self.richLoad(id).then(function (person) {
                 Utils.hideShakingTree();
                 condLog(`=======RICH_LOADed ${person.toString()}`, person);
-                const aRoot = new Couple("A", { a: person, isRoot: true });
-                const dRoot = new Couple("D", { a: person, isRoot: true });
-                self.drawTree(aRoot, dRoot);
+                // const aRoot = new Couple("A", { a: person, isRoot: true });
+                // const dRoot = new Couple("D", { a: person, isRoot: true });
+                const aRoot = Couple.get("A", { a: person, isRoot: true });
+                //const dRoot = Couple.get("D", { a: person, isRoot: true });
+                self.drawTree(aRoot, aRoot);
             });
         });
     }
@@ -609,7 +611,7 @@ export class CCTE {
             await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(), direction);
             const treeInfo = this.validateAndSetGenerations();
             condLog(`expand done for ${couple.toString()}`, couple);
-            couple.expanded = true;
+            // couple.expanded = true;
             return treeInfo;
         } else {
             console.error("Attempted to expand for enriched person", oldPerson);
@@ -777,7 +779,8 @@ export class CCTE {
                 const father = couple[side]?.getFather();
                 const mother = couple[side]?.getMother();
                 if (father || mother) {
-                    children.push(new Couple(couple.idPrefix + `_${side}`, { a: father, b: mother }));
+                    // children.push(new Couple(couple.idPrefix + `_${side}`, { a: father, b: mother }));
+                    children.push(Couple.get(couple.idPrefix + `_${side}`, { a: father, b: mother }));
                 }
             }
         }

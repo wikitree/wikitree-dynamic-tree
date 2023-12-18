@@ -7,10 +7,34 @@ export class Couple {
     static L = -1;
     static R = 1;
 
+    static #couplesCache = new Map();
+
+    static init() {
+        Couple.#couplesCache = new Map();
+    }
+
+    static get(idPrefix, cd) {
+        //{ a, b, focus, isRoot = false }) {
+        const id = Couple.formId(idPrefix, cd.a, cd.b);
+        let c = Couple.#couplesCache.get(id);
+        if (c) {
+            condLog(`Couple.get from cache: ${c.toString()}`, c);
+            return c;
+        }
+
+        c = new Couple(idPrefix, cd);
+        Couple.#couplesCache.set(id, c);
+        return c;
+    }
+
+    static formId(prefix, a, b) {
+        return `${prefix}-${a?.getId() || ""}-${b?.getId() || ""}`;
+    }
+
     constructor(idPrefix, { a, b, focus, isRoot = false } = {}) {
         this.idPrefix = idPrefix;
         this.isRoot = isRoot;
-        this.expanded = isRoot;
+        // this.expanded = isRoot;
         if (typeof b == "undefined") {
             if (typeof a == "undefined") {
                 throw new Error("Attempting to create an empty couple");
@@ -104,10 +128,6 @@ export class Couple {
         // return `${this.idPrefix}-${this.a?.getId() || ""}-${this.b?.getId() || ""}`;
     }
 
-    static formId(prefix, a, b) {
-        return `${prefix}-${a?.getId() || ""}-${b?.getId() || ""}`;
-    }
-
     getInFocus() {
         if (this.focus == Couple.R) {
             return this.b;
@@ -159,7 +179,7 @@ export class Couple {
     }
 
     isAncestorExpandable() {
-        return !this.children && this.hasAParent() && !this.expanded;
+        return !this.children && this.hasAParent() && !this.isExpanded();
     }
 
     isComplete() {
@@ -169,10 +189,22 @@ export class Couple {
     isDescendantExpandable() {
         return (
             !this.children &&
-            !this.expanded &&
+            !this.isExpanded() &&
             this.mayHaveChildren() &&
             ((this.a && !this.a.getChildrenIds()) || (this.b && !this.b.getChildrenIds()))
         );
+    }
+
+    isExpanded() {
+        return this.isAExpanded() && this.isBExpanded();
+    }
+
+    isAExpanded() {
+        return !this.a || this.a.isNoSpouse || (this.a.getExpandedParentIds() && this.a.getSpouses());
+    }
+
+    isBExpanded() {
+        return !this.b || this.b.isNoSpouse || (this.b.getExpandedParentIds() && this.b.getSpouses());
     }
 
     mayHaveChildren() {
@@ -228,7 +260,7 @@ export class Couple {
             this.b._data._Parents = this.b._data.Parents;
             delete this.b._data.Parents;
         }
-        this.expanded = false;
+        // this.expanded = false;
         if (this.children) delete this.children;
         return new Promise((resolve, reject) => {
             resolve(this);
@@ -245,7 +277,7 @@ export class Couple {
             this.b._data._Children = this.b._data.Children;
             delete this.b._data.Children;
         }
-        this.expanded = false;
+        // this.expanded = false;
         if (this.children) delete this.children;
         return new Promise((resolve, reject) => {
             resolve(this);
