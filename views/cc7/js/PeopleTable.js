@@ -588,7 +588,7 @@ export class PeopleTable {
                 $(this).addClass("active");
                 $("#peopleTable,#lanceTable").hide().removeClass("active");
                 if ($("#hierarchyView").length == 0) {
-                    Utils.showShakingTree(function () {
+                    Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
                         // animation a change to complete first
                         setTimeout(() => HierarchyView.buildView(), 10);
