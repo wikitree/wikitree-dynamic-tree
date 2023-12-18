@@ -593,6 +593,37 @@ Determine if line by itself is an invalid source
 
 Returns **[Boolean][6]** true if invalid source else false
 
+### removeInvalidSourcePart
+
+Remove a string that by itself on a line is not a valid source
+
+#### Parameters
+
+*   `line` **[String][7]** the line to check
+
+Returns **[String][7]** line with any invalid sources removed
+
+### removeInvalidSourcePartTooOld
+
+Remove a string that by itself on a line is not a valid source
+for too old to remember
+
+#### Parameters
+
+*   `line` **[String][7]** the line to check
+
+Returns **[String][7]** line with any invalid sources removed
+
+### removeInvalidSourcePartPre1700
+
+Remove a string that by itself on a line is not a valid source Pre1700
+
+#### Parameters
+
+*   `line` **[String][7]** the line to check
+
+Returns **[String][7]** line with any invalid sources removed
+
 ### isInvalidPartialSource
 
 Determine if line is an invalid source when found anywhere on a line
