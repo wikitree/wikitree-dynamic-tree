@@ -1,11 +1,233 @@
 .highlighted {
   background-color: #fad158;
 }
+#view-container.ahnentafelView {
+  position: relative;
+}
 #ahnentafelAncestorList {
   background-color: #fff;
   padding: 20px;
+  position: relative;
 }
 #ahnentafelAncestorList p {
   line-height: 1.5em;
-  margin: 1.5em 0;
+  margin: 1em 0;
+}
+#ahnentafelAncestorList h2 {
+  background-color: #f8cd7d;
+  padding-left: 0.2em;
+  font-size: 1.4em;
+  cursor: pointer;
+}
+#ahnentafelAncestorList a.profileLink {
+  margin: auto;
+}
+
+#ahnentafelAncestorList .ahnentafelPerson,
+#ahnentafelAncestorList .ahnentafelPersonShort {
+  display: flex;
+  align-items: baseline;
+  padding: 3px;
+}
+
+#ahnentafelAncestorList .ahnentafelPerson > span.personText,
+#ahnentafelAncestorList .ahnentafelPersonShort > span.personText {
+  margin-left: 0.3em; /* Space between number and name */
+}
+
+#ahnentafelAncestorList .ahnentafelPerson,
+#ahnentafelAncestorList .ahnentafelPersonShort {
+  background-color: #efe;
+}
+
+#ahnentafelAncestorList .ahnentafelPerson.Male,
+#ahnentafelAncestorList .ahnentafelPersonShort.Male {
+  background-color: #eef;
+}
+
+#ahnentafelAncestorList .ahnentafelPerson.Female,
+#ahnentafelAncestorList .ahnentafelPersonShort.Female {
+  background-color: #fee;
+}
+
+#ahnentafelAncestorList p.ahnentafelPerson.highlighted,
+#ahnentafelAncestorList p.ahnentafelPerson.highlightedClick,
+#ahnentafelAncestorList p.ahnentafelPersonShort.highlighted,
+#ahnentafelAncestorList p.ahnentafelPersonShort.highlightedClick {
+  border: 3px solid gold;
+  padding: 0;
+}
+#ahnentafelAncestorList .ahnentafelLink,
+#ahnentafelAncestorList .childOf,
+#ahnentafelAncestorList .parentOf {
+  color: #0271fb;
+  cursor: pointer;
+}
+#ahnentafelAncestorList .descendantButton {
+  margin: 0.1em;
+  padding: 0.1em 0.3em;
+  position: absolute;
+  right: -0.1em;
+  font-size: 1.3em;
+}
+#ahnentafelAncestorList .descendantButton:hover {
+  background-color: #f8cd7d;
+}
+#ahnentafelAncestorList .descendantButton:active {
+  background-color: orange;
+}
+#ahnentafelAncestorList .descendantButton.active {
+  background-color: gold;
+}
+#ahnentafelAncestorList #masterToggle {
+  position: absolute;
+  left: 0.1em;
+  top: 0.1em;
+  font-size: 1.5em;
+}
+#ahnentafelAncestorList .toggleButton {
+  cursor: pointer;
+  user-select: none; /* Prevent text selection */
+  display: inline-block;
+  transition: transform 0.3s ease; /* Smooth rotation effect */
+}
+#ahnentafelAncestorList .toggleButton.collapsed {
+  transform: rotate(-90deg);
+}
+#ahnentafelAncestorList .range {
+  font-size: 0.6em;
+}
+
+#ahnentafelAncestorList.tidy .relativeDetails,
+#ahnentafelAncestorList.tidy .birthAndDeathDetails {
+  display: block;
+}
+#ahnentafelAncestorList.tidy .profileLink {
+  font-weight: bold;
+}
+
+#ahnentafelAncestorList #generation_1 .ahnentafelPerson .descendantButton {
+  display: none;
+}
+#ahnentafelAncestorList h2 span.fillRate,
+#ahnentafelAncestorList .duplicateCount {
+  float: right;
+  font-size: 0.7em;
+  margin-right: 0.5em;
+}
+#ahnentafelAncestorList .duplicateText {
+  float: right;
+  font-size: 0.7em;
+  margin-right: 0.5em;
+}
+
+#ahnentafelAncestorListNavButtons button {
+  font-size: 0.8em;
+  padding: 0.2em;
+  margin: 0.2em;
+}
+#ahnentafelAncestorListNavButtons {
+  margin-left: 2em;
+}
+
+#ahnentafelAncestorListNavButtons button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  border: 1px solid #999999;
+}
+
+/* Additional hover effect for disabled buttons */
+#ahnentafelAncestorListNavButtons button:disabled:hover {
+  background-color: #cccccc;
+  color: #666666;
+}
+
+#ahnentafelHeaderBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5em;
+  margin: auto;
+  position: sticky;
+  top: 10px;
+}
+
+#ahnentafelHeaderBox #help-button {
+  background: darkgreen;
+  color: #fff;
+  font-size: 0.8em;
+  padding: 0.1em 0.5em;
+  border-radius: 50%;
+  float: right;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 11000;
+  margin-left: 2em;
+}
+#ahnentafelHelpText {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  left: 100px;
+  width: 40em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  z-index: 11000;
+  cursor: default;
+}
+#ahnentafelHelpText h2 {
+  margin: 0.2em 0;
+  text-align: center;
+}
+#ahnentafelHelpText x {
+  position: absolute;
+  top: 0.2em;
+  right: 0.5em;
+  font-size: 1.2em;
+  cursor: pointer;
+  font-weight: bold;
+  color: forestgreen;
+}
+#ahnentafelHelpText x:hover {
+  color: darkgreen;
+}
+#ahnentafelHelpText x:active {
+  color: green;
+}
+
+#ahnentafelAncestorList .ahnentafelNumber {
+  font-weight: bold;
+}
+
+.more-generations-container {
+  display: flex;
+  align-items: center;
+}
+
+.more-generations-container input {
+  width: 3rem;
+  text-align: center;
+}
+
+.more-generations-container #moreGenerationsButton {
+  margin-left: 0.5rem;
+  width: 15em;
+}
+
+#progressContainer {
+  width: 100%;
+  background-color: #ddd;
+}
+
+#progressBar {
+  width: 0%;
+  height: 30px;
+  background-color: #4caf50;
+  text-align: center;
+  line-height: 30px;
+  color: white;
 }
