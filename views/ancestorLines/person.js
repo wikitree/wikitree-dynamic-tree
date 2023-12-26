@@ -1,14 +1,30 @@
+import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
+import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
+import { Biography } from "../../lib/biocheck-api/src/Biography.js";
+
 export class Person {
     constructor(data, fromFile = false) {
         let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
         if (fromFile) {
             this._data = data;
         } else {
+            if ("bio" in data && data.Name) {
+                const bioPerson = new BioCheckPerson();
+                if (bioPerson.canUse(data, false, true, data.Name)) {
+                    const biography = new Biography(theSourceRules);
+                    biography.parse(bioPerson.getBio(), bioPerson, "");
+                    biography.validate();
+                    this.hasBioIssues = biography.hasStyleIssues() || !biography.hasSources();
+                    if (this.hasBioIssues) {
+                        this.bioCheckReport = Person.getReportLines(biography, bioPerson.isPre1700());
+                    }
+                }
+            }
             this._data = {};
 
             let x = Object.entries(data);
             for (const [key, value] of x) {
-                if (!["Parents", "Spouses", "Children", "Siblings"].includes(key)) {
+                if (!["Parents", "Spouses", "Children", "Siblings", "bio"].includes(key)) {
                     this._data[key] = value;
                 }
             }
@@ -52,11 +68,21 @@ export class Person {
     getBirthDate() {
         return this._data.BirthDate;
     }
+    getBirthYear() {
+        const d = this._data.BirthDate || this._data.BirthDateDecade;
+        return d?.substring(0, 4) || "0000";
+    }
+    getBirthDecade() {
+        return this._data.BirthDateDecade;
+    }
     getBirthLocation() {
         return this._data.BirthLocation;
     }
     getDeathDate() {
         return this._data.DeathDate;
+    }
+    getDeathDecade() {
+        return this._data.DeathDateDecade;
     }
     getDeathLocation() {
         return this._data.DeathLocation;
@@ -81,6 +107,10 @@ export class Person {
     isAtGeneration(n) {
         return this.generations.has(n);
     }
+    getNrCopies(upToGen) {
+        // Count how many copies of this profile are there within upToGen generations
+        return [...this.generations.entries()].reduce((acc, [gen, cnt]) => (gen <= upToGen ? acc + cnt : acc), 0);
+    }
     isBelowGeneration(n) {
         for (const g of this.generations.keys()) {
             if (g < n) return true;
@@ -94,7 +124,7 @@ export class Person {
         return this._data.IsLiving;
     }
     isMarked() {
-        return this.isMarked;
+        return this.marked;
     }
     setMarked(what = true) {
         this.marked = what;
@@ -102,6 +132,19 @@ export class Person {
     toggleMarked() {
         this.marked = !this.marked;
         return this.marked;
+    }
+    isBrickWall() {
+        return this.brickWall;
+    }
+    setBrickWall(what = true) {
+        this.brickWall = what;
+    }
+    isPrivate() {
+        const priv = this._data.Privacy;
+        return priv >= 20 && priv <= 40;
+    }
+    isUnlisted() {
+        return this._data.Privacy == 10;
     }
 
     hasSuffix() {
@@ -138,6 +181,34 @@ export class Person {
 
     toString() {
         return `${this.getWtId()} (${this.getId()}) ${this.getDisplayName()}`;
+    }
+
+    static getReportLines(biography, isPre1700) {
+        const profileReportLines = [];
+        if (!biography.hasSources()) {
+            profileReportLines.push(["Profile may be unsourced", null]);
+        }
+        const invalidSources = biography.getInvalidSources();
+        const nrInvalidSources = invalidSources.length;
+        if (nrInvalidSources > 0) {
+            let msg = "Bio Check found sources that are not ";
+            if (isPre1700) {
+                msg += "reliable or ";
+            }
+            msg += "clearly identified:";
+            const subLines = [];
+            for (const invalidSource of invalidSources) {
+                subLines.push(invalidSource);
+            }
+            profileReportLines.push([msg, subLines]);
+        }
+        for (const sectMsg of biography.getSectionMessages()) {
+            profileReportLines.push([sectMsg, null]);
+        }
+        for (const styleMsg of biography.getStyleMessages()) {
+            profileReportLines.push([styleMsg, null]);
+        }
+        return profileReportLines;
     }
 }
 

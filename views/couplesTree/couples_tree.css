@@ -13,7 +13,7 @@
   font-size: 14px;
 }
 
-.couple .box {
+.cvtc .couple .box {
   cursor: pointer;
   border-style: solid;
   border-width: 2px;
@@ -23,13 +23,13 @@
   background-color: #fff;
 }
 
-.box[data-gender="male"],
-.popup-box[data-gender="male"] {
+.cvtc .box[data-gender="male"],
+.cvtc .popup-box[data-gender="male"] {
   border-color: rgba(102, 102, 204, 0.5);
 }
 
-.descendant .box[data-gender="male"][data-infocus="true"],
-.ancestor.root .box[data-gender="male"][data-infocus="true"] {
+.cvtc .descendant .box[data-gender="male"][data-infocus="true"],
+.cvtc .ancestor.root .box[data-gender="male"][data-infocus="true"] {
   cursor: pointer;
   border-color: rgba(102, 102, 204, 0.5);
   background-image: linear-gradient(
@@ -40,13 +40,13 @@
   );
 }
 
-.box[data-gender="female"],
-.popup-box[data-gender="female"] {
+.cvtc .box[data-gender="female"],
+.cvtc .popup-box[data-gender="female"] {
   border-color: rgba(204, 102, 102, 0.5);
 }
 
-.descendant .box[data-gender="female"][data-infocus="true"],
-.ancestor.root .box[data-gender="female"][data-infocus="true"] {
+.cvtc .descendant .box[data-gender="female"][data-infocus="true"],
+.cvtc .ancestor.root .box[data-gender="female"][data-infocus="true"] {
   border-color: rgba(204, 102, 102, 0.5);
   background-image: linear-gradient(
     to top right,
@@ -56,12 +56,12 @@
   );
 }
 
-.box,
-.popup-box {
+.cvtc .box,
+.cvtc .popup-box {
   border-color: rgba(102, 204, 102, 0.5);
 }
 
-.descendant .box[data-infocus="true"] {
+.cvtc .descendant .box[data-infocus="true"] {
   border-color: rgba(102, 204, 102, 0.5);
   background-image: linear-gradient(
     to top right,
@@ -71,19 +71,19 @@
   );
 }
 
-.person .cname {
+.cvtc .person .cname {
   font-size: 14px;
 }
 
-.person .marriage-date {
+.cvtc .person .marriage-date {
   font-size: 12px;
 }
 
-.button-words {
+.cvtc .button-words {
   color: black;
 }
 
-.drop-button {
+.cvtc .drop-button {
   font-size: 14px;
   margin: 0;
   text-transform: none;
@@ -93,7 +93,7 @@
   border-color: rgba(0, 0, 0, 0.2);
 }
 
-.select-spouse-button {
+.cvtc .select-spouse-button {
   font-size: 14px;
   margin: 0;
   text-transform: none;
@@ -102,22 +102,22 @@
   background-color: transparent;
 }
 
-.select-spouse-button:hover,
-.drop-button:hover {
+.cvtc .select-spouse-button:hover,
+.cvtc .drop-button:hover {
   cursor: pointer;
   /* color: #fc7171; */
 }
 
-.altSpouse {
+.cvtc .altSpouse {
   font-size: 14px;
 }
 
-.alt-spouse-list-wrapper h4 {
+.cvtc .alt-spouse-list-wrapper h4 {
   margin: 12px;
 }
 
-.spouse-list ol,
-.children-list ol {
+.cvtc .spouse-list ol,
+.cvtc .children-list ol {
   border: none;
   margin: 6px;
   padding-top: 0px;
@@ -126,33 +126,33 @@
   --content-padding: 0;
 }
 
-.children-list-wrapper h4 {
+.cvtc .children-list-wrapper h4 {
   margin: 12px;
   background: #f9f9f9;
 }
 
-.children-list ol {
+.cvtc .children-list ol {
   margin: 0;
 }
 
-.children-list {
+.cvtc .children-list {
   border-radius: 5px;
   border: solid rgba(102, 204, 102, 0.5);
   background: #f9f9f9;
 }
 
-.minus {
+.cvtc .minus {
   fill: #fff;
   cursor: pointer;
   stroke: #333;
   stroke-width: 1px;
 }
 
-.minus:hover {
+.cvtc .minus:hover {
   stroke: #fcbb71;
 }
 
-#ct-help-button {
+.cvtc #ct-help-button {
   background: #393a3c;
   color: #fff;
   font-size: 0.8em;
@@ -167,7 +167,7 @@
   z-index: 11000;
 }
 
-xx {
+.cvtc xx {
   position: absolute;
   top: 0.2em;
   right: 0.6em;
@@ -177,7 +177,7 @@ xx {
   color: red;
 }
 
-#ct-help-text {
+.cvtc #ct-help-text {
   display: none;
   border: 3px solid forestgreen;
   border-radius: 1em;
@@ -193,10 +193,10 @@ xx {
   z-index: 11000;
   cursor: default;
 }
-#ct-help-text:hover {
+.cvtc #ct-help-text:hover {
   cursor: grab;
 }
-#ct-help-text:active {
+.cvtc #ct-help-text:active {
   cursor: grabbing;
 }
 

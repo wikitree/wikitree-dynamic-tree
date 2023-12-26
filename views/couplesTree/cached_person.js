@@ -1,3 +1,11 @@
+import { Utils } from "../shared/Utils.js";
+
+/**
+ * When a person object is created from data in e.g. a Parents field of another profile, this parent Person object
+ * typically does not have Parents, Children, or Spouses fields. We refer to a Person object that has any of these
+ * fields as 'enriched'. The degree to which a profile has been 'enriched' (its 'richness') depends on how
+ * many of these 3 fields are present.
+ */
 class Richness {
     static MAX_RICHNESS = 0b1111;
     static FULLY_ENRICHED = 0b0111; // Currently we don't use/consider siblings in our richness measurements
@@ -86,6 +94,8 @@ export class CachedPerson {
         }
 
         this._data.noMoreSpouses = data.DataStatus ? data.DataStatus.Spouse == "blank" : false;
+        this.generations = new Map();
+        this.marked = false;
         condLog(`>--New person done: for ${this.getId()} ${name} (${this.getRichness()})`, this);
 
         function createAndCachePeople(mapOfPeopleData) {
@@ -94,69 +104,40 @@ export class CachedPerson {
             }
         }
     }
-    setSpouses(spousesData) {
-        this._data.Spouses = new Set(Object.keys(spousesData));
 
-        // The primary profile retrieved via an API call does not have marriage date and -place fields.
-        // That data is only present in each of the Spouses sub-records retrieved with the primary profile.
-        // However, such a spouse record has no Parents or Children records. If we then later retrieve the
-        // spouse record again via API in order to obtain their Parents or Children records, that new record
-        // no longer has the marriage data. Therefore, here we copy the marriage data (if any) from the Spouses
-        // records to a new MarriageDates field at the Person._data level. We also determine who the first
-        // spouse is based on marriage date (unknown date goes last).
-        let firstSpouseId = undefined;
-        let firstMarriageDate = dateObject();
-        this._data.MarriageDates = {};
-        for (const [spouseId, spouseData] of Object.entries(spousesData)) {
-            const mDate = spouseData.marriage_date || "0000-00-00";
-            const dateObj = dateObject(mDate);
-            this._data.MarriageDates[spouseId] = {
-                marriage_date: mDate,
-                marriage_end_date: spouseData.marriage_end_date || "0000-00-00",
-                marriage_location: spouseData.marriage_location || "0000-00-00",
-            };
-            CachedPerson.makePerson(spouseData);
-            if (dateObj - firstMarriageDate <= 0) {
-                firstMarriageDate = dateObj;
-                firstSpouseId = spouseId;
-            }
-        }
-        this._data.PreferredSpouseId = firstSpouseId;
+    //
+    // Note: the methods below are sorted, first by their noun and then the verb (and adjective) so that everything to
+    // do with a specific part of the object are together
+    //
 
-        function dateObject(dateStr) {
-            const parts = (dateStr || "9999-12-31").split("-");
-            // Unknown year goes last
-            if (parts[0] && parts[0] == 0) parts[0] = 9999;
-            if (parts[1] && parts[1] > 0) parts[1] -= 1;
-            if (parts.length == 1) {
-                parts[1] = 0;
-            }
-            return new Date(...parts);
-        }
-    }
-
-    // Basic "getters" for the data elements.
-    getId() {
-        return this._data.Id;
-    }
-    getName() {
-        return this._data.Name;
-    }
-    getGender() {
-        return this._data.Gender;
-    }
+    // -----------------------------------
+    // Birth Dates
+    //
     getBirthDate() {
         return this._data.BirthDate;
+    }
+    getBirthYear() {
+        const d = this._data.BirthDate || this._data.BirthDateDecade;
+        return d?.substring(0, 4) || "0000";
+    }
+    getBirthDecade() {
+        return this._data.BirthDateDecade;
     }
     getBirthLocation() {
         return this._data.BirthLocation;
     }
-    getDeathDate() {
-        return this._data.DeathDate;
+    // -----------------------------------
+    // Brick Wall
+    //
+    isBrickWall() {
+        return this.brickWall;
     }
-    getDeathLocation() {
-        return this._data.DeathLocation;
+    setBrickWall(what = true) {
+        this.brickWall = what;
     }
+    // -----------------------------------
+    // Children
+    //
     getChildrenIds() {
         return this._data.Children;
     }
@@ -173,43 +154,38 @@ export class CachedPerson {
     async getChildrenWithLoad() {
         return await Promise.all(CachedPerson.collectWithLoad(this._data.Children));
     }
-    getFatherId() {
-        return this._data.Father;
+    hasAChild() {
+        return this._data.HasChildren || this._data.Children?.length > 0;
     }
-    getMotherId() {
-        return this._data.Mother;
+
+    // -----------------------------------
+    // Death Dates
+    //
+    getDeathDate() {
+        return this._data.DeathDate;
     }
-    getParentIds() {
-        return this._data.Parents;
+    getDeathDecade() {
+        return this._data.DeathDateDecade;
+    }
+    getDeathLocation() {
+        return this._data.DeathLocation;
     }
     getDisplayName() {
         return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate;
     }
-    getPhotoUrl() {
-        if (this._data.PhotoData && this._data.PhotoData["url"]) {
-            return this._data.PhotoData["url"];
-        }
-    }
 
-    // Getters for Mother and Father return the Person objects, if there is one.
-    // The getMotherId and getFatherId functions above return the actual .Mother and .Father data elements (ids).
-    getMother() {
-        if (this._data.Mother) {
-            return CachedPerson.#peopleCache.getIfPresent(this.getMotherId());
-        }
-        return undefined;
-    }
-    async getMotherWithLoad() {
-        if (this._data.Mother) {
-            return await CachedPerson.#peopleCache.getWithLoad(this.getMotherId());
-        }
-        return CachedPerson.aPromiseFor(undefined);
-    }
+    // -----------------------------------
+    // Father
+    //
     getFather() {
+        // Get the actual father person object, not their id
         if (this._data.Father) {
             return CachedPerson.#peopleCache.getIfPresent(this.getFatherId());
         }
         return undefined;
+    }
+    getFatherId() {
+        return this._data.Father;
     }
     async getFatherWithLoad() {
         if (this._data.Father) {
@@ -217,23 +193,139 @@ export class CachedPerson {
         }
         return CachedPerson.aPromiseFor(undefined);
     }
-    /**
-     * When a person object is created from data in e.g. a Parents field of another profile, this parent Person object
-     * typically does not have Parents, Children, or Spouses fields. We refer to a Person object that has any of these
-     * fields as 'enriched'. The degree to which a profile has been 'enriched' (its 'richness') depends on how
-     * many of these 3 fields are present.
-     */
-    getRichness() {
-        return Richness.fromData(this._data);
+
+    // -----------------------------------
+    // Gender
+    //
+    getGender() {
+        return this._data.Gender;
     }
+
+    // -----------------------------------
+    // Generationms
+    //
+    // Since a person can appear in more than one generation and more than once in a generation,
+    // their generation is a map of {generation => count}.
+    addGeneration(gen) {
+        if (this.generations.has(gen)) {
+            const g = this.generations.get(gen);
+            this.generations.set(gen, g + 1);
+        } else {
+            this.generations.set(gen, 1);
+        }
+    }
+    clearGenerations() {
+        this.generations.clear();
+        this.setNrOlderGenerations(0);
+    }
+    getNrCopies(upToGen) {
+        // Count how many times this person appear in the direct ancestor lines within upToGen generations
+        return [...this.generations.entries()].reduce((acc, [gen, cnt]) => (gen <= upToGen ? acc + cnt : acc), 0);
+    }
+    getNrOlderGenerations() {
+        // The number of direct ancestor generations above this person in the tree
+        return this.nrOlderGenerations;
+    }
+    isAtGeneration(n) {
+        return this.generations.has(n);
+    }
+    isBelowGeneration(n) {
+        for (const g of this.generations.keys()) {
+            if (g < n) return true;
+        }
+        return false;
+    }
+    setNrOlderGenerations(n) {
+        this.nrOlderGenerations = n;
+    }
+
+    // -----------------------------------
+    // Id
+    //
+    getId() {
+        return this._data.Id;
+    }
+
+    // -----------------------------------
+    // Mother
+    //
+    getMother() {
+        // Get the actual mother person object, not their id
+        if (this._data.Mother) {
+            return CachedPerson.#peopleCache.getIfPresent(this.getMotherId());
+        }
+        return undefined;
+    }
+    getMotherId() {
+        return this._data.Mother;
+    }
+    async getMotherWithLoad() {
+        if (this._data.Mother) {
+            return await CachedPerson.#peopleCache.getWithLoad(this.getMotherId());
+        }
+        return CachedPerson.aPromiseFor(undefined);
+    }
+
+    // -----------------------------------
+    // Parents
+    //
+    getParentIds() {
+        return this._data.Parents;
+    }
+    hasAParent() {
+        return this.getFatherId() || this.getMotherId();
+    }
+
+    // -----------------------------------
+    // Photo
+    //
+    getPhotoUrl() {
+        if (this._data.PhotoData && this._data.PhotoData["url"]) {
+            return this._data.PhotoData["url"];
+        }
+    }
+
+    // -----------------------------------
+    // Richness
     isFullyEnriched() {
         return this.getRichness() == Richness.FULLY_ENRICHED;
     }
-    getSpouseIds() {
-        return this._data.Spouses;
+    getRichness() {
+        return Richness.fromData(this._data);
+    }
+
+    // -----------------------------------
+    // Spouses
+    //
+    copySpouses(person) {
+        // Copy spousal data frm 'person' to this profile
+        this._data.PreferredSpouseId = person._data.PreferredSpouseId;
+        this._data.Spouses = person._data.Spouses;
+        this._data.MarriageDates = person._data.MarriageDates;
+    }
+    getSpouse(id) {
+        if (id) {
+            if (this._data.Spouses && this._data.Spouses.has(id)) {
+                return CachedPerson.#peopleCache.getIfPresent(id) || new NotLoadedPerson(id);
+            }
+            return undefined;
+        }
+        if (this.hasSpouse()) {
+            return (
+                CachedPerson.#peopleCache.getIfPresent(this._data.PreferredSpouseId) ||
+                new NotLoadedPerson(this._data.PreferredSpouseId)
+            );
+        }
+        if (this.hasNoSpouse() || this.isDiedYoung()) {
+            return NoSpouse;
+        }
+        return undefined;
     }
     getSpouses() {
         return CachedPerson.collectPeople(this._data.Spouses);
+    }
+    getSpouseIds() {
+        return this._data.Spouses;
     }
     async getSpousesWithLoad() {
         return await Promise.all(CachedPerson.collectWithLoad(this._data.Spouses));
@@ -257,24 +349,6 @@ export class CachedPerson {
         }
         return CachedPerson.aPromiseFor(undefined);
     }
-    getSpouse(id) {
-        if (id) {
-            if (this._data.Spouses && this._data.Spouses.has(id)) {
-                return CachedPerson.#peopleCache.getIfPresent(id) || new NotLoadedPerson(id);
-            }
-            return undefined;
-        }
-        if (this.hasSpouse()) {
-            return (
-                CachedPerson.#peopleCache.getIfPresent(this._data.PreferredSpouseId) ||
-                new NotLoadedPerson(this._data.PreferredSpouseId)
-            );
-        }
-        if (this.hasNoSpouse() || this.isDiedYoung()) {
-            return NoSpouse;
-        }
-        return undefined;
-    }
     // Note that !hasSpouse() is not the same as hasNoSpouse(). The former just means that the current
     // profile does not have any spouse field(s) loaded while the latter means the profile definitely
     // has no spouse.
@@ -287,14 +361,69 @@ export class CachedPerson {
     hasNoSpouse() {
         return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0;
     }
+    setPreferredSpouse(id) {
+        if (this.hasSpouse(id)) {
+            this._data.PreferredSpouseId = id;
+            // also change the preferred spouse of the preferred spouse if possible
+            const thisId = this.getId();
+            const spouse = this.getSpouse();
+            if (spouse._data.preferredSpouse != thisId && spouse._data.Spouses && spouse._data.Spouses[thisId]) {
+                spouse._data.preferredSpouse = thisId;
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+    setSpouses(spousesData) {
+        this._data.Spouses = new Set(Object.keys(spousesData));
+
+        // The primary profile retrieved via an API call does not have marriage date and -place fields.
+        // That data is only present in each of the Spouses sub-records retrieved with the primary profile.
+        // However, such a spouse record has no Parents or Children records. If we then later retrieve the
+        // spouse record again via API in order to obtain their Parents or Children records, that new record
+        // no longer has the marriage data. Therefore, here we copy the marriage data (if any) from the Spouses
+        // records to a new MarriageDates field at the Person._data level. We also determine who the first
+        // spouse is based on marriage date (unknown date goes last).
+        let firstSpouseId = undefined;
+        let firstMarriageDate = Utils.dateObject();
+        this._data.MarriageDates = {};
+        for (const [spouseId, spouseData] of Object.entries(spousesData)) {
+            const mDate = spouseData.marriage_date || "0000-00-00";
+            const dateObj = Utils.dateObject(mDate);
+            this._data.MarriageDates[spouseId] = {
+                marriage_date: mDate,
+                marriage_end_date: spouseData.marriage_end_date || "0000-00-00",
+                marriage_location: spouseData.marriage_location || "0000-00-00",
+            };
+            CachedPerson.makePerson(spouseData);
+            if (dateObj - firstMarriageDate <= 0) {
+                firstMarriageDate = dateObj;
+                firstSpouseId = spouseId;
+            }
+        }
+        this._data.PreferredSpouseId = firstSpouseId;
+    }
+
+    // -----------------------------------
+    // WikiTree ID
+    //
+    getWtId() {
+        return this._data.Name;
+    }
+
+    // -----------------------------------
+    // Various property fields
+    //
     hasSuffix() {
         return this._data.Suffix && this._data.Suffix.length > 0;
     }
-    hasAParent() {
-        return this.getFatherId() || this.getMotherId();
-    }
-    hasAChild() {
-        return this._data.HasChildren || this._data.Children?.length > 0;
+    hasFields(mustHaveFields) {
+        let hasAll = true;
+        for (const i in mustHaveFields || []) {
+            hasAll &&= Object.hasOwn(this._data, mustHaveFields[i]);
+        }
+        return hasAll;
     }
     isMale() {
         return this.getGender() == "Male";
@@ -315,32 +444,28 @@ export class CachedPerson {
             return self._data.isDiedYoung;
         }
     }
-    hasFields(mustHaveFields) {
-        let hasAll = true;
-        for (const i in mustHaveFields || []) {
-            hasAll &&= Object.hasOwn(this._data, mustHaveFields[i]);
-        }
-        return hasAll;
+    isDuplicate() {
+        return this.generations.size > 1 || this.generations.values().next().value > 1;
     }
-
-    setPreferredSpouse(id) {
-        if (this.hasSpouse(id)) {
-            this._data.PreferredSpouseId = id;
-            // also change the preferred spouse of the preferred spouse if possible
-            const thisId = this.getId();
-            const spouse = this.getSpouse();
-            if (spouse._data.preferredSpouse != thisId && spouse._data.Spouses && spouse._data.Spouses[thisId]) {
-                spouse._data.preferredSpouse = thisId;
-            }
-            return true;
-        } else {
-            return false;
-        }
+    isLiving() {
+        return this._data.IsLiving;
     }
-    copySpouses(person) {
-        this._data.PreferredSpouseId = person._data.PreferredSpouseId;
-        this._data.Spouses = person._data.Spouses;
-        this._data.MarriageDates = person._data.MarriageDates;
+    isMarked() {
+        return this.marked;
+    }
+    setMarked(what = true) {
+        this.marked = what;
+    }
+    toggleMarked() {
+        this.marked = !this.marked;
+        return this.marked;
+    }
+    isPrivate() {
+        const priv = this._data.Privacy;
+        return priv >= 20 && priv <= 40;
+    }
+    isUnlisted() {
+        return this._data.Privacy == 10;
     }
 
     toString() {

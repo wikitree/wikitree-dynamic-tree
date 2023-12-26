@@ -12,11 +12,16 @@ export class AncestorTree {
     static maxGeneration;
     static duplicates = new Map();
     static genCounts = [];
+    static profileCount = 0;
+    static requestedGen = 0;
+    static minBirthYear = 0;
 
     static init() {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
+        AncestorTree.profileCount = 0;
+        AncestorTree.requestedGen = 0;
     }
 
     static clear() {
@@ -26,6 +31,8 @@ export class AncestorTree {
         AncestorTree.root = undefined;
         AncestorTree.maxGeneration = 0;
         AncestorTree.genCounts = [];
+        AncestorTree.profileCount = 0;
+        AncestorTree.requestedGen = 0;
     }
 
     static replaceWith(treeArray) {
@@ -37,8 +44,9 @@ export class AncestorTree {
         AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
     }
 
-    static async buildTreeWithGetPeople(wtId, depth) {
+    static async buildTreeWithGetPeople(wtId, depth, withBios) {
         const starttime = performance.now();
+        AncestorTree.requestedGen = depth + 1;
         let remainingDepth = depth;
         let reqDepth = Math.min(API.MAX_API_DEPTH, remainingDepth);
         let start = 0;
@@ -48,9 +56,18 @@ export class AncestorTree {
             reqDepth,
             start,
             API.GET_PERSON_LIMIT,
-            privateIdOffset
+            privateIdOffset,
+            withBios
         );
         if (!resultByKey) return [AncestorTree.root, performance.now() - starttime];
+        const status = resultByKey[wtId]?.status;
+        if (typeof status != "undefined" && status != "") {
+            wtViewRegistry.showWarning(
+                `Unexpected response from WikiTree server: "${status}".` +
+                    (status.includes("permission denied") ? " The requested ID might be private." : "")
+            );
+            return [AncestorTree.root, performance.now() - starttime];
+        }
         const rootId = resultByKey[wtId].Id;
 
         remainingDepth -= reqDepth;
@@ -80,7 +97,8 @@ export class AncestorTree {
                     reqDepth,
                     start,
                     API.GET_PERSON_LIMIT,
-                    privateIdOffset
+                    privateIdOffset,
+                    withBios
                 );
                 const newTreeSize = AncestorTree.#people.size;
                 console.log(
@@ -100,11 +118,17 @@ export class AncestorTree {
         return [AncestorTree.root, performance.now() - starttime];
     }
 
-    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset) {
+    static async makePagedCallAndAddPeople(reqIds, depth, start, limit, privateIdOffset, withBios) {
         console.log(`Calling getPeople with keys:${reqIds}, ancestors:${depth}, start:${start}, limit:${limit}`);
-        const [resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+        let starttime = performance.now();
+        let [status, resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+        let callTime = performance.now() - starttime;
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
-        console.log(`Received ${profiles.length} profiles`);
+        console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
+        if (typeof status != "undefined" && status != "") {
+            wtViewRegistry.showWarning(`Unexpected response from WikiTree server: "${status}".`);
+        }
+
         const notLoaded = new Set();
 
         let nrPrivateIds = 0;
@@ -146,9 +170,11 @@ export class AncestorTree {
             console.log(
                 `Retrieving getPeople result page. keys:..., ancestors:${depth}, start:${start}, limit:${limit}`
             );
-            const [, ancestor_json] = await API.getPeople(reqIds, depth, start, limit);
+            starttime = performance.now();
+            [status, , ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
+            callTime = performance.now() - starttime;
             profiles = Object.values(ancestor_json);
-            console.log(`Received ${profiles.length} profiles`);
+            console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
         }
         return [resultByKey, notLoaded, nrPrivateIds];
     }
@@ -159,6 +185,7 @@ export class AncestorTree {
         AncestorTree.root = AncestorTree.#people.get(rootId);
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.genCounts = [0];
+        AncestorTree.minBirthYear = 5000;
         // Clear each person's generation info and add them to the byWtId map
         for (const person of AncestorTree.#people.values()) {
             person.clearGenerations();
@@ -167,14 +194,20 @@ export class AncestorTree {
         const m = AncestorTree.#validate_and_set_generations(rootId, 1, new Set(), 0);
         AncestorTree.maxGeneration = m;
         AncestorTree.duplicates.clear();
+        AncestorTree.profileCount = 0;
         let n = 0;
         for (const p of AncestorTree.#people.values()) {
             const id = p.getId();
             if (p.isDuplicate() && !AncestorTree.duplicates.has(id)) {
                 AncestorTree.duplicates.set(id, ++n);
             }
+            AncestorTree.profileCount += p.getNrCopies(AncestorTree.requestedGen);
+            const bYear = +p.getBirthYear();
+            if (bYear > 0 && bYear < AncestorTree.minBirthYear) {
+                AncestorTree.minBirthYear = bYear;
+            }
         }
-        console.log(`nr duplicates=${AncestorTree.duplicates.size}`);
+        console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
     }
 
@@ -228,35 +261,25 @@ export class AncestorTree {
     static findPaths(otherWtIds) {
         const paths = AncestorTree.findAllPaths(AncestorTree.root, otherWtIds);
 
-        // Convert the [[node1, node2, ...], [node-k, node-l, ...], ...] paths obtained from the above
-        // into nodes {id: group: name:} and links {source: target: value:}, but we put the nodes in a
-        // map with person.wiId as key and the links in a map with 'src-id:dst-id' as key so we can do
-        // quick checks for existence.  (group and value in the above is/was used in some of the no-longer
-        // used display methods)
-        const pathsRoot = {
-            id: AncestorTree.root.getWtId(),
-            group: 1,
-            name: AncestorTree.root.getDisplayName(),
-        };
-        const nodes = new Map([[pathsRoot.id, pathsRoot]]);
-        const links = new Map();
+        // Convert the paths of the form [[id-1, id-2, ...], [id-1, id-k, ...], ...] obtained from the above
+        // into a graph with a set of wtIds representing the nodes, and a set of "<src-wtId>:<dst-wtId>"
+        // strings representing the links so we can do quick checks for existence.
+        const rootOfAllPaths = AncestorTree.root.getWtId();
+        const nodes = new Set([rootOfAllPaths]);
+        const links = new Set();
 
         for (const path of paths) {
-            let src = pathsRoot;
-            for (const id of path.slice(1)) {
-                const p = AncestorTree.get(id);
-                const dst = {
-                    id: p.getWtId(),
-                    group: otherWtIds.includes(p.getWtId()) ? 3 : p.isMale() ? 4 : 2,
-                    name: p.getDisplayName(),
-                };
-                if (!nodes.has(dst.id)) nodes.set(dst.id, dst);
-                const lnkId = `${src.id}:${dst.id}`;
-                if (!links.has(lnkId)) links.set(lnkId, { source: src.id, target: dst.id, value: 1 });
-                src = dst;
+            let srcWtId = AncestorTree.get(path.shift()).getWtId();
+            if (!nodes.has(srcWtId)) nodes.add(srcWtId);
+            for (const dstId of path) {
+                const dstWtId = AncestorTree.get(dstId).getWtId();
+                if (!nodes.has(dstWtId)) nodes.add(dstWtId);
+                const lnkId = `${srcWtId}:${dstWtId}`;
+                if (!links.has(lnkId)) links.add(lnkId);
+                srcWtId = dstWtId;
             }
         }
-        return [pathsRoot, nodes, links, otherWtIds, AncestorTree.getGenCountsForPaths(paths)];
+        return [rootOfAllPaths, nodes, links, otherWtIds, AncestorTree.getGenCountsForPaths(paths)];
     }
 
     static getGenCountsForPaths(paths) {
@@ -273,6 +296,13 @@ export class AncestorTree {
         return genCounts;
     }
 
+    /**
+     *
+     * @param {*} srcNode
+     * @param {*} dstWtIds
+     * @returns All paths from srcNode (a person) to their ancestors (if any) with WT id in dstWtIds
+     *          in the form [[id-1, id-2, ...], [id-1, id-k, ...], ...]
+     */
     static findAllPaths(srcNode, dstWtIds) {
         const allPaths = [];
         for (const dstWtId of dstWtIds) {
@@ -285,23 +315,72 @@ export class AncestorTree {
             path.push(srcNode.getId());
 
             // Use depth first search (with backtracking) to find all the paths in the graph
-            AncestorTree.DFS(srcNode, dstWtId, path, allPaths);
+            DFS(srcNode, dstWtId, path, allPaths);
         }
 
         return allPaths;
-    }
 
-    // This function uses depth-first search at its core to find all the paths in a graph
-    static DFS(srcNode, dstWtId, path, allPaths) {
-        if (srcNode.getWtId() == dstWtId) {
-            allPaths.push([...path]);
-        } else {
-            for (const adjnode of AncestorTree.getD3Children(srcNode)) {
-                path.push(adjnode.getId());
-                AncestorTree.DFS(adjnode, dstWtId, path, allPaths);
-                path.pop();
+        function DFS(srcNode, dstWtId, path, allPaths) {
+            if (srcNode.getWtId() == dstWtId) {
+                allPaths.push([...path]);
+            } else {
+                for (const adjnode of AncestorTree.getD3Children(srcNode)) {
+                    path.push(adjnode.getId());
+                    DFS(adjnode, dstWtId, path, allPaths);
+                    path.pop();
+                }
             }
         }
+    }
+
+    static markAndCountBricks(opt) {
+        let nrNoParents = 0;
+        let nrOneParent = 0;
+        let nrNoNoSpouses = 0;
+        let nrNoNoChildren = 0;
+        let nrBioIssue = 0;
+        AncestorTree.#people.forEach((person) => {
+            let isBrick = false;
+            if (!person.hasAParent()) {
+                ++nrNoParents;
+                isBrick ||= opt.noParents;
+            }
+            if ((person.getFatherId() && !person.getMotherId()) || (!person.getFatherId() && person.getMotherId())) {
+                ++nrOneParent;
+                isBrick ||= opt.oneParent;
+            }
+            if (person._data.DataStatus?.Spouse != "blank") {
+                ++nrNoNoSpouses;
+                isBrick ||= opt.noNoSpouses;
+            }
+            if (person._data.NoChildren != 1) {
+                ++nrNoNoChildren;
+                isBrick ||= opt.noNoChildren;
+            }
+            if (person.hasBioIssues) {
+                ++nrBioIssue;
+                isBrick ||= opt.bioCheck;
+            }
+            person.setBrickWall(isBrick);
+        });
+        return {
+            noParents: nrNoParents,
+            oneParent: nrOneParent,
+            noNoSpouses: nrNoNoSpouses,
+            noNoChildren: nrNoNoChildren,
+            bioCheck: window.aleBiosLoaded ? nrBioIssue : "?",
+        };
+    }
+
+    static nrDuplicatesUpToGen(gen) {
+        let cnt = 0;
+        for (const dId of AncestorTree.duplicates.keys()) {
+            const dPerson = AncestorTree.#people.get(+dId);
+            if (dPerson.getNrCopies(gen) > 1) {
+                ++cnt;
+            }
+        }
+        return cnt;
     }
 
     static toArray() {
@@ -350,8 +429,10 @@ export class AncestorTree {
 
     static getD3Children(person, alreadyInTree) {
         const parents = [];
-        addParent(+person.getFatherId());
-        addParent(+person.getMotherId());
+        if (!(person instanceof LinkToPerson)) {
+            addParent(+person.getFatherId());
+            addParent(+person.getMotherId());
+        }
         return parents;
 
         function addParent(id) {
@@ -367,7 +448,9 @@ export class AncestorTree {
         }
     }
 
-    // convert tree into a graph
+    // Convert tree into a graph, with the latter being represented as 2 arrays: nodes and edges.
+    // This is not currently being used, but might be useful if we want to use a display
+    // method dependent on a graph representation (as has been experimented with in the past).
     static makeGraph() {
         const rootNode = {
             id: AncestorTree.root.getWtId(),
