@@ -26,6 +26,9 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         bottom: 10,
         left: Math.max(aName ? aName.length : 5, bName ? bName.length : 5) * 8,
     };
+    // const originalSrc = document.getElementById("originalSrc").checked;
+    // const useX0 = document.getElementById("useX0").checked;
+    // const linksDelay = +$("#d3Delay").val() || 0;
     const edgeFactor = +$("#edgeFactor").val() || 180;
     const heightFactor = +$("#cctTHFactor").val() || 80;
     const brickWallColour = $("#cctBrickWallColour").val() || "#FF0000";
@@ -87,8 +90,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
     const inTree = connectors ? new Set() : undefined;
     // Assign parent, children, height, depth
-    var d3Root = d3.hierarchy(theTree.rootCouple, function (d) {
-        return CCTE.getD3Children(d, inTree);
+    var d3Root = d3.hierarchy(theTree.rootCouple, function (cpl) {
+        return CCTE.getD3Children(cpl, inTree);
     });
     d3Root.x0 = treeHeight / 2;
     d3Root.y0 = 0;
@@ -274,6 +277,9 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             .enter()
             .append("g")
             .attr("class", "node")
+            .attr("id", function (d) {
+                return d.data.getId();
+            })
             .attr("transform", function (d) {
                 return "translate(" + srcNode.y0 + "," + srcNode.x0 + ")";
             });
@@ -295,7 +301,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                     return d[savedChildrenFieldFor(side)] ? "lightsteelblue" : "#fff";
                 })
                 .on("click", function (e, d) {
-                    toggleAncestors(e, d, side, $(this));
+                    toggleAncestors(e, d, side, this);
                 })
                 .append("title")
                 .text(function (d) {
@@ -531,7 +537,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
         // Update the links...
         const link = svg.selectAll("path.link").data(links, function (d) {
-            return d.id;
+            return d.data.getId();
         });
 
         // Enter any new links at the parent's previous position.
@@ -546,11 +552,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 return "link";
             })
             .attr("d", function (d) {
-                const o = { x: d.parent.x, y: d.parent.y };
-                // tree root's previous position.
-                // const o = { x: d3Root.x, y: d3Root.y };
                 // parent's previous position.
-                // const o = { x: srcNode.x0, y: srcNode.y0 };
+                const o = { x: srcNode.x0, y: srcNode.y0 };
                 return diagonal(o, o);
             })
             .attr("lnk", function (d) {
@@ -559,6 +562,15 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
         // UPDATE
         const linkUpdate = linkEnter.merge(link);
+
+        // Transition back to the parent element position
+        linkUpdate
+            .transition()
+            // .delay(linksDelay)
+            .duration(duration)
+            .attr("d", function (d) {
+                return diagonal(d, d.parent);
+            });
 
         // Remove any exiting links
         link.exit()
@@ -569,14 +581,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 return diagonal(o, o);
             })
             .remove();
-
-        // Transition back to the parent element position
-        linkUpdate
-            .transition()
-            .duration(duration)
-            .attr("d", function (d) {
-                return diagonal(d, d.parent);
-            });
 
         // Store the old positions for the next transition.
         nodes.forEach(function (d) {
@@ -632,14 +636,14 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
 
         // Collapse/expand ancestors on click.
-        function toggleAncestors(event, d, side, jqClicked) {
+        function toggleAncestors(event, d, side, clicked) {
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
                 console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
             if (event.altKey) {
-                showBioCheckReport(jqClicked, d.data[side]);
+                showBioCheckReport(clicked, d.data[side]);
                 return;
             }
             const epIds = d.data[side]?.getExpandedParentIds();
@@ -657,11 +661,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 // expand
                 expandBranch(d, side);
             } else if (!isAllParentsLoaded && d.data[side]) {
-                expandBranchWithLoad(d, side);
+                expandBranchWithLoad(d, side, clicked);
             }
         }
 
-        function expandBranchWithLoad(d, side) {
+        function expandBranchWithLoad(d, side, clicked) {
             const sideChildrenName = savedChildrenFieldFor(side);
             const sideChildren = d[sideChildrenName];
             if (sideChildren) {
@@ -680,7 +684,21 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
                 update(d);
             } else {
+                const circ = d3.select(clicked);
+                const loader = svg
+                    .append("image")
+                    .attrs({
+                        "height": 16,
+                        "width": 16,
+                        "transform": circ.attr("transform"),
+                        "xlink:href": "https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif",
+                    })
+                    .attr("transform", function () {
+                        const dy = side == "a" ? -10 : 10;
+                        return `translate(${d.y + 10}, ${d.x + dy - 8})`;
+                    });
                 ccte.expand(d.data, CCTE.ANCESTORS).then(function (newTreeInfo) {
+                    loader.remove();
                     if (newTreeInfo) {
                         theTree = newTreeInfo;
                         const newDepth = d.depth + d.data.getNrOlderGenerations();
@@ -839,10 +857,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
     }
 
-    function showBioCheckReport(jqClicked, person) {
+    function showBioCheckReport(clicked, person) {
         if (typeof person.bioCheckReport == "undefined" || person.bioCheckReport.length == 0) {
             return;
         }
+        const jqClicked = $(clicked);
         const theClickedName = person.getWtId();
         const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
         const $bioReportTable = $(`#${familyId}`);
@@ -1039,7 +1058,9 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 button.setAttribute("person-id", currentSpouse.getId());
                 button.setAttribute("spouse-id", spouseData.id);
                 button.setAttribute("title", `Change ${currentSpouseFullName}'s spouse to ${spouseData.name}`);
-                // Note; the button's click behaviour is added in Tree.drawNodes()  FIX comment!!!
+                button.addEventListener("click", changePartner);
+
+                // FIX!!!! remove the listeners again !!!!!
                 marDiv.prepend(button);
             }
             item.appendChild(marDiv);
@@ -1049,6 +1070,13 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
         wrapper.appendChild(listDiv);
         return wrapper;
+    }
+    function changePartner(event) {
+        event.stopPropagation();
+        const coupleId = event.currentTarget.getAttribute("couple-id");
+        const personId = event.currentTarget.getAttribute("person-id");
+        const newPartnerId = event.currentTarget.getAttribute("spouse-id");
+        ccte.changePartner(coupleId, personId, newPartnerId);
     }
 
     function aDivWith(itsClass, ...elements) {
@@ -1086,7 +1114,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         const treeLink = document.createElement("a");
         treeLink.href = `#name=${wtId}`;
         treeLink.appendChild(img);
-        treeLink.setAttribute("title", `Make ${shortName} the centre of the tree`);
+        treeLink.setAttribute("title", `Make ${shortName} the root of the tree`);
         return treeLink;
     }
     function sleep(ms) {

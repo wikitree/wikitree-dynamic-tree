@@ -54,22 +54,24 @@ export class CCTE {
 
     static HELP_TEXT = `
         <xx>[ x ]</xx>
-        <h2 style="text-align: center">About The Couples Tree</h2>
+        <h2 style="text-align: center">About The Compact Couples Tree</h2>
         <p>The display combines the trees of two people that are in some relationship
-           (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the ancestors and descendants
+           (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the ancestors
            of both members of the couple. You can expand and contract the tree and change its focus as you please.</p>
         <p>Duplicate nodes are flagged with coloured squares. Click on the square to highlight the other copies.</p>
         <p>Navigation Summary</p>
         <ul>
             <li><svg width="12" height="12"><polygon points="1,2 11,2 6,12" style="fill:green;" /></svg>
                 - show the children of a couple, or all the spouses of the other member of the couple.
-            <li>⤇ - select this spouse for this couple (can only be done for the central couple and blood-line descendants).
-            <li><img src="https://www.wikitree.com/images/icons/pedigree.gif"/> - make this person the focus of the tree.
-            <li>Click in a circle to expand/collapse the tree at that node. Collapsed nodes are coloured in grey.
+            <li>⤇ - select this spouse for this couple (can only be done for the root couple).
+            <li><img src="https://www.wikitree.com/images/icons/pedigree.gif"/> - make this person the root of the tree.
+            <li>Click in a grayed-out circle to expand the tree at that node through the loading of more people.
+            <li>Click in a white node to collapse the tree at that node. Collapsed nodes are filled with green. Click on
+                it to expand the subtree again.
             <li>Click on a person's name to open that person's profile in a new tab.
             <li>Use scrolling (up/down and left/right) to pan around, or use the green left/right buttons at the bottom left.
         </ul>
-        <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>`;
+        <p>You can double click in this box, press ESC, or click the X in the top right corner to remove this About text.</p>`;
 
     static #nextZLevel = 10000;
 
@@ -127,6 +129,38 @@ export class CCTE {
                         title="Draw the tree, highlighting paths to the people of interest">
                         (Re-)Draw Tree
                       </button>
+                      <!-- DEBUGGING - some help with debugging animation issues
+                      <label
+                        for="d3delay"
+                        title="Animation delay.">
+                        Delay</label
+                      >
+                      <input
+                        id="d3delay"
+                        type="number"
+                        min="0"
+                        value="200"
+                        title="Links animation delay." />
+                      <input
+                        id="originalSrc"
+                        type="checkbox"
+                        title="Use srcNode or d.parent as links animation source." />
+                      <label
+                        for="originalSrc"
+                        title="Use srcNode or d.parent as links animation source."
+                        class="right">
+                        Use srcNode?</label
+                      >
+                      <input
+                        id="useX0"
+                        type="checkbox"
+                        title="Links animation src coords (x0,y0) or (x,y)?." />
+                      <label
+                        for="useX0"
+                        title="Links animation src coords (x0,y0) or (x,y)?."
+                        class="right">
+                        X0 Coords?</label
+                      > -->
                     </rd>
                   </tr>
                   <tr>
@@ -233,6 +267,7 @@ export class CCTE {
                         type="checkbox" />
                       <label
                         for="sleep"
+                        title="Add sleeps in between some steps of drawing the tree (for debugging help)."
                         class="right">
                         Sleep (test)</label
                       >
@@ -241,10 +276,11 @@ export class CCTE {
                       <input
                         id="bioCheck"
                         type="checkbox"
-                        title="Anyone with issues reported by Bio Check." />
+                        disabled="disabled"
+                        title="Anyone with issues reported by Bio Check. (TBD)" />
                       <label
                         for="bioCheck"
-                        title="Anyone with issues reported by Bio Check."
+                        title="Anyone with issues reported by Bio Check. (TBD)"
                         class="right">
                         Bio Check [<span class="cnt" title="Number of profiles with Bio Check Issues">?</span>]</label
                       >
@@ -654,21 +690,12 @@ export class CCTE {
         let foundRoot = false;
 
         // Find the couple node to change, remove it from the page and then change it
-        const couples = d3
-            .select(`#${coupleId}`)
+        d3.select(`#${coupleId}`)
             .remove()
             .each(function (d) {
                 changeIt(d.data);
             });
 
-        // If we changed a root node, we also have to change the other tree's root node
-        if (foundRoot) {
-            d3.select(`#${flipRootId(coupleId)}`)
-                .remove()
-                .each(function (d) {
-                    changeIt(d.data);
-                });
-        }
         // Redraw the tree
         this.drawTree();
 
@@ -685,21 +712,14 @@ export class CCTE {
                 console.error(`Retrieved wrong couple ${couple.toString()}. It does not contain profile ${personId}`);
             }
         }
-
-        function flipRootId(id) {
-            // A vicious hack!
-            const prefix = id.slice(0, 1);
-            if (prefix == "A") {
-                return `D${id.slice(1)}`;
-            } else {
-                return `A${id.slice(1)}`;
-            }
-        }
     }
 
     clearDisplay() {
+        $("#svgContainer").off("click");
         $("#theSvg svg").remove();
         $("#theSvg .treeHeader").remove();
+        $(".alt-spouse-list-wrapper").remove();
+        $(".children-list-remove").remove();
     }
 
     /**

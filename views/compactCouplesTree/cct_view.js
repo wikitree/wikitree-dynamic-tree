@@ -49,4 +49,8 @@ window.CCTView = class CCTView extends View {
         wtViewRegistry.showInfoPanel();
         const ccte = new CCTE(container_selector).loadAndDraw(person_id);
     }
+
+    close() {
+        $("#svgContainer").off();
+    }
 };

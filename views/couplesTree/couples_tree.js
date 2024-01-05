@@ -1304,14 +1304,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this.children(function (couple) {
                 condLog(`AncestorTree children for ${couple.toString()}`, couple);
                 const children = [];
-                if (couple.a?.getExandedParentIds()) {
+                if (couple.a?.getExpandedParentIds()) {
                     const father = couple.a.getFather();
                     const mother = couple.a.getMother();
                     if (father || mother) {
                         children.push(new Couple(couple.idPrefix + "_a", { a: father, b: mother }));
                     }
                 }
-                if (couple.b?.getExandedParentIds()) {
+                if (couple.b?.getExpandedParentIds()) {
                     const father = couple.b.getFather();
                     const mother = couple.b.getMother();
                     if (father || mother) {
