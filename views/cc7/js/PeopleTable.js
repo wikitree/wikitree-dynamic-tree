@@ -218,7 +218,7 @@ export class PeopleTable {
             if (firstName == undefined) {
                 firstName = "Private";
                 mPerson.LastNameCurrent = "";
-                if (mPerson.Name.match(/Private/) == null) {
+                if (mPerson.Name && mPerson.Name.includes("-") && mPerson.Name.match(/Private/) == null) {
                     mPerson.LastNameAtBirth = mPerson.Name.split("-")[1];
                 } else {
                     mPerson.LastNameAtBirth = "Private";
@@ -228,12 +228,24 @@ export class PeopleTable {
             const oLink = CC7Utils.profileLink(mPerson.Name, firstName);
             let managerLink;
             let dManager;
-            if (mPerson.Manager) {
-                const mgrWtId = mPerson.Managers?.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
+            if (typeof mPerson.Manager != "undefined" && mPerson.Manager == 0) {
+                // Trial and error showed this means it is orphaned
+                managerLink = "Orphaned";
+                dManager = managerLink;
+            } else if (mPerson.Managers && mPerson.Managers.length > 0) {
+                // If the current user is a manager, show them, else grab the first manager in the list
+                const watcher = window.WTUser.name;
+                const mgrWtId = watcher
+                    ? mPerson.Managers.find((m) => m.Name == watcher)?.Name || mPerson.Managers[0]?.Name
+                    : mPerson.Managers[0]?.Name;
                 dManager = CC7Utils.htmlEntities(mgrWtId);
+                managerLink = CC7Utils.profileLink(mgrWtId, dManager);
+            } else if (mPerson.Manager) {
+                // We have a number, so we might as well use it
+                dManager = mPerson.Manager;
                 managerLink = CC7Utils.profileLink(dManager, dManager);
             } else {
-                managerLink = mPerson.Name.startsWith("Private") ? "Unknown" : "Orphaned";
+                managerLink = "Unknown";
                 dManager = managerLink;
             }
 

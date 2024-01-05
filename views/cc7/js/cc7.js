@@ -632,6 +632,10 @@ export class CC7 {
                 person.Id = id;
                 person.Name = `Private${id}`;
                 person.DataStatus = { Spouse: "", Gender: "" };
+            } else if (!person.Name) {
+                // WT seems not to return Name for some private profiles, even though they do
+                // return a positive id for them, so we just set Name to Id since WT URLs work for both.
+                person.Name = `${id}`;
             }
             if (!window.people.has(id)) {
                 if (id < 0) {
