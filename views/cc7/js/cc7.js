@@ -133,7 +133,7 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young images, <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                The Died Young images, <img height=45px src="./views/cc7/images/pink-and-blue-ribbon.png" /> and
                 <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> by default, are used to flag people
                 (in their Children column) who died under age 5 and under age 16, respectively, provided they had
                 no children. You can change the image by clicking on the settings gear

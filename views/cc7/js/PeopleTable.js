@@ -23,6 +23,7 @@ export class PeopleTable {
         [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
         [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
         [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
+        ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
     ]);
 
     static async addPeopleTable(caption) {
@@ -170,7 +171,7 @@ export class PeopleTable {
                 deathLocationReversed = dLocation2ways[1];
             }
 
-            const privacyLevel = +mPerson.Privacy;
+            const privacyLevel = +mPerson.Privacy || "?";
             const privacyDetail = PeopleTable.PRIVACY_LEVELS.get(privacyLevel);
             let privacyImg = null;
             let privacyTitle = "";
@@ -441,7 +442,7 @@ export class PeopleTable {
                     }>` +
                     (privacyImg
                         ? "<img class='privacyImage' src='" + privacyImg + "' title='" + privacyTitle + "'>"
-                        : "") +
+                        : "<span title='Unknown'>?</span>") +
                     `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
@@ -1416,7 +1417,7 @@ export class PeopleTable {
                 theDate = person[ev + "DateDecade"];
             }
         }
-        let theDateM = theDate.match(/[0-9]{4}/);
+        let theDateM = theDate?.match(/[0-9]{4}/);
         if (CC7Utils.isOK(theDateM)) {
             return parseInt(theDateM[0]);
         } else {
@@ -1484,9 +1485,10 @@ export class PeopleTable {
     }
 
     static buildTimeline(tPerson, timelineEvents) {
+        const tPersonFirstName = tPerson.FirstName || "(Private)";
         const timelineTable = $(
             `<div class='timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
-                `<caption>Events in the life of ${tPerson.FirstName}'s family</caption>` +
+                `<caption>Events in the life of ${tPersonFirstName}'s family</caption>` +
                 "<thead><th class='tlDate'>Date</th><th class='tlBioAge'>Age</th>" +
                 "<th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>" +
                 `</thead><tbody></tbody></table></div>`
@@ -1550,9 +1552,9 @@ export class PeopleTable {
             let relation = aFact.relation.replace(/s$/, "");
             const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
 
-            let fNames = aFact.firstName;
+            let fNames = aFact.firstName || "(Private)";
             if (aFact.evnt == "marriage") {
-                fNames = tPerson.FirstName + " and " + aFact.firstName;
+                fNames = tPersonFirstName + " and " + fNames;
                 relation = "";
             }
             const tlFirstName = CC7Utils.profileLink(aFact.wtId, fNames);
@@ -1905,8 +1907,9 @@ export class PeopleTable {
         const aPeo = window.people.get(theClickedId);
         if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
             PeopleTable.doFamilySheet(aPeo, jqClicked);
-        } else {
-            console.log(`Calling getRelatives for ${theClickedName}`);
+        } else if (!theClickedName.startsWith("Private") || theClickedId > 0) {
+            const key = theClickedName.startsWith("Private") ? theClickedId : theClickedName;
+            console.log(`Calling getRelatives for ${key}`);
             WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
                 action: "getRelatives",
@@ -1914,17 +1917,20 @@ export class PeopleTable {
                 getChildren: "1",
                 getParents: "1",
                 getSiblings: "1",
-                keys: theClickedName,
+                keys: key,
             }).then((data) => {
                 // Construct this person so it conforms to the profiles retrieved using getPeople
-                const mPerson = PeopleTable.convertToInternal(data[0].items[0].person);
-                window.people.set(+mPerson.Id, mPerson);
+                const mPerson = PeopleTable.convertToInternal(data[0].items[0]);
                 PeopleTable.doFamilySheet(mPerson, jqClicked);
             });
         }
     }
 
-    static convertToInternal(pData) {
+    static convertToInternal(item) {
+        const pData = item.person;
+        if (!pData.Name && item.user_name) pData.Name = item.user_name;
+        if (!pData.Name) pData.Name = pData.Id;
+
         const person = PeopleTable.addFamilyToPerson(pData);
         if (person.Parents) person.Parents = Object.keys(person.Parents);
         if (person.Siblings) person.Siblings = Object.keys(person.Siblings);
@@ -1940,6 +1946,17 @@ export class PeopleTable {
                 };
             }
         }
+        const curPerson = window.people.get(+person.Id);
+        if (curPerson) {
+            // Copy fields not present in the new person from the old to the new
+            let x = Object.entries(curPerson);
+            for (const [key, value] of x) {
+                if (typeof person[key] == "undefined") {
+                    person[key] = value;
+                }
+            }
+        }
+        window.people.set(+person.Id, person);
         return person;
     }
 
