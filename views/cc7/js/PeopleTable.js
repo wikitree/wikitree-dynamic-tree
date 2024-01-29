@@ -220,7 +220,7 @@ export class PeopleTable {
                 firstName = "Private";
                 mPerson.LastNameCurrent = "";
                 if (mPerson.Name && mPerson.Name.includes("-") && mPerson.Name.match(/Private/) == null) {
-                    mPerson.LastNameAtBirth = mPerson.Name.split("-")[1];
+                    mPerson.LastNameAtBirth = mPerson.Name.split("-")[0];
                 } else {
                     mPerson.LastNameAtBirth = "Private";
                 }
