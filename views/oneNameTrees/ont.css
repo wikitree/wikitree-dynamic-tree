@@ -1,0 +1,616 @@
+/* Normalise */
+input[type="button"],
+input[type="submit"],
+.oneNameTrees #controls button,
+.oneNameTrees #help button,
+.oneNameTrees #helpButton,
+.oneNameTrees #table button,
+.oneNameTrees #view-container select {
+  font-weight: normal;
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+.oneNameTrees #tableView_length select {
+  width: 7em;
+  margin: 0;
+}
+.oneNameTrees header select {
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  padding-right: 4em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+.oneNameTrees header input[type="text"] {
+  padding-right: 1em;
+  padding: 0.3em;
+  background-size: 1em 2em;
+  min-width: 90px;
+}
+.oneNameTrees #view-container li {
+  margin: 0.2em;
+}
+
+.oneNameTrees body {
+  padding: 0;
+  background-color: #fff;
+}
+
+.oneNameTrees p {
+  margin: 0.5em;
+}
+
+header {
+  background: #f7f6f0 url(https://www.wikitree.com/images/header-bg-sm.gif) repeat-x bottom;
+  padding: 10px;
+  position: relative;
+  z-index: 1000;
+  border-radius: 1em;
+}
+
+/* ONS */
+
+.oneNameTrees #view-container {
+  background: white;
+  height: auto;
+  min-height: auto;
+}
+
+.oneNameTrees #loginForm,
+.oneNameTrees #locationSelects {
+  margin-bottom: auto !important;
+}
+
+.oneNameTrees #locationSelects select {
+  margin-left: 0;
+}
+
+.oneNameTrees header {
+  position: sticky;
+  top: 0;
+}
+
+.oneNameTrees #results ul {
+  list-style-type: none;
+  margin-left: 1.4em;
+  margin-bottom: 0;
+}
+
+.oneNameTrees #results ul ul {
+  padding-left: 0.2em;
+}
+
+.oneNameTrees #results ul li {
+  border-left-width: 2px !important;
+  padding: 0.2em 0 0.2em 0.2em;
+}
+
+.oneNameTrees span.spouse {
+  margin: 0.3em 0 0.3em 1em;
+  display: block;
+}
+
+.oneNameTrees #loadingBarContainer {
+  width: 100%;
+  margin: 0.5em 0;
+  border-radius: 1em;
+  background-color: #ddd;
+  display: none;
+}
+
+.oneNameTrees #loadingBar {
+  width: 0%;
+  height: 30px;
+  border-radius: 1em;
+  background-color: #4caf50;
+}
+
+.oneNameTrees .toggle-button {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.oneNameTrees .level-container {
+  margin-left: 20px;
+}
+
+.oneNameTrees button.toggle-children,
+.oneNameTrees button.descendantsCount {
+  padding: 0.2em !important;
+  line-height: 0.7em;
+  margin-left: -1.7em;
+  margin-right: 0.5em;
+  width: 1em;
+  font-size: 0.9em;
+}
+.oneNameTrees span.descendantsCount {
+  width: 2em;
+  font-weight: bold;
+  color: #4caf50;
+  cursor: default;
+}
+
+.oneNameTrees button.toggleAll {
+  margin-left: 0.5em;
+  display: none;
+}
+
+.oneNameTrees #controls button,
+.oneNameTrees #controls input[type="submit"],
+.oneNameTrees #wideTableButton {
+  margin-left: 0.3em !important;
+  margin-right: 0.3em !important;
+}
+
+.oneNameTrees button#refreshData,
+.oneNameTrees button#downloadData,
+.oneNameTrees button#loadButton,
+.oneNameTrees button#addNameVariants,
+.oneNameTrees button#toggleDetails,
+.oneNameTrees button#toggleWTIDs,
+.oneNameTrees button#toggleGeneralStats {
+  display: none;
+}
+
+.oneNameTrees #controls button.on,
+.oneNameTrees button#toggleDetails.on,
+.oneNameTrees button#toggleWTIDs.on,
+.oneNameTrees button#toggleGeneralStats.on,
+.oneNameTrees #periodButtonsContainer button.on,
+.oneNameTrees #wideTableButton.on {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.oneNameTrees .person .wtid {
+  display: none;
+}
+
+.oneNameTrees button#loadButton,
+.oneNameTrees button#addNameVariants {
+  display: inline-block;
+}
+
+.oneNameTrees section#results [data-gender="Female"] {
+  background-color: #fee;
+}
+.oneNameTrees section#results [data-gender="Male"] {
+  background-color: #eef;
+}
+.oneNameTrees section#results [data-gender="blank"] {
+  background-color: #efe;
+}
+
+.oneNameTrees section#results .details .row {
+  margin: 0.2em;
+}
+
+.oneNameTrees .details .row span:last-child {
+  text-align: left;
+  flex-grow: 1; /* Ensures it takes up the rest of the row */
+}
+
+.oneNameTrees span.dates {
+  cursor: pointer;
+}
+
+.oneNameTrees div.error {
+  color: red;
+  font-weight: bold;
+  border: black solid 2px;
+  padding: 0.5em;
+  margin: 0.5em;
+  text-align: center;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-5px, -5px);
+  }
+  50% {
+    transform: translate(5px, 5px);
+  }
+  75% {
+    transform: translate(-5px, 5px);
+  }
+}
+
+.oneNameTrees .shake {
+  animation: shake 0.5s; /* Run for 0.5 seconds */
+  animation-iteration-count: 2; /* Shake two times */
+}
+
+.oneNameTrees #help {
+  display: none;
+}
+.oneNameTrees #help .symbol {
+  font-weight: bold;
+  margin-right: 1em;
+}
+
+.oneNameTrees #help #closeHelp {
+  position: absolute;
+  cursor: pointer;
+  right: 0.5em;
+  top: 0.5em;
+}
+
+.oneNameTrees #help {
+  width: 40em;
+  margin: 1em;
+  border: 2px solid forestgreen;
+  padding: 1em;
+  background-color: #fff;
+  border-radius: 1em;
+  position: absolute;
+  z-index: 100000;
+  box-shadow: 0 0 10px #000;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.oneNameTrees #help h2 {
+  font-size: large;
+  text-align: center;
+}
+.oneNameTrees #help h3 {
+  font-size: medium;
+  margin: 1em 0 0.5em 0;
+}
+
+.oneNameTrees #help ol {
+  margin: 1em;
+}
+
+.oneNameTrees #help .categoryKeyItem span.symbol {
+  display: inline-block;
+  width: 1em;
+}
+.oneNameTrees #help .categoryKeyItem span.symbol img {
+  width: 1.3em;
+}
+
+.oneNameTrees #toggleButtons,
+.oneNameTrees #searchContainer {
+  display: inline-block;
+}
+
+.oneNameTrees #searchContainer {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  display: none;
+}
+
+.oneNameTrees #searchInput,
+.oneNameTrees #surname,
+.oneNameTrees #location {
+  width: 9em;
+}
+
+.oneNameTrees #location {
+  width: 10em;
+}
+
+.oneNameTrees .person.highlight {
+  border: 3px solid gold;
+  border-radius: 3px;
+}
+
+.oneNameTrees #searchButton,
+.oneNameTrees #submit {
+  margin-left: 0 !important;
+}
+
+.oneNameTrees #noResults {
+  margin: 1em;
+}
+
+.oneNameTrees #statisticsContainer,
+.oneNameTrees #periodStatisticsContainer {
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  margin: 0.5em;
+}
+
+.oneNameTrees #periodStatisticsContainer {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.oneNameTrees .stat-item {
+  margin-bottom: 10px;
+  display: inline-block;
+  margin: 0 1em;
+}
+
+.oneNameTrees .stat-item label {
+  font-weight: bold;
+}
+
+.oneNameTrees ul.locationSubdivision,
+.oneNameTrees ul.locationSubdivision li {
+  display: inline-block;
+  margin: 0 0.5em;
+}
+
+.oneNameTrees div.country {
+  display: inline-block;
+  margin: 0 0.3em;
+}
+
+.oneNameTrees div.genderNameList {
+  display: inline-block;
+  margin: 0 0.3em;
+}
+
+.oneNameTrees ul.commonNameList,
+.oneNameTrees ul.commonNameList li {
+  display: inline-block;
+  margin: 0 0.3em;
+}
+
+.oneNameTrees ul.commonNameList li {
+  list-style-type: none;
+  font-weight: normal;
+}
+
+.oneNameTrees #periodButtonsContainer {
+  border: 1px solid forestgreen;
+  border-radius: 0.5em;
+  text-align: center;
+  background: beige;
+  margin: 0.5em;
+  padding: 0.2em;
+}
+
+.oneNameTrees #periodButtonsContainer button {
+  margin: 0.2em 0.3em;
+}
+
+.oneNameTrees div.country {
+  display: inline-block;
+  margin: 0.2em 0.3em;
+  padding: 0.2em;
+  border: 1px solid gray;
+}
+
+.oneNameTrees div#commonNames {
+  display: block;
+}
+
+.oneNameTrees li.expandable {
+  cursor: pointer;
+  color: blue !important;
+}
+
+.oneNameTrees li.expandable li:not(.expandable) {
+  cursor: auto;
+  color: black;
+}
+
+.oneNameTrees li.expanded > ul.nestedSubdivision {
+  display: inline-block !important;
+  margin-left: 0.5em;
+}
+
+.oneNameTrees li.expanded {
+  border: 1px solid forestgreen;
+}
+.oneNameTrees .category {
+  text-decoration: none;
+  font-size: 1.3em;
+  cursor: default;
+}
+.oneNameTrees a.category {
+  cursor: pointer;
+}
+.oneNameTrees .category img {
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: bottom;
+}
+.oneNameTrees a.thisNameStudy {
+  background: #ffffff;
+  border-radius: 50%;
+  padding: 0 0.1em 0.1em;
+  border: 1px solid forestgreen;
+}
+
+.oneNameTrees span.toggleIcon {
+  cursor: pointer;
+}
+
+.oneNameTrees #ancestralLinePopup {
+  z-index: 1000000;
+  background: white;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  position: absolute;
+}
+
+.oneNameTrees #ancestralLinePopup .highlighted {
+  background-color: #f0f0f0; /* Light grey background */
+  border-left: 5px solid #007bff; /* Blue left border */
+  padding: 5px;
+  margin: 2px 0;
+}
+
+.oneNameTrees #tableViewButton {
+  display: none;
+}
+
+.oneNameTrees #table #tableView th,
+.oneNameTrees #table #tableView td {
+  padding: 0 0.3em;
+}
+
+.oneNameTrees section#table td.date {
+  text-wrap: nowrap;
+}
+.oneNameTrees section#table td.categoryHTML,
+.oneNameTrees section#table th.categoryHTML {
+  max-width: 4em;
+}
+.oneNameTrees section#table th {
+  text-align: left;
+}
+.oneNameTrees section#table tr[data-gender="Male"] {
+  background-color: #eef;
+}
+.oneNameTrees section#table tr[data-gender="Female"] {
+  background-color: #fee;
+}
+.oneNameTrees section#table td.age {
+  text-align: center;
+}
+.oneNameTrees section#table input.filter {
+  width: 100%;
+}
+
+.oneNameTrees #table #tableView td {
+  border-bottom: 2px solid #fff;
+  border-right: 2px solid #fff;
+}
+
+.oneNameTrees div.commonLocations a.locationCount {
+  cursor: pointer;
+}
+
+.oneNameTrees div.commonLocations a.locationCount {
+  padding: 0.1em 0.2em !important;
+  margin: 0.1em !important;
+}
+
+.oneNameTrees #shakingTree {
+  /* Small with a round 2px forestgreen border */
+  border: 2px solid forestgreen;
+  border-radius: 50%;
+  /* Small */
+  width: 7em;
+  height: 7em;
+  /* Centre of the screen */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* Move it back by half the width and height */
+  transform: translate(-50%, -50%);
+  z-index: 1000000;
+}
+.oneNameTrees #locationSelects {
+  display: inline-block;
+  margin: 0.2em;
+}
+.oneNameTrees #locationSelects select {
+  width: 9em;
+}
+.oneNameTrees #locationSelects #locationSelectAlpha {
+  display: none;
+}
+.oneNameTrees #locationSelects button#locationSelectsSwitchButton {
+  margin-left: 0 !important;
+  padding: 0.1em;
+}
+.oneNameTrees #locationSelects select {
+  margin-right: 0 !important;
+}
+
+.oneNameTrees #wtidGo,
+.oneNameTrees #nameSelect {
+  width: 9em;
+}
+
+.oneNameTrees select {
+  margin-bottom: 0.5em !important;
+}
+
+.oneNameTrees #statsDisplay {
+  display: none;
+}
+
+.oneNameTrees #topRightStuff {
+  margin: 0.5em;
+  float: right;
+}
+
+.oneNameTrees section#table #wideTableButton {
+  margin-left: 2em !important;
+}
+
+.oneNameTrees section#table.wide td {
+  white-space: nowrap;
+}
+
+.oneNameTrees #table #tableView thead {
+  position: sticky;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.oneNameTrees table {
+  width: 100%;
+}
+
+.oneNameTrees tfoot {
+  position: sticky;
+  bottom: 0;
+  background: white; /* Ensure visibility over table rows */
+}
+
+.oneNameTrees .locationToggler {
+  cursor: pointer;
+}
+.oneNameTrees div.locationToggler {
+  display: inline-block;
+}
+.oneNameTrees span.toggleMoreNames {
+  cursor: pointer;
+  margin-left: 0.5em;
+}
+
+.oneNameTrees #periodButtonsContainer {
+  display: grid;
+  grid-gap: 0.5em; /* Adjust the space between items */
+  padding: 10px; /* Add some padding around the grid if needed */
+  grid-template-columns: repeat(auto-fit, minmax(6.5em, 1fr));
+}
+
+.oneNameTrees #view-container {
+  overflow: visible;
+}
+
+.oneNameTrees #filterRow input {
+  padding: 0.2em;
+  margin: 0.2em 0;
+  border: 3px solid darkgray;
+}
+
+.oneNameTrees th.categoryHTML {
+  word-wrap: break-word;
+}
+
+.oneNameTrees #treesButtons {
+  margin-top: 0.5em;
+}
+
+.oneNameTrees #table #clearFilters {
+  margin-left: 2em !important;
+}
+
+.oneNameTrees #nameLabel {
+  font-weight: bold;
+  border: 2px solid forestgreen;
+  padding: 0.7em 0.2em;
+  border-radius: 0.5em;
+  margin-right: 0.5em;
+}

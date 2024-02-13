@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>One Name Trees</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="js/WikiTreeAPI.js"></script>
+    <script src="js/person_name.js"></script>
+    <script src="js/js.cookie.js"></script>
+    <script type="module" src="js/location_data.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <link href="css/normalize.css" rel="stylesheet" media="all" />
+    <link rel="stylesheet" href="https://www.wikitree.com/css/base.css" />
+    <link rel="stylesheet" href="css/ons.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
+  </head>
+
+  <body id="oneNameTrees">
+    <header>
+      <img
+        id="wtLogo"
+        src="https://www.wikitree.com/images/wikitree-small.png"
+        width="250"
+        height="42"
+        alt="WikiTree: Where genealogists collaborate"
+        title="WikiTree: Where genealogists collaborate"
+      />
+
+      <div id="topRightStuff">
+        <form id="loginForm" action="https://api.wikitree.com/api.php" method="POST">
+          <input type="hidden" name="action" value="clientLogin" />
+          <input
+            type="hidden"
+            id="returnURL"
+            name="returnURL"
+            value="https://apps.wikitree.com/apps/beacall6/one_name_trees.html"
+          />
+          <input
+            type="submit"
+            class="button small"
+            id="gotoAPI"
+            value="Log in"
+            title="Log in to the WikiTree apps server"
+          />
+        </form>
+        <button id="helpButton" title="About this">?</button>
+      </div>
+      <h1>One Name Trees</h1>
+      <div id="controls">
+        <input type="text" id="surname" placeholder="Surname" />
+        <input type="text" id="location" placeholder="Location (Optional)" />
+        <input type="submit" id="submit" name="submit" value="GO" />
+        <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
+        <button
+          id="refreshData"
+          title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
+        >
+          Refresh
+        </button>
+        <button id="downloadData">Save</button>
+        <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
+          Load
+        </button>
+        <input type="file" id="fileInput" style="display: none" />
+
+        <button id="tableViewButton" title="View the data in a table">Table</button>
+        <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
+        <div id="treesButtons">
+          <div id="toggleButtons">
+            <button class="toggleAll" id="showAll" title="show all descendants">+</button
+            ><button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
+          </div>
+          <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
+          <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
+
+          <div id="loadingBarContainer">
+            <div id="loadingBar"></div>
+          </div>
+        </div>
+        <!-- Placeholder for statistics -->
+        <div id="statsDisplay">
+          <div id="periodStatisticsContainer" style="display: none"></div>
+        </div>
+      </div>
+    </header>
+    <div id="help">
+      <h2>About This</h2>
+      <button id="closeHelp">×</button>
+      <ol>
+        <li>Put a surname (and optional location) in the box and hit 'Go'.</li>
+        <li>
+          The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
+          plus any with variants of the surname as entered in the Google Sheet (click 'Variants'), are fetched from
+          WikiTree+. This list is stored for the next time you enter the same surname. To refresh this list (to get the
+          most up-to-date list available on WikiTree+), hit the 'Refresh' button.
+        </li>
+        <li>
+          The data of all of the profiles is fetched from the WikiTree apps server. This may take a very long time (see
+          #8).
+        </li>
+        <li>
+          As all of the IDs returned by WikiTree+ are for open public profiles, if you are logged into the apps server,
+          you may be able to retrieve the data of more profiles. A check is made of post-19th century profiles for any
+          parents whose data is not among the retrieved data. If you are on the trusted list of a person with missing
+          parents, another database call is made for these people.
+        </li>
+        <li>
+          The profiles are sorted by birth date. (For profiles with only a death date, the death date is used for
+          comparison.)
+        </li>
+        <li>
+          Spouses with the target surname are added as spouses (below the first person's name, with "m." for "married").
+        </li>
+        <li>
+          Offspring are added to offspring lists below their parents, creating many expandable/collapsible descendant
+          trees. (The + and − at the top will expand and collapse all lists.)
+        </li>
+        <li>
+          As the data can take a long time to load, it's a good idea to hit the 'Save' button. This will save the
+          returned data to your desktop in a file. To return to this list in future, click the 'Load' button to load the
+          saved file fairly quickly.
+        </li>
+        <li>
+          If a query has over 10,000 results, you'll receive a warning that it could take a long time to load and a
+          suggestion to add a location.
+        </li>
+        <li>If a query has over 40,000 results (too many), you'll be asked to add a location and go again.</li>
+        <li>Birth and death details of each person can be seen by clicking their birth and death years.</li>
+        <li>
+          Click the Statistics button to see statistics about the people in the data set.
+          <ul>
+            <li>
+              The general statistics:
+              <ul>
+                <li>show the top few most common names and most common locations for the whole set.</li>
+              </ul>
+            </li>
+            <li>
+              The period statistics:
+              <ul>
+                <li>show more detail on the people born in that period.</li>
+              </ul>
+            </li>
+            <li>
+              The statistics can be dismissed by clicking the 'Statistics' button or double-clicking the statistics
+              section.
+            </li>
+            <li>
+              The most common birth places:
+              <ul>
+                <li>
+                  are presented hierarchically according to the commas in the location. If no country is entered in the
+                  profile's birth place field, it will appear as though the final part of the location were a country.
+                  Some effort has been made to standardise locations for (at the moment) US and UK locations, so
+                  profiles with 'Pa' as the country (for example), should be counted in the United States hierarchical
+                  figures as Pennsylvania (if the birth date is after the date when Pennsylvania joined the Union).
+                </li>
+                <li>have count numbers. Clicking these should show the relevant profiles in the table.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          The table:
+          <ul>
+            <li>
+              has filters in the footer of each column. The filters:
+              <ul>
+                <li>will work when you hit 'enter' or leave the input box.</li>
+                <li>
+                  work in special ways for date columns:
+                  <ul>
+                    <li><span class="symbol">-</span> for a range of years (e.g. 1870-1885).</li>
+                    <li><span class="symbol">&lt;</span> for before a certain year (e.g. &lt;1776).</li>
+                    <li><span class="symbol">&gt;</span> for after a certain year. (e.g. &gt;1776).</li>
+                  </ul>
+                </li>
+                <li>can be cleared by pressing the Clear Filters button at the top.</li>
+              </ul>
+            </li>
+            <li>can be filtered with the period buttons in the statistics section and the location count numbers.</li>
+            <li>can be sorted by clicking on the column headers.</li>
+            <li>can be dismissed (to return to the Trees view) by clicking the 'Table' button.</li>
+          </ul>
+        </li>
+        <li>
+          The Location dropdown lets you filter the table my a location item: a town, state, country, etc. The default
+          box shows the number of profiles that include that location part in the birth location. The toggle button next
+          to it turns the list alphabetical.
+        </li>
+      </ol>
+    </div>
+    <section id="results"></section>
+    <section id="table"></section>
+    <script type="module" src="js/locationstatistics.js"></script>
+    <script type="module" src="js/familytreestatistics.js"></script>
+    <script type="module" src="js/ons_test.js"></script>
+  </body>
+</html>
