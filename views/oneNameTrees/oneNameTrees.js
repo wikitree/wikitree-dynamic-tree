@@ -853,7 +853,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Sort and map children to parents
         let sortedPeople = this.sortPeopleByBirthDate(filteredResults);
         console.log("sortedPeople", sortedPeople);
-        //this.prioritizeTargetName(sortedPeople);
+        this.prioritizeTargetName(sortedPeople);
         let parentToChildrenMap = this.createParentToChildrenMap(sortedPeople);
         this.peopleById = this.createPeopleByIdMap(sortedPeople);
 
@@ -882,7 +882,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 const spouseIds = person.Spouses.map((spouse) => spouse.Id);
                 spouseIds.forEach((spouseId) => {
                     let spouse = sortedPeople.find((p) => p.Id === spouseId);
+                    console.log("Spouse:", spouse);
                     if (spouse && this.shouldPrioritize(spouse, person)) {
+                        console.log("Prioritizing spouse:", spouse, "over person:", person);
                         // Remove the spouse from their current position
                         sortedPeople = sortedPeople.filter((p) => p.Id !== spouse.Id);
                         // Find the new index of the person since the array has been modified
@@ -1695,12 +1697,12 @@ window.OneNameTrees = class OneNameTrees extends View {
     async displayDescendantsTree(peopleById, parentToChildrenMap) {
         console.log("Displaying descendants tree");
 
-        console.log("People by ID:", peopleById);
-        console.log("Parent to children map:", parentToChildrenMap);
+        // console.log("People by ID:", peopleById);
+        // console.log("Parent to children map:", parentToChildrenMap);
         // Call the preprocessing function
         await this.preprocessDescendantsTree(peopleById, parentToChildrenMap);
-        console.log("People by ID after preprocessing:", peopleById);
-        console.log("Parent to children map after preprocessing:", parentToChildrenMap);
+        //  console.log("People by ID after preprocessing:", peopleById);
+        //  console.log("Parent to children map after preprocessing:", parentToChildrenMap);
 
         let totalIndividuals = Object.keys(peopleById).length;
         let processedIndividuals = 0;
