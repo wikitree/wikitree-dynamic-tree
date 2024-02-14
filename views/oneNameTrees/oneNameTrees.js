@@ -582,11 +582,11 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     updateLoadingBar(percentage) {
-        document.getElementById("loadingBar").style.width = percentage + "%";
+        $("#loadingBar").style.width = percentage + "%";
     }
 
     hideLoadingBar() {
-        document.getElementById("loadingBarContainer").style.display = "none";
+        $("#loadingBarContainer").style.display = "none";
     }
 
     clearONSidsCache(surname) {
