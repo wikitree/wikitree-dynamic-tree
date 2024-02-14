@@ -69,9 +69,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         ];
 
         this.headerHTML = `
-      <div id="topRightStuff">
-        <button id="helpButton" title="About this">?</button>
-      </div>
       <div id="controls">
         <label id="nameLabel">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
@@ -93,6 +90,8 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         <button id="tableViewButton" title="View the data in a table">Table</button>
         <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
+        <button id="helpButton" title="About this">?</button>
+
         <div id="treesButtons">
           <div id="toggleButtons">
             <button class="toggleAll" id="showAll" title="show all descendants">+</button
@@ -232,6 +231,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         if ($("#controls").length == 0) {
             $(this.headerHTML).appendTo($("header"));
         }
+        //$("#helpButton").appendTo($("main")).css("float", "right").css("margin", "0.2em");
+
         if ($("#help").length == 0) {
             $(this.bodyHTML).appendTo($("#view-container"));
         }
@@ -881,16 +882,31 @@ window.OneNameTrees = class OneNameTrees extends View {
                 // Get spouse Ids from array of objects, each with a key for the spouse's Id
                 const spouseIds = person.Spouses.map((spouse) => spouse.Id);
                 spouseIds.forEach((spouseId) => {
-                    let spouse = sortedPeople.find((p) => p.Id === spouseId);
-                    console.log("Spouse:", spouse);
+                    // console.log("Spouse ID:", spouseId, typeof spouseId);
+                    //sortedPeople.forEach((p) => console.log("Person ID in sortedPeople:", p.Id, typeof p.Id));
+                    let spouse = sortedPeople.find((p) => p.Id == spouseId);
+                    let stegen = false;
+                    if (["Stegen-189", "Ostermann-148"].includes(person.Name)) {
+                        console.log("Spouse:", spouse);
+                        stegen = true;
+                        console.log("Name:", person.Name);
+                        console.log("Spouse:", spouse);
+                        console.log(this.shouldPrioritize(spouse, person));
+                    }
+
                     if (spouse && this.shouldPrioritize(spouse, person)) {
-                        console.log("Prioritizing spouse:", spouse, "over person:", person);
+                        spouse.shouldBeRoot = false;
+                        //    console.log("Prioritizing spouse:", spouse, "over person:", person);
                         // Remove the spouse from their current position
                         sortedPeople = sortedPeople.filter((p) => p.Id !== spouse.Id);
                         // Find the new index of the person since the array has been modified
-                        let newPersonIndex = sortedPeople.findIndex((p) => p.Id === person.Id);
+                        let newPersonIndex = sortedPeople.findIndex((p) => p.Id == person.Id);
                         // Insert the spouse after the person
                         sortedPeople.splice(newPersonIndex + 1, 0, spouse);
+                        if (stegen) {
+                            console.log("Sorted people after prioritizing:", sortedPeople);
+                            console.log("New person index:", newPersonIndex);
+                        }
                     }
                 });
             }
@@ -1700,7 +1716,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // console.log("People by ID:", peopleById);
         // console.log("Parent to children map:", parentToChildrenMap);
         // Call the preprocessing function
-        await this.preprocessDescendantsTree(peopleById, parentToChildrenMap);
+        //await this.preprocessDescendantsTree(peopleById, parentToChildrenMap);
         //  console.log("People by ID after preprocessing:", peopleById);
         //  console.log("Parent to children map after preprocessing:", parentToChildrenMap);
 
@@ -1708,6 +1724,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let processedIndividuals = 0;
 
         let rootIndividualsIds = this.findRootIndividuals(parentToChildrenMap, peopleById);
+        console.log("Root individuals IDs:", rootIndividualsIds);
         let rootIndividuals = rootIndividualsIds
             .map((id) => peopleById[id])
             .filter((root) => !this.displayedIndividuals.has(String(root.Id)) && root.shouldBeRoot !== false)
