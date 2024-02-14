@@ -597,6 +597,10 @@ export class PeopleTable {
         $("#hierarchyViewButton")
             .off("click")
             .on("click", function () {
+                if (!window.people.get(window.rootId)) {
+                    // We don't have a root, so we can't do anything
+                    return;
+                }
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
                 $("#peopleTable,#lanceTable").hide().removeClass("active");
@@ -632,6 +636,10 @@ export class PeopleTable {
                 }
             });
 
+        if (!window.people.get(window.rootId)) {
+            // We don't have a root, so disable the hierarchy view
+            $("#hierarchyViewButton").prop("disabled", true);
+        }
         Utils.hideShakingTree();
 
         PeopleTable.addFiltersToPeopleTable();

@@ -813,6 +813,14 @@ export class CC7 {
             window.rootId = +resultByKey[wtId]?.Id;
             CC7.populateRelativeArrays();
             const root = window.people.get(window.rootId);
+            let haveRoot = typeof root != "undefined";
+            if (!haveRoot) {
+                wtViewRegistry.showWarning(
+                    `The requested profile (${wtId}) was not returned by WikiTree, so some functionality, ` +
+                        "like the Hierarchy view and ancestor statistics, has been disabled and some filters " +
+                        "will return unexpected results."
+                );
+            }
             const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root, maxWantedDegree);
 
             window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
@@ -828,14 +836,17 @@ export class CC7 {
                         "<tr id='trDeg'><th>Degrees</th></tr>" +
                         "<tr id='trCon'><th>Connections</th></tr>" +
                         "<tr id='trTot'><th>Total</th></tr>" +
-                        `</table><p id="ancReport">Out of ${maxNrPeople} possible direct ancestors in ${
-                            maxWantedDegree + 3
-                        } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
-                            2
-                        )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
-                            (nrDuplicateAncestors / nrDirectAncestors) *
-                            100
-                        ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
+                        '</table><p id="ancReport">' +
+                        (haveRoot
+                            ? `Out of ${maxNrPeople} possible direct ancestors in ${
+                                  maxWantedDegree + 3
+                              } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
+                                  2
+                              )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
+                                  (nrDuplicateAncestors / nrDirectAncestors) *
+                                  100
+                              ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
+                            : "</p>")
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1);
@@ -977,7 +988,7 @@ export class CC7 {
     }
 
     static categoriseProfiles(theRoot, maxWantedDegree) {
-        if (!theRoot) return;
+        if (!theRoot) return [-1, -1];
         const ABOVE = true;
         const BELOW = false;
         const collator = new Intl.Collator();
