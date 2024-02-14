@@ -21,7 +21,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.nameVariants = new Map();
         this.surnameVariants = this.findSurnameVariants(this.surname);
         this.shakingTree = $(
-            `<img src="views/oneNameTrees/images/tree.gif" alt="Shaking Tree" title="Working" id="shakingTree">`
+            `<img src="views/oneNameTrees/images/tree.gif" alt="Shaking Tree" title="Working" id="dancingTree">`
         );
         this.shownCats = new Set();
         this.colours = [
@@ -153,6 +153,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         </li>
         <li>If a query has over 40,000 results (too many), you'll be asked to add a location and go again.</li>
         <li>Birth and death details of each person can be seen by clicking their birth and death years.</li>
+        <li>Categories and stickers on a profile are shown after the birth and death dates. 
+        A key to the symbols can be found below (on this About page). One key one to know about it the red badge
+        symbol, which represents a One Name Study category/sticker. If it has a green circle around it, it has a 
+    One Name Study sticker for this page's target surname.</li>
+        <li>The numbers in green after a person's dates and categories and stickers are 
+        the number of descendants that the person has in this data set.</li> 
         <li>
           Click the Statistics button to see statistics about the people in the data set.
           <ul>
@@ -215,6 +221,7 @@ window.OneNameTrees = class OneNameTrees extends View {
           box shows the number of profiles that include that location part in the birth location. The toggle button next
           to it turns the list alphabetical.
         </li>
+        <li>Have I missed anything?</li>
       </ol>
     </div>
     <section id="results"></section>
@@ -257,8 +264,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#show-btn").css("background-color", "#25422d");
         $("view-select").off("change");
         $("body").removeClass("oneNameTrees");
-        $("#controls").remove();
-        $("#topRightStuff").remove();
+        $("#controls,#dancingTree").remove();
     }
 
     addListeners() {
@@ -826,15 +832,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             const standardizedLastNameCurrent = $this.standardizeString(person?.LastNameCurrent) || "";
             const standardizedLastNameOther = $this.standardizeString(person?.LastNameOther) || "";
 
-            /*
-            console.log(
-                "Standardized last names:",
-                standardizedLastNameAtBirth,
-                standardizedLastNameCurrent,
-                standardizedLastNameOther
-            );
-*/
-
             // Check if any standardized surname variants include the standardized person's surnames
             const isMatch = surnameVariants.some(
                 (variant) =>
@@ -943,151 +940,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         return false;
     }
 
-    /*
-    async processBatches(ids, surname) {
-        const $this = this;
-        const userId = Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID");
-        console.log(userId);
-
-        if (!ids) {
-            $("#results").html("<p id='noResults'>No results found.</p>");
-            return;
-        }
-        this.showLoadingBar();
-        let processed = 0;
-        let total = ids.length;
-        let extendedTotal = total * 1.2;
-
-        let missingParents = [];
-
-        for (let i = 0; i < ids.length; i += 1000) {
-            const batchIds = ids.slice(i, i + 1000);
-            const people = await this.getPeople(batchIds);
-            // Combine the 'people' object with 'combinedResults'
-            if (people && typeof people === "object") {
-                Object.assign(this.combinedResults, people);
-            }
-
-            // Update progress
-            processed += 1000;
-            let percentage = (processed / total) * 100;
-            this.updateLoadingBar(percentage);
-            console.log("processed: ", processed);
-        }
-
-        if (userId) {
-            // Find Father and Mother ids that are missing from the combined results
-            Object.values(this.combinedResults).forEach((person) => {
-                // if (person?.BirthDate.replace(/-/,"") > 19000000) OK?
-                if (person?.BirthDateDecade?.replace(/s/, "") > 1890) {
-                    if (
-                        person?.Father > 0 &&
-                        !$this.combinedResults[person.Father] &&
-                        person.Managers.some((manager) => manager.Id === userId)
-                    ) {
-                        missingParents.push(person.Father);
-                    }
-                    if (
-                        person?.Mother > 0 &&
-                        !$this.combinedResults[person.Mother] &&
-                        person?.Managers?.some((manager) => manager.Id === userId)
-                    ) {
-                        missingParents.push(person.Mother);
-                    }
-                }
-            });
-        }
-        // If missing parents were found, fetch them and add them to the combined results
-        console.log("Missing parents count:", missingParents.length);
-        console.log(missingParents);
-
-        // After initial batch processing, reset the loading bar for missing parents
-        this.hideLoadingBar(); // Hide first to reset
-        this.showLoadingBar();
-        let processedParents = 0;
-        let totalParents = missingParents.length;
-
-        if (missingParents.length > 0) {
-            // process in batches
-            for (let i = 0; i < missingParents.length; i += 100) {
-                const batchIds = missingParents.slice(i, i + 100);
-                const people = await this.getPeople(batchIds, {
-                    ancestors: 1,
-                    descendants: 1,
-                });
-                // Combine the 'people' object with 'combinedResults'
-                if (people && typeof people === "object") {
-                    Object.assign(this.combinedResults, people);
-                }
-
-                // Update the loading bar for missing parents
-                processedParents += i + 100 > this.missingParents.length ? missingParents.length - i : 100;
-                let percentage = (processedParents / totalParents) * 100;
-                this.updateLoadingBar(percentage);
-            }
-        }
-
-        // Hide the loading bar after completing the missing parents
-        this.hideLoadingBar();
-
-        console.log("Fetched profiles count:", Object.keys(this.combinedResults).length);
-
-        // Now 'combinedResults' contains the combined data from all batches
-        console.log(this.combinedResults);
-        // If the surname is not LNAB, LNC, or LNO, filter out
-        let filteredResults = {};
-        // Get all variants for the surname
-        const surnameVariants = this.findSurnameVariants(this.surname);
-        if (surnameVariants.length == 0) {
-            // If no variants are found, use the surname as-is
-            surnameVariants.push(this.surname);
-        }
-
-        Object.values(this.combinedResults).forEach((person) => {
-            // Standardize the person's surnames for comparison
-            const standardizedLastNameAtBirth = this.standardizeString(person?.LastNameAtBirth) || "";
-            const standardizedLastNameCurrent = this.standardizeString(person?.LastNameCurrent) || "";
-            const standardizedLastNameOther = this.standardizeString(person?.LastNameOther) || "";
-
-            // Check if any standardized surname variants include the standardized person's surnames
-            const isMatch = surnameVariants.some(
-                (variant) =>
-                    this.standardizeString(variant) === standardizedLastNameAtBirth ||
-                    this.standardizeString(variant) === standardizedLastNameCurrent ||
-                    this.standardizeString(variant) === standardizedLastNameOther
-            );
-
-            if (isMatch) {
-                filteredResults[person.Id] = person;
-            }
-        });
-
-        // After batch processing, update the progress bar for additional steps
-        processed = ids.length;
-        this.updateLoadingBar((processed / extendedTotal) * 100);
-
-        // Sort and map children to parents
-        let sortedPeople = this.sortPeopleByBirthDate(filteredResults);
-        let parentToChildrenMap = this.createParentToChildrenMap(sortedPeople);
-        this.peopleById = this.createPeopleByIdMap(sortedPeople);
-
-        // Update progress bar after sorting and mapping
-        processed += (extendedTotal - total) * 0.5; // Assuming these take about half of the remaining 20%
-        this.updateLoadingBar((processed / extendedTotal) * 100);
-
-        this.displayDescendantsTree(this.peopleById, parentToChildrenMap);
-
-        // Update progress bar to complete
-        this.updateLoadingBar(100);
-
-        // After processing is complete
-        this.hideLoadingBar();
-
-        $("#downloadData").show();
-
-        return;
-    }
-*/
     findRootIndividuals(parentToChildrenMap, peopleById) {
         let childIds = new Set();
         Object.values(parentToChildrenMap).forEach((children) => {
@@ -1242,25 +1094,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             handleSearch($(this).data("wtid"));
         });
     }
-    /*
-    createCategoryHTML(person) {
-        let categoryHTML = ``;
-        const tags = [];
-        if (person.Categories && person.Categories.length > 0) {
-            // Process Name Studies separately due to its unique handling
-            categoryHTML += this.processNameStudies(person);
-
-            // Process each category mapping
-            categoryMappings.forEach(({ pattern, symbol, not }) => {
-                tags.push(this.processCategories(person, pattern, symbol, { not }));
-            });
-        }
-        if (tags.length > 0) {
-            categoryHTML += `${tags.join("")}`;
-        }
-        return categoryHTML;
-    }
-*/
 
     createJQueryObjects(tags) {
         return tags.map((html) => $(html)); // Convert each HTML string into a jQuery object
@@ -1720,40 +1553,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
     }
-    /*
-    async preprocessDescendantsTree(peopleById, parentToChildrenMap) {
-        let surnameVariants = this.findSurnameVariants($("#surname").val()); // Get surname variants for the name study
-
-        // Iterate over each person and adjust root individuals
-        Object.values(peopleById).forEach((person) => {
-            if (
-                person.Gender === "Female" &&
-                person.Spouses &&
-                typeof person.Spouses === "object" &&
-                Object.keys(person.Spouses).length > 0
-            ) {
-                Object.keys(person.Spouses).forEach((spouseId) => {
-                    let spouse = peopleById[spouseId];
-                    if (spouse && surnameVariants.includes(spouse.LastNameAtBirth)) {
-                        // Mark the husband as a root individual if his LNAB matches a surname variant
-                        spouse.isRoot = true;
-                        person.isRoot = false; // The wife is not a root individual as she married into the name
-                    }
-                });
-            }
-        });
-    }
-    */
 
     async displayDescendantsTree(peopleById, parentToChildrenMap) {
         console.log("Displaying descendants tree");
-
-        // console.log("People by ID:", peopleById);
-        // console.log("Parent to children map:", parentToChildrenMap);
-        // Call the preprocessing function
-        //await this.preprocessDescendantsTree(peopleById, parentToChildrenMap);
-        //  console.log("People by ID after preprocessing:", peopleById);
-        //  console.log("Parent to children map after preprocessing:", parentToChildrenMap);
 
         let totalIndividuals = Object.keys(peopleById).length;
         let processedIndividuals = 0;
@@ -1832,25 +1634,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
     }
-    /*
-    arrangeParentChildRelationship(father, mother, element) {
-        const fatherElement = $("li.person[data-id='" + father + "']");
-        const motherElement = $("li.person[data-id='" + mother + "']");
-        if (fatherElement.length > 0) {
-            if (fatherElement.find("ul.children").length === 0) {
-                fatherElement.append(`<ul class='children' data-parent-id='${fatherElement.attr("data-id")}'></ul>`);
-            } else {
-                fatherElement.find("ul.children").first().append(element);
-            }
-        } else if (motherElement.length > 0) {
-            if (motherElement.find("ul.children").length === 0) {
-                motherElement.append(`<ul class='children' data-parent-id='${motherElement.attr("data-id")}'></ul>`);
-            } else {
-                motherElement.find("ul.children").first().append(element);
-            }
-        }
-    }
-*/
+
     displayChildren(parentToChildrenMap, parentId, peopleById, level) {
         let html = "";
         if (parentToChildrenMap[parentId]) {
