@@ -472,6 +472,11 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $("#wt-id-text,#show-btn").prop("disabled", true).css("background-color", "lightgrey");
             }
         });
+
+        this.container.on("click", ".duplicateLink", function (e) {
+            e.preventDefault();
+            $this.handleSearch($(this).data("wtid"));
+        });
     }
 
     updateAccessOrder(key) {
@@ -1086,15 +1091,20 @@ window.OneNameTrees = class OneNameTrees extends View {
     findRootIndividuals(parentToChildrenMap, peopleById) {
         let childIds = new Set();
         Object.values(parentToChildrenMap).forEach((children) => {
-            children.forEach((childId) => childIds.add(childId));
+            children.forEach((childId) => childIds.add(String(childId)));
         });
 
+        /*
         let rootIndividuals = Object.keys(peopleById).filter((id) => {
             //console.log("Checking individual:", id); // Debugging statement
             return !childIds.has(id);
         });
+        */
+        let rootIndividuals = Object.keys(peopleById).filter((id) => {
+            return !childIds.has(String(id)); // Ensure `id` is treated as a string
+        });
 
-        // console.log("Root Individuals:", rootIndividuals); // Debugging statement
+        console.log("Root Individuals:", rootIndividuals); // Debugging statement
         return rootIndividuals;
     }
 
@@ -1119,8 +1129,18 @@ window.OneNameTrees = class OneNameTrees extends View {
     personHtml(person, level = 0) {
         const personIdStr = String(person.Id);
 
-        if (!person || this.displayedIndividuals.has(personIdStr)) {
+        if (!person) {
             return ""; // Skip if undefined or already displayed
+        }
+
+        //  || this.displayedIndividuals.has(personIdStr)
+        let duplicateLink = "";
+        let duplicateClass = "";
+        let isDuplicate = false;
+        if (this.displayedIndividuals.has(personIdStr)) {
+            isDuplicate = true;
+            duplicateClass = "duplicate";
+            duplicateLink = `<span data-wtid="${person.Name}" class="duplicateLink" title='See ${person?.FirstName} in another tree'>🠉</span>`;
         }
 
         let descendantsCount = "";
@@ -1154,7 +1174,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
 
-        let html = `<li class='level_${level} person' data-id='${personIdStr}' data-name='${
+        let html = `<li class='level_${level} person ${duplicateClass}' data-id='${personIdStr}' data-name='${
             person.Name
         }' data-father='${person?.Father}' data-mother='${
             person?.Mother
@@ -1162,12 +1182,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             person.Name
         }" target="_blank">${fullName}</a> <span class="wtid">(${
             person.Name || ""
-        })</span> <span class='dates'>${dates}</span> ${categoryHTML} ${descendantsCount}`;
+        })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} ${descendantsCount}`;
 
         // Add Spouses
         html += this.displaySpouses(person, level);
 
         html += "</li>";
+        if (person.Name == "Ostermann-506") {
+            console.log(html);
+        }
         return html;
     }
 
@@ -1536,7 +1559,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         let spouseHtml = "";
         spousesData.forEach(({ spouseInfo, married, marriageDate }) => {
             const spouseIdStr = String(spouseInfo.Id);
-            if (!this.displayedSpouses.has(spouseIdStr) && !this.displayedIndividuals.has(spouseIdStr)) {
+            if (!this.displayedSpouses.has(spouseIdStr)) {
+                //  && !this.displayedIndividuals.has(spouseIdStr)
                 this.displayedSpouses.add(spouseIdStr);
                 this.displayedIndividuals.add(spouseIdStr);
 
@@ -1552,13 +1576,23 @@ window.OneNameTrees = class OneNameTrees extends View {
                     married = "";
                 }
 
-                spouseHtml += `<span class='spouse person' data-name='${spouseInfo.Name}' data-id='${
+                // Check if the spouse is already displayed
+                let duplicateClass = "";
+                let duplicateLink = "";
+                if ($(`li.person[data-id='${spouseIdStr}']`).length > 0) {
+                    duplicateClass = " duplicate";
+                    duplicateLink = `<span data-wtid="${spouseInfo.Name}" class="duplicateLink" title='See ${spouseInfo?.FirstName} in another tree'>🠉</span>`;
+                }
+
+                spouseHtml += `<span class='spouse person${duplicateClass}' data-name='${spouseInfo.Name}' data-id='${
                     spouseInfo.Id
                 }' data-gender='${gender}' data-marriage-date='${marriageDate}'>m. <a href="https://www.wikitree.com/wiki/${
                     spouseInfo.Name
                 }" target="_blank">${spouseName}</a> <span class='wtid'>(${
                     spouseInfo.Name || ""
-                })</span> <span class='dates'>${this.displayDates(spouseInfo)}</span> ${married}</span>`;
+                })</span>${duplicateLink} <span class='dates'>${this.displayDates(
+                    spouseInfo
+                )}</span> ${married}</span>`;
             }
         });
 
@@ -1686,7 +1720,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
     }
-
+    /*
     async preprocessDescendantsTree(peopleById, parentToChildrenMap) {
         let surnameVariants = this.findSurnameVariants($("#surname").val()); // Get surname variants for the name study
 
@@ -1709,6 +1743,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
     }
+    */
 
     async displayDescendantsTree(peopleById, parentToChildrenMap) {
         console.log("Displaying descendants tree");
@@ -1727,8 +1762,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         console.log("Root individuals IDs:", rootIndividualsIds);
         let rootIndividuals = rootIndividualsIds
             .map((id) => peopleById[id])
-            .filter((root) => !this.displayedIndividuals.has(String(root.Id)) && root.shouldBeRoot !== false)
+            .filter((root) => root.shouldBeRoot !== false)
             .sort((a, b) => this.getComparableDate(a).localeCompare(this.getComparableDate(b)));
+
+        // !this.displayedIndividuals.has(String(root.Id)) &&
 
         rootIndividuals = this.adjustSortingForDeathDates(rootIndividuals);
 
@@ -1795,7 +1832,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
     }
-
+    /*
     arrangeParentChildRelationship(father, mother, element) {
         const fatherElement = $("li.person[data-id='" + father + "']");
         const motherElement = $("li.person[data-id='" + mother + "']");
@@ -1813,23 +1850,32 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         }
     }
-
+*/
     displayChildren(parentToChildrenMap, parentId, peopleById, level) {
         let html = "";
         if (parentToChildrenMap[parentId]) {
             // Sort the children of the current parent
             let sortedChildren = parentToChildrenMap[parentId]
                 .map((childId) => peopleById[childId])
-                .filter((child) => !this.displayedIndividuals.has(child.Id)) // Filter out already displayed
+                //.filter((child) => !this.displayedIndividuals.has(child.Id)) // Filter out already displayed
                 .sort((a, b) => this.getComparableDate(a).localeCompare(this.getComparableDate(b)));
 
             html += `<ul class='children' data-parent-id='${parentId}'>`;
             sortedChildren.forEach((child) => {
-                html += this.personHtml(child, level); // Use personHtml for each child
+                if (parentId == "41246055") {
+                    console.log("Child:", child);
+                }
+                const thisPersonHTML = this.personHtml(child, level);
+                html += thisPersonHTML; // Use personHtml for each child
                 // Recursively display children of this child, sorted
-                html += this.displayChildren(parentToChildrenMap, child.Id, peopleById, level + 1);
+                if (!thisPersonHTML.includes("duplicate")) {
+                    html += this.displayChildren(parentToChildrenMap, child.Id, peopleById, level + 1);
+                }
             });
             html += "</ul>";
+            if (parentId == "41246055") {
+                console.log("HTML:", html);
+            }
         }
         return html;
     }
@@ -2045,11 +2091,16 @@ window.OneNameTrees = class OneNameTrees extends View {
                     let gender = person.data("gender");
                     const notSpouseSpan = $(
                         `<span data-id='${personId}' data-gender='${gender}' class='not-spouse spouse'> ${personsHtml}</span>`
-                    );
-                    if (childsParent.children(`span.not-spouse[data-id='${personId}']`).length == 0) {
+                    ); // Check if the extra parent is already listed as a spouse
+                    const isSpouseListed = childsParent.find(`.spouse[data-id='${personId}']`).length > 0;
+
+                    if (
+                        !isSpouseListed &&
+                        childsParent.children(`span.not-spouse[data-id='${personId}']`).length == 0
+                    ) {
                         notSpouseSpan.insertBefore(childsParent.find("> ul.children").first());
+                        person.remove();
                     }
-                    person.remove();
                 }
             }
         });
@@ -2133,6 +2184,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Expand all ancestor lists of the found element
         foundElement.parents("ul.children").slideDown();
         foundElement.parents("li.person").find("> .toggle-children").text("−"); // Set toggle buttons to expanded state for ancestor lists
+        if (foundElement.hasClass("spouse")) {
+            foundElement.next("ul.children").slideDown();
+        }
 
         // Calculate the height of the sticky header
         const headerHeight = $("header").outerHeight(true);
@@ -2157,7 +2211,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
         $("#tableViewButton").removeClass("on");
         $(
-            "#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton"
+            ".duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton"
         )
             .off()
             .remove();
@@ -3187,10 +3241,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $(this).removeClass("on").addClass("off");
                 $("#statsDisplay").slideUp();
             }
-        });
-
-        $("#wtLogo").on("click", function () {
-            window.open("https://www.wikitree.com/", "_blank");
         });
 
         $("#tableViewButton").click(function () {

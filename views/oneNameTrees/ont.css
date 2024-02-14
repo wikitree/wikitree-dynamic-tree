@@ -614,4 +614,9 @@ header {
   border-radius: 0.5em;
   margin-right: 0.5em;
   background: #fff;
+  margin-top: 0.2em;
+}
+
+.oneNameTrees .duplicateLink {
+  cursor: pointer;
 }
