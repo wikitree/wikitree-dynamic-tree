@@ -5,10 +5,11 @@ window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "OneNameTrees";
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
+        this.cancelling = false;
         this.container = $(container_selector);
         this.personId = person_id;
         this.wtid = $("#wt-id-text").val();
-        this.surname = this.wtid ? this.wtid.replace(/\-\d+/, "").trim() : "";
+        this.surname = this.wtid ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim() : "";
         this.header = $("header");
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
@@ -75,6 +76,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             <input type="text" id="location" placeholder="Location (Optional)" />
             <input type="submit" id="submit" name="submit" value="GO" />
         </label>
+        <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
         <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
         <button
           id="refreshData"
@@ -153,12 +155,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         </li>
         <li>If a query has over 40,000 results (too many), you'll be asked to add a location and go again.</li>
         <li>Birth and death details of each person can be seen by clicking their birth and death years.</li>
-        <li>Categories and stickers on a profile are shown after the birth and death dates. 
-        A key to the symbols can be found below (on this About page). One key one to know about it the red badge
-        symbol, which represents a One Name Study category/sticker. If it has a green circle around it, it has a 
-    One Name Study sticker for this page's target surname.</li>
-        <li>The numbers in green after a person's dates and categories and stickers are 
-        the number of descendants that the person has in this data set.</li> 
+        <li>Categories and stickers on a profile are shown after the birth and death dates.
+          A key to the symbols can be found below (on this About page). One key one to know about it the red badge
+          symbol, which represents a One Name Study category/sticker. If it has a green circle around it, it has a
+          One Name Study sticker for this page's target surname.</li>
+        <li>The numbers in green after a person's dates and categories and stickers are
+          the number of descendants that the person has in this data set.</li>
         <li>
           Click the Statistics button to see statistics about the people in the data set.
           <ul>
@@ -238,6 +240,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         if ($("#controls").length == 0) {
             $(this.headerHTML).appendTo($("header"));
         }
+        $("#cancelFetch").hide();
         //$("#helpButton").appendTo($("main")).css("float", "right").css("margin", "0.2em");
 
         if ($("#help").length == 0) {
@@ -328,9 +331,17 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $this.displayedSpouses.clear();
                 $this.combinedResults = {};
                 $this.parentToChildrenMap = {};
-                const data = await $this.getONSids(surname); // Fetch data again
+                const [aborted, data] = await $this.getONSids(surname); // Fetch data again
+                if (aborted) {
+                    wtViewRegistry.showWarning("Profile retrieval cancelled.");
+                    $this.disableCancel();
+                    $this.shakingTree.hide();
+                    // TODO: do whatever other cleanup should be done
+                    return;
+                }
                 const ids = data.response.profiles;
                 await $this.processBatches(ids, surname);
+                $this.disableCancel();
                 $this.setupToggleButtons();
             }
         });
@@ -455,18 +466,23 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#fileInput").click(); // Triggers the hidden file input
         });
 
+        this.header.on("click", "#cancelFetch", function () {
+            $this.cancelFetch();
+        });
+
         $("#wt-id-text").on("keyup", function (e) {
             // If enter key is pressed, strip the hyphen and number from it,
+            // replace underscores with spaces,
             // put the value in the surname box and #submit.
             if (e.keyCode === 13) {
                 const wtid = $(this).val();
-                const surname = wtid.replace(/\-\d+/, "").trim();
+                const surname = wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim();
                 $("#surname").val(surname);
                 $("#submit").click();
             }
         });
         $("#show-btn").on("click", function () {
-            $("#surname").val($("#wt-id-text").val().replace(/\-\d+/, "").trim());
+            $("#surname").val($("#wt-id-text").val().replaceAll("_", " ").replace(/\-\d+/, "").trim());
             $("#submit").click();
         });
         $("#view-select").on("change.oneNameTrees", function () {
@@ -639,17 +655,37 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
+    activateCancel() {
+        $("#cancelFetch").show();
+        this.cancelling = false;
+    }
+
+    disableCancel() {
+        $("#cancelFetch").hide();
+        this.cancelling = false;
+    }
+
+    cancelFetch() {
+        wtViewRegistry.showWarning("Cancelling data retrieval...");
+        this.cancelling = true;
+        if (this.cancelFetchController) {
+            this.cancelFetchController.abort();
+        }
+    }
+
     async getONSids(surname, location) {
+        wtViewRegistry.clearStatus();
         this.setNewTitle();
         let cacheKey = `ONTids_${surname}`;
         if (location) {
             cacheKey += `_${location}`;
         }
+        this.activateCancel();
         const cachedData = localStorage.getItem(cacheKey);
         if (cachedData) {
             console.log("Returning cached data for ONTids from localStorage");
             $("#refreshData").show();
-            return JSON.parse(cachedData);
+            return [false, JSON.parse(cachedData)];
         }
 
         // Fetch all variants for the surname
@@ -671,9 +707,18 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
         console.log(url);
-        const response = await fetch(url);
-        const data = await response.json();
-
+        this.cancelFetchController = new AbortController();
+        const response = await fetch(url, { signal: this.cancelFetchController.signal });
+        let data;
+        try {
+            data = await response.json();
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                console.error("Error when fetching from WT+:", error);
+            } else {
+                return [true, null];
+            }
+        }
         // After fetching data, instead of directly using localStorage.setItem, use saveWithLRUStrategy
         try {
             const dataString = JSON.stringify(data); // Ensure data is serialized before saving
@@ -683,8 +728,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.error("Error saving data with LRU strategy:", error);
         }
         console.log(data);
-        return data;
+        return [false, data];
     }
+
     async getPeople(ids, options = {}) {
         const ancestors = options.ancestors || 0;
         const descendants = options.descendants || 0;
@@ -725,16 +771,28 @@ window.OneNameTrees = class OneNameTrees extends View {
             "Suffix",
             "Touched",
             "Templates",
-        ];
+        ].join(",");
         try {
-            const [status, resultByKey, people] = await WikiTreeAPI.getPeople("ONS", ids, fields, {
-                ancestors: ancestors,
-                descendants: descendants,
-            });
-            return people;
+            this.cancelFetchController = new AbortController();
+            const result = await WikiTreeAPI.postToAPI(
+                {
+                    appId: "ONS",
+                    action: "getPeople",
+                    keys: ids.join(","),
+                    ancestors: ancestors,
+                    descendants: descendants,
+                    fields: fields,
+                },
+                this.cancelFetchController.signal
+            );
+            return [false, result[0].people];
         } catch (error) {
-            console.error("Error in getPeople:", error);
-            return []; // Return an empty array in case of error
+            if (error.name !== "AbortError") {
+                console.error("Error in getPeople:", error);
+                return [false, []]; // Return an empty array in case of error
+            } else {
+                return [true, []];
+            }
         }
     }
 
@@ -748,6 +806,20 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#results").html("<p id='noResults'>No results found.</p>");
             return;
         }
+
+        function cancelIt() {
+            wtViewRegistry.showWarning("Profile retrieval cancelled.");
+            $this.disableCancel();
+            $this.shakingTree.hide();
+            // TODO: do whatever other cleanup should be done
+            return;
+        }
+
+        if ($this.cancelling) {
+            cancelIt();
+            return;
+        }
+
         this.showLoadingBar();
         let processed = 0;
         let total = ids.length;
@@ -755,10 +827,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         let missingParents = [];
 
-        for (let i = 0; i < ids.length; i += 1000) {
+        for (let i = 0; i < ids.length && !$this.cancelling; i += 1000) {
             const batchIds = ids.slice(i, i + 1000);
             // console.log(`Processing batch ${i / 1000 + 1}: IDs ${i} to ${i + 999}`);
-            const people = await this.getPeople(batchIds);
+            const [aborted, people] = await this.getPeople(batchIds);
+            if (aborted || $this.cancelling) {
+                cancelIt();
+                return;
+            }
             // console.log("People in batch:", people);
             // Combine the 'people' object with 'combinedResults'
             // console.log("Combined results before:", this.combinedResults);
@@ -773,7 +849,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         //  console.log("Initial processing complete. Checking for missing parents...");
-        if (userId) {
+        if (userId && !$this.cancelling) {
             Object.values(this.combinedResults).forEach((person) => {
                 if (person?.BirthDateDecade?.replace(/s/, "") > 1890) {
                     if (person?.Father > 0 && !this.combinedResults[person.Father]) {
@@ -793,9 +869,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         let totalParents = missingParents.length;
 
         if (missingParents.length > 0) {
-            for (let i = 0; i < missingParents.length; i += 100) {
+            for (let i = 0; i < missingParents.length && !$this.cancelling; i += 100) {
                 const batchIds = missingParents.slice(i, i + 100);
-                const people = await this.getPeople(batchIds, { ancestors: 1, descendants: 1 });
+                const [aborted, people] = await this.getPeople(batchIds, { ancestors: 1, descendants: 1 });
+                if (aborted || $this.cancelling) {
+                    cancelIt();
+                    return;
+                }
                 if (people && typeof people === "object") {
                     Object.assign(this.combinedResults, people);
                 }
@@ -824,6 +904,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         console.log("Surname variants:", surnameVariants);
 
+        if ($this.cancelling) {
+            cancelIt();
+            return;
+        }
+        $this.disableCancel();
         Object.values(this.combinedResults).forEach((person) => {
             //  console.log(person);
 
@@ -2919,10 +3004,19 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             if (surname) {
                 $this.reset();
-                const data = await $this.getONSids(surname, location);
+                const [aborted, data] = await $this.getONSids(surname, location);
+                if (aborted) {
+                    wtViewRegistry.showWarning("Profile retrieval cancelled.");
+                    $this.disableCancel();
+                    $this.shakingTree.hide();
+                    // TODO: do whatever other cleanup should be done
+                    return;
+                }
                 const ids = data.response.profiles;
                 const found = data.response.found;
                 if (found === 0) {
+                    $this.disableCancel();
+                    $this.shakingTree.hide();
                     const errorHtml = `<div class='error'>No results found.</div>`;
                     $("section#results").prepend(errorHtml);
                     $this.triggerError();
@@ -2942,21 +3036,21 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                     if (found < 40000) {
                         const howLong = Math.floor(roundedFound / 4000);
-                        message = `
-            <p>There are over ${formattedRoundedFound} results.</p> 
-            <p>This may take over ${howLong} minutes to load.</p> 
-            <p>You could try adding a ${moreSpecific}location.</p>`;
+                        message = `<p>There are over ${formattedRoundedFound} results.</p>
+                                   <p>This may take over ${howLong} minutes to load.</p>
+                                   <p>You could cancel and try adding a ${moreSpecific}location.</p>`;
                     } else {
-                        message = `
-              <p>There are over ${formattedRoundedFound} results.</p> 
-              <p>This is too many for the app to handle.</p> 
-              <p>Please add a location and go again.</p>`;
+                        message = `<p>There are over ${formattedRoundedFound} results.</p>
+                                   <p>This is too many for the app to handle.</p>
+                                   <p>Please add a location and go again.</p>`;
                         $("#results").prepend(`<div class='message'>${message}</div>`);
+                        $this.disableCancel();
+                        $this.shakingTree.hide();
                         return;
                     }
                     $("#results").prepend(`<div class='message'>${message}</div>`);
                 }
-                $this.processBatches(ids, surname);
+                $this.processBatches(ids, surname).then(() => $this.disableCancel());
             }
             // console.log("Surname:", surname);
         });
