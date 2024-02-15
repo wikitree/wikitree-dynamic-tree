@@ -286,6 +286,15 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Enter key submits the form
         this.header.on("keyup", "#surname", function (event) {
+            const value = $(this).val();
+            // If we have saved data for this surname, show the refresh button
+            if (value && localStorage.getItem(`ONTids_${value}`)) {
+                $("#refreshData").show();
+                // Make the refresh button stand out a little, briefly
+                $("#refreshData").fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+            } else {
+                $("#refreshData").hide();
+            }
             if (event.keyCode === 13) {
                 $("#submit").click();
             }
