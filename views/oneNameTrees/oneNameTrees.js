@@ -332,26 +332,12 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.header.on("click", "#refreshData", async function () {
             const surname = $("#surname").val();
+            const location = $("#location").val();
             $("#refreshData").fadeOut();
             if (surname) {
                 $this.reset();
                 $this.clearONSidsCache(surname); // Clear the cache for this surname
-                $this.displayedIndividuals.clear();
-                $this.displayedSpouses.clear();
-                $this.combinedResults = {};
-                $this.parentToChildrenMap = {};
-                const [aborted, data] = await $this.getONSids(surname); // Fetch data again
-                if (aborted) {
-                    wtViewRegistry.showWarning("Profile retrieval cancelled.");
-                    $this.disableCancel();
-                    $this.shakingTree.hide();
-                    // TODO: do whatever other cleanup should be done
-                    return;
-                }
-                const ids = data.response.profiles;
-                await $this.processBatches(ids, surname);
-                $this.disableCancel();
-                $this.setupToggleButtons();
+                $this.startTheFetching(surname, location);
             }
         });
 
@@ -729,6 +715,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         }
         // After fetching data, instead of directly using localStorage.setItem, use saveWithLRUStrategy
+
         try {
             const dataString = JSON.stringify(data); // Ensure data is serialized before saving
             this.saveWithLRUStrategy(cacheKey, dataString);
@@ -736,6 +723,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         } catch (error) {
             console.error("Error saving data with LRU strategy:", error);
         }
+
         console.log(data);
         return [false, data];
     }
@@ -780,7 +768,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             "Suffix",
             "Touched",
             "Templates",
-        ].join(",");
+        ];
         try {
             this.cancelFetchController = new AbortController();
             const result = await WikiTreeAPI.postToAPI(
@@ -2986,6 +2974,58 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
+    async startTheFetching(surname, location) {
+        const $this = this;
+        $this.reset();
+        const [aborted, data] = await $this.getONSids(surname, location);
+        if (aborted) {
+            wtViewRegistry.showWarning("Profile retrieval cancelled.");
+            $this.disableCancel();
+            $this.shakingTree.hide();
+            // TODO: do whatever other cleanup should be done
+            return;
+        }
+        const ids = data.response.profiles;
+        const found = data.response.found;
+        if (found === 0) {
+            $this.disableCancel();
+            $this.shakingTree.hide();
+            const errorHtml = `<div class='error'>No results found.</div>`;
+            $("section#results").prepend(errorHtml);
+            $this.triggerError();
+            return;
+        } else if (found > 10000) {
+            // Number to the nearest 1000 (rounding down)
+            let roundedFound = Math.floor(found / 1000) * 1000;
+            function formatNumber(number, locales, options) {
+                return new Intl.NumberFormat(locales, options).format(number);
+            }
+            const formattedRoundedFound = formatNumber(roundedFound, "en-US");
+            let message;
+            let moreSpecific = "";
+            if ($("#location").val().trim() !== "") {
+                moreSpecific = "more specific ";
+            }
+
+            if (found < 40000) {
+                const howLong = Math.floor(roundedFound / 4000);
+                message = `<p>There are over ${formattedRoundedFound} results.</p>
+                                   <p>This may take over ${howLong} minutes to load.</p>
+                                   <p>You could cancel and try adding a ${moreSpecific}location.</p>`;
+            } else {
+                message = `<p>There are over ${formattedRoundedFound} results.</p>
+                                   <p>This is too many for the app to handle.</p>
+                                   <p>Please add a location and go again.</p>`;
+                $("#results").prepend(`<div class='message'>${message}</div>`);
+                $this.disableCancel();
+                $this.shakingTree.hide();
+                return;
+            }
+            $("#results").prepend(`<div class='message'>${message}</div>`);
+        }
+        $this.processBatches(ids, surname).then(() => $this.disableCancel());
+    }
+
     documentReady() {
         this.addCategoryKeyToHelp();
         const $this = this;
@@ -3014,56 +3054,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
 
             if (surname) {
-                $this.reset();
-                const [aborted, data] = await $this.getONSids(surname, location);
-                if (aborted) {
-                    wtViewRegistry.showWarning("Profile retrieval cancelled.");
-                    $this.disableCancel();
-                    $this.shakingTree.hide();
-                    // TODO: do whatever other cleanup should be done
-                    return;
-                }
-                const ids = data.response.profiles;
-                const found = data.response.found;
-                if (found === 0) {
-                    $this.disableCancel();
-                    $this.shakingTree.hide();
-                    const errorHtml = `<div class='error'>No results found.</div>`;
-                    $("section#results").prepend(errorHtml);
-                    $this.triggerError();
-                    return;
-                } else if (found > 10000) {
-                    // Number to the nearest 1000 (rounding down)
-                    let roundedFound = Math.floor(found / 1000) * 1000;
-                    function formatNumber(number, locales, options) {
-                        return new Intl.NumberFormat(locales, options).format(number);
-                    }
-                    const formattedRoundedFound = formatNumber(roundedFound, "en-US");
-                    let message;
-                    let moreSpecific = "";
-                    if ($("#location").val().trim() !== "") {
-                        moreSpecific = "more specific ";
-                    }
-
-                    if (found < 40000) {
-                        const howLong = Math.floor(roundedFound / 4000);
-                        message = `<p>There are over ${formattedRoundedFound} results.</p>
-                                   <p>This may take over ${howLong} minutes to load.</p>
-                                   <p>You could cancel and try adding a ${moreSpecific}location.</p>`;
-                    } else {
-                        message = `<p>There are over ${formattedRoundedFound} results.</p>
-                                   <p>This is too many for the app to handle.</p>
-                                   <p>Please add a location and go again.</p>`;
-                        $("#results").prepend(`<div class='message'>${message}</div>`);
-                        $this.disableCancel();
-                        $this.shakingTree.hide();
-                        return;
-                    }
-                    $("#results").prepend(`<div class='message'>${message}</div>`);
-                }
-                $this.processBatches(ids, surname).then(() => $this.disableCancel());
+                $this.startTheFetching(surname, location);
             }
-            // console.log("Surname:", surname);
         });
 
         // Call the function to add the styles
