@@ -667,6 +667,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (this.cancelFetchController) {
             this.cancelFetchController.abort();
         }
+        $("#refreshData").prop("disabled", false);
     }
 
     async getONSids(surname, location) {
