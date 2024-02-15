@@ -335,6 +335,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             const location = $("#location").val();
             $("#refreshData").fadeOut();
             if (surname) {
+                wtViewRegistry.clearStatus();
                 $this.reset();
                 $this.clearONSidsCache(surname); // Clear the cache for this surname
                 $this.startTheFetching(surname, location);
