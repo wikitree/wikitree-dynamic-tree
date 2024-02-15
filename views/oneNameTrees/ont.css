@@ -543,7 +543,8 @@ header {
   float: right;
 }
 
-.oneNameTrees section#table #wideTableButton {
+.oneNameTrees section#table #wideTableButton,
+.oneNameTrees section#table #flipLocationsButton {
   margin-left: 2em !important;
 }
 

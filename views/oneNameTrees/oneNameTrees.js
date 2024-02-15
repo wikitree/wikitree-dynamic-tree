@@ -2078,7 +2078,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
         $("#tableViewButton").removeClass("on");
         $(
-            ".duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton"
+            ".duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton"
         )
             .off()
             .remove();
@@ -2860,6 +2860,24 @@ window.OneNameTrees = class OneNameTrees extends View {
         wideTableButton.on("click", function () {
             $("section#table").toggleClass("wide");
             $(this).toggleClass("on");
+        });
+
+        function flipLocationOrder() {
+            const table = $("#tableView").DataTable();
+            // Flip the text of each cell in the birthPlace and deathPlace columns
+            table.cells(".birthPlace, .deathPlace").every(function () {
+                const cell = this.node();
+                const cellData = this.data();
+                this.data(cellData.split(", ").reverse().join(", ")); // Update the data for DataTables to recognize
+            });
+
+            table.draw(false); // Redraw the table without resetting the paging
+        }
+
+        const flipLocationsButton = $("<button>", { id: "flipLocationsButton" }).text("Reverse locations");
+        $("#tableView_wrapper #tableView_length").after(flipLocationsButton);
+        flipLocationsButton.on("click", function () {
+            flipLocationOrder();
         });
 
         // Use ResizeObserver to handle dynamic changes in the header's size
