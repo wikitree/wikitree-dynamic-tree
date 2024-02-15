@@ -1709,6 +1709,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.hideLoadingBar();
         this.shakingTree.hide();
+        $("#refreshData").prop("disabled", false);
     }
 
     async arrangeTreeElements() {
@@ -2989,6 +2990,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.addCategoryKeyToHelp();
         const $this = this;
         $("#submit").on("click", async function () {
+            $("#refreshData").prop("disabled", true);
             console.log("Submit clicked");
             $this.shakingTree.show();
             $("div.error").remove(); // Remove any existing error messages
