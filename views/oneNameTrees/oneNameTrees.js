@@ -262,7 +262,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.reset();
         $("#wt-id-text,#show-btn").prop("disabled", false).css("background-color", "white");
         $("#show-btn").css("background-color", "#25422d");
-        $("view-select").off("change");
+        $("#view-select").off("change.oneNameTrees");
         $("body").removeClass("oneNameTrees");
         $("#controls,#dancingTree").remove();
     }
@@ -469,7 +469,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#surname").val($("#wt-id-text").val().replace(/\-\d+/, "").trim());
             $("#submit").click();
         });
-        $("#view-select").on("change", function () {
+        $("#view-select").on("change.oneNameTrees", function () {
             const view = $(this).val();
             if (view !== "oneNameTrees") {
                 $("#wt-id-text,#show-btn").prop("disabled", false).css("background-color", "white");
