@@ -2914,6 +2914,14 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(".filter").on("keyup", function () {
             this.clearFiltersButton();
         });
+
+        // Check for #periodButtonsContainer button.on and load the period filter if it is on
+        if ($("#periodButtonsContainer button.on").length) {
+            const period = $("#periodButtonsContainer button.on").text();
+            $("#birthDateFilter").val(period);
+            table.draw();
+        }
+
         this.shakingTree.hide();
     }
 
