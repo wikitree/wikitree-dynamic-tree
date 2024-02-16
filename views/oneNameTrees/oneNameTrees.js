@@ -3052,12 +3052,12 @@ window.OneNameTrees = class OneNameTrees extends View {
                 message = `<p>There are over ${formattedRoundedFound} results.</p>
                                    <p>This is too many for the app to handle.</p>
                                    <p>Please add a location and go again.</p>`;
-                $("#results").prepend(`<div class='message'>${message}</div>`);
+                wtViewRegistry.showWarning(message);
                 $this.disableCancel();
                 $this.shakingTree.hide();
                 return;
             }
-            $("#results").prepend(`<div class='message'>${message}</div>`);
+            wtViewRegistry.showWarning(message);
         }
         $this.processBatches(ids, surname).then(() => $this.disableCancel());
     }
