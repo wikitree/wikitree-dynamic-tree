@@ -286,7 +286,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Enter key submits the form
         this.header.on("keyup", "#surname", function (event) {
-            const value = $(this).val();
+            const value = $(this).val().toLowerCase();
             // If we have saved data for this surname, show the refresh button
             if (value && localStorage.getItem(`ONTids_${value}`)) {
                 $("#refreshData").show();
@@ -579,7 +579,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         // Normalize the string to NFD (Normalization Form Decomposition)
         // then replace non-spacing marks (accents) with an empty string
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
     }
 
     findSurnameVariants(surname) {
@@ -675,7 +678,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     async getONSids(surname, location) {
         wtViewRegistry.clearStatus();
         this.setNewTitle();
-        let cacheKey = `ONTids_${surname}`;
+        let cacheKey = `ONTids_${surname.toLowerCase()}`;
         if (location) {
             cacheKey += `_${location}`;
         }
