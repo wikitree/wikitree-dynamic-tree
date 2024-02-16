@@ -167,7 +167,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             <li>
               The general statistics:
               <ul>
-                <li>show the top few most common names and most common locations for the whole set.</li>
+                <li>show the top few most common names and most common birth places for the whole set.</li>
               </ul>
             </li>
             <li>
@@ -2159,7 +2159,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Most Common Locations
         const locationStats = stats.getLocationStatistics();
         const $locationDiv = this.generateLocationHTML(locationStats);
-        $statsContainer.append(this.createStatItem("Most Common Birth Locations: ", $locationDiv));
+        $statsContainer.append(this.createStatItem("Most Common Birth Places: ", $locationDiv));
 
         return $statsContainer;
     }
@@ -2542,72 +2542,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
-    /*
-    addLocationSelectBoxes(locationStats) {
-        const $this = this;
-        $("#locationSelects").remove();
-        $("#locationSelects select").off("change");
-        const $locationSelects = $("<div>", { id: "locationSelects" });
-        const locations = locationStats.locationCounts;
-        // Create a select box full of locations, sorted by the count on the objects.
-        const sortedLocations = Object.entries(locations)
-            .sort((a, b) => b[1].count - a[1].count)
-            .map(([location, count]) => {
-                return { location, count };
-            });
-
-        console.log("sortedLocations", sortedLocations);
-        const locationSelect = $("<select>", { id: "locationSelect" });
-        locationSelect.append($("<option>").text("Location").val(""));
-        sortedLocations.forEach((location) => {
-            locationSelect.append(
-                $("<option>")
-                    .text(location.location + " (" + location.count.count + ")")
-                    .val(location.location)
-            );
-        });
-
-        // Create a selext box with locations in alphabetical order
-        const locationSelectAlpha = $("<select>", { id: "locationSelectAlpha" });
-        locationSelectAlpha.append($("<option>").text("Location").val(""));
-        sortedLocations
-            .sort((a, b) => a.location.localeCompare(b.location))
-            .forEach((location) => {
-                locationSelectAlpha.append(
-                    $("<option>")
-                        .text(location.location + " (" + location.count.count + ")")
-                        .val(location.location)
-                );
-            });
-
-        const locationSelectsSwitchButton = $("<button>", {
-            id: "locationSelectsSwitchButton",
-            title: "Switch between locations sorted by count and sorted alphabetically",
-        });
-
-        locationSelectsSwitchButton.html("&#x21C6;").on("click", function () {
-            $("#locationSelect").toggle();
-            $("#locationSelectAlpha").toggle();
-        });
-
-        $locationSelects.append(locationSelect, locationSelectAlpha, locationSelectsSwitchButton);
-        $("#toggleGeneralStats").after($locationSelects);
-
-        // Add event listener to the select boxes
-        $("#locationSelects select").on("change", function () {
-            const value = $(this).val();
-            if (!value.match(/Location/)) {
-                if ($("#tableView").length == 0) {
-                    $this.shakingTree.show();
-                }
-                setTimeout(function () {
-                    $this.loadTableWithFilter(value, "birthPlace");
-                }, 0);
-            }
-        });
-    }
-*/
-
     addLocationSelectBoxes(locationStats) {
         const $this = this;
         // Ensure removal of existing elements to avoid duplicates.
@@ -2638,7 +2572,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
 
             $locationSelect.empty(); // Clear existing options.
-            $locationSelect.append($("<option>").text(`Location${orderText}`).val("")); // Default option.
+            $locationSelect.append($("<option>").text(`Birth Place${orderText}`).val("")); // Default option.
             locationsArray.forEach(({ location, count }) => {
                 $locationSelect.append($("<option>").text(`${location} (${count})`).val(location));
             });
@@ -2651,7 +2585,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $switchButton = $("<button>", {
             id: "locationSelectsSwitchButton",
             text: "⇆",
-            title: "Switch between sort orders",
+            title: "Switch between sort orders (count and alphabetical).",
         }).on("click", function () {
             // Determine the current sorting order to toggle.
             const isSortedByCount = $locationSelect
