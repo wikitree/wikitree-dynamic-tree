@@ -809,7 +809,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         function cancelIt() {
-            wtViewRegistry.showWarning("Profile retrieval cancelled.");
+            wtViewRegistry.showWarning("Data retrieval cancelled.");
             $this.disableCancel();
             $this.shakingTree.hide();
             // TODO: do whatever other cleanup should be done
@@ -1116,11 +1116,11 @@ window.OneNameTrees = class OneNameTrees extends View {
             person.Name
         }' data-father='${person?.Father}' data-mother='${
             person?.Mother
-        }' data-gender='${gender}' data-full-name='${fullName}' data-dates='${dates}'> ${toggleButton}<a href="https://www.wikitree.com/wiki/${
+        }' data-gender='${gender}' data-full-name='${fullName}' data-dates='${dates}'> ${toggleButton}${descendantsCount}<a href="https://www.wikitree.com/wiki/${
             person.Name
         }" target="_blank">${fullName}</a> <span class="wtid">(${
             person.Name || ""
-        })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} ${descendantsCount}`;
+        })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} `;
 
         // Add Spouses
         html += this.displaySpouses(person, level);
@@ -3038,7 +3038,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $this.reset();
         const [aborted, data] = await $this.getONSids(surname, location);
         if (aborted) {
-            wtViewRegistry.showWarning("Profile retrieval cancelled.");
+            wtViewRegistry.showWarning("Data retrieval cancelled.");
             $this.disableCancel();
             $this.shakingTree.hide();
             // TODO: do whatever other cleanup should be done

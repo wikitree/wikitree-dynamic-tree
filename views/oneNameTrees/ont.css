@@ -45,6 +45,7 @@ input[type="submit"],
   margin: 0.5em;
 }
 
+/*
 header {
   background: #f7f6f0 url(https://www.wikitree.com/images/header-bg-sm.gif) repeat-x bottom;
   padding: 10px;
@@ -52,8 +53,16 @@ header {
   z-index: 1000;
   border-radius: 1em;
 }
+*/
 
 /* ONS */
+
+.oneNameTrees header {
+  z-index: 2;
+}
+.oneNameTrees #logo {
+  margin-bottom: 1em;
+}
 
 .oneNameTrees #view-container {
   background: white;
@@ -73,6 +82,10 @@ header {
 .oneNameTrees header {
   position: sticky;
   top: 0;
+}
+
+.oneNameTrees #results > ul {
+  margin-left: 4em !important;
 }
 
 .oneNameTrees #results ul {
@@ -130,10 +143,14 @@ header {
   font-size: 0.9em;
 }
 .oneNameTrees span.descendantsCount {
-  width: 2em;
+  width: 2.5em;
   font-weight: bold;
   color: #4caf50;
   cursor: default;
+  position: absolute;
+  margin-left: -4em;
+  background: white;
+  text-align: center;
 }
 
 .oneNameTrees button.toggleAll {
