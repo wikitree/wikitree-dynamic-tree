@@ -1084,7 +1084,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let descendantsCount = "";
         if (this.parentToChildrenMap[person.Id] && this.parentToChildrenMap[person.Id].length > 0) {
             const count = this.countDescendants(person.Id, this.parentToChildrenMap);
-            descendantsCount = ` <span class="descendantsCount" title="${count} descendants">[${count}]</span>`;
+            descendantsCount = ` <span class="descendantsCount" title="${count} descendants"><span class='descendantsCountText'>[${count}]</span></span>`;
             if (count == 0) {
                 descendantsCount = "";
             }

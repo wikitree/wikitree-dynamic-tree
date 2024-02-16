@@ -85,7 +85,7 @@ header {
 }
 
 .oneNameTrees #results > ul {
-  margin-left: 4em !important;
+  margin-left: 4.5em !important;
 }
 
 .oneNameTrees #results ul {
@@ -143,14 +143,18 @@ header {
   font-size: 0.9em;
 }
 .oneNameTrees span.descendantsCount {
-  width: 2.5em;
+  width: 3em;
   font-weight: bold;
   color: #4caf50;
   cursor: default;
   position: absolute;
-  margin-left: -4em;
-  background: white;
-  text-align: center;
+  margin-left: -5em;
+  text-align: right;
+}
+.oneNameTrees span.descendantsCountText {
+  padding: 0 0.2em;
+  background-color: #ffffff;
+  border-radius: 0.3em;
 }
 
 .oneNameTrees button.toggleAll {
