@@ -2668,9 +2668,15 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Event listener for the select box.
         $locationSelect.on("change", function () {
-            const selectedValue = $(this).val();
-            if (selectedValue && !selectedValue.match(/^Select Location$/)) {
-                // Action for the selected location.
+            let selectedValue = $(this).val();
+            if (selectedValue && !selectedValue.match(/^Location/)) {
+                const strippedValue = selectedValue.replace(/ \(\d+\)/, "");
+                if ($("#tableView").length == 0) {
+                    $this.shakingTree.show();
+                }
+                setTimeout(function () {
+                    $this.loadTableWithFilter(strippedValue, "birthPlace");
+                }, 0);
             }
         });
     }
@@ -3260,13 +3266,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                         $this.shakingTree.hide();
                     }, 0);
                 }
-                $("#toggleButtons,#wtidGo,#nameSelect,#toggleDetails,#toggleWTIDs").hide();
+                $("#toggleButtons,#nameSelects,#toggleDetails,#toggleWTIDs").hide();
             } else {
                 $treeViewContainer.show();
                 $tableViewContainer.hide();
                 $(this).removeClass("on").attr("title", "Show table view");
                 $("#clearFilters").off().remove();
-                $("#toggleButtons,#wtidGo,#nameSelect,#toggleDetails,#toggleWTIDs").show();
+                $("#toggleButtons,#nameSelects,#toggleDetails,#toggleWTIDs").show();
             }
             if ($("#periodButtonsContainer button.on").length) {
                 $("#birthDateFilter").val($("#periodButtonsContainer button.on").text());
