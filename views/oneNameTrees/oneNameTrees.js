@@ -1330,11 +1330,12 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     showMoreDetails(datesElement, showOrHide = "toggle") {
+        const theLI = datesElement.closest("li");
         let Id;
         if (datesElement.parent().hasClass("person")) {
             Id = datesElement.parent().data("id");
         } else {
-            Id = datesElement.closest("li").data("id");
+            Id = theLI.data("id");
         }
         if ($(`div.details[data-id='${Id}']`).length > 0) {
             if (showOrHide == "show") {
@@ -1356,8 +1357,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         <div class='row'>${birth}</div>
         <div class='row'>${death}</div>
       </div>`);
-
-        datesElement.after(detailsHtml);
+        if (datesElement.parent().hasClass("spouse")) {
+            datesElement.parent().append(detailsHtml);
+        } else if (theLI.children(".spouse").length > 0) {
+            theLI.children(".spouse").first().before(detailsHtml);
+        } else {
+            datesElement.closest("li").append(detailsHtml);
+        }
     }
 
     getDateStatus(person, event, length = "abbr") {
