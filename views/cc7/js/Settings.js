@@ -27,8 +27,8 @@ export class Settings {
     // commercial projects without attribution"
     static dyIcons = [
         {
-            value: "47px-RTC_-_Pictures.jpeg",
-            text: "IMG:views/cc7/images/47px-RTC_-_Pictures.jpeg",
+            value: "pink-and-blue-ribbon.png",
+            text: "IMG:views/cc7/images/pink-and-blue-ribbon.png",
             width: 30,
         },
         {
@@ -133,7 +133,7 @@ export class Settings {
                         type: "radio",
                         label: "",
                         values: Settings.dyIcons,
-                        defaultValue: "47px-RTC_-_Pictures.jpeg",
+                        defaultValue: "pink-and-blue-ribbon.png",
                     },
                     {
                         optionName: "sect2",
@@ -637,7 +637,7 @@ export class Settings {
             }
             Settings.optionsDef.optionsGroups[0].options[1].defaultValue = optionWithDefault(
                 "icons_options_veryYoung",
-                "47px-RTC_-_Pictures.jpeg"
+                "pink-and-blue-ribbon.png"
             );
             Settings.optionsDef.optionsGroups[0].options[3].defaultValue = optionWithDefault(
                 "icons_options_young",

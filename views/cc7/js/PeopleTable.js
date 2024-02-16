@@ -23,6 +23,7 @@ export class PeopleTable {
         [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
         [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
         [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
+        ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
     ]);
 
     static async addPeopleTable(caption) {
@@ -170,7 +171,7 @@ export class PeopleTable {
                 deathLocationReversed = dLocation2ways[1];
             }
 
-            const privacyLevel = +mPerson.Privacy;
+            const privacyLevel = +mPerson.Privacy || "?";
             const privacyDetail = PeopleTable.PRIVACY_LEVELS.get(privacyLevel);
             let privacyImg = null;
             let privacyTitle = "";
@@ -218,8 +219,8 @@ export class PeopleTable {
             if (firstName == undefined) {
                 firstName = "Private";
                 mPerson.LastNameCurrent = "";
-                if (mPerson.Name.match(/Private/) == null) {
-                    mPerson.LastNameAtBirth = mPerson.Name.split("-")[1];
+                if (mPerson.Name && mPerson.Name.includes("-") && mPerson.Name.match(/Private/) == null) {
+                    mPerson.LastNameAtBirth = mPerson.Name.split("-")[0];
                 } else {
                     mPerson.LastNameAtBirth = "Private";
                 }
@@ -228,12 +229,24 @@ export class PeopleTable {
             const oLink = CC7Utils.profileLink(mPerson.Name, firstName);
             let managerLink;
             let dManager;
-            if (mPerson.Manager) {
-                const mgrWtId = mPerson.Managers?.find((m) => m.Id == mPerson.Manager)?.Name || mPerson.Manager;
+            if (typeof mPerson.Manager != "undefined" && mPerson.Manager == 0) {
+                // Trial and error showed this means it is orphaned
+                managerLink = "Orphaned";
+                dManager = managerLink;
+            } else if (mPerson.Managers && mPerson.Managers.length > 0) {
+                // If the current user is a manager, show them, else grab the first manager in the list
+                const watcher = window.WTUser.name;
+                const mgrWtId = watcher
+                    ? mPerson.Managers.find((m) => m.Name == watcher)?.Name || mPerson.Managers[0]?.Name
+                    : mPerson.Managers[0]?.Name;
                 dManager = CC7Utils.htmlEntities(mgrWtId);
+                managerLink = CC7Utils.profileLink(mgrWtId, dManager);
+            } else if (mPerson.Manager) {
+                // We have a number, so we might as well use it
+                dManager = mPerson.Manager;
                 managerLink = CC7Utils.profileLink(dManager, dManager);
             } else {
-                managerLink = mPerson.Name.startsWith("Private") ? "Unknown" : "Orphaned";
+                managerLink = "Unknown";
                 dManager = managerLink;
             }
 
@@ -429,7 +442,7 @@ export class PeopleTable {
                     }>` +
                     (privacyImg
                         ? "<img class='privacyImage' src='" + privacyImg + "' title='" + privacyTitle + "'>"
-                        : "") +
+                        : "<span title='Unknown'>?</span>") +
                     `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
@@ -584,6 +597,10 @@ export class PeopleTable {
         $("#hierarchyViewButton")
             .off("click")
             .on("click", function () {
+                if (!window.people.get(window.rootId)) {
+                    // We don't have a root, so we can't do anything
+                    return;
+                }
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
                 $("#peopleTable,#lanceTable").hide().removeClass("active");
@@ -619,6 +636,10 @@ export class PeopleTable {
                 }
             });
 
+        if (!window.people.get(window.rootId)) {
+            // We don't have a root, so disable the hierarchy view
+            $("#hierarchyViewButton").prop("disabled", true);
+        }
         Utils.hideShakingTree();
 
         PeopleTable.addFiltersToPeopleTable();
@@ -1404,7 +1425,7 @@ export class PeopleTable {
                 theDate = person[ev + "DateDecade"];
             }
         }
-        let theDateM = theDate.match(/[0-9]{4}/);
+        let theDateM = theDate?.match(/[0-9]{4}/);
         if (CC7Utils.isOK(theDateM)) {
             return parseInt(theDateM[0]);
         } else {
@@ -1472,9 +1493,10 @@ export class PeopleTable {
     }
 
     static buildTimeline(tPerson, timelineEvents) {
+        const tPersonFirstName = tPerson.FirstName || "(Private)";
         const timelineTable = $(
             `<div class='timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
-                `<caption>Events in the life of ${tPerson.FirstName}'s family</caption>` +
+                `<caption>Events in the life of ${tPersonFirstName}'s family</caption>` +
                 "<thead><th class='tlDate'>Date</th><th class='tlBioAge'>Age</th>" +
                 "<th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>" +
                 `</thead><tbody></tbody></table></div>`
@@ -1538,9 +1560,9 @@ export class PeopleTable {
             let relation = aFact.relation.replace(/s$/, "");
             const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
 
-            let fNames = aFact.firstName;
+            let fNames = aFact.firstName || "(Private)";
             if (aFact.evnt == "marriage") {
-                fNames = tPerson.FirstName + " and " + aFact.firstName;
+                fNames = tPersonFirstName + " and " + fNames;
                 relation = "";
             }
             const tlFirstName = CC7Utils.profileLink(aFact.wtId, fNames);
@@ -1893,8 +1915,9 @@ export class PeopleTable {
         const aPeo = window.people.get(theClickedId);
         if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
             PeopleTable.doFamilySheet(aPeo, jqClicked);
-        } else {
-            console.log(`Calling getRelatives for ${theClickedName}`);
+        } else if (!theClickedName.startsWith("Private") || theClickedId > 0) {
+            const key = theClickedName.startsWith("Private") ? theClickedId : theClickedName;
+            console.log(`Calling getRelatives for ${key}`);
             WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
                 action: "getRelatives",
@@ -1902,17 +1925,20 @@ export class PeopleTable {
                 getChildren: "1",
                 getParents: "1",
                 getSiblings: "1",
-                keys: theClickedName,
+                keys: key,
             }).then((data) => {
                 // Construct this person so it conforms to the profiles retrieved using getPeople
-                const mPerson = PeopleTable.convertToInternal(data[0].items[0].person);
-                window.people.set(+mPerson.Id, mPerson);
+                const mPerson = PeopleTable.convertToInternal(data[0].items[0]);
                 PeopleTable.doFamilySheet(mPerson, jqClicked);
             });
         }
     }
 
-    static convertToInternal(pData) {
+    static convertToInternal(item) {
+        const pData = item.person;
+        if (!pData.Name && item.user_name) pData.Name = item.user_name;
+        if (!pData.Name) pData.Name = pData.Id;
+
         const person = PeopleTable.addFamilyToPerson(pData);
         if (person.Parents) person.Parents = Object.keys(person.Parents);
         if (person.Siblings) person.Siblings = Object.keys(person.Siblings);
@@ -1928,6 +1954,17 @@ export class PeopleTable {
                 };
             }
         }
+        const curPerson = window.people.get(+person.Id);
+        if (curPerson) {
+            // Copy fields not present in the new person from the old to the new
+            let x = Object.entries(curPerson);
+            for (const [key, value] of x) {
+                if (typeof person[key] == "undefined") {
+                    person[key] = value;
+                }
+            }
+        }
+        window.people.set(+person.Id, person);
         return person;
     }
 
