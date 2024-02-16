@@ -721,8 +721,11 @@
 
     SuperBigFamView.prototype.init = function (selector, startId) {
         // condLog("SuperBigFamView.js - line:18", selector) ;
-        var container = document.querySelector(selector),
-            width = container.offsetWidth,
+        var container = document.querySelector(selector);
+
+        container.style.height = "100vh";
+
+        var width = container.offsetWidth,
             height = container.offsetHeight;
         condLog("ORIG WID x HT : ", width, height);
         var self = this;
