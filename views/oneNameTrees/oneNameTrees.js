@@ -1141,6 +1141,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 fullName: thisElement.data("full-name"),
                 dates: thisElement.data("dates"),
                 wtid: thisElement.data("wtid"),
+                gender: thisElement.data("gender"),
                 isTarget: ancestralLine.length === 0, // Mark the first element as the target
             };
             ancestralLine.push(personData);
@@ -1148,18 +1149,22 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         ancestralLine.reverse();
-        let ancestralLineHtml = ancestralLine
-            .map(
-                (ancestor, index) =>
-                    `<div class='ancestor person ${ancestor.isTarget ? "highlighted" : ""}' data-id='${
-                        ancestor.id
-                    }' data-name='${ancestor.fullName}' data-wtid='${ancestor.wtid}'>
+        let ancestralLineHtml = $("<ul></ul>").append(
+            ancestralLine
+                .map(
+                    (ancestor, index) =>
+                        `<li class='ancestor person ${ancestor.isTarget ? "highlighted" : ""}' data-id='${
+                            ancestor.id
+                        }' data-name='${ancestor.fullName}' data-wtid='${ancestor.wtid}' data-gender='${
+                            ancestor.gender
+                        }'>
             ${ancestor.fullName} <span class='dates'>${ancestor.dates}</span> <span class='wtid'>(${
-                        ancestor.wtid
-                    })</span>
-          </div>`
-            )
-            .join("");
+                            ancestor.wtid
+                        })</span>
+          </li>`
+                )
+                .join("")
+        );
 
         const ancestralPopup = $("<div id='ancestralLinePopup'></div>").html(ancestralLineHtml);
         $("body").append(ancestralPopup);

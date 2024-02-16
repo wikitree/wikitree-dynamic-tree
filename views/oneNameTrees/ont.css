@@ -446,6 +446,21 @@ header {
   margin: 2px 0;
 }
 
+.oneNameTrees #ancestralLinePopup .highlighted[data-gender="Female"] {
+  border-color: rgb(252, 181, 193);
+}
+
+.oneNameTrees #ancestralLinePopup ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.oneNameTrees #ancestralLinePopup ul li {
+  padding: 0.2em;
+  margin: 0.2em;
+}
+
 .oneNameTrees #tableViewButton {
   display: none;
 }
@@ -465,10 +480,12 @@ header {
 .oneNameTrees section#table th {
   text-align: left;
 }
-.oneNameTrees section#table tr[data-gender="Male"] {
+.oneNameTrees section#table tr[data-gender="Male"],
+.oneNameTrees #ancestralLinePopup li[data-gender="Male"] {
   background-color: #eef;
 }
-.oneNameTrees section#table tr[data-gender="Female"] {
+.oneNameTrees section#table tr[data-gender="Female"],
+.oneNameTrees #ancestralLinePopup li[data-gender="Female"] {
   background-color: #fee;
 }
 .oneNameTrees section#table td.age {
