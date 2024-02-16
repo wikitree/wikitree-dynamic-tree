@@ -529,14 +529,15 @@ header {
   margin: 0.2em;
 }
 .oneNameTrees #locationSelects select {
-  width: 9em;
+  width: 12em;
 }
 .oneNameTrees #locationSelects #locationSelectAlpha {
   display: none;
 }
-.oneNameTrees #locationSelects button#locationSelectsSwitchButton {
+.oneNameTrees #locationSelects button#locationSelectsSwitchButton,
+.oneNameTrees #nameSelects button#nameSelectsSwitchButton {
   margin-left: 0 !important;
-  padding: 0.1em;
+  padding-bottom: 0.4em !important;
 }
 .oneNameTrees #locationSelects select {
   margin-right: 0 !important;
@@ -545,6 +546,13 @@ header {
 .oneNameTrees #wtidGo,
 .oneNameTrees #nameSelect {
   width: 9em;
+}
+.oneNameTrees #nameSelects {
+  display: inline-block;
+  margin: 0 0.5em;
+}
+.oneNameTrees #nameSelects select {
+  margin: 0;
 }
 
 .oneNameTrees select {

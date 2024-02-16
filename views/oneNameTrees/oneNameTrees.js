@@ -1576,9 +1576,18 @@ window.OneNameTrees = class OneNameTrees extends View {
         return ax.length - bx.length;
     }
 
-    createSelectBoxes() {
+    createNameSelectBoxes() {
+        const switchButton = $(`<button id="nameSelectsSwitchButton" 
+        title="Switch between WT ID search and name search">⇆</button>`);
+        const nameSelects = $("<div id='nameSelects'></div>").append(switchButton);
+        nameSelects.insertBefore($("#toggleDetails"));
         this.createWTIDSelectBox();
         this.createNameSelectBox();
+        $("#wtidGo").hide();
+        switchButton.on("click", () => {
+            $("#wtidGo").toggle();
+            $("#nameSelect").toggle();
+        });
     }
 
     createWTIDSelectBox() {
@@ -1602,7 +1611,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         // Add this to #controls (before #helpButton) and set it to work like the search input.
         // This is to replace the searchInput.
-        selectBox.insertBefore($("#toggleDetails"));
+        selectBox.prependTo($("#nameSelects"));
         selectBox.change(function () {
             if (this.value) {
                 $this.handleSearch(this.value);
@@ -1643,7 +1652,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             selectBoxName.append(`<option value='${individual.wtid}'>${individual.name} ${individual.dates}</option>`);
         });
 
-        selectBoxName.insertBefore($("#toggleDetails"));
+        selectBoxName.prependTo($("#nameSelects"));
         selectBoxName.change(function () {
             if (this.value) {
                 $this.handleSearch(this.value);
@@ -1707,7 +1716,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(
             "#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#treesButtons,#locationSelects"
         ).show();
-        this.createSelectBoxes();
+        this.createNameSelectBoxes();
         this.showStatistics();
 
         this.hideLoadingBar();
@@ -2533,6 +2542,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
+    /*
     addLocationSelectBoxes(locationStats) {
         const $this = this;
         $("#locationSelects").remove();
@@ -2593,6 +2603,74 @@ window.OneNameTrees = class OneNameTrees extends View {
                 setTimeout(function () {
                     $this.loadTableWithFilter(value, "birthPlace");
                 }, 0);
+            }
+        });
+    }
+*/
+
+    addLocationSelectBoxes(locationStats) {
+        const $this = this;
+        // Ensure removal of existing elements to avoid duplicates.
+        $("#locationSelects").remove();
+
+        // Create the container for the select box and the switch button.
+        const $locationSelects = $("<div>", { id: "locationSelects" });
+        $("#toggleGeneralStats").after($locationSelects);
+
+        // Extract and prepare the location data.
+        const locations = locationStats.locationCounts;
+        const sortedLocationsByCount = Object.entries(locations)
+            .sort((a, b) => b[1].count - a[1].count) // Make sure to access the count correctly for sorting.
+            .map(([location, data]) => ({ location, count: data.count })); // Ensure data.count is correctly accessed.
+        const sortedLocationsAlphabetically = [...sortedLocationsByCount].sort((a, b) =>
+            a.location.localeCompare(b.location)
+        );
+
+        // Initialize the select box with an id.
+        const $locationSelect = $("<select>", { id: "locationSelect" });
+        $locationSelects.append($locationSelect);
+
+        // Function to populate the select box.
+        function populateSelectBox(locationsArray, order) {
+            let orderText = "";
+            if (order === "a-z") {
+                orderText = " (A-Z)";
+            }
+
+            $locationSelect.empty(); // Clear existing options.
+            $locationSelect.append($("<option>").text(`Location${orderText}`).val("")); // Default option.
+            locationsArray.forEach(({ location, count }) => {
+                $locationSelect.append($("<option>").text(`${location} (${count})`).val(location));
+            });
+        }
+
+        // Populate initially with locations sorted by count.
+        populateSelectBox(sortedLocationsByCount);
+
+        // Create the switch button for toggling the sort order.
+        const $switchButton = $("<button>", {
+            id: "locationSelectsSwitchButton",
+            text: "⇆",
+            title: "Switch between sort orders",
+        }).on("click", function () {
+            // Determine the current sorting order to toggle.
+            const isSortedByCount = $locationSelect
+                .find("option:nth-child(2)")
+                .text()
+                .includes("(" + sortedLocationsByCount[0].count + ")");
+            if (isSortedByCount) {
+                populateSelectBox(sortedLocationsAlphabetically, "a-z");
+            } else {
+                populateSelectBox(sortedLocationsByCount, "count");
+            }
+        });
+        $locationSelects.append($switchButton);
+
+        // Event listener for the select box.
+        $locationSelect.on("change", function () {
+            const selectedValue = $(this).val();
+            if (selectedValue && !selectedValue.match(/^Select Location$/)) {
+                // Action for the selected location.
             }
         });
     }
