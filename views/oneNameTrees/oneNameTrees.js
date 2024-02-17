@@ -2105,7 +2105,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
         $("#tableViewButton").removeClass("on");
         $(
-            ".duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton"
+            ".duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
         )
             .off()
             .remove();
@@ -2178,6 +2178,72 @@ window.OneNameTrees = class OneNameTrees extends View {
         const maxCountries = 3; // Maximum countries to show initially
         const maxLocations = 5; // Maximum locations to show initially within each country
 
+        // Recursive function to generate HTML for subdivisions and any nested subdivisions
+        const generateSubdivisionsHTML = (subdivisions, isVisibleLimit) => {
+            let $subdivisionList = $("<ul class='locationSubdivision'>");
+            subdivisions
+                .filter(([key, _]) => key !== "count" && key !== "")
+                .sort((a, b) => b[1].count - a[1].count)
+                .forEach(([subdivision, subData], index) => {
+                    const isVisible = index < isVisibleLimit;
+                    const countButton = this.locationCountButton(subdivision, subData.count);
+                    let $subItem = $("<li>")
+                        .append(`<span class="locationPart">${subdivision}</span> (${countButton})`)
+                        .toggle(isVisible);
+
+                    // Check if there are further nested subdivisions
+                    let nestedSubdivisions = Object.entries(subData).filter(([key, _]) => !["count", ""].includes(key));
+                    if (nestedSubdivisions.length > 0) {
+                        $subItem.addClass("expandable");
+                        let $nestedList = generateSubdivisionsHTML(nestedSubdivisions, isVisibleLimit); // Recursive call
+                        $subItem.append($nestedList.hide());
+                    }
+                    $subdivisionList.append($subItem);
+                });
+
+            if (subdivisions.length > isVisibleLimit) {
+                this.addToggleMoreLessButton($subdivisionList, isVisibleLimit);
+            }
+
+            return $subdivisionList;
+        };
+
+        let countriesSorted = Object.entries(locationStats.countryCounts)
+            .sort((a, b) => b[1] - a[1])
+            .filter(([country, _]) => country !== "");
+
+        countriesSorted.forEach(([country, countryCount], countryIndex) => {
+            const isCountryVisible = countryIndex < maxCountries;
+            const countButton = this.locationCountButton(country, countryCount);
+            let $countryDiv = $("<div class='country'>")
+                .html(`<span class="locationPart">${country}</span> (${countButton})`)
+                .toggle(isCountryVisible);
+
+            let subdivisions = locationStats.subdivisionCounts[country];
+            if (subdivisions) {
+                let subdivisionEntries = Object.entries(subdivisions);
+                let $subdivisionList = generateSubdivisionsHTML(subdivisionEntries, maxLocations);
+                $countryDiv.append($subdivisionList);
+            }
+
+            $locationDiv.append($countryDiv);
+        });
+
+        if (countriesSorted.length > maxCountries) {
+            this.addToggleMoreCountriesButton($locationDiv, maxCountries);
+        }
+
+        return $locationDiv;
+    }
+
+    /*
+    generateLocationHTML(locationStats) {
+        console.log("generateLocationHTML", locationStats);
+
+        let $locationDiv = $("<div class='commonLocations'>");
+        const maxCountries = 3; // Maximum countries to show initially
+        const maxLocations = 5; // Maximum locations to show initially within each country
+
         let countriesSorted = Object.entries(locationStats.countryCounts)
             .sort((a, b) => b[1] - a[1])
             .filter(([country, _]) => country !== "");
@@ -2227,6 +2293,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         return $locationDiv;
     }
+*/
 
     addToggleMoreLessButton($list, maxItems) {
         let $showMore = $("<li class='showMore locationToggler'>")
