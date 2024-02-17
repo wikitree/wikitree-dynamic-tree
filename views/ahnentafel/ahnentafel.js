@@ -124,10 +124,10 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             $(".highlightedClick").removeClass("highlightedClick");
 
             if (isActive) {
-                $(".ahnentafelPerson, .ahnentafelPersonShort").slideDown();
+                $(".ahnentafelPerson, .ahnentafelPersonShort").show();
                 this.navigateChange(-1); // Undo the last change
             } else {
-                $(".generationContainer").slideDown();
+                $(".generationContainer").show();
                 $(".toggleButton").removeClass("collapsed");
                 const ahnentafelNumber = clickedButton.data("ahnentafel");
                 clickedButton.addClass("active");
@@ -904,7 +904,15 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         // Birth details
         if (person.BirthDate || person.BirthLocation) {
             const birthDate = person.BirthDate ? this.formatDate(person.BirthDate) : "";
-            const inOn = birthDate.match(/^\d+$/) ? "in" : "on"; // If only a year is present, use 'in'
+            let inOn = birthDate.match(/^\d+$/) ? "in" : "on"; // If only a year is present, use 'in'
+            if (person?.DataStatus?.BirthDate === "guess") {
+                inOn = "about";
+            } else if (person?.DataStatus?.BirthDate === "before") {
+                inOn = "before";
+            } else if (person?.DataStatus?.BirthDate === "after") {
+                inOn = "after";
+            }
+
             birthDetails = `<span class='birthDetails dataItem'>Born ${
                 person.BirthLocation ? `in ${person.BirthLocation} ` : ""
             }${birthDate ? `${inOn} ${birthDate}` : ""}.</span>`;
@@ -914,7 +922,16 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if ((person.DeathDate && person.DeathDate !== "0000-00-00") || person.DeathLocation) {
             const deathDate =
                 person.DeathDate && person.DeathDate !== "0000-00-00" ? this.formatDate(person.DeathDate) : "";
-            const inOn = deathDate.match(/^\d+$/) ? "in" : "on"; // If only a year is present, use 'in'
+            let inOn = deathDate.match(/^\d+$/) ? "in" : "on"; // If only a year is present, use 'in'
+
+            if (person?.DataStatus?.DeathDate === "guess") {
+                inOn = "about";
+            } else if (person?.DataStatus?.DeathDate === "before") {
+                inOn = "before";
+            } else if (person?.DataStatus?.DeathDate === "after") {
+                inOn = "after";
+            }
+
             deathDetails = `<span class='deathDetails dataItem'>Died ${
                 person.DeathLocation ? `in ${person.DeathLocation} ` : ""
             }${deathDate ? `${inOn} ${deathDate}` : ""}.</span>`;
