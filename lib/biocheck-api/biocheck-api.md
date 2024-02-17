@@ -14,7 +14,8 @@ Could be a profile obtained via the API in the app
 or could be a profile in the WikiTree Browser Extension.
 Only contains a subset of the complete set of data available.
 Expects the profile to contain the following fields from the API:
-Id,Name,IsLiving,Privacy,Manager,BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
+Id,Name,IsLiving,Privacy,Manager,IsMember,
+BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
 FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 
 ### canUse
@@ -77,6 +78,12 @@ Returns **[String][7]** manager Id
 Get WikiTree link
 
 Returns **[String][7]** link to the WikiTree person
+
+### isMember
+
+Is profile for a member
+
+Returns **[Boolean][6]** true if profile for a member
 
 ### getPrivacy
 
@@ -175,6 +182,10 @@ along with information about the bio. Provides methods to parse and validate.
 
 *   `theSourceRules`  {SourceRules} source rules for validating sources
 
+### applyPre1700ToAll
+
+Treat all profiles as Pre-1700
+
 ### parse
 
 Parse contents of the bio.
@@ -193,9 +204,9 @@ Information about the biography style can be accessed via get methods.
 
 Validate contents of bio
 
-Returns **[Boolean][6]** true if sources found. Returns false for empty bio, a profile
-with no dates, or a profile that has an Unsourced Research Notes Box or is in
-an Unsourced category.
+Returns **[Boolean][6]** true if profile looks good, else false.
+Returns false a profile that appears unsourced (is ?), a profile with an empty bio, a profile with no dates,
+or a profile that has an Unsourced Research Notes Box or is in an Unsourced category.
 
 ### validateSourcesStr
 
@@ -341,6 +352,12 @@ does bio have acknowledgements before sources
 
 Returns **[Boolean][6]** true if bio has acknowledgements before sources
 
+### hasSectionAfterAdvanceDirective
+
+does bio have section after advance directive
+
+Returns **[Boolean][6]** true if bio has section heading after advance directive
+
 ### hasUnknownSection
 
 does bio have unknown section headings
@@ -433,6 +450,16 @@ Determine if a line is a valid acknowledgements heading
 *   `line` **[String][7]** to test
 
 Returns **[Boolean][6]** true if acknowledgements heading else false
+
+### isAdvanceDirective
+
+Determine if a line is a valid advance directive heading
+
+#### Parameters
+
+*   `line` **[String][7]** to test
+
+Returns **[Boolean][6]** true if advance directive heading else false
 
 ### isResearchNoteBox
 
@@ -530,6 +557,37 @@ Determine if line by itself is an invalid source
 *   `line` **[String][7]** input source string
 
 Returns **[Boolean][6]** true if invalid source else false
+
+### removeInvalidSourcePart
+
+Remove a string that by itself on a line is not a valid source
+
+#### Parameters
+
+*   `line` **[String][7]** the line to check
+
+Returns **[String][7]** line with any invalid sources removed
+
+### removeInvalidSourcePartTooOld
+
+Remove a string that by itself on a line is not a valid source
+for too old to remember
+
+#### Parameters
+
+*   `line` **[String][7]** the line to check
+
+Returns **[String][7]** line with any invalid sources removed
+
+### removeInvalidSourcePartPre1700
+
+Remove a string that by itself on a line is not a valid source Pre1700
+
+#### Parameters
+
+*   `line` **[String][7]** the line to check
+
+Returns **[String][7]** line with any invalid sources removed
 
 ### isInvalidPartialSource
 

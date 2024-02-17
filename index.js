@@ -49,6 +49,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
         "timeline": new TimelineView(),
         "fanchart": new FanChartView(),
+        // "fanchart2": new FanChart2View(),
         "fandoku": new FandokuView(),
         "fractal": new FractalView(),
         "ahnentafel": new AhnentafelView(),
@@ -56,11 +57,18 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "webs": new WebsView(),
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
-        "calendar": new calendarView(),
+        "calendar": new CalendarView(),
+        "portraits": new PortraitView(),
         "nameTest": new NameTestView(),
         "cc7": new CC7View(),
         "ale": new ALEView(),
         "descendants": new DescendantsView(),
+        "xtree": new XTreeView(),
+        "familyGroupApp": new FamilyGroupAppView(),
+        "superbig": new SuperBigFamView(),
+
+        "stats": new StatsView(),
+        "wtPlusMaps": new WtPlusMaps(),
     };
 
     for (let key in views) {
@@ -73,3 +81,5 @@ window.addEventListener("DOMContentLoaded", (event) => {
     wtViewRegistry = new ViewRegistry(views, new SessionManager(WikiTreeAPI, loginManager));
     wtViewRegistry.render();
 });
+
+//// "superbig": new SuperBigFamView(),

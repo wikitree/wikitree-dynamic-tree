@@ -53,6 +53,12 @@
  *
  */
 
+// BioCheck initialization - just once
+import("./lib/biocheck-api/src/BioCheckTemplateManager.js").then((bio) => {
+    window.bioCheckTemplateManager = new bio.BioCheckTemplateManager();
+    window.bioCheckTemplateManager.load();
+});
+
 window.View = class View {
     constructor() {
         this.id = null;
@@ -72,6 +78,8 @@ window.View = class View {
     init(container_selector, person_id) {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
+
+    close() {}
 };
 
 window.ViewError = class ViewError extends Error {
@@ -103,6 +111,7 @@ window.ViewRegistry = class ViewRegistry {
     constructor(views, session_manager) {
         this.views = views;
         this.session = session_manager;
+        this.currentView = undefined;
 
         // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
@@ -228,8 +237,21 @@ window.ViewRegistry = class ViewRegistry {
             this.session.saveCookies();
 
             this.clearStatus();
+            if (this.currentView && this.currentView.id != view.id && this.currentView.close) {
+                if (typeof this.currentView.close === "function") {
+                    try {
+                        this.currentView.close();
+                    } catch (err) {
+                        this.showError(
+                            `An error occurred when closing the previous view (${this.currentView.id}). You can ignore this, or please report it in G2G): ${err.message}`
+                        );
+                        this.hideInfoPanel();
+                    }
+                }
+            }
 
             try {
+                this.currentView = view;
                 view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
             } catch (err) {
                 // If we have an unhandleable error from a view, display the error message and hide away
@@ -240,7 +262,15 @@ window.ViewRegistry = class ViewRegistry {
         } else {
             infoPanel.classList.add("hidden");
             if (wtID) {
-                this.showError(`Person not found for WikiTree ID ${wtID}.`);
+                const status = data[0]["status"];
+                if (["Illegal WikiTree ID", "Invalid user"].includes(status)) {
+                    this.showError(`Person not found for WikiTree ID ${wtID}.`);
+                } else {
+                    const help = status.toLowerCase().includes("limit exceeded")
+                        ? "Wait a minute and retry, otherwise wait an hour and retry."
+                        : " Refreshing the page might help.";
+                    this.showError(`An unexpected error occurred: ${status}.${help}`);
+                }
             } else {
                 this.showError("Please enter a WikiTree ID.");
             }

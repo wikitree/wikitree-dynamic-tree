@@ -97,14 +97,21 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // returns the HTML necessary to create the Settings DIV that matches the SettingsOptionsObject that was just created
     // input --> data is the object passed through from the Dynamic View that needs the settings
     createSettingsDIV(data) {
+        const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16.19 2H7.81C4.17 2 2 4.17 2 7.81V16.18C2 19.83 4.17 22 7.81 22H16.18C19.82 22 21.99 19.83 21.99 16.19V7.81C22 4.17 19.83 2 16.19 2ZM15.36 14.3C15.65 14.59 15.65 15.07 15.36 15.36C15.21 15.51 15.02 15.58 14.83 15.58C14.64 15.58 14.45 15.51 14.3 15.36L12 13.06L9.7 15.36C9.55 15.51 9.36 15.58 9.17 15.58C8.98 15.58 8.79 15.51 8.64 15.36C8.35 15.07 8.35 14.59 8.64 14.3L10.94 12L8.64 9.7C8.35 9.41 8.35 8.93 8.64 8.64C8.93 8.35 9.41 8.35 9.7 8.64L12 10.94L14.3 8.64C14.59 8.35 15.07 8.35 15.36 8.64C15.65 8.93 15.65 9.41 15.36 9.7L13.06 12L15.36 14.3Z" fill="red"/>
+        </svg>`;
+        // ORIGINAL FILL COLOUR AT END OF PATH:  #292D32
+
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
-            '.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '.cancelSettings();">' +
+            SVGbtnCLOSE +
+            "</A></span>" +
             this.createULelements(data) +
-            '<br />    <div align="center">      <div id="status"></div>      <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>';
-        ("</div>");
+            '<br />    <div align="center">     <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>' +
+            "</div></div>";
 
         return theDIVhtml;
     }
@@ -266,8 +273,40 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
                 let breakElement = document.createElement("br");
                 tabPanelElement.appendChild(breakElement);
-                let breakElement2 = document.createElement("br");
-                tabPanelElement.appendChild(breakElement2);
+
+                if (tab.help) {
+                    // add it right away
+                } else {
+                    // otherwise, add an extra line break here
+                    let breakElement2 = document.createElement("br");
+                    tabPanelElement.appendChild(breakElement2);
+                }
+            }
+
+            if (tab.help) {
+                const SVGbtnHELP = `<svg fill="#006600" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    width="16" height="16" viewBox="0 0 95.334 95.334"
+                    xml:space="preserve">
+                <g>
+                    <path d="M47.667,0C21.341,0,0.001,21.341,0.001,47.667s21.34,47.667,47.666,47.667s47.666-21.341,47.666-47.667S73.993,0,47.667,0z
+                        M53.015,83.251c0,0.854-0.693,1.548-1.549,1.548h-7.611c-0.855,0-1.549-0.693-1.549-1.548v-6.838c0-0.854,0.693-1.548,1.549-1.548
+                        h7.611c0.855,0,1.549,0.693,1.549,1.548V83.251z M61.342,50.376c-4.519,3.867-8.085,6.919-8.256,16.878
+                        c-0.015,0.846-0.704,1.521-1.548,1.521h-7.742c-0.415,0-0.813-0.166-1.104-0.461c-0.291-0.297-0.451-0.696-0.445-1.11
+                        c0.229-14.946,7.059-20.792,12.046-25.06c3.817-3.269,5.366-4.755,5.366-8.772c0-6.617-5.383-12-11.999-12
+                        c-6.358,0-11.62,4.969-11.979,11.313c-0.047,0.819-0.726,1.46-1.546,1.46h-7.75c-0.421,0-0.822-0.17-1.114-0.473
+                        c-0.292-0.303-0.448-0.71-0.434-1.13c0.444-12.341,10.47-22.008,22.823-22.008c12.593,0,22.837,10.245,22.837,22.837
+                        C70.497,42.54,65.421,46.885,61.342,50.376z"/>
+                </g>
+                </svg>`;
+                let helpElement = document.createElement("div");
+                helpElement.innerHTML = "<A target='helpDoc' href='" + tab.help + "'>" + SVGbtnHELP + "</A>";
+                helpElement.className = "alignRight";
+                tabPanelElement.appendChild(helpElement);
+
+                // let breakElement = document.createElement("br");
+                // tabPanelElement.appendChild(breakElement);
+                // let breakElement2 = document.createElement("br");
+                // tabPanelElement.appendChild(breakElement2);
             }
 
             // Add select for the subsections, we do this even if there is only one subsection
@@ -394,19 +433,15 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             indentText += "_";
                         }
                         let indentTextNode = document.createElement("label");
-                        indentTextNode.innerText = (indentText);
+                        indentTextNode.innerText = indentText;
                         indentTextNode.style.color = "aliceblue";
-                        labelElement.append(indentTextNode);                        
+                        labelElement.append(indentTextNode);
                     }
-
 
                     labelElement.appendChild(optionElement);
                     labelElement.appendChild(labelTextNode);
 
                     optionDivElement.appendChild(labelElement);
-                    
-                    
-
                 } else if (option.type == "radio") {
                     optionElement = document.createElement("radio");
 
@@ -461,6 +496,27 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 let optionLabelTextNode = document.createTextNode(" " + value.text);
                                 labelElement.appendChild(optionLabelTextNode);
                             }
+
+                            if (value.addOtherTextField === true) {
+                                // console.log("ADD AN OTHER TEXT FIELD RIGHT HERE !!!");
+
+                                let otherElement = document.createElement("input");
+                                otherElement.type = "text";
+                                otherElement.id = fullOptionName + "_otherValue";
+                                // otherElement.className = "optionNumber";
+                                if (value.maxLength && value.maxLength > 0) {
+                                    otherElement.size = value.maxLength * 1.0 + 1;
+                                    otherElement.maxlength = value.maxLength;
+                                }
+                                if (option.defaultOtherValue) {
+                                    otherElement.value = option.defaultOtherValue;
+                                } else if (value.otherValue) {
+                                    otherElement.value = value.otherValue;
+                                }
+                                otherElement.style.padding = "2px";
+
+                                labelElement.appendChild(otherElement);
+                            }
                         }
                     }
                     optionDivElement.appendChild(labelElement);
@@ -508,9 +564,14 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     optionElement = document.createElement("input");
                     optionElement.type = "text";
                     // optionElement.className = "optionNumber";
+                    if (option.maxLength && option.maxLength > 0) {
+                        optionElement.size = option.maxLength * 1.0 + 1;
+                        optionElement.maxlength = option.maxLength;
+                    }
                     if (option.defaultValue) {
                         optionElement.value = option.defaultValue;
                     }
+                    optionElement.style.padding = "2px";
 
                     let labelTextNode = document.createTextNode(option.label + ": ");
 
@@ -628,9 +689,9 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
             } else {
                 // radio buttons each have their own unique ID, so they are numbered
-                // NOTE:  Currently there is a hard cap of 10 on # of radio button options
+                // NOTE:  Currently there is a hard cap of 12 on # of radio button options
                 // This arbitrary number might need to be adjusted
-                // - but - one wonders if you need more than 10 options, you may need to rethink your parameters
+                // - but - one wonders if you need more than 12 options, you may need to rethink your parameters
                 thisSettingObj = document.getElementById(setting + "_radio1");
 
                 let currCounter = 1;
@@ -639,7 +700,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     if (thisSettingObj.checked == true) {
                         thisVal = thisSettingObj.value;
                     } else {
-                        while (currCounter < 10 && thisVal == "?") {
+                        while (currCounter < 12 && thisVal == "?") {
                             currCounter++;
                             thisSettingObj = document.getElementById(setting + "_radio" + currCounter);
                             if (thisSettingObj) {
@@ -649,6 +710,15 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             }
                         }
                     }
+                }
+                // CHECK for OTHER VALUE text field trailing at the end of a set of Radio Button options
+                let thisSettingObjOtherValue = document.getElementById(setting + "_otherValue");
+                if (thisSettingObjOtherValue) {
+                    let otherVal = thisSettingObjOtherValue.value;
+                    if (theCurrentSettings[setting + "_otherValue"] != otherVal) {
+                        settingsChanged = true;
+                    }
+                    theCurrentSettings[setting + "_otherValue"] = otherVal;
                 }
             }
             if (thisVal != "?") {

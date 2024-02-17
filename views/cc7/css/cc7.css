@@ -35,27 +35,21 @@ div.cc7Table ul {
   margin-bottom: 1em;
 }
 
+div.cc7Table button[disabled] {
+  background-color: gray;
+}
+
 img.familyHome,
 img.privacyImage,
 img.timelineButton {
-  height: 1em;
+  height: 15px;
 }
+.cc7Table .bioIssue,
 img.familyHome,
 img.timelineButton {
   cursor: pointer;
 }
 
-#peopleTable.wide {
-  white-space: nowrap;
-  table-layout: auto;
-}
-div.cc7Table #buttonBox button:active {
-  background: lightgreen;
-  box-shadow: 1px 1px 1px #ccc;
-}
-div.cc7Table #spLocationFilterLabel {
-  display: none;
-}
 div.cc7Table #tree {
   display: block;
   height: 5em;
@@ -64,6 +58,7 @@ div.cc7Table #tree {
   width: 5em;
   margin: auto;
 }
+.cc7Table .bioReport,
 .cc7Table .familySheet,
 .cc7Table .timeline {
   background: white;
@@ -77,19 +72,10 @@ div.cc7Table #tree {
   white-space: nowrap;
   z-index: 10000;
 }
-.peopleTable a:link,
-.peopleTable a:visited {
-  text-decoration: none;
+.cc7Table .bioReport {
+  white-space: normal;
 }
-#peopleTable td {
-  padding: 0.2em;
-}
-#peopleTable td.aDate {
-  white-space: nowrap;
-}
-#peopleTable th {
-  text-align: left;
-}
+.bioReport.wrap,
 .timeline.wrap,
 .familySheet.wrap {
   width: 80%;
@@ -98,7 +84,6 @@ div.cc7Table #tree {
 .cc7Table .timeline {
   height: auto;
   width: auto;
-  /* z-index: 4000; */
 }
 .timelineTable td {
   padding: 0.1em;
@@ -116,6 +101,7 @@ th.tlBioAge {
 .tlDate {
   white-space: nowrap;
 }
+.bioReport x,
 .timeline x,
 .familySheet x {
   position: absolute;
@@ -125,6 +111,7 @@ th.tlBioAge {
   cursor: pointer;
   color: red;
 }
+.bioReport w,
 .timeline w,
 .familySheet w {
   position: absolute;
@@ -132,6 +119,9 @@ th.tlBioAge {
   left: 0.5em;
   font-weight: bold;
   cursor: pointer;
+}
+.familySheet .self {
+  font-weight: bold;
 }
 .timelineTable .BioPerson,
 .timelineTable .marriage {
@@ -141,6 +131,10 @@ div.cc7Table .timelineTable {
   width: 98%;
   margin: auto;
 }
+div.cc7Table .bioReportTable ol {
+  margin-left: 2em;
+}
+div.cc7Table .bioReportTable td,
 div.cc7Table .timelineTable td {
   border-top: none;
   border-bottom: none;
@@ -155,14 +149,53 @@ div.cc7Table .timelineTable td {
 .cc7Table p {
   margin: 1em;
 }
+.cc7Table span.none {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background: #c6c6c6;
+  color: white;
+  border: 1px solid #ddd;
+}
+.cc7Table caption {
+  font-family: sans-serif;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: left;
+  padding: 0.5em;
+  background: white;
+  border-top: 1px solid forestgreen;
+  border-bottom: 1px solid forestgreen;
+}
 
 .cc7Table #degreesTable {
-  margin: 1em;
+  margin: 1em 1em 0.5em;
   text-align: right;
 }
 .cc7Table #degreesTable td,
 .cc7Table #degreesTable th {
   padding: 0.3em;
+}
+.cc7Table #ancReport {
+  margin: 0 1em 1em;
+}
+
+.cc7Table #peopleTable.wide {
+  white-space: nowrap;
+  table-layout: auto;
+}
+.cc7Table .peopleTable a:link,
+.cc7Table .peopleTable a:visited {
+  text-decoration: none;
+}
+.cc7Table #peopleTable td {
+  padding: 0.2em;
+}
+.cc7Table #peopleTable td.aDate {
+  white-space: nowrap;
+}
+.cc7Table #peopleTable th {
+  text-align: left;
 }
 .cc7Table #peopleTable td.none {
   background: #c6c6c6;
@@ -185,32 +218,31 @@ div.cc7Table .timelineTable td {
 .cc7Table #peopleTable td.age-at-death {
   text-align: right;
 }
-.cc7Table span.none {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  background: #c6c6c6;
-  color: white;
-  border: 1px solid #ddd;
+.cc7Table span.bioIssue,
+.cc7Table #peopleTable td.bioIssue {
+  border: 2px solid darkorange;
+  background: #ffe270;
 }
-.cc7Table caption {
-  font-family: sans-serif;
-  font-size: 1.2em;
-  font-weight: bold;
-  text-align: left;
-  padding: 0.5em;
-  background: white;
-  border-top: 1px solid forestgreen;
-  border-bottom: 1px solid forestgreen;
+.cc7Table span.bioIssue2,
+.cc7Table #peopleTable td.bioIssue2 {
+  border: 2px solid darkorange;
+}
+.cc7Table span.bioIssue,
+.cc7Table span.bioIssue2 {
+  cursor: default;
+  position: relative;
+  top: -0.4em;
+}
+.cc7Table #peopleTable td.privBio {
+  text-align: center;
+  vertical-align: middle;
 }
 
 .cc7Table table#peopleTable {
   border-collapse: separate;
   border-spacing: 3px;
   margin-top: 1em;
-}
-.cc7Table #peopleTable td {
-  padding: 0.4em;
+  background: white;
 }
 .cc7Table #peopleTable td.number {
   text-align: center;
@@ -220,19 +252,16 @@ div.cc7Table .timelineTable td {
   top: 0;
   background: white;
 }
-.cc7Table #peopleTable img.diedYoungImg {
-  float: right;
+.cc7Table #peopleTable td.diedYoung {
+  padding: 0;
 }
-.cc7Table td.diedYoung {
-  background: url("../images/diedYoung.png") top right no-repeat;
+.cc7Table #peopleTable td.diedYoung img {
+  height: 1.8em;
+  vertical-align: middle;
 }
-.cc7Table ul#key {
-  display: block;
-  border: none;
-}
-.cc7Table ul#key li {
-  width: auto;
-  cursor: default;
+
+.cc7Table #settingsDIV {
+  z-index: 10000;
 }
 
 .cc7Table #explanation {
@@ -247,7 +276,7 @@ div.cc7Table .timelineTable td {
   margin: 1em auto;
   background: white;
   box-shadow: 1em 1em 1em grey;
-  z-index: 11000;
+  z-index: 10000;
 }
 #explanation:hover {
   cursor: grab;
@@ -278,19 +307,23 @@ div.cc7Table .timelineTable td {
   cursor: pointer;
   color: red;
 }
+.cc7Table #explanation h3 {
+  font-size: 1.3em;
+  margin-bottom: 0.5em;
+}
+.cc7Table #explanation h4 {
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+}
+.cc7Table #explanation ul {
+  margin-left: 35px;
+}
 
 div.cc7Table {
   background: white;
   min-width: 650px;
 }
 
-#peopleList td,
-#peopleList th {
-  padding: 1px 1em 1px 1px;
-}
-#peopleList li a {
-  font: 1.2em;
-}
 span.death,
 span.birth {
   display: block;
@@ -300,186 +333,97 @@ span.missingText {
   margin-top: 0.3em;
 }
 
-img.familyHome {
-  height: 15px;
-  display: none;
-}
-
-div.cc7Table img.familyHome {
-  height: 15px;
-  display: inline;
-}
-#peopleList {
-  display: none;
-}
-.birthDate,
-.deathDate,
-.relationCell {
+.cc7Table .birthDate,
+.cc7Table .deathDate,
+.cc7Table .relationCell {
   white-space: nowrap;
-}
-#cousinsLabel,
-#ancestorsLabel,
-#getPeopleButton {
-  margin-left: 1em;
-  white-space: nowrap;
-  margin-bottom: 1em;
 }
 #getPeopleButton {
   width: 7em;
   text-align: center;
+  margin-left: 1em;
+  margin-right: 0.5em;
+  white-space: nowrap;
+  margin-bottom: 1em;
 }
-#status #getPeopleButton.small.button {
-  width: 10em;
+#cc7Degree {
+  width: 2.5em;
+  min-width: 2.5em;
+  margin-right: 0.5em;
+}
+#cc7Degree option {
   text-align: center;
 }
-#loginForm {
-  margin-top: 1em;
-  margin-left: 0.5em;
-  display: inline-block;
-}
-#wtLogo {
-  float: left;
+#getDegreeButton {
+  margin-right: 20px;
 }
 
 div.cc7Table select,
 div.cc7Table input {
   padding: 0.3em;
   width: auto;
-  min-width: 90px;
   padding-right: 1em;
   background-size: 1em 2em;
 }
-#peopleList {
-  margin-left: 0.5em;
-  margin-bottom: 1em;
-  padding: 0.5em;
+#cc7Subset {
+  margin-left: 1em;
+  min-width: 3em;
+  padding-right: 1.5em;
 }
-#peopleList th {
-  text-align: left;
-  white-space: nowrap;
+#cc7PBFilter {
+  min-width: 1em;
 }
-#peopleList tr {
-  padding: 0.2em;
-  border-bottom: 1px solid gray;
+div.cc7Table #settingsDIV input[type="radio"] {
+  min-width: 40px;
 }
 
-td.actions img,
-#key img,
-.key img {
+#wideTableButton {
+  margin-left: 0.5em;
+}
+.cc7Table #adminButtons {
+  float: right;
+}
+.cc7Table #settingsButton img {
+  width: 1.5em;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.cc7Table #help {
+  background: #393a3c;
+  color: #fff;
+  font-size: 12pt;
+  font-weight: bold;
+  vertical-align: middle;
+  padding: 1.6pt 5pt;
+  border: 0.2em;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.cc7Table #cc7ImgKey {
+  display: block;
+  border: none;
+  list-style: none;
+  display: block;
+  padding: 0 0.5em 0 0.5em;
+}
+.cc7Table #cc7ImgKey li {
+  width: auto;
+  display: inline-block;
+  margin: 0;
+  padding: 3px 2px 2px 3px;
+}
+#cc7ImgKey img {
   width: 20px;
   height: 20px;
   margin-right: 2px;
 }
-#wideTableButton {
-  margin-left: 0.5em;
-}
-#help {
-  background: #393a3c;
-  color: #fff;
-  font-size: 0.8em;
-  padding: 0.1em 0.5em;
-  border: 0.2em;
-  border-radius: 50%;
-  float: right;
-  font-weight: bold;
-  cursor: pointer;
-}
-section#formThings {
-  max-width: 45em;
-  margin: 0.5em auto;
-}
-label.missingLabel {
-  margin-left: 1em;
-  display: inline-block;
-}
-label.missingLabel input {
-  width: auto;
-  min-width: auto;
-}
-label.missingLabel {
-  border: 1px solid forestgreen;
-  border-radius: 1em;
-  padding: 0 0.5em;
-}
-#key,
-.key {
-  list-style: none;
-  display: inline-block;
-  margin-bottom: 0;
-}
-#key li,
-.key li {
-  display: inline-block;
-  cursor: pointer;
-}
-.key li {
-  width: 48%;
-}
-.key li.bricks {
-  width: 32%;
-}
-.key {
-  width: 37em;
-  margin: 1em auto;
-  display: block;
-  text-align: center;
-  padding: 0.7em 0.5em 0.3em 0.5em;
-  border: 2px solid forestgreen;
-  border-radius: 1em;
-}
-.key span {
-  position: relative;
-  top: -0.4em;
+.cc7ImgKey span.none {
+  height: 1.3em;
 }
 
-img.missingImg {
-  cursor: pointer;
-}
-img.missingImg:active {
-  border-right: 1px solid forestgreen;
-  border-left: 1px solid forestgreen;
-}
-.key li {
-  border-bottom: 2px solid #fff;
-  border-radius: 1em;
-  padding: 3px 2px 2px 3px;
-}
-.key li.clicked {
-  background: #f7f6f0;
-  border-radius: 1em;
-  border-bottom: 2px solid forestgreen;
-}
-#peopleList tr[data-name=""] td.actions img,
-#peopleList tr[data-name=""] td.actions a {
-  visibility: hidden;
-}
-#peopleList tr[data-name=""] td.actions img.missingImg {
-  visibility: visible;
-}
-#peopleList th.missingChildrenCell,
-#peopleList td.missingChildrenCell,
-#peopleList th.missingSpouseCell,
-#peopleList td.missingSpouseCell,
-#peopleList th.actions,
-#peopleList td.actions {
-  padding-right: 2px;
-  padding-left: 0;
-}
-#peopleList .created,
-#peopleList .touched {
-  display: none;
-  text-align: right;
-}
-#peopleList.wide .created,
-#peopleList.wide .touched {
-  display: table-cell;
-}
 td.degree {
   text-align: center;
   cursor: default;
-}
-div#status {
-  padding: 1em;
 }
 div.cc7Table td {
   border-top: 1px solid gray;
@@ -620,7 +564,6 @@ button.viewButton {
 }
 
 button.viewButton.active {
-  /*background-color: #3c54e1;*/
   background-color: #faae1a;
   color: #25422d;
   font-weight: bold;
@@ -628,17 +571,6 @@ button.viewButton.active {
   box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.1);
 }
 
-#cc7Degree {
-  width: 2.5em;
-  min-width: 2.5em;
-  margin-right: 2em;
-}
-#cc7Degree option {
-  text-align: center;
-}
-#getDegreeButton {
-  margin-right: 0.3em;
-}
 div.degreeView #hierarchyViewButton {
   visibility: hidden;
 }
@@ -710,6 +642,51 @@ div.cc7Table #savePeople {
   font-size: 0.8em;
 }
 
+table tr.cc7filter-row input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.1em;
+  border: 1px solid #aaa;
+  border-radius: 0.25em;
+  font-size: 1em;
+  line-height: 1.5em;
+  margin: 0;
+  background-color: #fff;
+  color: #000;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  -webkit-transition: border-color 0.2s ease-in-out;
+  -moz-transition: border-color 0.2s ease-in-out;
+  transition: border-color 0.2s ease-in-out;
+}
+#clearTableFiltersButton {
+  font-size: 0.8em;
+  padding: 7px 15px;
+  font-size: 0.9em;
+  text-align: center;
+  display: inline-block;
+}
+.cc7filter-row input.numeric-input {
+  width: 2em !important;
+  min-width: auto;
+}
+.cc7filter-row input.date-input {
+  width: 6em !important;
+  min-width: auto;
+}
+
+.cc7filter-row input.text-input {
+  width: 100%;
+}
+
+#cc7Container li.select2-results__option {
+  height: 0.8em;
+  margin-bottom: 0;
+}
+#cc7Container .select2-dropdown {
+  width: 40px !important;
+}
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/

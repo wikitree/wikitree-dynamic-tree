@@ -4,9 +4,11 @@ export class API {
     static GET_PERSON_LIMIT = 1000;
     static PRIMARY_FIELDS = [
         "BirthDate",
+        "BirthDateDecade",
         "BirthLocation",
         "DataStatus",
         "DeathDate",
+        "DeathDateDecade",
         "DeathLocation",
         "Derived.BirthName",
         "Derived.BirthNamePrivate",
@@ -23,21 +25,18 @@ export class API {
         "Mother",
         "Name",
         "Nicknames",
+        "NoChildren",
         // "Photo",
         "Prefix",
+        "Privacy",
         "RealName",
         "Suffix",
     ];
 
-    static async getAncestorData(id, depth, fields = API.PRIMARY_FIELDS) {
-        return WikiTreeAPI.getAncestors(API.APP_ID, id, depth, fields);
-    }
+    static FOR_BIO_CHECK = ["Bio", "IsMember", "Manager"];
 
-    static async getRelatives(ids, fields = API.PRIMARY_FIELDS) {
-        return WikiTreeAPI.getRelatives(API.APP_ID, ids, fields);
-    }
-
-    static async getPeople(ids, ancestors = 0, start = 0, limit = API.GET_PERSON_LIMIT, fields = API.PRIMARY_FIELDS) {
+    static async getPeople(ids, ancestors = 0, start = 0, limit = API.GET_PERSON_LIMIT, withBios = false) {
+        const fields = withBios ? API.PRIMARY_FIELDS.concat(API.FOR_BIO_CHECK) : API.PRIMARY_FIELDS;
         const [status, resultByKey, people] = await WikiTreeAPI.getPeople(API.APP_ID, ids, fields, {
             ancestors: ancestors,
             start: start,
@@ -46,6 +45,6 @@ export class API {
         if (status != "") {
             console.warn(`getpeople returned status: ${status}`);
         }
-        return [resultByKey, people];
+        return [status, resultByKey, people];
     }
 }

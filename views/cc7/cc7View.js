@@ -1,23 +1,40 @@
 import { CC7 } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
-    static #DESCRIPTION =
-        "Loading 7 degrees may take a while (more than a minute) so the default is set to 3. Feel free to change it. " +
-        "Also, degrees of seperation might be shown as larger than actual if there are private profiles in the mix. " +
-        "These private profiles may also result in it not being possible to determine the degree of separation of some " +
-        "profiles, so the latter will be shown with a negative degree." +
-        "Your logged in status (see top right) might influence the number of private profiles.";
+    constructor() {
+        super();
+        this.overflow = undefined;
+    }
+
     meta() {
         return {
             title: "CC7 Views",
-            description: CC7View.#DESCRIPTION,
+            description: CC7.LONG_LOAD_WARNING,
             docs: "",
         };
     }
 
     init(container_selector, person_id) {
-        wtViewRegistry.setInfoPanel(CC7View.#DESCRIPTION);
-        wtViewRegistry.showInfoPanel();
+        // Our view fiddles with the overflow style value of view-container, so we want to reset it to its original
+        // value once the user is done with our view.
+        // However, init() can be called multiple times while the view is active (i.e. everytime the GO button is clicked)
+        // so we save the overflow value only if close() had been called since we last saved it
+        if (!this.overflow) {
+            this.overflow = $("#view-container").css("overflow");
+        }
         const cc7 = new CC7(container_selector, person_id);
     }
+
+    close() {
+        // Another view is about to be activated, retore the original overflow value of view-container
+        $("#view-container").css({
+            overflow: this.overflow,
+        });
+        this.overflow = undefined;
+    }
+};
+
+CC7View.cancelSettings = function () {
+    let theDIV = document.getElementById("settingsDIV");
+    theDIV.style.display = "none";
 };

@@ -1,3 +1,8 @@
+body.descendants #view-container {
+  background: #fcb76e;
+  min-height: auto;
+}
+
 #descendants li {
   list-style-type: none;
   margin: 0;
@@ -13,21 +18,22 @@
 #descendants {
   margin-left: 0;
 }
-#descendants ul {
+#descendants ul.personList {
   display: none; /* Hide the list by default */
 }
 
-#descendants ul.expanded {
+#descendants ul.personList.expanded {
   display: block; /* Show the list when it has the class 'expanded' */
 }
 
-.expanded {
+#descendants .expanded {
   display: block !important;
 }
 #descendants li > .arrow {
   display: inline-block;
   transition: transform 0.3s ease;
   position: absolute;
+  margin-left: -0.3em;
 }
 
 #descendants li > .arrow.rotated {
@@ -54,11 +60,16 @@
 }
 
 #descendantsButtons {
-  margin: 0.2em;
+  margin: 0;
+  padding: 0.2em;
   display: none;
+  top: 0;
+  position: sticky;
+  background-color: #fcb76e;
+  z-index: 100;
 }
 
-button.load-more {
+#descendants button.load-more {
   float: right;
   margin: 0.2em;
 }
@@ -66,11 +77,22 @@ button.load-more {
 #seeUpTo {
   margin: 0.2em;
 }
-#generationSelect {
+body.descendants #generationSelect,
+body.descendants #dateFormatSelect,
+body.descendants #dateDataStatusSelect {
   margin: 0.2em;
   padding: 0.3em 0 0.3em 0.5em;
   width: 6em !important;
   min-width: 6em;
+}
+body.descendants #dateFormatSelect,
+body.descendants #dateDataStatusSelect {
+  padding: 0.3em 0 0.3m 0.1em;
+  width: 14em !important;
+}
+
+body.descendants #generationSelect {
+  width: 18em !important;
 }
 
 #descendants .load-more img {
@@ -82,18 +104,25 @@ button.load-more {
   margin-right: 0.5em;
   vertical-align: middle;
 }
-a.profileLink {
+body.descendants a.profileLink {
   margin-left: 1em;
+  font-size: 1.2em;
+  /*font-weight: bold; */
+  color: navy;
+}
+
+body.descendants a.profileLink:visited {
+  color: navy;
 }
 
 #descendants.hide-Male li.Male {
   display: none;
 }
 
-#descendants.hide-Female li.Male {
+#descendants.hide-Female li.Female {
   display: none;
 }
-#descendants ul {
+#descendants ul.personList {
   margin-left: 1em !important;
 }
 
@@ -103,11 +132,8 @@ a.profileLink {
   border-left: 1px solid #ddd;
   background-color: #f6f6f6;
 }
-
-#descendants dl.bdDatesLocations {
-  font-weight: normal;
-  font-size: 1em;
-  margin: 0.1em;
+#descendants div.fullBiography {
+  cursor: default;
 }
 
 #descendants dl.bdDatesLocations {
@@ -116,9 +142,11 @@ a.profileLink {
     "birthDate birthLocation "
     "deathDate deathLocation ";
   grid-template-columns: 8em 1fr;
-  margin: 0.5em 0.5em 1em 0.5em;
-  padding: 0.5em;
+  margin: 0.2em 0.2em 0.5em 0.2em;
+  padding: 0.3em;
   border: 1px solid #ddd;
+  font-weight: normal;
+  font-size: 1em;
 }
 
 #descendants .bdDatesLocations dd {
@@ -153,17 +181,445 @@ a.profileLink {
   font-weight: bold;
   cursor: pointer;
   color: forestgreen;
+  background: gold;
 }
 #descendants .moreDetailsEye:active {
   font-weight: normal;
   cursor: pointer;
   color: orange;
+  font-size: 0.9em;
 }
 
 #descendants .aContents {
   display: none;
 }
 
-#descendantsButtons #toggleBios {
+#descendants .profilePicture {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 1em;
+  background-color: #f6f6f6;
+  border: 1px solid #ddd;
+  float: left;
+}
+
+#descendants dl.bdDatesLocations:has(a[data-gender="Female"]) {
+  background-color: #fee;
+}
+#descendants dl.bdDatesLocations:has(a[data-gender="Male"]) {
+  background-color: #eef;
+}
+
+#descendants dl a.switch {
+  margin-left: 2em;
+  font-weight: bold;
+  font-size: 1.2em;
+  color: navy;
+}
+
+#descendants li img.dna {
+  margin-left: 0.5em;
+}
+#descendantsButtons button.on {
+  background-color: gold;
+  color: black;
+  border: 1px solid darkorange;
+}
+
+#descendantsButtons button.hideMales {
+  background-color: pink;
+  color: black;
+  border: 1px solid red;
+}
+
+#descendants .load-more {
   display: none;
+}
+#descendantsButtons #showHelp,
+#descendantsButtons button.download {
+  margin-left: 0.2em;
+}
+
+#descendantsButtons #helpEtc {
+  float: right;
+}
+
+#descendantsHelp {
+  display: none;
+  position: absolute;
+  top: 100px;
+  width: 50%;
+  left: 25%;
+  background-color: #f6f6f6;
+  border: 1px solid #ddd;
+  padding: 1em;
+  z-index: 100000;
+  box-shadow: 0 0 1em #ddd;
+  cursor: move;
+}
+
+body.descendants #closeHelp {
+  float: right;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: gold;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0.2em;
+  padding: 0.2em;
+}
+
+#descendantsHelp span.button {
+  padding: 0.2em;
+  margin: 0;
+}
+
+#descendantsHelp h2 {
+  text-align: center;
+}
+
+#descendantsButtons #dateFormat {
+  display: inline-block;
+}
+
+#descendantsButtons label,
+#descendantsHelp label {
+  background-color: #f6f6f6;
+  border: 1px solid #ddd;
+  padding: 0.3em;
+  display: inline-block;
+}
+
+#descendants .birthDeathDetails {
+  display: grid;
+  grid-template-columns: 17em 1fr 17em 1fr;
+  gap: 0.2em; /* Spacing between grid items */
+  margin-left: 1em;
+}
+
+#descendants .birthDeathDate,
+#descendants .birthDeathLocation {
+  padding: 2px;
+}
+
+#descendants .birthDate:not(:empty, .datesOnly .birthDate)::before {
+  content: "b. ";
+}
+#descendants .deathDate:not(:empty, .datesOnly .deathDate)::before {
+  content: "d. ";
+}
+
+#descendants li.person.highlighted {
+  background-color: lightgreen;
+}
+
+#descendants button.collapse {
+  height: 0.8em;
+  width: 2em;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+#descendants li.person.collapsed {
+  height: 0.1em;
+  overflow: hidden;
+}
+#descendants li.person.collapsed *:not(.collapse) {
+  display: none;
+}
+
+body.descendants button {
+  margin-right: 0;
+}
+
+#descendants li.person.hidden {
+  display: none;
+}
+
+#descendants li.person .wtid {
+  font-size: 0.8em;
+  font-weight: normal;
+  color: #666;
+}
+
+#descendants li.person .datesOnly {
+  display: none;
+}
+
+#descendants li.person .aboville {
+  float: right;
+  margin-right: 2em;
+  font-size: 0.8em;
+  font-weight: normal;
+  color: #666;
+  background-color: #f6f6f6;
+  border-radius: 1em;
+  padding: 0 0.5em;
+}
+
+#descendants a.mapsLink {
+  display: inline-block;
+  margin-left: 0.1em;
+  border: 0;
+  width: 12px;
+  height: 11px;
+}
+
+#descendantsButtons button:active {
+  padding-bottom: 6px;
+}
+
+#descendantsButtons fieldset {
+  display: inline-block;
+  margin-bottom: 0.2em;
+}
+
+#descendantsButtons #showBiosLabel {
+  visibility: hidden;
+}
+
+#descendants li.person {
+  border-left: 3px solid #ddd;
+}
+
+#descendants li.person.childOfSpouse_0,
+#descendants dl.spouse dt.spouse_0 {
+  border-left: 3px solid green;
+}
+#descendants li.person.childOfSpouse_1,
+#descendants dl.spouse dt.spouse_1 {
+  border-left: 3px solid red;
+}
+#descendants li.person.childOfSpouse_2,
+#descendants dl.spouse dt.spouse_2 {
+  border-left: 3px solid gold;
+}
+#descendants li.person.childOfSpouse_3,
+#descendants dl.spouse dt.spouse_3 {
+  border-left: 3px solid #f5a9a9;
+}
+#descendants li.person.childOfSpouse_4,
+#descendants dl.spouse dt.spouse_4 {
+  border-left: 3px solid #d0f5a9;
+}
+#descendants li.person.childOfSpouse_5,
+#descendants dl.spouse dt.spouse_5 {
+  border-left: 3px solid #a9f5f2;
+}
+#descendants li.person.childOfSpouse_6,
+#descendants dl.spouse dt.spouse_6 {
+  border-left: 3px solid #e6e6e6;
+}
+#descendants li.person.childOfSpouse_7,
+#descendants dl.spouse dt.spouse_7 {
+  border-left: 3px solid #d0a9f5;
+}
+#descendants li.person.childOfSpouse_8,
+#descendants dl.spouse dt.spouse_8 {
+  border-left: 3px solid #f2f5a9;
+}
+#descendants li.person.childOfSpouse_9,
+#descendants dl.spouse dt.spouse_9 {
+  border-left: 3px solid #f78181;
+}
+#descendants li.person.childOfSpouse_10,
+#descendants dl.spouse dt.spouse_10 {
+  border-left: 3px solid #bef781;
+}
+#descendants li.person.childOfSpouse_11,
+#descendants dl.spouse dt.spouse_11 {
+  border-left: 3px solid #81f7f3;
+}
+#descendants li.person.childOfSpouse_12,
+#descendants dl.spouse dt.spouse_12 {
+  border-left: 3px solid #d8d8d8;
+}
+#descendants li.person.childOfSpouse_13,
+#descendants dl.spouse dt.spouse_13 {
+  border-left: 3px solid #be81f7;
+}
+#descendants li.person.childOfSpouse_14,
+#descendants dl.spouse dt.spouse_14 {
+  border-left: 3px solid #f3f781;
+}
+#descendants li.person.childOfSpouse_15,
+#descendants dl.spouse dt.spouse_15 {
+  border-left: 3px solid #fa5858;
+}
+#descendants li.person.childOfSpouse_16,
+#descendants dl.spouse dt.spouse_16 {
+  border-left: 3px solid #acfa58;
+}
+#descendants li.person.childOfSpouse_17,
+#descendants dl.spouse dt.spouse_17 {
+  border-left: 3px solid #58faf4;
+}
+#descendants li.person.childOfSpouse_18,
+#descendants dl.spouse dt.spouse_18 {
+  border-left: 3px solid #bdbdbd;
+}
+#descendants li.person.childOfSpouse_19,
+#descendants dl.spouse dt.spouse_19 {
+  border-left: 3px solid #ac58fa;
+}
+#descendants li.person.childOfSpouse_20,
+#descendants dl.spouse dt.spouse_20 {
+  border-left: 3px solid #f4fa58;
+}
+#descendants li.person.childOfSpouse_21,
+#descendants dl.spouse dt.spouse_21 {
+  border-left: 3px solid #fe2e2e;
+}
+#descendants li.person.childOfSpouse_22,
+#descendants dl.spouse dt.spouse_22 {
+  border-left: 3px solid #9afe2e;
+}
+#descendants li.person.childOfSpouse_23,
+#descendants dl.spouse dt.spouse_23 {
+  border-left: 3px solid #2efef7;
+}
+#descendants li.person.childOfSpouse_24,
+#descendants dl.spouse dt.spouse_24 {
+  border-left: 3px solid #a4a4a4;
+}
+#descendants li.person.childOfSpouse_25,
+#descendants dl.spouse dt.spouse_25 {
+  border-left: 3px solid #9a2efe;
+}
+#descendants li.person.childOfSpouse_26,
+#descendants dl.spouse dt.spouse_26 {
+  border-left: 3px solid #f7fe2e;
+}
+#descendants li.person.childOfSpouse_27,
+#descendants dl.spouse dt.spouse_27 {
+  border-left: 3px solid #ff0000;
+}
+#descendants li.person.childOfSpouse_28,
+#descendants dl.spouse dt.spouse_28 {
+  border-left: 3px solid #00ffff;
+}
+#descendants li.person.childOfSpouse_29,
+#descendants dl.spouse dt.spouse_29 {
+  border-left: 3px solid #80ff00;
+}
+#descendants li.person.childOfSpouse_30,
+#descendants dl.spouse dt.spouse_30 {
+  border-left: 3px solid #848484;
+}
+#descendants li.person.childOfSpouse_31,
+#descendants dl.spouse dt.spouse_31 {
+  border-left: 3px solid #8000ff;
+}
+#descendants li.person.childOfSpouse_32,
+#descendants dl.spouse dt.spouse_32 {
+  border-left: 3px solid #ffff00;
+}
+#descendants li.person.childOfSpouse_33,
+#descendants dl.spouse dt.spouse_33 {
+  border-left: 3px solid #df0101;
+}
+#descendants li.person.childOfSpouse_34,
+#descendants dl.spouse dt.spouse_34 {
+  border-left: 3px solid #74df00;
+}
+#descendants li.person.childOfSpouse_35,
+#descendants dl.spouse dt.spouse_35 {
+  border-left: 3px solid #01dfd7;
+}
+#descendants li.person.childOfSpouse_36,
+#descendants dl.spouse dt.spouse_36 {
+  border-left: 3px solid #6e6e6e;
+}
+#descendants li.person.childOfSpouse_37,
+#descendants dl.spouse dt.spouse_37 {
+  border-left: 3px solid #7401df;
+}
+#descendants li.person.childOfSpouse_38,
+#descendants dl.spouse dt.spouse_38 {
+  border-left: 3px solid #d7df01;
+}
+#descendants li.person.childOfSpouse_39,
+#descendants dl.spouse dt.spouse_39 {
+  border-left: 3px solid #b40404;
+}
+#descendants li.person.childOfSpouse_40,
+#descendants dl.spouse dt.spouse_40 {
+  border-left: 3px solid #5fb404;
+}
+#descendants li.person.childOfSpouse_41,
+#descendants dl.spouse dt.spouse_41 {
+  border-left: 3px solid #04b4ae;
+}
+#descendants li.person.childOfSpouse_42,
+#descendants dl.spouse dt.spouse_42 {
+  border-left: 3px solid #585858;
+}
+#descendants li.person.childOfSpouse_43,
+#descendants dl.spouse dt.spouse_43 {
+  border-left: 3px solid #5f04b4;
+}
+#descendants li.person.childOfSpouse_44,
+#descendants dl.spouse dt.spouse_44 {
+  border-left: 3px solid #aeb404;
+}
+#descendants li.person.childOfSpouse_45,
+#descendants dl.spouse dt.spouse_45 {
+  border-left: 3px solid #8a0808;
+}
+#descendants li.person.childOfSpouse_46,
+#descendants dl.spouse dt.spouse_46 {
+  border-left: 3px solid #243b0b;
+}
+#descendants li.person.childOfSpouse_47,
+#descendants dl.spouse dt.spouse_47 {
+  border-left: 3px solid #088a85;
+}
+#descendants li.person.childOfSpouse_48,
+#descendants dl.spouse dt.spouse_48 {
+  border-left: 3px solid #424242;
+}
+#descendants li.person.childOfSpouse_49,
+#descendants dl.spouse dt.spouse_49 {
+  border-left: 3px solid #4b088a;
+}
+#descendants li.person.childOfSpouse_50,
+#descendants dl.spouse dt.spouse_50 {
+  border-left: 3px solid #868a08;
+}
+#descendants li.person.childOfSpouse_51,
+#descendants dl.spouse dt.spouse_51 {
+  border-left: 3px solid #4b088a;
+}
+
+#descendantsButtons #checkboxIndicator {
+  width: 0.7em;
+  height: 0.7em;
+  display: inline-block;
+  border: 1px solid #ccc;
+  position: absolute;
+  margin-left: -1.1em;
+  margin-top: 0.3em;
+  background-color: lightgray;
+}
+
+#descendantsButtons #showBios + #checkboxIndicator {
+  visibility: hidden;
+}
+
+#descendantsButtons #showBios.half-checked + #checkboxIndicator {
+  visibility: visible;
+}
+
+#descendants .biography {
+  display: none;
+}
+
+#descendants .biography.visible {
+  display: block;
 }
