@@ -3264,6 +3264,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.log("Submit clicked");
             $this.shakingTree.show();
             $("div.error").remove(); // Remove any existing error messages
+            wtViewRegistry.clearStatus();
 
             let surname = $("#surname").val();
             let location = $("#location").val().trim(); // Get the location from the new input field
