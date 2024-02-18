@@ -21,6 +21,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.familyTreeStatistics = new FamilyTreeStatistics(this.combinedResults);
         this.nameVariants = new Map();
         this.surnameVariants = this.findSurnameVariants(this.surname);
+        this.surnames = [];
         this.shakingTree = $(
             `<img src="views/oneNameTrees/images/tree.gif" alt="Shaking Tree" title="Working" id="dancingTree">`
         );
@@ -589,6 +590,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (!this.nameVariants.size) {
             this.nameVariants = this.retrieveData();
         }
+        if (surname.includes(",")) {
+            this.surnames = surname.split(/,\s*/);
+            return this.surnames;
+        }
         return this.nameVariants.get(surname) || [surname];
     }
 
@@ -608,7 +613,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     clearONSidsCache(surname) {
         // Construct the key prefix to match
-        const prefix = `ONTids_${surname}`;
+        const prefix = `ONTids_${surname.replace(" ", "_").toLowerCase()}`;
 
         // Iterate over all keys in localStorage
         for (const key in localStorage) {
@@ -632,7 +637,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 let accessOrder = localStorage.getItem("accessOrder");
                 accessOrder = accessOrder ? JSON.parse(accessOrder) : [];
 
-                while (accessOrder.length > 0 && error.name === "QuotaExceededError") {
+                while (accessOrder.length > 0 && error?.name === "QuotaExceededError") {
                     const oldestKey = accessOrder.shift(); // Remove the oldest accessed key
                     localStorage.removeItem(oldestKey); // Remove the oldest item
                     localStorage.setItem("accessOrder", JSON.stringify(accessOrder)); // Update the access order in storage
@@ -673,12 +678,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.cancelFetchController.abort();
         }
         $("#refreshData").prop("disabled", false);
+        $("#loadButton").prop("disabled", false);
     }
 
     async getONSids(surname, location) {
         wtViewRegistry.clearStatus();
         this.setNewTitle();
-        let cacheKey = `ONTids_${surname.toLowerCase()}`;
+        let cacheKey = `ONTids_${surname.replace(" ", "_").toLowerCase()}`;
         if (location) {
             cacheKey += `_${location}`;
         }
@@ -695,7 +701,16 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (location) {
             locationBit = `Location%3D"${location.trim().replace(/,/, "%2C").replace(" ", "+")}"+`;
         }
-        const surnameVariants = this.findSurnameVariants(surname);
+        let surnameVariants = this.findSurnameVariants(surname);
+        if (surname.includes(",")) {
+            this.surnames = surname.split(/,\s*/);
+            surnameVariants = this.surnames;
+            surname = this.surnames[0];
+        }
+        if (this.surnames) {
+            this.surnameVariants = this.surnames;
+            surname = this.surnames[0];
+        }
         let query = `${locationBit}LastNameatBirth%3D"${surname}"+OR+${locationBit}CurrentLastName%3D"${surname}"+OR+${locationBit}LastNameOther%3D"${surname}"`;
         if (surnameVariants.length != 0) {
             // Construct the query part for each variant
@@ -758,6 +773,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             if (aborted) {
                 return [true, 0];
             }
+            console.log("People", people);
             const callTime = performance.now() - starttime;
             // const nrProfiles = Object.keys(people).length;
             const nrProfiles = !people
@@ -775,7 +791,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 return [false, profiles];
             }
             if (people && typeof people === "object") {
+                console.log(`Adding ${nrProfiles} profiles to the profiles object`);
                 Object.assign(profiles, people);
+                console.log(`profiles now has ${Object.keys(profiles).length} profiles`);
             } else {
                 console.log(`WTF? people=${people}`, people);
             }
@@ -953,10 +971,12 @@ window.OneNameTrees = class OneNameTrees extends View {
                     return;
                 }
                 if (people && typeof people === "object") {
+                    console.log("People in batch:", people);
+                    console.log("Combined results before:", this.combinedResults);
                     Object.assign(this.combinedResults, people);
                 }
                 processedParents += batchIds.length;
-                // We claim fethcing missing parents is the 2nd half of the work
+                // We claim fetching missing parents is the 2nd half of the work
                 let percentage = (processedParents / totalParents) * 50 + 50;
                 this.updateLoadingBar(percentage);
                 // console.log(`Processed missing parents: ${processedParents}/${totalParents} (${percentage}%)`);
@@ -1014,7 +1034,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                 // console.log("Filtered results:", filteredResults);
             }
         });
-        // console.log("Filtered results:", filteredResults);
+        console.log("Filtered results:", filteredResults);
+        console.log("Filtered results count:", Object.keys(filteredResults).length);
 
         // After batch processing, update the progress bar for additional steps
         processed = ids.length;
@@ -1803,6 +1824,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.hideLoadingBar();
         this.shakingTree.hide();
         $("#refreshData").prop("disabled", false);
+        $("#loadButton").prop("disabled", false);
     }
 
     async arrangeTreeElements() {
@@ -3238,17 +3260,20 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $this = this;
         $("#submit").on("click", async function () {
             $("#refreshData").prop("disabled", true);
+            $("#loadButton").prop("disabled", true);
             console.log("Submit clicked");
             $this.shakingTree.show();
             $("div.error").remove(); // Remove any existing error messages
 
-            // There is a comma, the name is before the first comma. Anything after the first comma is a location.
             let surname = $("#surname").val();
             let location = $("#location").val().trim(); // Get the location from the new input field
 
-            if (surname.includes(",")) {
-                surname = surname.split(",")[0].trim();
-                location = $("#surname").val().split(",").slice(1).join(",").trim();
+            // If surname includes a comma, it's a list of surnames.
+            this.surnames = surname.split(",");
+            if (this.surnames.length > 1) {
+                this.surnames = this.surnames.map((name) => name.trim());
+                // Make this.surnames an array of surnames
+                console.log("this.surnames", this.surnames);
             }
 
             // If surname is blank or includes a number, show an error message and return

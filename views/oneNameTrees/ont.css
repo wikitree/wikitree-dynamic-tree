@@ -85,7 +85,7 @@ header {
 }
 
 .oneNameTrees #results > ul {
-  margin-left: 4.5em !important;
+  margin-left: 4.7em !important;
 }
 
 .oneNameTrees #results ul {
@@ -143,12 +143,12 @@ header {
   font-size: 0.9em;
 }
 .oneNameTrees span.descendantsCount {
-  width: 3em;
+  width: 3.3em;
   font-weight: bold;
   color: #4caf50;
   cursor: default;
   position: absolute;
-  margin-left: -4.7em;
+  margin-left: -4.9em;
   text-align: right;
 }
 .oneNameTrees span.descendantsCountText {
@@ -489,6 +489,11 @@ header {
 .oneNameTrees #table #tableView th,
 .oneNameTrees #table #tableView td {
   padding: 0 0.3em;
+}
+
+.oneNameTrees #view-container {
+  padding: 0.5em;
+  margin: 0.5em;
 }
 
 .oneNameTrees section#table td.date {
