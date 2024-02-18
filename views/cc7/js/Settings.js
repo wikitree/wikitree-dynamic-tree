@@ -27,8 +27,8 @@ export class Settings {
     // commercial projects without attribution"
     static dyIcons = [
         {
-            value: "47px-RTC_-_Pictures.jpeg",
-            text: "IMG:views/cc7/images/47px-RTC_-_Pictures.jpeg",
+            value: "pink-and-blue-ribbon.png",
+            text: "IMG:views/cc7/images/pink-and-blue-ribbon.png",
             width: 30,
         },
         {
@@ -133,7 +133,7 @@ export class Settings {
                         type: "radio",
                         label: "",
                         values: Settings.dyIcons,
-                        defaultValue: "47px-RTC_-_Pictures.jpeg",
+                        defaultValue: "pink-and-blue-ribbon.png",
                     },
                     {
                         optionName: "sect2",
@@ -176,270 +176,376 @@ export class Settings {
                         label: "Section Messages",
                         type: "br",
                     },
-                    // --- Section Messages ---
+                    // The messages below and the regular expressions that match them were obtained by grepping for
+                    // 'Messages.push' in lib/biocheck-api/src/Biography.js and by comparing the result with
+                    //   https://www.wikitree.com/wiki/Space:BioCheckHelp#Required_Sections and
+                    //   https://www.wikitree.com/wiki/Space:BioCheckHelp#Style_Issues
+                    //
+                    // Note that the capitalisation in the latter 2 places cannot be trusted.
+                    //
+                    // --- Required Section Messages ----------------------------------------------
                     {
                         optionName: "ackb4src",
                         type: "checkbox",
                         label: "Acknowledgements before Sources",
                         defaultValue: 0,
+                        re: /^Acknowledgements before/,
                     },
                     {
                         optionName: "acksubsec",
                         type: "checkbox",
                         label: "Acknowledgements not a section",
                         defaultValue: 0,
+                        re: /^Acknowledgements subsection/,
                     },
                     {
                         optionName: "adnotend",
                         type: "checkbox",
                         label: "Advance Directive not at end of profile",
                         defaultValue: 0,
+                        re: /^Advance Directive is not/,
                     },
                     {
                         optionName: "adsubsec",
                         type: "checkbox",
                         label: "Advance Directive not a section",
                         defaultValue: 0,
+                        re: /^Advance Directive subsection/,
                     },
                     {
                         optionName: "bioempty",
                         type: "checkbox",
                         label: "Biography is empty",
                         defaultValue: 0,
+                        re: /^Biography is empty/,
                     },
                     {
                         optionName: "comnoend",
                         type: "checkbox",
                         label: "Comment with no ending",
                         defaultValue: 0,
+                        re: /^Comment with no ending/,
                     },
                     {
                         optionName: "irefafter",
                         type: "checkbox",
                         label: "Inline <ref> tag after <references >",
                         defaultValue: 0,
+                        re: /^Inline <ref> tag after/,
                     },
                     {
                         optionName: "irefnoend",
                         type: "checkbox",
                         label: "Inline <ref> tag with no ending </ref> tag",
                         defaultValue: 0,
+                        re: /^Inline <ref> tag with/,
                     },
                     {
                         optionName: "linesbetween",
                         type: "checkbox",
                         label: "Lines between Sources and <references />",
                         defaultValue: 0,
+                        re: /lines? between Sources/,
                     },
                     {
                         optionName: "munsrc",
                         type: "checkbox",
                         label: "Marked unsourced",
                         defaultValue: 0,
+                        re: /^Profile is marked unsourced$/,
                     },
                     {
                         optionName: "munsrcbut",
                         type: "checkbox",
                         label: "Marked unsourced but may have sources",
                         defaultValue: 0,
+                        re: /^Profile is marked unsourced but/,
                     },
                     {
                         optionName: "maybeunsrc",
                         type: "checkbox",
                         label: "May be unsourced",
                         defaultValue: 0,
+                        re: /^Profile may be/,
                     },
                     {
                         optionName: "misref",
                         type: "checkbox",
                         label: "Missing <references /> tag",
                         defaultValue: 0,
+                        re: /^Missing <references/,
                     },
                     {
                         optionName: "misbio",
                         type: "checkbox",
                         label: "Missing Biography heading",
                         defaultValue: 0,
+                        re: /^Missing Biography/,
                     },
                     {
                         optionName: "missrc",
                         type: "checkbox",
                         label: "Missing Sources heading",
                         defaultValue: 0,
+                        re: /^Missing Sources/,
                     },
                     {
                         optionName: "multiref",
                         type: "checkbox",
                         label: "Multiple <references /> tag",
                         defaultValue: 0,
+                        re: /^Multiple <references/,
                     },
                     {
                         optionName: "multibio",
                         type: "checkbox",
                         label: "Multiple Biography headings",
                         defaultValue: 0,
+                        re: /^Multiple Biography/,
                     },
                     {
                         optionName: "multisrc",
                         type: "checkbox",
                         label: "Multiple Sources headings",
                         defaultValue: 0,
+                        re: /^Multiple Sources/,
                     },
                     {
                         optionName: "nodates",
                         type: "checkbox",
                         label: "Profile has no dates",
                         defaultValue: 0,
+                        re: /^Profile has no dates/,
                     },
                     {
                         optionName: "badsrcs",
                         type: "checkbox",
                         label: "Sources not reliable/clearly identified",
                         defaultValue: 0,
+                        re: /^Bio Check found sources/,
                     },
                     {
                         optionName: "srcsubsec",
                         type: "checkbox",
                         label: "Sources not a section",
                         defaultValue: 0,
+                        re: /^Sources subsection/,
                     },
                     {
                         optionName: "spannoend",
                         type: "checkbox",
                         label: "Span with no end",
                         defaultValue: 0,
+                        re: /^Span with no end/,
                     },
                     {
                         optionName: "stylebr",
                         label: "Style Messages",
                         type: "br",
                     },
-                    // --- Style Messages ---
+                    // --- Style Messages -----------------------------------------
                     {
                         optionName: "adnonmem",
                         type: "checkbox",
                         label: "Advance Directive on non member",
                         defaultValue: 0,
+                        re: /^Advance Directive on a non/,
                     },
                     {
                         optionName: "biohdb4",
                         type: "checkbox",
                         label: "Biography heading before ...",
                         defaultValue: 0,
+                        re: /^Biography heading before/,
                     },
                     {
                         optionName: "brnoend",
                         type: "checkbox",
                         label: "<BR without ending >",
                         defaultValue: 0,
+                        re: /^Biography has <BR/,
+                    },
+                    {
+                        optionName: "ecnbb4",
+                        type: "checkbox",
+                        label: "Easily Confused Box before ...",
+                        defaultValue: 0,
+                        re: /^Easily Confused/,
                     },
                     {
                         optionName: "secempty",
                         type: "checkbox",
                         label: "Empty section",
                         defaultValue: 0,
+                        re: /^Empty Biography section/,
                     },
                     {
                         optionName: "headb4bio",
                         type: "checkbox",
                         label: "Heading before Biography",
                         defaultValue: 0,
+                        re: /^Heading or subheading/,
                     },
                     {
                         optionName: "horizb4bio",
                         type: "checkbox",
                         label: "Horizontal rule before Biography",
                         defaultValue: 0,
+                        re: /^Horizontal rule before/,
                     },
                     {
                         optionName: "bioemail",
                         type: "checkbox",
                         label: "Might contain email address",
                         defaultValue: 0,
+                        re: /^Biography may contain email/,
                     },
                     {
                         optionName: "misrnb",
                         type: "checkbox",
                         label: "Missing Research Note box",
                         defaultValue: 0,
+                        re: /^Missing Research/,
                     },
                     {
-                        optionName: "navbb4",
+                        optionName: "navnb4h",
                         type: "checkbox",
-                        label: "Navigation Box before ...",
+                        label: "Navigation Box not before Biography",
                         defaultValue: 0,
+                        re: /^Navigation.+should be before Biography h/,
                     },
                     {
-                        optionName: "navbnb4",
+                        optionName: "navnb4r",
                         type: "checkbox",
-                        label: "Navigation Box not before ...",
+                        label: "Navigation Box not before Research Note",
                         defaultValue: 0,
+                        re: /^Navigation.+should be before Research Note/,
+                    },
+                    {
+                        optionName: "navnb4p",
+                        type: "checkbox",
+                        label: "Navigation Box not before Project Box",
+                        defaultValue: 0,
+                        re: /^Navigation.+should be before Project Box/,
+                    },
+                    {
+                        optionName: "navnb4s",
+                        type: "checkbox",
+                        label: "Navigation Box not before Succession",
+                        defaultValue: 0,
+                        re: /^Navigation.+should be before.+Navigation/,
+                    },
+                    {
+                        optionName: "navstatus",
+                        type: "checkbox",
+                        label: "Navigation Box status",
+                        defaultValue: 0,
+                        re: /^Navigation.+is/,
                     },
                     {
                         optionName: "nrhtml",
                         type: "checkbox",
                         label: "Not-recommended HTML tag(s)",
                         defaultValue: 0,
+                        re: /^Biography contains HTML/,
                     },
                     {
                         optionName: "pbb4",
                         type: "checkbox",
                         label: "Project Box before ...",
                         defaultValue: 0,
+                        re: /^Project Box before/,
                     },
                     {
                         optionName: "pnb4bio",
                         type: "checkbox",
                         label: "Project ... not before Biography",
                         defaultValue: 0,
+                        re: /^Project:.+should be before B/,
+                    },
+                    {
+                        optionName: "pnb4s",
+                        type: "checkbox",
+                        label: "Project ... not before Succession",
+                        defaultValue: 0,
+                        re: /^Project:.+should be before S/,
                     },
                     {
                         optionName: "rnbb4",
                         type: "checkbox",
                         label: "Research Note Box before ...",
                         defaultValue: 0,
+                        re: /^Research Note Box before/,
                     },
                     {
-                        optionName: "rnbnb4",
+                        optionName: "rnbnb4b",
                         type: "checkbox",
-                        label: "Research Note Box not before ...",
+                        label: "Research Note Box not before Biography",
                         defaultValue: 0,
+                        re: /^Research Note Box:.+should be before B/,
+                    },
+                    {
+                        optionName: "rnbnb4p",
+                        type: "checkbox",
+                        label: "Research Note Box not before Project Box",
+                        defaultValue: 0,
+                        re: /^Research Note Box:.+should be before P/,
+                    },
+                    {
+                        optionName: "rnbnb4s",
+                        type: "checkbox",
+                        label: "Research Note Box not before Succession",
+                        defaultValue: 0,
+                        re: /^Research Note Box:.+should be before S/,
                     },
                     {
                         optionName: "rnbstatus",
                         type: "checkbox",
                         label: "Research Note Box status",
                         defaultValue: 0,
+                        re: /^Research Note Box:.+is.+status/,
                     },
                     {
                         optionName: "stcknabio",
                         type: "checkbox",
                         label: "Sticker not after Biography heading",
                         defaultValue: 0,
+                        re: /^Sticker.+should be after/,
+                    },
+                    {
+                        optionName: "sumb4",
+                        type: "checkbox",
+                        label: "Succession Navigation Box before ...",
+                        defaultValue: 0,
+                        re: /^Succession.+before/,
                     },
                     {
                         optionName: "sumb4",
                         type: "checkbox",
                         label: "Summary Text before ...",
                         defaultValue: 0,
+                        re: /^Summary Text before/,
                     },
                     {
                         optionName: "ulb4bio",
                         type: "checkbox",
                         label: "Unexpected line before ...",
                         defaultValue: 0,
+                        re: /^Unexpected line before/,
                     },
                     {
                         optionName: "ulmore",
                         type: "checkbox",
                         label: "Unexpected line ... more follow",
                         defaultValue: 0,
+                        re: /^Unexpected line.+more/,
                     },
                     {
                         optionName: "wronglvl",
                         type: "checkbox",
                         label: "Wrong level heading",
                         defaultValue: 0,
+                        re: /^Wrong level/,
                     },
                 ],
             },
@@ -489,54 +595,18 @@ export class Settings {
         ],
     };
 
-    // These message were obtained by grepping for 'Messages.push' in lib/biocheck-api/src/Biography.js
-    static reportMatches = [
-        // Section Messages
-        { opt: "ackb4src", re: /^Acknowledgements before/ },
-        { opt: "acksubsec", re: /^Acknowledgements subsection/ },
-        { opt: "adnotend", re: /^Advance Directive is not/ },
-        { opt: "adsubsec", re: /^Advance Directive subsection/ },
-        { opt: "bioempty", re: /^Biography is empty/ },
-        { opt: "comnoend", re: /^Comment with no ending/ },
-        { opt: "irefafter", re: /^Inline <ref> tag after/ },
-        { opt: "irefnoend", re: /^Inline <ref> tag with/ },
-        { opt: "linesbetween", re: /lines? between Sources/ },
-        { opt: "misref", re: /^Missing <references/ },
-        { opt: "misbio", re: /^Missing Biography/ },
-        { opt: "missrc", re: /^Missing Sources/ },
-        { opt: "multiref", re: /^Multiple <references/ },
-        { opt: "multibio", re: /^Multiple Biography/ },
-        { opt: "multisrc", re: /^Multiple Sources/ },
-        { opt: "munsrc", re: /^Profile is marked unsourced$/ },
-        { opt: "munsrcbut", re: /^Profile is marked unsourced but/ },
-        { opt: "maybeunsrc", re: /^Profile may be/ },
-        { opt: "nodates", re: /^Profile has no dates/ },
-        { opt: "badsrcs", re: /^Bio Check found sources/ },
-        { opt: "srcsubsec", re: /^Sources subsection/ },
-        { opt: "spannoend", re: /^Span with no end/ },
-        // Style Messages
-        { opt: "adnonmem", re: /^Advance Directive on a non/ },
-        { opt: "nrhtml", re: /^Biography contains HTML/ },
-        { opt: "brnoend", re: /^Biography has <BR/ },
-        { opt: "biohdb4", re: /^Biography heading before/ },
-        { opt: "bioemail", re: /^Biography may contain email/ },
-        { opt: "secempty", re: /^Empty Biography section/ },
-        { opt: "headb4bio", re: /^Heading or subheading/ },
-        { opt: "horizb4bio", re: /^Horizontal rule before/ },
-        { opt: "misrnb", re: /^Missing Research/ },
-        { opt: "navbb4", re: /^Navigation Box before/ },
-        { opt: "navbnb4", re: /^Navigation.+should be/ },
-        { opt: "pnb4bio", re: /^Project:.+should be/ },
-        { opt: "pbb4", re: /^Project Box before/ },
-        { opt: "rnbb4", re: /^Research Note Box before/ },
-        { opt: "rnbnb4", re: /^Research Note Box:.+should be/ },
-        { opt: "rnbstatus", re: /^Research Note Box:.+is.+status/ },
-        { opt: "stcknabio", re: /^Sticker.+should be after/ },
-        { opt: "sumb4", re: /^Summary Text before/ },
-        { opt: "ulmore", re: /^Unexpected line.+more/ },
-        { opt: "ulb4bio", re: /^Unexpected line before/ },
-        { opt: "wronglvl", re: /^Wrong level/ },
-    ];
+    static collectREs() {
+        // Collect the regular expressions associated with each of the messages in BioCheckOptions above
+        const regExes = [];
+        const bioCheckTab = Settings.optionsDef.optionsGroups.find((el) => el.tab == "biocheck");
+        for (const opt of bioCheckTab.options) {
+            if (opt.re) {
+                regExes.push({ opt: opt.optionName, re: opt.re });
+            }
+        }
+        return regExes;
+    }
+    static reportMatches = Settings.collectREs();
 
     static mustHighlight(bioReport) {
         for (const [msg, subLines] of bioReport) {
@@ -547,9 +617,10 @@ export class Settings {
                     break;
                 }
             }
-            // if the current message did not match any of the flagged messages, it must be highligted
-            // so we don't even have to check the rest. If it did match, we still have to check if any
-            // of the other messages doesn't match
+            // if the current message did not match any of the flagged messages, the bio report must be highligted,
+            // so we don't even have to check the rest of the messages. If the message did match a flagged one,
+            // we still have to check if any of the other messages doesn't match (meaning the report has to be
+            // highlighted because of them).
             if (!hadMatch) return true;
         }
         return false;
@@ -566,7 +637,7 @@ export class Settings {
             }
             Settings.optionsDef.optionsGroups[0].options[1].defaultValue = optionWithDefault(
                 "icons_options_veryYoung",
-                "47px-RTC_-_Pictures.jpeg"
+                "pink-and-blue-ribbon.png"
             );
             Settings.optionsDef.optionsGroups[0].options[3].defaultValue = optionWithDefault(
                 "icons_options_young",

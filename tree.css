@@ -393,6 +393,12 @@ main {
   box-shadow: none;
 }
 
+/* Attempt to make something sticky so it doesn't scroll off the page */
+.stickyDIV {
+  position: sticky;
+  top: 1px;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
