@@ -133,7 +133,7 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young images, <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                The Died Young images, <img height=45px src="./views/cc7/images/pink-and-blue-ribbon.png" /> and
                 <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> by default, are used to flag people
                 (in their Children column) who died under age 5 and under age 16, respectively, provided they had
                 no children. You can change the image by clicking on the settings gear
@@ -632,6 +632,10 @@ export class CC7 {
                 person.Id = id;
                 person.Name = `Private${id}`;
                 person.DataStatus = { Spouse: "", Gender: "" };
+            } else if (!person.Name) {
+                // WT seems not to return Name for some private profiles, even though they do
+                // return a positive id for them, so we just set Name to Id since WT URLs work for both.
+                person.Name = `${id}`;
             }
             if (!window.people.has(id)) {
                 if (id < 0) {
@@ -809,6 +813,14 @@ export class CC7 {
             window.rootId = +resultByKey[wtId]?.Id;
             CC7.populateRelativeArrays();
             const root = window.people.get(window.rootId);
+            let haveRoot = typeof root != "undefined";
+            if (!haveRoot) {
+                wtViewRegistry.showWarning(
+                    `The requested profile (${wtId}) was not returned by WikiTree, so some functionality, ` +
+                        "like the Hierarchy view and ancestor statistics, has been disabled and some filters " +
+                        "will return unexpected results."
+                );
+            }
             const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root, maxWantedDegree);
 
             window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
@@ -824,14 +836,17 @@ export class CC7 {
                         "<tr id='trDeg'><th>Degrees</th></tr>" +
                         "<tr id='trCon'><th>Connections</th></tr>" +
                         "<tr id='trTot'><th>Total</th></tr>" +
-                        `</table><p id="ancReport">Out of ${maxNrPeople} possible direct ancestors in ${
-                            maxWantedDegree + 3
-                        } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
-                            2
-                        )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
-                            (nrDuplicateAncestors / nrDirectAncestors) *
-                            100
-                        ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
+                        '</table><p id="ancReport">' +
+                        (haveRoot
+                            ? `Out of ${maxNrPeople} possible direct ancestors in ${
+                                  maxWantedDegree + 3
+                              } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
+                                  2
+                              )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
+                                  (nrDuplicateAncestors / nrDirectAncestors) *
+                                  100
+                              ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
+                            : "</p>")
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1);
@@ -973,7 +988,7 @@ export class CC7 {
     }
 
     static categoriseProfiles(theRoot, maxWantedDegree) {
-        if (!theRoot) return;
+        if (!theRoot) return [-1, -1];
         const ABOVE = true;
         const BELOW = false;
         const collator = new Intl.Collator();
