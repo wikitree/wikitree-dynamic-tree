@@ -735,7 +735,55 @@ window.OneNameTrees = class OneNameTrees extends View {
         return [false, data];
     }
 
-    async getPeople(ids, options = {}) {
+    async getPeopleViaPagedCalls(ids, options = {}) {
+        let start = 0;
+        let limit = 1000;
+        let callNr = 0;
+        let profiles = {};
+        while (true) {
+            callNr += 1;
+            if (callNr == 1) {
+                console.log(
+                    `Calling getPeople with ${ids.length} keys, start:${start}, limit:${limit}, options:`,
+                    options
+                );
+            } else {
+                console.log(
+                    `Retrieving getPeople result page ${callNr}. ${ids.length} keys, start:${start}, limit:${limit}`,
+                    options
+                );
+            }
+            const starttime = performance.now();
+            const [aborted, people] = await this.getPeople(ids, start, limit, options);
+            if (aborted) {
+                return [true, 0];
+            }
+            const callTime = performance.now() - starttime;
+            // const nrProfiles = Object.keys(people).length;
+            const nrProfiles = !people
+                ? 0
+                : Array.isArray(people)
+                ? people.length
+                : typeof people === "object"
+                ? Object.keys(people).length
+                : 0;
+            console.log(`Received ${nrProfiles} profiles for call ${callNr} (start:${start}) in ${callTime}ms`);
+            if (nrProfiles === 0) {
+                // An empty result means we've got all the results.
+                // Checking for an empty object above, as opposed to an arrya is just belts and braces
+                // because we're supposed to get an object, but it seems we get an array if there is nothing
+                return [false, profiles];
+            }
+            if (people && typeof people === "object") {
+                Object.assign(profiles, people);
+            } else {
+                console.log(`WTF? people=${people}`, people);
+            }
+            start += limit;
+        }
+    }
+
+    async getPeople(ids, start = 0, limit = 1000, options = {}) {
         const ancestors = options.ancestors || 0;
         const descendants = options.descendants || 0;
         const fields = [
@@ -783,6 +831,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                     appId: "ONS",
                     action: "getPeople",
                     keys: ids.join(","),
+                    start: start,
+                    limit: limit,
                     ancestors: ancestors,
                     descendants: descendants,
                     fields: fields,
@@ -825,20 +875,36 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         this.showLoadingBar();
+        this.updateLoadingBar(1); // we've done some work... :)
         let processed = 0;
         let total = ids.length;
         let extendedTotal = total * 1.2;
 
         let missingParents = [];
 
+        const starttime = performance.now();
         for (let i = 0; i < ids.length && !$this.cancelling; i += 1000) {
             const batchIds = ids.slice(i, i + 1000);
             // console.log(`Processing batch ${i / 1000 + 1}: IDs ${i} to ${i + 999}`);
+            console.log(`Calling getPeople with ${batchIds.length} keys (of ${ids.length - i} still to fetch)`);
+            const callStart = performance.now();
+            // We don't do paging calls here because we're not expecting profiles other than the ids we've requested
+            // and the API spec says "The initial set of profiles are returned in the results unpaginated by the
+            // start/limit values".
             const [aborted, people] = await this.getPeople(batchIds);
+            const callTime = performance.now() - callStart;
             if (aborted || $this.cancelling) {
                 cancelIt();
                 return;
             }
+            const nrProfiles = !people
+                ? 0
+                : Array.isArray(people)
+                ? people.length
+                : typeof people === "object"
+                ? Object.keys(people).length
+                : 0;
+            console.log(`Received ${nrProfiles} profiles in ${callTime}ms`);
             // console.log("People in batch:", people);
             // Combine the 'people' object with 'combinedResults'
             // console.log("Combined results before:", this.combinedResults);
@@ -847,7 +913,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
             // console.log("Combined results after:", this.combinedResults);
             processed += batchIds.length;
-            let percentage = (processed / total) * 100;
+            // We arbitrarily regard fetching the intial profiles as half of the work,
+            // and fetching missing parents as the other half
+            let percentage = (processed / total) * 50;
             this.updateLoadingBar(percentage);
             // console.log(`Batch processed: ${processed}/${total} (${percentage}%)`);
         }
@@ -867,15 +935,19 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         //   console.log(`Missing parents identified: ${missingParents.length}`);
 
-        this.hideLoadingBar(); // Reset the loading bar for processing missing parents
-        this.showLoadingBar();
+        // this.hideLoadingBar(); // Reset the loading bar for processing missing parents
+        // this.showLoadingBar();
         let processedParents = 0;
         let totalParents = missingParents.length;
 
         if (missingParents.length > 0) {
+            console.log(`Fetching ${missingParents.length} missing parents and their children`);
             for (let i = 0; i < missingParents.length && !$this.cancelling; i += 100) {
                 const batchIds = missingParents.slice(i, i + 100);
-                const [aborted, people] = await this.getPeople(batchIds, { ancestors: 1, descendants: 1 });
+                const [aborted, people] = await this.getPeopleViaPagedCalls(batchIds, {
+                    ancestors: 1,
+                    descendants: 1,
+                });
                 if (aborted || $this.cancelling) {
                     cancelIt();
                     return;
@@ -884,16 +956,22 @@ window.OneNameTrees = class OneNameTrees extends View {
                     Object.assign(this.combinedResults, people);
                 }
                 processedParents += batchIds.length;
-                let percentage = (processedParents / totalParents) * 100;
+                // We claim fethcing missing parents is the 2nd half of the work
+                let percentage = (processedParents / totalParents) * 50 + 50;
                 this.updateLoadingBar(percentage);
                 // console.log(`Processed missing parents: ${processedParents}/${totalParents} (${percentage}%)`);
             }
+        } else {
+            this.updateLoadingBar(100);
         }
+        const fetchTime = performance.now() - starttime;
 
         this.hideLoadingBar();
         //  console.log("Processing complete.");
 
-        console.log("Fetched profiles count:", Object.keys(this.combinedResults).length);
+        const profileCount = Object.keys(this.combinedResults).length;
+        console.log(`Fetched profiles count: ${profileCount}`);
+        console.log(`Total fetch time: ${fetchTime}ms`);
 
         // Now 'combinedResults' contains the combined data from all batches
         console.log(this.combinedResults);
@@ -1580,7 +1658,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     createNameSelectBoxes() {
-        const switchButton = $(`<button id="nameSelectsSwitchButton" 
+        const switchButton = $(`<button id="nameSelectsSwitchButton"
         title="Switch between WT ID search and name search">⇆</button>`);
         const nameSelects = $("<div id='nameSelects'></div>").append(switchButton);
         nameSelects.insertBefore($("#toggleDetails"));
