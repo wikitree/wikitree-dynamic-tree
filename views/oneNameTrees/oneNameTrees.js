@@ -934,10 +934,12 @@ window.OneNameTrees = class OneNameTrees extends View {
             // console.log("People in batch:", people);
             // Combine the 'people' object with 'combinedResults'
             console.log("Combined results before:", this.combinedResults);
+            console.log("length", Object.keys(this.combinedResults).length);
             if (people && typeof people === "object") {
                 Object.assign(this.combinedResults, people);
             }
             console.log("Combined results after:", this.combinedResults);
+            console.log("length", Object.keys(this.combinedResults).length);
             processed += batchIds.length;
             // We arbitrarily regard fetching the intial profiles as half of the work,
             // and fetching missing parents as the other half
@@ -989,6 +991,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 if (people && typeof people === "object") {
                     console.log("People in batch:", people);
                     console.log("Combined results before:", this.combinedResults);
+                    console.log("length", Object.keys(this.combinedResults).length);
                     Object.assign(this.combinedResults, people);
                 }
                 processedParents += batchIds.length;
