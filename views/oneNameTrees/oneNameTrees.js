@@ -746,7 +746,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.error("Error saving data with LRU strategy:", error);
         }
 
-        console.log(data);
+        // console.log(data);
         return [false, data];
     }
 
