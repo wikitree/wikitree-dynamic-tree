@@ -950,7 +950,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (userId && !$this.cancelling) {
             Object.values(this.combinedResults).forEach((person) => {
                 if (person?.BirthDateDecade?.replace(/s/, "") > 1890) {
-                    console.log(person.Name, " may connect to missing people.");
+                    //  console.log(person.Name, " may connect to missing people.");
                     if (person?.Father > 0 && !this.combinedResults[person.Father]) {
                         secondCall.push(person.Father);
                     }
@@ -962,7 +962,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     // Add them to possibleMissingPeople
                     if (!person.NoChildren) {
                         secondCall.push(person.Id);
-                        console.log(person.Name, " may connect to missing people.");
+                        //      console.log(person.Name, " may connect to missing people.");
                     }
                 }
             });
