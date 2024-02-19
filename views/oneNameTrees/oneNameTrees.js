@@ -2,7 +2,8 @@ import { FamilyTreeStatistics } from "./familytreestatistics.js";
 import { categoryMappings } from "./category_mappings.js";
 
 window.OneNameTrees = class OneNameTrees extends View {
-    static APP_ID = "OneNameTrees";
+    static APP_ID = "ONS";
+    static VERBOSE = true;
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
         this.cancelling = false;
@@ -90,15 +91,15 @@ window.OneNameTrees = class OneNameTrees extends View {
           Load
         </button>
         <input type="file" id="fileInput" style="display: none" />
-        
+
         <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
         <button id="helpButton" title="About this">?</button>
 
-        
-        <label id="tableLabel">Table: 
+
+        <label id="tableLabel">Table:
         <button id="tableViewButton" title="View the data in a table">Table</button>
         </label>
-        <label id="treesButtons">Trees: 
+        <label id="treesButtons">Trees:
           <div id="toggleButtons">
             <button class="toggleAll" id="showAll" title="show all descendants">+</button
             ><button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
@@ -753,6 +754,16 @@ window.OneNameTrees = class OneNameTrees extends View {
         return [false, data];
     }
 
+    numberOfProfiles(resultObj) {
+        return !resultObj
+            ? 0
+            : Array.isArray(resultObj)
+            ? resultObj.length
+            : typeof resultObj === "object"
+            ? Object.keys(resultObj).length
+            : 0;
+    }
+
     async getPeopleViaPagedCalls(ids, options = {}) {
         let start = 0;
         let limit = 1000;
@@ -776,27 +787,25 @@ window.OneNameTrees = class OneNameTrees extends View {
             if (aborted) {
                 return [true, 0];
             }
-            console.log("People", people);
+            // console.log("People", people);
             const callTime = performance.now() - starttime;
-            // const nrProfiles = Object.keys(people).length;
-            const nrProfiles = !people
-                ? 0
-                : Array.isArray(people)
-                ? people.length
-                : typeof people === "object"
-                ? Object.keys(people).length
-                : 0;
-            console.log(`Received ${nrProfiles} profiles for call ${callNr} (start:${start}) in ${callTime}ms`);
+            const nrProfiles = this.numberOfProfiles(people);
+            console.log(`Page ${callNr}: Received ${nrProfiles} profiles (start:${start}) in ${callTime}ms`);
             if (nrProfiles === 0) {
                 // An empty result means we've got all the results.
                 // Checking for an empty object above, as opposed to an arrya is just belts and braces
                 // because we're supposed to get an object, but it seems we get an array if there is nothing
                 return [false, profiles];
             }
-            if (people && typeof people === "object") {
-                console.log(`Adding ${nrProfiles} profiles to the profiles object`);
+            if (nrProfiles > 0 && typeof people === "object") {
+                const beforeCnt = Object.keys(profiles).length;
                 Object.assign(profiles, people);
-                console.log(`profiles now has ${Object.keys(profiles).length} profiles`);
+                const afterCnt = Object.keys(profiles).length;
+                console.log(
+                    `Page ${callNr}: Collected ${
+                        afterCnt - beforeCnt
+                    } of ${nrProfiles} new profiles. We now have ${afterCnt}.`
+                );
             } else {
                 console.log(`WTF? people=${people}`, people);
             }
@@ -849,7 +858,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.cancelFetchController = new AbortController();
             const result = await WikiTreeAPI.postToAPI(
                 {
-                    appId: "ONS",
+                    appId: OneNameTrees.APP_ID,
                     action: "getPeople",
                     keys: ids.join(","),
                     start: start,
@@ -905,7 +914,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let total = ids.length;
         let extendedTotal = total * 1.2;
 
-        let secondCall = [];
+        const secondCall = new Set();
 
         const starttime = performance.now();
         for (let i = 0; i < ids.length && !$this.cancelling; i += 1000) {
@@ -922,61 +931,79 @@ window.OneNameTrees = class OneNameTrees extends View {
                 cancelIt();
                 return;
             }
-            const nrProfiles = !people
-                ? 0
-                : Array.isArray(people)
-                ? people.length
-                : typeof people === "object"
-                ? Object.keys(people).length
-                : 0;
+            const nrProfiles = this.numberOfProfiles(people);
             console.log(`Received ${nrProfiles} profiles in ${callTime}ms`);
             // console.log("People in batch:", people);
             // Combine the 'people' object with 'combinedResults'
-            console.log("Combined results before:", this.combinedResults);
+            // console.log("Combined results before:", this.combinedResults);
+            const countBefore = Object.keys(this.combinedResults).length;
             if (people && typeof people === "object") {
                 Object.assign(this.combinedResults, people);
             }
-            console.log("Combined results after:", this.combinedResults);
+            console.log(`Added ${Object.keys(this.combinedResults).length - countBefore} profiles`);
+            // console.log("Combined results after:", this.combinedResults);
             processed += batchIds.length;
-            // We arbitrarily regard fetching the intial profiles as half of the work,
-            // and fetching missing parents as the other half
-            let percentage = (processed / total) * 50;
+            // We arbitrarily regard fetching the intial profiles as 45% of the work,
+            // fetching missing parents as a further 45% and port-processing the last 10%
+            let percentage = (processed / total) * 45;
             this.updateLoadingBar(percentage);
             // console.log(`Batch processed: ${processed}/${total} (${percentage}%)`);
         }
 
         console.log("Initial processing complete. Checking for missing parents...");
+        // We do the below because the IDs we get from WT+ would be for public profiles only.
+        // So here, since the user might be logged in and may have access to some of the
+        // private profiles that should be part of the set, we try and collect some of those
+        // private profiles via the WT getPeople api.
+        const hasMissing = new Set();
         if (userId && !$this.cancelling) {
             Object.values(this.combinedResults).forEach((person) => {
                 if (person?.BirthDateDecade?.replace(/s/, "") > 1890) {
-                    console.log(person.Name, " may connect to missing people.");
+                    // console.log(person.Name, " may connect to missing people.");
                     if (person?.Father > 0 && !this.combinedResults[person.Father]) {
-                        secondCall.push(person.Father);
+                        secondCall.add(person.Father);
+                        if (OneNameTrees.VERBOSE) hasMissing.add(person.Name || person.Id);
                     }
                     if (person?.Mother > 0 && !this.combinedResults[person.Mother]) {
-                        secondCall.push(person.Mother);
+                        secondCall.add(person.Mother);
+                        if (OneNameTrees.VERBOSE) hasMissing.add(person.Name || person.Id);
                     }
                     // Add possible missing children to the list of missing parents
-                    // If NoChildren is not set && the person is not a parent of anyone in combinedResults
-                    // Add them to possibleMissingPeople
+                    // If NoChildren is not set on a profile, we add that profile to possibleMissingPeople
+                    // so we gan get their children.
                     if (!person.NoChildren) {
-                        secondCall.push(person.Id);
-                        console.log(person.Name, " may connect to missing people.");
+                        secondCall.add(person.Id);
+                        // console.log(person.Name, " may connect to missing people.");
+                        if (OneNameTrees.VERBOSE) hasMissing.add(person.Name || person.Id);
                     }
                 }
             });
         }
-        console.log(`Missing people identified: ${secondCall.length}`);
+        console.log(`Number of ids to use in retrieving of missing relatives: ${secondCall.size}`);
+        if (OneNameTrees.VERBOSE) console.log(`These are the profiles triggering the extra search:`, [...hasMissing]);
+        hasMissing.clear();
 
         // this.hideLoadingBar(); // Reset the loading bar for processing missing parents
         // this.showLoadingBar();
         let processedParents = 0;
-        let totalSecondCall = secondCall.length;
+        let totalSecondCall = secondCall.size;
 
-        if (secondCall.length > 0) {
-            //console.log(`Fetching ${secondCall.length} missing parents and their children`);
-            for (let i = 0; i < secondCall.length && !$this.cancelling; i += 100) {
-                const batchIds = secondCall.slice(i, i + 100);
+        function setDifference(a, b) {
+            return new Set([...a].filter((x) => !b.has(x)));
+        }
+        function setUnion(a, b) {
+            return new Set([...a, ...b]);
+        }
+        function setIntersection(a, b) {
+            return new Set([...a].filter((x) => b.has(x)));
+        }
+
+        let currentIds = new Set(OneNameTrees.VERBOSE ? Object.keys(this.combinedResults) : []);
+        let additionalIds = new Set();
+        if (secondCall.size > 0) {
+            const secondCallIds = [...secondCall];
+            for (let i = 0; i < secondCallIds.length && !$this.cancelling; i += 100) {
+                const batchIds = secondCallIds.slice(i, i + 100);
                 const [aborted, people] = await this.getPeopleViaPagedCalls(batchIds, {
                     ancestors: 1,
                     descendants: 1,
@@ -985,31 +1012,41 @@ window.OneNameTrees = class OneNameTrees extends View {
                     cancelIt();
                     return;
                 }
-                if (people && typeof people === "object") {
-                    console.log("People in batch:", people);
-                    console.log("Combined results before:", this.combinedResults);
+                const nrProfiles = this.numberOfProfiles(people);
+                if (nrProfiles > 0) {
+                    if (OneNameTrees.VERBOSE) {
+                        const fetchedIdsSet = new Set(Object.keys(people));
+                        const newIds = setDifference(fetchedIdsSet, currentIds);
+                        const dups = setIntersection(fetchedIdsSet, currentIds);
+                        console.log(`Adding ${newIds.size} new people from ${nrProfiles} received`, [...newIds]);
+                        console.log("Duplicates not added", [...dups]);
+                        currentIds = setUnion(currentIds, newIds);
+                        additionalIds = setUnion(additionalIds, newIds);
+                    }
+                    // console.log("People in batch:", people);
+                    // console.log("Combined results before:", this.combinedResults);
                     Object.assign(this.combinedResults, people);
                 }
                 processedParents += batchIds.length;
-                // We claim fetching missing parents is the 2nd half of the work
-                let percentage = (processedParents / totalSecondCall) * 50 + 50;
+                // We claim fetching missing parents is the 2nd 45% of the work
+                let percentage = 45 + (processedParents / totalSecondCall) * 45;
                 this.updateLoadingBar(percentage);
                 // console.log(`Processed missing parents: ${processedParents}/${totalParents} (${percentage}%)`);
             }
         } else {
-            this.updateLoadingBar(100);
+            this.updateLoadingBar(90);
         }
         const fetchTime = performance.now() - starttime;
 
-        this.hideLoadingBar();
-        //  console.log("Processing complete.");
+        // this.hideLoadingBar();
+        // console.log("Processing complete.");
 
         const profileCount = Object.keys(this.combinedResults).length;
         console.log(`Fetched profiles count: ${profileCount}`);
         console.log(`Total fetch time: ${fetchTime}ms`);
 
         // Now 'combinedResults' contains the combined data from all batches
-        console.log(this.combinedResults);
+        // console.log(this.combinedResults);
         // If the surname is not LNAB, LNC, or LNO, filter out
         let filteredResults = {};
         // Get all variants for the surname
@@ -1045,27 +1082,37 @@ window.OneNameTrees = class OneNameTrees extends View {
             // console.log("Is match:", isMatch);
             if (isMatch) {
                 filteredResults[person.Id] = person;
-                //  console.log("Added to filtered results:", person);
+                // console.log("Added to filtered results:", person);
                 // console.log("Filtered results:", filteredResults);
             }
         });
-        console.log("Filtered results:", filteredResults);
-        console.log("Filtered results count:", Object.keys(filteredResults).length);
+        const filteredCount = Object.keys(filteredResults).length || 0;
+        if (OneNameTrees.VERBOSE) {
+            const removedNew = setDifference(additionalIds, new Set(Object.keys(filteredResults)));
+            console.log(
+                `Last name filtering removed ${currentIds.size - filteredCount} profiles (${removedNew.size} of ${
+                    additionalIds.size
+                } additionally retrieved profiles) from ${currentIds.size} leaving ${filteredCount} profiles.`
+            );
+        } else {
+            // console.log("Filtered results:", filteredResults);
+            console.log(`Last name filtering left ${filteredCount} profiles.`);
+        }
 
-        // After batch processing, update the progress bar for additional steps
+        // After batch processing, update the progress bar for additional steps (the last 10% of the work)
         processed = ids.length;
-        this.updateLoadingBar((processed / extendedTotal) * 100);
+        this.updateLoadingBar(90 + (processed / extendedTotal) * 10);
 
         // Sort and map children to parents
         let sortedPeople = this.sortPeopleByBirthDate(filteredResults);
-        console.log("sortedPeople", sortedPeople);
+        if (OneNameTrees.VERBOSE) console.log("sortedPeople", sortedPeople);
         this.prioritizeTargetName(sortedPeople);
         let parentToChildrenMap = this.createParentToChildrenMap(sortedPeople);
         this.peopleById = this.createPeopleByIdMap(sortedPeople);
 
         // Update progress bar after sorting and mapping
         processed += (extendedTotal - total) * 0.5; // Assuming these take about half of the remaining 20%
-        this.updateLoadingBar((processed / extendedTotal) * 100);
+        this.updateLoadingBar(90 + (processed / extendedTotal) * 10);
 
         this.displayDescendantsTree(this.peopleById, parentToChildrenMap);
 
@@ -1159,7 +1206,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             return !childIds.has(String(id)); // Ensure `id` is treated as a string
         });
 
-        console.log("Root Individuals:", rootIndividuals); // Debugging statement
+        // console.log("Root Individuals:", rootIndividuals); // Debugging statement
         return rootIndividuals;
     }
 
@@ -1784,7 +1831,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let processedIndividuals = 0;
 
         let rootIndividualsIds = this.findRootIndividuals(parentToChildrenMap, peopleById);
-        console.log("Root individuals IDs:", rootIndividualsIds);
+        if (OneNameTrees.VERBOSE) console.log("Root individuals IDs:", rootIndividualsIds);
         let rootIndividuals = rootIndividualsIds
             .map((id) => peopleById[id])
             .filter((root) => root.shouldBeRoot !== false)
@@ -1794,7 +1841,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         rootIndividuals = this.adjustSortingForDeathDates(rootIndividuals);
 
-        console.log("Root individuals:", rootIndividuals);
+        if (OneNameTrees.VERBOSE) console.log("Root individuals:", rootIndividuals);
 
         let resultsContainer = $("section#results");
         resultsContainer.hide().empty();
@@ -2803,10 +2850,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.familyTreeStats = new FamilyTreeStatistics(this.combinedResults);
         console.log("Total People: ", this.familyTreeStats.getTotalPeople());
         console.log("Average Lifespan: ", this.familyTreeStats.getAverageLifespan(), "years");
-        console.log("Birth Decade Distribution: ", this.familyTreeStats.getBirthDecadeDistribution());
-        console.log("Child Counts: ", this.familyTreeStats.getChildCounts());
         console.log("Gender Distribution: ", this.familyTreeStats.getGenderDistribution());
-        console.log("Common Names: ", this.familyTreeStats.getNameStatistics());
+        if (OneNameTrees.VERBOSE) {
+            console.log("Birth Decade Distribution: ", this.familyTreeStats.getBirthDecadeDistribution());
+            console.log("Child Counts: ", this.familyTreeStats.getChildCounts());
+            console.log("Common Names: ", this.familyTreeStats.getNameStatistics());
+        }
 
         // Get top 10 male names
         const topMaleNames = this.familyTreeStats.getTopNamesByGender("Male");
