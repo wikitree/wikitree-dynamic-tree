@@ -870,7 +870,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     async processBatches(ids, surname) {
         const $this = this;
-        const userId = Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID");
+        console.log("All accessible cookies:", document.cookie);
+
+        const userId =
+            Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
         console.log("Starting processBatches", { userId, idsLength: ids ? ids.length : 0, surname });
 
         if (!ids || ids.length === 0) {
@@ -898,7 +901,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let total = ids.length;
         let extendedTotal = total * 1.2;
 
-        let missingParents = [];
+        let secondCall = [];
 
         const starttime = performance.now();
         for (let i = 0; i < ids.length && !$this.cancelling; i += 1000) {
@@ -925,11 +928,11 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.log(`Received ${nrProfiles} profiles in ${callTime}ms`);
             // console.log("People in batch:", people);
             // Combine the 'people' object with 'combinedResults'
-            // console.log("Combined results before:", this.combinedResults);
+            console.log("Combined results before:", this.combinedResults);
             if (people && typeof people === "object") {
                 Object.assign(this.combinedResults, people);
             }
-            // console.log("Combined results after:", this.combinedResults);
+            console.log("Combined results after:", this.combinedResults);
             processed += batchIds.length;
             // We arbitrarily regard fetching the intial profiles as half of the work,
             // and fetching missing parents as the other half
@@ -938,30 +941,38 @@ window.OneNameTrees = class OneNameTrees extends View {
             // console.log(`Batch processed: ${processed}/${total} (${percentage}%)`);
         }
 
-        //  console.log("Initial processing complete. Checking for missing parents...");
+        console.log("Initial processing complete. Checking for missing parents...");
         if (userId && !$this.cancelling) {
             Object.values(this.combinedResults).forEach((person) => {
                 if (person?.BirthDateDecade?.replace(/s/, "") > 1890) {
+                    console.log(person.Name, " may connect to missing people.");
                     if (person?.Father > 0 && !this.combinedResults[person.Father]) {
-                        missingParents.push(person.Father);
+                        secondCall.push(person.Father);
                     }
                     if (person?.Mother > 0 && !this.combinedResults[person.Mother]) {
-                        missingParents.push(person.Mother);
+                        secondCall.push(person.Mother);
+                    }
+                    // Add possible missing children to the list of missing parents
+                    // If NoChildren is not set && the person is not a parent of anyone in combinedResults
+                    // Add them to possibleMissingPeople
+                    if (!person.NoChildren) {
+                        secondCall.push(person.Id);
+                        console.log(person.Name, " may connect to missing people.");
                     }
                 }
             });
         }
-        //   console.log(`Missing parents identified: ${missingParents.length}`);
+        console.log(`Missing people identified: ${secondCall.length}`);
 
         // this.hideLoadingBar(); // Reset the loading bar for processing missing parents
         // this.showLoadingBar();
         let processedParents = 0;
-        let totalParents = missingParents.length;
+        let totalSecondCall = secondCall.length;
 
-        if (missingParents.length > 0) {
-            console.log(`Fetching ${missingParents.length} missing parents and their children`);
-            for (let i = 0; i < missingParents.length && !$this.cancelling; i += 100) {
-                const batchIds = missingParents.slice(i, i + 100);
+        if (secondCall.length > 0) {
+            console.log(`Fetching ${secondCall.length} missing parents and their children`);
+            for (let i = 0; i < secondCall.length && !$this.cancelling; i += 100) {
+                const batchIds = secondCall.slice(i, i + 100);
                 const [aborted, people] = await this.getPeopleViaPagedCalls(batchIds, {
                     ancestors: 1,
                     descendants: 1,
@@ -977,7 +988,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
                 processedParents += batchIds.length;
                 // We claim fetching missing parents is the 2nd half of the work
-                let percentage = (processedParents / totalParents) * 50 + 50;
+                let percentage = (processedParents / totalSecondCall) * 50 + 50;
                 this.updateLoadingBar(percentage);
                 // console.log(`Processed missing parents: ${processedParents}/${totalParents} (${percentage}%)`);
             }
