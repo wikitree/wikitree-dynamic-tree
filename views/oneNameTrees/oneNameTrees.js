@@ -90,19 +90,22 @@ window.OneNameTrees = class OneNameTrees extends View {
           Load
         </button>
         <input type="file" id="fileInput" style="display: none" />
-
-        <button id="tableViewButton" title="View the data in a table">Table</button>
+        
         <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
         <button id="helpButton" title="About this">?</button>
 
-        <div id="treesButtons">
+        
+        <label id="tableLabel">Table: 
+        <button id="tableViewButton" title="View the data in a table">Table</button>
+        </label>
+        <label id="treesButtons">Trees: 
           <div id="toggleButtons">
             <button class="toggleAll" id="showAll" title="show all descendants">+</button
             ><button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
           </div>
           <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
           <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
-        </div>
+        </label>
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
         </div>
@@ -878,7 +881,8 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         if (!ids || ids.length === 0) {
             console.error("No IDs provided for processing.");
-            $("#results").html("<p id='noResults'>No results found.</p>");
+            wtViewRegistry.showWarning("No results found");
+            $("#refreshData").prop("disabled", false);
             return;
         }
 
@@ -1826,9 +1830,8 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         resultsContainer.fadeIn();
 
-        $(
-            "#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#treesButtons,#locationSelects"
-        ).show();
+        $("#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#locationSelects").show();
+        $("#tableLabel,#treesButtons").addClass("visible");
         this.createNameSelectBoxes();
         this.showStatistics();
 
@@ -2233,7 +2236,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.parentToChildrenMap = {};
         $("section#results").empty();
         $("#statsDisplay #periodStatisticsContainer").empty();
-        $("#treesButtons").hide();
+        $("#treesButtons,#tableLabel").removeClass("visible");
         $("#toggleGeneralStats").removeClass("on").hide();
         $("#locationSelects").hide();
     }
@@ -2730,7 +2733,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Create the container for the select box and the switch button.
         const $locationSelects = $("<div>", { id: "locationSelects" });
-        $("#toggleGeneralStats").after($locationSelects);
+        $("#tableLabel").append($locationSelects);
 
         // Extract and prepare the location data.
         const locations = locationStats.locationCounts;
@@ -3230,9 +3233,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (found === 0) {
             $this.disableCancel();
             $this.shakingTree.hide();
-            const errorHtml = `<div class='error'>No results found.</div>`;
-            $("section#results").prepend(errorHtml);
-            $this.triggerError();
+            wtViewRegistry.showWarning("No results found.");
+            $("#refreshData").prop("disabled", false);
             return;
         } else if (found > 10000) {
             // Number to the nearest 1000 (rounding down)
@@ -3385,13 +3387,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                         $this.shakingTree.hide();
                     }, 0);
                 }
-                $("#toggleButtons,#nameSelects,#toggleDetails,#toggleWTIDs").hide();
+                $("#treesButtons").removeClass("visible");
             } else {
                 $treeViewContainer.show();
                 $tableViewContainer.hide();
                 $(this).removeClass("on").attr("title", "Show table view");
                 $("#clearFilters").off().remove();
-                $("#toggleButtons,#nameSelects,#toggleDetails,#toggleWTIDs").show();
+                $("#treesButtons").addClass("visible");
             }
             if ($("#periodButtonsContainer button.on").length) {
                 $("#birthDateFilter").val($("#periodButtonsContainer button.on").text());

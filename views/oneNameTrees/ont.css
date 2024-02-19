@@ -658,14 +658,36 @@ header {
   margin-left: 2em !important;
 }
 
-.oneNameTrees #nameLabel {
+.oneNameTrees #nameLabel,
+.oneNameTrees #treesButtons,
+.oneNameTrees #tableLabel {
   font-weight: bold;
   border: 2px solid forestgreen;
-  padding: 0.7em 0.2em;
+  padding: 0.2em 0.3em 0.3em;
   border-radius: 0.5em;
   margin-right: 0.5em;
   background: #fff;
   margin-top: 0.2em;
+  display: inline-block;
+}
+
+.oneNameTrees #tableLabel,
+.oneNameTrees #treesButtons {
+  display: none;
+}
+.oneNameTrees #tableLabel.visible,
+.oneNameTrees #treesButtons.visible {
+  display: inline-block;
+}
+
+.oneNameTrees #controls label input {
+  margin-bottom: 0;
+}
+.oneNameTrees #controls #locationSelects,
+.oneNameTrees #controls #locationSelects select,
+.oneNameTrees #controls #nameSelects,
+.oneNameTrees #controls #nameSelects select {
+  margin-bottom: 0 !important;
 }
 
 .oneNameTrees .duplicateLink {
