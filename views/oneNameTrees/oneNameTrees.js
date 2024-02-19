@@ -72,33 +72,34 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.headerHTML = `
       <div id="controls">
-        <label id="nameLabel">Name:
+        <label id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
             <input type="text" id="location" placeholder="Location (Optional)" />
             <input type="submit" id="submit" name="submit" value="GO" />
         </label>
-        <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
-        <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
-        <button
-          id="refreshData"
-          title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
-        >
-          Refresh
-        </button>
-        <button id="downloadData">Save</button>
-        <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
-          Load
-        </button>
-        <input type="file" id="fileInput" style="display: none" />
-        
-        <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
-        <button id="helpButton" title="About this">?</button>
-
-        
-        <label id="tableLabel">Table: 
-        <button id="tableViewButton" title="View the data in a table">Table</button>
+        <label id="otherControls" class="controlGroup">
+            <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
+            <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
+            <button
+            id="refreshData"
+            title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
+            >
+            Refresh
+            </button>
+            <button id="downloadData">Save</button>
+            <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
+            Load
+            </button>
+            <input type="file" id="fileInput" style="display: none" />
+            
+            <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
+            <button id="helpButton" title="About this">?</button>
         </label>
-        <label id="treesButtons">Trees: 
+        
+        <label id="tableLabel" class="controlGroup">Table: 
+            <button id="tableViewButton" title="View the data in a table">Table</button>
+        </label>
+        <label id="treesButtons" class="controlGroup">Trees: 
           <div id="toggleButtons">
             <button class="toggleAll" id="showAll" title="show all descendants">+</button
             ><button class="toggleAll" id="hideAll" title="hide all descendants">−</button>

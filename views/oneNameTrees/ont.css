@@ -658,12 +658,10 @@ header {
   margin-left: 2em !important;
 }
 
-.oneNameTrees #nameLabel,
-.oneNameTrees #treesButtons,
-.oneNameTrees #tableLabel {
+.oneNameTrees .controlGroup {
   font-weight: bold;
   border: 2px solid forestgreen;
-  padding: 0.2em 0.3em 0.3em;
+  padding: 0.2em 0.3em 0.2em;
   border-radius: 0.5em;
   margin-right: 0.5em;
   background: #fff;
@@ -688,6 +686,7 @@ header {
 .oneNameTrees #controls #nameSelects,
 .oneNameTrees #controls #nameSelects select {
   margin-bottom: 0 !important;
+  margin-top: 0 !important;
 }
 
 .oneNameTrees .duplicateLink {
