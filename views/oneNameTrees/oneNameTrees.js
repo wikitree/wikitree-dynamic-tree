@@ -870,7 +870,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     async processBatches(ids, surname) {
         const $this = this;
-        console.log("All accessible cookies:", document.cookie);
+        // console.log("All accessible cookies:", document.cookie);
 
         const userId =
             Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
@@ -970,7 +970,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let totalSecondCall = secondCall.length;
 
         if (secondCall.length > 0) {
-            console.log(`Fetching ${secondCall.length} missing parents and their children`);
+            //console.log(`Fetching ${secondCall.length} missing parents and their children`);
             for (let i = 0; i < secondCall.length && !$this.cancelling; i += 100) {
                 const batchIds = secondCall.slice(i, i + 100);
                 const [aborted, people] = await this.getPeopleViaPagedCalls(batchIds, {
