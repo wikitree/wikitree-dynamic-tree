@@ -784,7 +784,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 );
             }
             const starttime = performance.now();
-            const [aborted, people] = await this.getPeople(ids, start, limit, options);
+            const [aborted, theresMore, people] = await this.getPeople(ids, start, limit, options);
             if (aborted) {
                 return [true, 0];
             }
@@ -807,8 +807,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                         afterCnt - beforeCnt
                     } of ${nrProfiles} new profiles. We now have ${afterCnt}.`
                 );
-                // If we receive less than the limit we requested, we're done
-                if (nrProfiles < limit) return [false, profiles];
+                // return if there is no more data
+                if (!theresMore) return [false, profiles];
             } else {
                 console.log(`WTF? people=${people}`, people);
             }
@@ -872,13 +872,14 @@ window.OneNameTrees = class OneNameTrees extends View {
                 },
                 this.cancelFetchController.signal
             );
-            return [false, result[0].people];
+            const theresMore = result[0].status?.startsWith("Maximum number of profiles");
+            return [false, theresMore, result[0].people];
         } catch (error) {
             if (error.name !== "AbortError") {
                 console.error("Error in getPeople:", error);
-                return [false, []]; // Return an empty array in case of error
+                return [false, false, []]; // Return an empty array in case of error
             } else {
-                return [true, []];
+                return [true, false, []];
             }
         }
     }
@@ -928,7 +929,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             // We don't do paging calls here because we're not expecting profiles other than the ids we've requested
             // and the API spec says "The initial set of profiles are returned in the results unpaginated by the
             // start/limit values".
-            const [aborted, people] = await this.getPeople(batchIds);
+            const [aborted, theresmore, people] = await this.getPeople(batchIds);
             const callTime = performance.now() - callStart;
             if (aborted || $this.cancelling) {
                 cancelIt();
