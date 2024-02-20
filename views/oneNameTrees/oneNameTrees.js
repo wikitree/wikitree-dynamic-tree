@@ -807,6 +807,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                         afterCnt - beforeCnt
                     } of ${nrProfiles} new profiles. We now have ${afterCnt}.`
                 );
+                // If we receive less than the limit we requested, we're done
+                if (nrProfiles < limit) return [false, profiles];
             } else {
                 console.log(`WTF? people=${people}`, people);
             }
