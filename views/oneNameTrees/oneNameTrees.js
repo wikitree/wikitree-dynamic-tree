@@ -125,9 +125,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         <li>Put a surname (and optional location) in the box and hit 'Go'.</li>
         <li>
           The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
-          plus any with variants of the surname as entered in the Google Sheet (click 'Variants'), are fetched from
+          plus any with variants of the surname as entered in the Google Sheet (click 'Variants')*, are fetched from
           WikiTree+. This list is stored for the next time you enter the same surname. To refresh this list (to get the
-          most up-to-date list available on WikiTree+), hit the 'Refresh' button.
+          most up-to-date list available on WikiTree+), hit the 'Refresh' button.<br>
+          * Alternatively, you can enter a list of surnames separated by commas in the Name box.
         </li>
         <li>
           The data of all of the profiles is fetched from the WikiTree apps server. This may take a very long time (see
@@ -136,15 +137,15 @@ window.OneNameTrees = class OneNameTrees extends View {
         <li>
           As all of the IDs returned by WikiTree+ are for open public profiles, if you are logged into the apps server,
           you may be able to retrieve the data of more profiles. A check is made of post-19th century profiles for any
-          parents whose data is not among the retrieved data. If you are on the trusted list of a person with missing
-          parents, another database call is made for these people.
+          parents whose data is not among the retrieved data and for children of those at the end of the lines 
+          (if they do not have the No Children flag set). If any are found, the data of those profiles is fetched.
         </li>
         <li>
-          The profiles are sorted by birth date. (For profiles with only a death date, the death date is used for
+          The people are sorted by birth date. (For profiles with only a death date, the death date is used for
           comparison.)
         </li>
         <li>
-          Spouses with the target surname are added as spouses (below the first person's name, with "m." for "married").
+          Spouses with a target surname are added as spouses (below the first person's name, with "m." for "married").
         </li>
         <li>
           Offspring are added to offspring lists below their parents, creating many expandable/collapsible descendant
@@ -182,6 +183,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li>show more detail on the people born in that period.</li>
               </ul>
             </li>
+            <li>In the Table View, the period buttons will not only show the statistics of the period, but also add 
+            the period as a table filter.</li>
             <li>
               The statistics can be dismissed by clicking the 'Statistics' button or double-clicking the statistics
               section.
@@ -204,6 +207,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         <li>
           The table:
           <ul>
+            <li>can be seen by clicking the 'Table' button or by choosing a place from the 'Birth Place' dropdown list.</li>
             <li>
               has filters in the footer of each column. The filters:
               <ul>
@@ -221,11 +225,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             </li>
             <li>can be filtered with the period buttons in the statistics section and the location count numbers.</li>
             <li>can be sorted by clicking on the column headers.</li>
+            <li>has a 'Reverse Locations' button to let you order sort people by the last part of their birth 
+            place (usually the country).</li>
+            <li>has a 'Wide' button to make the table wider (so that the text does not wrap and the table maybe be easier to scan).</li>
             <li>can be dismissed (to return to the Trees view) by clicking the 'Table' button.</li>
           </ul>
         </li>
         <li>
-          The Location dropdown lets you filter the table my a location item: a town, state, country, etc. The default
+          The Birth Place dropdown lets you filter the table by a location item: a town, state, country, etc. The default
           box shows the number of profiles that include that location part in the birth location. The toggle button next
           to it turns the list alphabetical.
         </li>
@@ -2461,10 +2468,11 @@ window.OneNameTrees = class OneNameTrees extends View {
 */
 
     addToggleMoreLessButton($list, maxItems) {
+        const $this = this;
         let $showMore = $("<li class='showMore locationToggler'>")
             .text("▶")
             .click(function () {
-                this.toggleItemsVisibility($list, maxItems, this);
+                $this.toggleItemsVisibility($list, maxItems, this);
             });
         $list.append($showMore);
     }

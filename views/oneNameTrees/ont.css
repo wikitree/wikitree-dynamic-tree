@@ -344,8 +344,9 @@ header {
   margin: 0.5em;
 }
 
-.oneNameTrees #periodStatisticsContainer {
-  max-height: 50vh;
+.oneNameTrees #periodStatisticsContainer,
+.oneNameTrees #statisticsContainer {
+  max-height: 30vh;
   overflow: auto;
 }
 
@@ -619,7 +620,7 @@ header {
 }
 
 .oneNameTrees .locationToggler {
-  cursor: pointer;
+  cursor: pointer !important;
 }
 .oneNameTrees div.locationToggler {
   display: inline-block;
