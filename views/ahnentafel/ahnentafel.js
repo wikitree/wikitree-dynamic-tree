@@ -29,6 +29,15 @@ window.AhnentafelView = class AhnentafelView extends View {
         ahnen.clearData(); // Clear existing data
         ahnen.displayAncestorList();
     }
+
+    close() {
+        $("#moreGenerationsButton").off("click").remove();
+        $("header #ahnentafelHeaderBox").remove();
+        $("#view-container").css({ "min-height": "1000px", "overflow": "visible" });
+        $("#view-container").removeClass("ahnentafelView");
+        $(document).off("keydown.AhnentafelView");
+        $("#view-container").off();
+    }
 };
 
 /*
@@ -188,15 +197,6 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.ancestors = [];
         this.displayedIds.clear();
         $(this.selector).empty(); // Clears the HTML content
-    }
-
-    close() {
-        $("#moreGenerationsButton").off("click").remove();
-        $("header").find(".more-generations-container").remove();
-        $("#view-container").css({ "min-height": "1000px", "overflow": "visible" });
-        $("#view-container").removeClass("ahnentafelView");
-        $(document).off("keydown.AhnentafelView");
-        $(this.selector).off();
     }
 
     // Inside the AhnentafelAncestorList class
