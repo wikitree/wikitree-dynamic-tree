@@ -534,7 +534,8 @@ export class CC7 {
         if (status == "aborted") {
             return [status, 0, false];
         }
-        if (status != "" && peopleData && peopleData.length > 0) {
+        let theresMore = status.startsWith("Maximum number of profiles");
+        if (status != "" && peopleData && peopleData.length > 0 && !theresMore) {
             isPartial = true;
         }
         let profiles = peopleData ? Object.values(peopleData) : [];
@@ -554,7 +555,8 @@ export class CC7 {
             Object.assign(resultByKeyReturned, resultByKey);
 
             // Check if we're done
-            if (profiles.length < limit) break;
+            // if (profiles.length < limit) break;
+            if (!theresMore) break;
 
             // We have more paged profiles to fetch
             ++callNr;
@@ -566,7 +568,8 @@ export class CC7 {
             if (sstatus == "aborted") {
                 return [sstatus, 0, false];
             }
-            if (sstatus != "") {
+            theresMore = sstatus.startsWith("Maximum number of profiles");
+            if (sstatus != "" && !theresMore) {
                 console.warn(`Partial results obtained when requesting relatives for ${wtId}: ${sstatus}`);
                 isPartial = true;
             }
@@ -924,7 +927,8 @@ export class CC7 {
                 return [status, false, 0];
             }
             const callTime = performance.now() - starttime;
-            if (status != "" && peopleData && peopleData.length > 0) {
+            getMore = status.startsWith("Maximum number of profiles");
+            if (status != "" && peopleData && peopleData.length > 0 && !getMore) {
                 isPartial = true;
             }
             const profiles = peopleData ? Object.values(peopleData) : [];
@@ -950,7 +954,7 @@ export class CC7 {
 
             start += limit;
             // Check if we're done
-            getMore = profiles.length == limit;
+            // getMore = profiles.length == limit;
         }
         console.log(
             `Retrieved ${window.people.size} unique CC${upToDegreeToGet} profiles with ${callNr} API call(s) in ${
