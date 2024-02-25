@@ -6,6 +6,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     static VERBOSE = true;
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
+        this.popupZindex = 1000;
         this.cancelling = false;
         this.container = $(container_selector);
         this.personId = person_id;
@@ -509,6 +510,39 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.container.on("click", ".duplicateLink", function (e) {
             e.preventDefault();
             $this.handleSearch($(this).data("wtid"));
+        });
+
+        this.header.on("click", ".averageLifespan label", function () {
+            const graph = $("#lifespanGraph");
+            graph.toggle();
+            if (graph.is(":visible")) {
+                graph.css("display", "inline-block");
+                graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                $this.popupZindex++;
+                graph.css("z-index", $this.popupZindex);
+            }
+        });
+
+        // Esc to close the highest (z-index) open popup
+        // Add Esc to close family sheet
+        $(document).on("keyup", function (e) {
+            if (e.key === "Escape") {
+                // Find the .familySheet with the highest z-index
+                let highestZIndex = 0;
+                let lastPopup = null;
+
+                $(".popup:visible").each(function () {
+                    const zIndex = parseInt($(this).css("z-index"), 10);
+                    if (zIndex > highestZIndex) {
+                        highestZIndex = zIndex;
+                        lastPopup = $(this);
+                    }
+                });
+
+                if (lastPopup) {
+                    lastPopup.fadeOut();
+                }
+            }
         });
     }
 
@@ -2309,7 +2343,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         $statsContainer.append(this.createStatItem("Total People: ", stats.getTotalPeople()));
 
         // Average Lifespan
-        $statsContainer.append(this.createStatItem("Average Lifespan: ", stats.getAverageLifespan() + " years"));
+        $statsContainer.append(
+            this.createStatItem("Average Lifespan: ", stats.getAverageLifespan() + " years", {
+                classes: "averageLifespan",
+            })
+        );
 
         // Average Children Per Person
         $statsContainer.append(
@@ -2614,7 +2652,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         $statsContainer.append(this.createStatItem("Total People: ", periodStats.peopleCount));
 
         // Average Lifespan
-        $statsContainer.append(this.createStatItem("Average Lifespan: ", periodStats.averageAgeAtDeath + " years"));
+        $statsContainer.append(
+            this.createStatItem("Average Lifespan: ", periodStats.averageAgeAtDeath + " years", {
+                classes: "averageLifespan",
+            })
+        );
 
         // Average Children Per Person
         $statsContainer.append(
@@ -2728,7 +2770,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Utility function to create a stat item
         const id = options.id || "";
         const title = options.title || "";
-        return $("<div>", { class: "stat-item", id: id, title: title }).append(
+        const classes = options.classes || "";
+        return $("<div>", { class: "stat-item " + classes, id: id, title: title }).append(
             $("<label>").text(label),
             value instanceof jQuery ? value : $("<span>").text(value)
         );
@@ -2880,6 +2923,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Get stats for each 50-year period
         const periodStats = this.familyTreeStats.getStatsBy50YearPeriods();
         console.log("Stats by 50-Year Periods:", periodStats);
+
+        const d3DataFormatter = new D3DataFormatter(periodStats);
+        d3DataFormatter.lifespanGraph();
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -3467,3 +3513,106 @@ window.OneNameTrees = class OneNameTrees extends View {
         $this.loadFromURL();
     }
 };
+
+class D3DataFormatter {
+    constructor(statsByPeriod) {
+        this.statsByPeriod = statsByPeriod;
+    }
+
+    formatLifespanData() {
+        const sortedData = Object.entries(this.statsByPeriod)
+            .sort(([periodA], [periodB]) => {
+                // Assuming period format is "YYYY-YYYY", split and parse to get the start year
+                const startYearA = parseInt(periodA.split("-")[0]);
+                const startYearB = parseInt(periodB.split("-")[0]);
+                return startYearA - startYearB; // Sort by start year
+            })
+            .map(([period, data]) => {
+                const averageAgeAtDeath = data.deathsCount > 0 ? data.totalAgeAtDeath / data.deathsCount : 0;
+                return {
+                    period: period,
+                    averageAgeAtDeath: parseFloat(averageAgeAtDeath.toFixed(2)),
+                    peopleCount: data.peopleCount,
+                };
+            });
+        return sortedData;
+    }
+
+    lifespanGraph() {
+        const lifespanGraphDiv = $('<div id="lifespanGraph" class="graph popup"></div>');
+        $("body").append(lifespanGraphDiv);
+
+        const margin = { top: 30, right: 10, bottom: 30, left: 40 },
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        const svg = d3
+            .select("#lifespanGraph")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const data = this.formatLifespanData().sort((a, b) => d3.ascending(a.period, b.period));
+
+        const x = d3
+            .scaleBand()
+            .range([0, width])
+            .domain(data.map((d) => d.period));
+        const y = d3
+            .scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(data, (d) => d.averageAgeAtDeath)]);
+
+        const line = d3
+            .line()
+            .x((d) => x(d.period) + x.bandwidth() / 2) // Center the line in the band
+            .y((d) => y(d.averageAgeAtDeath));
+
+        svg.append("path")
+            .datum(data) // Bind data to the line
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 1.5)
+            .attr("d", line); // Use line generator to set "d"
+
+        svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+
+        svg.append("g").call(d3.axisLeft(y));
+
+        // Add rectangles for background color
+        data.forEach((d) => {
+            const textWidth = 35; // Adjust based on your actual text width
+            const textHeight = 25; // Adjust based on your actual text height
+            svg.append("rect")
+                .attr("x", x(d.period) + x.bandwidth() / 2 - textWidth / 2)
+                .attr("y", y(d.averageAgeAtDeath) - textHeight - 3)
+                .attr("width", textWidth)
+                .attr("height", textHeight)
+                .attr("fill", "white"); // Background color
+        });
+
+        // Add numbers above each point
+        svg.selectAll(".text")
+            .data(data)
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("x", (d) => x(d.period) + x.bandwidth() / 2) // Center the text above the point
+            .attr("y", (d) => y(d.averageAgeAtDeath) - 10) // Adjust position to be above the point
+            .attr("text-anchor", "middle") // Center the text horizontally
+            .text((d) => d.averageAgeAtDeath);
+
+        // Add circles for each data point
+        svg.selectAll(".point")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("class", "point")
+            .attr("cx", (d) => x(d.period) + x.bandwidth() / 2)
+            .attr("cy", (d) => y(d.averageAgeAtDeath))
+            .attr("r", 5) // Size of the circle
+            .attr("fill", "forestgreen"); // Color of the circle
+    }
+}

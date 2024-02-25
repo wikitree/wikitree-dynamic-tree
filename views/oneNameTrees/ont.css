@@ -651,10 +651,6 @@ header {
   word-wrap: break-word;
 }
 
-.oneNameTrees #treesButtons {
-  margin-top: 0.5em;
-}
-
 .oneNameTrees #table #clearFilters {
   margin-left: 2em !important;
 }
@@ -692,4 +688,26 @@ header {
 
 .oneNameTrees .duplicateLink {
   cursor: pointer;
+}
+
+.oneNameTrees #lifespanGraph {
+  display: none;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  position: absolute;
+  z-index: 100000;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1em;
+}
+
+.oneNameTrees #statsDisplay .stat-item[id] label {
+  cursor: pointer;
+}
+.oneNameTrees #statsDisplay .stat-item[id] label:hover {
+  background-color: #f0f0f0;
+}
+.oneNameTrees #statsDisplay .stat-item[id] label:active {
+  background-color: #e0e0e0;
 }
