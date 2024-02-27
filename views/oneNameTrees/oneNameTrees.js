@@ -74,12 +74,12 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.headerHTML = `
       <div id="controls">
-        <label id="nameLabel" class="controlGroup">Name:
+        <div id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
             <input type="text" id="location" placeholder="Location (Optional)" />
             <input type="submit" id="submit" name="submit" value="GO" />
-        </label>
-        <label id="otherControls" class="controlGroup">
+        </div>
+        <div id="otherControls" class="controlGroup">
             <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
             <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
             <button
@@ -96,19 +96,19 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
             <button id="helpButton" title="About this">?</button>
-        </label>
+        </div>
 
-        <label id="tableLabel" class="controlGroup">Table:
+        <div id="tableLabel" class="controlGroup">Table:
             <button id="tableViewButton" title="View the data in a table">Table</button>
-        </label>
-        <label id="treesButtons" class="controlGroup">Trees:
+        </div>
+        <div id="treesButtons" class="controlGroup">Trees:
           <div id="toggleButtons">
-            <button class="toggleAll" id="showAll" title="show all descendants">+</button
-            ><button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
+            <button class="toggleAll" id="showAll" title="show all descendants">+</button>
+            <button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
           </div>
           <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
           <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
-        </label>
+        </div>
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
         </div>
@@ -520,6 +520,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
                 $this.popupZindex++;
                 graph.css("z-index", $this.popupZindex);
+                $(this).addClass("on");
+            } else {
+                $(this).removeClass("on");
             }
         });
 
@@ -2305,7 +2308,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     reset() {
-        $("div.message").remove();
+        $("div.message,.popup").remove();
 
         $("#toggleDetails,#toggleWTIDs").removeClass("on");
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
@@ -2345,7 +2348,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Average Lifespan
         $statsContainer.append(
             this.createStatItem("Average Lifespan: ", stats.getAverageLifespan() + " years", {
-                classes: "averageLifespan",
+                classes: "averageLifespan clicker",
             })
         );
 
@@ -2654,7 +2657,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Average Lifespan
         $statsContainer.append(
             this.createStatItem("Average Lifespan: ", periodStats.averageAgeAtDeath + " years", {
-                classes: "averageLifespan",
+                classes: "averageLifespan clicker",
             })
         );
 
@@ -3543,8 +3546,8 @@ class D3DataFormatter {
         $("body").append(lifespanGraphDiv);
 
         const margin = { top: 30, right: 10, bottom: 30, left: 40 },
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
+            width = 600 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
 
         const svg = d3
             .select("#lifespanGraph")
