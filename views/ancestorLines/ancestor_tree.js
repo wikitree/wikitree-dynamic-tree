@@ -123,9 +123,10 @@ export class AncestorTree {
         let starttime = performance.now();
         let [status, resultByKey, ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
         let callTime = performance.now() - starttime;
+        let getMore = status?.startsWith("Maximum number of profiles");
         let profiles = ancestor_json ? Object.values(ancestor_json) : [];
         console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
-        if (typeof status != "undefined" && status != "") {
+        if (typeof status != "undefined" && status != "" && !getMore) {
             wtViewRegistry.showWarning(`Unexpected response from WikiTree server: "${status}".`);
         }
 
@@ -163,7 +164,8 @@ export class AncestorTree {
             console.log(`Added ${nrAdded} people to the tree`);
 
             // Check if we're done
-            if (profiles.length < API.GET_PERSON_LIMIT) break;
+            // if (profiles.length < API.GET_PERSON_LIMIT) break;
+            if (!getMore) break;
 
             // We have more paged profiles to fetch
             start += API.GET_PERSON_LIMIT;
@@ -173,6 +175,7 @@ export class AncestorTree {
             starttime = performance.now();
             [status, , ancestor_json] = await API.getPeople(reqIds, depth, start, limit, withBios);
             callTime = performance.now() - starttime;
+            getMore = status?.startsWith("Maximum number of profiles");
             profiles = Object.values(ancestor_json);
             console.log(`Received ${profiles.length} profiles in ${callTime}ms.`);
         }
