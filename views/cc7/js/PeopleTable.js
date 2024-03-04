@@ -969,7 +969,7 @@ export class PeopleTable {
                 filterInput.type = "text";
                 filterInput.classList.add("filter-input");
 
-                // Check the length of the text in the first ten cells of the column
+                // Check the length of the text in the first 50 cells of the column
                 const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
                 let isNumeric = 0;
                 let isDate = 0;
