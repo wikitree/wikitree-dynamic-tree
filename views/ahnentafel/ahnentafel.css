@@ -18,6 +18,7 @@
   padding-left: 0.2em;
   font-size: 1.4em;
   cursor: pointer;
+  margin: 0;
 }
 #ahnentafelAncestorList a.profileLink {
   margin: auto;
@@ -50,10 +51,10 @@
   background-color: #fee;
 }
 
-#ahnentafelAncestorList p.ahnentafelPerson.highlighted,
-#ahnentafelAncestorList p.ahnentafelPerson.highlightedClick,
-#ahnentafelAncestorList p.ahnentafelPersonShort.highlighted,
-#ahnentafelAncestorList p.ahnentafelPersonShort.highlightedClick {
+#ahnentafelAncestorList div.ahnentafelPerson.highlighted,
+#ahnentafelAncestorList div.ahnentafelPerson.highlightedClick,
+#ahnentafelAncestorList div.ahnentafelPersonShort.highlighted,
+#ahnentafelAncestorList div.ahnentafelPersonShort.highlightedClick {
   border: 3px solid gold;
   padding: 0;
 }
@@ -164,6 +165,16 @@
   z-index: 11000;
   margin-left: 2em;
 }
+#ahnentafelHeaderBox #help-button:hover {
+  background: green;
+}
+#ahnentafelHeaderBox #help-button:active {
+  background: forestgreen;
+}
+#ahnentafelHeaderBox button:active {
+  background: forestgreen;
+}
+
 #ahnentafelHelpText {
   display: none;
   border: 3px solid forestgreen;
@@ -198,6 +209,13 @@
 #ahnentafelHelpText x:active {
   color: green;
 }
+#ahnentafelHelpText ul {
+  margin: 0.5em;
+  padding: 0.5em;
+}
+#ahnentafelHelpText ul ul {
+  margin: 0 0.5em;
+}
 
 #ahnentafelAncestorList .ahnentafelNumber {
   font-weight: bold;
@@ -218,16 +236,41 @@
   width: 15em;
 }
 
-#progressContainer {
+#st-status #progressContainer {
   width: 100%;
   background-color: #ddd;
 }
 
-#progressBar {
+#wt-status #progressBar {
   width: 0%;
   height: 30px;
   background-color: #4caf50;
   text-align: center;
   line-height: 30px;
   color: white;
+}
+
+#ahnentafelAncestorList .detailsTable {
+  border-collapse: collapse;
+  width: auto;
+}
+
+.detailsTable td {
+  padding-right: 1em;
+  text-align: left;
+}
+
+#ahnentafelAncestorList .bornCol,
+#ahnentafelAncestorList .diedCol {
+  width: 2em;
+}
+
+#ahnentafelAncestorList .bCol,
+#ahnentafelAncestorList .dCol {
+  /* Narrower widths for 'b.' and 'd.' columns */
+  width: 1em; /* Adjust based on actual content width */
+}
+
+#ahnentafelAncestorList div.generationContainer {
+  margin: 0.5em 0;
 }

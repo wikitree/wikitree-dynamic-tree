@@ -157,7 +157,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                  toggles all generations.</li>
                 <li><strong>Additional Generations</strong>: Add more generations by selecting a number (1-5) 
                 in the box and clicking the 'More Genreation(s)' button.</li>
-                <li><strong>Customizable View</strong>: Click the 'Tidy' checkbox to tidy up the text a little.</li>
+                <li><strong>Customizable View</strong>: Click the 'Format' button to cycle through four layout options for the birth and death details.</li>
                 <li><strong>Profile Links</strong>: Click an underlined link to go the WikiTree profile page for that person.</li>
                 <li><strong>In-app Links</strong>: Click on a non-underlined link to go to the person in the list.</li>
                 <li><strong>Duplicates</strong>: Each generation shows the number of duplicates in each generation as "Num1 (Num2) duplicates".
@@ -492,7 +492,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.addMoreGenerationsButton();
         this.addToggleButtons();
         this.applySettings();
-        this.addTidyCheckbox();
+        //this.addTidyCheckbox();
+        this.addFormatButton();
         // this.showFillRates();
         this.setupNavigationButtons(); // Setup navigation buttons
         this.trackChanges(); // Start tracking changes
@@ -797,13 +798,29 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         const theName = this.getName(person);
         if (person.Id === 0) {
-            return `<p data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson" id="person_${person.Id}">
+            return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson" id="person_${
+                person.Id
+            }">
                         [${this.unknownName(this.generation, ahnentafelNumber)}]
-                    </p>`;
+                    </div>`;
         } else {
-            return `<p data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${
+            // Add data attributes to the person's div for birth-date, etc. for dynamic formatting
+
+            const dataAttributes = {
+                "data-birth-date": person.BirthDate,
+                "data-birth-location": person.BirthLocation,
+                "data-death-date": person.DeathDate,
+                "data-death-location": person.DeathLocation,
+                "data-birth-date-status": person?.DataStatus?.BirthDate,
+                "data-death-date-status": person?.DataStatus?.DeathDate,
+            };
+            const dataAttributeString = Object.entries(dataAttributes)
+                .map(([key, value]) => `${key}="${value}"`)
+                .join(" ");
+
+            return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${
                 person.Gender
-            }" id="person_${person.Id}"  data-ahnentafel-number="${ahnentafelNumber}">
+            }" id="person_${person.Id}" data-ahnentafel-number="${ahnentafelNumber}" ${dataAttributeString}>
                         <span class="ahnentafelNumber">${ahnentafelNumber}.</span>
                         <span class="personText">
                             <a class="profileLink" href="https://www.wikitree.com/wiki/${person.Name}">
@@ -830,7 +847,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                         <button class="descendantButton" data-ahnentafel="${ahnentafelNumber}" title="See only ${
                 person.FirstName
             }'s descendants and ancestors">↕</button>
-            </p>`;
+            </div>`;
         }
     }
 
@@ -897,47 +914,129 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         return gender === "Male" ? "Son" : gender === "Female" ? "Daughter" : "Child";
     }
 
+    reformatAll() {
+        if (this.settings.format === 2) {
+            // add tidy class
+            $("#ahnentafelAncestorList").addClass("tidy");
+        } else {
+            $("#ahnentafelAncestorList").removeClass("tidy");
+        }
+        const $this = this;
+        $(".ahnentafelPerson").each(function () {
+            const $personElement = $(this);
+            // Construct a temporary 'person' object from data attributes
+            const person = {
+                BirthDate: $personElement.data("birth-date"),
+                DeathDate: $personElement.data("death-date"),
+                BirthLocation: $personElement.data("birth-location"),
+                DeathLocation: $personElement.data("death-location"),
+                DataStatus: {
+                    BirthDate: $personElement.data("birth-date-status"),
+                    DeathDate: $personElement.data("death-date-status"),
+                },
+            };
+
+            // Call formatBirthDeathDetails with this temporary person object
+            const newContent = $this.formatBirthDeathDetails(person);
+
+            // Update the .birthAndDeathDetails container within the current .ahnentafelPerson element
+            $personElement.find(".birthAndDeathDetails").html(newContent);
+        });
+    }
+
     formatBirthDeathDetails(person) {
-        let birthDetails = "";
-        let deathDetails = "";
+        // Extract the format setting
+        const formatSetting = this.settings.format || 1;
 
-        // Birth details
-        if (person.BirthDate || person.BirthLocation) {
-            const birthDate = person.BirthDate ? this.formatDate(person.BirthDate) : "";
-            let inOn = birthDate.match(/^\d+$/) ? "in" : "on"; // If only a year is present, use 'in'
-            if (person?.DataStatus?.BirthDate === "guess") {
-                inOn = "about";
-            } else if (person?.DataStatus?.BirthDate === "before") {
-                inOn = "before";
-            } else if (person?.DataStatus?.BirthDate === "after") {
-                inOn = "after";
+        // Utility to format dates, assumed to be defined elsewhere
+        const formatDate = (date) => (date ? this.formatDate(date) : "");
+
+        // Function to format location string, only adding "in" if location exists
+        const formatLocation = (location) => (location ? ` in ${location}` : "");
+
+        // Function to determine date status prefix based on formatSetting and date status
+        const formatDateStatus = (status, isTableFormat = false) => {
+            if (isTableFormat) {
+                if (formatSetting === 3) {
+                    // Table format with words
+                    switch (status) {
+                        case "guess":
+                            return "abt.";
+                        case "before":
+                            return "bef.";
+                        case "after":
+                            return "aft.";
+                        default:
+                            return "";
+                    }
+                } else if (formatSetting === 4) {
+                    // Table format with symbols
+                    switch (status) {
+                        case "guess":
+                            return "~";
+                        case "before":
+                            return "<";
+                        case "after":
+                            return ">";
+                        default:
+                            return "";
+                    }
+                }
+            } else {
+                // Narrative style with words
+                switch (status) {
+                    case "guess":
+                        return "about";
+                    case "before":
+                        return "before";
+                    case "after":
+                        return "after";
+                    default:
+                        return "";
+                }
             }
+            return "";
+        };
 
-            birthDetails = `<span class='birthDetails dataItem'>Born ${
-                person.BirthLocation ? `in ${person.BirthLocation} ` : ""
-            }${birthDate ? `${inOn} ${birthDate}` : ""}.</span>`;
+        let content = "";
+
+        switch (formatSetting) {
+            case 1: // Original narrative style
+            case 2: // Tidy table style, narrative
+                const birthStatusWord = formatDateStatus(person.DataStatus?.BirthDate);
+                const deathStatusWord = formatDateStatus(person.DataStatus?.DeathDate);
+                const birthDetails =
+                    person.BirthDate || person.BirthLocation
+                        ? `<span class='birthDetails'>Born ${birthStatusWord} ${formatDate(
+                              person.BirthDate
+                          )}${formatLocation(person.BirthLocation)}.</span>`
+                        : "";
+                const deathDetails =
+                    person.DeathDate || person.DeathLocation
+                        ? `<span class='deathDetails'>Died ${deathStatusWord} ${formatDate(
+                              person.DeathDate
+                          )}${formatLocation(person.DeathLocation)}.</span>`
+                        : "";
+                content = `${birthDetails} ${deathDetails}`;
+                break;
+
+            case 3: // Table with 'Born:' and 'Died:', using words
+            case 4: // Table with 'b.' and 'd.', using symbols
+                const birthPrefix = formatSetting === 4 ? "b." : "Born:";
+                const deathPrefix = formatSetting === 4 ? "d." : "Died:";
+                const birthStatus = formatDateStatus(person.DataStatus?.BirthDate, true);
+                const deathStatus = formatDateStatus(person.DataStatus?.DeathDate, true);
+                const birthRow = `<tr><td>${birthPrefix}</td><td>${birthStatus} ${formatDate(
+                    person.BirthDate
+                )}</td><td>${person.BirthLocation || ""}</td></tr>`;
+                const deathRow = `<tr><td>${deathPrefix}</td><td>${deathStatus} ${formatDate(
+                    person.DeathDate
+                )}</td><td>${person.DeathLocation || ""}</td></tr>`;
+                content = `<table class='detailsTable'><tbody>${birthRow}${deathRow}</tbody></table>`;
+                break;
         }
 
-        // Death details
-        if ((person.DeathDate && person.DeathDate !== "0000-00-00") || person.DeathLocation) {
-            const deathDate =
-                person.DeathDate && person.DeathDate !== "0000-00-00" ? this.formatDate(person.DeathDate) : "";
-            let inOn = deathDate.match(/^\d+$/) ? "in" : "on"; // If only a year is present, use 'in'
-
-            if (person?.DataStatus?.DeathDate === "guess") {
-                inOn = "about";
-            } else if (person?.DataStatus?.DeathDate === "before") {
-                inOn = "before";
-            } else if (person?.DataStatus?.DeathDate === "after") {
-                inOn = "after";
-            }
-
-            deathDetails = `<span class='deathDetails dataItem'>Died ${
-                person.DeathLocation ? `in ${person.DeathLocation} ` : ""
-            }${deathDate ? `${inOn} ${deathDate}` : ""}.</span>`;
-        }
-
-        return [birthDetails, deathDetails].filter((detail) => detail).join(" ");
+        return content;
     }
 
     getNameById(id) {
@@ -1086,11 +1185,44 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             });
         }
     }
+
+    addFormatButton() {
+        const buttonHTML = `<button class="small" id="formatButton" 
+        title="Change the format of the birth and death details.  Cycle through four options."
+        >Format</label>`;
+        if ($("#formatButton").length === 0) {
+            $("#ahnentafelHeaderBox #help-button").before(buttonHTML);
+            const formatButton = $("#formatButton");
+            formatButton.prop("checked", this.settings.tidy);
+            const $this = this;
+            formatButton.on("click", function () {
+                $this.settings.format++;
+                if ($this.settings.format > 4) {
+                    $this.settings.format = 1;
+                }
+                $this.saveSettings();
+                $this.applySettings();
+            });
+        }
+    }
+
     // Load settings from localStorage
     loadSettings() {
-        const defaultSettings = { tidy: false };
-        const storedSettings = localStorage.getItem("ahnentafelSettings");
-        return storedSettings ? JSON.parse(storedSettings) : defaultSettings;
+        const defaultSettings = { tidy: false, format: 1 };
+        const storedSettingsString = localStorage.getItem("ahnentafelSettings");
+        let storedSettings = storedSettingsString ? JSON.parse(storedSettingsString) : null;
+
+        // If storedSettings is not null, check for the 'format' property
+        if (storedSettings) {
+            // If 'format' is not present in storedSettings, set it to 1
+            if (storedSettings.format === undefined) {
+                storedSettings.format = 1;
+            }
+            return storedSettings;
+        } else {
+            // If there are no storedSettings, return the defaultSettings
+            return defaultSettings;
+        }
     }
 
     // Save settings to localStorage
@@ -1098,13 +1230,33 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         localStorage.setItem("ahnentafelSettings", JSON.stringify(this.settings));
     }
 
+    setUniformDateColumnWidth() {
+        let maxWidth = 0;
+        // Find all second columns
+        $(".detailsTable tr td:nth-child(2)").each(function () {
+            const width = $(this).outerWidth();
+            if (width > maxWidth) {
+                maxWidth = width;
+            }
+        });
+
+        // Set all second columns to the maximum width found
+        $(".detailsTable tr td:nth-child(2)").css("width", maxWidth);
+    }
+
     // Apply settings to the UI
     applySettings() {
+        this.reformatAll();
+        if (this.settings.format > 2) {
+            this.setUniformDateColumnWidth();
+        }
+        /*
         if (this.settings.tidy) {
             $("#ahnentafelAncestorList").addClass("tidy");
         } else {
             $("#ahnentafelAncestorList").removeClass("tidy");
         }
+        */
     }
 
     // Inside the AhnentafelAncestorList class
