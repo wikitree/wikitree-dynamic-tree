@@ -807,33 +807,37 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             // Add data attributes to the person's div for birth-date, etc. for dynamic formatting
 
             const dataAttributes = {
-                "data-birth-date": person.BirthDate,
-                "data-birth-location": person.BirthLocation,
-                "data-death-date": person.DeathDate,
-                "data-death-location": person.DeathLocation,
-                "data-birth-date-status": person?.DataStatus?.BirthDate,
-                "data-death-date-status": person?.DataStatus?.DeathDate,
+                "data-birth-date": person.BirthDate || "",
+                "data-birth-location": person.BirthLocation || "",
+                "data-death-date": person.DeathDate || "",
+                "data-death-location": person.DeathLocation || "",
+                "data-birth-date-status": person?.DataStatus?.BirthDate || "",
+                "data-death-date-status": person?.DataStatus?.DeathDate || "",
             };
             const dataAttributeString = Object.entries(dataAttributes)
                 .map(([key, value]) => `${key}="${value}"`)
                 .join(" ");
 
-            return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${
-                person.Gender
-            }" id="person_${person.Id}" data-ahnentafel-number="${ahnentafelNumber}" ${dataAttributeString}>
+            let profileLink = `<a class="profileLink" href="https://www.wikitree.com/wiki/${person.Name}">
+            ${theName.theFirstName} ${person.MiddleName || ""} 
+            ${person.Nicknames ? `"${person.Nicknames}" ` : ""}
+            ${person.LastNameCurrent !== person.LastNameAtBirth ? ` (${person.LastNameAtBirth}) ` : ""}
+            ${person.LastNameCurrent}</a>${person.Suffix ? ` ${person.Suffix}` : ""}${
+                additionalNumbers ? ` (Also ${additionalNumbers})` : ""
+            }`;
+            if (!theName.theFirstName) {
+                profileLink = "Private";
+            }
+
+            // Get gender from Ahnnetafel number
+            const gender = ahnentafelNumber % 2 === 0 ? "Male" : "Female";
+
+            return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${gender}" id="person_${
+                person.Id
+            }" data-ahnentafel-number="${ahnentafelNumber}" ${dataAttributeString}>
                         <span class="ahnentafelNumber">${ahnentafelNumber}.</span>
                         <span class="personText">
-                            <a class="profileLink" href="https://www.wikitree.com/wiki/${person.Name}">
-                                ${theName.theFirstName} ${person.MiddleName || ""} 
-                                ${person.Nicknames ? `"${person.Nicknames}" ` : ""}
-                                ${
-                                    person.LastNameCurrent !== person.LastNameAtBirth
-                                        ? ` (${person.LastNameAtBirth}) `
-                                        : ""
-                                }
-                                ${person.LastNameCurrent}</a>${person.Suffix ? ` ${person.Suffix}` : ""}${
-                additionalNumbers ? ` (Also ${additionalNumbers})` : ""
-            }: 
+                            ${profileLink}: 
                             <span class="birthAndDeathDetails">${this.formatBirthDeathDetails(person)}</span>
                             <span class="relativeDetails"><span class="parentOfDetails dataItem">${this.formatParentOfLinks(
                                 person,
@@ -865,12 +869,16 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         const theName = this.getName(child);
 
         // Create the link for the direct child
-        let childLink = `<a data-id="${child.Id}" class="parentOf" data-highlighted="${this.incrementedNumber()}">${
-            theName.theFirstName
-        } ${child.LastNameAtBirth}</a>`;
+        let name = theName.theFirstName + " " + child.LastNameAtBirth;
+        if (!theName.theFirstName) {
+            name = "Private";
+        }
+        let childLink = `<a data-id="${
+            child.Id
+        }" class="parentOf" data-highlighted="${this.incrementedNumber()}">${name}</a>`;
 
-        // Determine the relationship label based on gender
-        let relationshipLabel = person.Gender === "Male" ? "Father" : "Mother";
+        // Determine the relationship label based on Ahnen numbers
+        let relationshipLabel = ahnentafelNumber % 2 === 0 ? "Father" : "Mother";
 
         return ` ${relationshipLabel} of (${childAhnentafelNumber}) ${childLink}.`;
     }
@@ -902,9 +910,12 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         let parent = this.ancestors.find((p) => p.Id === parentId);
         if (parent) {
             const theName = this.getName(parent);
-            return `(${ahnentafelNumber}) <a data-id="${parentId}" class="childOf" data-highlighted="${this.incrementedNumber()}">${
-                theName.theFirstName
-            } ${parent.LastNameAtBirth}</a>`;
+
+            let name = `${theName.theFirstName} ${parent.LastNameAtBirth}`;
+            if (!theName.theFirstName) {
+                name = "Private";
+            }
+            return `(${ahnentafelNumber}) <a data-id="${parentId}" class="childOf" data-highlighted="${this.incrementedNumber()}">${name}</a>`;
         } else {
             return "";
         }
@@ -1005,18 +1016,40 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             case 2: // Tidy table style, narrative
                 const birthStatusWord = formatDateStatus(person.DataStatus?.BirthDate);
                 const deathStatusWord = formatDateStatus(person.DataStatus?.DeathDate);
-                const birthDetails =
+
+                let formattedBirthDate = formatDate(person.BirthDate);
+                if (!formattedBirthDate || person.BirthDate === "0000-00-00" || !person.BirthDate) {
+                    formattedBirthDate = "";
+                } else {
+                    formattedBirthDate = `${birthStatusWord} ${formattedBirthDate}`;
+                }
+
+                let formattedDeathDate = formatDate(person.DeathDate);
+                if (!formattedDeathDate || person.DeathDate === "0000-00-00" || !person.DeathDate) {
+                    formattedDeathDate = "";
+                } else {
+                    formattedDeathDate = `${deathStatusWord} ${formattedDeathDate}`;
+                }
+
+                let formattedBirthLocation = formatLocation(person.BirthLocation) || "";
+                if (!person.BirthLocation) {
+                    formattedBirthLocation = "";
+                }
+
+                let formattedDeathLocation = formatLocation(person.DeathLocation) || "";
+                if (!person.DeathLocation) {
+                    formattedDeathLocation = "";
+                }
+
+                let birthDetails =
                     person.BirthDate || person.BirthLocation
-                        ? `<span class='birthDetails'>Born ${birthStatusWord} ${formatDate(
-                              person.BirthDate
-                          )}${formatLocation(person.BirthLocation)}.</span>`
+                        ? `<span class='birthDetails'>Born ${formattedBirthDate} ${formattedBirthLocation}.</span>`
                         : "";
-                const deathDetails =
+                let deathDetails =
                     person.DeathDate || person.DeathLocation
-                        ? `<span class='deathDetails'>Died ${deathStatusWord} ${formatDate(
-                              person.DeathDate
-                          )}${formatLocation(person.DeathLocation)}.</span>`
+                        ? `<span class='deathDetails'>Died ${formattedDeathDate} ${formattedDeathLocation}.</span>`
                         : "";
+
                 content = `${birthDetails} ${deathDetails}`;
                 break;
 
@@ -1026,12 +1059,28 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 const deathPrefix = formatSetting === 4 ? "d." : "Died:";
                 const birthStatus = formatDateStatus(person.DataStatus?.BirthDate, true);
                 const deathStatus = formatDateStatus(person.DataStatus?.DeathDate, true);
-                const birthRow = `<tr><td>${birthPrefix}</td><td>${birthStatus} ${formatDate(
-                    person.BirthDate
-                )}</td><td>${person.BirthLocation || ""}</td></tr>`;
-                const deathRow = `<tr><td>${deathPrefix}</td><td>${deathStatus} ${formatDate(
-                    person.DeathDate
-                )}</td><td>${person.DeathLocation || ""}</td></tr>`;
+
+                let theBirthDate = formatDate(person.BirthDate);
+                if (!theBirthDate || person.BirthDate === "0000-00-00" || !person.BirthDate) {
+                    theBirthDate = "";
+                }
+                let theDeathDate = formatDate(person.DeathDate);
+                if (!theDeathDate || person.DeathDate === "0000-00-00" || !person.DeathDate) {
+                    theDeathDate = "";
+                }
+
+                let birthRow = `<tr><td>${birthPrefix}</td><td>${birthStatus} ${formatDate(person.BirthDate)}</td><td>${
+                    person.BirthLocation || ""
+                }</td></tr>`;
+                if (!person.BirthDate && !person.BirthLocation) {
+                    birthRow = "";
+                }
+                let deathRow = `<tr><td>${deathPrefix}</td><td>${deathStatus} ${formatDate(person.DeathDate)}</td><td>${
+                    person.DeathLocation || ""
+                }</td></tr>`;
+                if (!person.DeathDate && !person.DeathLocation) {
+                    deathRow = "";
+                }
                 content = `<table class='detailsTable'><tbody>${birthRow}${deathRow}</tbody></table>`;
                 break;
         }
