@@ -476,6 +476,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.header.on("click", "#loadButton", function () {
             $("#fileInput").click(); // Triggers the hidden file input
+            wtViewRegistry.clearStatus();
         });
 
         this.header.on("click", "#cancelFetch", function () {
@@ -526,6 +527,20 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
+        this.header.on("click", ".mostCommonNames label", function () {
+            const graph = $("#namesTable");
+            graph.toggle();
+            if (graph.is(":visible")) {
+                graph.css("display", "inline-block");
+                graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                $this.popupZindex++;
+                graph.css("z-index", $this.popupZindex);
+                $(this).addClass("on");
+            } else {
+                $(this).removeClass("on");
+            }
+        });
+
         // Esc to close the highest (z-index) open popup
         // Add Esc to close family sheet
         $(document).on("keyup", function (e) {
@@ -546,6 +561,22 @@ window.OneNameTrees = class OneNameTrees extends View {
                     lastPopup.fadeOut();
                 }
             }
+        });
+
+        function closePopup(el) {
+            el.slideUp();
+            if (el.prop("id") === "lifespanGraph") {
+                $(".averageLifespan label").removeClass("on");
+            } else if (el.prop("id") === "namesTable") {
+                $(".mostCommonNames label").removeClass("on");
+            }
+        }
+
+        $(document).on("click", ".popup x", function () {
+            closePopup($(this).closest("div"));
+        });
+        $(document).on("dblclick", ".popup", function (e) {
+            closePopup($(this));
         });
     }
 
@@ -2370,7 +2401,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         const topMaleNames = stats.getTopNamesByGender("Male", 100);
         const topFemaleNames = stats.getTopNamesByGender("Female", 100);
         const $commonNamesDiv = this.generateNamesHTML(topMaleNames, topFemaleNames);
-        $statsContainer.append(this.createStatItem("Most Common Names: ", $commonNamesDiv));
+        $statsContainer.append(
+            this.createStatItem("Most Common Names: ", $commonNamesDiv, { classes: "mostCommonNames clicker" })
+        );
 
         // Most Common Locations
         const locationStats = stats.getLocationStatistics();
@@ -2929,6 +2962,11 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const d3DataFormatter = new D3DataFormatter(periodStats);
         d3DataFormatter.lifespanGraph();
+
+        d3DataFormatter.formatNamesData();
+
+        const topNamesByPeriod = this.familyTreeStats.getTopNamesByPeriod();
+        console.log("Top Names by Period: ", topNamesByPeriod);
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -3520,6 +3558,50 @@ window.OneNameTrees = class OneNameTrees extends View {
 class D3DataFormatter {
     constructor(statsByPeriod) {
         this.statsByPeriod = statsByPeriod;
+        this.nameBackgroundColours = [
+            "#FFCCCB", // Light Red
+            "#CCFFCC", // Light Green
+            "#CCCCFF", // Light Blue
+            "#FFFFCC", // Light Yellow
+            "#FFCCFF", // Light Pink
+            "#CCFFFF", // Light Cyan
+            "#F0E68C", // Khaki
+            "#E6E6FA", // Lavender
+            "#FFFACD", // Lemon Chiffon
+            "#FFE4E1", // Misty Rose
+            "#FFEFD5", // Papaya Whip
+            "#FFF0F5", // Lavender Blush
+            "#F0FFF0", // Honeydew
+            "#F5FFFA", // Mint Cream
+            "#F0FFFF", // Azure
+            "#FAEBD7", // Antique White
+            "#FAF0E6", // Linen
+            "#FFF5EE", // Seashell
+            "#F5F5F5", // White Smoke
+            "#F5F5DC", // Beige
+        ];
+
+        this.nameBorderColours = [
+            "#20B2AA", // Light Sea Green
+            "#9370DB", // Medium Purple
+            "#FF4500", // Orange Red
+            "#2E8B57", // Sea Green
+            "#8B0000", // Dark Red
+            "#483D8B", // Dark Slate Blue
+            "#006400", // Dark Green
+            "#4B0082", // Indigo
+            "#FF8C00", // Dark Orange
+            "#2F4F4F", // Dark Slate Gray
+            "#8B008B", // Dark Magenta
+            "#556B2F", // Dark Olive Green
+            "#FFD700", // Gold
+            "#800080", // Purple
+            "#008080", // Teal
+            "#DC143C", // Crimson
+            "#00008B", // Dark Blue
+            "#B8860B", // Dark Goldenrod
+            "#006400", // DarkGreen
+        ];
     }
 
     formatLifespanData() {
@@ -3542,8 +3624,9 @@ class D3DataFormatter {
     }
 
     lifespanGraph() {
-        const lifespanGraphDiv = $('<div id="lifespanGraph" class="graph popup"></div>');
+        const lifespanGraphDiv = $('<div id="lifespanGraph" class="graph popup"><x>x</x></div>');
         $("body").append(lifespanGraphDiv);
+        lifespanGraphDiv.draggable();
 
         const margin = { top: 30, right: 10, bottom: 30, left: 40 },
             width = 600 - margin.left - margin.right,
@@ -3617,5 +3700,108 @@ class D3DataFormatter {
             .attr("cy", (d) => y(d.averageAgeAtDeath))
             .attr("r", 5) // Size of the circle
             .attr("fill", "forestgreen"); // Color of the circle
+    }
+
+    formatNameDataForD3() {
+        const sortedData = Object.entries(this.statsByPeriod)
+            .sort(([periodA], [periodB]) => {
+                // Sort by the start year of each period
+                const startYearA = parseInt(periodA.split("-")[0]);
+                const startYearB = parseInt(periodB.split("-")[0]);
+                return startYearA - startYearB;
+            })
+            .map(([period, data]) => ({
+                period: period,
+                Male: data.Male,
+                Female: data.Female,
+            }));
+
+        return sortedData;
+    }
+
+    formatNamesData() {
+        // Sort periods in ascending order
+        const topNamesByPeriod = this.getTopNamesByPeriod();
+
+        // Now, create a table to display the data
+        const tableDiv = $('<div id="namesTable" class="popup"><x>&times;</x></div>');
+        $("body").append(tableDiv);
+        tableDiv.draggable();
+        const table = d3.select("#namesTable").append("table");
+
+        table
+            .append("thead")
+            .append("tr")
+            .selectAll("th")
+            .data(["Period", "Male Names", "Female Names"])
+            .enter()
+            .append("th")
+            .text((d) => d);
+
+        const tbody = table.append("tbody");
+
+        topNamesByPeriod.forEach((item) => {
+            const row = tbody.append("tr");
+            row.append("td").text(item.period); // Access the period directly
+            row.append("td").html(this.formatNameList(item.Male)); // Access Male directly
+            row.append("td").html(this.formatNameList(item.Female)); // Access Female directly
+        });
+    }
+
+    // Helper function to format names list into HTML
+    formatNameList(namesArray) {
+        if (!namesArray) {
+            return "";
+        }
+        return namesArray
+            .map((name) => {
+                const { backgroundColour, borderColour } = this.getColorsForName(name[0]); // Get colors for the name
+                return `<span style="background-color: ${backgroundColour}; border: 1px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name[0]} (${name[1]})</span>`;
+            })
+            .join(", ");
+    }
+
+    // Method to get background and border color for a name
+    getColorsForName(name) {
+        const backgroundIndex = this.hashNameToIndex(name, this.nameBackgroundColours.length);
+        const borderIndex = this.hashNameToIndex(name, this.nameBorderColours.length);
+        return {
+            backgroundColour: this.nameBackgroundColours[backgroundIndex],
+            borderColour: this.nameBorderColours[borderIndex],
+        };
+    }
+
+    // Hash function for name to index mapping
+    hashNameToIndex(name, arrayLength) {
+        let sum = 0;
+        for (let i = 0; i < name.length; i++) {
+            sum += name.charCodeAt(i);
+        }
+        return sum % arrayLength; // Ensure index is within the array bounds
+    }
+
+    // Method to get the top 10 names for each period, for both genders
+    getTopNamesByPeriod() {
+        const periods = Object.keys(this.statsByPeriod); // Get all the periods
+        const topNamesByPeriod = periods.map((period) => {
+            const periodData = this.statsByPeriod[period];
+            const names = periodData.names;
+
+            // Assuming names are already sorted within each gender
+            return {
+                period: period,
+                Male: names.Male.slice(0, 10),
+                Female: names.Female.slice(0, 10),
+            };
+        });
+
+        // Sort the periods in ascending order
+        topNamesByPeriod.sort((a, b) => {
+            const startYearA = parseInt(a.period.split("-")[0], 10);
+            const startYearB = parseInt(b.period.split("-")[0], 10);
+            return startYearA - startYearB;
+        });
+
+        return topNamesByPeriod;
     }
 }
