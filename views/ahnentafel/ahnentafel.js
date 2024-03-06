@@ -47,8 +47,7 @@ window.AhnentafelView = class AhnentafelView extends View {
 window.AhnentafelAncestorList = class AhnentafelAncestorList {
     static WANTED_NAME_PARTS = [
         "Prefix",
-        "FirstName",
-        "MiddleNames",
+        "FirstNames",
         "PreferredName",
         "Nicknames",
         "LastNameAtBirth",
@@ -760,10 +759,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     getName(person) {
         const aName = new PersonName(person);
         const theName = aName.withParts(this.WANTED_NAME_PARTS);
-        const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
+        const theParts = aName.getParts(["LastNameAtBirth", "FirstNames"]);
         const theLNAB = theParts.get("LastNameAtBirth");
-        const theFirstName = theParts.get("FirstName");
-        const theMiddleName = theParts.get("MiddleName");
+        const theFirstNames = theParts.get("FirstNames");
         const theSuffix = theParts.get("Suffix");
         const theNicknames = theParts.get("Nicknames");
         const thePrefix = theParts.get("Prefix");
@@ -775,8 +773,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             theName,
             theParts,
             theLNAB,
-            theFirstName,
-            theMiddleName,
+            theFirstNames,
             theSuffix,
             theNicknames,
             thePrefix,
@@ -819,13 +816,13 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 .join(" ");
 
             let profileLink = `<a class="profileLink" href="https://www.wikitree.com/wiki/${person.Name}">
-            ${theName.theFirstName} ${person.MiddleName || ""} 
+            ${theName.theFirstNames}
             ${person.Nicknames ? `"${person.Nicknames}" ` : ""}
             ${person.LastNameCurrent !== person.LastNameAtBirth ? ` (${person.LastNameAtBirth}) ` : ""}
             ${person.LastNameCurrent}</a>${person.Suffix ? ` ${person.Suffix}` : ""}${
                 additionalNumbers ? ` (Also ${additionalNumbers})` : ""
             }`;
-            if (!theName.theFirstName) {
+            if (!theName.theFirstNames) {
                 profileLink = "Private";
             }
 
@@ -869,8 +866,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         const theName = this.getName(child);
 
         // Create the link for the direct child
-        let name = theName.theFirstName + " " + child.LastNameAtBirth;
-        if (!theName.theFirstName) {
+        let name = theName.theFirstNames + " " + child.LastNameAtBirth;
+        if (!theName.theFirstNames) {
             name = "Private";
         }
         let childLink = `<a data-id="${
@@ -911,8 +908,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if (parent) {
             const theName = this.getName(parent);
 
-            let name = `${theName.theFirstName} ${parent.LastNameAtBirth}`;
-            if (!theName.theFirstName) {
+            let name = `${theName.theFirstNames} ${parent.LastNameAtBirth}`;
+            if (!theName.theFirstNames) {
                 name = "Private";
             }
             return `(${ahnentafelNumber}) <a data-id="${parentId}" class="childOf" data-highlighted="${this.incrementedNumber()}">${name}</a>`;
