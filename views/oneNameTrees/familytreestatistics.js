@@ -402,24 +402,4 @@ export class FamilyTreeStatistics {
 
         return categoryCounts;
     }
-
-    // Method to get the top 10 names for each period, for both genders
-    getTopNamesByPeriod() {
-        const periods = Object.keys(this.periodData); // Get all the periods available in the data
-        const topNamesByPeriod = periods.map((period) => {
-            const periodData = this.periodData[period];
-            const names = periodData.names;
-
-            // Simplify the structure and get top 10 for each gender
-            const simplifiedNames = {
-                period: period,
-                Male: names.Male.slice(0, 10), // Assuming names are already sorted
-                Female: names.Female.slice(0, 10),
-            };
-
-            return simplifiedNames;
-        });
-
-        return topNamesByPeriod;
-    }
 }

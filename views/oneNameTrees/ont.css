@@ -731,6 +731,11 @@ input[type="submit"],
 .oneNameTrees #namesTable table tr {
   border-top: 2px solid #ddd;
 }
+.oneNameTrees #namesTable table caption {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+}
 
 .oneNameTrees .popup x {
   position: absolute;

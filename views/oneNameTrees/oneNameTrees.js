@@ -2965,9 +2965,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         d3DataFormatter.formatNamesData();
 
-        const topNamesByPeriod = this.familyTreeStats.getTopNamesByPeriod();
-        console.log("Top Names by Period: ", topNamesByPeriod);
-
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
         console.log("Country Counts: ", locationStats.countryCounts);
@@ -3700,6 +3697,15 @@ class D3DataFormatter {
             .attr("cy", (d) => y(d.averageAgeAtDeath))
             .attr("r", 5) // Size of the circle
             .attr("fill", "forestgreen"); // Color of the circle
+
+        // Add a title to the graph
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", 0 - margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "1em")
+            .style("font-weight", "bold")
+            .text("Average Life Span");
     }
 
     formatNameDataForD3() {
@@ -3728,6 +3734,7 @@ class D3DataFormatter {
         $("body").append(tableDiv);
         tableDiv.draggable();
         const table = d3.select("#namesTable").append("table");
+        table.append("caption").text("Top 10 Names by 50-Year Periods");
 
         table
             .append("thead")
