@@ -154,7 +154,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 <li><strong>Undo / Redo</strong>: After clicking buttons, you can use the buttons at the top to return to a previous state. You can also use Ctrl + Shift + Arrow (Opt + Shift + Arrow on Mac) for this.</li>
                 <li><strong>Expand/Collapse Generations</strong>: Use ▼ to manage generations' visibility. The top-left master toggle button
                  toggles all generations.</li>
-                <li><strong>Additional Generations</strong>: Add more generations by selecting a number (1-5) 
+                <li><strong>Additional Generations</strong>: Add more generations by selecting a number (1-5)
                 in the box and clicking the 'More Genreation(s)' button.</li>
                 <li><strong>Customizable View</strong>: Click the 'Format' button to cycle through four layout options for the birth and death details.</li>
                 <li><strong>Profile Links</strong>: Click an underlined link to go the WikiTree profile page for that person.</li>
@@ -164,7 +164,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                         <li><strong>"Num1"</strong> shows the number of entries in the Ahnentafel that are additional appearances of an ancestor who has previously appeared on the list.</li>
                         <li><strong>"Num2"</strong> shows the number of slots in each generation filled by individuals with more than one entry in the Ahnentafel.</li>
                     </ul>
-                </li> 
+                </li>
             </ul>
         </div>
     `);
@@ -425,23 +425,24 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
 
         try {
-            let ancestorData = await WikiTreeAPI.getPeople(AhnentafelView.APP_ID, p.Id, this.profileFieldsArray, {
-                ancestors: this.maxGeneration,
-            });
-            this.processInitialAncestors(ancestorData);
-
-            if (!ancestorData) {
-                wtViewRegistry.showError(`Error: No ancestors found for ${p.Name}`);
-                return;
+            this.ancestors = [];
+            const limit = 1000;
+            let start = 0;
+            let theresMore = true;
+            while (theresMore) {
+                let ancestorData = await WikiTreeAPI.getPeople(AhnentafelView.APP_ID, p.Id, this.profileFieldsArray, {
+                    ancestors: this.maxGeneration,
+                    start: start,
+                    limit: limit,
+                });
+                if (!ancestorData && this.ancestors.length == 0) {
+                    wtViewRegistry.showError(`Error: No ancestors found for ${p.Name}`);
+                    return;
+                }
+                this.ancestors = this.ancestors.concat(this.processReceivedAncestors(ancestorData));
+                theresMore = ancestorData[0]?.startsWith("Maximum number of profiles");
+                start += limit;
             }
-
-            // Assuming ancestorData[2] is an object of objects, keyed by Id
-            const ancestorObject = ancestorData[2];
-            this.ancestors = Object.keys(ancestorObject).map((key) => {
-                ancestorObject[key].Generation = [];
-                ancestorObject[key].AhnentafelNumber = [];
-                return ancestorObject[key];
-            });
 
             // Start with the root person
             const rootPerson = this.ancestors.find((person) => person.Id === p.Id);
@@ -501,10 +502,11 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.addHelpText(); // Add help text
     }
 
-    processInitialAncestors(ancestorData) {
+    processReceivedAncestors(ancestorData) {
+        let ancestors = [];
         if (ancestorData && ancestorData[2] && typeof ancestorData[2] === "object") {
             // Process each ancestor in ancestorData[2]
-            this.ancestors = Object.keys(ancestorData[2]).map((key) => {
+            ancestors = Object.keys(ancestorData[2]).map((key) => {
                 const ancestor = ancestorData[2][key];
 
                 // Initialize properties for each ancestor
@@ -516,6 +518,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         } else {
             console.error("Invalid ancestor data format", ancestorData);
         }
+        return ancestors;
     }
 
     isValidAncestor(ancestor) {
@@ -568,29 +571,38 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         for (let group of idGroups) {
             let ids = group.join(",");
-            let additionalData = await WikiTreeAPI.getPeople(AhnentafelView.APP_ID, ids, this.profileFieldsArray, {
-                ancestors: generationsToAdd,
-            });
-            completedCalls++;
-            this.updateProgressBar(completedCalls, totalCalls);
+            const limit = 1000;
+            let start = 0;
+            let theresMore = true;
+            while (theresMore) {
+                let additionalData = await WikiTreeAPI.getPeople(AhnentafelView.APP_ID, ids, this.profileFieldsArray, {
+                    ancestors: generationsToAdd,
+                    start: start,
+                    limit: limit,
+                });
 
-            if (additionalData[2]) {
-                Object.values(additionalData[2]).forEach((newAncestor) => {
-                    let existingAncestor = this.ancestors.find((a) => a.Id === newAncestor.Id);
-                    if (!existingAncestor) {
-                        this.initializeAncestor(newAncestor);
-                        this.ancestors.push(newAncestor);
-                    } else {
-                        // Update existing ancestor's data
-                        // This ensures that any new information from additionalData is integrated
-                        for (let key in newAncestor) {
-                            if (newAncestor.hasOwnProperty(key)) {
-                                existingAncestor[key] = newAncestor[key];
+                if (additionalData[2]) {
+                    Object.values(additionalData[2]).forEach((newAncestor) => {
+                        let existingAncestor = this.ancestors.find((a) => a.Id === newAncestor.Id);
+                        if (!existingAncestor) {
+                            this.initializeAncestor(newAncestor);
+                            this.ancestors.push(newAncestor);
+                        } else {
+                            // Update existing ancestor's data
+                            // This ensures that any new information from additionalData is integrated
+                            for (let key in newAncestor) {
+                                if (newAncestor.hasOwnProperty(key)) {
+                                    existingAncestor[key] = newAncestor[key];
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
+                theresMore = additionalData[0]?.startsWith("Maximum number of profiles");
+                start += limit;
             }
+            completedCalls++;
+            this.updateProgressBar(completedCalls, totalCalls);
         }
 
         // Reassign Ahnentafel numbers and generations to all ancestors
@@ -702,7 +714,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 } ` +
                     this.generationTitle(generationNumber) +
                     `${range} ${duplicateText}${fillRateText}</h2>
-                    <div class="generationContainer" data-collapsed="${this.incrementedNumber()}">        
+                    <div class="generationContainer" data-collapsed="${this.incrementedNumber()}">
                     ${html}
                     </div>
                 </section>`
@@ -739,7 +751,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             person.Gender
         }" id="person_${ahnentafelNumber}" data-ahnentafel-number="${ahnentafelNumber}">
             <span class="ahnentafelNumber">${ahnentafelNumber}.</span>
-            <span class="personText"> 
+            <span class="personText">
                 <a data-id="${person.Id}" class="profileLink" href="#person_${person.Id}">${person.FirstName} ${
             person.LastNameAtBirth
         }</a>
@@ -751,7 +763,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             </span>
             <button class="descendantButton" data-active='${ahnentafelNumber}' data-ahnentafel="${ahnentafelNumber}" title="See only ${
             person.FirstName
-        }'s descendants and ancestors">↕</button> 
+        }'s descendants and ancestors">↕</button>
         </p>
         `;
     }
@@ -834,7 +846,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             }" data-ahnentafel-number="${ahnentafelNumber}" ${dataAttributeString}>
                         <span class="ahnentafelNumber">${ahnentafelNumber}.</span>
                         <span class="personText">
-                            ${profileLink}: 
+                            ${profileLink}:
                             <span class="birthAndDeathDetails">${this.formatBirthDeathDetails(person)}</span>
                             <span class="relativeDetails"><span class="parentOfDetails dataItem">${this.formatParentOfLinks(
                                 person,
@@ -1233,7 +1245,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     addFormatButton() {
-        const buttonHTML = `<button class="small" id="formatButton" 
+        const buttonHTML = `<button class="small" id="formatButton"
         title="Change the format of the birth and death details.  Cycle through four options."
         >Format</label>`;
         if ($("#formatButton").length === 0) {
