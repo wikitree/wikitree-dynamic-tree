@@ -737,37 +737,6 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         return incrementingNumber++;
     }
 
-    displayShortPersonEntry(person, ahnentafelNumber) {
-        const additionalNumbers = person.AhnentafelNumber.filter((num) => num !== ahnentafelNumber)
-            .sort((a, b) => a - b) // Sorts the numbers in ascending order
-            .map(
-                (num) =>
-                    `<a class="ahnentafelLink" data-highlighted="${this.incrementedNumber()}" data-ahnentafel-number="${num}">${num}</a>`
-            )
-            .join(", ");
-
-        return `
-            <p data-highlighted="${this.incrementedNumber()}" class="ahnentafelPersonShort short ${
-            person.Gender
-        }" id="person_${ahnentafelNumber}" data-ahnentafel-number="${ahnentafelNumber}">
-            <span class="ahnentafelNumber">${ahnentafelNumber}.</span>
-            <span class="personText">
-                <a data-id="${person.Id}" class="profileLink" href="#person_${person.Id}">${person.FirstName} ${
-            person.LastNameAtBirth
-        }</a>
-                ${additionalNumbers ? ` (Also ${additionalNumbers})` : ""}
-                <span class="relativeDetails"><span class="parentOfDetails dataItem">${this.formatParentOfLinks(
-                    person,
-                    ahnentafelNumber
-                )}</span></span>
-            </span>
-            <button class="descendantButton" data-active='${ahnentafelNumber}' data-ahnentafel="${ahnentafelNumber}" title="See only ${
-            person.FirstName
-        }'s descendants and ancestors">↕</button>
-        </p>
-        `;
-    }
-
     getName(person) {
         const aName = new PersonName(person);
         const theName = aName.withParts(this.WANTED_NAME_PARTS);
@@ -1072,8 +1041,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             case 4: // Table with 'b.' and 'd.', using symbols
                 const birthPrefix = formatSetting === 4 ? "b." : "Born:";
                 const deathPrefix = formatSetting === 4 ? "d." : "Died:";
-                const birthStatus = formatDateStatus(person.DataStatus?.BirthDate, true);
-                const deathStatus = formatDateStatus(person.DataStatus?.DeathDate, true);
+                let birthStatus = formatDateStatus(person.DataStatus?.BirthDate, true);
+                let deathStatus = formatDateStatus(person.DataStatus?.DeathDate, true);
 
                 let theBirthDate = formatDate(person.BirthDate);
                 if (!theBirthDate || person.BirthDate === "0000-00-00" || !person.BirthDate) {
