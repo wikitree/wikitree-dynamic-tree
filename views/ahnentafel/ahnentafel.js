@@ -815,6 +815,12 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         } else {
             // Add data attributes to the person's div for birth-date, etc. for dynamic formatting
 
+            if (person.DeathDate === "0000-00-00") {
+                person.DeathDate = "";
+            }
+            if (person.BirthDate === "0000-00-00") {
+                person.BirthDate = "";
+            }
             const dataAttributes = {
                 "data-birth-date": person.BirthDate || "",
                 "data-birth-location": person.BirthLocation || "",
