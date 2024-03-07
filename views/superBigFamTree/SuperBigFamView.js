@@ -160,7 +160,7 @@
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "17 February 2024";
+    const AboutUpdateDate = "07 March 2024";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -2162,16 +2162,23 @@
 
         SuperBigFamView.HlinesATC = [];
         SuperBigFamView.VlinesATC = [];
-        SuperBigFamView.VlinesATCpeep = [];        
+        SuperBigFamView.VlinesATCpeep = [];
 
         for (var ChunkID in SuperBigFamView.theChunkCollection) {
             SuperBigFamView.theChunkCollection[ChunkID]["YsList"] = [];
         }
 
-        linesDIV.innerHTML =
-            (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
-                ? drawBoxesAround()
-                : "") +
+        // ADDING the lineAtBottomOfSVG to force Safari to render (and re-render) the full SVG when being dragged
+        let numD = SuperBigFamView.numDescGens2Display; 
+        let bottomFeederY = 300 + numD * 500 * (SuperBigFamView.displayINLAWS > 0 ? 2 : 1);
+        let lineAtBottomOfSVG =
+            '<polyline points="-100,' + (bottomFeederY) +' 100,' + (bottomFeederY) +'" fill="none" stroke="#EEE" stroke-width="10"></polyline>';
+
+        linesDIV.innerHTML = lineAtBottomOfSVG +
+                (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
+                    ? drawBoxesAround()
+                    : "")
+             +
             drawLinesForFamilyOf("A0") +
             drawLinesForDirectAncestors() +
             drawLinesForDescendants("A0") +
