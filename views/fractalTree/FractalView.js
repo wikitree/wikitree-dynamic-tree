@@ -38,7 +38,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 July 2023";
+    const AboutUpdateDate = "07 March 2024";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1381,6 +1381,18 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
 
         */
 
+        // ADDING the lineAtBottomOfSVG to force Safari to render (and re-render) the full SVG when being dragged
+
+        g.append("line").attrs({
+            id: "lineAtBottomOfSVG",
+            display: "inline-block",
+            x1: -20,
+            y1: 700,
+            x2: 20,
+            y2: 700,
+            style: "stroke: #eee; stroke-width: 8;",
+        });
+
         condLog("ADDING THE PIECES FROM 0 to 2 ** FRACTAL VIEW maxNumGens", 2 ** FractalView.maxNumGens);
         for (let index = 0; index < 2 ** FractalView.maxNumGens; index++) {
             condLog("ADDING THE PIECES FOR ", index);
@@ -1776,6 +1788,12 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
 
     FractalView.drawLines = function () {
         condLog("DRAWING LINES stuff should go here");
+
+        const lineAtBottomOfSVG = document.getElementById("lineAtBottomOfSVG");
+        let bottomFeederY = 2 ** (Math.ceil(FractalView.numGens2Display/2) - 1) - 1;        
+        lineAtBottomOfSVG.setAttribute("y1",500*bottomFeederY + 300);
+        lineAtBottomOfSVG.setAttribute("y2",500*bottomFeederY + 300);
+
         for (let index = 0; index < 2 ** (FractalView.numGens2Display - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
             const vitalDIV = document.getElementById("vital" + index);
@@ -1931,6 +1949,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             element.setAttribute("x2", Xk);
             element.setAttribute("y2", Yk);
         }
+
         for (let index = 2 ** (FractalView.numGens2Display - 1); index < 2 ** (FractalView.maxNumGens - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
             if (element) {
@@ -2069,17 +2088,17 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                         thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
                         thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
 
-                        console.log(
-                            "async adding ",
-                            thePerson.getReportName(),
-                            canUseThis,
-                            hasSources,
-                            biography.getInlineRefCount(),
-                            biography.getPossibleSourcesLineCount(),
-                            biography.hasStyleIssues(),
-                            biography.isMissingSourcesHeading(),
-                            thePeopleList[thePerson.getProfileId()].biocheck
-                        );
+                        // console.log(
+                        //     "async adding ",
+                        //     thePerson.getReportName(),
+                        //     canUseThis,
+                        //     hasSources,
+                        //     biography.getInlineRefCount(),
+                        //     biography.getPossibleSourcesLineCount(),
+                        //     biography.hasStyleIssues(),
+                        //     biography.isMissingSourcesHeading(),
+                        //     thePeopleList[thePerson.getProfileId()].biocheck
+                        // );
                     }
                     FractalView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     FractalView.workingMaxNumGens = Math.min(FractalView.maxNumGens, FractalView.numGensRetrieved + 1);
@@ -2397,17 +2416,17 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                     let hasSources = biography.validate();
                     thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
                     thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
-                    console.log(
-                        "async adding ",
-                        theBioPerson.getReportName(),
-                        canUseThis,
-                        hasSources,
-                        biography.getInlineRefCount(),
-                        biography.getPossibleSourcesLineCount(),
-                        biography.hasStyleIssues(),
-                        biography.isMissingSourcesHeading(),
-                        thePeopleList[theBioPerson.getProfileId()].biocheck
-                    );
+                    // console.log(
+                    //     "async adding ",
+                    //     theBioPerson.getReportName(),
+                    //     canUseThis,
+                    //     hasSources,
+                    //     biography.getInlineRefCount(),
+                    //     biography.getPossibleSourcesLineCount(),
+                    //     biography.hasStyleIssues(),
+                    //     biography.isMissingSourcesHeading(),
+                    //     thePeopleList[theBioPerson.getProfileId()].biocheck
+                    // );
                 }
 
                 person._data.Father = FractalView.theAncestors[id].Father;
