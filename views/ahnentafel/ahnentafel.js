@@ -402,13 +402,6 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             wtViewRegistry.hideInfoPanel();
             return;
         }
-        if (p.Privacy < 50 && !p.Gender) {
-            wtViewRegistry.showError(
-                `<p>Sorry, this profile is <a href="https://www.wikitree.com/wiki/Privacy">Private</a> and you are not on the profile's <a href="https://www.wikitree.com/wiki/Trusted_List">Trusted List</a>.</p>`
-            );
-            wtViewRegistry.hideInfoPanel();
-            return;
-        }
 
         // Fill in some custom links in the "description" with completed values.
         let x = p.Name.split("-");
