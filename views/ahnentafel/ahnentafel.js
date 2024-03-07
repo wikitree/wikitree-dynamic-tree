@@ -396,7 +396,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             if (wtViewRegistry?.session.lm.user.isLoggedIn()) {
                 err += ` You may need to be added to the starting profile's Trusted List.`;
             } else {
-                err += ` Try the Apps Login.`;
+                err += ` Is it a private profile?`;
             }
             wtViewRegistry.showError(err);
             wtViewRegistry.hideInfoPanel();
