@@ -1109,7 +1109,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     formatDate(date) {
-        if (!date || date === "0000-00-00") return "[date unknown]";
+        if (!date || date === "0000-00-00") return "";
         let [year, month, day] = date.split("-");
         month = parseInt(month, 10);
         day = parseInt(day, 10);
