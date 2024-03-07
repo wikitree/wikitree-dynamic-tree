@@ -1078,19 +1078,21 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 let theBirthDate = formatDate(person.BirthDate);
                 if (!theBirthDate || person.BirthDate === "0000-00-00" || !person.BirthDate) {
                     theBirthDate = "";
+                    birthStatus = "";
                 }
                 let theDeathDate = formatDate(person.DeathDate);
                 if (!theDeathDate || person.DeathDate === "0000-00-00" || !person.DeathDate) {
                     theDeathDate = "";
+                    deathStatus = "";
                 }
 
-                let birthRow = `<tr><td>${birthPrefix}</td><td>${birthStatus} ${formatDate(person.BirthDate)}</td><td>${
+                let birthRow = `<tr><td>${birthPrefix}</td><td>${birthStatus} ${theBirthDate}</td><td>${
                     person.BirthLocation || ""
                 }</td></tr>`;
                 if (!person.BirthDate && !person.BirthLocation) {
                     birthRow = "";
                 }
-                let deathRow = `<tr><td>${deathPrefix}</td><td>${deathStatus} ${formatDate(person.DeathDate)}</td><td>${
+                let deathRow = `<tr><td>${deathPrefix}</td><td>${deathStatus} ${theDeathDate}</td><td>${
                     person.DeathLocation || ""
                 }</td></tr>`;
                 if (!person.DeathDate && !person.DeathLocation) {
