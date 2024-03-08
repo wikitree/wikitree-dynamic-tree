@@ -568,6 +568,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                 graphId = "#unconnectedProfiles";
             } else if ($(this).closest(".noRelations").length > 0) {
                 graphId = "#noRelationsProfiles";
+            } else if ($(this).closest(".mostCommonLocations").length > 0) {
+                graphId = "#locationsVisualisation";
             }
 
             // Proceed if a matching graphId was found
@@ -2389,16 +2391,18 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     reset() {
+        clearInterval(D3DataFormatter.evolutionInterval);
+        $("#stopEvolution").trigger("click");
         $("div.message,.popup").remove();
-
         $("#toggleDetails,#toggleWTIDs").removeClass("on");
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
         $("#tableViewButton").removeClass("on");
         $(
-            ".duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
-        )
-            .off()
-            .remove();
+            "#controlButtons button,#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects,#statisticsContainer label"
+        ).off();
+        $(
+            "#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
+        ).remove();
         $("#wtidGo,#nameSelect,.toggle-children,.descendantsCount").each(
             function () {
                 $(this).off();
@@ -2543,7 +2547,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Most Common Locations
         const locationStats = stats.getLocationStatistics();
         const $locationDiv = this.generateLocationHTML(locationStats);
-        $statsContainer.append(this.createStatItem("Most Common Birth Places: ", $locationDiv));
+        $statsContainer.append(
+            this.createStatItem("Most Common Birth Places: ", $locationDiv, { classes: "mostCommonLocations clicker" })
+        );
 
         return $statsContainer;
     }
@@ -3694,6 +3700,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
 class D3DataFormatter {
     constructor(statsByPeriod) {
+        $("#locationsVisualization").remove();
         this.statsByPeriod = statsByPeriod;
         this.currentPeriodIndex = 0;
         this.locationHierarchy = { name: "All Periods", children: [] };
@@ -3742,6 +3749,22 @@ class D3DataFormatter {
             "#006400", // DarkGreen
         ];
         this.createLocationHierarchy(statsByPeriod);
+        this.sortLocationHierarchy();
+        this.aggregateCounts(this.locationHierarchy);
+        console.log("Location Hierarchy:", JSON.parse(JSON.stringify(this.locationHierarchy)));
+        // this.initVisualization();
+    }
+
+    aggregateCounts(node) {
+        if (!node.children || node.children.length === 0) {
+            return node.value || 0;
+        }
+        let total = 0;
+        for (const child of node.children) {
+            total += this.aggregateCounts(child); // Make sure to use this.aggregateCounts when calling recursively
+        }
+        node.count = total;
+        return total;
     }
 
     formatLifespanData() {
@@ -3955,95 +3978,79 @@ class D3DataFormatter {
         return topNamesByPeriod;
     }
 
-    createLocationHierarchy(periodStats) {
-        console.log("Creating location hierarchy from period stats...");
-
-        Object.entries(periodStats).forEach(([periodName, stats]) => {
-            console.log(`Processing period: ${periodName}`);
-            let periodObj = { name: periodName, children: [] };
-
-            // Assuming `subdivisionCounts` is the structure to iterate for location hierarchy
+    createLocationHierarchy() {
+        Object.entries(this.statsByPeriod).forEach(([periodName, stats]) => {
+            let periodObj = { name: periodName, children: [], count: 0, id: periodName };
             Object.entries(stats.subdivisionCounts).forEach(([country, subdivisions]) => {
-                console.log(`  Processing country: ${country}`);
-                let countryObj = { name: country, children: [], count: subdivisions.count };
-
+                let countryObj = { name: country, children: [], count: 0, id: `country-${country}` };
                 Object.entries(subdivisions).forEach(([subdivisionName, details]) => {
                     if (subdivisionName !== "count") {
-                        // Exclude the 'count' property
-                        console.log(`    Processing subdivision: ${subdivisionName}`);
-                        let subdivisionObj = { name: subdivisionName, children: [], count: details.count };
-
+                        let subdivisionObj = {
+                            name: subdivisionName,
+                            children: [],
+                            count: details.count,
+                            id: `subdivision-${country}-${subdivisionName}`,
+                        };
                         Object.entries(details).forEach(([locationName, locationDetails]) => {
-                            if (
-                                typeof locationDetails === "object" &&
-                                locationDetails !== null &&
-                                locationName !== "count"
-                            ) {
-                                // Check for a proper location object
-                                console.log(
-                                    `      Adding location: ${locationName} with count: ${locationDetails.count}`
-                                );
-                                let locationObj = { name: locationName, value: locationDetails.count };
+                            if (locationDetails !== null && locationName !== "count") {
+                                let locationObj = {
+                                    name: locationName,
+                                    value: locationDetails.count,
+                                    id: `location-${country}-${subdivisionName}-${locationName}`,
+                                };
                                 subdivisionObj.children.push(locationObj);
+                                subdivisionObj.count += locationDetails.count; // Aggregate count for the subdivision
                             }
                         });
-
                         countryObj.children.push(subdivisionObj);
+                        countryObj.count += subdivisionObj.count; // Aggregate count for the country
                     }
                 });
-
                 periodObj.children.push(countryObj);
+                periodObj.count += countryObj.count; // Aggregate count for the period
             });
-
             this.locationHierarchy.children.push(periodObj);
         });
 
-        console.log("Completed location hierarchy.");
-        console.log(this.locationHierarchy);
+        // After creating the hierarchy, print the aggregated counts for debugging
+        console.log(
+            "Final Location Hierarchy with Aggregated Counts:",
+            JSON.stringify(this.locationHierarchy, null, 2)
+        );
     }
 
     sortLocationHierarchy() {
-        // Sort the children array by the period name
-        this.locationHierarchy.children.sort((a, b) => {
-            const periodA = a.name.split("-");
-            const periodB = b.name.split("-");
-
-            // Compare the start year of the periods
-            const startYearA = parseInt(periodA[0]);
-            const startYearB = parseInt(periodB[0]);
-
-            if (startYearA < startYearB) {
-                return -1; // a should come before b
-            } else if (startYearA > startYearB) {
-                return 1; // b should come before a
-            } else {
-                return 0; // they are equal
-            }
-        });
-        console.log("Sorted location hierarchy by period.", this.locationHierarchy);
+        this.locationHierarchy.children.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    flattenLocationData() {
+    flattenLocationData(periodData) {
         let nodes = [],
-            links = [];
+            links = [],
+            index = 0;
+        const addNodesAndLinks = (node, parentId) => {
+            const nodeId = index++;
+            if (node.id !== periodData.id) {
+                // Check to exclude the period node
+                nodes.push({
+                    ...node,
+                    id: nodeId,
+                    name: node.name,
+                    value: node.value || node.count,
+                    parentId,
+                });
 
-        const addNodesAndLinks = (node, parentId = null) => {
-            const nodeId = nodes.length;
-            nodes.push({ id: nodeId, name: node.name, value: node.value || node.count, parentId });
-            if (parentId !== null) {
-                links.push({ source: parentId, target: nodeId });
+                if (parentId !== undefined) {
+                    links.push({ source: parentId, target: nodeId });
+                }
             }
             if (node.children) {
-                node.children.forEach((child) => addNodesAndLinks(child, nodeId));
+                node.children.forEach((child) =>
+                    addNodesAndLinks(child, node.id === periodData.id ? undefined : nodeId)
+                ); // Adjust parentId for children of the period node
             }
         };
-
-        this.createLocationHierarchy(this.statsByPeriod);
-        this.locationHierarchy.children.forEach((period) => {
-            addNodesAndLinks(period);
-        });
-        this.sortLocationHierarchy();
-
+        // Start adding nodes and links from the children of the period node, skipping the period node itself
+        periodData.children.forEach((child) => addNodesAndLinks(child));
         return { nodes, links };
     }
 
@@ -4052,84 +4059,102 @@ class D3DataFormatter {
         return { nodes, links };
     }
 
-    visualizeDataWithD3(periodKey) {
-        if (!periodKey) {
-            console.error("Invalid period key:", periodKey);
-        }
-        const { nodes, links } = this.prepareDataForPeriod(periodKey);
+    visualizeDataWithD3() {
+        const periodData = this.locationHierarchy.children[this.currentPeriodIndex];
+        const { nodes, links } = this.flattenLocationData(periodData);
 
-        console.log("Nodes:", nodes);
-        console.log("Links:", links);
-        const width = 960,
-            height = 600;
+        const width = $("#locationsVisualisation").width();
+        const height = $("#locationsVisualisation").height();
 
-        const simulation = d3
-            .forceSimulation(nodes)
-            .force(
-                "link",
-                d3.forceLink(links).id((d) => d.id)
-            )
-            .force("charge", d3.forceManyBody().strength(-200)) // Experiment with this value
-            .force("center", d3.forceCenter(width / 2, height / 2));
+        // Ensure SVG container is initialized
+        d3.select("#locationsVisualisation svg").remove(); // Clear previous SVG to prevent duplication
+        const svg = d3.select("#locationsVisualisation").append("svg");
 
-        // Create SVG container
-        const locationsVisualisation = $("<div id='locationsVisualisation' class='popup'><x>x</x></div>");
-        $("body").append(locationsVisualisation);
-        const svg = d3.select("#locationsVisualisation").append("svg").attr("width", width).attr("height", height);
+        // Initialize or update the main title
+        let title = svg.selectAll(".mainTitle").data([periodData]); // Bind the periodData as data for the title
+        title
+            .enter()
+            .append("text")
+            .attr("class", "mainTitle") // Assign class for easy selection
+            .merge(title) // Merge enter and update selections
+            .text((d) => d.name) // Set the text to the period's name
+            .attr("x", width / 2)
+            .attr("y", 30) // Position at the top, adjust as needed
+            .style("text-anchor", "middle")
+            .style("font-size", "24px"); // Styling for the title
 
-        // Create link lines
-        const link = svg.selectAll("line").data(links).enter().append("line").style("stroke", "#aaa");
+        // Initialize layers
+        const linkLayer = svg.append("g").attr("class", "link-layer");
+        const nodeLayer = svg.append("g").attr("class", "node-layer");
+        const labelLayer = svg.append("g").attr("class", "label-layer");
 
-        // Create bubbles (nodes)
-        const node = svg
+        // Create links (lines)
+        const link = linkLayer.selectAll("line").data(links).enter().append("line").style("stroke", "#aaa");
+
+        // Define node size and color
+        const nodeSize = (d) => Math.sqrt(d.count || 1) * 3 + 5;
+        const nodeColor = (d) => (d.parentId === undefined ? "#ff4136" : "#69b3a2");
+        const baseRadius = 5; // Base radius for other nodes
+        const scaleFactor = 3; // Scaling factor for dynamic radius calculation
+
+        // Create nodes (circles)
+        const node = nodeLayer
             .selectAll("circle")
             .data(nodes)
             .enter()
             .append("circle")
-            // Adjust node size scaling
-            .attr("r", (d) => {
-                const baseSize = 20; // Minimum size for visibility
-                if (isNaN(d.value) || d.value == null) {
-                    console.warn("Invalid or missing 'value' for node:", d);
-                    return baseSize; // Ensure minimum visibility for nodes
-                }
-                return Math.sqrt(d.value) * 2 + baseSize; // Adjust scaling factor and add baseSize
-            })
+            .attr("r", nodeSize)
+            .style("fill", nodeColor)
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
 
-            .style("fill", (d) => (d.parentId == null ? "#ccc" : "#666"))
-            .call(
-                d3
-                    .drag() // Add drag functionality
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended)
-            );
-
-        // After the circles for the nodes have been added
-        const text = svg
-            .selectAll(".nodeText")
+        // Create labels
+        const label = labelLayer
+            .selectAll("text")
             .data(nodes)
             .enter()
             .append("text")
-            .attr("class", "nodeText")
-            .text((d) => d.name) // Assuming 'name' is the property with the place name
+            .attr("class", "label")
+            .text((d) => d.name)
             .style("text-anchor", "middle")
-            .style("fill", "#000") // Text color
-            .style("font-size", "10px"); // Adjust font size based on your needs
+            .style("fill", "#000")
+            .style("font-size", "10px");
 
-        // Update positions on each simulation 'tick'
+        // Modify the simulation setup to include a radial force
+        const simulation = d3
+            .forceSimulation(nodes)
+            .force(
+                "link",
+                d3
+                    .forceLink(links)
+                    .id((d) => d.id)
+                    .distance(50)
+            )
+            .force("charge", d3.forceManyBody().strength(-100))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force(
+                "collision",
+                d3.forceCollide().radius((d) => Math.sqrt(d.count || 1) * scaleFactor + baseRadius)
+            )
+            .force(
+                "radial",
+                d3
+                    .forceRadial((d) => (d.isLargest ? 0 : width / 4), width / 2, height / 2)
+                    .strength((d) => (d.isLargest ? 0.1 : 0))
+            )
+            .force("x", d3.forceX(width / 2).strength(0.1)) // Force towards center (X-axis)
+            .force("y", d3.forceY(height / 2).strength(0.1)) // Force towards center (Y-axis)
+
+            .on("tick", ticked);
+
         simulation.on("tick", () => {
-            // Update link positions
             link.attr("x1", (d) => d.source.x)
                 .attr("y1", (d) => d.source.y)
                 .attr("x2", (d) => d.target.x)
                 .attr("y2", (d) => d.target.y);
 
-            // Update node positions
             node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
 
-            // Update text positions to match node (bubble) positions
-            text.attr("x", (d) => d.x).attr("y", (d) => d.y + 3); // Adjust as needed to center text vertically within the bubble
+            label.attr("x", (d) => d.x).attr("y", (d) => d.y - nodeSize(d) - 3);
         });
 
         function dragstarted(event, d) {
@@ -4148,107 +4173,89 @@ class D3DataFormatter {
             d.fx = null;
             d.fy = null;
         }
-    }
 
-    // Call this method to initialize the visualization with the first period
-    initVisualization() {
-        this.updateVisualizationForPeriod();
-    }
-
-    updateVisualizationForPeriod() {
-        console.log("Current Period Index:", this.currentPeriodIndex);
-        console.log("Location Hierarchy Children:", this.locationHierarchy.children);
-
-        // Ensure currentPeriodIndex is correctly managed and wraps around as expected.
-        const currentPeriodData = this.locationHierarchy.children[this.currentPeriodIndex];
-
-        if (!currentPeriodData) {
-            console.error("No current period data found for index:", this.currentPeriodIndex);
-            // Consider handling this case appropriately, such as resetting the index or taking other corrective action
-            return; // Early exit to prevent further errors
-        }
-
-        // Correctly call visualizeDataWithD3 with either period data or a valid period key.
-        this.visualizeDataWithD3(currentPeriodData.name); // Make sure this method is prepared to handle undefined or incorrect input
-
-        // After visualizing, manage the period index for the next call
-        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % this.locationHierarchy.children.length;
-    }
-
-    drawForceDirectedGraph(nodes, links) {
-        const width = 960,
-            height = 600;
-
-        // Remove existing svg if present
-        d3.select("svg").remove();
-
-        // Create SVG element
-        const svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
-
-        // Create links lines
-        const link = svg
-            .selectAll(".link")
-            .data(links)
-            .enter()
-            .append("line")
-            .attr("class", "link")
-            .style("stroke", "#999")
-            .style("stroke-opacity", 0.6)
-            .style("stroke-width", (d) => Math.sqrt(d.value));
-
-        // Create nodes circles
-        const node = svg
-            .selectAll(".node")
-            .data(nodes)
-            .enter()
-            .append("circle")
-            .attr("class", "node")
-            .attr("r", 5) // Radius of the nodes
-            .style("fill", "#69b3a2")
-            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
-
-        // Define simulation
-        const simulation = d3
-            .forceSimulation()
-            .nodes(nodes)
-            .force(
-                "link",
-                d3.forceLink(links).id((d) => d.id)
-            )
-            .force("charge", d3.forceManyBody().strength(-100)) // Repel force between nodes
-            .force("center", d3.forceCenter(width / 2, height / 2)); // Centering force
-
-        // Add the link force
-        simulation.force("link").links(links);
-
-        // Define ticked function for simulation
         function ticked() {
+            // Apply bounding box constraints with epsilon buffer
+            const epsilon = 5; // Adjust epsilon value as needed
+            nodes.forEach((d) => {
+                const radius = nodeSize(d);
+                d.x = Math.max(radius + epsilon, Math.min(width - radius - epsilon, d.x));
+                d.y = Math.max(radius + epsilon, Math.min(height - radius - epsilon, d.y));
+            });
+
+            // Update link and label positions
             link.attr("x1", (d) => d.source.x)
                 .attr("y1", (d) => d.source.y)
                 .attr("x2", (d) => d.target.x)
                 .attr("y2", (d) => d.target.y);
 
             node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-        }
 
-        simulation.on("tick", ticked);
-
-        function dragstarted(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
+            label.attr("x", (d) => d.x).attr("y", (d) => d.y + radius + 3);
         }
+    }
 
-        function dragged(event, d) {
-            d.fx = event.x;
-            d.fy = event.y;
-        }
+    initVisualization() {
+        d3.select("#locationsVisualisation").remove();
+        const locationsVisualisationDiv = $("<div id='locationsVisualisation' class='popup'><x>x</x></div>");
+        $("body").append(locationsVisualisationDiv);
+        locationsVisualisationDiv.draggable(
+            {
+                containment: "window",
+                scroll: false,
+            },
+            {
+                stop: function (event, ui) {
+                    // Save the new position
+                    const position = ui.position;
+                    console.log("New position:", position);
+                },
+            }
+        );
+        const controlButtons = `
+        <div id="controlButtons">
+            <button id="prevPeriod">⏪</button>
+            <button id="nextPeriod">⏩</button>
+            <button id="startEvolution" class="active">▶️</button>
+            <button id="stopEvolution">⏹️</button>
+        </div>
+      `;
+        // Add a button on the right to expand the div and the SVG to full screen
+        const expandButton = $("<button id='expandButton'>⬜</button>");
+        locationsVisualisationDiv.append(expandButton);
+        expandButton.on("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            locationsVisualisationDiv.toggleClass("expanded");
+            if (locationsVisualisationDiv.hasClass("expanded")) {
+                expandButton.text("⬛");
+            } else {
+                expandButton.text("⬜");
+            }
+        });
 
-        function dragended(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-        }
+        locationsVisualisationDiv.append(controlButtons);
+
+        $("#prevPeriod").click(() => this.showPreviousPeriod());
+        $("#nextPeriod").click(() => this.showNextPeriod());
+        $("#stopEvolution").click(() => this.stopEvolution());
+        const $this = this;
+        $("#controlButtons button").on("click", function () {
+            $("#controlButtons button").removeClass("active");
+            $this.stopEvolution();
+            if ($(this).prop("id") === "startEvolution") {
+                $(this).addClass("active");
+                $this.startEvolution(5000);
+            }
+        });
+
+        this.visualizeDataWithD3();
+        this.startEvolution(5000);
+    }
+
+    updateVisualizationForPeriod() {
+        // this.currentPeriodIndex = (this.currentPeriodIndex + 1) % this.locationHierarchy.children.length;
+        this.visualizeDataWithD3();
     }
 
     prepareDataForPeriod(periodKey) {
@@ -4289,5 +4296,21 @@ class D3DataFormatter {
             this.currentPeriodIndex -= 1;
         }
         this.updateVisualizationForPeriod();
+    }
+
+    startEvolution(intervalMs) {
+        if (this.evolutionInterval) {
+            clearInterval(this.evolutionInterval); // Clear existing interval if it's already running
+        }
+        this.evolutionInterval = setInterval(() => {
+            this.showNextPeriod();
+        }, intervalMs);
+    }
+
+    stopEvolution() {
+        if (this.evolutionInterval) {
+            clearInterval(this.evolutionInterval);
+            this.evolutionInterval = null; // Clear the interval ID
+        }
     }
 }
