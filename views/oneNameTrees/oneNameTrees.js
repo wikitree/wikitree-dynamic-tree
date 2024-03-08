@@ -4088,7 +4088,7 @@ class D3DataFormatter {
             .append("circle")
             // Adjust node size scaling
             .attr("r", (d) => {
-                const baseSize = 10; // Minimum size for visibility
+                const baseSize = 20; // Minimum size for visibility
                 if (isNaN(d.value) || d.value == null) {
                     console.warn("Invalid or missing 'value' for node:", d);
                     return baseSize; // Ensure minimum visibility for nodes
