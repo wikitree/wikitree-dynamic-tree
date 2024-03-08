@@ -667,6 +667,9 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     findSurnameVariants(surname) {
+        if (!surname) {
+            return [];
+        }
         if (!this.nameVariants.size) {
             this.nameVariants = this.retrieveData();
         }
@@ -3555,6 +3558,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 class D3DataFormatter {
     constructor(statsByPeriod) {
         this.statsByPeriod = statsByPeriod;
+        console.log("createLocationHierarchy", this.createLocationHierarchy(statsByPeriod));
         this.nameBackgroundColours = [
             "#FFCCCB", // Light Red
             "#CCFFCC", // Light Green
@@ -3705,7 +3709,7 @@ class D3DataFormatter {
             .attr("text-anchor", "middle")
             .style("font-size", "1em")
             .style("font-weight", "bold")
-            .text("Average Life Span");
+            .text("Average Lifespan");
     }
 
     formatNameDataForD3() {
@@ -3734,7 +3738,7 @@ class D3DataFormatter {
         $("body").append(tableDiv);
         tableDiv.draggable();
         const table = d3.select("#namesTable").append("table");
-        table.append("caption").text("Top 10 Names by 50-Year Periods");
+        table.append("caption").text("Most Common Names");
 
         table
             .append("thead")
@@ -3763,9 +3767,9 @@ class D3DataFormatter {
         return namesArray
             .map((name) => {
                 const { backgroundColour, borderColour } = this.getColorsForName(name[0]); // Get colors for the name
-                return `<span style="background-color: ${backgroundColour}; border: 1px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name[0]} (${name[1]})</span>`;
+                return `<span style="background-color: ${backgroundColour}; border: 2px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name[0]} (${name[1]})</span>`;
             })
-            .join(", ");
+            .join(" ");
     }
 
     // Method to get background and border color for a name
@@ -3811,4 +3815,77 @@ class D3DataFormatter {
 
         return topNamesByPeriod;
     }
+
+    createLocationHierarchy(periodStats) {
+        console.log("Creating location hierarchy from period stats...");
+        let root = { name: "All Periods", children: [] };
+
+        Object.entries(periodStats).forEach(([periodName, stats]) => {
+            console.log(`Processing period: ${periodName}`);
+            let periodObj = { name: periodName, children: [] };
+
+            // Assuming `subdivisionCounts` is the structure to iterate for location hierarchy
+            Object.entries(stats.subdivisionCounts).forEach(([country, subdivisions]) => {
+                console.log(`  Processing country: ${country}`);
+                let countryObj = { name: country, children: [], count: subdivisions.count };
+
+                Object.entries(subdivisions).forEach(([subdivisionName, details]) => {
+                    if (subdivisionName !== "count") {
+                        // Exclude the 'count' property
+                        console.log(`    Processing subdivision: ${subdivisionName}`);
+                        let subdivisionObj = { name: subdivisionName, children: [], count: details.count };
+
+                        Object.entries(details).forEach(([locationName, locationDetails]) => {
+                            if (
+                                typeof locationDetails === "object" &&
+                                locationDetails !== null &&
+                                locationName !== "count"
+                            ) {
+                                // Check for a proper location object
+                                console.log(
+                                    `      Adding location: ${locationName} with count: ${locationDetails.count}`
+                                );
+                                let locationObj = { name: locationName, value: locationDetails.count };
+                                subdivisionObj.children.push(locationObj);
+                            }
+                        });
+
+                        countryObj.children.push(subdivisionObj);
+                    }
+                });
+
+                periodObj.children.push(countryObj);
+            });
+
+            root.children.push(periodObj);
+        });
+
+        console.log("Completed location hierarchy.");
+        return root;
+    }
+
+    /*
+    createLocationHierarchy(data) {
+        let root = { name: "All Periods", children: [] };
+
+        data.forEach((period) => {
+            let periodObj = { name: period.name, children: [] };
+            Object.keys(period.locations).forEach((country) => {
+                let countryObj = { name: country, children: [] };
+                Object.keys(period.locations[country]).forEach((subdivision) => {
+                    let subdivisionObj = { name: subdivision, children: [] };
+                    Object.keys(period.locations[country][subdivision]).forEach((city) => {
+                        let cityObj = { name: city, value: period.locations[country][subdivision][city] };
+                        subdivisionObj.children.push(cityObj);
+                    });
+                    countryObj.children.push(subdivisionObj);
+                });
+                periodObj.children.push(countryObj);
+            });
+            root.children.push(periodObj);
+        });
+
+        return root;
+    }
+    */
 }
