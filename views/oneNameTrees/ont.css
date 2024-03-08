@@ -727,6 +727,7 @@ input[type="submit"],
   max-width: 90vw;
   width: max-content;
   overflow-y: auto;
+  cursor: default;
 }
 .oneNameTrees #namesTable table tr {
   border-top: 2px solid #ddd;
@@ -751,4 +752,41 @@ input[type="submit"],
 }
 .oneNameTrees .popup x:active {
   color: green;
+}
+.oneNameTrees #unsourcedProfiles,
+.oneNameTrees #unconnectedProfiles,
+.oneNameTrees #noRelationsProfiles {
+  display: none;
+  position: fixed;
+  z-index: 100000;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  max-height: 50vh;
+  max-width: 90vw;
+  width: max-content;
+  overflow-y: auto;
+}
+.oneNameTrees #unsourcedProfiles a,
+.oneNameTrees #unconnectedProfiles a,
+.oneNameTrees #noRelationsProfiles a {
+  display: block;
+  margin: 0.5em;
+}
+
+#locationSunburst {
+  display: none;
+  position: fixed;
+  z-index: 100000;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  max-height: 50vh;
+  max-width: 90vw;
+  width: max-content;
+  overflow-y: auto;
 }

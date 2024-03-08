@@ -512,7 +512,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             e.preventDefault();
             $this.handleSearch($(this).data("wtid"));
         });
-
+        /*
         this.header.on("click", ".averageLifespan label", function () {
             const graph = $("#lifespanGraph");
             graph.toggle();
@@ -538,6 +538,51 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $(this).addClass("on");
             } else {
                 $(this).removeClass("on");
+            }
+        });
+
+        this.header.on("click", ".unsourced label", function () {
+            const graph = $("#unsourcedTable");
+            graph.toggle();
+            if (graph.is(":visible")) {
+                graph.css("display", "inline-block");
+                graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                $this.popupZindex++;
+                graph.css("z-index", $this.popupZindex);
+                $(this).addClass("on");
+            } else {
+                $(this).removeClass("on");
+            }
+        }
+        */
+        this.header.on("click", "label", function () {
+            // Determine which graph to toggle based on the clicked label's class
+            let graphId;
+            if ($(this).closest(".averageLifespan").length > 0) {
+                graphId = "#lifespanGraph";
+            } else if ($(this).closest(".mostCommonNames").length > 0) {
+                graphId = "#namesTable";
+            } else if ($(this).closest(".unsourced").length > 0) {
+                graphId = "#unsourcedProfiles";
+            } else if ($(this).closest(".unconnected").length > 0) {
+                graphId = "#unconnectedProfiles";
+            } else if ($(this).closest(".noRelations").length > 0) {
+                graphId = "#noRelationsProfiles";
+            }
+
+            // Proceed if a matching graphId was found
+            if (graphId) {
+                const graph = $(graphId);
+                graph.toggle();
+                if (graph.is(":visible")) {
+                    graph.css("display", "inline-block");
+                    graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                    $this.popupZindex++;
+                    graph.css("z-index", $this.popupZindex);
+                    $(this).addClass("on");
+                } else {
+                    $(this).removeClass("on");
+                }
             }
         });
 
@@ -902,6 +947,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             "BirthDateDecade",
             "BirthLocation",
             "Categories",
+            "Connected",
             "Created",
             "DataStatus",
             "DeathDate",
@@ -1968,6 +2014,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.shakingTree.hide();
         $("#refreshData").prop("disabled", false);
         $("#loadButton").prop("disabled", false);
+        wtViewRegistry.clearStatus();
     }
 
     async arrangeTreeElements() {
@@ -2370,6 +2417,19 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#locationSelects").hide();
     }
 
+    getTotalWithTargetLNABs() {
+        const surnameVariants = this.surnameVariants.map((variant) => this.standardizeString(variant));
+        // Get the total number of people with target last names at birth from this.combinedResults
+        let totalWithTargetLNABs = 0;
+        for (let person of Object.values(this.combinedResults)) {
+            const standardizedLastName = this.standardizeString(person.LastNameAtBirth);
+            if (standardizedLastName && surnameVariants.includes(standardizedLastName)) {
+                totalWithTargetLNABs++;
+            }
+        }
+        return totalWithTargetLNABs;
+    }
+
     generateStatsHTML(stats) {
         $("#statisticsContainer li").off();
         $("#statisticsContainer").remove(); // Remove any existing statistics container
@@ -2377,7 +2437,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         let $statsContainer = $("<div>", { id: "statisticsContainer" });
 
         // Total People
-        $statsContainer.append(this.createStatItem("Total People: ", stats.getTotalPeople()));
+
+        const totalWithTargetLNABs = this.getTotalWithTargetLNABs();
+        const totalPeopleText = `${stats.getTotalPeople()} (<span title="${totalWithTargetLNABs} of the total have the target surname (or variants) as the last name at birth">${totalWithTargetLNABs}</span>)`;
+        $statsContainer.append(
+            this.createStatItem("Total People: ", totalPeopleText, { title: "Total people in the dataset." })
+        );
 
         // Average Lifespan
         $statsContainer.append(
@@ -2399,6 +2464,73 @@ window.OneNameTrees = class OneNameTrees extends View {
                 title: "Average number of children per couple for the entire dataset.",
             })
         );
+
+        // Add unsourced count and link to display list of unsourced profiles
+        const unsourced = stats.getUnsourced();
+        $statsContainer.append(
+            this.createStatItem("Unsourced Profiles: ", unsourced.length, {
+                classes: "unsourced clicker",
+                title: "Click to display a list of profiles with an Unsourced template or category.",
+            })
+        );
+
+        // Add a list of unsourced profiles
+        const $unsourcedDiv = $("<div id='unsourcedProfiles' class='popup'><x>x</x></div>");
+        $("body").append($unsourcedDiv);
+        $unsourcedDiv.draggable();
+        unsourced.forEach((person) => {
+            const aName = new PersonName(person);
+            let fullName = aName.withParts(["FullName"]);
+            const dates = this.displayDates(person);
+            $unsourcedDiv.append(
+                `<a href="https://www.wikitree.com/wiki/${person.Name}" target="_blank">${fullName} ${dates}</a>`
+            );
+        });
+
+        // Unconnected
+        const unconnected = stats.getUnconnected();
+        $statsContainer.append(
+            this.createStatItem("Unconnected Profiles: ", unconnected.length, {
+                classes: "unconnected clicker",
+                title: "Click to display a list of unconnected profiles.",
+            })
+        );
+
+        // Add a list of unconnected profiles
+        const $unconnectedDiv = $("<div id='unconnectedProfiles' class='popup'><x>x</x></div>");
+        $("body").append($unconnectedDiv);
+        $unconnectedDiv.draggable();
+        unconnected.forEach((person) => {
+            const aName = new PersonName(person);
+            let fullName = aName.withParts(["FullName"]);
+            const dates = this.displayDates(person);
+            $unconnectedDiv.append(
+                `<a href="https://www.wikitree.com/wiki/${person.Name}" target="_blank">${fullName} ${dates}</a>`
+            );
+        });
+
+        // NoRelations
+        const noRelations = stats.getNoRelations();
+        if (noRelations.length > 0) {
+            $statsContainer.append(
+                this.createStatItem("No Connections: ", noRelations.length, {
+                    classes: "noRelations clicker",
+                    title: "Click to display a list of profiles with no relations.",
+                })
+            );
+            // Add a list of profiles with no relations
+            const $noRelationsDiv = $("<div id='noRelationsProfiles' class='popup'><x>x</x></div>");
+            $("body").append($noRelationsDiv);
+            $noRelationsDiv.draggable();
+            noRelations.forEach((person) => {
+                const aName = new PersonName(person);
+                let fullName = aName.withParts(["FullName"]);
+                const dates = this.displayDates(person);
+                $noRelationsDiv.append(
+                    `<a href="https://www.wikitree.com/wiki/${person.Name}" target="_blank">${fullName} ${dates}</a>`
+                );
+            });
+        }
 
         // Most Common Names
         const topMaleNames = stats.getTopNamesByGender("Male", 100);
@@ -2811,8 +2943,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         const title = options.title || "";
         const classes = options.classes || "";
         return $("<div>", { class: "stat-item " + classes, id: id, title: title }).append(
-            $("<label>").text(label),
-            value instanceof jQuery ? value : $("<span>").text(value)
+            $("<label>").html(label),
+            value instanceof jQuery ? value : $("<span>").html(value)
         );
     }
 
@@ -2949,6 +3081,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.log("Birth Decade Distribution: ", this.familyTreeStats.getBirthDecadeDistribution());
             console.log("Child Counts: ", this.familyTreeStats.getChildCounts());
             console.log("Common Names: ", this.familyTreeStats.getNameStatistics());
+            const unsourced = this.familyTreeStats.getUnsourced();
+            console.log("Unsourced Profiles: ", unsourced.length);
+            console.log("Unsourced Profiles: ", unsourced);
         }
 
         // Get top 10 male names
@@ -2967,6 +3102,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         d3DataFormatter.lifespanGraph();
 
         d3DataFormatter.formatNamesData();
+
+        d3DataFormatter.initVisualization();
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -3558,7 +3695,8 @@ window.OneNameTrees = class OneNameTrees extends View {
 class D3DataFormatter {
     constructor(statsByPeriod) {
         this.statsByPeriod = statsByPeriod;
-        console.log("createLocationHierarchy", this.createLocationHierarchy(statsByPeriod));
+        this.currentPeriodIndex = 0;
+        this.locationHierarchy = { name: "All Periods", children: [] };
         this.nameBackgroundColours = [
             "#FFCCCB", // Light Red
             "#CCFFCC", // Light Green
@@ -3603,6 +3741,7 @@ class D3DataFormatter {
             "#B8860B", // Dark Goldenrod
             "#006400", // DarkGreen
         ];
+        this.createLocationHierarchy(statsByPeriod);
     }
 
     formatLifespanData() {
@@ -3818,7 +3957,6 @@ class D3DataFormatter {
 
     createLocationHierarchy(periodStats) {
         console.log("Creating location hierarchy from period stats...");
-        let root = { name: "All Periods", children: [] };
 
         Object.entries(periodStats).forEach(([periodName, stats]) => {
             console.log(`Processing period: ${periodName}`);
@@ -3857,35 +3995,299 @@ class D3DataFormatter {
                 periodObj.children.push(countryObj);
             });
 
-            root.children.push(periodObj);
+            this.locationHierarchy.children.push(periodObj);
         });
 
         console.log("Completed location hierarchy.");
-        return root;
+        console.log(this.locationHierarchy);
     }
 
-    /*
-    createLocationHierarchy(data) {
-        let root = { name: "All Periods", children: [] };
+    sortLocationHierarchy() {
+        // Sort the children array by the period name
+        this.locationHierarchy.children.sort((a, b) => {
+            const periodA = a.name.split("-");
+            const periodB = b.name.split("-");
 
-        data.forEach((period) => {
-            let periodObj = { name: period.name, children: [] };
-            Object.keys(period.locations).forEach((country) => {
-                let countryObj = { name: country, children: [] };
-                Object.keys(period.locations[country]).forEach((subdivision) => {
-                    let subdivisionObj = { name: subdivision, children: [] };
-                    Object.keys(period.locations[country][subdivision]).forEach((city) => {
-                        let cityObj = { name: city, value: period.locations[country][subdivision][city] };
-                        subdivisionObj.children.push(cityObj);
-                    });
-                    countryObj.children.push(subdivisionObj);
-                });
-                periodObj.children.push(countryObj);
-            });
-            root.children.push(periodObj);
+            // Compare the start year of the periods
+            const startYearA = parseInt(periodA[0]);
+            const startYearB = parseInt(periodB[0]);
+
+            if (startYearA < startYearB) {
+                return -1; // a should come before b
+            } else if (startYearA > startYearB) {
+                return 1; // b should come before a
+            } else {
+                return 0; // they are equal
+            }
+        });
+        console.log("Sorted location hierarchy by period.", this.locationHierarchy);
+    }
+
+    flattenLocationData() {
+        let nodes = [],
+            links = [];
+
+        const addNodesAndLinks = (node, parentId = null) => {
+            const nodeId = nodes.length;
+            nodes.push({ id: nodeId, name: node.name, value: node.value || node.count, parentId });
+            if (parentId !== null) {
+                links.push({ source: parentId, target: nodeId });
+            }
+            if (node.children) {
+                node.children.forEach((child) => addNodesAndLinks(child, nodeId));
+            }
+        };
+
+        this.createLocationHierarchy(this.statsByPeriod);
+        this.locationHierarchy.children.forEach((period) => {
+            addNodesAndLinks(period);
+        });
+        this.sortLocationHierarchy();
+
+        return { nodes, links };
+    }
+
+    prepareDataForForceSimulation() {
+        const { nodes, links } = this.flattenLocationData();
+        return { nodes, links };
+    }
+
+    visualizeDataWithD3(periodKey) {
+        if (!periodKey) {
+            console.error("Invalid period key:", periodKey);
+        }
+        const { nodes, links } = this.prepareDataForPeriod(periodKey);
+
+        console.log("Nodes:", nodes);
+        console.log("Links:", links);
+        const width = 960,
+            height = 600;
+
+        const simulation = d3
+            .forceSimulation(nodes)
+            .force(
+                "link",
+                d3.forceLink(links).id((d) => d.id)
+            )
+            .force("charge", d3.forceManyBody().strength(-200)) // Experiment with this value
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        // Create SVG container
+        const locationsVisualisation = $("<div id='locationsVisualisation' class='popup'><x>x</x></div>");
+        $("body").append(locationsVisualisation);
+        const svg = d3.select("#locationsVisualisation").append("svg").attr("width", width).attr("height", height);
+
+        // Create link lines
+        const link = svg.selectAll("line").data(links).enter().append("line").style("stroke", "#aaa");
+
+        // Create bubbles (nodes)
+        const node = svg
+            .selectAll("circle")
+            .data(nodes)
+            .enter()
+            .append("circle")
+            // Adjust node size scaling
+            .attr("r", (d) => {
+                const baseSize = 10; // Minimum size for visibility
+                if (isNaN(d.value) || d.value == null) {
+                    console.warn("Invalid or missing 'value' for node:", d);
+                    return baseSize; // Ensure minimum visibility for nodes
+                }
+                return Math.sqrt(d.value) * 2 + baseSize; // Adjust scaling factor and add baseSize
+            })
+
+            .style("fill", (d) => (d.parentId == null ? "#ccc" : "#666"))
+            .call(
+                d3
+                    .drag() // Add drag functionality
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended)
+            );
+
+        // After the circles for the nodes have been added
+        const text = svg
+            .selectAll(".nodeText")
+            .data(nodes)
+            .enter()
+            .append("text")
+            .attr("class", "nodeText")
+            .text((d) => d.name) // Assuming 'name' is the property with the place name
+            .style("text-anchor", "middle")
+            .style("fill", "#000") // Text color
+            .style("font-size", "10px"); // Adjust font size based on your needs
+
+        // Update positions on each simulation 'tick'
+        simulation.on("tick", () => {
+            // Update link positions
+            link.attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y);
+
+            // Update node positions
+            node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+
+            // Update text positions to match node (bubble) positions
+            text.attr("x", (d) => d.x).attr("y", (d) => d.y + 3); // Adjust as needed to center text vertically within the bubble
         });
 
-        return root;
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
     }
-    */
+
+    // Call this method to initialize the visualization with the first period
+    initVisualization() {
+        this.updateVisualizationForPeriod();
+    }
+
+    updateVisualizationForPeriod() {
+        console.log("Current Period Index:", this.currentPeriodIndex);
+        console.log("Location Hierarchy Children:", this.locationHierarchy.children);
+
+        // Ensure currentPeriodIndex is correctly managed and wraps around as expected.
+        const currentPeriodData = this.locationHierarchy.children[this.currentPeriodIndex];
+
+        if (!currentPeriodData) {
+            console.error("No current period data found for index:", this.currentPeriodIndex);
+            // Consider handling this case appropriately, such as resetting the index or taking other corrective action
+            return; // Early exit to prevent further errors
+        }
+
+        // Correctly call visualizeDataWithD3 with either period data or a valid period key.
+        this.visualizeDataWithD3(currentPeriodData.name); // Make sure this method is prepared to handle undefined or incorrect input
+
+        // After visualizing, manage the period index for the next call
+        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % this.locationHierarchy.children.length;
+    }
+
+    drawForceDirectedGraph(nodes, links) {
+        const width = 960,
+            height = 600;
+
+        // Remove existing svg if present
+        d3.select("svg").remove();
+
+        // Create SVG element
+        const svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+
+        // Create links lines
+        const link = svg
+            .selectAll(".link")
+            .data(links)
+            .enter()
+            .append("line")
+            .attr("class", "link")
+            .style("stroke", "#999")
+            .style("stroke-opacity", 0.6)
+            .style("stroke-width", (d) => Math.sqrt(d.value));
+
+        // Create nodes circles
+        const node = svg
+            .selectAll(".node")
+            .data(nodes)
+            .enter()
+            .append("circle")
+            .attr("class", "node")
+            .attr("r", 5) // Radius of the nodes
+            .style("fill", "#69b3a2")
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+
+        // Define simulation
+        const simulation = d3
+            .forceSimulation()
+            .nodes(nodes)
+            .force(
+                "link",
+                d3.forceLink(links).id((d) => d.id)
+            )
+            .force("charge", d3.forceManyBody().strength(-100)) // Repel force between nodes
+            .force("center", d3.forceCenter(width / 2, height / 2)); // Centering force
+
+        // Add the link force
+        simulation.force("link").links(links);
+
+        // Define ticked function for simulation
+        function ticked() {
+            link.attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y);
+
+            node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+        }
+
+        simulation.on("tick", ticked);
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    }
+
+    prepareDataForPeriod(periodKey) {
+        const periodData = this.locationHierarchy.children.find((p) => p.name === periodKey);
+        if (!periodData) {
+            console.error("No data for period:", periodKey);
+            return { nodes: [], links: [] };
+        }
+
+        let nodes = [],
+            links = [],
+            nodeId = 0;
+        const addNode = (node, parentId = null) => {
+            const newNode = { id: nodeId++, name: node.name, value: node.value || node.count, group: parentId };
+            nodes.push(newNode);
+            if (parentId !== null) {
+                links.push({ source: parentId, target: newNode.id });
+            }
+            if (node.children) {
+                node.children.forEach((child) => addNode(child, newNode.id));
+            }
+        };
+
+        addNode(periodData); // Initialize with the period's root node
+        return { nodes, links };
+    }
+
+    showNextPeriod() {
+        // Use the length of locationHierarchy.children for cycling through periods
+        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % this.locationHierarchy.children.length;
+        this.updateVisualizationForPeriod();
+    }
+
+    showPreviousPeriod() {
+        if (this.currentPeriodIndex === 0) {
+            this.currentPeriodIndex = this.locationHierarchy.children.length - 1;
+        } else {
+            this.currentPeriodIndex -= 1;
+        }
+        this.updateVisualizationForPeriod();
+    }
 }

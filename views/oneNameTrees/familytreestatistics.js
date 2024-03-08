@@ -10,6 +10,64 @@ export class FamilyTreeStatistics {
         this.periodData = this.getStatsBy50YearPeriods();
     }
 
+    getUnsourced() {
+        // Count people where any person.Categories or person.Templates includes an item with the word 'Unsourced'
+        const unsourced = this.peopleArray.filter(
+            (person) =>
+                (Array.isArray(person.Categories) &&
+                    person.Categories.some((category) => category?.includes("Unsourced"))) ||
+                (Array.isArray(person.Templates) &&
+                    person.Templates.some((template) => template.name?.includes("Unsourced")))
+        );
+        // Sort by birth date
+        unsourced.sort((a, b) => {
+            // Make sure they have a BirthDate
+            if (!a.BirthDate) return 1;
+            return a.BirthDate.localeCompare(b.BirthDate);
+        });
+        return unsourced;
+    }
+
+    getUnconnected() {
+        // Get people where person.Connected != 1
+        // Check for that person.Connected exists first
+        const unconnected = this.peopleArray.filter((person) => person.Connected !== 1);
+        // Sort by birth date
+        unconnected.sort((a, b) => {
+            // Make sure they have a BirthDate
+            if (!a.BirthDate) return 1;
+            return a.BirthDate.localeCompare(b.BirthDate);
+        });
+        return unconnected;
+    }
+
+    getNoRelations() {
+        const noRelations = this.peopleArray.filter(
+            (person) =>
+                (!person.Father || person.Father === 0) &&
+                (!person.Mother || person.Mother === 0) &&
+                person.NoChildren === 1 &&
+                this.isSpousesObjectEmpty(person.Spouses)
+        );
+        // Proceed with sorting as before
+        noRelations.sort((a, b) => {
+            if (!a.BirthDate) return 1;
+            if (!b.BirthDate) return -1;
+            return a.BirthDate.localeCompare(b.BirthDate);
+        });
+        return noRelations;
+    }
+
+    // Helper function to determine if the Spouses object is empty
+    isSpousesObjectEmpty(spouses) {
+        // If spouses is not an object or is null, treat it as "empty"
+        if (typeof spouses !== "object" || spouses === null) {
+            return true;
+        }
+        // Check if the object has any own properties
+        return Object.keys(spouses).length === 0;
+    }
+
     getTotalPeople() {
         return this.peopleArray.length;
     }
