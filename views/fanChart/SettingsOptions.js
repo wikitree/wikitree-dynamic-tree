@@ -493,8 +493,12 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 }
                                 labelElement.appendChild(optionIMGNode);
                             } else {
-                                let optionLabelTextNode = document.createTextNode(" " + value.text);
-                                labelElement.appendChild(optionLabelTextNode);
+                                let subLabelElement = document.createElement("label");
+                                // console.log("Trying to add FOR: ", radioOptionElement.id);
+                                subLabelElement.setAttribute("For",radioOptionElement.id);
+                                let optionLabelTextNode = document.createTextNode(" " + value.text);  
+                                subLabelElement.appendChild(optionLabelTextNode);
+                                labelElement.appendChild(subLabelElement);
                             }
 
                             if (value.addOtherTextField === true) {
