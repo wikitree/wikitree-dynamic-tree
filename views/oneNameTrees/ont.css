@@ -273,10 +273,12 @@ input[type="submit"],
 .oneNameTrees #help h2 {
   font-size: large;
   text-align: center;
+  background-color: #f7f6f0;
 }
 .oneNameTrees #help h3 {
   font-size: medium;
   margin: 1em 0 0.5em 0;
+  background-color: #f7f6f0;
 }
 
 .oneNameTrees #help ol {
@@ -685,17 +687,17 @@ input[type="submit"],
   background-color: #fff;
   border: 2px solid forestgreen;
   border-radius: 1em;
-  position: absolute;
+  position: fixed;
   z-index: 100000;
   padding: 1em;
   box-shadow: 0 0 10px #000;
 }
-.oneNameTrees .stat-item label.on {
+.oneNameTrees #statsDisplay .stat-item.clicker label.on {
   background-color: #4caf50;
   color: #fff;
   border: forestgreen 2px solid;
 }
-.oneNameTrees .stat-item label {
+.oneNameTrees #statsDisplay .stat-item label {
   border: #f9f9f9 2px solid;
   border-radius: 1em;
 }
@@ -738,6 +740,20 @@ input[type="submit"],
   margin-bottom: 0.5em;
 }
 
+.oneNameTrees .popup {
+  left: 5%;
+  max-width: 90%;
+}
+.oneNameTrees .popup h2 {
+  text-align: center;
+  margin: 0.2em;
+  padding: 0.2em;
+  background-color: #f7f6f0;
+  font-size: 1.2em;
+  font-variant: small-caps;
+  cursor: move;
+}
+
 .oneNameTrees .popup x {
   position: absolute;
   top: 0.3em;
@@ -752,6 +768,15 @@ input[type="submit"],
 }
 .oneNameTrees .popup x:active {
   color: green;
+}
+
+.oneNameTrees .popup a.Male {
+  background-color: #eef;
+  border-left: 5px solid #007bff;
+}
+.oneNameTrees .popup a.Female {
+  background-color: #fee;
+  border-left: 5px solid #ff69b4;
 }
 .oneNameTrees #unsourcedProfiles,
 .oneNameTrees #unconnectedProfiles,
@@ -774,6 +799,7 @@ input[type="submit"],
 .oneNameTrees #noRelationsProfiles a {
   display: block;
   margin: 0.5em;
+  padding-left: 0.2em;
 }
 
 .oneNameTrees #locationsVisualisation {
@@ -785,10 +811,13 @@ input[type="submit"],
   border-radius: 1em;
   box-shadow: 0 0 10px #000;
   padding: 1em;
-  width: max-content;
   overflow-y: auto;
-  height: 500px;
-  width: 800px;
+  height: 90%;
+  width: 90%;
+  top: 5%;
+  left: 5%;
+  right: 5%;
+  bottom: 5%;
 }
 .oneNameTrees #locationsVisualisation .mainTitle {
   cursor: move;
@@ -803,8 +832,9 @@ input[type="submit"],
   padding: 0;
 }
 .oneNameTrees #locationsVisualisation #controlButtons button.active {
-  background-color: #4caf50;
+  background-color: lightgreen;
   color: #fff;
+  border: 3px solid lightgreen;
 }
 .oneNameTrees #expandButton {
   position: absolute;

@@ -175,7 +175,21 @@ window.OneNameTrees = class OneNameTrees extends View {
             <li>
               The general statistics:
               <ul>
-                <li>show the top few most common names and most common birth places for the whole set.</li>
+                <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
+                as last name at birth.</li>
+                <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
+                Click the button to see a graph.</li>
+                <li><label>Average Children per Male over 16</label>: This is per male over 16 
+                because the dataset will include their children but not those of many of the women, 
+                whose children would tend to take their father's surname 
+                (due to this being a name study, mostly based on last name at birth).</li>
+                <li><label>Average Children per Couple</label>: This is the average number of children per couple.</li>
+                <li><label>Unsourced</label>: The number of profiles without sources. Click the button to see a list of the profiles.</li>
+                <li><label>Unconnected</label>: The number of profiles not connected to the big trees. Click the button to see a list of the profiles.</li>
+                <li><label>No Connections</label>: The number of profiles with no relations/connections in the WikTree database. Click the button to see a list of the profiles.</li>
+                <li><label>Most Common Names</label>: This is the first names in the dataset by frequency. Click the triangle to see the whole list.</li>
+                <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.  
+                Click the numbers to a table filtered to show only people from those places. Click the button to see an interesting visualisation.</li>
               </ul>
             </li>
             <li>
@@ -320,11 +334,11 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.container.on("click", "#results .dates", function () {
+        this.container.on("click.oneNameTrees", "#results .dates", function () {
             $this.showMoreDetails($(this));
         });
 
-        this.header.on("click", "#addNameVariants", function (e) {
+        this.header.on("click.oneNameTrees", "#addNameVariants", function (e) {
             e.preventDefault();
             window.open(
                 "https://docs.google.com/spreadsheets/d/1VwYnlDVIw8MH4mKDQeRfJAW_2u2kSHyiGcQUw5yBepw/edit#gid=0",
@@ -333,40 +347,48 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Event listener for the search button
-        this.header.on("click", "#searchButton", function () {
+        this.header.on("click.oneNameTrees", "#searchButton", function () {
             $this.handleSearch();
         });
 
         // Also allow searching by pressing the enter key in the search input
-        this.header.on("keyup", "#searchInput", function (event) {
+        this.header.on("keyup.oneNameTrees", "#searchInput", function (event) {
             if (event.keyCode === 13) {
                 $this.handleSearch();
             }
         });
 
-        this.header.on("click", "#refreshData", async function () {
+        this.header.on("click.oneNameTrees", "#refreshData", async function () {
             const surname = $("#surname").val();
             const location = $("#location").val();
+            $("#cancelFetch").trigger("click");
             $("#refreshData").fadeOut();
             if (surname) {
                 $this.showLoadingBar();
                 $this.shakingTree.show();
-                wtViewRegistry.clearStatus();
+                setTimeout(function () {
+                    wtViewRegistry.clearStatus();
+                    wtViewRegistry.showWarning("Refreshing data...");
+                }, 100);
                 $this.reset();
                 $this.clearONSidsCache(surname); // Clear the cache for this surname
                 $this.startTheFetching(surname, location);
             }
         });
 
-        this.container.on("mouseover", ".person:not(.spouse,.notSpouse,.level_0) > a:first-of-type", function () {
-            $this.showAncestralLineToRoot($(this));
-        });
+        this.container.on(
+            "mouseover.oneNameTrees",
+            ".person:not(.spouse,.notSpouse,.level_0) > a:first-of-type",
+            function () {
+                $this.showAncestralLineToRoot($(this));
+            }
+        );
 
-        this.container.on("mouseout", ".person", function () {
+        this.container.on("mouseout.oneNameTrees", ".person", function () {
             $("#ancestralLinePopup").remove();
         });
 
-        this.header.on("click", ".commonLocations .locationCount", function (e) {
+        this.header.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
             e.preventDefault();
             // e.stopPropagation();
             const location = $(this).data("location") || $(this).attr("data-location");
@@ -407,17 +429,17 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Delegate from .commonLocations for .locationPart click events
-        this.header.on("click", ".commonLocations .locationPart", function (event) {
+        this.header.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
             //event.stopPropagation(); // Prevent event bubbling
             const $subItem = $(this).closest("li").toggleClass("expanded");
             $subItem.children("ul").toggle(); // Toggle visibility of the nested list
         });
 
-        this.header.on("dblclick", "#statisticsContainer,#periodStatisticsContainer", function () {
+        this.header.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
             $("#toggleGeneralStats").trigger("click");
         });
 
-        $("#downloadData").on("click", function () {
+        $("#downloadData").on("click.oneNameTrees", function () {
             if (Object.keys($this.combinedResults).length > 0) {
                 const surname = $("#surname").val();
                 const fileName = "ONT_" + surname + "_" + new Date().toISOString().substring(0, 16) + ".json";
@@ -428,7 +450,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("change", "#fileInput", function (event) {
+        this.header.on("change.oneNameTrees", "#fileInput", function (event) {
             const file = event.target.files[0];
             if (file) {
                 $this.reset();
@@ -474,12 +496,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("click", "#loadButton", function () {
-            $("#fileInput").click(); // Triggers the hidden file input
+        this.header.on("click.oneNameTrees", "#loadButton", function () {
+            $("#cancelFetch").trigger("click");
             wtViewRegistry.clearStatus();
+            $("#fileInput").click(); // Triggers the hidden file input
         });
 
-        this.header.on("click", "#cancelFetch", function () {
+        this.header.on("click.oneNameTrees", "#cancelFetch", function () {
             $this.cancelFetch();
         });
 
@@ -494,7 +517,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $("#submit").click();
             }
         });
-        $("#show-btn").on("click", function () {
+        $("#show-btn").on("click.oneNameTrees", function () {
             $("#surname").val($("#wt-id-text").val().replaceAll("_", " ").replace(/\-\d+/, "").trim());
             $("#submit").click();
         });
@@ -508,54 +531,12 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.container.on("click", ".duplicateLink", function (e) {
+        this.container.on("click.oneNameTrees", ".duplicateLink", function (e) {
             e.preventDefault();
             $this.handleSearch($(this).data("wtid"));
         });
-        /*
-        this.header.on("click", ".averageLifespan label", function () {
-            const graph = $("#lifespanGraph");
-            graph.toggle();
-            if (graph.is(":visible")) {
-                graph.css("display", "inline-block");
-                graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
-                $this.popupZindex++;
-                graph.css("z-index", $this.popupZindex);
-                $(this).addClass("on");
-            } else {
-                $(this).removeClass("on");
-            }
-        });
 
-        this.header.on("click", ".mostCommonNames label", function () {
-            const graph = $("#namesTable");
-            graph.toggle();
-            if (graph.is(":visible")) {
-                graph.css("display", "inline-block");
-                graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
-                $this.popupZindex++;
-                graph.css("z-index", $this.popupZindex);
-                $(this).addClass("on");
-            } else {
-                $(this).removeClass("on");
-            }
-        });
-
-        this.header.on("click", ".unsourced label", function () {
-            const graph = $("#unsourcedTable");
-            graph.toggle();
-            if (graph.is(":visible")) {
-                graph.css("display", "inline-block");
-                graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
-                $this.popupZindex++;
-                graph.css("z-index", $this.popupZindex);
-                $(this).addClass("on");
-            } else {
-                $(this).removeClass("on");
-            }
-        }
-        */
-        this.header.on("click", "label", function () {
+        this.header.on("click.oneNameTrees", "label", function () {
             // Determine which graph to toggle based on the clicked label's class
             let graphId;
             if ($(this).closest(".averageLifespan").length > 0) {
@@ -578,7 +559,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 graph.toggle();
                 if (graph.is(":visible")) {
                     graph.css("display", "inline-block");
-                    graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                    if (graphId != "#locationsVisualisation") {
+                        graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                    }
                     $this.popupZindex++;
                     graph.css("z-index", $this.popupZindex);
                     $(this).addClass("on");
@@ -590,7 +573,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Esc to close the highest (z-index) open popup
         // Add Esc to close family sheet
-        $(document).on("keyup", function (e) {
+        $(document).on("keyup.oneNameTrees", function (e) {
             if (e.key === "Escape") {
                 // Find the .familySheet with the highest z-index
                 let highestZIndex = 0;
@@ -612,17 +595,25 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         function closePopup(el) {
             el.slideUp();
-            if (el.prop("id") === "lifespanGraph") {
-                $(".averageLifespan label").removeClass("on");
-            } else if (el.prop("id") === "namesTable") {
-                $(".mostCommonNames label").removeClass("on");
+            const idToLabelMap = {
+                lifespanGraph: ".averageLifespan label",
+                namesTable: ".mostCommonNames label",
+                unsourcedProfiles: ".unsourced label",
+                unconnectedProfiles: ".unconnected label",
+                noRelationsProfiles: ".noRelations label",
+                locationsVisualisation: ".mostCommonLocations label",
+            };
+
+            const labelSelector = idToLabelMap[el.prop("id")];
+            if (labelSelector) {
+                $(labelSelector).removeClass("on");
             }
         }
 
-        $(document).on("click", ".popup x", function () {
+        $(document).on("click.oneNameTrees", ".popup x", function () {
             closePopup($(this).closest("div"));
         });
-        $(document).on("dblclick", ".popup", function (e) {
+        $(document).on("dblclick.oneNameTrees", ".popup", function (e) {
             closePopup($(this));
         });
     }
@@ -807,8 +798,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (this.cancelFetchController) {
             this.cancelFetchController.abort();
         }
+        /*
         $("#refreshData").prop("disabled", false);
         $("#loadButton").prop("disabled", false);
+        */
     }
 
     async getONSids(surname, location) {
@@ -962,6 +955,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             "Father",
             "FirstName",
             "Gender",
+            "HasChildren",
             "Id",
             //"IsLiving",
             "LastNameAtBirth",
@@ -975,7 +969,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             "Nicknames",
             "NoChildren",
             "Prefix",
-            //"Privacy",
+            "Privacy",
             "RealName",
             "ShortName",
             "Spouses",
@@ -1475,7 +1469,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             })
             .show();
 
-        ancestralPopup.find(".ancestor").click(function () {
+        ancestralPopup.find(".ancestor").on("click.oneNameTrees", function () {
             handleSearch($(this).data("wtid"));
         });
     }
@@ -1878,7 +1872,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.createWTIDSelectBox();
         this.createNameSelectBox();
         $("#wtidGo").hide();
-        switchButton.on("click", () => {
+        switchButton.on("click.oneNameTrees", () => {
             $("#wtidGo").toggle();
             $("#nameSelect").toggle();
         });
@@ -1967,8 +1961,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             .filter((root) => root.shouldBeRoot !== false)
             .sort((a, b) => this.getComparableDate(a).localeCompare(this.getComparableDate(b)));
 
-        // !this.displayedIndividuals.has(String(root.Id)) &&
-
         rootIndividuals = this.adjustSortingForDeathDates(rootIndividuals);
 
         if (OneNameTrees.VERBOSE) console.log("Root individuals:", rootIndividuals);
@@ -2048,9 +2040,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             html += `<ul class='children' data-parent-id='${parentId}'>`;
             sortedChildren.forEach((child) => {
-                if (parentId == "41246055") {
-                    console.log("Child:", child);
-                }
                 const thisPersonHTML = this.personHtml(child, level);
                 html += thisPersonHTML; // Use personHtml for each child
                 // Recursively display children of this child, sorted
@@ -2059,9 +2048,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             });
             html += "</ul>";
-            if (parentId == "41246055") {
-                console.log("HTML:", html);
-            }
         }
         return html;
     }
@@ -2398,7 +2384,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
         $("#tableViewButton").removeClass("on");
         $(
-            "#controlButtons button,#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects,#statisticsContainer label"
+            "#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
         ).off();
         $(
             "#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
@@ -2457,7 +2443,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Average Children Per Person
         $statsContainer.append(
-            this.createStatItem("Average Children Per Male (over 16): ", stats.getAverageChildrenPerMaleOver16(), {
+            this.createStatItem("Average Children per Male (over 16): ", stats.getAverageChildrenPerMaleOver16(), {
                 title: `This is per male over 16 because the dataset will include their children, but not those of many of the women, whose children would tend to take their father's surname (due to this being a name study, mostly based on last name at birth).`,
             })
         );
@@ -2469,72 +2455,52 @@ window.OneNameTrees = class OneNameTrees extends View {
             })
         );
 
-        // Add unsourced count and link to display list of unsourced profiles
-        const unsourced = stats.getUnsourced();
-        $statsContainer.append(
-            this.createStatItem("Unsourced Profiles: ", unsourced.length, {
-                classes: "unsourced clicker",
-                title: "Click to display a list of profiles with an Unsourced template or category.",
-            })
-        );
-
-        // Add a list of unsourced profiles
-        const $unsourcedDiv = $("<div id='unsourcedProfiles' class='popup'><x>x</x></div>");
-        $("body").append($unsourcedDiv);
-        $unsourcedDiv.draggable();
-        unsourced.forEach((person) => {
-            const aName = new PersonName(person);
-            let fullName = aName.withParts(["FullName"]);
-            const dates = this.displayDates(person);
-            $unsourcedDiv.append(
-                `<a href="https://www.wikitree.com/wiki/${person.Name}" target="_blank">${fullName} ${dates}</a>`
-            );
-        });
-
-        // Unconnected
-        const unconnected = stats.getUnconnected();
-        $statsContainer.append(
-            this.createStatItem("Unconnected Profiles: ", unconnected.length, {
-                classes: "unconnected clicker",
-                title: "Click to display a list of unconnected profiles.",
-            })
-        );
-
-        // Add a list of unconnected profiles
-        const $unconnectedDiv = $("<div id='unconnectedProfiles' class='popup'><x>x</x></div>");
-        $("body").append($unconnectedDiv);
-        $unconnectedDiv.draggable();
-        unconnected.forEach((person) => {
-            const aName = new PersonName(person);
-            let fullName = aName.withParts(["FullName"]);
-            const dates = this.displayDates(person);
-            $unconnectedDiv.append(
-                `<a href="https://www.wikitree.com/wiki/${person.Name}" target="_blank">${fullName} ${dates}</a>`
-            );
-        });
-
-        // NoRelations
-        const noRelations = stats.getNoRelations();
-        if (noRelations.length > 0) {
+        function addStatsAndList($this, statType, title, statsMethod, divId, extraClass = "") {
+            const statItems = stats[statsMethod]();
             $statsContainer.append(
-                this.createStatItem("No Connections: ", noRelations.length, {
-                    classes: "noRelations clicker",
-                    title: "Click to display a list of profiles with no relations.",
+                $this.createStatItem(`${title}: `, statItems.length, {
+                    classes: `${statType} clicker ${extraClass}`,
+                    title: `Click to display a list of profiles with ${title.toLowerCase()}.`,
+                    heading: title,
                 })
             );
-            // Add a list of profiles with no relations
-            const $noRelationsDiv = $("<div id='noRelationsProfiles' class='popup'><x>x</x></div>");
-            $("body").append($noRelationsDiv);
-            $noRelationsDiv.draggable();
-            noRelations.forEach((person) => {
+
+            if (statItems.length > 0) {
+                const $div = createPopupDiv(divId, title);
+                populateDivWithProfiles($this, $div, statItems);
+            }
+        }
+
+        function createPopupDiv(divId, title) {
+            const $div = $(`
+            <div id='${divId}' class='popup'><x>x</x>
+            <h2>${title}</h2>
+            </div>`);
+            $("body").append($div);
+            $div.draggable();
+            return $div;
+        }
+
+        function populateDivWithProfiles($this, $div, profiles) {
+            profiles.forEach((person) => {
                 const aName = new PersonName(person);
                 let fullName = aName.withParts(["FullName"]);
-                const dates = this.displayDates(person);
-                $noRelationsDiv.append(
-                    `<a href="https://www.wikitree.com/wiki/${person.Name}" target="_blank">${fullName} ${dates}</a>`
-                );
+                const dates = $this.displayDates(person);
+                let id = person.Name;
+                let link = `<a href="https://www.wikitree.com/wiki/${id}" target="_blank" class="${
+                    person.Gender || ""
+                }">${fullName} ${dates}</a>`;
+                if (!person.Name) {
+                    link = `<a>Private ${dates}</a>`;
+                }
+                $div.append(link);
             });
         }
+
+        // Using the functions
+        addStatsAndList(this, "unsourced", "Unsourced Profiles", "getUnsourced", "unsourcedProfiles");
+        addStatsAndList(this, "unconnected", "Unconnected Profiles", "getUnconnected", "unconnectedProfiles");
+        addStatsAndList(this, "noRelations", "No Connections", "getNoRelations", "noRelationsProfiles");
 
         // Most Common Names
         const topMaleNames = stats.getTopNamesByGender("Male", 100);
@@ -2623,70 +2589,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         return $locationDiv;
     }
 
-    /*
-    generateLocationHTML(locationStats) {
-        console.log("generateLocationHTML", locationStats);
-
-        let $locationDiv = $("<div class='commonLocations'>");
-        const maxCountries = 3; // Maximum countries to show initially
-        const maxLocations = 5; // Maximum locations to show initially within each country
-
-        let countriesSorted = Object.entries(locationStats.countryCounts)
-            .sort((a, b) => b[1] - a[1])
-            .filter(([country, _]) => country !== "");
-
-        countriesSorted.forEach(([country, countryCount], countryIndex) => {
-            const isCountryVisible = countryIndex < maxCountries;
-            const countButton = this.locationCountButton(country, countryCount);
-            let $countryDiv = $("<div class='country'>")
-                .html(`<span class="locationPart">${country}</span> (${countButton})`)
-                .toggle(isCountryVisible);
-            let subdivisions = locationStats.subdivisionCounts[country];
-
-            if (subdivisions) {
-                let subdivisionEntries = Object.entries(subdivisions)
-                    .filter(([key, _]) => key !== "count" && key !== "")
-                    .sort((a, b) => b[1].count - a[1].count);
-
-                let $subdivisionList = $("<ul class='locationSubdivision'>");
-                subdivisionEntries.forEach(([subdivision, subData], index) => {
-                    const isVisible = index < maxLocations;
-                    const countButton = this.locationCountButton(subdivision, subData.count);
-                    let $subItem = $("<li>")
-                        .append(`<span class="locationPart">${subdivision}</span> (${countButton})`)
-                        .toggle(isVisible);
-
-                    if (Object.keys(subData).length > 1) {
-                        $subItem.addClass("expandable");
-                        let $nestedList = this.generateNestedSubdivisionList(subData);
-                        $subItem.append($nestedList.hide());
-                    }
-                    $subdivisionList.append($subItem);
-                });
-
-                if (subdivisionEntries.length > maxLocations) {
-                    this.addToggleMoreLessButton($subdivisionList, maxLocations);
-                }
-
-                $countryDiv.append($subdivisionList);
-            }
-
-            $locationDiv.append($countryDiv);
-        });
-
-        if (countriesSorted.length > maxCountries) {
-            this.addToggleMoreCountriesButton($locationDiv, maxCountries);
-        }
-
-        return $locationDiv;
-    }
-*/
-
     addToggleMoreLessButton($list, maxItems) {
         const $this = this;
         let $showMore = $("<li class='showMore locationToggler'>")
             .text("▶")
-            .click(function () {
+            .on("click.oneNameTrees", function () {
                 $this.toggleItemsVisibility($list, maxItems, this);
             });
         $list.append($showMore);
@@ -2705,7 +2612,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         let $showMoreCountries = $("<div class='showMoreCountries locationToggler'>")
             .text("▶")
-            .click(function () {
+            .on("click.oneNameTrees", function () {
                 let isExpanded = $(this).text().includes("▼");
                 $countries.slice(maxCountries).toggle(!isExpanded);
                 $(this).text(isExpanded ? "▶" : "▼");
@@ -2787,7 +2694,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             // Add toggle button if there are more names than maxVisibleNames
             if (names.length > maxVisibleNames) {
-                let $toggleButton = $("<span class='toggleMoreNames'>▶</span>").click(function () {
+                let $toggleButton = $("<span class='toggleMoreNames'>▶</span>").on("click.oneNameTrees", function () {
                     $(this).siblings(".hiddenName").slideToggle();
                     // Update button text based on visibility of hidden names
                     let isExpanded = $(this).text().trim() === "▼";
@@ -2837,14 +2744,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Average Children Per Person
         $statsContainer.append(
-            this.createStatItem("Average Children Per Male (over 16): ", periodStats.averageChildren, {
+            this.createStatItem("Average Children per Male (over 16): ", periodStats.averageChildren, {
                 title: `Average number of children for each male born in this period and thought to have reached the age of 16. This is excludes females as the dataset will not include the children of many of the women, whose children would tend to take their father's surname (due to this being a name study, mostly based on last name at birth).`,
             })
         );
 
         // Average Children Per Couple
         $statsContainer.append(
-            this.createStatItem("Average Children Per Couple: ", periodStats.averageChildrenPerCouple)
+            this.createStatItem("Average Children per Couple: ", periodStats.averageChildrenPerCouple)
         );
 
         // Most Common Names
@@ -2885,7 +2792,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 if (names.length > 5) {
                     const $toggleIcon = $("<span class='toggleIcon' title='See more names'>")
                         .html("&#9654;")
-                        .click(function () {
+                        .on("click.oneNameTrees", function () {
                             $genderContainer.find(".hiddenName").slideToggle("fast", function () {
                                 const anyVisible = $genderContainer.find(".hiddenName:visible").length > 0;
                                 $toggleIcon.html(anyVisible ? "&#9660;" : "&#9654;");
@@ -2963,7 +2870,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         sortedPeriods.forEach((period) => {
             let $button = $("<button>")
                 .text(period)
-                .on("click", function () {
+                .on("click.oneNameTrees", function () {
                     $button = $(this);
                     $this.togglePeriodStats(this, periodStats[period]);
                     if ($("#tableViewButton").hasClass("on")) {
@@ -3049,7 +2956,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             id: "locationSelectsSwitchButton",
             text: "⇆",
             title: "Switch between sort orders (count and alphabetical).",
-        }).on("click", function () {
+        }).on("click.oneNameTrees", function () {
             // Determine the current sorting order to toggle.
             const isSortedByCount = $locationSelect
                 .find("option:nth-child(2)")
@@ -3365,7 +3272,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const wideTableButton = $("<button>", { id: "wideTableButton" }).text("Wide");
         $("#tableView_wrapper #tableView_length").after(wideTableButton);
-        wideTableButton.on("click", function () {
+        wideTableButton.on("click.oneNameTrees", function () {
             $("section#table").toggleClass("wide");
             $(this).toggleClass("on");
         });
@@ -3384,7 +3291,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const flipLocationsButton = $("<button>", { id: "flipLocationsButton" }).text("Reverse locations");
         $("#tableView_wrapper #tableView_length").after(flipLocationsButton);
-        flipLocationsButton.on("click", function () {
+        flipLocationsButton.on("click.oneNameTrees", function () {
             flipLocationOrder();
         });
 
@@ -3397,7 +3304,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             resizeObserver.observe(header);
         }
 
-        $("#toggleGeneralStats").on("click", function () {
+        $("#toggleGeneralStats").on("click.oneNameTrees", function () {
             setTimeout($this.setStickyHeader, 300); // Adjust the timeout based on actual delay
         });
 
@@ -3470,7 +3377,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#tableView_filter").before($clearButton);
             //           $("#controls").append($clearButton);
         }
-        $("#clearFilters").on("click", function () {
+        $("#clearFilters").on("click.oneNameTrees", function () {
             $this.shakingTree.show();
             setTimeout(function () {
                 $(".filter").val("");
@@ -3562,9 +3469,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     documentReady() {
         this.addCategoryKeyToHelp();
         const $this = this;
-        $("#submit").on("click", async function () {
-            $("#refreshData").prop("disabled", true);
-            $("#loadButton").prop("disabled", true);
+        $("#submit").on("click.oneNameTrees", async function () {
             console.log("Submit clicked");
             $this.shakingTree.show();
             $("div.error").remove(); // Remove any existing error messages
@@ -3601,7 +3506,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const helpModal = $("#help");
         // #helpButton: on click, show the help text in the modal and draggable
         helpModal.draggable();
-        $("#helpButton,#closeHelp").on("click", function (e) {
+        $("#helpButton,#closeHelp").on("click.oneNameTrees", function (e) {
             e.preventDefault();
             // Calculate the position of the helpButton
             const helpButtonOffset = $("#helpButton").offset();
@@ -3616,7 +3521,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             helpModal.slideToggle();
         });
-        helpModal.on("dblclick", function (e) {
+        helpModal.on("dblclick.oneNameTrees", function (e) {
             e.preventDefault();
             helpModal.slideUp();
         });
@@ -3627,7 +3532,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        $("#toggleDetails").on("click", function () {
+        $("#toggleDetails").on("click.oneNameTrees", function () {
             if ($(this).hasClass("off")) {
                 $(this).removeClass("off").addClass("on");
                 $(".dates").each(function () {
@@ -3641,7 +3546,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        $("#toggleWTIDs").on("click", function () {
+        $("#toggleWTIDs").on("click.oneNameTrees", function () {
             if ($(this).hasClass("off")) {
                 $(this).removeClass("off").addClass("on");
                 $(".wtid").show();
@@ -3651,7 +3556,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        $("#toggleGeneralStats").on("click", function () {
+        $("#toggleGeneralStats").on("click.oneNameTrees", function () {
             if ($(this).hasClass("on") == false) {
                 $(this).removeClass("off").addClass("on");
                 $("#statsDisplay").slideDown();
@@ -3661,7 +3566,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        $("#tableViewButton").click(function () {
+        $("#tableViewButton").on("click.oneNameTrees", function () {
             const $tableViewContainer = $("section#table");
             const $treeViewContainer = $("section#results");
 
@@ -4214,33 +4119,20 @@ class D3DataFormatter {
         );
         const controlButtons = `
         <div id="controlButtons">
-            <button id="prevPeriod">⏪</button>
-            <button id="nextPeriod">⏩</button>
-            <button id="startEvolution" class="active">▶️</button>
-            <button id="stopEvolution">⏹️</button>
+            <button id="prevPeriod" title="See birth locations in the previous period">⏪</button>
+            <button id="nextPeriod" title="See birth locations in the next period">⏩</button>
+            <button id="startEvolution" class="active" title="Automatically move from one period to the next">▶️</button>
+            <button id="stopEvolution" title="Stop automatic movement through the periods">⏹️</button>
         </div>
       `;
-        // Add a button on the right to expand the div and the SVG to full screen
-        const expandButton = $("<button id='expandButton'>⬜</button>");
-        locationsVisualisationDiv.append(expandButton);
-        expandButton.on("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            locationsVisualisationDiv.toggleClass("expanded");
-            if (locationsVisualisationDiv.hasClass("expanded")) {
-                expandButton.text("⬛");
-            } else {
-                expandButton.text("⬜");
-            }
-        });
 
         locationsVisualisationDiv.append(controlButtons);
 
-        $("#prevPeriod").click(() => this.showPreviousPeriod());
-        $("#nextPeriod").click(() => this.showNextPeriod());
-        $("#stopEvolution").click(() => this.stopEvolution());
+        $("#prevPeriod").on("click.oneNameTrees", () => this.showPreviousPeriod());
+        $("#nextPeriod").on("click.oneNameTrees", () => this.showNextPeriod());
+        $("#stopEvolution").on("click.oneNameTrees", () => this.stopEvolution());
         const $this = this;
-        $("#controlButtons button").on("click", function () {
+        $("#controlButtons button").on("click.oneNameTrees", function () {
             $("#controlButtons button").removeClass("active");
             $this.stopEvolution();
             if ($(this).prop("id") === "startEvolution") {

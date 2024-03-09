@@ -46,7 +46,8 @@ export class FamilyTreeStatistics {
             (person) =>
                 (!person.Father || person.Father === 0) &&
                 (!person.Mother || person.Mother === 0) &&
-                person.NoChildren === 1 &&
+                !person.HasChildren &&
+                person.Privacy >= 40 &&
                 this.isSpousesObjectEmpty(person.Spouses)
         );
         // Proceed with sorting as before
