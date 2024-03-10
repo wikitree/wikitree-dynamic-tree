@@ -462,6 +462,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         var self = this;
         FractalView.fractalSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FractalView",
+            saveSettingsToCookie: true,
             tabs: [
                 {
                     name: "general",
@@ -1765,7 +1766,22 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
          if (!showBadges) {
             let stickerLegend = document.getElementById("stickerLegend");
             stickerLegend.style.display = "none";
+            if (
+                FractalView.currentSettings["highlight_options_showHighlights"] == false &&
+                FractalView.currentSettings["colour_options_colourBy"] != "Location" &&
+                FractalView.currentSettings["colour_options_colourBy"] != "Family"
+            ) {
+                let legendDIV = document.getElementById("legendDIV");
+                legendDIV.style.display = "none";
+            }
          }
+
+         console.log(
+             "SELF LOAD end values of legendDIV:",
+             legendDIV.style.display,
+             showBadges,
+             FractalView.currentSettings["highlight_options_showHighlights"]
+         );
 
     };
 
