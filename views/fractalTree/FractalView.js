@@ -21,6 +21,7 @@ const SVGbtnUP =
 import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
+import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
 (function () {
     const APP_ID = "FractalTree";
@@ -113,6 +114,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
      */
     var FractalView = (window.FractalView = function () {
         Object.assign(this, this?.meta());
+        // let theCookie = WTapps_Utils.getCookie("wtapps_fractal");
     });
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fractal Tree
@@ -1069,7 +1071,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         var legendHTML =
             '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; align:left"><A style="cursor:pointer;" onclick="FractalView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
-            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='FractalView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div></div>";
+            "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='FractalView.refreshTheLegend();'>Click to Update Legend</A></DIV><div id=innerLegend></div></div>";
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
@@ -1161,7 +1163,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             SVGbtnCLOSE +
             "</a></span>" +
             highlightHTML +
-            "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FractalView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
+            "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FractalView.refreshTheLegend();'>Click to Update Legend</A></DIV><div id=innerLegend></div>" +
             badgesHTML +
             "</div>";
 
@@ -1186,8 +1188,12 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
 
         function settingsChanged(e) {
             if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
-                condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                condLog("NEW settings are:", FractalView.currentSettings);
+                condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");                
+                WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
+                    expires: 365,
+                }); 
+
+                console.log("NEW settings are:", FractalView.currentSettings);
                 let showBadges = FractalView.currentSettings["general_options_showBadges"];
                 let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
                 let colourBy = FractalView.currentSettings["colour_options_colourBy"];
@@ -1213,39 +1219,9 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                     stickerLegend.style.display = "block";
                     legendToggle.style.display = "inline-block";
                     if (colourBy == "Family" || colourBy == "Location") {
-                        BRbetweenLegendAndStickers.style.display = "block";
-                        LegendTitleH3.style.display = "block";
-                        condLog(
-                            "NEW UPDATE SETTINGS: ",
-                            colourBy,
-                            colour_options_specifyByFamily,
-                            colour_options_specifyByLocation
-                        );
-                        if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
-                            LegendTitle.textContent = "Age at death";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
-                            LegendTitle.textContent = "Birth Country";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
-                            LegendTitle.textContent = "Birth Region";
-                        } else if (
-                            colourBy == "Location" &&
-                            colour_options_specifyByLocation.indexOf("BirthTown") > -1
-                        ) {
-                            LegendTitle.textContent = "Birth Town";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
-                            LegendTitle.textContent = "Country of Death";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
-                            LegendTitle.textContent = "Region of Death";
-                        } else if (
-                            colourBy == "Location" &&
-                            colour_options_specifyByLocation.indexOf("DeathTown") > -1
-                        ) {
-                            LegendTitle.textContent = "Town of Death";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
-                            LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
-                            LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
-                        }
+                        updateLegendTitle();
+
+                        
                     } else {
                         BRbetweenLegendAndStickers.style.display = "none";
                         LegendTitleH3.style.display = "none";
@@ -1265,63 +1241,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                 }
 
                 if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
-                    legendDIV.style.display = "block";
-                    legendToggle.style.display = "inline-block";
-
-                    document.getElementById("highlightDescriptor").style.display = "block";
-                    if (FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
-                        document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "mitochondrial DNA (mtDNA) ancestors";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "X Chromosome inheritance path";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "X, Y, mitochondrial DNA ancestors";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Relationships confirmed by DNA";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Profiles that pass the BioCheck";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Profiles that fail the BioCheck";
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
-                        let catNameSelector = document.getElementById("highlight_options_catName");
-                        let rawValue = catNameSelector.value.trim();
-                        document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
-                        currentHighlightCategory = rawValue;
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
-                        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
-                        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
-                        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
-                        if (aliveYYYYSelector.value > 1) {
-                            document.getElementById("highlightPeepsDescriptor").textContent =
-                                "Alive on " +
-                                aliveDDSelector.value +
-                                " " +
-                                monthNames[aliveMMMSelector.value - 1] +
-                                " " +
-                                aliveYYYYSelector.value;
-                        } else {
-                            document.getElementById("highlightPeepsDescriptor").textContent =
-                                "Alive on " +
-                                aliveDDSelector.value +
-                                " " +
-                                monthNames[aliveMMMSelector.value - 1] +
-                                " " +
-                                1950;
-                        }
-                    } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioText") {
-                        let bioTextSelector = document.getElementById("highlight_options_bioText");
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
-                    } else {
-                        document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
-                    }
+                    updateHighlightDescriptor();
                 } else {
                     document.getElementById("highlightDescriptor").style.display = "none";
                 }
@@ -1333,6 +1253,145 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                 condLog("NOTHING happened according to SETTINGS OBJ");
             }
         }
+
+    function updateLegendTitle() {
+        let colourBy = FractalView.currentSettings["colour_options_colourBy"];
+        let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
+        let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
+
+        let legendDIV = document.getElementById("legendDIV");
+        let LegendTitle = document.getElementById("LegendTitle");
+        let LegendTitleH3 = document.getElementById("LegendTitleH3");
+                
+        BRbetweenLegendAndStickers.style.display = "block";
+        LegendTitleH3.style.display = "block";
+        condLog("NEW UPDATE SETTINGS: ", colourBy, colour_options_specifyByFamily, colour_options_specifyByLocation);
+
+        if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
+            LegendTitle.textContent = "Age at death";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
+            LegendTitle.textContent = "Birth Country";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
+            LegendTitle.textContent = "Birth Region";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("BirthTown") > -1) {
+            LegendTitle.textContent = "Birth Town";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
+            LegendTitle.textContent = "Country of Death";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
+            LegendTitle.textContent = "Region of Death";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("DeathTown") > -1) {
+            LegendTitle.textContent = "Town of Death";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
+            LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
+        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
+            LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+        }
+        
+    }
+
+    function updateHighlightDescriptor() {
+        let legendDIV = document.getElementById("legendDIV");
+        let legendToggle = document.getElementById("legendASCII");
+        let innerLegend = document.getElementById("innerLegend");
+
+        legendDIV.style.display = "block";
+        legendToggle.style.display = "inline-block";
+
+        document.getElementById("highlightDescriptor").style.display = "block";
+        if (FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "mitochondrial DNA (mtDNA) ancestors";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "X, Y, mitochondrial DNA ancestors";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "Relationships confirmed by DNA";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "Profiles that pass the BioCheck";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+            document.getElementById("highlightPeepsDescriptor").textContent = "Profiles that fail the BioCheck";
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
+            let catNameSelector = document.getElementById("highlight_options_catName");
+            let rawValue = catNameSelector.value.trim();
+            document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
+            currentHighlightCategory = rawValue;
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
+            let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+            let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+            let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+            if (aliveYYYYSelector.value > 1) {
+                document.getElementById("highlightPeepsDescriptor").textContent =
+                    "Alive on " +
+                    aliveDDSelector.value +
+                    " " +
+                    monthNames[aliveMMMSelector.value - 1] +
+                    " " +
+                    aliveYYYYSelector.value;
+            } else {
+                document.getElementById("highlightPeepsDescriptor").textContent =
+                    "Alive on " + aliveDDSelector.value + " " + monthNames[aliveMMMSelector.value - 1] + " " + 1950;
+            }
+        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+            let bioTextSelector = document.getElementById("highlight_options_bioText");
+            document.getElementById("highlightPeepsDescriptor").textContent =
+                'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
+        } else {
+            document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
+        }
+
+        if (FractalView.currentSettings["highlight_options_showHighlights"] != true) {            
+            document.getElementById("highlightDescriptor").style.display = "none";
+        }
+
+    }
+
+    function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
+            const theCookieSettings = JSON.parse(theCookieString);
+            for (const key in theCookieSettings) {
+                if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                    const element = theCookieSettings[key];
+                    let theType = "";
+                    if (document.getElementById(key)) {
+                        theType = document.getElementById(key).type;
+                        if (theType == "checkbox") {
+                            document.getElementById(key).checked = element;
+                        } else if (theType == "number" || theType == "text") {
+                            document.getElementById(key).value = element;
+                        } else if (document.getElementById(key).classList.length > 0) {
+                            document.getElementById(key).value = element;
+                            theType = "optionSelect";
+                        } else {
+                            theType = document.getElementById(key);
+                        }
+                    } else {
+                        theType = "NO HTML OBJECT";
+                        let theRadioButtons = document.getElementsByName(key + "_radio");
+                        if (theRadioButtons) {
+                            // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                            theType = "radio x " + theRadioButtons.length;
+                            for (let i = 0; i < theRadioButtons.length; i++) {
+                                const btn = theRadioButtons[i];
+                                if (btn.value == element) {
+                                    btn.checked = true;
+                                }
+                            }
+                        }
+                    }
+                    // console.log(key, element, theType);
+                    if (Object.hasOwnProperty.call(FractalView.currentSettings, key)) {
+                        FractalView.currentSettings[key] = element;
+                    }
+                }
+            }
+
+            // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+            // FractalView.currentSettings["general_options_badgeLabels_otherValue"] =
+            //     theCookieSettings["general_options_badgeLabels_otherValue"];
+    }
+        
+
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
@@ -1619,13 +1678,22 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         FractalView.fractalSettingsOptionsObject.setActiveTab("names");
         FractalView.currentSettings = FractalView.fractalSettingsOptionsObject.getDefaultOptions();
 
+        let theCookieString = WTapps_Utils.getCookie("wtapps_fractal");
+        if (theCookieString) {
+            updateCurrentSettingsBasedOnCookieValues(theCookieString);
+        }
+
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
 
         let vBoxHeightSelector1 = document.getElementById("general_options_vBoxHeight_radio1");
         let vBoxHeightSelector2 = document.getElementById("general_options_vBoxHeight_radio2");
-        document.getElementById("general_options_vSpacing_label").style.display = "none";
-        document.getElementById("general_options_vSpacing").style.display = "none";
+
+        if (FractalView.currentSettings["general_options_vBoxHeight"] != 1) {
+            document.getElementById("general_options_vSpacing_label").style.display = "none";
+            document.getElementById("general_options_vSpacing").style.display = "none";
+        }
+
         // condLog("bkgdClrSelector", bkgdClrSelector);
 
         bkgdClrSelector.setAttribute("onchange", "FractalView.optionElementJustChanged();");
@@ -1637,35 +1705,68 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
         let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-        specLocSelector.style.display = "none";
-        specFamSelector.style.display = "none";
-        specLocSelectorLabel.style.display = "none";
-        specFamSelectorLabel.style.display = "none";
-        specLocSelectorBR.style.display = "none";
-        specFamSelectorBR.style.display = "none";
+        
+        if (FractalView.currentSettings["colour_options_colourBy"] != "Family") {
+            specFamSelector.style.display = "none";
+            specFamSelectorLabel.style.display = "none";
+            specFamSelectorBR.style.display = "none";
+        }
+        if (FractalView.currentSettings["colour_options_colourBy"] != "Location") {
+            specLocSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "none";
+        } else if (FractalView.currentSettings["colour_options_colourBy"] == "Location") { 
+            document.getElementById("colour_options_palette").style.display = "none";
+            document.getElementById("colour_options_palette_label").style.display = "none";
+            document.getElementById("colour_options_palette_BR").style.display = "none";
+
+        }
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
         highlightSelector.setAttribute("onchange", "FractalView.optionElementJustChanged();");
         let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
+        let howDNAlinksSelectorBR = document.getElementById("highlight_options_howDNAlinks_BR");
+
+        if (FractalView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") == -1) {
+            break4DNASelector.parentNode.style.display = "none";
+            howDNAlinksSelectorBR.parentNode.style.display = "none";
+        }
+
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
-        catNameSelector.style.display = "none";
-        catNameSelectorLabel.style.display = "none";
+        if (FractalView.currentSettings["highlight_options_highlightBy"] != "cat") {
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
+        }
 
         let bioTextSelector = document.getElementById("highlight_options_bioText");
         let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
-        bioTextSelector.style.display = "none";
-        bioTextSelectorLabel.style.display = "none";
+        if (FractalView.currentSettings["highlight_options_highlightBy"] != "bioText") {
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
+        }
 
         let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
         let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
         let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
 
-        aliveYYYYSelector.parentNode.parentNode.style.display = "none";
-        aliveMMMSelector.parentNode.style.display = "none";
-        aliveDDSelector.parentNode.style.display = "none";
+        if (FractalView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+            aliveMMMSelector.parentNode.style.display = "none";
+            aliveDDSelector.parentNode.style.display = "none";
+        }
+        
+        
+        updateHighlightDescriptor();
+        updateLegendTitle();
+
+        let showBadges = FractalView.currentSettings["general_options_showBadges"];
+         if (!showBadges) {
+            let stickerLegend = document.getElementById("stickerLegend");
+            stickerLegend.style.display = "none";
+         }
+
     };
 
     function showRefreshInLegend() {
@@ -1783,6 +1884,11 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         } else {
             break4DNASelector.parentNode.style.display = "block";
             howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
+        }
+
+        if (highlightSelector.value.indexOf("DNA") == -1) {
+            break4DNASelector.parentNode.style.display = "none";
+            howDNAlinksRadiosBR.parentNode.style.display = "none";
         }
     };
 
