@@ -483,23 +483,29 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             if (value.text == "SVG") {
                                 let optionSVGNode = document.createElement("SVG");
                                 optionSVGNode.id = fullOptionName + "_SVG" + radioNum;
+                                optionSVGNode.setAttribute("For", radioOptionElement.id);
                                 labelElement.appendChild(optionSVGNode);
                             } else if (value.text && value.text.indexOf("IMG:") == 0) {
+                                let subLabelElement = document.createElement("label");
+                                subLabelElement.setAttribute("For", radioOptionElement.id);
                                 let optionIMGNode = document.createElement("IMG");
                                 optionIMGNode.id = fullOptionName + "_IMG" + radioNum;
+                                
+                                
                                 optionIMGNode.src = value.text.substring(4);
                                 if (value.width > 0) {
                                     optionIMGNode.width = value.width;
                                 }
-                                labelElement.appendChild(optionIMGNode);
+                                subLabelElement.appendChild(optionIMGNode);
+                                labelElement.appendChild(subLabelElement);
                             } else {
                                 let subLabelElement = document.createElement("label");
-                                // console.log("Trying to add FOR: ", radioOptionElement.id);
                                 subLabelElement.setAttribute("For",radioOptionElement.id);
                                 let optionLabelTextNode = document.createTextNode(" " + value.text);  
                                 subLabelElement.appendChild(optionLabelTextNode);
                                 labelElement.appendChild(subLabelElement);
                             }
+                            
 
                             if (value.addOtherTextField === true) {
                                 // console.log("ADD AN OTHER TEXT FIELD RIGHT HERE !!!");
