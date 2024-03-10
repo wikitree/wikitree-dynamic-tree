@@ -141,6 +141,8 @@
  * 
  */
 
+import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
+
 (function () {
     const APP_ID = "SuperBigTree";
     var originOffsetX = 500,
@@ -1481,7 +1483,7 @@
             SVGbtnCLOSE +
             "</A></span>" +
             highlightHTML +
-            // "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
+            // "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='SuperBigFamView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
             "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='SuperBigFamView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
             badgesHTML +
             "</div>";
@@ -1521,6 +1523,9 @@
         function settingsChanged(e) {
             if (SuperBigFamView.SBFtreeSettingsOptionsObject.hasSettingsChanged(SuperBigFamView.currentSettings)) {
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+                WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
+                    expires: 365,
+                }); 
                 condLog("NEW settings are:", SuperBigFamView.currentSettings);
                 let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
                 let newBoxWidth = SuperBigFamView.currentSettings["general_options_boxWidth"];
@@ -1681,6 +1686,163 @@
                 condLog("NOTHING happened according to SETTINGS OBJ");
             }
         }
+        function updateLegendTitle() {
+            let colourBy = SuperBigFamView.currentSettings["colour_options_colourBy"];
+            let colour_options_specifyByFamily = SuperBigFamView.currentSettings["colour_options_specifyByFamily"];
+            let colour_options_specifyByLocation = SuperBigFamView.currentSettings["colour_options_specifyByLocation"];
+
+            let legendDIV = document.getElementById("legendDIV");
+            let LegendTitle = document.getElementById("LegendTitle");
+
+            if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
+                LegendTitle.textContent = "Age at death";
+            } else if (colourBy == "Family" && colour_options_specifyByFamily == "numSpouses") {
+                LegendTitle.textContent = "Number of spouses";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
+                LegendTitle.textContent = "Birth Country";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
+                LegendTitle.textContent = "Birth Region";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("BirthTown") > -1) {
+                LegendTitle.textContent = "Birth Town";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
+                LegendTitle.textContent = "Country of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
+                LegendTitle.textContent = "Region of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("DeathTown") > -1) {
+                LegendTitle.textContent = "Town of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
+                LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
+                LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+            } else if (colourBy == "BioCheck") {
+                LegendTitle.textContent = "Bio Check status";
+            } else if (colourBy == "DNAstatus") {
+                LegendTitle.textContent = "Parental status";
+            }
+        }
+
+        function updateHighlightDescriptor() {
+            let legendToggle = document.getElementById("legendASCII");
+            let innerLegend = document.getElementById("innerLegend");
+
+            if (SuperBigFamView.currentSettings["highlight_options_showHighlights"] == true) {
+                legendDIV.style.display = "block";
+                legendToggle.style.display = "inline-block";
+
+                document.getElementById("highlightDescriptor").style.display = "block";
+                if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
+                    if (thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                        document.getElementById("highlightPeepsDescriptor").innerHTML =
+                            "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                    }
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "mitochondrial DNA (mtDNA) ancestors";
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "X, Y, mitochondrial DNA ancestors";
+                    if (thePeopleList[SuperBigFamView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                        document.getElementById("highlightPeepsDescriptor").innerHTML =
+                            "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                    }
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Relationships confirmed by DNA";
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "cat") {
+                    let catNameSelector = document.getElementById("highlight_options_catName");
+                    let rawValue = catNameSelector.value.trim();
+                    currentHighlightCategory = rawValue;
+                    document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Profiles that pass the Bio Check : have sources";
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Profiles that fail the Bio Check : no sources";
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "bioCheckStyle") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Profiles that the Bio Check app flagged : style issues";
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
+                    let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+                    let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+                    let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+                    if (aliveYYYYSelector.value > 1) {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Alive on " +
+                            aliveDDSelector.value +
+                            " " +
+                            monthNames[aliveMMMSelector.value - 1] +
+                            " " +
+                            aliveYYYYSelector.value;
+                    } else {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Alive on " +
+                            aliveDDSelector.value +
+                            " " +
+                            monthNames[aliveMMMSelector.value - 1] +
+                            " " +
+                            1950;
+                    }
+                } else if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+                    let bioTextSelector = document.getElementById("highlight_options_bioText");
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
+                } else {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
+                }
+            } else {
+                document.getElementById("highlightDescriptor").style.display = "none";
+            }
+        }
+
+
+
+    function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
+            const theCookieSettings = JSON.parse(theCookieString);
+            for (const key in theCookieSettings) {
+                if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                    const element = theCookieSettings[key];
+                    let theType = "";
+                    if (document.getElementById(key)) {
+                        theType = document.getElementById(key).type;
+                        if (theType == "checkbox") {
+                            document.getElementById(key).checked = element;
+                        } else if (theType == "number" || theType == "text") {
+                            document.getElementById(key).value = element;
+                        } else if (document.getElementById(key).classList.length > 0) {
+                            document.getElementById(key).value = element;
+                            theType = "optionSelect";
+                        } else {
+                            theType = document.getElementById(key);
+                        }
+                    } else {
+                        theType = "NO HTML OBJECT";
+                        let theRadioButtons = document.getElementsByName(key + "_radio");
+                        if (theRadioButtons) {
+                            // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                            theType = "radio x " + theRadioButtons.length;
+                            for (let i = 0; i < theRadioButtons.length; i++) {
+                                const btn = theRadioButtons[i];
+                                if (btn.value == element) {
+                                    btn.checked = true;
+                                }
+                            }
+                        }
+                    }
+                    // console.log(key, element, theType);
+                    if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
+                        SuperBigFamView.currentSettings[key] = element;
+                    }
+                }
+            }
+
+            // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+            // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
+            //     theCookieSettings["general_options_badgeLabels_otherValue"];
+    }
+   
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3
@@ -1709,14 +1871,14 @@
         );
 
         // // Setup zoom and pan
-        // FanChartView.zoom = d3
+        // SuperBigFamView.zoom = d3
         //     .zoom()
         //     .scaleExtent([0.1, 3.0])
         //     .on("zoom", function (event) {
         //         g.attr("transform", event.transform);
-        //         FanChartView.currentScaleFactor = event.transform.k;
+        //         SuperBigFamView.currentScaleFactor = event.transform.k;
         //     });
-        // svg.call(FanChartView.zoom);
+        // svg.call(SuperBigFamView.zoom);
 
         // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Super Big Family Tree
@@ -1973,17 +2135,23 @@
         SuperBigFamView.SBFtreeSettingsOptionsObject.buildPage();
         SuperBigFamView.SBFtreeSettingsOptionsObject.setActiveTab("names");
         SuperBigFamView.currentSettings = SuperBigFamView.SBFtreeSettingsOptionsObject.getDefaultOptions();
-        let possibleWTuserIDdiv = document.getElementById("wt-api-login")
-        if (possibleWTuserIDdiv) {
-            let possibleWTuserID = possibleWTuserIDdiv.innerText;
-            let whereCOLON = possibleWTuserID.indexOf(":");
-            let whereBracket = possibleWTuserID.indexOf("(");
-            let youID = possibleWTuserID.substring(whereCOLON + 1, whereBracket).trim(); 
-            condLog("You are:", youID);
-            if (youID == "Clarke-11007") {
-                invokeCreatorCustomSettings();
-            }
+
+        let theCookieString = WTapps_Utils.getCookie("wtapps_superbig");
+        if (theCookieString) {
+            updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
+
+        // let possibleWTuserIDdiv = document.getElementById("wt-api-login")
+        // if (possibleWTuserIDdiv) {
+        //     let possibleWTuserID = possibleWTuserIDdiv.innerText;
+        //     let whereCOLON = possibleWTuserID.indexOf(":");
+        //     let whereBracket = possibleWTuserID.indexOf("(");
+        //     let youID = possibleWTuserID.substring(whereCOLON + 1, whereBracket).trim(); 
+        //     condLog("You are:", youID);
+        //     if (youID == "Clarke-11007") {
+        //         invokeCreatorCustomSettings();
+        //     }
+        // }
         
         SuperBigFamView.Adimensions = [];
 
@@ -2005,12 +2173,18 @@
         let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
         let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-        specLocSelector.style.display = "none";
-        specFamSelector.style.display = "none";
-        specLocSelectorLabel.style.display = "none";
-        specFamSelectorLabel.style.display = "none";
-        specLocSelectorBR.style.display = "none";
-        specFamSelectorBR.style.display = "none";
+
+        if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family") {
+            specFamSelector.style.display = "none";
+            specFamSelectorBR.style.display = "none";
+            specFamSelectorLabel.style.display = "none";
+        }
+        
+        if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location") {
+            specLocSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "none";
+        }
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
@@ -2019,21 +2193,37 @@
         // let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
-        catNameSelector.style.display = "none";
-        catNameSelectorLabel.style.display = "none";
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "cat") {
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
+        }
 
         let bioTextSelector = document.getElementById("highlight_options_bioText");
         let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
-        bioTextSelector.style.display = "none";
-        bioTextSelectorLabel.style.display = "none";
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "bioText") {
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
+        }
 
         let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
         let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
         let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
 
-        aliveYYYYSelector.parentNode.parentNode.style.display = "none";
-        aliveMMMSelector.parentNode.style.display = "none";
-        aliveDDSelector.parentNode.style.display = "none";
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+            aliveMMMSelector.parentNode.style.display = "none";
+            aliveDDSelector.parentNode.style.display = "none";
+        }
+
+        updateHighlightDescriptor();
+        updateLegendTitle();
+
+        
+        let showBadges = FractalView.currentSettings["general_options_showBadges"];
+        if (!showBadges) {
+            let stickerLegend = document.getElementById("stickerLegend");
+            stickerLegend.style.display = "none";
+        }
     };
 
     function showRefreshInLegend() {
