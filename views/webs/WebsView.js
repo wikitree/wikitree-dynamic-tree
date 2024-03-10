@@ -51,6 +51,9 @@
 *       --> node positions are recalculated here and transformed, then drawLines redone
 *
  */
+
+import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
+
 (function () {
     const APP_ID = "AncestorWebs";
     var originOffsetX = 500,
@@ -66,6 +69,8 @@
      */
     var WebsView = (window.WebsView = function () {
         Object.assign(this, this?.meta());
+        // let theCookie = WTapps_Utils.getCookie("wtapps_webs");
+        // console.log(theCookie);
     });
 
     const PERSON_SILHOUETTE = "👤";
@@ -693,7 +698,10 @@
         function settingsChanged(e) {
             if (WebsView.websSettingsOptionsObject.hasSettingsChanged(WebsView.currentSettings)) {
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                condLog("NEW settings are:", WebsView.currentSettings);
+                console.log("NEW settings are:", WebsView.currentSettings);
+                WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), {
+                    expires: 365,
+                });
                 repeatAncestorTracker = new Object();
                 repeatAncestorCounter = [0];
                 numRepeatAncestors = 0;
@@ -822,6 +830,52 @@
             }
         };
 
+          function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
+              const theCookieSettings = JSON.parse(theCookieString);
+              for (const key in theCookieSettings) {
+                  if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                      const element = theCookieSettings[key];
+                      let theType = "";
+                      if (document.getElementById(key)) {
+                          theType = document.getElementById(key).type;
+                          if (theType == "checkbox") {
+                              document.getElementById(key).checked = element;
+                          } else if (theType == "number" || theType == "text") {
+                              document.getElementById(key).value = element;
+                          } else if (document.getElementById(key).classList.length > 0) {
+                              document.getElementById(key).value = element;
+                              theType = "optionSelect";
+                          } else {
+                              theType = document.getElementById(key);
+                          }
+                      } else {
+                          theType = "NO HTML OBJECT";
+                          let theRadioButtons = document.getElementsByName(key + "_radio");
+                          if (theRadioButtons) {
+                              // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                              theType = "radio x " + theRadioButtons.length;
+                              for (let i = 0; i < theRadioButtons.length; i++) {
+                                  const btn = theRadioButtons[i];
+                                  if (btn.value == element) {
+                                      btn.checked = true;
+                                  }
+                              }
+                          }
+                      }
+                      // console.log(key, element, theType);
+                      if (Object.hasOwnProperty.call(WebsView.currentSettings, key)) {
+                          WebsView.currentSettings[key] = element;
+                      }
+                  }
+              }
+
+            //   // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+            //   WebsView.currentSettings["general_options_badgeLabels_otherValue"] =
+            //       theCookieSettings["general_options_badgeLabels_otherValue"];
+          }
+        
+        
+
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
         const g = svg.append("g");
@@ -891,6 +945,11 @@
         WebsView.websSettingsOptionsObject.buildPage();
         WebsView.websSettingsOptionsObject.setActiveTab("names");
         WebsView.currentSettings = WebsView.websSettingsOptionsObject.getDefaultOptions();
+
+        let theCookieString = WTapps_Utils.getCookie("wtapps_webs");
+        if (theCookieString) {
+            updateCurrentSettingsBasedOnCookieValues(theCookieString);
+        }
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         // let SVG4MRCAoption1 = document.getElementById("line_options_singleMRCA_SVG1");
@@ -2717,10 +2776,12 @@
                 }
 
                 for (let repeaterIndex = startingRepeaterIndex; repeaterIndex <= endingRepeaterIndex; repeaterIndex++) {
-                    for (let index = 0; index < WebsView.listOfRepeatAncestors[repeaterIndex].AhnNums.length; index++) {
-                        const thisAhnNum = WebsView.listOfRepeatAncestors[repeaterIndex].AhnNums[index];
-                        // condLog("Need to find the peeps in between AhnNum 1 and AhnNum ", thisAhnNum);
-                        setUseThisForNode(thisAhnNum, nodes);
+                     if (WebsView.listOfRepeatAncestors[repeaterIndex] && WebsView.listOfRepeatAncestors[repeaterIndex].AhnNums){
+                        for (let index = 0; index < WebsView.listOfRepeatAncestors[repeaterIndex].AhnNums.length; index++) {
+                            const thisAhnNum = WebsView.listOfRepeatAncestors[repeaterIndex].AhnNums[index];
+                            // condLog("Need to find the peeps in between AhnNum 1 and AhnNum ", thisAhnNum);
+                            setUseThisForNode(thisAhnNum, nodes);
+                        }
                     }
                 }
 
@@ -3024,7 +3085,7 @@
             //          Each person in the data collection has an .AhnNum numeric property assigned, which uniquely determines where their name plate should be displayed.
 
             // condLog("node.attr.transform  - line:324 (x,y) = ",d.x, d.y, d._data.Name);
-            d = ancestorObject.person; //thePeopleList[ person.id ];
+            let d = ancestorObject.person; //thePeopleList[ person.id ];
             // condLog(ancestorObject);
             let theAncestorAtTop = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
             // condLog("theAncestorAtTop", theAncestorAtTop);
