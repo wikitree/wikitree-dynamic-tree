@@ -40,7 +40,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
      */
     var FanChartView = (window.FanChartView = function () {
         Object.assign(this, this?.meta());
-        let theCookie = WTapps_Utils.getCookie("wtapps_fanchart");
+        // let theCookie = WTapps_Utils.getCookie("wtapps_fanchart");
         // console.log(theCookie);
     });
 
