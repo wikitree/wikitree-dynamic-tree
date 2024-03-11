@@ -39,12 +39,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "07 March 2024";
+    const AboutUpdateDate = "11 March 2024";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
         "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
-    const AboutAssistants = "Rob Pavey & Kay Knight";
+    const AboutAssistants = "Rob Pavey, Kay Knight, Riel Smit & Ian Beacall";
     const AboutLatestG2G = ""; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = ""; // "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
@@ -162,6 +162,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     let font4Name = "Arial";
     let font4Info = "SansSerif";
+
+    // function sayHi() {
+    //     console.log("Gday Mate");
+    // }
 
     var ColourArray = [
         "White",
@@ -453,6 +457,69 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         };
     };
 
+    
+
+    FractalView.resetSettingsDIVtoDefaults = function () {
+        // console.log("Here you are inside FractalView.resetSettingsDIVtoDefaults");
+        let theCookieString = JSON.stringify(FractalView.currentSettings);
+        // console.log({ theCookieString });
+        if (theCookieString) {
+            FractalView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            FractalView.tweakSettingsToHideShowElements();
+            FractalView.updateLegendTitle();
+            FractalView.updateHighlightDescriptor();
+
+            let showBadges = FractalView.currentSettings["general_options_showBadges"];
+            if (!showBadges) {
+                let stickerLegend = document.getElementById("stickerLegend");
+                stickerLegend.style.display = "none";
+                if (
+                    FractalView.currentSettings["highlight_options_showHighlights"] == false &&
+                    FractalView.currentSettings["colour_options_colourBy"] != "Location" &&
+                    FractalView.currentSettings["colour_options_colourBy"] != "Family"
+                ) {
+                    let legendDIV = document.getElementById("legendDIV");
+                    legendDIV.style.display = "none";
+                }
+            }
+
+            WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
+                expires: 365,
+            });
+        }
+    };
+
+
+    FractalView.redrawAfterLoadSettings = function () {
+        // console.log("Here you are inside FractalView.redrawAfterLoadSettings");
+        
+            FractalView.tweakSettingsToHideShowElements();
+            FractalView.updateLegendTitle();
+            FractalView.updateHighlightDescriptor();
+
+            let showBadges = FractalView.currentSettings["general_options_showBadges"];
+            if (!showBadges) {
+                let stickerLegend = document.getElementById("stickerLegend");
+                stickerLegend.style.display = "none";
+                if (
+                    FractalView.currentSettings["highlight_options_showHighlights"] == false &&
+                    FractalView.currentSettings["colour_options_colourBy"] != "Location" &&
+                    FractalView.currentSettings["colour_options_colourBy"] != "Family"
+                ) {
+                    let legendDIV = document.getElementById("legendDIV");
+                    legendDIV.style.display = "none";
+                }
+            }
+
+            WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
+                expires: 365,
+            });
+
+            FractalView.redraw();
+
+    };
+
+
     FractalView.prototype.init = function (selector, startId) {
         // condLog("FractalView.js - line:18", selector) ;
         var container = document.querySelector(selector),
@@ -463,6 +530,16 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         FractalView.fractalSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FractalView",
             saveSettingsToCookie: true,
+            /*
+                IF this saveSettingsToCookie is set to TRUE, then additional functions are needed in this app
+
+                NEEDED:  The Tree App that uses this saveSettingsToCookie MUST have these functions defined:
+                        appObject.resetSettingsDIVtoDefaults
+                        appObject.redrawAfterLoadSettings
+                        appObject.updateCurrentSettingsBasedOnCookieValues
+                        
+                */
+
             tabs: [
                 {
                     name: "general",
@@ -1187,75 +1264,22 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         };
 
-        function settingsChanged(e) {
-            if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
-                condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");                
-                WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
-                    expires: 365,
-                }); 
+    function settingsChanged(e) {
+        if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
+            condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");                
+            WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
+                expires: 365,
+            }); 
+            console.log("NEW settings are:", FractalView.currentSettings);
 
-                console.log("NEW settings are:", FractalView.currentSettings);
-                let showBadges = FractalView.currentSettings["general_options_showBadges"];
-                let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
-                let colourBy = FractalView.currentSettings["colour_options_colourBy"];
-                let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
-                let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
-
-                let legendDIV = document.getElementById("legendDIV");
-                let LegendTitle = document.getElementById("LegendTitle");
-                let LegendTitleH3 = document.getElementById("LegendTitleH3");
-                let stickerLegend = document.getElementById("stickerLegend");
-                let legendToggle = document.getElementById("legendASCII");
-                let innerLegend = document.getElementById("innerLegend");
-                let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
-
-                condLog("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
-                if (newBoxWidth != boxWidth) {
-                    boxWidth = newBoxWidth;
-                    nodeWidth = boxWidth * 1.5;
-                }
-
-                if (showBadges || colourBy == "Family" || colourBy == "Location") {
-                    legendDIV.style.display = "block";
-                    stickerLegend.style.display = "block";
-                    legendToggle.style.display = "inline-block";
-                    if (colourBy == "Family" || colourBy == "Location") {
-                        updateLegendTitle();
-
-                        
-                    } else {
-                        BRbetweenLegendAndStickers.style.display = "none";
-                        LegendTitleH3.style.display = "none";
-                        innerLegend.innerHTML = "";
-                    }
-
-                    if (!showBadges) {
-                        stickerLegend.style.display = "none";
-                    }
-                } else {
-                    // if (colourBy == "Family" || colourBy == "Location") {
-                    // } else {
-                    // }
-                    legendDIV.style.display = "none";
-                    stickerLegend.style.display = "none";
-                    legendToggle.style.display = "none";
-                }
-
-                if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
-                    updateHighlightDescriptor();
-                } else {
-                    document.getElementById("highlightDescriptor").style.display = "none";
-                }
-
-                FractalView.myAncestorTree.draw();
-                updateFontsIfNeeded();
-                adjustHeightsIfNeeded();
-            } else {
-                condLog("NOTHING happened according to SETTINGS OBJ");
-            }
+            FractalView.tweakSettingsToHideShowElements();
+            
+        } else {
+            condLog("NOTHING happened according to SETTINGS OBJ");
         }
+    }
 
-    function updateLegendTitle() {
+    FractalView.updateLegendTitle = function () {
         let colourBy = FractalView.currentSettings["colour_options_colourBy"];
         let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
         let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
@@ -1290,7 +1314,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         
     }
 
-    function updateHighlightDescriptor() {
+    FractalView.updateHighlightDescriptor = function () {
         let legendDIV = document.getElementById("legendDIV");
         let legendToggle = document.getElementById("legendASCII");
         let innerLegend = document.getElementById("innerLegend");
@@ -1348,8 +1372,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     }
 
-    function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
-            const theCookieSettings = JSON.parse(theCookieString);
+    FractalView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+        // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+        // console.log(theCookieString);
+        const theCookieSettings = JSON.parse(theCookieString);
+        // console.log("JSON version of the settings are:", theCookieSettings);
             for (const key in theCookieSettings) {
                 if (Object.hasOwnProperty.call(theCookieSettings, key)) {
                     const element = theCookieSettings[key];
@@ -1393,6 +1420,61 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     }
         
 
+    FractalView.tweakSettingsToHideShowElements = function () {
+        let showBadges = FractalView.currentSettings["general_options_showBadges"];
+        let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
+        let colourBy = FractalView.currentSettings["colour_options_colourBy"];
+        let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
+        let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
+
+        let legendDIV = document.getElementById("legendDIV");
+        let LegendTitle = document.getElementById("LegendTitle");
+        let LegendTitleH3 = document.getElementById("LegendTitleH3");
+        let stickerLegend = document.getElementById("stickerLegend");
+        let legendToggle = document.getElementById("legendASCII");
+        let innerLegend = document.getElementById("innerLegend");
+        let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
+
+        condLog("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+        if (newBoxWidth != boxWidth) {
+            boxWidth = newBoxWidth;
+            nodeWidth = boxWidth * 1.5;
+        }
+
+        if (showBadges || colourBy == "Family" || colourBy == "Location") {
+            legendDIV.style.display = "block";
+            stickerLegend.style.display = "block";
+            legendToggle.style.display = "inline-block";
+            if (colourBy == "Family" || colourBy == "Location") {
+                FractalView.updateLegendTitle();
+            } else {
+                BRbetweenLegendAndStickers.style.display = "none";
+                LegendTitleH3.style.display = "none";
+                innerLegend.innerHTML = "";
+            }
+
+            if (!showBadges) {
+                stickerLegend.style.display = "none";
+            }
+        } else {
+            // if (colourBy == "Family" || colourBy == "Location") {
+            // } else {
+            // }
+            legendDIV.style.display = "none";
+            stickerLegend.style.display = "none";
+            legendToggle.style.display = "none";
+        }
+
+        if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+            FractalView.updateHighlightDescriptor();
+        } else {
+            document.getElementById("highlightDescriptor").style.display = "none";
+        }
+
+        FractalView.myAncestorTree.draw();
+        updateFontsIfNeeded();
+        adjustHeightsIfNeeded();
+    };
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
@@ -1677,11 +1759,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         FractalView.fractalSettingsOptionsObject.buildPage();
         FractalView.fractalSettingsOptionsObject.setActiveTab("names");
-        FractalView.currentSettings = FractalView.fractalSettingsOptionsObject.getDefaultOptions();
+        FractalView.defaultSettings = FractalView.fractalSettingsOptionsObject.getDefaultOptions();
+        FractalView.currentSettings = FractalView.defaultSettings;
 
         let theCookieString = WTapps_Utils.getCookie("wtapps_fractal");
         if (theCookieString) {
-            updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            FractalView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
@@ -1759,8 +1842,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
         
         
-        updateHighlightDescriptor();
-        updateLegendTitle();
+        FractalView.updateHighlightDescriptor();
+        FractalView.updateLegendTitle();
+
+        updateFontsIfNeeded();
 
         let showBadges = FractalView.currentSettings["general_options_showBadges"];
          if (!showBadges) {
@@ -1776,12 +1861,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
          }
 
-         console.log(
-             "SELF LOAD end values of legendDIV:",
-             legendDIV.style.display,
-             showBadges,
-             FractalView.currentSettings["highlight_options_showHighlights"]
-         );
+        //  console.log("SELF LOAD end values of legendDIV:", legendDIV.style.display, showBadges,FractalView.currentSettings["highlight_options_showHighlights"]);
 
     };
 
@@ -4511,7 +4591,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             FractalView.currentSettings["general_options_font4Names"] == font4Name &&
             FractalView.currentSettings["general_options_font4Info"] == font4Info
         ) {
-            condLog("NOTHING to see HERE in UPDATE FONT land");
+            // console.log("NOTHING to see HERE in UPDATE FONT land");
         } else {
             condLog(
                 "Update Fonts:",
