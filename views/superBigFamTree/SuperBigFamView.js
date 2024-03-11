@@ -721,6 +721,117 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         };
     };
 
+      SuperBigFamView.resetSettingsDIVtoDefaults = function () {
+          // console.log("Here you are inside SuperBigFamView.resetSettingsDIVtoDefaults");
+          let theCookieString = JSON.stringify(SuperBigFamView.currentSettings);
+          // console.log({ theCookieString });
+          if (theCookieString) {
+              SuperBigFamView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+              SuperBigFamView.tweakSettingsToHideShowElements();
+              SuperBigFamView.updateLegendTitle();
+              SuperBigFamView.updateHighlightDescriptor();
+
+              let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
+              if (!showBadges) {
+                  let stickerLegend = document.getElementById("stickerLegend");
+                  stickerLegend.style.display = "none";
+                  if (
+                      SuperBigFamView.currentSettings["highlight_options_showHighlights"] == false &&
+                      SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location" &&
+                      SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family"
+                  ) {
+                      let legendDIV = document.getElementById("legendDIV");
+                      legendDIV.style.display = "none";
+                  }
+              }
+
+              WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
+                  expires: 365,
+              });
+
+              SuperBigFamView.redraw();
+          }
+      };
+
+      SuperBigFamView.tweakSettingsToHideShowElements = function () {
+        // console.log("Call to SuperBigFamView.tweakSettingsToHideShowElements ");
+      }
+
+      SuperBigFamView.redrawAfterLoadSettings = function () {
+          // console.log("Here you are inside SuperBigFamView.redrawAfterLoadSettings");
+
+          SuperBigFamView.tweakSettingsToHideShowElements();
+          SuperBigFamView.updateLegendTitle();
+          SuperBigFamView.updateHighlightDescriptor();
+
+          let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
+          if (!showBadges) {
+              let stickerLegend = document.getElementById("stickerLegend");
+              stickerLegend.style.display = "none";
+              if (
+                  SuperBigFamView.currentSettings["highlight_options_showHighlights"] == false &&
+                  SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location" &&
+                  SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family"
+              ) {
+                  let legendDIV = document.getElementById("legendDIV");
+                  legendDIV.style.display = "none";
+              }
+          }
+
+          WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
+              expires: 365,
+          });
+
+          SuperBigFamView.redraw();
+      };
+
+         SuperBigFamView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+             // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+             // console.log(theCookieString);
+             const theCookieSettings = JSON.parse(theCookieString);
+             // console.log("JSON version of the settings are:", theCookieSettings);
+             for (const key in theCookieSettings) {
+                 if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                     const element = theCookieSettings[key];
+                     let theType = "";
+                     if (document.getElementById(key)) {
+                         theType = document.getElementById(key).type;
+                         if (theType == "checkbox") {
+                             document.getElementById(key).checked = element;
+                         } else if (theType == "number" || theType == "text") {
+                             document.getElementById(key).value = element;
+                         } else if (document.getElementById(key).classList.length > 0) {
+                             document.getElementById(key).value = element;
+                             theType = "optionSelect";
+                         } else {
+                             theType = document.getElementById(key);
+                         }
+                     } else {
+                         theType = "NO HTML OBJECT";
+                         let theRadioButtons = document.getElementsByName(key + "_radio");
+                         if (theRadioButtons) {
+                             // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                             theType = "radio x " + theRadioButtons.length;
+                             for (let i = 0; i < theRadioButtons.length; i++) {
+                                 const btn = theRadioButtons[i];
+                                 if (btn.value == element) {
+                                     btn.checked = true;
+                                 }
+                             }
+                         }
+                     }
+                     // console.log(key, element, theType);
+                     if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
+                         SuperBigFamView.currentSettings[key] = element;
+                     }
+                 }
+             }
+
+             // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+             // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
+             //     theCookieSettings["general_options_badgeLabels_otherValue"];
+         };
+
     SuperBigFamView.prototype.init = function (selector, startId) {
         // condLog("SuperBigFamView.js - line:18", selector) ;
         var container = document.querySelector(selector);
@@ -733,6 +844,16 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         var self = this;
         SuperBigFamView.SBFtreeSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "SuperBigFamView",
+            saveSettingsToCookie: true,
+            /*
+                IF this saveSettingsToCookie is set to TRUE, then additional functions are needed in this app
+
+                NEEDED:  The Tree App that uses this saveSettingsToCookie MUST have these functions defined:
+                        appObject.resetSettingsDIVtoDefaults
+                        appObject.redrawAfterLoadSettings
+                        appObject.updateCurrentSettingsBasedOnCookieValues
+                        
+                */
             tabs: [
                 {
                     name: "general",
@@ -1686,7 +1807,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 condLog("NOTHING happened according to SETTINGS OBJ");
             }
         }
-        function updateLegendTitle() {
+        SuperBigFamView.updateLegendTitle = function () {
             let colourBy = SuperBigFamView.currentSettings["colour_options_colourBy"];
             let colour_options_specifyByFamily = SuperBigFamView.currentSettings["colour_options_specifyByFamily"];
             let colour_options_specifyByLocation = SuperBigFamView.currentSettings["colour_options_specifyByLocation"];
@@ -1721,7 +1842,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         }
 
-        function updateHighlightDescriptor() {
+        SuperBigFamView.updateHighlightDescriptor = function () {
             let legendToggle = document.getElementById("legendASCII");
             let innerLegend = document.getElementById("innerLegend");
 
@@ -2215,11 +2336,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             aliveDDSelector.parentNode.style.display = "none";
         }
 
-        updateHighlightDescriptor();
-        updateLegendTitle();
+        SuperBigFamView.updateHighlightDescriptor();
+        SuperBigFamView.updateLegendTitle();
 
         
-        let showBadges = FractalView.currentSettings["general_options_showBadges"];
+        let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
         if (!showBadges) {
             let stickerLegend = document.getElementById("stickerLegend");
             stickerLegend.style.display = "none";
