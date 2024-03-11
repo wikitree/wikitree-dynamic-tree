@@ -691,6 +691,8 @@ input[type="submit"],
   z-index: 100000;
   padding: 1em;
   box-shadow: 0 0 10px #000;
+  width: 90%;
+  height: 50%;
 }
 .oneNameTrees #statsDisplay .stat-item.clicker label.on {
   background-color: #4caf50;
@@ -725,9 +727,10 @@ input[type="submit"],
   border-radius: 1em;
   box-shadow: 0 0 10px #000;
   padding: 1em;
-  max-height: 50vh;
-  max-width: 90vw;
-  width: max-content;
+  height: 90%;
+  width: 90%;
+  top: 5%;
+  left: 5%;
   overflow-y: auto;
   cursor: default;
 }
@@ -738,6 +741,7 @@ input[type="submit"],
   font-weight: bold;
   font-size: 1.1em;
   margin-bottom: 0.5em;
+  cursor: move;
 }
 
 .oneNameTrees .popup {
@@ -811,13 +815,13 @@ input[type="submit"],
   border-radius: 1em;
   box-shadow: 0 0 10px #000;
   padding: 1em;
-  overflow-y: auto;
   height: 90%;
   width: 90%;
   top: 5%;
   left: 5%;
   right: 5%;
   bottom: 5%;
+  overflow: hidden;
 }
 .oneNameTrees #locationsVisualisation .mainTitle {
   cursor: move;
@@ -830,6 +834,7 @@ input[type="submit"],
 .oneNameTrees #locationsVisualisation #controlButtons button {
   margin: 0;
   padding: 0;
+  border: 3px solid white;
 }
 .oneNameTrees #locationsVisualisation #controlButtons button.active {
   background-color: lightgreen;
@@ -867,4 +872,18 @@ input[type="submit"],
   color: forestgreen;
   font-weight: bold;
   margin-top: -0.3em;
+}
+
+.oneNameTress #locationsVisualisation {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Adjust based on your scrolling/zooming setup */
+}
+
+.oneNameTress #locationsVisualisation h2 {
+  text-align: center;
+  margin-bottom: 10px; /* Space between title and SVG */
+  position: absolute;
 }

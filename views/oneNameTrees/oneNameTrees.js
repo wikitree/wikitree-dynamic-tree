@@ -559,7 +559,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 graph.toggle();
                 if (graph.is(":visible")) {
                     graph.css("display", "inline-block");
-                    if (graphId != "#locationsVisualisation") {
+                    if (!["#locationsVisualisation", "#namesTable"].includes(graphId)) {
                         graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
                     }
                     $this.popupZindex++;
@@ -588,6 +588,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 });
 
                 if (lastPopup) {
+                    closePopup(lastPopup);
                     lastPopup.fadeOut();
                 }
             }
@@ -847,18 +848,30 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
         console.log(url);
-        this.cancelFetchController = new AbortController();
-        const response = await fetch(url, { signal: this.cancelFetchController.signal });
-        let data;
         try {
-            data = await response.json();
+            this.cancelFetchController = new AbortController();
+            const response = await fetch(url, { signal: this.cancelFetchController.signal });
+
+            // Check if the response is ok (status in the range 200-299)
+            if (!response.ok) {
+                // Throw an error with response status and statusText
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+            }
+
+            let data = await response.json();
+            // Handle your data here
         } catch (error) {
             if (error.name !== "AbortError") {
                 console.error("Error when fetching from WT+:", error);
+                $("#dancingTree").fadeOut();
+                wtViewRegistry.showWarning("No response from WikiTree +. Please try again later.");
+                return;
             } else {
+                // Handle fetch abortion as a special case
                 return [true, null];
             }
         }
+
         // After fetching data, instead of directly using localStorage.setItem, use saveWithLRUStrategy
 
         try {
@@ -3651,7 +3664,6 @@ class D3DataFormatter {
             "#DC143C", // Crimson
             "#00008B", // Dark Blue
             "#B8860B", // Dark Goldenrod
-            "#006400", // DarkGreen
         ];
         this.createLocationHierarchy(statsByPeriod);
         this.sortLocationHierarchy();
@@ -3696,9 +3708,11 @@ class D3DataFormatter {
         $("body").append(lifespanGraphDiv);
         lifespanGraphDiv.draggable();
 
-        const margin = { top: 30, right: 10, bottom: 30, left: 40 },
-            width = 600 - margin.left - margin.right,
-            height = 400 - margin.top - margin.bottom;
+        const margin = { top: 30, right: 10, bottom: 30, left: 40 };
+        const width = $("#lifespanGraph").width() - margin.left - margin.right;
+        const height = $("#lifespanGraph").height() - margin.top - margin.bottom;
+        //            width = 600 - margin.left - margin.right,
+        //            height = 400 - margin.top - margin.bottom;
 
         const svg = d3
             .select("#lifespanGraph")
@@ -3737,14 +3751,15 @@ class D3DataFormatter {
 
         // Add rectangles for background color
         data.forEach((d) => {
-            const textWidth = 35; // Adjust based on your actual text width
+            const textWidth = 40; // Adjust based on your actual text width
             const textHeight = 25; // Adjust based on your actual text height
             svg.append("rect")
                 .attr("x", x(d.period) + x.bandwidth() / 2 - textWidth / 2)
                 .attr("y", y(d.averageAgeAtDeath) - textHeight - 3)
                 .attr("width", textWidth)
                 .attr("height", textHeight)
-                .attr("fill", "white"); // Background color
+                .attr("fill", "white") // Background color
+                .attr("rx", 5); // Rounded corners
         });
 
         // Add numbers above each point
@@ -3824,6 +3839,42 @@ class D3DataFormatter {
             row.append("td").html(this.formatNameList(item.Male)); // Access Male directly
             row.append("td").html(this.formatNameList(item.Female)); // Access Female directly
         });
+
+        $(".name-span").click(function () {
+            const clickedName = $(this).data("name");
+            highlightName(clickedName);
+        });
+
+        function highlightName(nameToHighlight) {
+            let anyHighlighted = false;
+
+            // Check if any names are currently highlighted
+            $(".name-span").each(function () {
+                if ($(this).hasClass("highlighted")) {
+                    anyHighlighted = true;
+                }
+            });
+
+            // If any names are highlighted, reset all before proceeding
+            if (anyHighlighted) {
+                resetHighlighting();
+                return;
+            }
+
+            // Apply new highlighting
+            $(".name-span").each(function () {
+                if ($(this).data("name") === nameToHighlight) {
+                    $(this).css("opacity", "1").addClass("highlighted");
+                } else {
+                    $(this).css("opacity", "0.2").removeClass("highlighted");
+                }
+            });
+        }
+
+        // Function to reset highlighting
+        function resetHighlighting() {
+            $(".name-span").css("opacity", "1").removeClass("highlighted");
+        }
     }
 
     // Helper function to format names list into HTML
@@ -3834,7 +3885,7 @@ class D3DataFormatter {
         return namesArray
             .map((name) => {
                 const { backgroundColour, borderColour } = this.getColorsForName(name[0]); // Get colors for the name
-                return `<span style="background-color: ${backgroundColour}; border: 2px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name[0]} (${name[1]})</span>`;
+                return `<span class="name-span" data-name="${name[0]}" style="background-color: ${backgroundColour}; border: 2px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name[0]} (${name[1]})</span>`;
             })
             .join(" ");
     }
@@ -3882,6 +3933,8 @@ class D3DataFormatter {
 
         return topNamesByPeriod;
     }
+
+    // Locations bit
 
     createLocationHierarchy() {
         Object.entries(this.statsByPeriod).forEach(([periodName, stats]) => {
@@ -3965,33 +4018,41 @@ class D3DataFormatter {
     }
 
     visualizeDataWithD3() {
+        function updateVisualizationTitle(periodName) {
+            $("#locationsVisualisation h2").text(periodName);
+        }
+
         const periodData = this.locationHierarchy.children[this.currentPeriodIndex];
         const { nodes, links } = this.flattenLocationData(periodData);
 
-        const width = $("#locationsVisualisation").width();
-        const height = $("#locationsVisualisation").height();
+        const divWidth = $("#locationsVisualisation").width();
+        const divHeight = $("#locationsVisualisation").height() - 30;
+        const width = 2000; // Adjustable dimensions for the canvas
+        const height = 2000;
 
         // Ensure SVG container is initialized
         d3.select("#locationsVisualisation svg").remove(); // Clear previous SVG to prevent duplication
         const svg = d3.select("#locationsVisualisation").append("svg");
 
+        // Create a 'g' element for zooming and panning
+        const g = svg.append("g");
+
+        svg.attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", `0 0 ${divWidth} ${divHeight}`) // Initial viewable area, adjust as needed
+            .call(
+                d3.zoom().on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                })
+            );
+
         // Initialize or update the main title
-        let title = svg.selectAll(".mainTitle").data([periodData]); // Bind the periodData as data for the title
-        title
-            .enter()
-            .append("text")
-            .attr("class", "mainTitle") // Assign class for easy selection
-            .merge(title) // Merge enter and update selections
-            .text((d) => d.name) // Set the text to the period's name
-            .attr("x", width / 2)
-            .attr("y", 30) // Position at the top, adjust as needed
-            .style("text-anchor", "middle")
-            .style("font-size", "24px"); // Styling for the title
+        updateVisualizationTitle(periodData.name);
 
         // Initialize layers
-        const linkLayer = svg.append("g").attr("class", "link-layer");
-        const nodeLayer = svg.append("g").attr("class", "node-layer");
-        const labelLayer = svg.append("g").attr("class", "label-layer");
+        const linkLayer = g.append("g").attr("class", "link-layer");
+        const nodeLayer = g.append("g").attr("class", "node-layer");
+        const labelLayer = g.append("g").attr("class", "label-layer");
 
         // Create links (lines)
         const link = linkLayer.selectAll("line").data(links).enter().append("line").style("stroke", "#aaa");
@@ -4035,7 +4096,7 @@ class D3DataFormatter {
                     .distance(50)
             )
             .force("charge", d3.forceManyBody().strength(-100))
-            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("center", d3.forceCenter(divWidth / 2, divHeight / 2))
             .force(
                 "collision",
                 d3.forceCollide().radius((d) => Math.sqrt(d.count || 1) * scaleFactor + baseRadius)
@@ -4043,11 +4104,11 @@ class D3DataFormatter {
             .force(
                 "radial",
                 d3
-                    .forceRadial((d) => (d.isLargest ? 0 : width / 4), width / 2, height / 2)
+                    .forceRadial((d) => (d.isLargest ? 0 : divWidth / 4), divWidth / 2, height / 2)
                     .strength((d) => (d.isLargest ? 0.1 : 0))
             )
-            .force("x", d3.forceX(width / 2).strength(0.1)) // Force towards center (X-axis)
-            .force("y", d3.forceY(height / 2).strength(0.1)) // Force towards center (Y-axis)
+            .force("x", d3.forceX(divWidth / 2).strength(0.1)) // Force towards center (X-axis)
+            .force("y", d3.forceY(divHeight / 2).strength(0.1)) // Force towards center (Y-axis)
 
             .on("tick", ticked);
 
@@ -4084,8 +4145,8 @@ class D3DataFormatter {
             const epsilon = 5; // Adjust epsilon value as needed
             nodes.forEach((d) => {
                 const radius = nodeSize(d);
-                d.x = Math.max(radius + epsilon, Math.min(width - radius - epsilon, d.x));
-                d.y = Math.max(radius + epsilon, Math.min(height - radius - epsilon, d.y));
+                d.x = Math.max(radius + epsilon, Math.min(divWidth - radius - epsilon, d.x));
+                d.y = Math.max(radius + epsilon, Math.min(divHeight - radius - epsilon, d.y));
             });
 
             // Update link and label positions
@@ -4102,7 +4163,9 @@ class D3DataFormatter {
 
     initVisualization() {
         d3.select("#locationsVisualisation").remove();
-        const locationsVisualisationDiv = $("<div id='locationsVisualisation' class='popup'><x>x</x></div>");
+        const locationsVisualisationDiv = $(
+            "<div id='locationsVisualisation' class='popup visualisationContainer'><h2></h2><x>x</x></div>"
+        );
         $("body").append(locationsVisualisationDiv);
         locationsVisualisationDiv.draggable(
             {
