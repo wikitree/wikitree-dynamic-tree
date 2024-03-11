@@ -70,9 +70,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     var WebsView = (window.WebsView = function () {
         Object.assign(this, this?.meta());
         // let theCookie = WTapps_Utils.getCookie("wtapps_webs");
-        // console.log(theCookie);
+        // condLog(theCookie);
     });
 
+    let font4Name = "Arial";
+    
     const PERSON_SILHOUETTE = "👤";
     const PRINTER_ICON = "&#x1F4BE;";
     const SETTINGS_GEAR = "&#x2699;";
@@ -330,6 +332,112 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         };
     };
 
+      WebsView.resetSettingsDIVtoDefaults = function () {
+          // condLog("Here you are inside WebsView.resetSettingsDIVtoDefaults");
+          let theCookieString = JSON.stringify(WebsView.currentSettings);
+          // condLog({ theCookieString });
+          if (theCookieString) {
+              WebsView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            //   WebsView.tweakSettingsToHideShowElements();
+            //   WebsView.updateLegendTitle();
+            //   WebsView.updateHighlightDescriptor();
+
+            //   let showBadges = WebsView.currentSettings["general_options_showBadges"];
+            //   if (!showBadges) {
+            //       let stickerLegend = document.getElementById("stickerLegend");
+            //       stickerLegend.style.display = "none";
+            //       if (
+            //           WebsView.currentSettings["highlight_options_showHighlights"] == false &&
+            //           WebsView.currentSettings["colour_options_colourBy"] != "Location" &&
+            //           WebsView.currentSettings["colour_options_colourBy"] != "Family"
+            //       ) {
+            //           let legendDIV = document.getElementById("legendDIV");
+            //           legendDIV.style.display = "none";
+            //       }
+            //   }
+
+              WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), {
+                  expires: 365,
+              });
+              WebsView.redraw();
+          }
+      };
+
+      WebsView.redrawAfterLoadSettings = function () {
+          // condLog("Here you are inside WebsView.redrawAfterLoadSettings");
+
+        //   WebsView.tweakSettingsToHideShowElements();
+        //   WebsView.updateLegendTitle();
+        //   WebsView.updateHighlightDescriptor();
+
+        //   let showBadges = WebsView.currentSettings["general_options_showBadges"];
+        //   if (!showBadges) {
+        //       let stickerLegend = document.getElementById("stickerLegend");
+        //       stickerLegend.style.display = "none";
+        //       if (
+        //           WebsView.currentSettings["highlight_options_showHighlights"] == false &&
+        //           WebsView.currentSettings["colour_options_colourBy"] != "Location" &&
+        //           WebsView.currentSettings["colour_options_colourBy"] != "Family"
+        //       ) {
+        //           let legendDIV = document.getElementById("legendDIV");
+        //           legendDIV.style.display = "none";
+        //       }
+        //   }
+
+          WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), {
+              expires: 365,
+          });
+
+          WebsView.redraw();
+      };
+
+       WebsView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+           // condLog("function: updateCurrentSettingsBasedOnCookieValues");
+           // condLog(theCookieString);
+           const theCookieSettings = JSON.parse(theCookieString);
+           // condLog("JSON version of the settings are:", theCookieSettings);
+           for (const key in theCookieSettings) {
+               if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                   const element = theCookieSettings[key];
+                   let theType = "";
+                   if (document.getElementById(key)) {
+                       theType = document.getElementById(key).type;
+                       if (theType == "checkbox") {
+                           document.getElementById(key).checked = element;
+                       } else if (theType == "number" || theType == "text") {
+                           document.getElementById(key).value = element;
+                       } else if (document.getElementById(key).classList.length > 0) {
+                           document.getElementById(key).value = element;
+                           theType = "optionSelect";
+                       } else {
+                           theType = document.getElementById(key);
+                       }
+                   } else {
+                       theType = "NO HTML OBJECT";
+                       let theRadioButtons = document.getElementsByName(key + "_radio");
+                       if (theRadioButtons) {
+                           // condLog("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                           theType = "radio x " + theRadioButtons.length;
+                           for (let i = 0; i < theRadioButtons.length; i++) {
+                               const btn = theRadioButtons[i];
+                               if (btn.value == element) {
+                                   btn.checked = true;
+                               }
+                           }
+                       }
+                   }
+                   // condLog(key, element, theType);
+                   if (Object.hasOwnProperty.call(WebsView.currentSettings, key)) {
+                       WebsView.currentSettings[key] = element;
+                   }
+               }
+           }
+
+           // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+           // WebsView.currentSettings["general_options_badgeLabels_otherValue"] =
+           //     theCookieSettings["general_options_badgeLabels_otherValue"];
+       };
+
     WebsView.prototype.init = function (selector, startId) {
         // condLog("WebsView.js - line:18", selector) ;
         var container = document.querySelector(selector),
@@ -340,14 +448,24 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         WebsView.websSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "WebsView",
+            saveSettingsToCookie: true,
+            /*
+                IF this saveSettingsToCookie is set to TRUE, then additional functions are needed in this app
+
+                NEEDED:  The Tree App that uses this saveSettingsToCookie MUST have these functions defined:
+                        appObject.resetSettingsDIVtoDefaults
+                        appObject.redrawAfterLoadSettings
+                        appObject.updateCurrentSettingsBasedOnCookieValues
+                        
+                */
             tabs: [
-                // {
-                //     name: "general",
-                //     label: "General",
-                //     hideSelect: true,
-                //     subsections: [{ name: "WebsGeneral", label: "General settings" }],
-                //     comment: "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
-                // },
+                {
+                    name: "general",
+                    label: "General",
+                    hideSelect: true,
+                    subsections: [{ name: "WebsGeneral", label: "General settings" }],
+                    comment: "These options apply to the Ancestor Webs overall.",
+                },
                 {
                     name: "names",
                     label: "Initials / Names",
@@ -378,27 +496,27 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 },
             ],
             optionsGroups: [
-                // {
-                //     tab: "general",
-                //     subsection: "WebsGeneral",
-                //     category: "general",
-                //     subcategory: "options",
-                //     options: [
-                //         {
-                //             optionName: "font",
-                //             type: "radio",
-                //             label: "Font",
-                //             values: [
-                //                 { value: "Arial", text: "Arial" },
-                //                 { value: "Courier", text: "Courier" },
-                //                 { value: "Times", text: "Times" },
-                //                 { value: "Fantasy", text: "Fantasy" },
-                //                 { value: "Script", text: "Script" },
-                //             ],
-                //             defaultValue: "Arial",
-                //         },
-                //     ],
-                // },
+                {
+                    tab: "general",
+                    subsection: "WebsGeneral",
+                    category: "general",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "font",
+                            type: "radio",
+                            label: "Font",
+                            values: [
+                                { value: "Arial", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Arial",
+                        },
+                    ],
+                },
 
                 {
                     tab: "names",
@@ -539,14 +657,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 {
                                     value: "T",
                                     text: "IMG:views/webs/websSingleMRCA-T.png",
-                                    width:100
+                                    width: 100,
                                     // text: "use 90 degree vertical-horizontal lines (to minimize criss-crossing lines)",
                                 },
                                 {
                                     value: "V",
                                     text: "IMG:views/webs/websSingleMRCA-V.png",
                                     // text: "use direct connection (will create lines on an angle from Single Ancestor to Children)",
-                                    width:100
+                                    width: 100,
                                 },
                             ],
                             defaultValue: "T",
@@ -852,7 +970,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                           theType = "NO HTML OBJECT";
                           let theRadioButtons = document.getElementsByName(key + "_radio");
                           if (theRadioButtons) {
-                              // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                              // condLog("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
                               theType = "radio x " + theRadioButtons.length;
                               for (let i = 0; i < theRadioButtons.length; i++) {
                                   const btn = theRadioButtons[i];
@@ -862,7 +980,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                               }
                           }
                       }
-                      // console.log(key, element, theType);
+                      // condLog(key, element, theType);
                       if (Object.hasOwnProperty.call(WebsView.currentSettings, key)) {
                           WebsView.currentSettings[key] = element;
                       }
@@ -2143,7 +2261,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     /** FUNCTION used to force a redraw of the Ancestor Webs, used when called from Button Bar after a parameter has been changed */
 
     WebsView.redraw = function () {
-        // condLog("WebsView.redraw");
+        condLog("WebsView.redraw");
         // condLog("Now theAncestors = ", WebsView.theAncestors);
         // thePeopleList.listAll();
         // if (WebsView.viewMode == 0) {
@@ -2962,6 +3080,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
             
 
+            WebsView.updateFontsIfNeeded();
 
         } else {
             throw new Error("Missing root");
@@ -3070,6 +3189,37 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         node.exit().remove();
         node = nodeEnter.merge(node);
 
+        WebsView.updateFontsIfNeeded = function () {
+            // if (
+            //     WebsView.currentSettings["general_options_font"] == font4Name 
+                
+            // ) {
+            //     condLog("NOTHING to see HERE in UPDATE FONT land");
+            // } else {
+                condLog("WELCOME to  UPDATE FONT land");
+                condLog(
+                    "Update Fonts:",
+                    WebsView.currentSettings["general_options_font"],
+                    font4Name
+                );
+                condLog(WebsView.currentSettings);
+
+                font4Name = WebsView.currentSettings["general_options_font"];
+                
+
+                let nameElements = document.getElementsByClassName("name");
+                for (let e = 0; e < nameElements.length; e++) {
+                    const element = nameElements[e];
+                    element.classList.remove("fontSerif");
+                    element.classList.remove("fontSansSerif"); // Arial ???
+                    element.classList.remove("fontMono");
+                    element.classList.remove("fontFantasy");
+                    element.classList.remove("fontScript");
+                    element.classList.add("font" + font4Name);
+                }                 
+            // }
+        }
+        
         // *****************************
         // *
         // * REAL MAGIC HAPPENS HERE !!! --> By adjusting the Position, we can use the underlying logic of the d3.js Tree to handle the icky stuff, and we just position the boxes using some logic and a generalized formula
