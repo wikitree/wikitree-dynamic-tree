@@ -470,6 +470,113 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         };
     };
 
+  FanChartView.resetSettingsDIVtoDefaults = function () {
+      // console.log("Here you are inside FanChartView.resetSettingsDIVtoDefaults");
+      let theCookieString = JSON.stringify(FanChartView.currentSettings);
+      // console.log({ theCookieString });
+      if (theCookieString) {
+          FanChartView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+          FanChartView.tweakSettingsToHideShowElements();
+          FanChartView.updateLegendTitle();
+          FanChartView.updateHighlightDescriptor();
+
+          let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+          if (!showBadges) {
+              let stickerLegend = document.getElementById("stickerLegend");
+              stickerLegend.style.display = "none";
+              if (
+                  FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
+                  FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
+                  FanChartView.currentSettings["colour_options_colourBy"] != "Family"
+              ) {
+                  let legendDIV = document.getElementById("legendDIV");
+                  legendDIV.style.display = "none";
+              }
+          }
+
+          WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+              expires: 365,
+          });
+
+          FanChartView.redraw();
+      }
+  };
+
+  FanChartView.redrawAfterLoadSettings = function () {
+      // console.log("Here you are inside FanChartView.redrawAfterLoadSettings");
+
+      FanChartView.tweakSettingsToHideShowElements();
+      FanChartView.updateLegendTitle();
+      FanChartView.updateHighlightDescriptor();
+
+      let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+      if (!showBadges) {
+          let stickerLegend = document.getElementById("stickerLegend");
+          stickerLegend.style.display = "none";
+          if (
+              FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
+              FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
+              FanChartView.currentSettings["colour_options_colourBy"] != "Family"
+          ) {
+              let legendDIV = document.getElementById("legendDIV");
+              legendDIV.style.display = "none";
+          }
+      }
+
+      WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+          expires: 365,
+      });
+
+      FanChartView.redraw();
+  };
+
+     FanChartView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+         // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+         // console.log(theCookieString);
+         const theCookieSettings = JSON.parse(theCookieString);
+         // console.log("JSON version of the settings are:", theCookieSettings);
+         for (const key in theCookieSettings) {
+             if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                 const element = theCookieSettings[key];
+                 let theType = "";
+                 if (document.getElementById(key)) {
+                     theType = document.getElementById(key).type;
+                     if (theType == "checkbox") {
+                         document.getElementById(key).checked = element;
+                     } else if (theType == "number" || theType == "text") {
+                         document.getElementById(key).value = element;
+                     } else if (document.getElementById(key).classList.length > 0) {
+                         document.getElementById(key).value = element;
+                         theType = "optionSelect";
+                     } else {
+                         theType = document.getElementById(key);
+                     }
+                 } else {
+                     theType = "NO HTML OBJECT";
+                     let theRadioButtons = document.getElementsByName(key + "_radio");
+                     if (theRadioButtons) {
+                         // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                         theType = "radio x " + theRadioButtons.length;
+                         for (let i = 0; i < theRadioButtons.length; i++) {
+                             const btn = theRadioButtons[i];
+                             if (btn.value == element) {
+                                 btn.checked = true;
+                             }
+                         }
+                     }
+                 }
+                 // console.log(key, element, theType);
+                 if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
+                     FanChartView.currentSettings[key] = element;
+                 }
+             }
+         }
+
+         // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+         // FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
+         //     theCookieSettings["general_options_badgeLabels_otherValue"];
+     };
+
     FanChartView.theSVG = null; // to be assigned shortly
 
     FanChartView.prototype.init = function (selector, startId) {
@@ -483,6 +590,16 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         var self = this;
         FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FanChartView",
+            saveSettingsToCookie: true,
+            /*
+                IF this saveSettingsToCookie is set to TRUE, then additional functions are needed in this app
+
+                NEEDED:  The Tree App that uses this saveSettingsToCookie MUST have these functions defined:
+                        appObject.resetSettingsDIVtoDefaults
+                        appObject.redrawAfterLoadSettings
+                        appObject.updateCurrentSettingsBasedOnCookieValues
+                        
+                */
             tabs: [
                 {
                     name: "general",
@@ -1404,7 +1521,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                     FanChartView.removeBadges();
                 }
 
-                updateHighlightDescriptor();
+                FanChartView.updateHighlightDescriptor();
                
                 FanChartView.myAncestorTree.draw();
             } else {
@@ -1412,7 +1529,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             }
         }
 
-        function updateLegendTitle() {
+        FanChartView.updateLegendTitle = function () {
             let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
             let colour_options_specifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
             let colour_options_specifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -1447,7 +1564,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             }
         }
 
-        function updateHighlightDescriptor() {
+        FanChartView.updateHighlightDescriptor = function () {
             let legendToggle = document.getElementById("legendASCII");
             let innerLegend = document.getElementById("innerLegend");
 
@@ -1653,10 +1770,10 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
          
         // CALL this FUNCTION to do the necessary tweaking to HIDE or SHOW elements
         // from inside the Settings panel, based on options chosen
-        tweakSettingsToHideShowElements();
+        FanChartView.tweakSettingsToHideShowElements();
             
-        updateHighlightDescriptor();
-        updateLegendTitle();
+        FanChartView.updateHighlightDescriptor();
+        FanChartView.updateLegendTitle();
         
         let showBadges = FanChartView.currentSettings["general_options_showBadges"];
         let stickerLegend = document.getElementById("stickerLegend");
@@ -1770,7 +1887,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         condLog("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
         let refreshLegendDIV = document.getElementById("refreshLegend");
         refreshLegendDIV.style.display = "none";
-        updateLegendIfNeeded();
+        FanChartView.updateLegendIfNeeded();
         FanChartView.redraw();
     };
 
@@ -1786,7 +1903,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         colourizeHighlightTab.checked = newSetting;
     };
 
-    function tweakSettingsToHideShowElements() {
+    FanChartView.tweakSettingsToHideShowElements = function () {
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let specFamSelector = document.getElementById("colour_options_specifyByFamily");
         let specLocSelector = document.getElementById("colour_options_specifyByLocation");
@@ -2229,7 +2346,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         window.setTimeout(FanChartView.resetView, 0); // use setTimeout to run in async mode so that the browser finishes rendering before calculating the bounding box
     }
 
-    function updateLegendIfNeeded() {
+    FanChartView.updateLegendIfNeeded = function () {
         // console.log("DOING updateLegendIfNeeded");
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
@@ -3312,7 +3429,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
-            updateLegendIfNeeded();
+            FanChartView.updateLegendIfNeeded();
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
             hideMDateDIVs();
