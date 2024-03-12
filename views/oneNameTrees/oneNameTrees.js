@@ -11,16 +11,21 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.container = $(container_selector);
         this.personId = person_id;
         this.wtid = $("#wt-id-text").val();
-        this.surname = this.wtid ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim() : "";
+        this.surname = $("#surname").val()
+            ? $("#surname").val().replaceAll("_", " ").replace(/\-\d+/, "").trim()
+            : this.wtid
+            ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
+            : "";
         this.header = $("header");
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
         this.combinedResults = {};
+        this.filteredResults = {};
         this.parentToChildrenMap = {};
         this.peopleById = {};
         this.familyTreeStats;
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        this.familyTreeStatistics = new FamilyTreeStatistics(this.combinedResults);
+        this.familyTreeStatistics = {};
         this.nameVariants = new Map();
         this.surnameVariants = this.findSurnameVariants(this.surname);
         this.surnames = [];
@@ -189,8 +194,10 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li><label>No Connections</label>: The number of profiles with no relations/connections in the WikTree database. Click the button to see a list of the profiles.</li>
                 <li><label>Most Common Names</label>: This is the first names in the dataset by frequency. Click the triangle to see the whole list.</li>
                 <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.  
-                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation.</li>
-              </ul>
+                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation. 
+                On the visualisation, there are buttons to stop/start the automatic 'play'. There are also buttons to step from one period to the next.
+                 You can move the location balls around by (clicking and dragging), zoom in and out, and drag the display to see more.</li>
+              </ul> 
             </li>
             <li>
               The period statistics:
@@ -1186,7 +1193,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Now 'combinedResults' contains the combined data from all batches
         // console.log(this.combinedResults);
         // If the surname is not LNAB, LNC, or LNO, filter out
-        let filteredResults = {};
+
         // Get all variants for the surname
         this.surname = $("#surname").val();
         const surnameVariants = this.findSurnameVariants(this.surname);
@@ -1201,6 +1208,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             return;
         }
         $this.disableCancel();
+
+        // Filter out those without the surname
         Object.values(this.combinedResults).forEach((person) => {
             //  console.log(person);
 
@@ -1219,14 +1228,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             // console.log("Is match:", isMatch);
             if (isMatch) {
-                filteredResults[person.Id] = person;
+                $this.filteredResults[person.Id] = person;
                 // console.log("Added to filtered results:", person);
                 // console.log("Filtered results:", filteredResults);
             }
         });
-        const filteredCount = Object.keys(filteredResults).length || 0;
+        const filteredCount = Object.keys($this.filteredResults).length || 0;
         if (OneNameTrees.VERBOSE) {
-            const removedNew = setDifference(additionalIds, new Set(Object.keys(filteredResults)));
+            const removedNew = setDifference(additionalIds, new Set(Object.keys($this.filteredResults)));
             console.log(
                 `Last name filtering removed ${currentIds.size - filteredCount} profiles (${removedNew.size} of ${
                     additionalIds.size
@@ -1242,7 +1251,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.updateLoadingBar(90 + (processed / extendedTotal) * 10);
 
         // Sort and map children to parents
-        let sortedPeople = this.sortPeopleByBirthDate(filteredResults);
+        let sortedPeople = this.sortPeopleByBirthDate(this.filteredResults);
         if (OneNameTrees.VERBOSE) console.log("sortedPeople", sortedPeople);
         this.prioritizeTargetName(sortedPeople);
         let parentToChildrenMap = this.createParentToChildrenMap(sortedPeople);
@@ -1428,9 +1437,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         html += this.displaySpouses(person, level);
 
         html += "</li>";
-        if (person.Name == "Ostermann-506") {
-            console.log(html);
-        }
+
         return html;
     }
 
@@ -1899,10 +1906,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Add a title dummy option
         selectBox.append(`<option value=''>WT ID</option>`);
         // Get all of the Names (WT IDs) from the array of displayed people, sort them, and add them to the select box
-        // displayedIndividuals has the IDs.  We need to get the Names from combinedResults.
+        // displayedIndividuals has the IDs.  We need to get the Names from filteredResults.
         let names = [];
         for (let id of this.displayedIndividuals) {
-            names.push(this.combinedResults[id].Name);
+            const name = this.filteredResults?.[id]?.Name;
+            if (name) {
+                names.push(name);
+            }
         }
         names.sort(this.naturalSort);
 
@@ -1929,8 +1939,8 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         let individuals = [];
         for (let id of this.displayedIndividuals) {
-            if (this.combinedResults[id] && this.combinedResults[id].LastNameAtBirth) {
-                let person = this.combinedResults[id];
+            if (this.filteredResults[id] && this.filteredResults[id].LastNameAtBirth) {
+                let person = this.filteredResults[id];
                 let dates = this.displayDates(person); // Using displayDates function
                 individuals.push({
                     id: id,
@@ -2015,9 +2025,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#locationSelects").show();
         $("#tableLabel,#treesButtons").addClass("visible");
-        this.createNameSelectBoxes();
-        this.showStatistics();
 
+        this.showStatistics();
+        this.createNameSelectBoxes();
         this.hideLoadingBar();
         this.shakingTree.hide();
         $("#refreshData").prop("disabled", false);
@@ -2414,7 +2424,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set();
         this.combinedResults = {};
+        this.filteredResults = {};
         this.parentToChildrenMap = {};
+        this.surname = $("#surname").val().replaceAll("_", " ").replace(/\-\d+/, "").trim();
+        this.surnameVariants = this.findSurnameVariants(this.surname);
         $("section#results").empty();
         $("#statsDisplay #periodStatisticsContainer").empty();
         $("#treesButtons,#tableLabel").removeClass("visible");
@@ -2423,8 +2436,8 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     getTotalWithTargetLNABs() {
+        this.surnameVariants = this.findSurnameVariants(this.surname);
         const surnameVariants = this.surnameVariants.map((variant) => this.standardizeString(variant));
-        // Get the total number of people with target last names at birth from this.combinedResults
         let totalWithTargetLNABs = 0;
         for (let person of Object.values(this.combinedResults)) {
             const standardizedLastName = this.standardizeString(person.LastNameAtBirth);
@@ -3001,7 +3014,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     showStatistics() {
-        this.familyTreeStats = new FamilyTreeStatistics(this.combinedResults);
+        this.familyTreeStats = new FamilyTreeStatistics(this.filteredResults);
         console.log("Total People: ", this.familyTreeStats.getTotalPeople());
         console.log("Average Lifespan: ", this.familyTreeStats.getAverageLifespan(), "years");
         console.log("Gender Distribution: ", this.familyTreeStats.getGenderDistribution());
@@ -3151,9 +3164,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         $tfoot.append($tr2);
 
         // Add rows for data
-        console.log("combinedResults", this.combinedResults);
-        Object.keys(this.combinedResults).forEach(function (key) {
-            const person = $this.combinedResults[key];
+        console.log("filteredResults", this.filteredResults);
+        Object.keys(this.filteredResults).forEach(function (key) {
+            const person = $this.filteredResults[key];
             if (!person.Name) {
                 return;
             }
@@ -3318,8 +3331,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             const correctedLocation = $(row).data("corrected-location") || "";
             const locationFilterValue = $("#birthPlaceFilter").val().toLowerCase();
 
-            console.log(`Row ${dataIndex} Validity: ${isValid}`);
-
             $(".dateFilter").each(function () {
                 const columnIndex = $(this).closest("th").index(); // Get column index based on the position of the input
                 const filterValue = $(this).val().trim(); // Trim whitespace from the filter value
@@ -3361,9 +3372,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             if (locationFilterValue && !correctedLocation.toLowerCase().includes(locationFilterValue)) {
                 isValid = false;
             }
-
-            console.log(`Row ${dataIndex} Validity: ${isValid}`);
-
             // Handling other filters that are not date filters
             $(".filter:not(.dateFilter)").each(function () {
                 if (!isValid) return; // Skip if already invalid
@@ -3373,31 +3381,20 @@ window.OneNameTrees = class OneNameTrees extends View {
                 const columnIndex = $(this).closest("th").index(); // Assuming filter is placed within a column header or related structure
                 const cellData = data[columnIndex]?.toString().toLowerCase() || ""; // Cell data in lowercase for case-insensitive comparison
 
-                console.log(
-                    `Filtering Other Column: ${columnIndex}, Filter Value: ${filterValue}, Cell Data: ${cellData}`
-                );
-
                 if (filterValue.startsWith("!")) {
                     // Handling NOT condition for non-date fields
                     const excludeValue = filterValue.slice(1);
-                    console.log(`NOT Condition: Exclude '${excludeValue}'`);
 
                     if (cellData.includes(excludeValue)) {
-                        console.log(`Row ${dataIndex} excluded by NOT condition`);
-
                         isValid = false; // Exclude row if it contains the excluded value
                     }
                 } else {
                     // Regular condition for textual and numerical fields
                     if (!cellData.includes(filterValue)) {
-                        console.log(`Row ${dataIndex} excluded by regular condition`);
-
                         isValid = false; // Exclude row if it does not contain the filter value
                     }
                 }
             });
-
-            console.log(`Row ${dataIndex} Validity: ${isValid}`);
 
             return isValid; // Only include rows where isValid remains true
         });
@@ -3595,6 +3592,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
             wtViewRegistry.showWarning(message);
         }
+        $("#cancelFetch").show();
+
         $this.processBatches(ids, surname).then(() => $this.disableCancel());
     }
 
@@ -4088,12 +4087,6 @@ class D3DataFormatter {
             });
             this.locationHierarchy.children.push(periodObj);
         });
-
-        // After creating the hierarchy, print the aggregated counts for debugging
-        console.log(
-            "Final Location Hierarchy with Aggregated Counts:",
-            JSON.stringify(this.locationHierarchy, null, 2)
-        );
     }
 
     sortLocationHierarchy() {
