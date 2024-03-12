@@ -51,13 +51,14 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "09 March 2024";
+    const AboutUpdateDate = "12 March 2024";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
         "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
-    const AboutAssistants = "Rob Pavey & Kay Knight";
-    const AboutLatestG2G = "https://www.wikitree.com/g2g/1621138/fan-chart-update-august-2023-chocolate-peanut-butter"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutAssistants = "Rob Pavey, Kay Knight, Riel Smit & Ian Beacall";
+    const AboutLatestG2G =
+        "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; //"https://www.wikitree.com/g2g/1621138/fan-chart-update-august-2023-chocolate-peanut-butter"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -1498,7 +1499,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                             colour_options_specifyByFamily,
                             colour_options_specifyByLocation
                         );
-                        updateLegendTitle();
+                        FanChartView.updateLegendTitle();
                     } else {
                         BRbetweenLegendAndStickers.style.display = "none";
                         LegendTitleH3.style.display = "none";
@@ -1634,50 +1635,50 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
 
         }
 
-        function updateCurrentSettingsBasedOnCookieValues(theCookieString){
-            const theCookieSettings = JSON.parse(theCookieString);
-            for (const key in theCookieSettings) {
-                if (Object.hasOwnProperty.call(theCookieSettings, key)) {
-                    const element = theCookieSettings[key];
-                    let theType = "";
-                    if (document.getElementById(key)) {
-                        theType = document.getElementById(key).type;
-                        if (theType == "checkbox") {
-                            document.getElementById(key).checked = element;
-                        } else if (theType == "number" || theType == "text") {
-                            document.getElementById(key).value = element;
-                        } else if (document.getElementById(key).classList.length > 0) {
-                            document.getElementById(key).value = element;
-                            theType = "optionSelect";
-                        } else {
-                            theType = document.getElementById(key);
-                        }
-                    } else {
-                        theType = "NO HTML OBJECT";
-                        let theRadioButtons = document.getElementsByName(key + "_radio");
-                        if (theRadioButtons) {
-                            // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
-                            theType = "radio x " + theRadioButtons.length;
-                            for (let i  = 0; i  < theRadioButtons.length; i ++) {
-                                const btn = theRadioButtons[i ];
-                                if(btn.value == element) {
-                                    btn.checked = true;
-                                }
+        // function updateCurrentSettingsBasedOnCookieValues(theCookieString){
+        //     const theCookieSettings = JSON.parse(theCookieString);
+        //     for (const key in theCookieSettings) {
+        //         if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+        //             const element = theCookieSettings[key];
+        //             let theType = "";
+        //             if (document.getElementById(key)) {
+        //                 theType = document.getElementById(key).type;
+        //                 if (theType == "checkbox") {
+        //                     document.getElementById(key).checked = element;
+        //                 } else if (theType == "number" || theType == "text") {
+        //                     document.getElementById(key).value = element;
+        //                 } else if (document.getElementById(key).classList.length > 0) {
+        //                     document.getElementById(key).value = element;
+        //                     theType = "optionSelect";
+        //                 } else {
+        //                     theType = document.getElementById(key);
+        //                 }
+        //             } else {
+        //                 theType = "NO HTML OBJECT";
+        //                 let theRadioButtons = document.getElementsByName(key + "_radio");
+        //                 if (theRadioButtons) {
+        //                     // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+        //                     theType = "radio x " + theRadioButtons.length;
+        //                     for (let i  = 0; i  < theRadioButtons.length; i ++) {
+        //                         const btn = theRadioButtons[i ];
+        //                         if(btn.value == element) {
+        //                             btn.checked = true;
+        //                         }
                                 
-                            }
-                        }
-                    }
-                    // console.log(key, element, theType);
-                    if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
-                        FanChartView.currentSettings[key] = element;
-                    }
-                }
-            }
+        //                     }
+        //                 }
+        //             }
+        //             // console.log(key, element, theType);
+        //             if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
+        //                 FanChartView.currentSettings[key] = element;
+        //             }
+        //         }
+        //     }
 
-            // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
-            FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
-                theCookieSettings["general_options_badgeLabels_otherValue"];
-        }
+        //     // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+        //     FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
+        //         theCookieSettings["general_options_badgeLabels_otherValue"];
+        // }
         
         
 
@@ -1747,7 +1748,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
 
         let theCookieString = WTapps_Utils.getCookie("wtapps_fanchart");
         if (theCookieString) {
-            updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            FanChartView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
 
         // SETUP some ON CHANGE events so that changing options INSIDE the Settings Panel
@@ -1916,12 +1917,21 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             specFamSelector.style.display = "none";
             specFamSelectorLabel.style.display = "none";
             specFamSelectorBR.style.display = "none";
+        } else {
+            specFamSelector.style.display = "inline-block";
+            specFamSelectorLabel.style.display = "inline-block";
+            specFamSelectorBR.style.display = "inline-block";
         }
+
 
         if (FanChartView.currentSettings["colour_options_colourBy"] != "Location") {
             specLocSelector.style.display = "none";
             specLocSelectorLabel.style.display = "none";
             specLocSelectorBR.style.display = "none";
+        } else {
+            specLocSelector.style.display = "inline-block";
+            specLocSelectorLabel.style.display = "inline-block";
+            specLocSelectorBR.style.display = "inline-block";
         }
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
@@ -1933,11 +1943,17 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         if (FanChartView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") == -1) {
             break4DNASelector.parentNode.style.display = "none";
             howDNAlinksRadiosBR.parentNode.style.display = "none";
+        } else {
+            break4DNASelector.parentNode.style.display = "block";
+            howDNAlinksRadiosBR.parentNode.style.display = "block";
         }
 
         if (FanChartView.currentSettings["highlight_options_highlightBy"] != "cat") {
             catNameSelector.style.display = "none";
             catNameSelectorLabel.style.display = "none";
+        } else {
+            catNameSelector.style.display = "inline-block";
+            catNameSelectorLabel.style.display = "inline-block";
         }
 
         let bioTextSelector = document.getElementById("highlight_options_bioText");
@@ -1945,6 +1961,9 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         if (FanChartView.currentSettings["highlight_options_highlightBy"] != "bioText") {
             bioTextSelector.style.display = "none";
             bioTextSelectorLabel.style.display = "none";
+        } else {
+            bioTextSelector.style.display = "inline-block";
+            bioTextSelectorLabel.style.display = "inline-block";
         }
 
         let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
@@ -1955,6 +1974,20 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             aliveYYYYSelector.parentNode.parentNode.style.display = "none";
             aliveMMMSelector.parentNode.style.display = "none";
             aliveDDSelector.parentNode.style.display = "none";
+        } else  {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "block";
+            aliveMMMSelector.parentNode.style.display = "block";
+            aliveDDSelector.parentNode.style.display = "block";
+        }
+
+        if (document.getElementById("date_options_showMarriage").checked == true) {
+            document.getElementById("date_options_marriageBlend").parentNode.style.display = "inline-block";
+            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display =
+                "inline-block";
+        } else {
+            document.getElementById("date_options_marriageBlend").parentNode.style.display = "none";
+            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display =
+                "none";
         }
     }
 
