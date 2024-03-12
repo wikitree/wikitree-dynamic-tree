@@ -39,13 +39,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "11 March 2024";
+    const AboutUpdateDate = "12 March 2024";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
         "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
     const AboutAssistants = "Rob Pavey, Kay Knight, Riel Smit & Ian Beacall";
-    const AboutLatestG2G = ""; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutLatestG2G =
+        "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = ""; // "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -486,6 +487,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
                 expires: 365,
             });
+
+            FractalView.redraw();
         }
     };
 
@@ -1266,14 +1269,25 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     function settingsChanged(e) {
         if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
-            condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");                
+            condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
             WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
                 expires: 365,
-            }); 
+            });
             console.log("NEW settings are:", FractalView.currentSettings);
 
             FractalView.tweakSettingsToHideShowElements();
             
+            
+            // if (!showBadges) {
+            //     FractalView.removeBadges();
+            // }
+            
+            FractalView.updateHighlightDescriptor();
+            
+            FractalView.myAncestorTree.draw();
+            // updateFontsIfNeeded();
+            adjustHeightsIfNeeded();
+
         } else {
             condLog("NOTHING happened according to SETTINGS OBJ");
         }
@@ -1435,10 +1449,92 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         let innerLegend = document.getElementById("innerLegend");
         let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
 
-        condLog("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
-        if (newBoxWidth != boxWidth) {
+        console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+        if (newBoxWidth && newBoxWidth > 0 && newBoxWidth != boxWidth) {
             boxWidth = newBoxWidth;
             nodeWidth = boxWidth * 1.5;
+        }
+
+        if (FractalView.currentSettings["general_options_vBoxHeight"] != 1) {
+            document.getElementById("general_options_vSpacing_label").style.display = "none";
+            document.getElementById("general_options_vSpacing").style.display = "none";
+        } else {
+            document.getElementById("general_options_vSpacing_label").style.display = "inline-block";
+            document.getElementById("general_options_vSpacing").style.display = "inline-block";
+        }
+
+        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+
+        if (FractalView.currentSettings["colour_options_colourBy"] != "Family") {
+            specFamSelector.style.display = "none";
+            specFamSelectorLabel.style.display = "none";
+            specFamSelectorBR.style.display = "none";
+        } else {
+            specFamSelector.style.display = "inline-block";
+            specFamSelectorLabel.style.display = "inline-block";
+            specFamSelectorBR.style.display = "inline-block";
+        }
+
+        if (FractalView.currentSettings["colour_options_colourBy"] != "Location") {
+            specLocSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "none";
+        } else if (FractalView.currentSettings["colour_options_colourBy"] == "Location") {
+            document.getElementById("colour_options_palette").style.display = "none";
+            document.getElementById("colour_options_palette_label").style.display = "none";
+            document.getElementById("colour_options_palette_BR").style.display = "none";
+            specLocSelector.style.display = "inline-block";
+            specLocSelectorLabel.style.display = "inline-block";
+            specLocSelectorBR.style.display = "inline-block";
+        }
+
+        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        let howDNAlinksSelectorBR = document.getElementById("highlight_options_howDNAlinks_BR");
+        if (FractalView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") == -1) {
+            break4DNASelector.parentNode.style.display = "none";
+            howDNAlinksSelectorBR.parentNode.style.display = "none";
+        } else {
+            break4DNASelector.parentNode.style.display = "block";
+            howDNAlinksSelectorBR.parentNode.style.display = "block";
+        }
+
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+        if (FractalView.currentSettings["highlight_options_highlightBy"] != "cat") {
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
+        } else {
+            catNameSelector.style.display = "inline-block";
+            catNameSelectorLabel.style.display = "inline-block";
+        }
+
+        let bioTextSelector = document.getElementById("highlight_options_bioText");
+        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
+        if (FractalView.currentSettings["highlight_options_highlightBy"] != "bioText") {
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
+        } else {
+            bioTextSelector.style.display = "inline-block";
+            bioTextSelectorLabel.style.display = "inline-block";
+        }
+
+        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+
+        if (FractalView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+            aliveMMMSelector.parentNode.style.display = "none";
+            aliveDDSelector.parentNode.style.display = "none";
+        } else {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "block";
+            aliveMMMSelector.parentNode.style.display = "block";
+            aliveDDSelector.parentNode.style.display = "block";
         }
 
         if (showBadges || colourBy == "Family" || colourBy == "Location") {
@@ -1465,15 +1561,17 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             legendToggle.style.display = "none";
         }
 
-        if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
-            FractalView.updateHighlightDescriptor();
-        } else {
-            document.getElementById("highlightDescriptor").style.display = "none";
-        }
+        // if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+        //     FractalView.updateHighlightDescriptor();
+        // } else {
+        //     document.getElementById("highlightDescriptor").style.display = "none";
+        // }
 
-        FractalView.myAncestorTree.draw();
-        updateFontsIfNeeded();
-        adjustHeightsIfNeeded();
+        // if (FractalView.myAncestorTree) {
+        //     FractalView.myAncestorTree.draw();
+        // }
+        // updateFontsIfNeeded();
+        // adjustHeightsIfNeeded();
     };
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
@@ -1767,6 +1865,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             FractalView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
 
+        FractalView.tweakSettingsToHideShowElements();
+        
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
 
@@ -1845,7 +1945,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         FractalView.updateHighlightDescriptor();
         FractalView.updateLegendTitle();
 
-        updateFontsIfNeeded();
+        // updateFontsIfNeeded();
 
         let showBadges = FractalView.currentSettings["general_options_showBadges"];
          if (!showBadges) {
@@ -2785,6 +2885,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // this.descendantTree.data(data);
         }
         this.ancestorTree.draw();
+        updateFontsIfNeeded();
         // this.descendantTree.draw();
     };
 
@@ -2869,6 +2970,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             FractalView.drawLines();
             this.drawNodes(nodes);
+            updateFontsIfNeeded();
         } else {
             throw new Error("Missing root");
         }
