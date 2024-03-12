@@ -189,7 +189,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li><label>No Connections</label>: The number of profiles with no relations/connections in the WikTree database. Click the button to see a list of the profiles.</li>
                 <li><label>Most Common Names</label>: This is the first names in the dataset by frequency. Click the triangle to see the whole list.</li>
                 <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.  
-                Click the numbers to a table filtered to show only people from those places. Click the button to see an interesting visualisation.</li>
+                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation.</li>
               </ul>
             </li>
             <li>
@@ -2399,6 +2399,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(
             "#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
         ).off();
+
         $(
             "#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
         ).remove();
@@ -3336,7 +3337,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         $(".filter").on("keyup", function () {
-            this.clearFiltersButton();
+            $this.clearFiltersButton();
         });
 
         // Check for #periodButtonsContainer button.on and load the period filter if it is on
