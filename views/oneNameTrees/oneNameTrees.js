@@ -167,9 +167,9 @@ window.OneNameTrees = class OneNameTrees extends View {
           A key to the symbols can be found below (on this About page). One key one to know about it the red badge
           symbol, which represents a One Name Study category/sticker. If it has a green circle around it, it has a
           One Name Study sticker for this page's target surname.</li>
-        <li>The numbers in green after a person's dates and categories and stickers are
-          the number of descendants that the person has in this data set.</li>
-        <li>
+        <li>The numbers in green to the left of the person's name are
+          the number of descendants that the person has in this data set. Click the + button to see their children.</li>
+        <li> 
           Click the Statistics button to see statistics about the people in the data set.
           <ul>
             <li>
@@ -848,6 +848,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
         console.log(url);
+        let data;
         try {
             this.cancelFetchController = new AbortController();
             const response = await fetch(url, { signal: this.cancelFetchController.signal });
@@ -858,7 +859,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
 
-            let data = await response.json();
+            data = await response.json();
             // Handle your data here
         } catch (error) {
             if (error.name !== "AbortError") {
@@ -3231,6 +3232,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             lengthMenu: [50, 100, 200, 500, 1000],
         });
 
+        /*
+
+          search: {
+                smart: true,
+                regex: true,
+            },
+
+            */
+
         // Apply the filter
         table.columns().every(function () {
             var column = this;
@@ -3239,12 +3249,12 @@ window.OneNameTrees = class OneNameTrees extends View {
                 column.search(this.value).draw();
             });
             $("input", this.footer()).on("keyup", function (e) {
-                if (e.keyCode === 13) {
+                if (e.key === "Enter") {
                     column.search(this.value).draw();
                 }
             });
         });
-
+        /*
         $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
             // Access the DataTable instance and the row element
             const table = $(settings.nTable).DataTable();
@@ -3259,27 +3269,135 @@ window.OneNameTrees = class OneNameTrees extends View {
                 const cellValue = data[columnIndex] || ""; // Get the value from the cell in the current column
                 let year = cellValue.split("-")[0]; // Assuming the date is in YYYY-MM-DD format
 
-                let minYear, maxYear;
+                let minYear, maxYear, excludeYear, exactYear;
 
                 // Interpret filterValue
-                if (filterValue.includes("-")) {
+                if (filterValue.startsWith("!")) {
+                    excludeYear = parseInt(filterValue.substring(1), 10);
+                } else if (filterValue.includes("-")) {
                     [minYear, maxYear] = filterValue.split("-").map(Number);
                 } else if (filterValue.startsWith("<")) {
                     maxYear = parseInt(filterValue.substring(1), 10);
                 } else if (filterValue.startsWith(">")) {
                     minYear = parseInt(filterValue.substring(1), 10) + 1; // +1 to make it exclusive
+                } else if (filterValue.length === 4 && /^\d+$/.test(filterValue)) {
+                    // Check for an exact year match
+                    exactYear = parseInt(filterValue, 10);
                 }
 
                 // Apply filter logic
-                if ((minYear && year < minYear) || (maxYear && year > maxYear)) {
+                if (
+                    (minYear && year < minYear) ||
+                    (maxYear && year > maxYear) ||
+                    (excludeYear && year == excludeYear) ||
+                    (exactYear !== undefined && year !== exactYear)
+                ) {
                     isValid = false; // If any condition fails, set isValid to false
                 }
             });
 
-            // Custom location-based filtering logic
+            // Standard location filtering
             if (locationFilterValue && !correctedLocation.toLowerCase().includes(locationFilterValue)) {
                 isValid = false;
             }
+
+            return isValid; // Only include rows where isValid remains true
+        });
+*/
+
+        function escapeRegExp(string) {
+            return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        }
+
+        $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
+            let isValid = true; // Initialize as true and set to false if any condition fails
+
+            // Access the DataTable instance and the row element
+            const table = $(settings.nTable).DataTable();
+            const row = table.row(dataIndex).node();
+            const correctedLocation = $(row).data("corrected-location") || "";
+            const locationFilterValue = $("#birthPlaceFilter").val().toLowerCase();
+
+            console.log(`Row ${dataIndex} Validity: ${isValid}`);
+
+            $(".dateFilter").each(function () {
+                const columnIndex = $(this).closest("th").index(); // Get column index based on the position of the input
+                const filterValue = $(this).val().trim(); // Trim whitespace from the filter value
+                const cellValue = data[columnIndex] || ""; // Get the value from the cell in the current column
+                let year = parseInt(cellValue.split("-")[0], 10); // Extract year as an integer
+
+                let minYear, maxYear, excludeYear, exactYear;
+
+                // Interpret filterValue
+                if (filterValue.startsWith("!")) {
+                    excludeYear = parseInt(filterValue.substring(1), 10);
+                    if (year === excludeYear) {
+                        isValid = false; // Exclude rows where the year matches the excludeYear
+                    }
+                } else if (filterValue.includes("-")) {
+                    [minYear, maxYear] = filterValue.split("-").map(Number);
+                    if (year < minYear || year > maxYear) {
+                        isValid = false; // Exclude rows outside the specified range
+                    }
+                } else if (filterValue.startsWith("<")) {
+                    maxYear = parseInt(filterValue.substring(1), 10);
+                    if (year >= maxYear) {
+                        isValid = false; // Exclude rows with a year greater than or equal to maxYear
+                    }
+                } else if (filterValue.startsWith(">")) {
+                    minYear = parseInt(filterValue.substring(1), 10);
+                    if (year <= minYear) {
+                        isValid = false; // Exclude rows with a year less than or equal to minYear
+                    }
+                } else if (/^\d{4}$/.test(filterValue)) {
+                    // Enhanced check for an exact year match
+                    exactYear = parseInt(filterValue, 10);
+                    if (year !== exactYear) {
+                        isValid = false; // Exclude rows that do not match the exact year
+                    }
+                }
+            });
+            // Standard location filtering
+            if (locationFilterValue && !correctedLocation.toLowerCase().includes(locationFilterValue)) {
+                isValid = false;
+            }
+
+            console.log(`Row ${dataIndex} Validity: ${isValid}`);
+
+            // Handling other filters that are not date filters
+            $(".filter:not(.dateFilter)").each(function () {
+                if (!isValid) return; // Skip if already invalid
+
+                const filterElement = $(this);
+                const filterValue = filterElement.val().trim().toLowerCase(); // Trim and lowercase the filter value
+                const columnIndex = $(this).closest("th").index(); // Assuming filter is placed within a column header or related structure
+                const cellData = data[columnIndex]?.toString().toLowerCase() || ""; // Cell data in lowercase for case-insensitive comparison
+
+                console.log(
+                    `Filtering Other Column: ${columnIndex}, Filter Value: ${filterValue}, Cell Data: ${cellData}`
+                );
+
+                if (filterValue.startsWith("!")) {
+                    // Handling NOT condition for non-date fields
+                    const excludeValue = filterValue.slice(1);
+                    console.log(`NOT Condition: Exclude '${excludeValue}'`);
+
+                    if (cellData.includes(excludeValue)) {
+                        console.log(`Row ${dataIndex} excluded by NOT condition`);
+
+                        isValid = false; // Exclude row if it contains the excluded value
+                    }
+                } else {
+                    // Regular condition for textual and numerical fields
+                    if (!cellData.includes(filterValue)) {
+                        console.log(`Row ${dataIndex} excluded by regular condition`);
+
+                        isValid = false; // Exclude row if it does not contain the filter value
+                    }
+                }
+            });
+
+            console.log(`Row ${dataIndex} Validity: ${isValid}`);
 
             return isValid; // Only include rows where isValid remains true
         });
@@ -3325,12 +3443,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Initial call to ensure the sticky header is correctly positioned on page load
         this.setStickyHeader();
 
-        $(".dateFilter").off(); // Remove any existing event listeners
+        $(".filter").off(); // Remove any existing event listeners
 
-        $(".dateFilter").on("change", function () {
+        $(".filter").on("change", function () {
             table.draw();
         });
-        $(".dateFilter").on("keyup", function (e) {
+        $(".filter").on("keyup", function (e) {
             if (e.keyCode === 13) {
                 table.draw();
             }
@@ -4201,12 +4319,12 @@ class D3DataFormatter {
             $this.stopEvolution();
             if ($(this).prop("id") === "startEvolution") {
                 $(this).addClass("active");
-                $this.startEvolution(5000);
+                $this.startEvolution(7000);
             }
         });
 
         this.visualizeDataWithD3();
-        this.startEvolution(5000);
+        this.startEvolution(7000);
     }
 
     updateVisualizationForPeriod() {
