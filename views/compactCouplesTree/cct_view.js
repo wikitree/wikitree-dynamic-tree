@@ -4,7 +4,7 @@ import { CachedPerson } from "../couplesTree/cached_person.js";
 import { CCTE } from "./cct_explorer.js";
 
 window.CCTView = class CCTView extends View {
-    static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
+    static #DESCRIPTION = "";
     static WANTED_PRIMARY_FIELDS = [
         "BirthDate",
         "BirthDateDecade",
@@ -38,7 +38,7 @@ window.CCTView = class CCTView extends View {
         return {
             title: "Compact Couples Tree",
             description: CCTView.#DESCRIPTION,
-            docs: "https://www.wikitree.com/wiki/Space:Couples_Dynamic_Tree", //TODO: FIX THIS!!
+            docs: "",
         };
     }
 

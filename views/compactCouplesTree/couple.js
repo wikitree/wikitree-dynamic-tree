@@ -15,15 +15,15 @@ export class Couple {
 
     static get(idPrefix, cd) {
         //{ a, b, focus, isRoot = false }) {
-        const id = Couple.formId(idPrefix, cd.a, cd.b);
-        let c = Couple.#couplesCache.get(id);
-        if (c) {
-            condLog(`Couple.get from cache: ${c.toString()}`, c);
-            return c;
-        }
+        // const id = Couple.formId(idPrefix, cd.a, cd.b);
+        // let c = Couple.#couplesCache.get(id);
+        // if (c) {
+        //     condLog(`Couple.get from cache: ${c.toString()}`, c);
+        //     return c;
+        // }
 
-        c = new Couple(idPrefix, cd);
-        Couple.#couplesCache.set(id, c);
+        const c = new Couple(idPrefix, cd);
+        // Couple.#couplesCache.set(id, c);
         return c;
     }
 
@@ -103,7 +103,7 @@ export class Couple {
         }
     }
     /**
-     * This id identifies the couple (i.e. <WtId of a>:<WtId of b>) and is unique per couple, but is not
+     * This id identifies the couple (i.e. a<Id of a>-b<Id of b>) and is unique per couple, but is not
      * unique in the tree if there is pedigree collapse.
      * @returns
      */

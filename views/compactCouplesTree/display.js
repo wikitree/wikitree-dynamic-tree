@@ -5,7 +5,6 @@
 //
 import { CCTE } from "./cct_explorer.js";
 import { Utils } from "../shared/Utils.js";
-import { Couple } from "./couple.js";
 
 const DOWN_ARROW = "\u21e9";
 const UP_ARROW = "\u21e7";
@@ -32,6 +31,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     const edgeFactor = +$("#edgeFactor").val() || 180;
     const heightFactor = +$("#cctTHFactor").val() || 80;
     const brickWallColour = $("#cctBrickWallColour").val() || "#FF0000";
+    const linkLineColour = $("#cctLinkLineColour").val() || "#000CCC";
     var currentMaxShowGen = theTree.maxGeneration;
 
     function calculateWidths() {
@@ -96,7 +96,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     d3Root.x0 = treeHeight / 2;
     d3Root.y0 = 0;
     // console.log(`d3Root (x,y)=(${d3Root.x},${d3Root.y}) (x0,y0)=(${d3Root.x0},${d3Root.y0})`, d3Root);
-    update(d3Root);
+    updateDisplay(d3Root);
 
     function genHeader(level) {
         let relType = "";
@@ -180,10 +180,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         return counts;
     }
 
-    async function update(srcNode) {
+    async function updateDisplay(srcNode) {
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
-        const doSleep = document.getElementById("sleep").checked;
+        const doSleep = document.getElementById("sleep")?.checked;
 
         //TODO: we can opimise this by only recalculating it when required, but for now we're lazy
         // and calculate it every time - seems to be fast enough and less error-prone
@@ -234,6 +234,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 const [p, s] = whoseBirthScale == "a" ? getPS("a", "b") : getPS("b", "a");
                 const bYear = +p?.getBirthYear();
                 if (bYear == 0) {
+                    // we're not using a birth year to position
                     d.y = d.depth * edgeFactor;
                     if (p && !p.isNoSpouse) p.birthPlaced = false;
                     if (s && !s.isNoSpouse) s.birthPlaced = false;
@@ -251,6 +252,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 if (s && !s.isNoSpouse) s.birthPlaced = false;
             }
 
+            // Get [person, spouse] of a couple such that 'person' is a proper person
+            // and preferrably the m side of the couple, otherwise the n side
             function getPS(m, n) {
                 let p = d.data[m];
                 let s = d.data[n];
@@ -450,7 +453,9 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         if (p.isUnlisted()) return "Private";
                         if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
                     }
-                    return p.getDisplayName() || "Private";
+                    let name = p.getDisplayName();
+                    if (name && d.data[`${side}IsLinkToPerson`]) name = `See ${name}`;
+                    return name || "Private";
                 })
                 .style("fill", (d) => {
                     return d.data[side]?.isBrickWall() ? brickWallColour : "inherit";
@@ -478,8 +483,15 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             .selectAll("circle.node")
             .attr("r", 6)
             .style("fill", function (d) {
+                // We need to look at the g.node DOM element's datum because the data of child
+                // nodes do not get updated when the d3.selectAll().data() call is made
+                const parentNode = d3.select(this).node().parentNode;
+                // const parentNode = theDomNode.parentNode;
+                const pd = d3.select(parentNode).datum();
+                // const theDomParent = d3.select(this).node.parentNode;
+                // const pd = d3.select(theDomParent).datum();
                 const side = this.classList.contains("a") ? "a" : "b";
-                const result = colourOf(d.data, side);
+                const result = colourOf(pd.data, side);
                 // Assigning this to result will colour the the circels the same for load-expand
                 // BUT currently if the partner is not a person, the load-expand won't happen
                 // (this.classList.contains("a") && d[savedChildrenFieldFor("a")]) ||
@@ -492,7 +504,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
                 // Colour the circles independently for load-expand.
                 function colourOf(cpl, side) {
-                    if (d[savedChildrenFieldFor(side)]) return "yellowgreen"; // branch expand
+                    if (pd[savedChildrenFieldFor(side)]) return "yellowgreen"; // branch expand
+                    if (cpl[side] && cpl[`${side}IsLinkToPerson`]) return "rgb(0, 200, 255)";
                     if (
                         (side == "a" && !cpl.isAExpanded() && cpl.a.hasAParent()) ||
                         (side == "b" && !cpl.isBExpanded() && cpl.b.hasAParent())
@@ -536,7 +549,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         if (doSleep) await sleep(3000); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         // Update the links...
-        const link = svg.selectAll("path.link").data(links, function (d) {
+        const link = svg.selectAll("path.cctlink").data(links, function (d) {
             return d.data.getId();
         });
 
@@ -547,15 +560,16 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             .attr("class", function (d) {
                 const lnkId = `${d.parent.data.getCoupleId()}_${d.data.getCoupleId()}`;
                 for (const m of markedPaths.values()) {
-                    if (m.has(lnkId)) return "link marked";
+                    if (m.has(lnkId)) return "cctlink marked";
                 }
-                return "link";
+                return "cctlink";
             })
             .attr("d", function (d) {
                 // parent's previous position.
                 const o = { x: srcNode.x0, y: srcNode.y0 };
                 return diagonal(o, o);
             })
+            .attr("stroke", linkLineColour)
             .attr("lnk", function (d) {
                 return `${d.parent.data.getCoupleId()}_${d.data.getCoupleId()}`;
             });
@@ -570,9 +584,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             .duration(duration)
             .attr("d", function (d) {
                 return diagonal(d, d.parent);
-            });
+            })
+            .attr("stroke", linkLineColour);
 
-        // Remove any exiting links
+        // Remove any existing links
         link.exit()
             .transition()
             .duration(duration)
@@ -609,13 +624,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
             return arcAtSrc();
 
-            function curvedAtSrc() {
-                const epx = d.x + dir * 7;
-                return `M ${s.y} ${s.x}
-                    C ${(s.y + d.y) / 2} ${s.x},
-                    ${d.y + (s.y - d.y) / 20} ${d.x - dir * 20},
-                    ${d.y} ${epx}`;
-            }
             function arcAtSrc() {
                 // Draw a bezier curve from s to d and add an (8,4) elipse arc at d,
                 // with the arc pointing up/down depending on dir. If dir = 0, no arc is drawn.
@@ -636,7 +644,9 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
 
         // Collapse/expand ancestors on click.
-        function toggleAncestors(event, d, side, clicked) {
+        function toggleAncestors(event, dd, side, clicked) {
+            const parentNode = d3.select(clicked).node().parentNode;
+            const d = d3.select(parentNode).datum();
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
                 console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
@@ -657,6 +667,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             } else if (isAllParentsLoaded && d.children && !d[savedChildrenFieldFor(side)]) {
                 // contract
                 collapseBranch(d, side);
+                updateDisplay(d);
             } else if (isAllParentsLoaded && d[savedChildrenFieldFor(side)]) {
                 // expand
                 expandBranch(d, side);
@@ -666,6 +677,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
 
         function expandBranchWithLoad(d, side, clicked) {
+            if (d.data[`${side}IsLinkToPerson`]) return;
             const sideChildrenName = savedChildrenFieldFor(side);
             const sideChildren = d[sideChildrenName];
             if (sideChildren) {
@@ -682,9 +694,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 d[sideChildrenName] = null;
                 const newDepth = d.depth + d.data.getNrOlderGenerations();
                 currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-                update(d);
+                updateDisplay(d);
             } else {
                 const circ = d3.select(clicked);
+                // Display a loading... icon
                 const loader = svg
                     .append("image")
                     .attrs({
@@ -703,13 +716,26 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         theTree = newTreeInfo;
                         const newDepth = d.depth + d.data.getNrOlderGenerations();
                         currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-                        d3Root = d3.hierarchy(theTree.rootCouple, function (c) {
+                        const oldDescendants = d3Root.descendants();
+                        const inTree = connectors ? new Set() : undefined;
+                        const updatedD3Root = d3.hierarchy(theTree.rootCouple, function (c) {
                             return CCTE.getD3Children(c, inTree);
                         });
-                        console.log("Rebuilt root", d3Root);
-                        console.log("Expanded d", d);
+                        const dCoupleId = d.data.getCoupleId();
+                        updatedD3Root.descendants().forEach(function (newNode) {
+                            const newCoupleId = newNode.data.getCoupleId();
+                            if (newCoupleId !== dCoupleId) {
+                                const matchedOldNode = oldDescendants.find((n) => n.data.getCoupleId() === newCoupleId);
+                                if (matchedOldNode) {
+                                    if (matchedOldNode._childrena) collapseBranch(newNode, "a");
+                                    if (matchedOldNode._childrenb) collapseBranch(newNode, "b");
+                                }
+                            }
+                        });
+                        // console.log("Rebuilt root", updatedD3Root);
+                        d3Root = updatedD3Root;
 
-                        update(d);
+                        updateDisplay(d);
                     }
                 });
             }
@@ -789,13 +815,13 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             // unless they are part of another marked path
             if (linksToMark) {
                 for (const lnk of linksToMark.keys()) {
-                    d3.selectAll(`path.link[lnk='${lnk}']`).classed("marked", true);
+                    d3.selectAll(`path.cctlink[lnk='${lnk}']`).classed("marked", true);
                 }
             }
             if (linksToUnmark) {
                 for (const lnk of linksToUnmark.keys()) {
                     if (!stillMarked(lnk)) {
-                        d3.selectAll(`path.link[lnk='${lnk}']`).classed("marked", false);
+                        d3.selectAll(`path.cctlink[lnk='${lnk}']`).classed("marked", false);
                     }
                 }
             }
@@ -830,7 +856,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             d[sideChildrenName] = null;
             const newDepth = d.depth + d.data.getNrOlderGenerations();
             currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-            update(d);
+            updateDisplay(d);
             return true;
         }
         return false;
@@ -850,7 +876,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             }
         }
         if (d.children.length == 0) d.children = null;
-        update(d);
 
         function isSide(couple, side) {
             return couple.idPrefix.slice(-1) == side;
@@ -970,7 +995,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                     "aChild",
                     aProfileLink(childName, child.getWtId()),
                     document.createTextNode(" "),
-                    aTreeLink(childName, child.getWtId())
+                    aTreeLink(childName, child.getWtId()),
+                    document.createTextNode(` ${lifespan(child)}`)
                 )
             );
             childrenList.appendChild(item);
@@ -1043,8 +1069,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         "lifespan",
                         document.createTextNode(" "),
                         aTreeLink(spouseData.name, spouseData.wtId),
-                        document.createTextNode(" "),
-                        document.createTextNode(spouseData.lifespan)
+                        document.createTextNode(` ${spouseData.lifespan}`)
                     )
                 )
             );
@@ -1223,11 +1248,11 @@ function lifespan(person) {
 
     let lifespan = "";
     if (birth && birth != "0000") {
-        lifespan += birth;
+        lifespan = `${birth} –`;
     }
-    lifespan += " – ";
     if (death && death != "0000") {
-        lifespan += death;
+        if (lifespan.length == 0) lifespan += "–";
+        lifespan += ` ${death}`;
     }
 
     return lifespan;

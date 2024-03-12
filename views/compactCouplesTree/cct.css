@@ -10,6 +10,15 @@
   cursor: grabbing;
 }
 */
+/* Normalise buttons */
+.cct button {
+  font-weight: normal;
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
 
 .cct {
   --a-colour: rgba(102, 102, 204, 0.6);
@@ -52,12 +61,13 @@ div.cct input {
   padding-block-start: 0.35em;
   padding-inline-start: 0.75em;
   padding-inline-end: 0.75em;
-  padding-block-end: 0.625em;
+  padding-block-end: 0;
   min-inline-size: min-content;
   border-width: 2px;
   border-style: groove;
   border-color: rgb(192, 192, 192);
   border-image: initial;
+  border-radius: 5px;
   margin-bottom: 10px;
 }
 .cct fieldset input {
@@ -128,17 +138,16 @@ div.cct input {
   font-weight: bold;
 }
 
-.cct .link {
+.cct .cctlink {
   fill: none;
-  stroke: #ccc;
   stroke-width: 2px;
 }
 
-.cct .link.ofinterest {
+.cct .cctlink.ofinterest {
   stroke: lightcoral;
 }
 
-.cct .link.marked {
+.cct .cctlink.marked {
   stroke: green;
 }
 
@@ -152,7 +161,8 @@ div.cct input {
   stroke-width: 1.5px;
 }
 
-.cct #cctBrickWallColour {
+.cct #cctBrickWallColour,
+.cct #cctLinkLineColour {
   width: 2em;
   padding: 2px;
 }
@@ -160,18 +170,6 @@ div.cct input {
 .cct #edgeFactor,
 .cct #cctTHFactor {
   width: 4em;
-}
-
-.cct #help-button {
-  background: darkgreen;
-  color: #fff;
-  font-size: 0.8em;
-  padding: 0.1em 0.5em;
-  border-radius: 50%;
-  float: right;
-  font-weight: bold;
-  cursor: pointer;
-  z-index: 11000;
 }
 
 .cct #help-text {

@@ -1034,7 +1034,6 @@ export class PeopleTable {
         }
         $("#cc7PBFilter").select2({
             templateResult: formatOptions,
-            templateResult: formatOptions,
             templateSelection: formatOptions,
             dropdownParent: $("#cc7Container"),
             minimumResultsForSearch: Infinity,
