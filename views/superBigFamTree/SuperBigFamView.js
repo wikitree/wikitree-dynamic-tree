@@ -5893,7 +5893,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             SuperBigFamView.ListsOfIDs[getCode + "sp"] = [];
         }
 
-        condLog(
+        console.log(
             "getPeopleCall : ",
             thisKeysIDsArray.length + " of " + KeysIDsArray.length,
             getCode,
@@ -6013,9 +6013,23 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         }
                     }
                 }
-                condLog("ADDED ", numNewPeeps, " new peeps!");
+                console.log(
+                    "ADDED ",
+                    numNewPeeps,
+                    " new peeps!",                    
+                );
+                console.log(result[0]);
 
+
+                let needToReDoCall = false;
                 if (numNewPeeps >= 1000) {
+                    needToReDoCall = true;
+                } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
+                    needToReDoCall = true;
+                }
+
+                // if (numNewPeeps >= 1000) {
+                if (needToReDoCall) {
                     // WE NEED TO DO THE EXACT SAME CALL AGAIN, AND START 1000 higher (exact same keys, parameters)
                     getPeopleCall(KeysIDsArray, getCode, startKeyAt, startResultAt + 1000, NextKeysIDsArray);
                 } else if (KeysIDsArray.length > startKeyAt + 100) {
@@ -8730,7 +8744,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
             }
 
+            // if (numPeeps >= 1000) {
+            let needToReDoCall = false;
             if (numPeeps >= 1000) {
+                needToReDoCall = true;
+            } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
+                needToReDoCall = true;
+            }
+            
+            if (needToReDoCall) {
                 initialLoadDirectAncestors7(self, id, person, startingNum + 1000);
             } else {
                 initialLoad1000(self, id, person, 0);
@@ -8850,10 +8872,18 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             //     }
             // }
 
+            // if (numPeeps >= 1000) {
+            let needToReDoCall = false;
             if (numPeeps >= 1000) {
+                needToReDoCall = true;
+            } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
+                needToReDoCall = true;
+            }
+
+            if (needToReDoCall) {
                 initialLoad1000(self, id, person, startingNum + 1000);
             } else {
-                condLog("listOfPrivateIDs",SuperBigFamView.listOfPrivateIDs);
+                condLog("listOfPrivateIDs", SuperBigFamView.listOfPrivateIDs);
                 initialLoadSiblings(self, id, person, 0);
             }
         });
@@ -8916,7 +8946,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             condLog("SUBSEQUENTLY loaded ", numPeeps2, " GGGparent Sibling peeps");
 
+            // if (numPeeps2 >= 1000) {
+            let needToReDoCall = false;
             if (numPeeps2 >= 1000) {
+                needToReDoCall = true;
+            } else if (result2[0] > "" && result2[0].indexOf("Maximum number of profiles") > -1) {
+                needToReDoCall = true;
+            }
+
+            if (needToReDoCall) {
                 initialLoadSiblings(self, id, person, startingNum + 1000);
             } else {
                 finishInitialLoad(self, id, person);
