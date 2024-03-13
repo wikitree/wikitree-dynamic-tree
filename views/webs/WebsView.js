@@ -1726,7 +1726,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         );
                     }
                     if ((useSteps == true || useSteps4Ma == true) && elementMa.getAttribute("display") == "block") {
-                        // let theLineClr = "White";
+                        let theLineClr = "White";
                         // if (!theLineClr) {
                             theLineClr =
                                 LineColourArray[
@@ -2108,7 +2108,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         numPeepsAdded++;
                         thePeopleList.add(WebsView.theAncestors[index]);
                     }
-                    condLog("ADDED ", numPeepsAdded, "PEEPS added inside loadAncestorsAtLevel", newLevel);
+                    // console.log("ADDED ", numPeepsAdded, "PEEPS added inside loadAncestorsAtLevel", newLevel);
+                    // console.log(result[0]);//.status, result[0].status.startsWith("Maximum number of profiles"));
+
                     WebsView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
 
                     if (numPeepsAdded >= 1000) {
