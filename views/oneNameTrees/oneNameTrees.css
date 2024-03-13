@@ -270,6 +270,10 @@ input[type="submit"],
   overflow-y: auto;
 }
 
+.oneNameTrees #help #generalStatsHelp label {
+  font-weight: bold;
+}
+
 .oneNameTrees #help h2 {
   font-size: large;
   text-align: center;
@@ -475,7 +479,8 @@ input[type="submit"],
   margin: 0.2em;
 }
 
-.oneNameTrees #tableViewButton {
+.oneNameTrees #tableViewButton,
+.oneNameTrees #sheetButton {
   display: none;
 }
 

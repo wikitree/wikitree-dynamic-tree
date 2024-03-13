@@ -154,7 +154,7 @@ export class FamilyTreeStatistics {
                 });
             }
         });
-
+        console.log("Name Counts", nameCounts);
         return nameCounts;
     }
 
@@ -263,12 +263,22 @@ export class FamilyTreeStatistics {
             periodData.averageAgeAtDeath =
                 periodData.deathsCount > 0 ? (periodData.totalAgeAtDeath / periodData.deathsCount).toFixed(2) : 0;
 
+            console.log(JSON.parse(JSON.stringify(periodData.names)));
+
             ["Male", "Female", "Unknown"].forEach((gender) => {
                 const names = periodData.names[gender];
-                periodData.names[gender] = Object.entries(names)
+                // Convert back to an object after sorting and slicing
+                const sortedSlicedNames = Object.entries(names)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
+                    .slice(0, 10)
+                    .reduce((obj, [name, count]) => {
+                        obj[name] = count; // Reconstruct the object
+                        return obj;
+                    }, {});
+
+                periodData.names[gender] = sortedSlicedNames;
             });
+            console.log(JSON.parse(JSON.stringify(periodData.names)));
 
             let totalCouples = 0;
             let totalChildrenForCouples = 0;
@@ -289,7 +299,36 @@ export class FamilyTreeStatistics {
             periodData.subdivisionCounts = periodData.locationStatistics.getSubdivisionCounts();
         });
 
-        return statsByPeriod;
+        // After populating statsByPeriod, create an ordered array of period keys
+        const orderedPeriodKeys = Object.keys(statsByPeriod).sort((a, b) => {
+            // Assuming period format is "YYYY-YYYY", split and parse to get the start year
+            const startYearA = parseInt(a.split("-")[0]);
+            const startYearB = parseInt(b.split("-")[0]);
+            return startYearA - startYearB; // Sort by start year
+        });
+
+        // Now you can create a sorted version of statsByPeriod
+        const sortedStatsByPeriod = {};
+        orderedPeriodKeys.forEach((periodKey) => {
+            sortedStatsByPeriod[periodKey] = statsByPeriod[periodKey];
+        });
+
+        // Calculate most common names and locations for each period
+        Object.keys(statsByPeriod).forEach((periodKey) => {
+            const periodData = statsByPeriod[periodKey];
+            console.log("periodData", periodData);
+            periodData.mostCommonNames = this.getMostCommonNamesForPeriod(periodData.names);
+            console.log("Location Counts for period", periodKey, periodData.locationStatistics.locationCounts);
+            periodData.mostCommonLocations = this.getTopNLocations(periodData.subdivisionCounts, 10);
+
+            // Debug: Check if most common locations are calculated as expected
+            console.log("Most common locations for period", periodKey, periodData.mostCommonLocations);
+        });
+
+        // Use sortedStatsByPeriod for further processing
+        return sortedStatsByPeriod;
+
+        // return statsByPeriod;
     }
 
     getPeriod(year, periodLength) {
@@ -460,5 +499,77 @@ export class FamilyTreeStatistics {
         });
 
         return categoryCounts;
+    }
+
+    getMostCommonNames() {
+        const nameStatistics = this.getNameStatistics();
+        return {
+            Male: this.getSortedNames(nameStatistics.Male, 10),
+            Female: this.getSortedNames(nameStatistics.Female, 10),
+        };
+    }
+
+    getMostCommonLocations() {
+        // Sort locationCounts entries by count in descending order and slice the top 5
+        const sortedLocations = Object.entries(this.locationStats.locationCounts)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 5)
+            .map(([name, data]) => ({ name, count: data.count }));
+        return sortedLocations;
+    }
+
+    // Helper method to sort names and slice the top N
+    getSortedNames(nameObject, topN) {
+        return Object.entries(nameObject)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, topN)
+            .map(([name, count]) => ({ name, count }));
+    }
+
+    // Helper method to get most common names for a period
+    getMostCommonNamesForPeriod(namesObject) {
+        console.log("namesObject", namesObject);
+        console.log("Male names", this.getSortedNames(namesObject.Male, 10));
+
+        return {
+            Male: this.getSortedNames(namesObject.Male, 10),
+            Female: this.getSortedNames(namesObject.Female, 10),
+        };
+    }
+
+    // Helper method to get most common locations for a period
+    getMostCommonLocationsForPeriod(locationCounts) {
+        console.log("Received location counts for period:", locationCounts);
+
+        const sortedLocations = Object.entries(locationCounts)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 10)
+            .map(([name, data]) => ({ name, count: data.count }));
+
+        console.log("Sorted locations for period:", sortedLocations);
+
+        return sortedLocations;
+    }
+
+    flattenLocations(locationData, prefix = "") {
+        let flatList = [];
+
+        for (const [location, data] of Object.entries(locationData)) {
+            const fullName = prefix ? `${prefix}, ${location}` : location;
+            flatList.push({ name: fullName, count: data.count });
+
+            // If there are nested locations, recurse
+            const subLocations = { ...data };
+            delete subLocations.count; // Remove the count property to avoid duplication in recursion
+            flatList = flatList.concat(this.flattenLocations(subLocations, fullName));
+        }
+
+        return flatList;
+    }
+
+    getTopNLocations(subdivisionCounts, topN = 5) {
+        const flattenedLocations = this.flattenLocations(subdivisionCounts);
+        const sortedLocations = flattenedLocations.sort((a, b) => b.count - a.count).slice(0, topN);
+        return sortedLocations;
     }
 }

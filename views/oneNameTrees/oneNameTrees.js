@@ -26,6 +26,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.familyTreeStats;
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         this.familyTreeStatistics = {};
+        this.locationStats = {};
         this.nameVariants = new Map();
         this.surnameVariants = this.findSurnameVariants(this.surname);
         this.surnames = [];
@@ -100,6 +101,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             <input type="file" id="fileInput" style="display: none" />
 
             <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
+            <button id="sheetButton" title="Download a spreadsheet file">Sheet</button>
             <button id="helpButton" title="About this">?</button>
         </div>
 
@@ -173,13 +175,13 @@ window.OneNameTrees = class OneNameTrees extends View {
           symbol, which represents a One Name Study category/sticker. If it has a green circle around it, it has a
           One Name Study sticker for this page's target surname.</li>
         <li>The numbers in green to the left of the person's name are
-          the number of descendants that the person has in this data set. Click the + button to see their children.</li>
+          the number of descendants that the person has in this dataset. Click the + button to see their children.</li>
         <li> 
-          Click the Statistics button to see statistics about the people in the data set.
+          Click the Statistics button to see statistics about the people in the dataset.
           <ul>
             <li>
               The general statistics:
-              <ul>
+              <ul id="generalStatsHelp">
                 <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
                 as last name at birth.</li>
                 <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
@@ -234,6 +236,7 @@ window.OneNameTrees = class OneNameTrees extends View {
               has filters in the footer of each column. The filters:
               <ul>
                 <li>will work when you hit 'enter' or leave the input box.</li>
+                <li>accept negative filters, using a '!' at the start of the filter (e.g. !England).</li>
                 <li>
                   work in special ways for date columns:
                   <ul>
@@ -241,7 +244,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     <li><span class="symbol">&lt;</span> for before a certain year (e.g. &lt;1776).</li>
                     <li><span class="symbol">&gt;</span> for after a certain year. (e.g. &gt;1776).</li>
                   </ul>
-                </li>
+                </li> 
                 <li>can be cleared by pressing the Clear Filters button at the top.</li>
               </ul>
             </li>
@@ -484,7 +487,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                     $this.displayedSpouses.clear();
                     $this.parentToChildrenMap = {};
 
-                    let sortedPeople = $this.sortPeopleByBirthDate($this.combinedResults);
+                    $this.filterResults();
+                    let sortedPeople = $this.sortPeopleByBirthDate($this.filteredResults);
                     $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
                     $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
                     $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
@@ -623,6 +627,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
         $(document).on("dblclick.oneNameTrees", ".popup", function (e) {
             closePopup($(this));
+        });
+
+        $(document).on("click.oneNameTrees", "#sheetButton", function () {
+            $this.exportTableToExcel();
         });
     }
 
@@ -1025,6 +1033,41 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
+    filterResults() {
+        // Get all variants for the surname
+        this.surname = $("#surname").val();
+        const surnameVariants = this.findSurnameVariants(this.surname);
+        if (surnameVariants.length == 0) {
+            // If no variants are found, use the surname as-is
+            surnameVariants.push(this.surname);
+        }
+        console.log("Surname variants:", surnameVariants);
+        const $this = this;
+        Object.values(this.combinedResults).forEach((person) => {
+            //  console.log(person);
+
+            // Standardize the person's surnames for comparison
+            const standardizedLastNameAtBirth = $this.standardizeString(person?.LastNameAtBirth) || "";
+            const standardizedLastNameCurrent = $this.standardizeString(person?.LastNameCurrent) || "";
+            const standardizedLastNameOther = $this.standardizeString(person?.LastNameOther) || "";
+
+            // Check if any standardized surname variants include the standardized person's surnames
+            const isMatch = surnameVariants.some(
+                (variant) =>
+                    $this.standardizeString(variant) === standardizedLastNameAtBirth ||
+                    $this.standardizeString(variant) === standardizedLastNameCurrent ||
+                    $this.standardizeString(variant) === standardizedLastNameOther
+            );
+
+            // console.log("Is match:", isMatch);
+            if (isMatch) {
+                $this.filteredResults[person.Id] = person;
+                // console.log("Added to filtered results:", person);
+                // console.log("Filtered results:", filteredResults);
+            }
+        });
+    }
+
     async processBatches(ids, surname) {
         const $this = this;
         // console.log("All accessible cookies:", document.cookie);
@@ -1209,6 +1252,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         $this.disableCancel();
 
+        /*
         // Filter out those without the surname
         Object.values(this.combinedResults).forEach((person) => {
             //  console.log(person);
@@ -1233,6 +1277,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                 // console.log("Filtered results:", filteredResults);
             }
         });
+        */
+        this.filterResults();
         const filteredCount = Object.keys($this.filteredResults).length || 0;
         if (OneNameTrees.VERBOSE) {
             const removedNew = setDifference(additionalIds, new Set(Object.keys($this.filteredResults)));
@@ -2023,7 +2069,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         resultsContainer.fadeIn();
 
-        $("#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#locationSelects").show();
+        $(
+            "#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#locationSelects,#sheetButton"
+        ).show();
         $("#tableLabel,#treesButtons").addClass("visible");
 
         this.showStatistics();
@@ -2425,6 +2473,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.displayedSpouses = new Set();
         this.combinedResults = {};
         this.filteredResults = {};
+        this.locationStats = {};
+        this.familyTreeStatistics = {};
         this.parentToChildrenMap = {};
         this.surname = $("#surname").val().replaceAll("_", " ").replace(/\-\d+/, "").trim();
         this.surnameVariants = this.findSurnameVariants(this.surname);
@@ -3642,12 +3692,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Calculate the position of the helpButton
             const helpButtonOffset = $("#helpButton").offset();
             const helpButtonHeight = $("#helpButton").outerHeight();
+            console.log("helpButtonOffset", helpButtonOffset);
+            console.log("helpButtonHeight", helpButtonHeight);
 
             // Position the help modal below the helpButton and align it based on your design needs
             helpModal.css({
                 position: "fixed",
                 top: helpButtonOffset.top + helpButtonHeight + 10, // 10px for a little spacing from the button
-                zIndex: 1000, // Ensure the modal is above other content; adjust as necessary
+                zIndex: 100000, // Ensure the modal is above other content; adjust as necessary
             });
 
             helpModal.slideToggle();
@@ -3731,6 +3783,185 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         $this.loadFromURL();
+    }
+
+    exportTableToExcel() {
+        const $this = this;
+
+        const fileName =
+            $("#surname").val() + "_" + new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
+
+        const wb = XLSX.utils.book_new(); // Create a new workbook
+        const ws_name = "TableData";
+
+        // Prepare data for Excel
+        let dataForExcel = [
+            [
+                "First",
+                "LNAB",
+                "Current",
+                "Birth Date",
+                "Birth Place",
+                "Death Date",
+                "Death Place",
+                "Age",
+                "Categories",
+                "Templates",
+                "Managers",
+                "Created",
+                "Modified",
+            ],
+        ];
+
+        // Process each person for the table
+        Object.keys(this.filteredResults).forEach(function (key) {
+            const person = $this.filteredResults[key];
+            const aName = new PersonName(person); // Assuming PersonName is a function you've defined elsewhere
+            let givenNames = aName.withParts(["FirstNames"]); // Modify based on your actual method
+
+            // Calculate age
+            const age =
+                person.BirthDate &&
+                person.BirthDate !== "0000-00-00" &&
+                person.DeathDate &&
+                person.DeathDate !== "0000-00-00"
+                    ? $this.familyTreeStats.calculateAgeAtDeath(person.BirthDate, person.DeathDate)
+                    : "";
+
+            function formatDate(dateString) {
+                // Parse the string
+                const year = dateString.substring(0, 4);
+                const month = dateString.substring(4, 6);
+                const day = dateString.substring(6, 8);
+
+                // Format to YYYY-MM-DD
+                return `${year}-${month}-${day}`;
+            }
+
+            // Process managers
+            let managers = person.Managers ? person.Managers.map((manager) => manager.Name).join(", ") : "";
+
+            // Process categories
+            let categories = person.Categories ? person.Categories.join(", ") : "";
+
+            // Process templates
+            let templates = person.Templates
+                ? person.Templates.map((template) => {
+                      const params = Object.values(template.params).join("|");
+                      return `{{${template.name}${params ? "|" + params : ""}}}`;
+                  }).join(", ")
+                : "";
+
+            const created = person.Created ? formatDate(person.Created) : "";
+            const modified = person.Touched ? formatDate(person.Touched) : "";
+
+            dataForExcel.push([
+                givenNames,
+                person.LastNameAtBirth,
+                person.LastNameCurrent,
+                person.BirthDate,
+                person.BirthLocation,
+                person.DeathDate,
+                person.DeathLocation,
+                age,
+                categories,
+                templates,
+                managers,
+                created,
+                modified,
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(dataForExcel);
+
+        ws["!cols"] = [
+            { wch: 20 }, // Adjust column widths as needed
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 12 },
+            { wch: 25 },
+            { wch: 12 },
+            { wch: 25 },
+            { wch: 5 },
+            { wch: 30 },
+            { wch: 50 }, // Templates might need more space
+            { wch: 20 },
+            { wch: 15 },
+            { wch: 15 },
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, ws_name);
+
+        const familyTreeStats = this.familyTreeStats;
+
+        // General Statistics
+        const generalStatsData = [
+            ["General Statistic", "Value"],
+            ["Total Individuals", familyTreeStats.getTotalPeople()],
+            ["Average Lifespan", familyTreeStats.getAverageLifespan()],
+            ["Total Children", familyTreeStats.getTotalChildren()],
+            ["Average Children per Person", familyTreeStats.getAverageChildrenPerPerson()],
+            ["Average Children per Male Over 16", familyTreeStats.getAverageChildrenPerMaleOver16()],
+            // ... add other general statistics you need ...
+        ];
+
+        // Generate most common names and locations for the general statistics
+        const mostCommonNames = this.familyTreeStats.getMostCommonNames();
+        const mostCommonLocations = this.familyTreeStats.getMostCommonLocations();
+
+        // Add most common names and locations to the general statistics data
+        generalStatsData.push(
+            ["Most Common Male Names", mostCommonNames.Male.map((n) => `${n.name} (${n.count})`).join(", ")],
+            ["Most Common Female Names", mostCommonNames.Female.map((n) => `${n.name} (${n.count})`).join(", ")],
+            ["Most Common Locations", mostCommonLocations.map((l) => `${l.name} (${l.count})`).join(", ")]
+        );
+
+        // Create a worksheet for general statistics
+        const wsGeneralStats = XLSX.utils.aoa_to_sheet(generalStatsData);
+        wsGeneralStats["!cols"] = [
+            { wch: 30 }, // "Statistic" column width
+            { wch: 20 }, // "Value" column width
+        ];
+        XLSX.utils.book_append_sheet(wb, wsGeneralStats, "General Statistics");
+
+        // Prepare sheets for each period with most common names and locations
+        const periodData = $this.familyTreeStats.getStatsBy50YearPeriods();
+
+        Object.keys(periodData).forEach((periodKey) => {
+            const periodStats = periodData[periodKey];
+            const periodSheetData = [
+                ["Statistic", "Value"],
+                ["People", periodStats.peopleCount],
+                ["Average Age at Death", periodStats.averageAgeAtDeath],
+                [
+                    "Most Common Male Names",
+                    periodStats.mostCommonNames.Male.map((n) => `${n.name} (${n.count})`).join(", "),
+                ],
+                [
+                    "Most Common Female Names",
+                    periodStats.mostCommonNames.Female.map((n) => `${n.name} (${n.count})`).join(", "),
+                ],
+                [
+                    "Most Common Locations",
+                    periodStats.mostCommonLocations.map((l) => `${l.name} (${l.count})`).join(", "),
+                ],
+                // Include additional period-specific statistics as needed
+            ];
+
+            // Create a worksheet for this period's statistics
+            const wsPeriod = XLSX.utils.aoa_to_sheet(periodSheetData);
+
+            // Set column widths for the period worksheet
+            wsPeriod["!cols"] = [
+                { wch: 30 }, // For "Statistic" column
+                { wch: 100 }, // For "Value" column, adjust width as needed based on content
+            ];
+
+            XLSX.utils.book_append_sheet(wb, wsPeriod, `${periodKey}`);
+        });
+
+        // Write the workbook to a file
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
     }
 };
 
@@ -3996,14 +4227,14 @@ class D3DataFormatter {
     }
 
     // Helper function to format names list into HTML
-    formatNameList(namesArray) {
-        if (!namesArray) {
+    formatNameList(namesObject) {
+        if (!namesObject) {
             return "";
         }
-        return namesArray
-            .map((name) => {
-                const { backgroundColour, borderColour } = this.getColorsForName(name[0]); // Get colors for the name
-                return `<span class="name-span" data-name="${name[0]}" style="background-color: ${backgroundColour}; border: 2px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name[0]} (${name[1]})</span>`;
+        return Object.entries(namesObject)
+            .map(([name, count]) => {
+                const { backgroundColour, borderColour } = this.getColorsForName(name); // Get colors for the name
+                return `<span class="name-span" data-name="${name}" style="background-color: ${backgroundColour}; border: 2px solid ${borderColour}; padding: 2px; margin: 2px; display: inline-block;">${name} (${count})</span>`;
             })
             .join(" ");
     }
@@ -4034,11 +4265,21 @@ class D3DataFormatter {
             const periodData = this.statsByPeriod[period];
             const names = periodData.names;
 
-            // Assuming names are already sorted within each gender
+            // Convert the names object for each gender into a sorted array and slice the top 10
+            const topMaleNames = Object.entries(names.Male || {})
+                .sort((a, b) => b[1] - a[1]) // Sort by count, descending
+                .slice(0, 10)
+                .reduce((acc, [name, count]) => ({ ...acc, [name]: count }), {}); // Convert back to object
+
+            const topFemaleNames = Object.entries(names.Female || {})
+                .sort((a, b) => b[1] - a[1]) // Sort by count, descending
+                .slice(0, 10)
+                .reduce((acc, [name, count]) => ({ ...acc, [name]: count }), {}); // Convert back to object
+
             return {
                 period: period,
-                Male: names.Male.slice(0, 10),
-                Female: names.Female.slice(0, 10),
+                Male: topMaleNames,
+                Female: topFemaleNames,
             };
         });
 
