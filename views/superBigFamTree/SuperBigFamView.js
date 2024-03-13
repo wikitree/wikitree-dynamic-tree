@@ -918,14 +918,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     hideSelect: true,
                     subsections: [{ name: "SBFtreeGeneral", label: "General settings" }],
                     comment:
-                        "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                        "These options apply to the Super Tree overall, and don't fall in any other specific category.",
                 },
                 {
                     name: "names",
                     label: "Names",
                     hideSelect: true,
                     subsections: [{ name: "SBFtreeNames", label: "NAMES format" }],
-                    comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
+                    comment: "These options apply to how the ancestor names will displayed in each Person box.",
                 },
                 {
                     name: "dates",
@@ -953,7 +953,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     label: "Colours",
                     hideSelect: true,
                     subsections: [{ name: "SBFtreeColours", label: "COLOURS   " }],
-                    comment: "These options apply to background colours in the Fan Chart cells.",
+                    comment: "These options apply to background colours in the Person boxes.",
                 },
                 {
                     name: "highlights",
@@ -6170,7 +6170,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
      */
     function loadDescendantsAtLevel(newLevel) {
         let newDescLevel = SuperBigFamView.numDescGens2Display;
-        condLog("Need to load MORE DESCENDANT peeps from Generation ", newLevel, newDescLevel);
+        console.log("Need to load MORE DESCENDANT peeps from Generation ", newLevel, newDescLevel);
         if (SuperBigFamView.loadedLevels.indexOf("D" + newLevel) > -1) {
             // already loaded this level ... so let's just return and forget about it - no need to repeat the past
             SuperBigFamView.refreshTheLegend();
@@ -6225,7 +6225,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function loadCousinsAtLevel(newLevel) {
         const d = new Date();
         let ms = d.getUTCMinutes() + " : " + d.getUTCSeconds() + " : " + d.getUTCMilliseconds();
-        condLog("== function loadCousinsAtLevel --> Need to load MORE COUSINS peeps at LEVEL ", newLevel, ms);
+        console.log("== function loadCousinsAtLevel --> Need to load MORE COUSINS peeps at LEVEL ", newLevel, ms);
         condLog(
             "At beginning of function loadCousinsAtLevel - primary has ",
             thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
@@ -6354,7 +6354,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function loadAncestorsAtLevel(newLevel) {
         const d = new Date();
         let ms = d.getUTCMinutes() + " : " + d.getUTCSeconds() + " : " + d.getUTCMilliseconds();
-        condLog(
+        console.log(
             "== function loadAncestorsAtLevel --> Need to load MORE ANCESTOR peeps from Generation ",
             newLevel,
             ms,

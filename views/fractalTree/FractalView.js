@@ -550,14 +550,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     hideSelect: true,
                     subsections: [{ name: "FractalGeneral", label: "General settings" }],
                     comment:
-                        "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                        "These options apply to the Fractal Tree overall, and don't fall in any other specific category.",
                 },
                 {
                     name: "names",
                     label: "Names",
                     hideSelect: true,
                     subsections: [{ name: "FractalNames", label: "NAMES format" }],
-                    comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
+                    comment: "These options apply to how the ancestor names will displayed in each Person box.",
                 },
                 {
                     name: "dates",
@@ -585,7 +585,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     label: "Colours",
                     hideSelect: true,
                     subsections: [{ name: "FractalColours", label: "COLOURS   " }],
-                    comment: "These options apply to background colours in the Fan Chart cells.",
+                    comment: "These options apply to background colours in the Person boxes.",
                 },
                 {
                     name: "highlights",
