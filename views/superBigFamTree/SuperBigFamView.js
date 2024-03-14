@@ -8510,7 +8510,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         /** Placeholder to hold EXTRA SPOUSES that aren't showing up during regular getPeople searches - like unmarried spouses - but children link to both parents. */
         SuperBigFamView.listOfExtraSpousesToAddToList = [];
 
-        SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
+        SuperBigFamView.loadedLevels = ["A1", "A2", "D1", "A1C0", "A1C1", "A3", "D2"];
         SuperBigFamView.HlinesATC = []; // the Horiz Lines (connectors) Air Traffic Controller
         SuperBigFamView.VlinesATC = []; // the Vert Lines (connectors) Air Traffic Controller
         SuperBigFamView.VlinesATCpeep = []; // the Vertical Lines (drop lines) Air Traffic Controller - PEEP array - for debugging purposes
@@ -8620,6 +8620,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             start: startingNum,
         });
 
+        flashWarningMessageBelowButtonBar("Please wait while initial Super Big Family Tree is loading .... direct ancestors ...");
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
             APP_ID,
@@ -8768,6 +8769,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             start: startingNum,
         });
 
+        flashWarningMessageBelowButtonBar(
+            "Please wait while initial Super Big Family Tree is loading .... CC4 of primary person ..."
+        );
+
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
             APP_ID,
@@ -8884,7 +8889,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 initialLoad1000(self, id, person, startingNum + 1000);
             } else {
                 condLog("listOfPrivateIDs", SuperBigFamView.listOfPrivateIDs);
-                initialLoadSiblings(self, id, person, 0);
+                // initialLoadSiblings(self, id, person, 0);
+                finishInitialLoad(self, id, person);
             }
         });
     }
@@ -8895,6 +8901,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // ===================
         // LOAD the SIBLINGS of the grandparents (2nd gen) ancestors for completeness
         // ===================
+        flashWarningMessageBelowButtonBar(
+            "Please wait while initial Super Big Family Tree is loading .... siblings of direct ancestors ..."
+        );
 
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
@@ -9073,6 +9082,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // prunePrivateLeaves(); 
 
         if (niblingInLawParents.length > 0) {
+            flashWarningMessageBelowButtonBar(
+                "Please wait while initial Super Big Family Tree is loading .... nibling in-laws ..."
+            );
             getPeopleCall(niblingInLawParents, "I0");
             self.drawTree(person);
             clearMessageBelowButtonBar();
