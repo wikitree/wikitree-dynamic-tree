@@ -263,7 +263,7 @@ export class FamilyTreeStatistics {
             periodData.averageAgeAtDeath =
                 periodData.deathsCount > 0 ? (periodData.totalAgeAtDeath / periodData.deathsCount).toFixed(2) : 0;
 
-            console.log(JSON.parse(JSON.stringify(periodData.names)));
+            // console.log(JSON.parse(JSON.stringify(periodData.names)));
 
             ["Male", "Female", "Unknown"].forEach((gender) => {
                 const names = periodData.names[gender];
@@ -278,7 +278,7 @@ export class FamilyTreeStatistics {
 
                 periodData.names[gender] = sortedSlicedNames;
             });
-            console.log(JSON.parse(JSON.stringify(periodData.names)));
+            // console.log(JSON.parse(JSON.stringify(periodData.names)));
 
             let totalCouples = 0;
             let totalChildrenForCouples = 0;
@@ -316,13 +316,13 @@ export class FamilyTreeStatistics {
         // Calculate most common names and locations for each period
         Object.keys(statsByPeriod).forEach((periodKey) => {
             const periodData = statsByPeriod[periodKey];
-            console.log("periodData", periodData);
+            // console.log("periodData", periodData);
             periodData.mostCommonNames = this.getMostCommonNamesForPeriod(periodData.names);
             console.log("Location Counts for period", periodKey, periodData.locationStatistics.locationCounts);
             periodData.mostCommonLocations = this.getTopNLocations(periodData.subdivisionCounts, 10);
 
             // Debug: Check if most common locations are calculated as expected
-            console.log("Most common locations for period", periodKey, periodData.mostCommonLocations);
+            // console.log("Most common locations for period", periodKey, periodData.mostCommonLocations);
         });
 
         // Use sortedStatsByPeriod for further processing

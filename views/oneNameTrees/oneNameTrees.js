@@ -1300,6 +1300,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let sortedPeople = this.sortPeopleByBirthDate(this.filteredResults);
         if (OneNameTrees.VERBOSE) console.log("sortedPeople", sortedPeople);
         this.prioritizeTargetName(sortedPeople);
+        console.log("sortedPeople after prioritizing:", JSON.parse(JSON.stringify(sortedPeople)));
         let parentToChildrenMap = this.createParentToChildrenMap(sortedPeople);
         this.peopleById = this.createPeopleByIdMap(sortedPeople);
 
@@ -1330,14 +1331,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                     // console.log("Spouse ID:", spouseId, typeof spouseId);
                     //sortedPeople.forEach((p) => console.log("Person ID in sortedPeople:", p.Id, typeof p.Id));
                     let spouse = sortedPeople.find((p) => p.Id == spouseId);
-                    let stegen = false;
-                    if (["Stegen-189", "Ostermann-148"].includes(person.Name)) {
-                        console.log("Spouse:", spouse);
-                        stegen = true;
-                        console.log("Name:", person.Name);
-                        console.log("Spouse:", spouse);
-                        console.log(this.shouldPrioritize(spouse, person));
-                    }
 
                     if (spouse && this.shouldPrioritize(spouse, person)) {
                         spouse.shouldBeRoot = false;
@@ -1348,10 +1341,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                         let newPersonIndex = sortedPeople.findIndex((p) => p.Id == person.Id);
                         // Insert the spouse after the person
                         sortedPeople.splice(newPersonIndex + 1, 0, spouse);
-                        if (stegen) {
-                            console.log("Sorted people after prioritizing:", sortedPeople);
-                            console.log("New person index:", newPersonIndex);
-                        }
+
+                        console.log("Sorted people after prioritizing:", sortedPeople);
+                        console.log("New person index:", newPersonIndex);
                     }
                 });
             }
