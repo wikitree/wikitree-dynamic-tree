@@ -154,7 +154,7 @@ export class FamilyTreeStatistics {
                 });
             }
         });
-        console.log("Name Counts", nameCounts);
+        // console.log("Name Counts", nameCounts);
         return nameCounts;
     }
 
@@ -318,7 +318,7 @@ export class FamilyTreeStatistics {
             const periodData = statsByPeriod[periodKey];
             // console.log("periodData", periodData);
             periodData.mostCommonNames = this.getMostCommonNamesForPeriod(periodData.names);
-            console.log("Location Counts for period", periodKey, periodData.locationStatistics.locationCounts);
+            // console.log("Location Counts for period", periodKey, periodData.locationStatistics.locationCounts);
             periodData.mostCommonLocations = this.getTopNLocations(periodData.subdivisionCounts, 10);
 
             // Debug: Check if most common locations are calculated as expected
@@ -528,8 +528,8 @@ export class FamilyTreeStatistics {
 
     // Helper method to get most common names for a period
     getMostCommonNamesForPeriod(namesObject) {
-        console.log("namesObject", namesObject);
-        console.log("Male names", this.getSortedNames(namesObject.Male, 10));
+        //  console.log("namesObject", namesObject);
+        // console.log("Male names", this.getSortedNames(namesObject.Male, 10));
 
         return {
             Male: this.getSortedNames(namesObject.Male, 10),
@@ -539,14 +539,14 @@ export class FamilyTreeStatistics {
 
     // Helper method to get most common locations for a period
     getMostCommonLocationsForPeriod(locationCounts) {
-        console.log("Received location counts for period:", locationCounts);
+        //  console.log("Received location counts for period:", locationCounts);
 
         const sortedLocations = Object.entries(locationCounts)
             .sort((a, b) => b[1].count - a[1].count)
             .slice(0, 10)
             .map(([name, data]) => ({ name, count: data.count }));
 
-        console.log("Sorted locations for period:", sortedLocations);
+        //  console.log("Sorted locations for period:", sortedLocations);
 
         return sortedLocations;
     }
