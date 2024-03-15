@@ -263,46 +263,6 @@ export class CCTE {
                         </td>
                         <td>
                           <input
-                            id="oneParent"
-                            type="checkbox"
-                            title="Anyone with only one parent." />
-                          <label
-                            for="oneParent"
-                            title="Anyone with only one parent."
-                            class="right">
-                            Only 1 Parent [<span class="cnt" title="Number of profiles with only one parent">?</span>]</label
-                          >
-                        </td>
-                        <td>
-                        <!--
-                          <input
-                            id="sleep"
-                            type="checkbox" />
-                          <label
-                            for="sleep"
-                            title="Add sleeps in between some steps of drawing the tree (for debugging help)."
-                            class="right">
-                            Sleep (test)</label
-                          >
-                        -->
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <input
-                            id="bioCheck"
-                            type="checkbox"
-                            disabled="disabled"
-                            title="Anyone with issues reported by Bio Check. (TBD)" />
-                          <label
-                            for="bioCheck"
-                            title="Anyone with issues reported by Bio Check. (TBD)"
-                            class="right">
-                            Bio Check [<span class="cnt" title="Number of profiles with Bio Check Issues">?</span>]</label
-                          >
-                        </td>
-                        <td>
-                          <input
                             id="noNoSpouses"
                             type="checkbox"
                             title='Anyone who does not have their "No more spouses" checkbox set.' />
@@ -311,6 +271,20 @@ export class CCTE {
                             title='Anyone who does not have their "No more spouses" checkbox set.'
                             class="right">
                             No "no more spouses" [<span class="cnt" title='Number of profiles with "No more spouses" not checked'>?</span>]</label
+                          >
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <input
+                            id="oneParent"
+                            type="checkbox"
+                            title="Anyone with only one parent." />
+                          <label
+                            for="oneParent"
+                            title="Anyone with only one parent."
+                            class="right">
+                            Only 1 Parent [<span class="cnt" title="Number of profiles with only one parent">?</span>]</label
                           >
                         </td>
                         <td>
@@ -328,6 +302,19 @@ export class CCTE {
                       </tr>
                     </table></fieldset>
                     </td>
+                    <!--
+                    <td>
+                        <input
+                        id="sleep"
+                        type="checkbox" />
+                        <label
+                        for="sleep"
+                        title="Add sleeps in between some steps of drawing the tree (for debugging help)."
+                        class="right">
+                        Sleep (test)</label
+                        >
+                    </td>
+                    -->
                   </tr>
                   <tr>
                     <td style="text-align:right; vertical-align:top">
@@ -383,11 +370,7 @@ export class CCTE {
         $("#drawTreeButton")
             .off("click")
             .on("click", function (e) {
-                if (document.getElementById("bioCheck").checked && !window.cctBiosLoaded) {
-                    self.loadAndDraw(wtViewRegistry.getCurrentWtId());
-                } else {
-                    self.drawTree();
-                }
+                self.drawTree();
             });
         $("#edgeFactor").keyup(function (e) {
             if (e.keyCode == 13) {
@@ -490,15 +473,13 @@ export class CCTE {
             // Find the popup with the highest z-index
             let highestZIndex = 0;
             let lastPopup = null;
-            $(".bioReport:visible, #help-text:visible, .children-list:visible, .alt-spouse-list-wrapper:visible").each(
-                function () {
-                    const zIndex = parseInt($(this).css("z-index"), 10);
-                    if (zIndex > highestZIndex) {
-                        highestZIndex = zIndex;
-                        lastPopup = $(this);
-                    }
+            $("#help-text:visible, .children-list:visible, .alt-spouse-list-wrapper:visible").each(function () {
+                const zIndex = parseInt($(this).css("z-index"), 10);
+                if (zIndex > highestZIndex) {
+                    highestZIndex = zIndex;
+                    lastPopup = $(this);
                 }
-            );
+            });
 
             // Close the popup with the highest z-index
             if (lastPopup) {
@@ -520,7 +501,6 @@ export class CCTE {
             oneParent: document.getElementById("oneParent").checked,
             noNoSpouses: document.getElementById("noNoSpouses").checked,
             noNoChildren: document.getElementById("noNoChildren").checked,
-            bioCheck: document.getElementById("bioCheck").checked,
             checkedScale: document.querySelector('input[name = "theBirthScale"]:checked').value,
             privatise: document.getElementById("privatise").checked,
             anonLiving: document.getElementById("anonLiving").checked,
@@ -544,7 +524,6 @@ export class CCTE {
             $("#oneParent").attr("checked", opt.oneParent);
             $("#noNoSpouses").attr("checked", opt.noNoSpouses);
             $("#noNoChildren").attr("checked", opt.noNoChildren);
-            $("#bioCheck").attr("checked", opt.bioCheck);
             if (["a", "b", "no"].includes(opt.checkedScale)) $(`#birthScale${opt.checkedScale}`).attr("checked", 1);
             $("#privatise").attr("checked", opt.privatise);
             $("#anonLiving").attr("checked", opt.anonLiving);
@@ -796,7 +775,7 @@ export class CCTE {
         $("#theSvg svg").remove();
         $("#theSvg .treeHeader").remove();
         $(".alt-spouse-list-wrapper").remove();
-        $(".children-list-remove").remove();
+        $(".children-list").remove();
     }
 
     /**
@@ -813,21 +792,6 @@ export class CCTE {
         CCTE.saveOptionCookies();
         const tInfo = this.validateAndSetGenerations();
 
-        const counts = CCTE.markAndCountBricks(
-            {
-                noParents: document.getElementById("noParents").checked,
-                oneParent: document.getElementById("oneParent").checked,
-                noNoSpouses: document.getElementById("noNoSpouses").checked,
-                noNoChildren: document.getElementById("noNoChildren").checked,
-                bioCheck: document.getElementById("bioCheck").checked,
-            },
-            CachedPerson.getCache().getMap()
-        );
-
-        for (const id of ["noParents", "oneParent", "noNoSpouses", "noNoChildren", "bioCheck"]) {
-            $(`label[for=${id}`).find("span.cnt").text(counts[id]);
-        }
-
         const connectors = document.getElementById("connectors").checked;
         const hideTreeHeader = document.getElementById("hideTreeHeader").checked;
 
@@ -843,24 +807,15 @@ export class CCTE {
      * Main WikiTree API calls
      */
     async getFullPerson(id) {
-        return await CachedPerson.getWithLoad(id, [
-            ...this.additionaRequiredFields(),
-            "Parents",
-            "Spouses",
-            "Children",
-        ]);
+        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"]);
     }
 
     async getWithSpousesAndChildren(id) {
-        return await CachedPerson.getWithLoad(id, [...this.additionaRequiredFields(), "Spouses", "Children"]);
+        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"]);
     }
 
     async getWithSpouses(id) {
-        return await CachedPerson.getWithLoad(id, [...this.additionaRequiredFields(), "Spouses"]);
-    }
-
-    additionaRequiredFields() {
-        return document.getElementById("bioCheck").checked ? ["Bio", "IsMember", "Manager", "RealName"] : [];
+        return await CachedPerson.getWithLoad(id, ["Spouses"]);
     }
 
     static getD3Children(couple, alreadyInTree) {
@@ -971,12 +926,27 @@ export class CCTE {
         }
     }
 
+    static updateBrickWallCounts() {
+        const counts = CCTE.markAndCountBricks(
+            {
+                noParents: document.getElementById("noParents").checked,
+                oneParent: document.getElementById("oneParent").checked,
+                noNoSpouses: document.getElementById("noNoSpouses").checked,
+                noNoChildren: document.getElementById("noNoChildren").checked,
+            },
+            CachedPerson.getCache().getMap()
+        );
+
+        for (const id of ["noParents", "oneParent", "noNoSpouses", "noNoChildren"]) {
+            $(`label[for=${id}`).find("span.cnt").text(counts[id]);
+        }
+    }
+
     static markAndCountBricks(opt, people) {
         let nrNoParents = 0;
         let nrOneParent = 0;
         let nrNoNoSpouses = 0;
         let nrNoNoChildren = 0;
-        let nrBioIssue = 0;
         people.forEach((person) => {
             let isBrick = false;
             if (!person.hasAParent()) {
@@ -995,10 +965,6 @@ export class CCTE {
                 ++nrNoNoChildren;
                 isBrick ||= opt.noNoChildren;
             }
-            if (person.hasBioIssues) {
-                ++nrBioIssue;
-                isBrick ||= opt.bioCheck;
-            }
             person.setBrickWall(isBrick);
         });
         return {
@@ -1006,7 +972,6 @@ export class CCTE {
             oneParent: nrOneParent,
             noNoSpouses: nrNoNoSpouses,
             noNoChildren: nrNoNoChildren,
-            bioCheck: window.aleBiosLoaded ? nrBioIssue : "?",
         };
     }
 

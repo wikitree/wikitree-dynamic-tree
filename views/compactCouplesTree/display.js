@@ -32,6 +32,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     const heightFactor = +$("#cctTHFactor").val() || 80;
     const brickWallColour = $("#cctBrickWallColour").val() || "#FF0000";
     const linkLineColour = $("#cctLinkLineColour").val() || "#000CCC";
+    const privatise = $("#privatise").is(":checked");
+    const anonLiving = $("#anonLiving").is(":checked");
     var currentMaxShowGen = theTree.maxGeneration;
 
     function calculateWidths() {
@@ -180,7 +182,22 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         return counts;
     }
 
+    function getPersonName(p, preferredValue, isLink = false) {
+        if (!p || p.isNoSpouse) return "";
+        if (anonLiving && p.isLiving()) {
+            return "Living";
+        }
+        if (privatise) {
+            if (p.isUnlisted()) return "Private";
+            if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
+        }
+        let name = preferredValue;
+        if (name && isLink) name = `See ${name}`;
+        return name || "Private";
+    }
+
     async function updateDisplay(srcNode) {
+        CCTE.updateBrickWallCounts();
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
         const doSleep = document.getElementById("sleep")?.checked;
@@ -264,9 +281,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 return [p, s];
             }
         });
-
-        const privatise = document.getElementById("privatise").checked;
-        const anonLiving = document.getElementById("anonLiving").checked;
 
         // ****************** Nodes section ***************************
 
@@ -445,17 +459,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 .attr("wtId", (d) => d.data[side]?.getId())
                 .text(function (d) {
                     const p = d.data[side];
-                    if (!p || p.isNoSpouse) return "";
-                    if (anonLiving && p.isLiving()) {
-                        return "Living";
-                    }
-                    if (privatise) {
-                        if (p.isUnlisted()) return "Private";
-                        if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
-                    }
-                    let name = p.getDisplayName();
-                    if (name && d.data[`${side}IsLinkToPerson`]) name = `See ${name}`;
-                    return name || "Private";
+                    return getPersonName(p, p.getDisplayName(), d.data[`${side}IsLinkToPerson`] || false);
                 })
                 .style("fill", (d) => {
                     return d.data[side]?.isBrickWall() ? brickWallColour : "inherit";
@@ -486,10 +490,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 // We need to look at the g.node DOM element's datum because the data of child
                 // nodes do not get updated when the d3.selectAll().data() call is made
                 const parentNode = d3.select(this).node().parentNode;
-                // const parentNode = theDomNode.parentNode;
                 const pd = d3.select(parentNode).datum();
-                // const theDomParent = d3.select(this).node.parentNode;
-                // const pd = d3.select(theDomParent).datum();
                 const side = this.classList.contains("a") ? "a" : "b";
                 const result = colourOf(pd.data, side);
                 // Assigning this to result will colour the the circels the same for load-expand
@@ -650,10 +651,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
                 console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
-                return;
-            }
-            if (event.altKey) {
-                showBioCheckReport(clicked, d.data[side]);
                 return;
             }
             const epIds = d.data[side]?.getExpandedParentIds();
@@ -882,49 +879,6 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
     }
 
-    function showBioCheckReport(clicked, person) {
-        if (typeof person.bioCheckReport == "undefined" || person.bioCheckReport.length == 0) {
-            return;
-        }
-        const jqClicked = $(clicked);
-        const theClickedName = person.getWtId();
-        const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
-        const $bioReportTable = $(`#${familyId}`);
-        if ($bioReportTable.length) {
-            $bioReportTable.css("z-index", `${CCTE.getNextZLevel()}`).slideToggle("fast", () => {
-                setOffset(jqClicked, $bioReportTable, 10, 10);
-            });
-            return;
-        }
-
-        const bioReportTable = getBioCheckReportTable(person);
-        bioReportTable.attr("id", familyId);
-        showTable(jqClicked, bioReportTable, 10, 10);
-    }
-
-    function getBioCheckReportTable(person) {
-        const issueWord = person.bioCheckReport.length == 1 ? "issue" : "issues";
-        const bioCheckTable = $(
-            `<div class='bioReport' data-wtid='${person.getWtId()}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
-                `<caption>Bio Check found the following ${issueWord} with the biography of ${person.getDisplayName()}</caption>` +
-                "<tbody><tr><td><ol></ol></td></tr></tbody></table></div>"
-        );
-
-        const ol = bioCheckTable.find("tbody ol");
-        for (const [msg, subLines] of person.bioCheckReport) {
-            let msgLI = $("<li></li>").text(msg);
-            if (subLines && subLines.length > 0) {
-                const subList = $("<ul></ul>");
-                for (const line of subLines) {
-                    subList.append($("<li></li>").text(line));
-                }
-                msgLI = msgLI.append(subList);
-            }
-            ol.append(msgLI);
-        }
-        return bioCheckTable;
-    }
-
     function showTable(jqClicked, theTable, lOffset, tOffset) {
         // Attach the table to the container div
         theTable.prependTo($("#cctContainer"));
@@ -989,11 +943,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         const childrenList = document.createElement("ol");
         for (const child of children) {
             const item = document.createElement("li");
-            const childName = getShortName(child);
+            const childName = getPersonName(child, getShortName(child));
             item.appendChild(
                 aDivWith(
                     "aChild",
-                    aProfileLink(childName, child.getWtId()),
+                    aProfileLink(childName, child.getWtId(), child.isBrickWall()),
                     document.createTextNode(" "),
                     aTreeLink(childName, child.getWtId()),
                     document.createTextNode(` ${lifespan(child)}`)
@@ -1029,11 +983,12 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const mDate = currentSpouse._data.MarriageDates[spouse.getId()].marriage_date;
             list.push({
                 id: spouse.getId(),
-                name: getShortName(spouse),
+                name: getPersonName(spouse, getShortName(spouse)),
                 lifespan: lifespan(spouse),
                 wtId: spouse.getWtId(),
                 mDate: mDate,
                 msDate: Utils.dateObject(mDate),
+                isBrickWall: spouse.isBrickWall,
             });
         }
 
@@ -1064,7 +1019,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             item.appendChild(
                 aDivWith(
                     "altSpouse",
-                    aProfileLink(spouseData.name, spouseData.wtId),
+                    aProfileLink(spouseData.name, spouseData.wtId, spouseData.isBrickWall()),
                     aSpanWith(
                         "lifespan",
                         document.createTextNode(" "),
@@ -1122,10 +1077,19 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
      * Create a link (<a href=...>)</a> to a given WikiTree profile
      * @param {*} itsText The text to display in the link
      * @param {*} personId The profile id to link to
+     * @param {*} isBrickWall Whether or not the profile has been classified as a brick wall
      */
-    function aProfileLink(itsText, personId) {
+    function aProfileLink(itsText, personId, isBrickWall) {
         const profileLink = document.createElement("a");
-        profileLink.appendChild(document.createTextNode(itsText));
+        let txt;
+        if (isBrickWall) {
+            txt = document.createElement("span");
+            txt.textContent = itsText;
+            txt.style.color = brickWallColour;
+        } else {
+            txt = document.createTextNode(itsText);
+        }
+        profileLink.appendChild(txt);
         profileLink.href = `https://www.wikitree.com/wiki/${personId}`;
         profileLink.target = "_blank";
         profileLink.setAttribute("title", `Open the profile of ${itsText} on a new page`);
