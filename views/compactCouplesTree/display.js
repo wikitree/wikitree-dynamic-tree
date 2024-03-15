@@ -459,7 +459,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 .attr("wtId", (d) => d.data[side]?.getId())
                 .text(function (d) {
                     const p = d.data[side];
-                    return getPersonName(p, p.getDisplayName(), d.data[`${side}IsLinkToPerson`] || false);
+                    return getPersonName(p, p?.getDisplayName(), d.data[`${side}IsLinkToPerson`] || false);
                 })
                 .style("fill", (d) => {
                     return d.data[side]?.isBrickWall() ? brickWallColour : "inherit";
