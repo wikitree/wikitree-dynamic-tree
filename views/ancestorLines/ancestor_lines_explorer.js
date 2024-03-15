@@ -157,7 +157,6 @@ export class AncestorLinesExplorer {
               ><button id="help-button" class="small button" title="About this application.">
                 ?</button
               ><input id="fileInput" type="file" style="display: none" />
-              <!-- <span id="help-button" title="About this">?</span> -->
               <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
               <br />
               <fieldset id="aleFieldset">
