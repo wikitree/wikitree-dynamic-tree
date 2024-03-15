@@ -269,7 +269,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     // holding spot for list of Private IDs being used
     SuperBigFamView.listOfPrivateIDs = [];
 
-
+    // holding spot for the Leaves that are placed in the Super Tree
+    SuperBigFamView.theLeaves = [];
 
     /** Placeholder to hold EXTRA SPOUSES that aren't showing up during regular getPeople searches - like unmarried spouses - but children link to both parents. */
     SuperBigFamView.listOfExtraSpousesToAddToList = [];
@@ -673,7 +674,54 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             "#9ACD32",
         ],
     ];
-
+    var DarkColoursArray = [
+            [0,"Black","#000000"],  [0, "Blue", "#0000FF"],
+            [0, "BlueViolet", "#8A2BE2"],
+            [0, "Brown", "#A52A2A"],
+            [0, "Chocolate", "#D2691E"],
+            [0, "Crimson", "#DC143C"],
+            [0,"DarkBlue","#00008B"],  [0, "DarkGreen", "#006400"],
+            [0, "DarkMagenta", "#8B008B"],
+            [0, "DarkOliveGreen", "#556B2F"],
+            [0,"DarkOrchid","#9932CC"],
+            [0, "DarkRed", "#8B0000"],
+            [0, "DarkSlateBlue", "#483D8B"],
+            [0, "DarkSlateGray", "#2F4F4F"],
+            [0, "DarkViolet", "#9400D3"],
+            [0, "DimGray", "#696969"],
+            [0, "FireBrick", "#B22222"],
+            [0, "ForestGreen", "#228B22"],
+            [0, "Gray", "#808080"],
+            [0, "Grey", "#808080"],
+            [0, "Green", "#008000"],
+            [0, "IndianRed", "#CD5C5C"],
+            [0, "Indigo", "#4B0082"],
+            [0, "Maroon", "#800000"],
+            [0, "MediumBlue", "#0000CD"],
+            [0, "MediumOrchid", "#BA55D3"],
+            [0, "MediumPurple", "#9370DB"],
+            [0, "MediumSeaGreen", "#3CB371"],
+            [0, "MediumSlateBlue", "#7B68EE"],
+            [0, "MediumVioletRed", "#C71585"],
+            [0, "MidnightBlue", "#191970"],
+            [0, "Navy", "#000080"],
+            [0, "Olive", "#808000"],
+            [0, "OliveDrab", "#6B8E23"],
+            [0, "OrangeRed", "#FF4500"],
+            [0, "Peru", "#CD853F"],
+            [0, "Purple", "#800080"],
+            [0, "RebeccaPurple", "#663399"],
+            [0, "Red", "#FF0000"],
+            [0, "RoyalBlue", "#4169E1"],
+            [0, "SaddleBrown", "#8B4513"],
+            [0, "SeaGreen", "#2E8B57"],
+            [0, "Sienna", "#A0522D"],
+            [0, "SlateBlue", "#6A5ACD"],
+            [0, "SlateGray", "#708090"],
+            [0, "SlateGrey", "#708090"],
+            [0, "SteelBlue", "#4682B4"],
+            [0, "Teal", "#008080"],
+        ];
     var PastelsArray = []; // to be defined shortly
     var RainbowArray = []; // to be defined shortly
     var RainbowArrayLong = []; // to be defined shortly
@@ -1048,12 +1096,23 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                             type: "checkbox",
                             defaultValue: false,
                         },
-                        // {
-                        //     optionName: "colourizeRepeats",
-                        //     label: "!* Colourize Repeat Ancestors",
-                        //     type: "checkbox",
-                        //     defaultValue: true,
-                        // },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "handleRepeats",
+                            label: "How to handle Repeated People in Super Tree",
+                            type: "radio",
+                            values: [
+                                { value: "br" },
+                                { value: "none", text: "show multiple times, nothing special" },
+                                { value: "br" },
+                                { value: "halos", text: "show multiple times, coloured halos to identify them" },
+                                // { value: "br" },
+                                // { value: "labels", text: "show once, with unique labels pointing back to original" },
+                            ],
+
+                            defaultValue: "none",
+                        },
+                        // { optionName: "option2come", comment: "( ) show once, with unique labels pointing back to original (OPTION NOT READY YET)" , type: "br" },
                         // { optionName: "break2", type: "br" },
                         // {
                         //     optionName: "showBadges",
@@ -2030,6 +2089,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             .attr("width", width)
             .attr("height", height);
         const g = svg.append("g").attr("id", "SVGgraphics");
+        const halos = g.append("g").attr("id", "theHalos");
         const lines = g.append("g").attr("id", "theConnectors");
 
         condLog("ADDING THE SVG BIG DADDY TAZ");
@@ -2473,6 +2533,142 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
         }
     };
+
+    SuperBigFamView.drawHalos = function () {
+        let theLeaves = SuperBigFamView.theLeaves;
+        let halosDIV = document.getElementById("theHalos");
+
+        if (SuperBigFamView.currentSettings["general_options_handleRepeats"] == "none") {
+            halosDIV.innerHTML = "";
+            return;
+        };
+
+        let idArray4Leaves = {};
+        for (var l in theLeaves) {
+            const leaf = theLeaves[l];
+            if (!idArray4Leaves[leaf.Id]) {
+                idArray4Leaves[leaf.Id] = [leaf.Code];
+            } else {
+                idArray4Leaves[leaf.Id].push( leaf.Code);
+            }     
+
+        }
+
+        for (var l in idArray4Leaves) {
+            let thisID = idArray4Leaves[l];
+            if (thisID.length > 1) {
+                // console.log("REPEAT:",thisID );
+            }
+        }
+
+        // console.log({idArray4Leaves});
+
+        
+        let theSVGhtml = "";
+        let wid = 3/4 * SuperBigFamView.currentSettings["general_options_boxWidth"];
+        let ht = wid; // 400;
+
+        let numRepeats = 0;
+     
+        for (var l in idArray4Leaves) {
+            let thisID = idArray4Leaves[l];
+            if (thisID.length > 1) {
+                
+                let clr1 = "red"; // outermost, largest halo
+                let clr2 = "yellow"; // middle manager
+                let clr3 = "blue"; // inside job
+                
+                if (numRepeats < LightColoursArray.length) {
+                    clr1 = LightColoursArray[numRepeats][2];
+                    clr2 = "";
+                    clr3 = "";
+                } else if (numRepeats < LightColoursArray.length + DarkColoursArray.length) {
+                    clr1 = DarkColoursArray[numRepeats - LightColoursArray.length][2];
+                    clr2 = "";
+                    clr3 = "";
+                } else {
+                    clr1 = LightColoursArray[Math.floor(Math.random() * LightColoursArray.length)][2];
+                    clr2 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
+                    clr3 = LightColoursArray[Math.floor(Math.random() * LightColoursArray.length)][2];
+
+                    if (l % 3 == 0) {
+                        clr1 = "lime";
+                        clr2 = "indigo";
+                        clr3 = "magenta";
+
+                        clr1 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
+                        clr2 = LightColoursArray[Math.floor(Math.random() * LightColoursArray.length)][2];
+                        clr3 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
+                    }
+                }
+                    
+                numRepeats++;
+
+                for (let leafNum = 0; leafNum < thisID.length; leafNum++) {
+                    let leaf = SuperBigFamView.theLeafCollection[thisID[leafNum]];
+
+                    let halo1 =
+                        "<rect width=" +
+                        (wid + 100) +
+                        " height=" +
+                        (ht + 100) +
+                        " x=" +
+                        (leaf.x - (wid + 100) / 2) +
+                        " y=" +
+                        (leaf.y - (ht + 100) / 2) +
+                        " rx=" +
+                        wid / 2 +
+                        " ry=" +
+                        ht / 2 +
+                        " style='fill:" +
+                        clr1 +
+                        ";stroke:black;stroke-width:1;opacity:1' />";
+
+                    let halo2 =
+                        "<rect width=" +
+                        (wid + 50) +
+                        " height=" +
+                        (ht + 50) +
+                        " x=" +
+                        (leaf.x - (wid + 50) / 2) +
+                        " y=" +
+                        (leaf.y - (ht + 50) / 2) +
+                        " rx=" +
+                        wid / 2 +
+                        " ry=" +
+                        ht / 2 +
+                        " style='fill:" +
+                        clr2 +
+                        ";stroke:black;stroke-width:1;opacity:1' />";
+                    if (clr2 == "") {halo2 = "";}
+
+                    let halo3 =
+                        "<rect width=" +
+                        wid +
+                        " height=" +
+                        ht +
+                        " x=" +
+                        (leaf.x - wid / 2) +
+                        " y=" +
+                        (leaf.y - ht / 2) +
+                        " rx=" +
+                        wid / 2 +
+                        " ry=" +
+                        ht / 2 +
+                        " style='fill:" +
+                        clr3 +
+                        ";stroke:black;stroke-width:1;opacity:1' />";
+                    if (clr3 == "") {
+                        halo3 = "";
+                    }
+
+                        theSVGhtml += halo1 + halo2 + halo3;
+                }
+
+            }
+        } 
+        halosDIV.innerHTML = theSVGhtml;
+    }
 
     SuperBigFamView.drawLines = function () {
         // condLog("DRAWING LINES stuff should go here");
@@ -6970,6 +7166,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         SuperBigFamView.Adimensions = Adimensions;
         condLog("** ALL DONE REPOSITION LEAVES **");
+
+        SuperBigFamView.theLeaves = theLeaves;
+        SuperBigFamView.drawHalos();
     }
 
     function showInLawsAgain(theLeaves) {
