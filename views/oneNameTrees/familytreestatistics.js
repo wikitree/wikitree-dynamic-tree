@@ -10,6 +10,10 @@ export class FamilyTreeStatistics {
         this.periodData = this.getStatsBy50YearPeriods();
     }
 
+    getSettings() {
+        return JSON.parse(localStorage.getItem("oneNameTreesSettings"));
+    }
+
     getUnsourced() {
         // Count people where any person.Categories or person.Templates includes an item with the word 'Unsourced'
         const unsourced = this.peopleArray.filter(
@@ -184,11 +188,14 @@ export class FamilyTreeStatistics {
         const statsByPeriod = {};
         const childCounts = this.getChildCounts();
         const couples = {};
+        const periodLength = parseInt(this.getSettings()?.periodLength) || 50;
+        console.log("Period Length", periodLength);
+        console.log("Settings", this.getSettings());
 
         this.peopleArray.forEach((person) => {
             const birthYear = this.getYear(person.BirthDate);
             if (birthYear) {
-                const period = this.getPeriod(birthYear, 50);
+                const period = this.getPeriod(birthYear, periodLength);
 
                 if (!statsByPeriod[period]) {
                     statsByPeriod[period] = {

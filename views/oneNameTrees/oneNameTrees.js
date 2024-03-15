@@ -6,6 +6,8 @@ window.OneNameTrees = class OneNameTrees extends View {
     static VERBOSE = false;
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
+        this.defaultSettings = { periodLength: 50 };
+        this.settings = JSON.parse(localStorage.getItem("oneNameTreesSettings")) || this.defaultSettings;
         this.popupZindex = 1000;
         this.cancelling = false;
         this.container = $(container_selector);
@@ -118,6 +120,7 @@ window.OneNameTrees = class OneNameTrees extends View {
           <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
           <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
         </div>
+        <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
         </div>
@@ -136,9 +139,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         <li>
           The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
           plus any with variants of the surname as entered in the Google Sheet (click 'Variants')*, are fetched from
-          WikiTree+. This list is stored for the next time you enter the same surname. To refresh this list (to get the
+          WikiTree+**. This list is stored for the next time you enter the same surname. To refresh this list (to get the
           most up-to-date list available on WikiTree+), hit the 'Refresh' button.<br>
-          * Alternatively, you can enter a list of surnames separated by commas in the Name box.
+          * Alternatively, you can enter a list of surnames separated by commas in the Name box.<br>
+          ** Note that WikiTree+ is updated once a week, so new profiles may be missing from the results.
         </li>
         <li>
           The data of all of the profiles is fetched from the WikiTree apps server. This may take a very long time (see
@@ -161,6 +165,8 @@ window.OneNameTrees = class OneNameTrees extends View {
           Offspring are added to offspring lists below their parents, creating many expandable/collapsible descendant
           trees. (The + and − at the top will expand and collapse all lists.)
         </li>
+        <li>When there is more than one spouse, coloured left borders will be added to the spouses and the children to 
+        show which children belong to which spouse.</li>
         <li>
           As the data can take a long time to load, it's a good idea to hit the 'Save' button. This will save the
           returned data to your desktop in a file. To return to this list in future, click the 'Load' button to load the
@@ -268,6 +274,15 @@ window.OneNameTrees = class OneNameTrees extends View {
     </div>
     <section id="results"></section>
     <section id="table"></section>`;
+
+        this.settingsBox = $(`<div id="oneNameTreesSettings" class="popup">
+            <x>x</x>
+            <h2>Settings</h2>
+            <div id="settings-content">
+                <label for="periodLength">Period Length:</label>
+                <input type="number" min="10" max="200" step="5" id="periodLength" title="Period length (in years) for the Statistics" value="${this.settings.periodLength}" />
+            </div>
+        </div>`);
     }
     init(container_selector, person_id) {
         const view = new window.OneNameTrees(container_selector, person_id);
@@ -628,12 +643,44 @@ window.OneNameTrees = class OneNameTrees extends View {
             closePopup($(this).closest("div"));
         });
         $(document).on("dblclick.oneNameTrees", ".popup", function (e) {
-            closePopup($(this));
+            // If the double-clicked element is not, and is not within, #oneNameTreesSettings, close the popup
+            if (!$(e.target).closest("#oneNameTreesSettings").length) {
+                closePopup($(this));
+            }
         });
 
         $(document).on("click.oneNameTrees", "#sheetButton", function () {
             $this.exportTableToExcel();
         });
+
+        this.header.on("click.oneNameTrees", "#setting-icon", function () {
+            if ($("#oneNameTreesSettings").length == 0) {
+                $this.settingsBox.appendTo($("body"));
+            }
+            // Get position of the settings icon and show the settings box below it.
+            const position = $(this).position();
+            $this.settingsBox.css("top", position.top + 30 + "px");
+            $this.settingsBox.css("left", position.left - 200 + "px");
+            $this.settingsBox.fadeToggle();
+        });
+
+        this.settingsBox.on("click.oneNameTrees", "x", function () {
+            $this.updateSettings();
+        });
+    }
+
+    updateSettings() {
+        // Get all the settings from the settings box and update the settings object.
+        // Keys are IDs of the input elements in the settings box.
+        // Get all inputs.  Get their IDs and values and update the settings object.
+        const $this = this;
+        const inputs = this.settingsBox.find("input");
+        inputs.each(function () {
+            const id = $(this).attr("id");
+            const value = $(this).val();
+            $this.settings[id] = value;
+        });
+        localStorage.setItem("oneNameTreesSettings", JSON.stringify(this.settings));
     }
 
     updateAccessOrder(key) {
@@ -1203,7 +1250,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 const batchIds = secondCallIds.slice(i, i + 100);
                 const [aborted, people] = await this.getPeopleViaPagedCalls(batchIds, {
                     ancestors: 1,
-                    descendants: 1,
+                    descendants: 2,
                 });
                 if (aborted || $this.cancelling) {
                     cancelIt();
@@ -1261,32 +1308,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         $this.disableCancel();
 
-        /*
-        // Filter out those without the surname
-        Object.values(this.combinedResults).forEach((person) => {
-            //  console.log(person);
-
-            // Standardize the person's surnames for comparison
-            const standardizedLastNameAtBirth = $this.standardizeString(person?.LastNameAtBirth) || "";
-            const standardizedLastNameCurrent = $this.standardizeString(person?.LastNameCurrent) || "";
-            const standardizedLastNameOther = $this.standardizeString(person?.LastNameOther) || "";
-
-            // Check if any standardized surname variants include the standardized person's surnames
-            const isMatch = surnameVariants.some(
-                (variant) =>
-                    $this.standardizeString(variant) === standardizedLastNameAtBirth ||
-                    $this.standardizeString(variant) === standardizedLastNameCurrent ||
-                    $this.standardizeString(variant) === standardizedLastNameOther
-            );
-
-            // console.log("Is match:", isMatch);
-            if (isMatch) {
-                $this.filteredResults[person.Id] = person;
-                // console.log("Added to filtered results:", person);
-                // console.log("Filtered results:", filteredResults);
-            }
-        });
-        */
         this.filterResults();
         const filteredCount = Object.keys($this.filteredResults).length || 0;
         if (OneNameTrees.VERBOSE) {
@@ -1332,90 +1353,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         return;
     }
-
-    /*
-    prioritizeTargetName(sortedPeople) {
-        for (let i = 0; i < sortedPeople.length; i++) {
-            let person = sortedPeople[i];
-
-            const shouldLog = this.shouldLog(person.Id);
-
-            if (person.Spouses && person.Spouses.length > 0) {
-                // Get spouse Ids from array of objects, each with a key for the spouse's Id
-                const spouseIds = person.Spouses.map((spouse) => spouse.Id);
-                spouseIds.forEach((spouseId) => {
-                    // console.log("Spouse ID:", spouseId, typeof spouseId);
-                    //sortedPeople.forEach((p) => console.log("Person ID in sortedPeople:", p.Id, typeof p.Id));
-                    let spouse = sortedPeople.find((p) => p.Id == spouseId);
-
-                    if (spouse && this.shouldPrioritize(spouse, person)) {
-                        spouse.shouldBeRoot = false;
-                        //    console.log("Prioritizing spouse:", spouse, "over person:", person);
-                        // Remove the spouse from their current position
-                        sortedPeople = sortedPeople.filter((p) => p.Id !== spouse.Id);
-                        // Find the new index of the person since the array has been modified
-                        let newPersonIndex = sortedPeople.findIndex((p) => p.Id == person.Id);
-                        // Insert the spouse after the person
-                        sortedPeople.splice(newPersonIndex + 1, 0, spouse);
-
-                        console.log("Sorted people after prioritizing:", sortedPeople);
-                        console.log("New person index:", newPersonIndex);
-                    }
-                });
-            }
-        }
-    }
-    */
-    /*
-    prioritizeTargetName(sortedPeople) {
-        console.log("in prioritizeTargetName");
-        let personShouldLog = false;
-        let spouseShouldLog = false;
-        for (let i = 0; i < sortedPeople.length; i++) {
-            let person = sortedPeople[i];
-            personShouldLog = this.shouldLog(person.Id);
-            if (personShouldLog) {
-                console.log("Person:", person);
-            }
-            if (person.Spouses && person.Spouses.length > 0) {
-                const spouseIds = person.Spouses.map((spouse) => spouse.Id);
-                if (personShouldLog) {
-                    console.log("Spouse IDs:", spouseIds);
-                }
-                spouseIds.forEach((spouseId) => {
-                    let spouseIndex = sortedPeople.findIndex((p) => p.Id === spouseId);
-                    if (personShouldLog) {
-                        console.log("Spouse Index:", spouseIndex);
-                    }
-                    if (spouseIndex !== -1) {
-                        let spouse = sortedPeople[spouseIndex];
-                        spouseShouldLog = this.shouldLog(spouse.Id);
-
-                        if (personShouldLog || spouseShouldLog) {
-                            console.log(`Person: ${person.Id} Spouse: (${spouse.Id}) `);
-                        }
-
-                        if (this.shouldPrioritize(spouse, person)) {
-                            if (personShouldLog || spouseShouldLog) {
-                                console.log(`Prioritizing spouse of ${person.Id} (${spouse.Id}) over ${person.Id}`);
-                            }
-
-                            spouse.shouldBeRoot = false;
-                            sortedPeople.splice(spouseIndex, 1); // Remove the spouse from their original position
-                            let newPersonIndex = sortedPeople.findIndex((p) => p.Id === person.Id); // Recalculate person's index as the array might have changed
-                            sortedPeople.splice(newPersonIndex + 1, 0, spouse); // Insert the spouse after the person
-                        }
-                    }
-                });
-            }
-        }
-        if (personShouldLog) {
-            console.log("Sorted people after prioritization:", sortedPeople.map((p) => p.Id).join(", "));
-        }
-        this.sortedPeople = sortedPeople;
-        console.log("this.sortedPeople after prioritizing:", this.sortedPeople);
-    }
-    */
 
     prioritizeTargetName(sortedPeople) {
         console.log("in prioritizeTargetName");
