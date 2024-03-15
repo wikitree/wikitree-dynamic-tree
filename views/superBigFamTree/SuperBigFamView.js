@@ -9231,7 +9231,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // FIND the SPOUSES of the CHILDREN of the SIBLINGS --> need to load their parents directly (they were not caught with the nuclear:3 net)
         let niblingInLawParents = [];
         // condLog("BIG TO DO ITEM:  Start with empty Nibling-In-Laws' Parents", niblingInLawParents);
-        if (thePeopleList[id]._data.Siblings) {
+        if (thePeopleList[id] && thePeopleList[id]._data && thePeopleList[id]._data.Siblings) {
             // condLog("BIG TO DO ITEM:  Load these Nibling-In-Laws' Parents - SIBLINGS array exists" );
             for (let s = 0; s < thePeopleList[id]._data.Siblings.length; s++) {
                 const sib = thePeopleList[id]._data.Siblings[s];
@@ -10702,11 +10702,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     extraInfoForThisAnc = "[ " + 0 + " ]";
                     extraBR = "<br/>";
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
-                    extraInfoForThisAnc = person._data.Name;
-                    extraBR = "<br/>";
+                    if (person && person._data && person._data.Name){
+                        extraInfoForThisAnc = person._data.Name;
+                        extraBR = "<br/>";
+                    }
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
-                    extraInfoForThisAnc = person._data.Id;
-                    extraBR = "<br/>";
+                     if (person && person._data && person._data.Name){
+                        extraInfoForThisAnc = person._data.Id;
+                        extraBR = "<br/>";
+                     }
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
                     if (person && person._data) {
                         extraInfoForThisAnc = "[ " + 0 + " ] " + person._data.Id + "<br/>" + person._data.Name;
