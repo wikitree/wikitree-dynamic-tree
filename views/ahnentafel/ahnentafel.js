@@ -108,7 +108,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             if (!ahnentafelNumber) {
                 targetElement = $(`#person_${$(this).data("id")}`);
             } else {
-                targetElement = $(`p[data-ahnentafel-number="${ahnentafelNumber}"]`);
+                targetElement = $(`div[data-ahnentafel-number="${ahnentafelNumber}"]`);
             }
             targetElement.addClass("highlightedClick");
 
