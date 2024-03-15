@@ -2289,6 +2289,36 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Yield control back to the browser
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
+        this.identifyChildrensParents();
+    }
+
+    identifyChildrensParents() {
+        const persons = $("li.person");
+        persons.each((index, person) => {
+            const $person = $(person); // Wrap the person element in jQuery to ensure it's a jQuery object
+            if ($person.children(".spouse").length > 0) {
+                const personData = $person.data();
+                const personProfile = this.combinedResults[personData.id];
+                if (personProfile?.Spouses && personProfile.Spouses.length > 1) {
+                    const spouses = personProfile.Spouses;
+                    const spouseIds = spouses.map((spouse) => spouse.Id);
+                    const spouseElements = $person.children(".spouse");
+                    // Add a coloured border-left to the spouse elements and the same coloured border
+                    // to their children's elements (in $person.children(".children"))
+                    spouseElements.each((index, spouseElement) => {
+                        const $spouseElement = $(spouseElement); // Ensure spouseElement is a jQuery object
+                        const spouseData = $spouseElement.data();
+                        const className = `parent-child-${index}`;
+                        const className2 = `parent-child`;
+                        $spouseElement.addClass(className).addClass(className2);
+                        const childrenElement = $(
+                            `li[data-father='${spouseData.id}'],li[data-mother='${spouseData.id}']`
+                        );
+                        childrenElement.addClass(className).addClass(className2);
+                    });
+                }
+            }
+        });
     }
 
     /*
