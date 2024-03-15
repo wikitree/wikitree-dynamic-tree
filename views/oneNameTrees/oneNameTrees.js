@@ -883,6 +883,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
 
             data = await response.json();
+            console.log("Data fetched from WT+:", data);
             // Handle your data here
         } catch (error) {
             if (error.name !== "AbortError") {
@@ -2279,13 +2280,17 @@ window.OneNameTrees = class OneNameTrees extends View {
         let processedElements = 0;
 
         for (const childrenElement of allChildrenElements) {
-            const thisParent = $(childrenElement).data("parent-id");
-            $("li.person[data-id='" + thisParent + "']").append($(childrenElement));
+            const $childrenElement = $(childrenElement);
+            const thisParent = $childrenElement.data("parent-id");
+            $("li.person[data-id='" + thisParent + "']").append($childrenElement);
 
             processedElements++;
             let percentage = (processedElements / totalElements) * 100;
             this.updateLoadingBar(percentage);
 
+            if ($childrenElement.parent().hasClass("children")) {
+                console.log("Error: Parent not found for children element", $childrenElement);
+            }
             // Yield control back to the browser
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
