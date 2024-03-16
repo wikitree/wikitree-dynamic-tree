@@ -6,7 +6,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     static VERBOSE = false;
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
-        this.defaultSettings = { periodLength: 50 };
+        this.defaultSettings = { periodLength: 50, onlyLastNameAtBirth: false };
         this.settings = JSON.parse(localStorage.getItem("oneNameTreesSettings")) || this.defaultSettings;
         this.popupZindex = 1000;
         this.cancelling = false;
@@ -23,6 +23,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
         this.combinedResults = {};
         this.filteredResults = {};
+        this.onlyLastNameAtBirth = {};
         this.sortedPeople = [];
         this.parentToChildrenMap = {};
         this.peopleById = {};
@@ -87,6 +88,30 @@ window.OneNameTrees = class OneNameTrees extends View {
         <div id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
             <input type="text" id="location" placeholder="Location (Optional)" />
+            <select id="century" title="You can choose results from a single century">
+                <option value="all">All time</option>
+                <option value="21">21st Century</option>
+                <option value="20">20th Century</option>
+                <option value="19">19th Century</option>
+                <option value="18">18th Century</option>
+                <option value="17">17th Century</option>
+                <option value="16">16th Century</option>
+                <option value="15">15th Century</option>
+                <option value="14">14th Century</option>
+                <option value="13">13th Century</option>
+                <option value="12">12th Century</option>
+                <option value="11">11th Century</option>
+                <option value="10">10th Century</option>
+                <option value="9">9th Century</option>
+                <option value="8">8th Century</option>
+                <option value="7">7th Century</option>
+                <option value="6">6th Century</option>
+                <option value="5">5th Century</option>
+                <option value="4">4th Century</option>
+                <option value="3">3rd Century</option>
+                <option value="2">2nd Century</option>
+                <option value="1">1st Century</option>
+            </select>
             <input type="submit" id="submit" name="submit" value="GO" />
         </div>
         <div id="otherControls" class="controlGroup">
@@ -191,7 +216,7 @@ window.OneNameTrees = class OneNameTrees extends View {
               The general statistics:
               <ul id="generalStatsHelp">
                 <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
-                as last name at birth.</li>
+                as last name at birth. Click the button to see a graph.</li>
                 <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
                 Click the button to see a graph.</li>
                 <li><label>Average Children per Male over 16</label>: This is per male over 16 
@@ -213,6 +238,7 @@ window.OneNameTrees = class OneNameTrees extends View {
               The period statistics:
               <ul>
                 <li>show more detail on the people born in that period.</li>
+                <li>are shown in 50 year periods by default, but the period length can be changed in the settings.</li>
               </ul>
             </li>
             <li>In the Table View, the period buttons will not only show the statistics of the period, but also add 
@@ -279,8 +305,16 @@ window.OneNameTrees = class OneNameTrees extends View {
             <x>x</x>
             <h2>Settings</h2>
             <div id="settings-content">
-                <label for="periodLength">Period Length:</label>
-                <input type="number" min="10" max="200" step="5" id="periodLength" title="Period length (in years) for the Statistics" value="${this.settings.periodLength}" />
+                <label for="periodLength">Period Length:
+                <input type="number" min="10" max="200" step="5" id="periodLength" title="Period length (in years) for the Statistics" value="${
+                    this.settings.periodLength
+                }" />
+                </label>
+                <label for="onlyLastNameAtBirth">Only Last Name at Birth:
+                <input type = "checkbox" id="onlyLastNameAtBirth" title="Show only profiles with the target surname(s) as Last Name at Birth" ${
+                    this.settings.onlyLastNameAtBirth ? "checked" : ""
+                } /> 
+                </label>
             </div>
         </div>`);
     }
@@ -388,6 +422,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.header.on("click.oneNameTrees", "#refreshData", async function () {
             const surname = $("#surname").val();
             const location = $("#location").val();
+            const century = $("#century").val();
             $("#cancelFetch").trigger("click");
             $("#refreshData").fadeOut();
             if (surname) {
@@ -399,7 +434,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }, 100);
                 $this.reset();
                 $this.clearONSidsCache(surname); // Clear the cache for this surname
-                $this.startTheFetching(surname, location);
+                $this.startTheFetching(surname, location, century);
             }
         });
 
@@ -505,7 +540,10 @@ window.OneNameTrees = class OneNameTrees extends View {
                     $this.parentToChildrenMap = {};
 
                     $this.filterResults();
-                    let sortedPeople = $this.sortPeopleByBirthDate($this.filteredResults);
+                    $this.filterFilteredResultsByLNAB();
+                    const theSet =
+                        $this.settings.onlyLastNameAtBirth == true ? $this.onlyLastNameAtBirth : $this.filteredResults;
+                    let sortedPeople = $this.sortPeopleByBirthDate(theSet);
                     $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
                     $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
                     $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
@@ -567,19 +605,24 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.header.on("click.oneNameTrees", "label", function () {
             // Determine which graph to toggle based on the clicked label's class
             let graphId;
-            if ($(this).closest(".averageLifespan").length > 0) {
-                graphId = "#lifespanGraph";
-            } else if ($(this).closest(".mostCommonNames").length > 0) {
-                graphId = "#namesTable";
-            } else if ($(this).closest(".unsourced").length > 0) {
-                graphId = "#unsourcedProfiles";
-            } else if ($(this).closest(".unconnected").length > 0) {
-                graphId = "#unconnectedProfiles";
-            } else if ($(this).closest(".noRelations").length > 0) {
-                graphId = "#noRelationsProfiles";
-            } else if ($(this).closest(".mostCommonLocations").length > 0) {
-                graphId = "#locationsVisualisation";
-            }
+
+            // Define a mapping of class names to graph IDs
+            const classToGraphId = {
+                ".averageLifespan": "#lifespanGraph",
+                ".totalPeople": "#peopleCountGraph",
+                ".mostCommonNames": "#namesTable",
+                ".unsourced": "#unsourcedProfiles",
+                ".unconnected": "#unconnectedProfiles",
+                ".noRelations": "#noRelationsProfiles",
+                ".mostCommonLocations": "#locationsVisualisation",
+            };
+
+            // Find the graph ID based on the closest matching class
+            Object.keys(classToGraphId).forEach((className) => {
+                if ($(this).closest(className).length > 0) {
+                    graphId = classToGraphId[className];
+                }
+            });
 
             // Proceed if a matching graphId was found
             if (graphId) {
@@ -626,6 +669,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             el.slideUp();
             const idToLabelMap = {
                 lifespanGraph: ".averageLifespan label",
+                peopleCountGraph: ".totalPeople label",
                 namesTable: ".mostCommonNames label",
                 unsourcedProfiles: ".unsourced label",
                 unconnectedProfiles: ".unconnected label",
@@ -660,11 +704,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Get position of the settings icon and show the settings box below it.
             const position = $(this).position();
             $this.settingsBox.css("top", position.top + 30 + "px");
-            $this.settingsBox.css("left", position.left - 200 + "px");
+            const windowWidth = $(window).width();
+            const settingsBoxWidth = $this.settingsBox.outerWidth();
+            const leftPosition = (windowWidth - settingsBoxWidth) / 2;
+            $this.settingsBox.css("left", leftPosition + "px");
             $this.settingsBox.fadeToggle();
         });
 
-        this.settingsBox.on("click.oneNameTrees", "x", function () {
+        $(document).on("click.oneNameTrees", "#oneNameTreesSettings x", function () {
+            console.log("x clicked");
             $this.updateSettings();
         });
     }
@@ -674,13 +722,52 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Keys are IDs of the input elements in the settings box.
         // Get all inputs.  Get their IDs and values and update the settings object.
         const $this = this;
+        const beforeSettings = JSON.parse(JSON.stringify(this.settings));
         const inputs = this.settingsBox.find("input");
         inputs.each(function () {
             const id = $(this).attr("id");
-            const value = $(this).val();
+            // If the input is a checkbox, use the checked property, otherwise use the value property.
+            const value = $(this).attr("type") === "checkbox" ? $(this).prop("checked") : $(this).val();
             $this.settings[id] = value;
         });
         localStorage.setItem("oneNameTreesSettings", JSON.stringify(this.settings));
+        console.log("Settings updated:", this.settings);
+        console.log("Before settings:", beforeSettings);
+        if (beforeSettings.onlyLastNameAtBirth !== this.settings.onlyLastNameAtBirth) {
+            this.reload();
+        } else if (beforeSettings.periodLength !== this.settings.periodLength) {
+            this.updateStatistics();
+        }
+    }
+
+    reload() {
+        const $this = this;
+        const tempOnlyLNAB = this.onlyLastNameAtBirth;
+        const tempFiltered = this.filteredResults;
+        const tempCombined = this.combinedResults;
+        this.reset();
+        this.onlyLastNameAtBirth = tempOnlyLNAB;
+        this.filteredResults = tempFiltered;
+        this.combinedResults = tempCombined;
+        const theSet = $this.settings.onlyLastNameAtBirth == true ? $this.onlyLastNameAtBirth : $this.filteredResults;
+        let sortedPeople = $this.sortPeopleByBirthDate(theSet);
+        $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
+        $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
+        $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
+    }
+
+    filterFilteredResultsByLNAB() {
+        const surnameVariants = this.getSurnameVariants();
+        const filteredResults = this.filteredResults;
+
+        // Convert the object to an array of [key, value] pairs, filter, then convert back
+        const filteredResultsByLNAB = Object.fromEntries(
+            Object.entries(filteredResults).filter(([id, person]) => {
+                return surnameVariants.includes(person.LastNameAtBirth);
+            })
+        );
+
+        this.onlyLastNameAtBirth = filteredResultsByLNAB;
     }
 
     updateAccessOrder(key) {
@@ -874,12 +961,18 @@ window.OneNameTrees = class OneNameTrees extends View {
         */
     }
 
-    async getONSids(surname, location) {
+    async getONSids(surname, location, century) {
+        console.log("Fetching ONTids for:", surname, location, century);
+        century = century == "all" ? "" : century;
+        console.log("Century:", century);
         wtViewRegistry.clearStatus();
         this.setNewTitle();
         let cacheKey = `ONTids_${surname.replace(" ", "_").toLowerCase()}`;
         if (location) {
             cacheKey += `_${location}`;
+        }
+        if (century) {
+            cacheKey += `_${century}`;
         }
         this.activateCancel();
 
@@ -895,6 +988,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (location) {
             locationBit = `Location%3D"${location.trim().replace(/,/, "%2C").replace(" ", "+")}"+`;
         }
+        let centuryBit = "";
+        if (century) {
+            centuryBit = `${century}Cen+`;
+        }
         let surnameVariants = this.findSurnameVariants(surname);
         if (surname.includes(",")) {
             this.surnames = surname.split(/,\s*/);
@@ -905,13 +1002,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.surnameVariants = this.surnames;
             surname = this.surnames[0];
         }
-        let query = `${locationBit}LastNameatBirth%3D"${surname}"+OR+${locationBit}CurrentLastName%3D"${surname}"+OR+${locationBit}LastNameOther%3D"${surname}"`;
+        let query = `${centuryBit}${locationBit}LastNameatBirth%3D"${surname}"+OR+${centuryBit}${locationBit}CurrentLastName%3D"${surname}"+OR+${centuryBit}${locationBit}LastNameOther%3D"${surname}"`;
         if (surnameVariants.length != 0) {
             // Construct the query part for each variant
             query = surnameVariants
                 .map(
                     (variant) =>
-                        `${locationBit}LastNameatBirth%3D"${variant}"+OR+${locationBit}CurrentLastName%3D"${variant}"+OR+${locationBit}LastNameOther%3D"${variant}"`
+                        `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"`
                 )
                 .join("+OR+");
         }
@@ -1244,6 +1341,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         let currentIds = new Set(OneNameTrees.VERBOSE ? Object.keys(this.combinedResults) : []);
         let additionalIds = new Set();
+        const century = $("#century").val();
+        if (century !== "all" && parseInt(century) < 19) {
+            secondCall.clear();
+        }
         if (secondCall.size > 0) {
             const secondCallIds = [...secondCall];
             for (let i = 0; i < secondCallIds.length && !$this.cancelling; i += 100) {
@@ -1327,7 +1428,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.updateLoadingBar(90 + (processed / extendedTotal) * 10);
 
         // Sort and map children to parents
-        this.sortedPeople = this.sortPeopleByBirthDate(this.filteredResults);
+        this.filterFilteredResultsByLNAB();
+        const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
+        this.sortedPeople = this.sortPeopleByBirthDate(dataset);
         if (OneNameTrees.VERBOSE) console.log("sortedPeople", this.sortedPeople);
         this.prioritizeTargetName(this.sortedPeople);
         console.log("sortedPeople after prioritizing:", JSON.parse(JSON.stringify(this.sortedPeople)));
@@ -2707,7 +2810,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         const totalWithTargetLNABs = this.getTotalWithTargetLNABs();
         const totalPeopleText = `${stats.getTotalPeople()} (<span title="${totalWithTargetLNABs} of the total have the target surname (or variants) as the last name at birth">${totalWithTargetLNABs}</span>)`;
         $statsContainer.append(
-            this.createStatItem("Total People: ", totalPeopleText, { title: "Total people in the dataset." })
+            this.createStatItem("Total People: ", totalPeopleText, {
+                title: "Total people in the dataset.",
+                classes: "totalPeople clicker",
+            })
         );
 
         // Average Lifespan
@@ -2731,12 +2837,12 @@ window.OneNameTrees = class OneNameTrees extends View {
             })
         );
 
-        function addStatsAndList($this, statType, title, statsMethod, divId, extraClass = "") {
+        function addStatsAndList($this, statType, title, titleText, statsMethod, divId, extraClass = "") {
             const statItems = stats[statsMethod]();
             $statsContainer.append(
                 $this.createStatItem(`${title}: `, statItems.length, {
                     classes: `${statType} clicker ${extraClass}`,
-                    title: `Click to display a list of profiles with ${title.toLowerCase()}.`,
+                    title: `Click to display a list of ${titleText}.`,
                     heading: title,
                 })
             );
@@ -2774,9 +2880,30 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         // Using the functions
-        addStatsAndList(this, "unsourced", "Unsourced Profiles", "getUnsourced", "unsourcedProfiles");
-        addStatsAndList(this, "unconnected", "Unconnected Profiles", "getUnconnected", "unconnectedProfiles");
-        addStatsAndList(this, "noRelations", "No Connections", "getNoRelations", "noRelationsProfiles");
+        addStatsAndList(
+            this,
+            "unsourced",
+            "Unsourced Profiles",
+            "profiles with 'Unsourced' templates or categories",
+            "getUnsourced",
+            "unsourcedProfiles"
+        );
+        addStatsAndList(
+            this,
+            "unconnected",
+            "Unconnected Profiles",
+            "unconnected profiles",
+            "getUnconnected",
+            "unconnectedProfiles"
+        );
+        addStatsAndList(
+            this,
+            "noRelations",
+            "No Connections",
+            "profiles with no connections",
+            "getNoRelations",
+            "noRelationsProfiles"
+        );
 
         // Most Common Names
         const topMaleNames = stats.getTopNamesByGender("Male", 100);
@@ -3262,7 +3389,8 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     showStatistics() {
-        this.familyTreeStats = new FamilyTreeStatistics(this.filteredResults);
+        const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
+        this.familyTreeStats = new FamilyTreeStatistics(dataset);
         //  console.log("Total People: ", this.familyTreeStats.getTotalPeople());
         //  console.log("Average Lifespan: ", this.familyTreeStats.getAverageLifespan(), "years");
         //  console.log("Gender Distribution: ", this.familyTreeStats.getGenderDistribution());
@@ -3288,7 +3416,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         console.log("Stats by 50-Year Periods:", periodStats);
 
         const d3DataFormatter = new D3DataFormatter(periodStats);
-        d3DataFormatter.lifespanGraph();
+        // d3DataFormatter.lifespanGraph();
+        d3DataFormatter.doDrawGraph("lifespanGraph");
+        d3DataFormatter.doDrawGraph("peopleCountGraph");
 
         d3DataFormatter.formatNamesData();
 
@@ -3322,6 +3452,15 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Add location select boxes
         this.addLocationSelectBoxes(locationStats);
+    }
+
+    updateStatistics() {
+        $("#statsDisplay *").off();
+        $("#statsDisplay").empty();
+        clearInterval(D3DataFormatter.evolutionInterval);
+        $(".popup:not(.message,#oneNameTreesSettings) *").off();
+        $(".popup:not(.message,#oneNameTreesSettings)").remove();
+        this.showStatistics();
     }
 
     birthAndDeathDates(person) {
@@ -3413,8 +3552,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Add rows for data
         console.log("filteredResults", this.filteredResults);
-        Object.keys(this.filteredResults).forEach(function (key) {
-            const person = $this.filteredResults[key];
+        const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
+        Object.keys(dataset).forEach(function (key) {
+            const person = dataset[key];
             if (!person.Name) {
                 return;
             }
@@ -3794,10 +3934,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
-    async startTheFetching(surname, location) {
+    async startTheFetching(surname, location, century) {
         const $this = this;
         $this.reset();
-        const [aborted, data] = await $this.getONSids(surname, location);
+        const [aborted, data] = await $this.getONSids(surname, location, century);
         if (aborted) {
             wtViewRegistry.showWarning("Data retrieval cancelled.");
             $this.disableCancel();
@@ -3857,6 +3997,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             let surname = $("#surname").val();
             let location = $("#location").val().trim(); // Get the location from the new input field
+            const century = $("#century").val();
 
             // If surname includes a comma, it's a list of surnames.
             this.surnames = surname.split(",");
@@ -3876,7 +4017,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
 
             if (surname) {
-                $this.startTheFetching(surname, location);
+                $this.startTheFetching(surname, location, century);
             }
         });
 
@@ -3984,9 +4125,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     exportTableToExcel() {
         const $this = this;
-
+        const locationBit = $("#location").val() ? "_" + $("#location").val().replace(/ /g, "_") : "";
+        const centuryBit = $("#century").val() ? "_" + $("#century").val() : "";
         const fileName =
-            $("#surname").val() + "_" + new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
+            $("#surname").val() +
+            locationBit +
+            centuryBit +
+            "_" +
+            new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19);
 
         const wb = XLSX.utils.book_new(); // Create a new workbook
         const ws_name = "TableData";
@@ -4011,8 +4157,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         ];
 
         // Process each person for the table
-        Object.keys(this.filteredResults).forEach(function (key) {
-            const person = $this.filteredResults[key];
+
+        const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
+
+        Object.keys(dataset).forEach(function (key) {
+            const person = dataset[key];
             const aName = new PersonName(person); // Assuming PersonName is a function you've defined elsewhere
             let givenNames = aName.withParts(["FirstNames"]); // Modify based on your actual method
 
@@ -4229,7 +4378,7 @@ class D3DataFormatter {
         node.count = total;
         return total;
     }
-
+    /*
     formatLifespanData() {
         const sortedData = Object.entries(this.statsByPeriod)
             .sort(([periodA], [periodB]) => {
@@ -4250,9 +4399,9 @@ class D3DataFormatter {
     }
 
     lifespanGraph() {
-        const lifespanGraphDiv = $('<div id="lifespanGraph" class="graph popup"><x>x</x></div>');
-        $("body").append(lifespanGraphDiv);
-        lifespanGraphDiv.draggable();
+        const graphDiv = $('<div id="lifespanGraph" class="graph popup"><x>x</x></div>');
+        $("body").append(graphDiv);
+        graphDiv.draggable();
 
         const margin = { top: 30, right: 10, bottom: 30, left: 40 };
         const width = $("#lifespanGraph").width() - margin.left - margin.right;
@@ -4338,6 +4487,124 @@ class D3DataFormatter {
             .style("font-size", "1em")
             .style("font-weight", "bold")
             .text("Average Lifespan");
+    }
+    */
+
+    formatPeriodData() {
+        const sortedData = Object.entries(this.statsByPeriod)
+            .sort(([periodA], [periodB]) => {
+                // Assuming period format is "YYYY-YYYY", split and parse to get the start year
+                const startYearA = parseInt(periodA.split("-")[0]);
+                const startYearB = parseInt(periodB.split("-")[0]);
+                return startYearA - startYearB; // Sort by start year
+            })
+            .map(([period, data]) => {
+                const averageAgeAtDeath = data.deathsCount > 0 ? data.totalAgeAtDeath / data.deathsCount : 0;
+                return {
+                    period: period,
+                    averageAgeAtDeath: parseFloat(averageAgeAtDeath.toFixed(2)),
+                    peopleCount: data.peopleCount,
+                };
+            });
+        return sortedData;
+    }
+
+    doDrawGraph(id) {
+        let accessorFunction, title, formatType;
+
+        switch (id) {
+            case "lifespanGraph":
+                accessorFunction = (d) => d.averageAgeAtDeath;
+                title = "Average Lifespan";
+                formatType = "float"; // Use floating-point numbers for lifespan
+                break;
+            case "peopleCountGraph":
+                accessorFunction = (d) => d.peopleCount;
+                title = "Number of Profiles";
+                formatType = "int"; // Use integers for people count
+                break;
+            // Add more cases as needed
+            default:
+                console.error("Unsupported graph ID:", id);
+                return; // Exit the function if id doesn't match
+        }
+
+        const formattedData = this.formatPeriodData();
+        this.drawGraph(formattedData, accessorFunction, title, id, formatType);
+    }
+
+    drawGraph(data, accessorFunction, title, id, formatType) {
+        const graphDiv = $(`<div id="${id}" class="graph popup"><x>x</x></div>`);
+        $("body").append(graphDiv);
+        graphDiv.draggable();
+
+        const margin = { top: 30, right: 10, bottom: 30, left: 40 };
+        const width = graphDiv.width() - margin.left - margin.right;
+        const height = graphDiv.height() - margin.top - margin.bottom;
+
+        const svg = d3
+            .select(graphDiv[0])
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const x = d3
+            .scaleBand()
+            .range([0, width])
+            .domain(data.map((d) => d.period));
+        const y = d3
+            .scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(data, accessorFunction)]);
+
+        const line = d3
+            .line()
+            .x((d) => x(d.period) + x.bandwidth() / 2)
+            .y((d) => y(accessorFunction(d)));
+
+        svg.append("path")
+            .datum(data)
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 1.5)
+            .attr("d", line);
+
+        svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+
+        svg.append("g").call(d3.axisLeft(y));
+
+        svg.selectAll(".text")
+            .data(data)
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("x", (d) => x(d.period) + x.bandwidth() / 2)
+            .attr("y", (d) => y(accessorFunction(d)) - 10)
+            .attr("text-anchor", "middle")
+            .text((d) => {
+                const value = accessorFunction(d);
+                return formatType === "float" ? value.toFixed(2) : value.toString();
+            });
+
+        svg.selectAll(".point")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("class", "point")
+            .attr("cx", (d) => x(d.period) + x.bandwidth() / 2)
+            .attr("cy", (d) => y(accessorFunction(d)))
+            .attr("r", 5)
+            .attr("fill", "forestgreen");
+
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", 0 - margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "1em")
+            .style("font-weight", "bold")
+            .text(title);
     }
 
     formatNameDataForD3() {

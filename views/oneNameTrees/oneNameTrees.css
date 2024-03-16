@@ -687,7 +687,8 @@ input[type="submit"],
   cursor: pointer;
 }
 
-.oneNameTrees #lifespanGraph {
+.oneNameTrees #lifespanGraph,
+.oneNameTrees #peopleCountGraph {
   display: none;
   background-color: #fff;
   border: 2px solid forestgreen;
@@ -1062,4 +1063,9 @@ input[type="submit"],
   max-width: 90vw;
   width: max-content;
   overflow-y: auto;
+}
+
+.oneNameTrees #oneNameTreesSettings label {
+  display: inline-block;
+  margin-right: 1em;
 }
