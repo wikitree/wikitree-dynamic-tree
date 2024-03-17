@@ -18,6 +18,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             : this.wtid
             ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
             : "";
+        this.centuries = this.parseCenturies($("#centuries").val());
         this.header = $("header");
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
@@ -88,30 +89,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         <div id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
             <input type="text" id="location" placeholder="Location (Optional)" />
-            <select id="century" title="You can choose results from a single century">
-                <option value="all">All time</option>
-                <option value="21">21st Century</option>
-                <option value="20">20th Century</option>
-                <option value="19">19th Century</option>
-                <option value="18">18th Century</option>
-                <option value="17">17th Century</option>
-                <option value="16">16th Century</option>
-                <option value="15">15th Century</option>
-                <option value="14">14th Century</option>
-                <option value="13">13th Century</option>
-                <option value="12">12th Century</option>
-                <option value="11">11th Century</option>
-                <option value="10">10th Century</option>
-                <option value="9">9th Century</option>
-                <option value="8">8th Century</option>
-                <option value="7">7th Century</option>
-                <option value="6">6th Century</option>
-                <option value="5">5th Century</option>
-                <option value="4">4th Century</option>
-                <option value="3">3rd Century</option>
-                <option value="2">2nd Century</option>
-                <option value="1">1st Century</option>
-            </select>
+            <input type="text" id="centuries" placeholder="Centuries (Optional)" /> 
             <input type="submit" id="submit" name="submit" value="GO" />
         </div>
         <div id="otherControls" class="controlGroup">
@@ -374,10 +352,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Enter key submits the form
-        this.header.on("keyup", "#surname", function (event) {
-            const value = $(this).val().toLowerCase();
+        this.header.on("keyup", "#surname,#location,#centuries", function (event) {
+            const value = $("#surname").val().toLowerCase();
+            const location = $("#location").val().toLowerCase();
+            const centuries = $this.parseCenturies($("#centuries").val());
             // If we have saved data for this surname, show the refresh button
-            if (value && localStorage.getItem(`ONTids_${value}`)) {
+            const cacheKey = $this.buildCacheKey(value, location, centuries);
+            if (value && localStorage.getItem(cacheKey)) {
                 $("#refreshData").show();
                 // Make the refresh button stand out a little, briefly
                 $("#refreshData").fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
@@ -422,7 +403,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.header.on("click.oneNameTrees", "#refreshData", async function () {
             const surname = $("#surname").val();
             const location = $("#location").val();
-            const century = $("#century").val();
+            const centuries = this.parseCenturies($("#centuries").val());
+            this.centuries = centuries;
+
             $("#cancelFetch").trigger("click");
             $("#refreshData").fadeOut();
             if (surname) {
@@ -434,7 +417,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }, 100);
                 $this.reset();
                 $this.clearONSidsCache(surname); // Clear the cache for this surname
-                $this.startTheFetching(surname, location, century);
+                $this.startTheFetching(surname, location, centuries);
             }
         });
 
@@ -717,6 +700,52 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
     }
 
+    parseCenturies(input) {
+        let centuries = [];
+
+        if (!input) return centuries;
+
+        input = input.toLowerCase().trim();
+        input = input.replace(/\s+to\s+|[\u2013\u2014-]/g, "-"); // Handle "to" and different dash types
+        input = input.replace(/\s*,\s*/g, ","); // Normalize comma spacing
+        input = input.replace(/\s+/g, " "); // Normalize spaces
+
+        // Helper function to convert year or century to the correct century number
+        const yearOrCenturyToCentury = (value) => {
+            // Handle ordinal indicators by removing them
+            value = value.replace(/(st|nd|rd|th)/g, "");
+            if (value.endsWith("s")) value = value.slice(0, -1); // Handle decades (1500s)
+            let year = parseInt(value, 10);
+            // Convert year to century if necessary
+            if (year < 100) return year; // Assume values < 100 are already centuries
+            return Math.ceil(year / 100);
+        };
+
+        // Split input by comma or space to handle lists and ranges separately
+        input.split(/[\s,]+/).forEach((part) => {
+            if (part.includes("-")) {
+                // Handle ranges
+                let [start, end] = part.split("-").map((part) => yearOrCenturyToCentury(part.trim()));
+                centuries.push(...Array.from({ length: end - start + 1 }, (_, i) => start + i));
+                // Increase each by 1 as 1500 should be the 16th century, not the 15th
+                centuries = centuries.map((century) => century + 1);
+                if (input.match(/\-\d+00$/)) {
+                    centuries.pop();
+                }
+            } else {
+                // Handle single values
+                centuries.push(yearOrCenturyToCentury((parseInt(part) + 1).toString()));
+                //centuries = centuries.map((century) => century + 1);
+            }
+        });
+
+        // Ensure unique centuries, sorted in ascending order
+        centuries = Array.from(new Set(centuries)).sort((a, b) => a - b);
+
+        //console.log("Centuries:", centuries);
+        return centuries;
+    }
+
     updateSettings() {
         // Get all the settings from the settings box and update the settings object.
         // Keys are IDs of the input elements in the settings box.
@@ -961,19 +990,63 @@ window.OneNameTrees = class OneNameTrees extends View {
         */
     }
 
-    async getONSids(surname, location, century) {
-        console.log("Fetching ONTids for:", surname, location, century);
-        century = century == "all" ? "" : century;
-        console.log("Century:", century);
-        wtViewRegistry.clearStatus();
-        this.setNewTitle();
+    buildQuery(centuries, locationBit, surname, surnameVariants) {
+        // Helper function to create query parts for a single century
+        const queryPartForCentury = (century, locationBit, variant) => {
+            const centuryBit = century ? `${century}Cen+` : "";
+            return (
+                `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"` +
+                `+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"` +
+                `+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"`
+            );
+        };
+
+        // Ensure we have an array for centuries
+        centuries = centuries || [];
+
+        // Construct the base query parts
+        let queries = [];
+        const variants = surnameVariants.length > 0 ? surnameVariants : [surname];
+        variants.forEach((variant) => {
+            if (centuries.length === 0) {
+                // If no centuries are provided, just use the location and variant
+                queries.push(queryPartForCentury(null, locationBit, variant));
+            } else {
+                // For each century, add a query part
+                centuries.forEach((century) => {
+                    queries.push(queryPartForCentury(century, locationBit, variant));
+                });
+            }
+        });
+
+        // Combine all query parts with "OR"
+        let query = queries.join("+OR+");
+
+        return query;
+    }
+
+    buildCacheKey(surname, location, centuries) {
         let cacheKey = `ONTids_${surname.replace(" ", "_").toLowerCase()}`;
         if (location) {
             cacheKey += `_${location}`;
         }
-        if (century) {
-            cacheKey += `_${century}`;
+        // If centuries is not an array, use parseCenturies to convert it
+        if (!Array.isArray(centuries)) {
+            console.log("Converting centuries to array:", centuries);
+            centuries = this.parseCenturies(centuries);
+            console.log("Converting centuries to array:", centuries);
         }
+        if (centuries.length) {
+            cacheKey += `_${centuries.join("C_")}`;
+        }
+        return cacheKey;
+    }
+
+    async getONSids(surname, location, centuries) {
+        console.log("Fetching ONTids for:", surname, location, centuries);
+        wtViewRegistry.clearStatus();
+        this.setNewTitle();
+        const cacheKey = this.buildCacheKey(surname, location, centuries);
         this.activateCancel();
 
         const cachedData = localStorage.getItem(cacheKey);
@@ -988,10 +1061,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (location) {
             locationBit = `Location%3D"${location.trim().replace(/,/, "%2C").replace(" ", "+")}"+`;
         }
-        let centuryBit = "";
-        if (century) {
-            centuryBit = `${century}Cen+`;
-        }
+
         let surnameVariants = this.findSurnameVariants(surname);
         if (surname.includes(",")) {
             this.surnames = surname.split(/,\s*/);
@@ -1002,6 +1072,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.surnameVariants = this.surnames;
             surname = this.surnames[0];
         }
+
+        const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
+        /*
         let query = `${centuryBit}${locationBit}LastNameatBirth%3D"${surname}"+OR+${centuryBit}${locationBit}CurrentLastName%3D"${surname}"+OR+${centuryBit}${locationBit}LastNameOther%3D"${surname}"`;
         if (surnameVariants.length != 0) {
             // Construct the query part for each variant
@@ -1012,9 +1085,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 )
                 .join("+OR+");
         }
-
+*/
         const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
-        // console.log(url);
+        console.log(url);
         let data;
         try {
             this.cancelFetchController = new AbortController();
@@ -1341,10 +1414,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         let currentIds = new Set(OneNameTrees.VERBOSE ? Object.keys(this.combinedResults) : []);
         let additionalIds = new Set();
-        const century = $("#century").val();
-        if (century !== "all" && parseInt(century) < 19) {
+        if (this.centuries && this.centuries.length > 0 && parseInt(this.centuries[this.centuries.length - 1]) < 19) {
             secondCall.clear();
         }
+
         if (secondCall.size > 0) {
             const secondCallIds = [...secondCall];
             for (let i = 0; i < secondCallIds.length && !$this.cancelling; i += 100) {
@@ -3934,10 +4007,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
-    async startTheFetching(surname, location, century) {
+    async startTheFetching(surname, location, centuries) {
         const $this = this;
         $this.reset();
-        const [aborted, data] = await $this.getONSids(surname, location, century);
+        const [aborted, data] = await $this.getONSids(surname, location, centuries);
         if (aborted) {
             wtViewRegistry.showWarning("Data retrieval cancelled.");
             $this.disableCancel();
@@ -3997,7 +4070,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             let surname = $("#surname").val();
             let location = $("#location").val().trim(); // Get the location from the new input field
-            const century = $("#century").val();
+            const centuries = $this.parseCenturies($("#centuries").val());
 
             // If surname includes a comma, it's a list of surnames.
             this.surnames = surname.split(",");
@@ -4017,7 +4090,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
 
             if (surname) {
-                $this.startTheFetching(surname, location, century);
+                $this.startTheFetching(surname, location, centuries);
             }
         });
 
@@ -4126,7 +4199,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     exportTableToExcel() {
         const $this = this;
         const locationBit = $("#location").val() ? "_" + $("#location").val().replace(/ /g, "_") : "";
-        const centuryBit = $("#century").val() ? "_" + $("#century").val() : "";
+        const centuryBit = this.centuries && this.centuries.length > 0 ? "C_" + this.centuries.join("_") : "";
         const fileName =
             $("#surname").val() +
             locationBit +

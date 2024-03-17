@@ -22,6 +22,7 @@ input[type="submit"],
   min-width: auto !important;
   padding: 0.5em !important;
   padding-right: 4em !important;
+  margin-bottom: 0 !important;
   margin-left: 0.5em;
   margin-right: 0.5em;
 }
@@ -312,6 +313,9 @@ input[type="submit"],
 .oneNameTrees #surname,
 .oneNameTrees #location {
   width: 9em;
+}
+.oneNameTrees #centuries {
+  width: 10em;
 }
 
 .oneNameTrees #location {
