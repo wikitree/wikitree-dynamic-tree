@@ -82,12 +82,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const FullAppName = "Ancestor Webs tree app";
     const AboutPreamble =
         "The Spider Webs app, originally created as a standalone WikiTree app, is the basis for this app.<br>The current Tree App version was renamed and created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "4 August 2023";
+    const AboutUpdateDate = "12 March 2024";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/ancWebs.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =""; //        "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
-    const AboutAssistants = "Rob Pavey";
-    const AboutLatestG2G = "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutAssistants = "Rob Pavey, Riel Smit & Ian Beacall";
+    const AboutLatestG2G =
+        "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; //"https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = "";// "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -948,49 +949,49 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         };
 
-          function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
-              const theCookieSettings = JSON.parse(theCookieString);
-              for (const key in theCookieSettings) {
-                  if (Object.hasOwnProperty.call(theCookieSettings, key)) {
-                      const element = theCookieSettings[key];
-                      let theType = "";
-                      if (document.getElementById(key)) {
-                          theType = document.getElementById(key).type;
-                          if (theType == "checkbox") {
-                              document.getElementById(key).checked = element;
-                          } else if (theType == "number" || theType == "text") {
-                              document.getElementById(key).value = element;
-                          } else if (document.getElementById(key).classList.length > 0) {
-                              document.getElementById(key).value = element;
-                              theType = "optionSelect";
-                          } else {
-                              theType = document.getElementById(key);
-                          }
-                      } else {
-                          theType = "NO HTML OBJECT";
-                          let theRadioButtons = document.getElementsByName(key + "_radio");
-                          if (theRadioButtons) {
-                              // condLog("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
-                              theType = "radio x " + theRadioButtons.length;
-                              for (let i = 0; i < theRadioButtons.length; i++) {
-                                  const btn = theRadioButtons[i];
-                                  if (btn.value == element) {
-                                      btn.checked = true;
-                                  }
-                              }
-                          }
-                      }
-                      // condLog(key, element, theType);
-                      if (Object.hasOwnProperty.call(WebsView.currentSettings, key)) {
-                          WebsView.currentSettings[key] = element;
-                      }
-                  }
-              }
+        //   function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
+        //       const theCookieSettings = JSON.parse(theCookieString);
+        //       for (const key in theCookieSettings) {
+        //           if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+        //               const element = theCookieSettings[key];
+        //               let theType = "";
+        //               if (document.getElementById(key)) {
+        //                   theType = document.getElementById(key).type;
+        //                   if (theType == "checkbox") {
+        //                       document.getElementById(key).checked = element;
+        //                   } else if (theType == "number" || theType == "text") {
+        //                       document.getElementById(key).value = element;
+        //                   } else if (document.getElementById(key).classList.length > 0) {
+        //                       document.getElementById(key).value = element;
+        //                       theType = "optionSelect";
+        //                   } else {
+        //                       theType = document.getElementById(key);
+        //                   }
+        //               } else {
+        //                   theType = "NO HTML OBJECT";
+        //                   let theRadioButtons = document.getElementsByName(key + "_radio");
+        //                   if (theRadioButtons) {
+        //                       // condLog("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+        //                       theType = "radio x " + theRadioButtons.length;
+        //                       for (let i = 0; i < theRadioButtons.length; i++) {
+        //                           const btn = theRadioButtons[i];
+        //                           if (btn.value == element) {
+        //                               btn.checked = true;
+        //                           }
+        //                       }
+        //                   }
+        //               }
+        //               // condLog(key, element, theType);
+        //               if (Object.hasOwnProperty.call(WebsView.currentSettings, key)) {
+        //                   WebsView.currentSettings[key] = element;
+        //               }
+        //           }
+        //       }
 
-            //   // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
-            //   WebsView.currentSettings["general_options_badgeLabels_otherValue"] =
-            //       theCookieSettings["general_options_badgeLabels_otherValue"];
-          }
+        //     //   // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+        //     //   WebsView.currentSettings["general_options_badgeLabels_otherValue"] =
+        //     //       theCookieSettings["general_options_badgeLabels_otherValue"];
+        //   }
         
         
 
@@ -1066,7 +1067,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         let theCookieString = WTapps_Utils.getCookie("wtapps_webs");
         if (theCookieString) {
-            updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            WebsView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
@@ -1725,7 +1726,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         );
                     }
                     if ((useSteps == true || useSteps4Ma == true) && elementMa.getAttribute("display") == "block") {
-                        // let theLineClr = "White";
+                        let theLineClr = "White";
                         // if (!theLineClr) {
                             theLineClr =
                                 LineColourArray[
@@ -2107,7 +2108,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         numPeepsAdded++;
                         thePeopleList.add(WebsView.theAncestors[index]);
                     }
-                    condLog("ADDED ", numPeepsAdded, "PEEPS added inside loadAncestorsAtLevel", newLevel);
+                    // console.log("ADDED ", numPeepsAdded, "PEEPS added inside loadAncestorsAtLevel", newLevel);
+                    // console.log(result[0]);//.status, result[0].status.startsWith("Maximum number of profiles"));
+
                     WebsView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
 
                     if (numPeepsAdded >= 1000) {

@@ -139,6 +139,13 @@
  *  LIVING people who are not PRIVATE (SemiPrivate -> ) will appear in Super Tree with allowable data being shown.
  *      Invoking the PRIVATIZE option in the button bar will show LIVING for their names, and only give decades for dates
  * 
+ * 
+ * NOTE:  Due to change in API, when requesting 1000 profiles, it serves up 1000 profiles, but then strips out those that are privacy protected
+ *  - SO - 
+ *  resulting number returned is not necessarily 1000 .... so ... better termination condition is something like this:
+ * result[0].status.startsWith("Maximum number of profiles")
+ *  --> status line is set to text similar to: Maximum number of profiles (1000) reached.
+ * 
  */
 
 import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
@@ -162,13 +169,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "07 March 2024";
+    const AboutUpdateDate = "12 March 2024";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
     const AboutAssistants =
-        "Murray Maloney, Rob Pavey, <A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
-    const AboutLatestG2G = "https://www.wikitree.com/g2g/1706061/the-return-of-the-super-tree"; //  "https://www.wikitree.com/g2g/1669634/new-app-super-big-family-tree"; 
+        "<br/>&nbsp;&nbsp;Murray Maloney, Rob Pavey, <A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>, Riel Smit & Ian Beacall";
+    const AboutLatestG2G = "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; // "https://www.wikitree.com/g2g/1706061/the-return-of-the-super-tree"; //  "https://www.wikitree.com/g2g/1669634/new-app-super-big-family-tree"; 
     const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Super_Big_Family_Tree_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -262,7 +269,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     // holding spot for list of Private IDs being used
     SuperBigFamView.listOfPrivateIDs = [];
 
-
+    // holding spot for the Leaves that are placed in the Super Tree
+    SuperBigFamView.theLeaves = [];
 
     /** Placeholder to hold EXTRA SPOUSES that aren't showing up during regular getPeople searches - like unmarried spouses - but children link to both parents. */
     SuperBigFamView.listOfExtraSpousesToAddToList = [];
@@ -666,7 +674,54 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             "#9ACD32",
         ],
     ];
-
+    var DarkColoursArray = [
+            [0,"Black","#000000"],  [0, "Blue", "#0000FF"],
+            [0, "BlueViolet", "#8A2BE2"],
+            [0, "Brown", "#A52A2A"],
+            [0, "Chocolate", "#D2691E"],
+            [0, "Crimson", "#DC143C"],
+            [0,"DarkBlue","#00008B"],  [0, "DarkGreen", "#006400"],
+            [0, "DarkMagenta", "#8B008B"],
+            [0, "DarkOliveGreen", "#556B2F"],
+            [0,"DarkOrchid","#9932CC"],
+            [0, "DarkRed", "#8B0000"],
+            [0, "DarkSlateBlue", "#483D8B"],
+            [0, "DarkSlateGray", "#2F4F4F"],
+            [0, "DarkViolet", "#9400D3"],
+            [0, "DimGray", "#696969"],
+            [0, "FireBrick", "#B22222"],
+            [0, "ForestGreen", "#228B22"],
+            [0, "Gray", "#808080"],
+            [0, "Grey", "#808080"],
+            [0, "Green", "#008000"],
+            [0, "IndianRed", "#CD5C5C"],
+            [0, "Indigo", "#4B0082"],
+            [0, "Maroon", "#800000"],
+            [0, "MediumBlue", "#0000CD"],
+            [0, "MediumOrchid", "#BA55D3"],
+            [0, "MediumPurple", "#9370DB"],
+            [0, "MediumSeaGreen", "#3CB371"],
+            [0, "MediumSlateBlue", "#7B68EE"],
+            [0, "MediumVioletRed", "#C71585"],
+            [0, "MidnightBlue", "#191970"],
+            [0, "Navy", "#000080"],
+            [0, "Olive", "#808000"],
+            [0, "OliveDrab", "#6B8E23"],
+            [0, "OrangeRed", "#FF4500"],
+            [0, "Peru", "#CD853F"],
+            [0, "Purple", "#800080"],
+            [0, "RebeccaPurple", "#663399"],
+            [0, "Red", "#FF0000"],
+            [0, "RoyalBlue", "#4169E1"],
+            [0, "SaddleBrown", "#8B4513"],
+            [0, "SeaGreen", "#2E8B57"],
+            [0, "Sienna", "#A0522D"],
+            [0, "SlateBlue", "#6A5ACD"],
+            [0, "SlateGray", "#708090"],
+            [0, "SlateGrey", "#708090"],
+            [0, "SteelBlue", "#4682B4"],
+            [0, "Teal", "#008080"],
+        ];
     var PastelsArray = []; // to be defined shortly
     var RainbowArray = []; // to be defined shortly
     var RainbowArrayLong = []; // to be defined shortly
@@ -704,15 +759,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     var BluesArray = []; // to be defined shortly
 
 
-    function invokeCreatorCustomSettings() {
-        condLog("APP CREATOR CUSTOM SETTINGS INVOKED NOW !!!!", SuperBigFamView.currentSettings);
-        SuperBigFamView.currentSettings["general_options_extraInfo"] = "all";
-        SuperBigFamView.currentSettings["general_options_showExtraInfoOnPopup"] = "Yes";
-        SuperBigFamView.currentSettings["date_options_showMarriage"] = true;
-        document.getElementById("general_options_extraInfo_radio5").checked = true;
-        document.getElementById("general_options_showExtraInfoOnPopup_radio1").checked = true;
-        document.getElementById("date_options_showMarriage").checked = true;
-    }
+     
     SuperBigFamView.prototype.meta = function () {
         return {
             title: "Super Tree",
@@ -755,6 +802,64 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
       SuperBigFamView.tweakSettingsToHideShowElements = function () {
         // console.log("Call to SuperBigFamView.tweakSettingsToHideShowElements ");
+        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+
+         if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family") {
+             specFamSelector.style.display = "none";
+             specFamSelectorBR.style.display = "none";
+             specFamSelectorLabel.style.display = "none";
+         } else {
+            specFamSelector.style.display = "inline-block";
+            specFamSelectorBR.style.display = "inline-block";
+            specFamSelectorLabel.style.display = "inline-block";
+         }
+
+         if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location") {
+             specLocSelector.style.display = "none";
+             specLocSelectorLabel.style.display = "none";
+             specLocSelectorBR.style.display = "none";
+         }
+
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "cat") {
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
+        } else {
+            catNameSelector.style.display = "inline-block";
+            catNameSelectorLabel.style.display = "inline-block";
+        }
+
+        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+            aliveMMMSelector.parentNode.style.display = "none";
+            aliveDDSelector.parentNode.style.display = "none";
+        } else {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "block";
+            aliveMMMSelector.parentNode.style.display = "block";
+            aliveDDSelector.parentNode.style.display = "block";
+        }
+
+        let bioTextSelector = document.getElementById("highlight_options_bioText");
+        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
+        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "bioText") {
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
+        } else {
+            bioTextSelector.style.display = "inline-block";
+            bioTextSelectorLabel.style.display = "inline-block";
+        }
+
+
       }
 
       SuperBigFamView.redrawAfterLoadSettings = function () {
@@ -861,14 +966,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     hideSelect: true,
                     subsections: [{ name: "SBFtreeGeneral", label: "General settings" }],
                     comment:
-                        "These options apply to the Fan Chart overall, and don't fall in any other specific category.",
+                        "These options apply to the Super Tree overall, and don't fall in any other specific category.",
                 },
                 {
                     name: "names",
                     label: "Names",
                     hideSelect: true,
                     subsections: [{ name: "SBFtreeNames", label: "NAMES format" }],
-                    comment: "These options apply to how the ancestor names will displayed in each Fan Chart cell.",
+                    comment: "These options apply to how the ancestor names will displayed in each Person box.",
                 },
                 {
                     name: "dates",
@@ -896,7 +1001,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     label: "Colours",
                     hideSelect: true,
                     subsections: [{ name: "SBFtreeColours", label: "COLOURS   " }],
-                    comment: "These options apply to background colours in the Fan Chart cells.",
+                    comment: "These options apply to background colours in the Person boxes.",
                 },
                 {
                     name: "highlights",
@@ -991,12 +1096,23 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                             type: "checkbox",
                             defaultValue: false,
                         },
-                        // {
-                        //     optionName: "colourizeRepeats",
-                        //     label: "!* Colourize Repeat Ancestors",
-                        //     type: "checkbox",
-                        //     defaultValue: true,
-                        // },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "handleRepeats",
+                            label: "How to handle Repeated People in Super Tree",
+                            type: "radio",
+                            values: [
+                                { value: "br" },
+                                { value: "none", text: "show multiple times, nothing special" },
+                                { value: "br" },
+                                { value: "halos", text: "show multiple times, coloured halos to identify them" },
+                                // { value: "br" },
+                                // { value: "labels", text: "show once, with unique labels pointing back to original" },
+                            ],
+
+                            defaultValue: "none",
+                        },
+                        // { optionName: "option2come", comment: "( ) show once, with unique labels pointing back to original (OPTION NOT READY YET)" , type: "br" },
                         // { optionName: "break2", type: "br" },
                         // {
                         //     optionName: "showBadges",
@@ -1920,49 +2036,49 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
 
 
-    function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
-            const theCookieSettings = JSON.parse(theCookieString);
-            for (const key in theCookieSettings) {
-                if (Object.hasOwnProperty.call(theCookieSettings, key)) {
-                    const element = theCookieSettings[key];
-                    let theType = "";
-                    if (document.getElementById(key)) {
-                        theType = document.getElementById(key).type;
-                        if (theType == "checkbox") {
-                            document.getElementById(key).checked = element;
-                        } else if (theType == "number" || theType == "text") {
-                            document.getElementById(key).value = element;
-                        } else if (document.getElementById(key).classList.length > 0) {
-                            document.getElementById(key).value = element;
-                            theType = "optionSelect";
-                        } else {
-                            theType = document.getElementById(key);
-                        }
-                    } else {
-                        theType = "NO HTML OBJECT";
-                        let theRadioButtons = document.getElementsByName(key + "_radio");
-                        if (theRadioButtons) {
-                            // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
-                            theType = "radio x " + theRadioButtons.length;
-                            for (let i = 0; i < theRadioButtons.length; i++) {
-                                const btn = theRadioButtons[i];
-                                if (btn.value == element) {
-                                    btn.checked = true;
-                                }
-                            }
-                        }
-                    }
-                    // console.log(key, element, theType);
-                    if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
-                        SuperBigFamView.currentSettings[key] = element;
-                    }
-                }
-            }
+    // function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
+    //         const theCookieSettings = JSON.parse(theCookieString);
+    //         for (const key in theCookieSettings) {
+    //             if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+    //                 const element = theCookieSettings[key];
+    //                 let theType = "";
+    //                 if (document.getElementById(key)) {
+    //                     theType = document.getElementById(key).type;
+    //                     if (theType == "checkbox") {
+    //                         document.getElementById(key).checked = element;
+    //                     } else if (theType == "number" || theType == "text") {
+    //                         document.getElementById(key).value = element;
+    //                     } else if (document.getElementById(key).classList.length > 0) {
+    //                         document.getElementById(key).value = element;
+    //                         theType = "optionSelect";
+    //                     } else {
+    //                         theType = document.getElementById(key);
+    //                     }
+    //                 } else {
+    //                     theType = "NO HTML OBJECT";
+    //                     let theRadioButtons = document.getElementsByName(key + "_radio");
+    //                     if (theRadioButtons) {
+    //                         // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+    //                         theType = "radio x " + theRadioButtons.length;
+    //                         for (let i = 0; i < theRadioButtons.length; i++) {
+    //                             const btn = theRadioButtons[i];
+    //                             if (btn.value == element) {
+    //                                 btn.checked = true;
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //                 // console.log(key, element, theType);
+    //                 if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
+    //                     SuperBigFamView.currentSettings[key] = element;
+    //                 }
+    //             }
+    //         }
 
-            // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
-            // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
-            //     theCookieSettings["general_options_badgeLabels_otherValue"];
-    }
+    //         // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+    //         // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
+    //         //     theCookieSettings["general_options_badgeLabels_otherValue"];
+    // }
    
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
@@ -1973,6 +2089,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             .attr("width", width)
             .attr("height", height);
         const g = svg.append("g").attr("id", "SVGgraphics");
+        const halos = g.append("g").attr("id", "theHalos");
         const lines = g.append("g").attr("id", "theConnectors");
 
         condLog("ADDING THE SVG BIG DADDY TAZ");
@@ -2259,7 +2376,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         let theCookieString = WTapps_Utils.getCookie("wtapps_superbig");
         if (theCookieString) {
-            updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            SuperBigFamView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
 
         // let possibleWTuserIDdiv = document.getElementById("wt-api-login")
@@ -2278,63 +2395,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-
-        // let vBoxHeightSelector1 = document.getElementById("general_options_vBoxHeight_radio1");
-        // let vBoxHeightSelector2 = document.getElementById("general_options_vBoxHeight_radio2");
-        // document.getElementById("general_options_vSpacing_label").style.display = "none";
-        // document.getElementById("general_options_vSpacing").style.display = "none";
-        // condLog("bkgdClrSelector", bkgdClrSelector);
-
         bkgdClrSelector.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-        // vBoxHeightSelector1.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-        // vBoxHeightSelector2.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
-        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
-        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
-        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
-        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
-        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-
-        if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family") {
-            specFamSelector.style.display = "none";
-            specFamSelectorBR.style.display = "none";
-            specFamSelectorLabel.style.display = "none";
-        }
         
-        if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location") {
-            specLocSelector.style.display = "none";
-            specLocSelectorLabel.style.display = "none";
-            specLocSelectorBR.style.display = "none";
-        }
-
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
         highlightSelector.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-        // let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        // let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
-        let catNameSelector = document.getElementById("highlight_options_catName");
-        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
-        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "cat") {
-            catNameSelector.style.display = "none";
-            catNameSelectorLabel.style.display = "none";
-        }
+          
 
-        let bioTextSelector = document.getElementById("highlight_options_bioText");
-        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
-        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "bioText") {
-            bioTextSelector.style.display = "none";
-            bioTextSelectorLabel.style.display = "none";
-        }
-
-        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
-        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
-        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
-
-        if (SuperBigFamView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
-            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
-            aliveMMMSelector.parentNode.style.display = "none";
-            aliveDDSelector.parentNode.style.display = "none";
-        }
+        SuperBigFamView.tweakSettingsToHideShowElements();
 
         SuperBigFamView.updateHighlightDescriptor();
         SuperBigFamView.updateLegendTitle();
@@ -2465,6 +2533,142 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
         }
     };
+
+    SuperBigFamView.drawHalos = function () {
+        let theLeaves = SuperBigFamView.theLeaves;
+        let halosDIV = document.getElementById("theHalos");
+
+        if (SuperBigFamView.currentSettings["general_options_handleRepeats"] == "none") {
+            halosDIV.innerHTML = "";
+            return;
+        };
+
+        let idArray4Leaves = {};
+        for (var l in theLeaves) {
+            const leaf = theLeaves[l];
+            if (!idArray4Leaves[leaf.Id]) {
+                idArray4Leaves[leaf.Id] = [leaf.Code];
+            } else {
+                idArray4Leaves[leaf.Id].push( leaf.Code);
+            }     
+
+        }
+
+        for (var l in idArray4Leaves) {
+            let thisID = idArray4Leaves[l];
+            if (thisID.length > 1) {
+                // console.log("REPEAT:",thisID );
+            }
+        }
+
+        // console.log({idArray4Leaves});
+
+        
+        let theSVGhtml = "";
+        let wid = 3/4 * SuperBigFamView.currentSettings["general_options_boxWidth"];
+        let ht = wid; // 400;
+
+        let numRepeats = 0;
+     
+        for (var l in idArray4Leaves) {
+            let thisID = idArray4Leaves[l];
+            if (thisID.length > 1) {
+                
+                let clr1 = "red"; // outermost, largest halo
+                let clr2 = "yellow"; // middle manager
+                let clr3 = "blue"; // inside job
+                
+                if (numRepeats < LightColoursArray.length) {
+                    clr1 = LightColoursArray[numRepeats][2];
+                    clr2 = "";
+                    clr3 = "";
+                } else if (numRepeats < LightColoursArray.length + DarkColoursArray.length) {
+                    clr1 = DarkColoursArray[numRepeats - LightColoursArray.length][2];
+                    clr2 = "";
+                    clr3 = "";
+                } else {
+                    clr1 = LightColoursArray[Math.floor(Math.random() * LightColoursArray.length)][2];
+                    clr2 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
+                    clr3 = LightColoursArray[Math.floor(Math.random() * LightColoursArray.length)][2];
+
+                    if (l % 3 == 0) {
+                        clr1 = "lime";
+                        clr2 = "indigo";
+                        clr3 = "magenta";
+
+                        clr1 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
+                        clr2 = LightColoursArray[Math.floor(Math.random() * LightColoursArray.length)][2];
+                        clr3 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
+                    }
+                }
+                    
+                numRepeats++;
+
+                for (let leafNum = 0; leafNum < thisID.length; leafNum++) {
+                    let leaf = SuperBigFamView.theLeafCollection[thisID[leafNum]];
+
+                    let halo1 =
+                        "<rect width=" +
+                        (wid + 100) +
+                        " height=" +
+                        (ht + 100) +
+                        " x=" +
+                        (leaf.x - (wid + 100) / 2) +
+                        " y=" +
+                        (leaf.y - (ht + 100) / 2) +
+                        " rx=" +
+                        wid / 2 +
+                        " ry=" +
+                        ht / 2 +
+                        " style='fill:" +
+                        clr1 +
+                        ";stroke:black;stroke-width:1;opacity:1' />";
+
+                    let halo2 =
+                        "<rect width=" +
+                        (wid + 50) +
+                        " height=" +
+                        (ht + 50) +
+                        " x=" +
+                        (leaf.x - (wid + 50) / 2) +
+                        " y=" +
+                        (leaf.y - (ht + 50) / 2) +
+                        " rx=" +
+                        wid / 2 +
+                        " ry=" +
+                        ht / 2 +
+                        " style='fill:" +
+                        clr2 +
+                        ";stroke:black;stroke-width:1;opacity:1' />";
+                    if (clr2 == "") {halo2 = "";}
+
+                    let halo3 =
+                        "<rect width=" +
+                        wid +
+                        " height=" +
+                        ht +
+                        " x=" +
+                        (leaf.x - wid / 2) +
+                        " y=" +
+                        (leaf.y - ht / 2) +
+                        " rx=" +
+                        wid / 2 +
+                        " ry=" +
+                        ht / 2 +
+                        " style='fill:" +
+                        clr3 +
+                        ";stroke:black;stroke-width:1;opacity:1' />";
+                    if (clr3 == "") {
+                        halo3 = "";
+                    }
+
+                        theSVGhtml += halo1 + halo2 + halo3;
+                }
+
+            }
+        } 
+        halosDIV.innerHTML = theSVGhtml;
+    }
 
     SuperBigFamView.drawLines = function () {
         // condLog("DRAWING LINES stuff should go here");
@@ -5885,7 +6089,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             SuperBigFamView.ListsOfIDs[getCode + "sp"] = [];
         }
 
-        condLog(
+        console.log(
             "getPeopleCall : ",
             thisKeysIDsArray.length + " of " + KeysIDsArray.length,
             getCode,
@@ -6005,9 +6209,23 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         }
                     }
                 }
-                condLog("ADDED ", numNewPeeps, " new peeps!");
+                console.log(
+                    "ADDED ",
+                    numNewPeeps,
+                    " new peeps!",                    
+                );
+                console.log(result[0]);
 
+
+                let needToReDoCall = false;
                 if (numNewPeeps >= 1000) {
+                    needToReDoCall = true;
+                } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
+                    needToReDoCall = true;
+                }
+
+                // if (numNewPeeps >= 1000) {
+                if (needToReDoCall) {
                     // WE NEED TO DO THE EXACT SAME CALL AGAIN, AND START 1000 higher (exact same keys, parameters)
                     getPeopleCall(KeysIDsArray, getCode, startKeyAt, startResultAt + 1000, NextKeysIDsArray);
                 } else if (KeysIDsArray.length > startKeyAt + 100) {
@@ -6148,7 +6366,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
      */
     function loadDescendantsAtLevel(newLevel) {
         let newDescLevel = SuperBigFamView.numDescGens2Display;
-        condLog("Need to load MORE DESCENDANT peeps from Generation ", newLevel, newDescLevel);
+        console.log("Need to load MORE DESCENDANT peeps from Generation ", newLevel, newDescLevel);
         if (SuperBigFamView.loadedLevels.indexOf("D" + newLevel) > -1) {
             // already loaded this level ... so let's just return and forget about it - no need to repeat the past
             SuperBigFamView.refreshTheLegend();
@@ -6203,7 +6421,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function loadCousinsAtLevel(newLevel) {
         const d = new Date();
         let ms = d.getUTCMinutes() + " : " + d.getUTCSeconds() + " : " + d.getUTCMilliseconds();
-        condLog("== function loadCousinsAtLevel --> Need to load MORE COUSINS peeps at LEVEL ", newLevel, ms);
+        console.log("== function loadCousinsAtLevel --> Need to load MORE COUSINS peeps at LEVEL ", newLevel, ms);
         condLog(
             "At beginning of function loadCousinsAtLevel - primary has ",
             thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
@@ -6332,7 +6550,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function loadAncestorsAtLevel(newLevel) {
         const d = new Date();
         let ms = d.getUTCMinutes() + " : " + d.getUTCSeconds() + " : " + d.getUTCMilliseconds();
-        condLog(
+        console.log(
             "== function loadAncestorsAtLevel --> Need to load MORE ANCESTOR peeps from Generation ",
             newLevel,
             ms,
@@ -6948,6 +7166,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         SuperBigFamView.Adimensions = Adimensions;
         condLog("** ALL DONE REPOSITION LEAVES **");
+
+        SuperBigFamView.theLeaves = theLeaves;
+        SuperBigFamView.drawHalos();
     }
 
     function showInLawsAgain(theLeaves) {
@@ -8488,7 +8709,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         /** Placeholder to hold EXTRA SPOUSES that aren't showing up during regular getPeople searches - like unmarried spouses - but children link to both parents. */
         SuperBigFamView.listOfExtraSpousesToAddToList = [];
 
-        SuperBigFamView.loadedLevels = ["A1", "A2", "D1"];
+        SuperBigFamView.loadedLevels = ["A1", "A2", "D1", "A1C0", "A1C1", "A3", "D2"];
         SuperBigFamView.HlinesATC = []; // the Horiz Lines (connectors) Air Traffic Controller
         SuperBigFamView.VlinesATC = []; // the Vert Lines (connectors) Air Traffic Controller
         SuperBigFamView.VlinesATCpeep = []; // the Vertical Lines (drop lines) Air Traffic Controller - PEEP array - for debugging purposes
@@ -8598,6 +8819,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             start: startingNum,
         });
 
+        flashWarningMessageBelowButtonBar("Please wait while initial Super Big Family Tree is loading .... direct ancestors ...");
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
             APP_ID,
@@ -8722,7 +8944,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
             }
 
+            // if (numPeeps >= 1000) {
+            let needToReDoCall = false;
             if (numPeeps >= 1000) {
+                needToReDoCall = true;
+            } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
+                needToReDoCall = true;
+            }
+            
+            if (needToReDoCall) {
                 initialLoadDirectAncestors7(self, id, person, startingNum + 1000);
             } else {
                 initialLoad1000(self, id, person, 0);
@@ -8737,6 +8967,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             nuclear: 4,
             start: startingNum,
         });
+
+        flashWarningMessageBelowButtonBar(
+            "Please wait while initial Super Big Family Tree is loading .... CC4 of primary person ..."
+        );
 
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
@@ -8842,11 +9076,20 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             //     }
             // }
 
+            // if (numPeeps >= 1000) {
+            let needToReDoCall = false;
             if (numPeeps >= 1000) {
+                needToReDoCall = true;
+            } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
+                needToReDoCall = true;
+            }
+
+            if (needToReDoCall) {
                 initialLoad1000(self, id, person, startingNum + 1000);
             } else {
-                condLog("listOfPrivateIDs",SuperBigFamView.listOfPrivateIDs);
-                initialLoadSiblings(self, id, person, 0);
+                condLog("listOfPrivateIDs", SuperBigFamView.listOfPrivateIDs);
+                // initialLoadSiblings(self, id, person, 0);
+                finishInitialLoad(self, id, person);
             }
         });
     }
@@ -8857,6 +9100,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // ===================
         // LOAD the SIBLINGS of the grandparents (2nd gen) ancestors for completeness
         // ===================
+        flashWarningMessageBelowButtonBar(
+            "Please wait while initial Super Big Family Tree is loading .... siblings of direct ancestors ..."
+        );
 
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
@@ -8908,7 +9154,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             condLog("SUBSEQUENTLY loaded ", numPeeps2, " GGGparent Sibling peeps");
 
+            // if (numPeeps2 >= 1000) {
+            let needToReDoCall = false;
             if (numPeeps2 >= 1000) {
+                needToReDoCall = true;
+            } else if (result2[0] > "" && result2[0].indexOf("Maximum number of profiles") > -1) {
+                needToReDoCall = true;
+            }
+
+            if (needToReDoCall) {
                 initialLoadSiblings(self, id, person, startingNum + 1000);
             } else {
                 finishInitialLoad(self, id, person);
@@ -8977,7 +9231,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // FIND the SPOUSES of the CHILDREN of the SIBLINGS --> need to load their parents directly (they were not caught with the nuclear:3 net)
         let niblingInLawParents = [];
         // condLog("BIG TO DO ITEM:  Start with empty Nibling-In-Laws' Parents", niblingInLawParents);
-        if (thePeopleList[id]._data.Siblings) {
+        if (thePeopleList[id] && thePeopleList[id]._data && thePeopleList[id]._data.Siblings) {
             // condLog("BIG TO DO ITEM:  Load these Nibling-In-Laws' Parents - SIBLINGS array exists" );
             for (let s = 0; s < thePeopleList[id]._data.Siblings.length; s++) {
                 const sib = thePeopleList[id]._data.Siblings[s];
@@ -9027,6 +9281,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // prunePrivateLeaves(); 
 
         if (niblingInLawParents.length > 0) {
+            flashWarningMessageBelowButtonBar(
+                "Please wait while initial Super Big Family Tree is loading .... nibling in-laws ..."
+            );
             getPeopleCall(niblingInLawParents, "I0");
             self.drawTree(person);
             clearMessageBelowButtonBar();
@@ -10120,6 +10377,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // this.descendantTree.data(data);
         }
         this.ancestorTree.draw();
+        
         // this.descendantTree.draw();
     };
 
@@ -10359,6 +10617,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             repositionLeaves();
             this.drawNodes(nodes);
             SuperBigFamView.drawLines();
+            updateFontsIfNeeded();
         } else {
             throw new Error("Missing root");
         }
@@ -10443,11 +10702,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     extraInfoForThisAnc = "[ " + 0 + " ]";
                     extraBR = "<br/>";
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
-                    extraInfoForThisAnc = person._data.Name;
-                    extraBR = "<br/>";
+                    if (person && person._data && person._data.Name){
+                        extraInfoForThisAnc = person._data.Name;
+                        extraBR = "<br/>";
+                    }
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
-                    extraInfoForThisAnc = person._data.Id;
-                    extraBR = "<br/>";
+                     if (person && person._data && person._data.Name){
+                        extraInfoForThisAnc = person._data.Id;
+                        extraBR = "<br/>";
+                     }
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
                     if (person && person._data) {
                         extraInfoForThisAnc = "[ " + 0 + " ] " + person._data.Id + "<br/>" + person._data.Name;
