@@ -1,0 +1,314 @@
+/*
+#cctContainer {
+  --content-padding: 0;
+  position: relative;
+}
+#cctContainer:hover {
+  cursor: grab;
+}
+#cctContainer:active {
+  cursor: grabbing;
+}
+*/
+/* Normalise buttons */
+.cct button {
+  font-weight: normal;
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+.cct {
+  --a-colour: rgba(102, 102, 204, 0.6);
+  --b-colour: rgba(204, 102, 102, 0.6);
+  --o-colour: rgba(102, 204, 102, 0.6);
+  --a-full: rgba(102, 102, 204, 1);
+  --b-full: rgba(204, 102, 102, 1);
+  --o-full: rgba(102, 204, 102, 1);
+}
+
+#cctContainer h4 {
+  font-size: 14px;
+  margin-left: 7px;
+  margin-bottom: 0.05em;
+}
+
+.cct #cctContainer {
+  padding: 0.3em;
+}
+.cct #theSvg {
+  overflow-x: auto;
+  width: 100%;
+}
+div.cct select,
+div.cct input {
+  padding: 0.3em;
+  width: auto;
+  background-size: 1em 2em;
+  margin: 5px 5px 0px 0px;
+}
+
+.cct #cctOptions {
+  cursor: pointer;
+}
+
+.cct fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+.cct fieldset input {
+  margin: 0;
+}
+.cct fieldset label {
+  margin-right: 0;
+}
+.cct fieldset label.left {
+  margin-left: 10px;
+}
+.cct fieldset label.right {
+  margin-right: 10px;
+}
+
+.cct circle.node {
+  fill: #fff;
+  stroke-width: 3px;
+}
+
+.cct polygon.node {
+  cursor: pointer;
+}
+
+.cct circle.node.male {
+  stroke: var(--a-colour);
+}
+.cct circle.node.male.birthPlaced {
+  stroke: var(--a-full);
+}
+
+.cct circle.node.female {
+  stroke: var(--b-colour);
+}
+.cct circle.node.female.birthPlaced {
+  stroke: var(--b-full);
+}
+
+.cct circle.node.other {
+  stroke: var(--o-colour);
+}
+.cct circle.node.other.birthPlaced {
+  stroke: var(--o-full);
+}
+
+.cct circle.node.ofinterest {
+  stroke: coral;
+}
+
+.cct circle.node.end {
+  stroke: red;
+}
+
+.cct .node rect.dup.marked {
+  stroke-width: 3px;
+  stroke: black;
+}
+
+.cct .treeHeader,
+.cct .children-list,
+.cct .alt-spouse-list-wrapper,
+.cct .node text {
+  font: 12px sans-serif;
+}
+
+.cct text.marked {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.cct .cctlink {
+  fill: none;
+  stroke-width: 2px;
+}
+
+.cct .cctlink.ofinterest {
+  stroke: lightcoral;
+}
+
+.cct .cctlink.marked {
+  stroke: green;
+}
+
+.cct .links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+
+.cct .nodes circle {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.cct #cctBrickWallColour,
+.cct #cctLinkLineColour {
+  width: 2em;
+  padding: 2px;
+}
+
+.cct #edgeFactor,
+.cct #cctTHFactor {
+  width: 4em;
+}
+
+.cct #help-text {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 50em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  z-index: 11000;
+  cursor: default;
+}
+
+.cct xx {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+.cct x {
+  position: absolute;
+  top: 0em;
+  left: 0.5em;
+  /* font-size: 1em; */
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+
+.cct #help-text:hover {
+  cursor: grab;
+}
+.cct #help-text:active {
+  cursor: grabbing;
+}
+.cct #help-text h3 {
+  font-size: 1.3em;
+  margin-bottom: 0.5em;
+}
+
+.cct .spouse-list ol,
+.cct .children-list ol {
+  border: none;
+  margin: 6px;
+  padding-top: 0px;
+  padding-left: 20px;
+  text-align: left;
+  --content-padding: 0;
+}
+.cct .spouse-list li,
+.cct .children-list li {
+  margin-bottom: 0;
+}
+.cct .children-list,
+.cct .alt-spouse-list-wrapper {
+  background: white;
+  border-radius: 1em;
+  border: 3px solid forestgreen;
+  box-shadow: 0.5em 0.5em 0.5em 0.5em #ccc;
+  cursor: grab;
+  display: none;
+  position: absolute;
+  padding: 1.5em 1em 1em;
+  /* white-space: nowrap; */
+  z-index: 10000;
+}
+
+.cct .select-spouse-button {
+  font-size: 14px;
+  margin: 0;
+  text-transform: none;
+  padding: 1px 2px;
+  color: green;
+  background-color: transparent;
+}
+
+.cct .select-spouse-button:hover {
+  cursor: pointer;
+  /* color: #fc7171; */
+}
+
+.cct .a-radio {
+  background-color: var(--a-colour);
+  border: 2px solid var(--a-colour);
+}
+
+.cct .b-radio {
+  background-color: var(--b-colour);
+  border: 2px solid var(--b-colour);
+}
+
+.cct .gray-radio {
+  background-color: darkgray;
+  border: 2px solid darkgray;
+}
+
+.cct input[type="radio"] {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: white;
+  opacity: 1;
+  &:checked::before {
+    content: "";
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
+    position: relative;
+    transform: translate(-20%, -20%);
+  }
+}
+
+@media print {
+  .cct-not-printable {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  #cctContainer .ui-draggable-handle {
+    -ms-touch-action: auto !important;
+    touch-action: auto !important;
+  }
+  #cctContainer #ct-help-text {
+    position: relative !important;
+    width: 70% !important;
+    margin: auto !important;
+    top: auto;
+    right: auto;
+  }
+}

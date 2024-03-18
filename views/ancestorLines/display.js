@@ -159,18 +159,18 @@ export function showTree(
         if (level == 1) {
             return level;
         }
-        const [parent, grand, great] = edgeFactor >= 120 ? ["Parents", "Grand", "Great-"] : ["P", "G", "G-"];
+        const [parents, grand, great] = edgeFactor >= 120 ? ["Parents", "Grand", "Great-"] : ["P", "G", "G-"];
         if (level > 1) {
-            relType = parent;
+            relType = parents;
         }
         if (level > 2) {
-            relType = grand + relType;
+            relType = grand + relType.toLowerCase();
         }
         if (level > 3) {
             relType = great + relType;
         }
         if (level > 4) {
-            relType = ordinal(level - 3) + " " + relType;
+            relType = `${level - 3}x ${relType}`; // 3x Great-Grandparents
         }
         return `${relType} (${level})`;
     }
