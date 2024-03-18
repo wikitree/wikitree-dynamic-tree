@@ -1,4 +1,5 @@
 import { LocationStatistics } from "./locationstatistics.js";
+import { usStatesDetails } from "./location_data.js";
 
 export class FamilyTreeStatistics {
     constructor(combinedResults) {
@@ -184,6 +185,69 @@ export class FamilyTreeStatistics {
         return dateString && /^\d{4}-\d{2}-\d{2}$/.test(dateString) ? parseInt(dateString.substring(0, 4)) : null;
     }
 
+    getMigrants() {
+        const migrants = this.peopleArray.filter((person) => {
+            const birthParts = this.getReverseLocationArray(person.BirthLocation);
+            const deathParts = this.getReverseLocationArray(person.DeathLocation);
+            return (
+                deathParts &&
+                birthParts &&
+                birthParts[0] !== deathParts[0] &&
+                birthParts[1] !== deathParts[1] &&
+                birthParts[0] != deathParts[1] &&
+                birthParts[1] != deathParts[0]
+            );
+        });
+        return migrants;
+    }
+
+    getReverseLocationArray(location) {
+        if (!location) return null;
+        let parts = location.split(",");
+        // Trim and reverse the array
+        for (let i = 0; i < parts.length; i++) {
+            parts[i] = parts[i].trim();
+        }
+        // Remove any empty parts
+        parts = parts.filter((part) => part);
+        parts.reverse();
+        // If parts[0] is England/Scotland/Wales/Northern Ireland, add "United Kingdom" to the start just for comparison's sake.
+        if (
+            parts[0] === "England" ||
+            parts[0] === "Scotland" ||
+            parts[0] === "Wales" ||
+            parts[0] === "Northern Ireland"
+        ) {
+            parts.unshift("United Kingdom");
+        }
+
+        if (
+            usStatesDetails.some((state) => {
+                const parts0Normalized = parts[0].replace(/'/g, "").toLowerCase();
+                const nameMatch =
+                    state.name.toLowerCase() === parts0Normalized ||
+                    state.abbreviation.toLowerCase() === parts0Normalized;
+                let formerNameMatch = false;
+                if (state.former_names) {
+                    formerNameMatch = Object.keys(state.former_names).some(
+                        (formerName) => formerName.replace(/'/g, "").toLowerCase() === parts0Normalized
+                    );
+                }
+                return nameMatch || formerNameMatch;
+            })
+        ) {
+            parts.unshift("United States");
+        }
+
+        if (parts[0].match(/^U\.?K\.?$/i)) {
+            parts[0] = "United Kingdom";
+        }
+        if (parts[0].match(/^U\.?S\.?(A\.?)?$/i)) {
+            parts[0] = "United States";
+        }
+        return parts;
+    }
+
     getStatsBy50YearPeriods() {
         const statsByPeriod = {};
         const childCounts = this.getChildCounts();
@@ -206,6 +270,7 @@ export class FamilyTreeStatistics {
                         malesOver16Count: 0,
                         names: { Male: {}, Female: {}, Unknown: {} },
                         locationStatistics: new LocationStatistics([]), // Initialize LocationStatistics for the period
+                        migrantIds: [],
                     };
                 }
 
@@ -304,6 +369,25 @@ export class FamilyTreeStatistics {
             // Access processed location data
             periodData.countryCounts = periodData.locationStatistics.getCountryCounts();
             periodData.subdivisionCounts = periodData.locationStatistics.getSubdivisionCounts();
+        });
+
+        // Step just before finalizing your statsByPeriod data
+        const migrants = this.getMigrants(); // Get all migrants
+
+        migrants.forEach((migrant) => {
+            const birthYear = this.getYear(migrant.BirthDate);
+            if (birthYear) {
+                const period = this.getPeriod(birthYear, periodLength);
+                // Check if the period exists in statsByPeriod
+                if (statsByPeriod[period]) {
+                    // Increment the migrant count
+                    statsByPeriod[period].migrantCount++;
+
+                    // Simplify to only include ID
+                    statsByPeriod[period].migrantIds = statsByPeriod[period].migrantIds || []; // Ensure the array is initialized
+                    statsByPeriod[period].migrantIds.push(migrant.Id);
+                }
+            }
         });
 
         // After populating statsByPeriod, create an ordered array of period keys

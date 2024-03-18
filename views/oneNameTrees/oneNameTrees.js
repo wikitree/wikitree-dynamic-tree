@@ -40,6 +40,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             `<img src="views/oneNameTrees/images/tree.gif" alt="Shaking Tree" title="Working" id="dancingTree">`
         );
         this.shownCats = new Set();
+        this.storageManager = new LocalStorageManager();
         this.colours = [
             "forestgreen",
             "#F5A9A9",
@@ -135,10 +136,13 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.bodyHTML = `
       <div id="help">
-      <h2>About This</h2>
+      <h2>About This</h2> 
       <button id="closeHelp">×</button>
+      <button id="print">⎙</button>
       <ol>
-        <li>Put a surname (and optional location) in the box and hit 'Go'.</li>
+        <li>Put a surname in the box and hit 'Go'. If you're likely to get to many results, you can enter a location and/or
+         a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"), 
+         a list of numbers ("16,17" or "16 17"), a range of numbers ("16-19"), and a range of years (1500-1900).)</li>
         <li>
           The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
           plus any with variants of the surname as entered in the Google Sheet (click 'Variants')*, are fetched from
@@ -177,9 +181,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         </li>
         <li>
           If a query has over 10,000 results, you'll receive a warning that it could take a long time to load and a
-          suggestion to add a location.
+          suggestion to add a location or a century (or centuries).
         </li>
-        <li>If a query has over 40,000 results (too many), you'll be asked to add a location and go again.</li>
+        <li>If a query has over 40,000 results (too many), you'll be asked to add a location or a century (or centuries) and go again.</li>
         <li>Birth and death details of each person can be seen by clicking their birth and death years.</li>
         <li>Categories and stickers on a profile are shown after the birth and death dates.
           A key to the symbols can be found below (on this About page). One key one to know about it the red badge
@@ -698,6 +702,62 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.log("x clicked");
             $this.updateSettings();
         });
+
+        $(document).on("click.oneNameTrees", "#help #print", function () {
+            // Check if the new window can be opened
+            const printWindow = window.open("", "_blank");
+            if (printWindow) {
+                // Function to create HTML content for printing
+                const createPrintContent = (content) => {
+                    return `<html>
+                                <head>
+                                    <title>One Name Trees Help</title>
+                                    <style>
+                                        body {
+                                            font-family: Arial, sans-serif;
+                                        }
+                                        h2, h3 {
+                                            font-size: large;
+                                            text-align: center;
+                                            background-color: #f7f6f0;
+                                        }
+                                        h3{
+                                            font-size: medium;
+                                        }
+                                        ol {
+                                            margin: 1em;
+                                            list-style: decimal outside;
+                                        }
+                                        li {
+                                            margin: 0.3em;
+                                        }
+                                        span.symbol img{
+                                            width: 1em;
+                                        }
+                                        button {
+                                            display:none;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    ${content} 
+                                </body>
+                            </html>`;
+                };
+
+                // Retrieve the content from the help section
+                const helpContent = $("#help").html();
+
+                // Write the content to the new window
+                printWindow.document.write(createPrintContent(helpContent));
+                printWindow.document.close(); // Close the document stream
+
+                // Trigger the print dialog
+                printWindow.print();
+            } else {
+                alert("Unable to open the print window. Please check your popup blocker settings.");
+            }
+        });
     }
 
     parseCenturies(input) {
@@ -734,6 +794,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             } else {
                 // Handle single values
+                if (part < 30) {
+                    centuries.push(part);
+                }
                 centuries.push(yearOrCenturyToCentury((parseInt(part) + 1).toString()));
                 //centuries = centuries.map((century) => century + 1);
             }
@@ -1041,7 +1104,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         return cacheKey;
     }
-
+    /*
     async getONSids(surname, location, centuries) {
         console.log("Fetching ONTids for:", surname, location, centuries);
         wtViewRegistry.clearStatus();
@@ -1064,7 +1127,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         let surnameVariants = this.findSurnameVariants(surname);
         if (surname.includes(",")) {
-            this.surnames = surname.split(/,\s*/);
+            this.surnames = surname.split(/,\s/);  // \s*
             surnameVariants = this.surnames;
             surname = this.surnames[0];
         }
@@ -1074,18 +1137,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
-        /*
-        let query = `${centuryBit}${locationBit}LastNameatBirth%3D"${surname}"+OR+${centuryBit}${locationBit}CurrentLastName%3D"${surname}"+OR+${centuryBit}${locationBit}LastNameOther%3D"${surname}"`;
-        if (surnameVariants.length != 0) {
-            // Construct the query part for each variant
-            query = surnameVariants
-                .map(
-                    (variant) =>
-                        `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"`
-                )
-                .join("+OR+");
-        }
-*/
+
         const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
         console.log(url);
         let data;
@@ -1118,7 +1170,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         try {
             const dataString = JSON.stringify(data); // Ensure data is serialized before saving
-            this.saveWithLRUStrategy(cacheKey, dataString);
+            this.storageManager.saveWithLRUStrategy(cacheKey, dataString);
             console.log("Data saved with LRU strategy");
         } catch (error) {
             console.error("Error saving data with LRU strategy:", error);
@@ -1126,6 +1178,69 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // console.log(data);
         return [false, data];
+    }
+*/
+
+    async getONSids(surname, location, centuries) {
+        const $this = this;
+        console.log("Fetching ONTids for:", surname, location, centuries);
+        wtViewRegistry.clearStatus();
+        this.setNewTitle();
+        const cacheKey = this.buildCacheKey(surname, location, centuries);
+        this.activateCancel();
+
+        // Retrieve cached data using LocalStorageManager
+        const cachedData = this.storageManager.getItemAndUpdateAccessOrder(cacheKey);
+        if (cachedData) {
+            console.log("Returning cached data for ONTids from localStorage");
+            $("#refreshData").show();
+            return [false, JSON.parse(cachedData)];
+        }
+
+        let locationBit = "";
+        if (location) {
+            locationBit = `Location%3D"${location.trim().replace(/,/, "%2C").replace(" ", "+")}"+`;
+        }
+
+        let surnameVariants = this.findSurnameVariants(surname);
+        if (surname.includes(",")) {
+            this.surnames = surname.split(/,\s*/);
+            surnameVariants = this.surnames;
+            surname = this.surnames[0];
+        }
+        if (this.surnames) {
+            this.surnameVariants = this.surnames;
+            surname = this.surnames[0];
+        }
+
+        const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
+
+        const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
+        console.log(url);
+        try {
+            this.cancelFetchController = new AbortController();
+            const response = await fetch(url, { signal: this.cancelFetchController.signal });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log("Data fetched from WT+:", data);
+
+            // Save fetched data using LocalStorageManager with LRU strategy
+            $this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(data));
+            console.log("Data saved with LRU strategy");
+
+            return [false, data];
+        } catch (error) {
+            console.error("Error when fetching from WT+ or saving data:", error);
+            if (error.name !== "AbortError") {
+                $("#dancingTree").fadeOut();
+                wtViewRegistry.showWarning("No response from WikiTree +. Please try again later.");
+            }
+            return [true, null];
+        }
     }
 
     numberOfProfiles(resultObj) {
@@ -2378,6 +2493,15 @@ window.OneNameTrees = class OneNameTrees extends View {
         ).show();
         $("#tableLabel,#treesButtons").addClass("visible");
 
+        // Temporary fix (Maybe)
+        // Remove any ul.children whose parent is not a li.person
+        $("ul.children").each((index, children) => {
+            const $children = $(children);
+            if (!$children.parent().hasClass("person")) {
+                $children.remove();
+            }
+        });
+
         this.showStatistics();
         this.createNameSelectBoxes();
         this.hideLoadingBar();
@@ -2438,31 +2562,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
     }
-
-    /*
-    displayChildren(parentToChildrenMap, parentId, peopleById, level) {
-        let html = "";
-        if (parentToChildrenMap[parentId]) {
-            // Sort the children of the current parent
-            let sortedChildren = parentToChildrenMap[parentId]
-                .map((childId) => peopleById[childId])
-                //.filter((child) => !this.displayedIndividuals.has(child.Id)) // Filter out already displayed
-                .sort((a, b) => this.getComparableDate(a).localeCompare(this.getComparableDate(b)));
-
-            html += `<ul class='children' data-parent-id='${parentId}'>`;
-            sortedChildren.forEach((child) => {
-                const thisPersonHTML = this.personHtml(child, level);
-                html += thisPersonHTML; // Use personHtml for each child
-                // Recursively display children of this child, sorted
-                if (!thisPersonHTML.includes("duplicate")) {
-                    html += this.displayChildren(parentToChildrenMap, child.Id, peopleById, level + 1);
-                }
-            });
-            html += "</ul>";
-        }
-        return html;
-    }
-    */
 
     displayChildren(parentToChildrenMap, parentId, peopleById, level) {
         let html = "";
@@ -3476,6 +3575,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             console.log("Unsourced Profiles: ", unsourced);
         }
 
+        const migrants = this.familyTreeStats.getMigrants();
+        migrants.forEach((migrant) => {
+            console.log("Migrant", migrant.Name);
+            console.log("BirthLocation: ", migrant.BirthLocation);
+            console.log("DeathLocation: ", migrant.DeathLocation);
+        });
+
         // Get top 10 male names
         const topMaleNames = this.familyTreeStats.getTopNamesByGender("Male");
         console.log("Top 10 Male Names:", topMaleNames);
@@ -3496,6 +3602,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         d3DataFormatter.formatNamesData();
 
         d3DataFormatter.initVisualization();
+
+        d3DataFormatter.extractMigrationFlows();
+        // d3DataFormatter.initMigrationVisualization();
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -4047,7 +4156,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             } else {
                 message = `<p>There are over ${formattedRoundedFound} results.</p>
                                    <p>This is too many for the app to handle.</p>
-                                   <p>Please add a location and go again.</p>`;
+                                   <p>Please add a location or a century (or centuries) and go again.</p>`;
                 wtViewRegistry.showWarning(message);
                 $this.disableCancel();
                 $this.shakingTree.hide();
@@ -4451,117 +4560,6 @@ class D3DataFormatter {
         node.count = total;
         return total;
     }
-    /*
-    formatLifespanData() {
-        const sortedData = Object.entries(this.statsByPeriod)
-            .sort(([periodA], [periodB]) => {
-                // Assuming period format is "YYYY-YYYY", split and parse to get the start year
-                const startYearA = parseInt(periodA.split("-")[0]);
-                const startYearB = parseInt(periodB.split("-")[0]);
-                return startYearA - startYearB; // Sort by start year
-            })
-            .map(([period, data]) => {
-                const averageAgeAtDeath = data.deathsCount > 0 ? data.totalAgeAtDeath / data.deathsCount : 0;
-                return {
-                    period: period,
-                    averageAgeAtDeath: parseFloat(averageAgeAtDeath.toFixed(2)),
-                    peopleCount: data.peopleCount,
-                };
-            });
-        return sortedData;
-    }
-
-    lifespanGraph() {
-        const graphDiv = $('<div id="lifespanGraph" class="graph popup"><x>x</x></div>');
-        $("body").append(graphDiv);
-        graphDiv.draggable();
-
-        const margin = { top: 30, right: 10, bottom: 30, left: 40 };
-        const width = $("#lifespanGraph").width() - margin.left - margin.right;
-        const height = $("#lifespanGraph").height() - margin.top - margin.bottom;
-        //            width = 600 - margin.left - margin.right,
-        //            height = 400 - margin.top - margin.bottom;
-
-        const svg = d3
-            .select("#lifespanGraph")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
-
-        const data = this.formatLifespanData().sort((a, b) => d3.ascending(a.period, b.period));
-
-        const x = d3
-            .scaleBand()
-            .range([0, width])
-            .domain(data.map((d) => d.period));
-        const y = d3
-            .scaleLinear()
-            .range([height, 0])
-            .domain([0, d3.max(data, (d) => d.averageAgeAtDeath)]);
-
-        const line = d3
-            .line()
-            .x((d) => x(d.period) + x.bandwidth() / 2) // Center the line in the band
-            .y((d) => y(d.averageAgeAtDeath));
-
-        svg.append("path")
-            .datum(data) // Bind data to the line
-            .attr("fill", "none")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 1.5)
-            .attr("d", line); // Use line generator to set "d"
-
-        svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
-
-        svg.append("g").call(d3.axisLeft(y));
-
-        // Add rectangles for background color
-        data.forEach((d) => {
-            const textWidth = 40; // Adjust based on your actual text width
-            const textHeight = 25; // Adjust based on your actual text height
-            svg.append("rect")
-                .attr("x", x(d.period) + x.bandwidth() / 2 - textWidth / 2)
-                .attr("y", y(d.averageAgeAtDeath) - textHeight - 3)
-                .attr("width", textWidth)
-                .attr("height", textHeight)
-                .attr("fill", "white") // Background color
-                .attr("rx", 5); // Rounded corners
-        });
-
-        // Add numbers above each point
-        svg.selectAll(".text")
-            .data(data)
-            .enter()
-            .append("text")
-            .attr("class", "label")
-            .attr("x", (d) => x(d.period) + x.bandwidth() / 2) // Center the text above the point
-            .attr("y", (d) => y(d.averageAgeAtDeath) - 10) // Adjust position to be above the point
-            .attr("text-anchor", "middle") // Center the text horizontally
-            .text((d) => d.averageAgeAtDeath);
-
-        // Add circles for each data point
-        svg.selectAll(".point")
-            .data(data)
-            .enter()
-            .append("circle")
-            .attr("class", "point")
-            .attr("cx", (d) => x(d.period) + x.bandwidth() / 2)
-            .attr("cy", (d) => y(d.averageAgeAtDeath))
-            .attr("r", 5) // Size of the circle
-            .attr("fill", "forestgreen"); // Color of the circle
-
-        // Add a title to the graph
-        svg.append("text")
-            .attr("x", width / 2)
-            .attr("y", 0 - margin.top / 2)
-            .attr("text-anchor", "middle")
-            .style("font-size", "1em")
-            .style("font-weight", "bold")
-            .text("Average Lifespan");
-    }
-    */
 
     formatPeriodData() {
         const sortedData = Object.entries(this.statsByPeriod)
@@ -5157,5 +5155,323 @@ class D3DataFormatter {
             clearInterval(this.evolutionInterval);
             this.evolutionInterval = null; // Clear the interval ID
         }
+    }
+
+    // Migration data
+
+    extractMigrationFlows() {
+        const periodMigrations = {};
+
+        // statsByPeriod is an object with period names as keys and period stats as values
+        //this.statsByPeriod.forEach((period) => {
+        Object.entries(this.statsByPeriod).forEach(([periodName, period]) => {
+            const migrations = {};
+            period.migrantIds.forEach((id) => {
+                const person = period.locationStatistics.peopleArray.find((p) => p.Id === id);
+                const birthLocation = person.BirthLocation;
+                const deathLocation = person.DeathLocation;
+                const birthLocationParts = birthLocation.split(/,\s?/);
+                // Trim and reverse the array; then join the first two elements
+                const birthRegion = birthLocationParts
+                    .map((part) => part.trim())
+                    .reverse()
+                    .slice(0, 2)
+                    .join(", ");
+                const deathLocationParts = deathLocation.split(/,\s?/);
+                const deathRegion = deathLocationParts
+                    .map((part) => part.trim())
+                    .reverse()
+                    .slice(0, 2)
+                    .join(", ");
+
+                const key = `${birthRegion} -> ${deathRegion}`;
+                if (!migrations[key]) {
+                    migrations[key] = { source: birthRegion, target: deathRegion, volume: 0, people: [] };
+                }
+                migrations[key].volume += 1;
+                migrations[key].people.push(person);
+            });
+            // Store migrations for the current period
+            periodMigrations[periodName] = Object.values(migrations);
+        });
+
+        console.log("Period-specific migration flows:", periodMigrations);
+
+        return periodMigrations;
+    }
+
+    initMigrationVisualization() {
+        if ($("#migrationVisualization").length === 0) {
+            $("body").append("<div id='migrationVisualization' class='popup visualisationContainer'></div>");
+        }
+
+        const visualizationContainer = $("#migrationVisualization").empty();
+
+        // Add SVG to the container
+        const svg = d3
+            .select("#migrationVisualization")
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", 600)
+            .attr("id", "migrationSvg");
+
+        // Add control buttons
+        const controlHtml = `
+            <div id="migrationControls">
+                <button id="prevMigrationPeriod">Previous</button>
+                <button id="nextMigrationPeriod">Next</button>
+                <button id="playMigration">Play</button>
+                <button id="stopMigration">Stop</button>
+            </div>
+        `;
+        visualizationContainer.append(controlHtml);
+
+        // Bind event listeners to the controls
+        $("#prevMigrationPeriod").click(() => this.showPreviousMigrationPeriod());
+        $("#nextMigrationPeriod").click(() => this.showNextMigrationPeriod());
+        $("#playMigration").click(() => this.startMigrationEvolution(2000)); // Play with an interval of 2 seconds
+        $("#stopMigration").click(() => this.stopMigrationEvolution());
+
+        // Initial visualization
+        this.updateMigrationVisualization();
+    }
+
+    showNextMigrationPeriod() {
+        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % Object.keys(this.statsByPeriod).length;
+        this.updateMigrationVisualization();
+    }
+
+    showPreviousMigrationPeriod() {
+        if (this.currentPeriodIndex === 0) {
+            this.currentPeriodIndex = Object.keys(this.statsByPeriod).length - 1;
+        } else {
+            this.currentPeriodIndex--;
+        }
+        this.updateMigrationVisualization();
+    }
+
+    startMigrationEvolution(intervalMs) {
+        this.stopMigrationEvolution(); // Ensure any existing interval is cleared
+        this.evolutionInterval = setInterval(() => {
+            this.showNextMigrationPeriod();
+        }, intervalMs);
+    }
+
+    stopMigrationEvolution() {
+        if (this.evolutionInterval) {
+            clearInterval(this.evolutionInterval);
+            this.evolutionInterval = null;
+        }
+    }
+
+    updateMigrationVisualization() {
+        const periodKeys = Object.keys(this.statsByPeriod);
+        const currentPeriodKey = periodKeys[this.currentPeriodIndex];
+        const migrationData = this.extractMigrationFlows()[currentPeriodKey];
+
+        // Ensure data is ready for D3
+        const { nodes, links } = this.processMigrationData(migrationData);
+
+        console.log(nodes, links); // Debugging
+
+        // Clear existing content
+        d3.select("#migrationSvg").selectAll("*").remove();
+
+        // Setup dimensions explicitly if necessary
+        const width = 960,
+            height = 500; // Example static dimensions for debugging
+
+        // Create SVG element
+        const svg = d3.select("#migrationSvg").attr("width", width).attr("height", height);
+
+        // Setup the simulation with proper dimensions
+        const simulation = d3
+            .forceSimulation(nodes)
+            .force(
+                "link",
+                d3.forceLink(links).id((d) => d.id)
+            )
+            .force("charge", d3.forceManyBody())
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        // Draw links
+        // Ensure links have a stroke color
+        const link = svg
+            .append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(links)
+            .enter()
+            .append("line")
+            .style("stroke", "#999") // A neutral color; adjust as necessary
+            .style("stroke-opacity", 0.6)
+            .style("stroke-width", (d) => Math.sqrt(d.volume));
+
+        // Draw nodes
+        const node = svg
+            .append("g")
+            .selectAll("circle")
+            .data(nodes)
+            .join("circle")
+            .attr("r", 5)
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+
+        // Example of defining and appending text labels to nodes
+        const labels = svg
+            .append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(nodes)
+            .enter()
+            .append("text")
+            .text((d) => d.name) // Assuming each node has a 'name' property
+            .attr("x", (d) => d.x)
+            .attr("y", (d) => d.y);
+
+        simulation.on("tick", () => {
+            link.attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y);
+
+            node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+
+            labels.attr("x", (d) => d.x + 5).attr("y", (d) => d.y + 5);
+        });
+
+        // Drag event handlers
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    }
+
+    // New method for processing migration data
+    processMigrationData(migrationsData) {
+        // Extract unique locations as nodes
+        let locationsSet = new Set();
+        migrationsData.forEach((migration) => {
+            locationsSet.add(migration.source);
+            locationsSet.add(migration.target);
+        });
+        let nodes = Array.from(locationsSet).map((location, index) => {
+            return { id: index, name: location }; // Assign an ID for reference
+        });
+
+        // Transform migrations into links
+        let links = migrationsData.map((migration) => {
+            let sourceNode = nodes.find((node) => node.name === migration.source);
+            let targetNode = nodes.find((node) => node.name === migration.target);
+            return {
+                source: sourceNode.id,
+                target: targetNode.id,
+                volume: migration.volume,
+                // You can add more metadata here, like people array
+                people: migration.people,
+            };
+        });
+
+        // The method returns an object containing both nodes and links
+        return { nodes, links };
+    }
+}
+
+class LocalStorageManager {
+    constructor() {
+        this.accessOrder = []; // Assuming it's feasible to keep this in memory
+    }
+
+    removeItems(criteria) {
+        // Loop through the accessOrder array in reverse (to safely remove items while iterating)
+        for (let i = this.accessOrder.length - 1; i >= 0; i--) {
+            const key = this.accessOrder[i];
+            if (key.includes(criteria)) {
+                localStorage.removeItem(key); // Remove the item from localStorage
+                this.accessOrder.splice(i, 1); // Remove the item from accessOrder
+                console.log(`Removed item with key: ${key}`);
+            }
+        }
+        this.updateLocalStorageAccessOrder(); // Update the accessOrder in localStorage
+    }
+
+    getItemAndUpdateAccessOrder(key) {
+        const value = localStorage.getItem(key);
+        if (value) {
+            // Move the key to the end of accessOrder to mark it as recently used
+            this.updateAccessOrder(key);
+            // Optionally, save the updated accessOrder back to localStorage
+            localStorage.setItem("accessOrder", JSON.stringify(this.accessOrder));
+        }
+        return value;
+    }
+
+    // Utility function to check the current usage of localStorage
+    checkStorageUsage() {
+        let total = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                total += localStorage.getItem(key).length;
+            }
+        }
+        return total; // Returns the total storage used in characters
+    }
+
+    // Function to free up space proactively
+    proactiveCleanup(newItemSize) {
+        const maxCapacity = 5 * 1024 * 1024; // 5MB, adjust as needed
+        let currentUsage = this.checkStorageUsage();
+        const threshold = maxCapacity * 0.7; // Consider lowering this if necessary
+
+        // Estimate if there's enough space for the new item
+        if (currentUsage + newItemSize > maxCapacity) {
+            // More aggressive cleanup if the new item is larger
+            while (this.accessOrder.length > 0 && currentUsage + newItemSize > maxCapacity) {
+                const oldestKey = this.accessOrder.shift();
+                const itemSize = localStorage.getItem(oldestKey)?.length || 0;
+                localStorage.removeItem(oldestKey);
+                currentUsage -= itemSize; // Update current usage estimate
+            }
+            this.updateLocalStorageAccessOrder();
+        } else if (currentUsage > threshold) {
+            // Regular cleanup logic here, as before
+        }
+    }
+
+    // Modified save function with proactive cleanup call
+    saveWithLRUStrategy(key, value) {
+        const newItemSize = new Blob([value]).size; // Approximate size in bytes
+        this.proactiveCleanup(newItemSize); // Ensure there's enough space
+
+        try {
+            localStorage.setItem(key, value);
+            this.updateAccessOrder(key);
+        } catch (error) {
+            console.error("Error saving to localStorage:", error);
+        }
+    }
+
+    // Example implementation of updateAccessOrder
+    updateAccessOrder(key) {
+        this.accessOrder = this.accessOrder.filter((item) => item !== key);
+        this.accessOrder.push(key);
+        // Optionally sync this.accessOrder to localStorage if needed
+    }
+
+    // Additional function to update localStorage access order
+    // Call this if you decide to sync accessOrder updates back to localStorage
+    updateLocalStorageAccessOrder() {
+        localStorage.setItem("accessOrder", JSON.stringify(this.accessOrder));
     }
 }
