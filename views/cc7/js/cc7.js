@@ -880,7 +880,7 @@ export class CC7 {
                         "<tr id='trCon'><th>Connections</th></tr>" +
                         "<tr id='trTot'><th>Total</th></tr>" +
                         '</table><p id="ancReport">' +
-                        (haveRoot
+                        (haveRoot && nrDirectAncestors > 0
                             ? `Out of ${maxDirectAncestors} possible direct ancestors in ${
                                   maxRequestedDeg + 2
                               } generations, ${nrDirectAncestors} (${(
@@ -1393,14 +1393,14 @@ export class CC7 {
     static buildDegreeTableData(degreeCounts, fromDegree) {
         function addTableCol(i, degreeSum) {
             $("#trDeg").append($(`<td>${i}</td>`));
-            $("#trCon").append($(`<td>${degreeCounts[i]}</td>`));
+            $("#trCon").append($(`<td>${degreeCounts[i] || "?"}</td>`));
             if (fromDegree == 1) {
-                $("#trTot").append($(`<td>${degreeSum}</td>`));
+                $("#trTot").append($(`<td>${degreeSum || "?"}</td>`));
             }
         }
         let degreeSum = 0;
         for (let i = fromDegree; i <= window.cc7Degree; ++i) {
-            degreeSum = degreeSum + degreeCounts[i];
+            degreeSum = degreeSum + (degreeCounts[i] || 0);
             addTableCol(i, degreeSum);
         }
         if (degreeCounts[-1]) {
