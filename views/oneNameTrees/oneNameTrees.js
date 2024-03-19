@@ -3604,7 +3604,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         d3DataFormatter.initVisualization();
 
         d3DataFormatter.extractMigrationFlows();
-        // d3DataFormatter.initMigrationVisualization();
+        d3DataFormatter.sankeyFormatMigrationData();
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -5200,164 +5200,6 @@ class D3DataFormatter {
         return periodMigrations;
     }
 
-    initMigrationVisualization() {
-        if ($("#migrationVisualization").length === 0) {
-            $("body").append("<div id='migrationVisualization' class='popup visualisationContainer'></div>");
-        }
-
-        const visualizationContainer = $("#migrationVisualization").empty();
-
-        // Add SVG to the container
-        const svg = d3
-            .select("#migrationVisualization")
-            .append("svg")
-            .attr("width", "100%")
-            .attr("height", 600)
-            .attr("id", "migrationSvg");
-
-        // Add control buttons
-        const controlHtml = `
-            <div id="migrationControls">
-                <button id="prevMigrationPeriod">Previous</button>
-                <button id="nextMigrationPeriod">Next</button>
-                <button id="playMigration">Play</button>
-                <button id="stopMigration">Stop</button>
-            </div>
-        `;
-        visualizationContainer.append(controlHtml);
-
-        // Bind event listeners to the controls
-        $("#prevMigrationPeriod").click(() => this.showPreviousMigrationPeriod());
-        $("#nextMigrationPeriod").click(() => this.showNextMigrationPeriod());
-        $("#playMigration").click(() => this.startMigrationEvolution(2000)); // Play with an interval of 2 seconds
-        $("#stopMigration").click(() => this.stopMigrationEvolution());
-
-        // Initial visualization
-        this.updateMigrationVisualization();
-    }
-
-    showNextMigrationPeriod() {
-        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % Object.keys(this.statsByPeriod).length;
-        this.updateMigrationVisualization();
-    }
-
-    showPreviousMigrationPeriod() {
-        if (this.currentPeriodIndex === 0) {
-            this.currentPeriodIndex = Object.keys(this.statsByPeriod).length - 1;
-        } else {
-            this.currentPeriodIndex--;
-        }
-        this.updateMigrationVisualization();
-    }
-
-    startMigrationEvolution(intervalMs) {
-        this.stopMigrationEvolution(); // Ensure any existing interval is cleared
-        this.evolutionInterval = setInterval(() => {
-            this.showNextMigrationPeriod();
-        }, intervalMs);
-    }
-
-    stopMigrationEvolution() {
-        if (this.evolutionInterval) {
-            clearInterval(this.evolutionInterval);
-            this.evolutionInterval = null;
-        }
-    }
-
-    updateMigrationVisualization() {
-        const periodKeys = Object.keys(this.statsByPeriod);
-        const currentPeriodKey = periodKeys[this.currentPeriodIndex];
-        const migrationData = this.extractMigrationFlows()[currentPeriodKey];
-
-        // Ensure data is ready for D3
-        const { nodes, links } = this.processMigrationData(migrationData);
-
-        console.log(nodes, links); // Debugging
-
-        // Clear existing content
-        d3.select("#migrationSvg").selectAll("*").remove();
-
-        // Setup dimensions explicitly if necessary
-        const width = 960,
-            height = 500; // Example static dimensions for debugging
-
-        // Create SVG element
-        const svg = d3.select("#migrationSvg").attr("width", width).attr("height", height);
-
-        // Setup the simulation with proper dimensions
-        const simulation = d3
-            .forceSimulation(nodes)
-            .force(
-                "link",
-                d3.forceLink(links).id((d) => d.id)
-            )
-            .force("charge", d3.forceManyBody())
-            .force("center", d3.forceCenter(width / 2, height / 2));
-
-        // Draw links
-        // Ensure links have a stroke color
-        const link = svg
-            .append("g")
-            .attr("class", "links")
-            .selectAll("line")
-            .data(links)
-            .enter()
-            .append("line")
-            .style("stroke", "#999") // A neutral color; adjust as necessary
-            .style("stroke-opacity", 0.6)
-            .style("stroke-width", (d) => Math.sqrt(d.volume));
-
-        // Draw nodes
-        const node = svg
-            .append("g")
-            .selectAll("circle")
-            .data(nodes)
-            .join("circle")
-            .attr("r", 5)
-            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
-
-        // Example of defining and appending text labels to nodes
-        const labels = svg
-            .append("g")
-            .attr("class", "labels")
-            .selectAll("text")
-            .data(nodes)
-            .enter()
-            .append("text")
-            .text((d) => d.name) // Assuming each node has a 'name' property
-            .attr("x", (d) => d.x)
-            .attr("y", (d) => d.y);
-
-        simulation.on("tick", () => {
-            link.attr("x1", (d) => d.source.x)
-                .attr("y1", (d) => d.source.y)
-                .attr("x2", (d) => d.target.x)
-                .attr("y2", (d) => d.target.y);
-
-            node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-
-            labels.attr("x", (d) => d.x + 5).attr("y", (d) => d.y + 5);
-        });
-
-        // Drag event handlers
-        function dragstarted(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-        }
-
-        function dragged(event, d) {
-            d.fx = event.x;
-            d.fy = event.y;
-        }
-
-        function dragended(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-        }
-    }
-
     // New method for processing migration data
     processMigrationData(migrationsData) {
         // Extract unique locations as nodes
@@ -5385,6 +5227,93 @@ class D3DataFormatter {
 
         // The method returns an object containing both nodes and links
         return { nodes, links };
+    }
+
+    prepareSankeyData(migrationData) {
+        // Create nodes array: unique locations
+        const locations = Array.from(new Set(migrationData.flatMap((d) => [d.source, d.target])));
+        const nodes = locations.map((location, index) => ({ name: location }));
+
+        // Create links array
+        const links = migrationData.map((d) => {
+            return {
+                source: locations.indexOf(d.source),
+                target: locations.indexOf(d.target),
+                value: d.volume, // or any other metric you're using to quantify flow
+            };
+        });
+
+        return { nodes, links };
+    }
+
+    sankeyFormatMigrationData() {
+        // Assuming migrationData is your data from extractMigrationFlows for a single period
+        const allMigrationData = this.extractMigrationFlows(); // Replace with your actual method call
+        const migrationData = allMigrationData["1801-1900"]; // Assuming you're working with the first period
+
+        const { nodes, links } = this.prepareSankeyData(migrationData);
+        // Help
+
+        console.log("Sankey nodes:", nodes);
+        console.log("Sankey links:", links);
+
+        const svgWidth = 960,
+            svgHeight = 500;
+        if ($("#migrationSankey").length === 0) {
+            $("body").append("<div id='migrationSankey' class='popup graph'></div>");
+        }
+        const svg = d3.select("#migrationSankey").append("svg").attr("width", svgWidth).attr("height", svgHeight);
+
+        const sankey = d3
+            .sankey()
+            .nodeWidth(15)
+            .nodePadding(10)
+            .extent([
+                [1, 1],
+                [svgWidth - 1, svgHeight - 6],
+            ]);
+
+        const { nodes: sankeyNodes, links: sankeyLinks } = sankey({
+            nodes: nodes.map((d) => Object.assign({}, d)),
+            links: links.map((d) => Object.assign({}, d)),
+        });
+
+        // Drawing links
+        svg.append("g")
+            .selectAll("path")
+            .data(sankeyLinks)
+            .enter()
+            .append("path")
+            .attr("d", d3.sankeyLinkHorizontal())
+            .style("stroke-width", (d) => Math.max(1, d.width))
+            .style("fill", "none")
+            .style("stroke", "#000")
+            .style("stroke-opacity", 0.5);
+
+        // Drawing nodes
+        svg.append("g")
+            .selectAll("rect")
+            .data(sankeyNodes)
+            .enter()
+            .append("rect")
+            .attr("x", (d) => d.x0)
+            .attr("y", (d) => d.y0)
+            .attr("height", (d) => d.y1 - d.y0)
+            .attr("width", sankey.nodeWidth())
+            .style("fill", "#90ee90");
+
+        // Adding titles for hover-over tooltips
+        svg.append("g")
+            .style("font", "10px sans-serif")
+            .selectAll("text")
+            .data(sankeyNodes)
+            .enter()
+            .append("text")
+            .attr("x", (d) => (d.x0 < svgWidth / 2 ? d.x1 + 6 : d.x0 - 6))
+            .attr("y", (d) => (d.y1 + d.y0) / 2)
+            .attr("dy", "0.35em")
+            .attr("text-anchor", (d) => (d.x0 < svgWidth / 2 ? "start" : "end"))
+            .text((d) => d.name);
     }
 }
 
