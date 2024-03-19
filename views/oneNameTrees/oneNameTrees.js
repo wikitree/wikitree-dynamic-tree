@@ -5229,28 +5229,95 @@ class D3DataFormatter {
         return { nodes, links };
     }
 
-    prepareSankeyData(migrationData) {
-        // Create nodes array: unique locations
-        const locations = Array.from(new Set(migrationData.flatMap((d) => [d.source, d.target])));
-        const nodes = locations.map((location, index) => ({ name: location }));
+    prepareSankeyData(migrationsData) {
+        // Initialize arrays for nodes and links
+        let nodes = [],
+            links = [];
+        const sourceNodes = new Map();
+        const targetNodes = new Map();
 
-        // Create links array
-        const links = migrationData.map((d) => {
-            return {
-                source: locations.indexOf(d.source),
-                target: locations.indexOf(d.target),
-                value: d.volume, // or any other metric you're using to quantify flow
-            };
+        // Function to add or get a node from a map, and return its index
+        function addOrGetNode(map, name, isTarget = false) {
+            if (!map.has(name)) {
+                const node = { name, id: nodes.length, isTarget };
+                nodes.push(node);
+                map.set(name, node.id);
+            }
+            return map.get(name);
+        }
+
+        migrationsData.forEach((migration) => {
+            const sourceId = addOrGetNode(sourceNodes, migration.source);
+            const targetId = addOrGetNode(targetNodes, migration.target, true);
+
+            // Collecting all people IDs for each migration
+            const peopleIds = migration.people.map((person) => person.Id);
+
+            links.push({
+                source: sourceId,
+                target: targetId,
+                value: migration.volume,
+                peopleIds: peopleIds, // Attach people IDs to each link
+            });
         });
 
         return { nodes, links };
     }
 
     drawSankey(nodes, links) {
-        // Dimensions and margins
-        const margin = { top: 10, right: 10, bottom: 10, left: 10 },
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
+        const countryColors = {
+            "Ireland": "#4daf4a",
+            "Canada": "#377eb8",
+            "Australia": "#ff7f00",
+            "United States": "#e41a1c",
+            "New Zealand": "#984ea3",
+            "United Kingdom": "#a65628", // Adjusted to a unique color
+            "South Africa": "#f781bf", // Adjusted to a unique color
+            "India": "#999999", // Adjusted to a unique color
+            "Philippines": "#ffff33", // Adjusted to a unique color
+            "China": "#a6cee3",
+            "Netherlands": "#1f78b4",
+            "Germany": "#b2df8a",
+            "Italy": "#33a02c",
+            "France": "#fb9a99",
+            "Spain": "#e31a1c",
+            "Portugal": "#fdbf6f",
+            "Brazil": "#ff7f00",
+            "Argentina": "#cab2d6",
+            "Chile": "#6a3d9a",
+            "Mexico": "#ffff99",
+            "Russia": "#b15928",
+            "Poland": "#fb8072",
+            "Sweden": "#80b1d3",
+            "Norway": "#fdb462",
+            "Finland": "#b3de69",
+            "Denmark": "#fccde5",
+            "Belgium": "#d9d9d9",
+            "Switzerland": "#bc80bd",
+            "Austria": "#ccebc5",
+            "Czech Republic": "#ffed6f",
+            "Slovakia": "#8dd3c7",
+            "Hungary": "#ffffb3",
+            "Romania": "#bebada",
+            "Bulgaria": "#fb8072",
+            "Greece": "#80b1d3",
+            "Turkey": "#fdb462",
+            "England": "#b3de69",
+            "Scotland": "#fccde5",
+            "Wales": "#d9d9d9",
+            "Northern Ireland": "#bc80bd",
+        };
+
+        // Calculate dynamic height
+        const nodePadding = 40; // Adjust based on your styling
+        const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+        let dynamicHeight = nodes.length * nodePadding + margin.top + margin.bottom;
+
+        // Ensure there's a minimum height for smaller datasets
+        const minHeight = 500; // Adjust as needed
+        const height = Math.max(dynamicHeight, minHeight);
+
+        const width = 960 - margin.left - margin.right;
 
         // Append the svg object to the body
         if ($("#migrationSankey").length === 0) {
@@ -5262,17 +5329,75 @@ class D3DataFormatter {
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            .attr("transform", `translate(${margin.left},${margin.top})`);
 
         // Set the sankey diagram properties
-        const sankey = d3.sankey().nodeWidth(36).nodePadding(40).size([width, height]);
+        const sankey = d3
+            .sankey()
+            .nodeWidth(36)
+            .nodePadding(nodePadding)
+            .size([width, height - margin.top - margin.bottom]);
 
         const { nodes: graphNodes, links: graphLinks } = sankey({
-            nodes: nodes.map((d) => Object.assign({}, d)),
-            links: links.map((d) => Object.assign({}, d)),
+            nodes: nodes.map((d) => ({ ...d })),
+            links: links.map((d) => ({ ...d })),
         });
 
-        // add in the links
+        // Define gradients for the links
+        const gradients = svg
+            .append("defs")
+            .selectAll(".gradient")
+            .data(graphLinks, (d) => d.source.name + "-" + d.target.name) // Unique identifier for each link
+            .enter()
+            .append("linearGradient")
+            .attr(
+                "id",
+                (d) => "gradient-" + d.source.name.replace(/[\s,]/g, "_") + "-" + d.target.name.replace(/[\s,]/g, "_")
+            )
+            .attr("gradientUnits", "userSpaceOnUse")
+            .attr("x1", (d) => d.source.x1)
+            .attr("y1", (d) => (d.source.y1 + d.source.y0) / 2)
+            .attr("x2", (d) => d.target.x0)
+            .attr("y2", (d) => (d.target.y1 + d.target.y0) / 2);
+
+        gradients
+            .append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", (d) => {
+                // Extracting country name considering the format "Country, County/State"
+                const countryName = d.source.name.split(/,\s?/).shift(); // Use .pop() to get the last part
+                console.log(`Adjusted Source country name: ${countryName}`);
+                // Use a function or a direct map to get the corresponding color
+                return countryColors[countryName] || "#cccccc"; // Default color if not found
+            });
+
+        gradients
+            .append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", (d) => {
+                // Extracting country name considering the format "Country, County/State"
+                const countryName = d.target.name.split(/,\s?/).shift(); // Use .pop() to get the last part
+                console.log(`Adjusted Target country name: ${countryName}`);
+                // Use a function or a direct map to get the corresponding color
+                return countryColors[countryName] || "#cccccc"; // Default color if not found
+            });
+
+        const marker = svg
+            .append("defs")
+            .append("marker")
+            .attr("id", "arrow")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 13) // Closer to the node, adjust as needed
+            .attr("refY", 0)
+            .attr("markerWidth", 4) // Smaller arrow size
+            .attr("markerHeight", 4) // Smaller arrow size
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5") // Arrow shape
+            .style("fill", "#999"); // A lighter and more subtle color
+
+        // Add in the links with gradient
+        // Add in the links with gradient
         const link = svg
             .append("g")
             .selectAll(".link")
@@ -5281,10 +5406,12 @@ class D3DataFormatter {
             .append("path")
             .attr("class", "link")
             .attr("d", d3.sankeyLinkHorizontal())
-            .style("stroke-width", function (d) {
-                return Math.max(1, d.width);
-            });
-
+            .style(
+                "stroke",
+                (d) => `url(#gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")})`
+            ) // Reference the sanitized ID
+            .style("stroke-width", (d) => Math.max(1, d.width));
+        //.attr("marker-end", "url(#arrow)"); // Use the arrow marker at the end of the paths
         // add in the nodes
         const node = svg
             .append("g")

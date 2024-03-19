@@ -1,5 +1,11 @@
 import { LocationStatistics } from "./locationstatistics.js";
 import { usStatesDetails } from "./location_data.js";
+import { EnglandCounties } from "./location_data.js";
+import { ScotlandCounties } from "./location_data.js";
+import { WalesCounties } from "./location_data.js";
+import { IrelandCounties } from "./location_data.js";
+import { countries } from "./location_data.js";
+import { historicalCountries } from "./location_data.js";
 
 export class FamilyTreeStatistics {
     constructor(combinedResults) {
@@ -184,20 +190,225 @@ export class FamilyTreeStatistics {
     getYear(dateString) {
         return dateString && /^\d{4}-\d{2}-\d{2}$/.test(dateString) ? parseInt(dateString.substring(0, 4)) : null;
     }
-
+    /*
     getMigrants() {
         const migrants = this.peopleArray.filter((person) => {
             const birthParts = this.getReverseLocationArray(person.BirthLocation);
             const deathParts = this.getReverseLocationArray(person.DeathLocation);
+            let topBirthLocation = birthParts ? birthParts[0] : null;
+            let topDeathLocation = deathParts ? deathParts[0] : null;
+// Check EnglandCounties, ScotlandCounties, WalesCounties, IrelandCounties
+// If the top location is a county, use the country as the top location
+            if (topBirthLocation && EnglandCounties[topBirthLocation]) {
+                topBirthLocation = "England";
+            }
+            if (topBirthLocation && ScotlandCounties[topBirthLocation]) {
+                topBirthLocation = "Scotland";
+            }
+            if (topBirthLocation && WalesCounties[topBirthLocation]) {
+                topBirthLocation = "Wales";
+            }
+            if (topBirthLocation && IrelandCounties[topBirthLocation]) {
+                topBirthLocation = "Ireland";
+            }
+            if (topDeathLocation && EnglandCounties[topDeathLocation]) {
+                topDeathLocation = "England";
+            }
+            if (topDeathLocation && ScotlandCounties[topDeathLocation]) {
+                topDeathLocation = "Scotland";
+            }
+            if (topDeathLocation && WalesCounties[topDeathLocation]) {
+                topDeathLocation = "Wales";
+            }
+            if (topDeathLocation && IrelandCounties[topDeathLocation]) {
+                topDeathLocation = "Ireland";
+            }
+            
+            // if topBirthLocation or topDeathLocation is not a country (in countries), return false
+            // countries is an array of objects with a name property
+            if (topBirthLocation && !countries.some((country) => country.name === topBirthLocation)) {
+                return false;
+            }
+            if (topDeathLocation && !countries.some((country) => country.name === topDeathLocation)) {
+                return false;
+            }
+
+
             return (
                 deathParts &&
                 birthParts &&
+                topBirthLocation != topDeathLocation &&
                 birthParts[0] !== deathParts[0] &&
                 birthParts[1] !== deathParts[1] &&
                 birthParts[0] != deathParts[1] &&
                 birthParts[1] != deathParts[0]
             );
         });
+        return migrants;
+    }
+    */
+
+    /*
+    getMigrants() {
+        // Helper function to get the top-level location, considering special cases
+        const getTopLocation = (locationParts) => {
+            if (!locationParts || locationParts.length === 0) return null;
+
+            let topLocation = locationParts[0];
+
+            // Check if the top location is in any of the county lists, and map it to the respective country if so
+            if (EnglandCounties.includes(topLocation)) return "England";
+            if (ScotlandCounties.includes(topLocation)) return "Scotland";
+            if (WalesCounties.includes(topLocation)) return "Wales";
+            if (IrelandCounties.includes(topLocation)) return "Ireland";
+
+            // If not a county or not in the lists, assume it's already a top-level location (like a country)
+            return topLocation;
+        };
+
+        const migrants = this.peopleArray.filter((person) => {
+            const birthParts = this.getReverseLocationArray(person.BirthLocation);
+            const deathParts = this.getReverseLocationArray(person.DeathLocation);
+
+            // Get top locations, considering counties as part of their countries
+            const topBirthLocation = getTopLocation(birthParts);
+            const topDeathLocation = getTopLocation(deathParts);
+
+            // If either location is unrecognized, exclude the person
+            if (
+                !countries.some(({ name }) => name === topBirthLocation) ||
+                !countries.some(({ name }) => name === topDeathLocation) ||
+                (topBirthLocation.match(/Ireland/i) && topDeathLocation.match(/Ireland/i))
+            ) {
+                return false;
+            }
+
+            // Check if the top locations are different at both the country and regional level
+            return (
+                deathParts &&
+                birthParts &&
+                topBirthLocation !== topDeathLocation && // Compare top-level locations (countries) &&
+                topBirthLocation !== deathParts[1] && // Cross-level check to avoid false negatives
+                topDeathLocation !== birthParts[1] && // Cross-level check to avoid false negatives
+                birthParts[0] !== deathParts[0] && // Compare most specific locations (cities/towns)
+                birthParts[1] !== deathParts[1] && // Compare second-level locations (states/regions)
+                birthParts[0] !== deathParts[1] && // Cross-level check to avoid false negatives
+                birthParts[1] !== deathParts[0] // Cross-level check to avoid false negatives
+            );
+        });
+
+        return migrants;
+    }
+    */
+    /*
+    getMigrants() {
+        const getTopLocation = (locationParts) => {
+            if (!locationParts || locationParts.length === 0) return null;
+            let topLocation = locationParts[0];
+            // Continue with your existing logic for mapping counties to countries
+            // ...
+            return topLocation; // Returns a country name or null
+        };
+
+        const migrants = this.peopleArray.filter((person) => {
+            const birthParts = this.getReverseLocationArray(person.BirthLocation);
+            const deathParts = this.getReverseLocationArray(person.DeathLocation);
+
+            const topBirthLocation = getTopLocation(birthParts);
+            const topDeathLocation = getTopLocation(deathParts);
+
+            // Exclude if either location is unrecognized
+            if (
+                !countries.some(({ name }) => name === topBirthLocation) ||
+                !countries.some(({ name }) => name === topDeathLocation)
+            ) {
+                return false;
+            }
+
+            // Specifically exclude US to US migrations
+            if (topBirthLocation === "United States" && topDeathLocation === "United States") {
+                // Check more granularly if both parts (states/regions) are the same; if so, it's not considered migration
+                if (birthParts[1] === deathParts[1]) {
+                    return false; // Exclude same-state movements within the US
+                }
+            }
+
+            // General condition to exclude intra-country migrations
+            if (topBirthLocation === topDeathLocation) {
+                return false; // Exclude general intra-country migrations
+            }
+
+            // Other checks can be added as needed
+            return true;
+        });
+
+        return migrants;
+    }
+    */
+
+    getMigrants() {
+        // Helper function to map location to its broader region or country
+        const getTopLocation = (locationParts) => {
+            if (!locationParts || locationParts.length === 0) return null;
+
+            let topLocation = locationParts[0];
+
+            // Mapping for UK counties to "United Kingdom" and handling Ireland separately
+            if (
+                EnglandCounties.includes(topLocation) ||
+                ScotlandCounties.includes(topLocation) ||
+                WalesCounties.includes(topLocation)
+            ) {
+                return "United Kingdom";
+            } else if (IrelandCounties.includes(topLocation)) {
+                return "Ireland";
+            }
+
+            // Handling US states and their historical names
+            const stateOrHistoricalName = usStatesDetails.find(
+                (s) =>
+                    s.name.toLowerCase() === topLocation.toLowerCase() ||
+                    (s.former_names &&
+                        Object.keys(s.former_names).some((fn) => fn.toLowerCase() === topLocation.toLowerCase()))
+            );
+            if (stateOrHistoricalName) return "United States";
+
+            // Checking modern and historical countries
+            const country = countries.find((c) => c.name.toLowerCase() === topLocation.toLowerCase());
+            if (country) return country.name;
+
+            const historicalCountry = historicalCountries.find((c) => c.toLowerCase() === topLocation.toLowerCase());
+            if (historicalCountry) return historicalCountry.name;
+
+            return null; // Return null if no match is found
+        };
+
+        // Function to determine if the migration is between different regions/countries
+        const isDifferentMigration = (birthLocation, deathLocation, birthParts, deathParts) => {
+            const birthCountry = getTopLocation(birthParts);
+            const deathCountry = getTopLocation(deathParts);
+
+            // Special handling for Ireland and Northern Ireland
+            if (
+                // (birthCountry === "Ireland" && deathCountry === "Northern Ireland") ||
+                // (birthCountry === "Northern Ireland" && deathCountry === "Ireland") ||
+                birthLocation &&
+                birthLocation.includes("Ireland") &&
+                deathLocation &&
+                deathLocation.includes("Ireland")
+            ) {
+                return false; // Treat as same region migration
+            }
+
+            return birthCountry && deathCountry && birthCountry !== deathCountry;
+        };
+
+        const migrants = this.peopleArray.filter((person) => {
+            const birthParts = this.getReverseLocationArray(person.BirthLocation);
+            const deathParts = this.getReverseLocationArray(person.DeathLocation);
+            return isDifferentMigration(person.BirthLocation, person.DeathLocation, birthParts, deathParts);
+        });
+
         return migrants;
     }
 
