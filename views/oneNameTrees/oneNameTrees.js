@@ -5246,6 +5246,88 @@ class D3DataFormatter {
         return { nodes, links };
     }
 
+    drawSankey(nodes, links) {
+        // Dimensions and margins
+        const margin = { top: 10, right: 10, bottom: 10, left: 10 },
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        // Append the svg object to the body
+        if ($("#migrationSankey").length === 0) {
+            $("body").append("<div id='migrationSankey' class='popup graph'></div>");
+        }
+        const svg = d3
+            .select("#migrationSankey")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // Set the sankey diagram properties
+        const sankey = d3.sankey().nodeWidth(36).nodePadding(40).size([width, height]);
+
+        const { nodes: graphNodes, links: graphLinks } = sankey({
+            nodes: nodes.map((d) => Object.assign({}, d)),
+            links: links.map((d) => Object.assign({}, d)),
+        });
+
+        // add in the links
+        const link = svg
+            .append("g")
+            .selectAll(".link")
+            .data(graphLinks)
+            .enter()
+            .append("path")
+            .attr("class", "link")
+            .attr("d", d3.sankeyLinkHorizontal())
+            .style("stroke-width", function (d) {
+                return Math.max(1, d.width);
+            });
+
+        // add in the nodes
+        const node = svg
+            .append("g")
+            .selectAll(".node")
+            .data(graphNodes)
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", function (d) {
+                return "translate(" + d.x0 + "," + d.y0 + ")";
+            });
+
+        // add the rectangles for the nodes
+        node.append("rect")
+            .attr("height", function (d) {
+                return d.y1 - d.y0;
+            })
+            .attr("width", sankey.nodeWidth())
+            .style("fill", function (d) {
+                return (d.color = "#b3cde3");
+            })
+            .style("stroke", function (d) {
+                return d3.rgb(d.color).darker(2);
+            });
+
+        // add in the title for the nodes
+        node.append("text")
+            .attr("x", -6)
+            .attr("y", function (d) {
+                return (d.y1 - d.y0) / 2;
+            })
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "end")
+            .text(function (d) {
+                return d.name;
+            })
+            .filter(function (d) {
+                return d.x0 < width / 2;
+            })
+            .attr("x", 6 + sankey.nodeWidth())
+            .attr("text-anchor", "start");
+    }
+
     sankeyFormatMigrationData() {
         // Assuming migrationData is your data from extractMigrationFlows for a single period
         const allMigrationData = this.extractMigrationFlows(); // Replace with your actual method call
@@ -5256,64 +5338,7 @@ class D3DataFormatter {
 
         console.log("Sankey nodes:", nodes);
         console.log("Sankey links:", links);
-
-        const svgWidth = 960,
-            svgHeight = 500;
-        if ($("#migrationSankey").length === 0) {
-            $("body").append("<div id='migrationSankey' class='popup graph'></div>");
-        }
-        const svg = d3.select("#migrationSankey").append("svg").attr("width", svgWidth).attr("height", svgHeight);
-
-        const sankey = d3
-            .sankey()
-            .nodeWidth(15)
-            .nodePadding(10)
-            .extent([
-                [1, 1],
-                [svgWidth - 1, svgHeight - 6],
-            ]);
-
-        const { nodes: sankeyNodes, links: sankeyLinks } = sankey({
-            nodes: nodes.map((d) => Object.assign({}, d)),
-            links: links.map((d) => Object.assign({}, d)),
-        });
-
-        // Drawing links
-        svg.append("g")
-            .selectAll("path")
-            .data(sankeyLinks)
-            .enter()
-            .append("path")
-            .attr("d", d3.sankeyLinkHorizontal())
-            .style("stroke-width", (d) => Math.max(1, d.width))
-            .style("fill", "none")
-            .style("stroke", "#000")
-            .style("stroke-opacity", 0.5);
-
-        // Drawing nodes
-        svg.append("g")
-            .selectAll("rect")
-            .data(sankeyNodes)
-            .enter()
-            .append("rect")
-            .attr("x", (d) => d.x0)
-            .attr("y", (d) => d.y0)
-            .attr("height", (d) => d.y1 - d.y0)
-            .attr("width", sankey.nodeWidth())
-            .style("fill", "#90ee90");
-
-        // Adding titles for hover-over tooltips
-        svg.append("g")
-            .style("font", "10px sans-serif")
-            .selectAll("text")
-            .data(sankeyNodes)
-            .enter()
-            .append("text")
-            .attr("x", (d) => (d.x0 < svgWidth / 2 ? d.x1 + 6 : d.x0 - 6))
-            .attr("y", (d) => (d.y1 + d.y0) / 2)
-            .attr("dy", "0.35em")
-            .attr("text-anchor", (d) => (d.x0 < svgWidth / 2 ? "start" : "end"))
-            .text((d) => d.name);
+        this.drawSankey(nodes, links);
     }
 }
 
