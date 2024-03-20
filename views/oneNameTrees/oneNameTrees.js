@@ -602,6 +602,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 ".unconnected": "#unconnectedProfiles",
                 ".noRelations": "#noRelationsProfiles",
                 ".mostCommonLocations": "#locationsVisualisation",
+                ".migrants": "#migrationSankey",
             };
 
             // Find the graph ID based on the closest matching class
@@ -617,11 +618,17 @@ window.OneNameTrees = class OneNameTrees extends View {
                 graph.toggle();
                 if (graph.is(":visible")) {
                     graph.css("display", "inline-block");
-                    if (!["#locationsVisualisation", "#namesTable"].includes(graphId)) {
+                    if (!["#locationsVisualisation", "#namesTable", "#migrationSankey"].includes(graphId)) {
                         graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
                     }
                     $this.popupZindex++;
-                    graph.css("z-index", $this.popupZindex);
+                    const graphZindex = graph.css("z-index");
+                    if (graphZindex < $this.popupZindex) {
+                        graph.css("z-index", $this.popupZindex);
+                    } else {
+                        $this.popupZindex++;
+                        graph.css("z-index", parseInt(graphZindex) + 1);
+                    }
                     $(this).addClass("on");
                 } else {
                     $(this).removeClass("on");
@@ -3009,6 +3016,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             })
         );
 
+        // Migrants
+        $statsContainer.append(
+            this.createStatItem("Migrants: ", stats.getMigrantsCount(), {
+                title: "People who were born in a different location to where they died.",
+                classes: "migrants clicker",
+            })
+        );
+
         function addStatsAndList($this, statType, title, titleText, statsMethod, divId, extraClass = "") {
             const statItems = stats[statsMethod]();
             $statsContainer.append(
@@ -4499,6 +4514,7 @@ class D3DataFormatter {
         this.statsByPeriod = statsByPeriod;
         this.currentPeriodIndex = 0;
         this.locationHierarchy = { name: "All Periods", children: [] };
+        this.peopleArray = [];
         this.nameBackgroundColours = [
             "#FFCCCB", // Light Red
             "#CCFFCC", // Light Green
@@ -5265,6 +5281,7 @@ class D3DataFormatter {
     }
 
     drawSankey(nodes, links) {
+        const $this = this;
         const countryColors = {
             "Ireland": "#4daf4a",
             "Canada": "#377eb8",
@@ -5313,16 +5330,19 @@ class D3DataFormatter {
         const margin = { top: 10, right: 10, bottom: 10, left: 10 };
         let dynamicHeight = nodes.length * nodePadding + margin.top + margin.bottom;
 
+        // Append the svg object to the body
+        if ($("#migrationSankey").length === 0) {
+            $("body").append("<div id='migrationSankey' class='popup graph'><h2>Migrants</h2><x>x</x></div>");
+            $("#migrationSankey").draggable();
+        }
+
         // Ensure there's a minimum height for smaller datasets
         const minHeight = 500; // Adjust as needed
         const height = Math.max(dynamicHeight, minHeight);
 
-        const width = 960 - margin.left - margin.right;
+        //const width = 960 - margin.left - margin.right;
+        const width = $("#migrationSankey").width() - margin.left - margin.right;
 
-        // Append the svg object to the body
-        if ($("#migrationSankey").length === 0) {
-            $("body").append("<div id='migrationSankey' class='popup graph'></div>");
-        }
         const svg = d3
             .select("#migrationSankey")
             .append("svg")
@@ -5382,21 +5402,6 @@ class D3DataFormatter {
                 return countryColors[countryName] || "#cccccc"; // Default color if not found
             });
 
-        const marker = svg
-            .append("defs")
-            .append("marker")
-            .attr("id", "arrow")
-            .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 13) // Closer to the node, adjust as needed
-            .attr("refY", 0)
-            .attr("markerWidth", 4) // Smaller arrow size
-            .attr("markerHeight", 4) // Smaller arrow size
-            .attr("orient", "auto")
-            .append("path")
-            .attr("d", "M0,-5L10,0L0,5") // Arrow shape
-            .style("fill", "#999"); // A lighter and more subtle color
-
-        // Add in the links with gradient
         // Add in the links with gradient
         const link = svg
             .append("g")
@@ -5411,7 +5416,7 @@ class D3DataFormatter {
                 (d) => `url(#gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")})`
             ) // Reference the sanitized ID
             .style("stroke-width", (d) => Math.max(1, d.width));
-        //.attr("marker-end", "url(#arrow)"); // Use the arrow marker at the end of the paths
+
         // add in the nodes
         const node = svg
             .append("g")
@@ -5453,13 +5458,147 @@ class D3DataFormatter {
             })
             .attr("x", 6 + sankey.nodeWidth())
             .attr("text-anchor", "start");
+
+        function sortNodesByCountry(nodes) {
+            // Example sorting function: split by comma, take the first part, and trim
+            return nodes.sort((a, b) => {
+                let aCountry = a.name.split(",")[0].trim();
+                let bCountry = b.name.split(",")[0].trim();
+                return aCountry.localeCompare(bCountry);
+            });
+        }
+
+        // Usage
+        let sortedNodes = sortNodesByCountry(nodes);
+
+        /*
+        function appendPersonIcons(svg, graphLinks, peopleArray) {
+            if ($("#personTooltip").length === 0) {
+                $("body").append("<div id='personTooltip' class='tooltip'></div>");
+            }
+            const tooltip = d3.select("#personTooltip");
+
+            graphLinks.forEach((link) => {
+                link.peopleIds.forEach((id, index) => {
+                    const person = peopleArray.find((p) => p.Id === id);
+                    if (!person) return;
+
+                    // For the birth circle, use the starting point of the link
+                    let birthCircleY = link.y0;
+
+                    // For the death circle, use the ending point of the link
+                    let deathCircleY = link.y1;
+
+                    // Circle for the birth (left of the link)
+                    svg.append("circle")
+                        .attr("cx", link.source.x0 + 20) // Adjust as needed
+                        .attr("cy", birthCircleY)
+                        .attr("r", 10)
+                        .attr("fill", "green") // Indicate birth with green
+                        .on("mouseover", function (event) {
+                            tooltip
+                                .style("visibility", "visible")
+                                .html(`Name: ${person.FirstName}<br>Birth: ${person.BirthDate}`)
+                                .style("left", `${event.pageX + 15}px`)
+                                .style("top", `${event.pageY - 10}px`);
+                        })
+                        .on("mousemove", function (event) {
+                            tooltip.style("left", `${event.pageX + 15}px`).style("top", `${event.pageY - 10}px`);
+                        })
+                        .on("mouseout", function () {
+                            tooltip.style("visibility", "hidden");
+                        });
+
+                    // Circle for the death (right of the link)
+                    svg.append("circle")
+                        .attr("cx", link.target.x1 - 20) // Adjust as needed
+                        .attr("cy", deathCircleY)
+                        .attr("r", 10)
+                        .attr("fill", "red") // Indicate death with red
+                        .on("mouseover", function (event) {
+                            tooltip
+                                .style("visibility", "visible")
+                                .html(`Name: ${person.FirstName}<br>Death: ${person.DeathDate}`)
+                                .style("left", `${event.pageX + 15}px`)
+                                .style("top", `${event.pageY - 10}px`);
+                        })
+                        .on("mousemove", function (event) {
+                            tooltip.style("left", `${event.pageX + 15}px`).style("top", `${event.pageY - 10}px`);
+                        })
+                        .on("mouseout", function () {
+                            tooltip.style("visibility", "hidden");
+                        });
+                });
+            });
+        }
+        */
+
+        function appendPersonIcons(svg, graphLinks, peopleArray) {
+            // Ensure the tooltip container is available
+            if ($("#personTooltip").length === 0) {
+                $("body").append(
+                    "<div id='personTooltip' class='tooltip' style='position: absolute; visibility: hidden;'></div>"
+                );
+            }
+
+            const tooltip = $("#personTooltip");
+
+            graphLinks.forEach((link) => {
+                link.peopleIds.forEach((id, index) => {
+                    const person = peopleArray.find((p) => p.Id === id);
+                    if (!person) return;
+
+                    let birthCircleY = link.y0;
+                    let deathCircleY = link.y1;
+
+                    // Birth circle
+                    svg.append("circle")
+                        .attr("cx", link.source.x0 + 20)
+                        .attr("cy", birthCircleY)
+                        .attr("r", 10)
+                        .attr("fill", "green")
+                        .on("click", function (event) {
+                            // Position and show the tooltip next to the circle
+                            tooltip
+                                .html(`Name: ${person.FirstName}<br>Birth: ${person.BirthDate}`)
+                                .css("left", event.pageX + 15 + "px")
+                                .css("top", event.pageY - 10 + "px")
+                                .css("visibility", "visible");
+                        });
+
+                    // Death circle
+                    svg.append("circle")
+                        .attr("cx", link.target.x1 - 20)
+                        .attr("cy", deathCircleY)
+                        .attr("r", 10)
+                        .attr("fill", "red")
+                        .on("click", function (event) {
+                            // Position and show the tooltip next to the circle
+                            tooltip
+                                .html(`Name: ${person.FirstName}<br>Death: ${person.DeathDate}`)
+                                .css("left", event.pageX + 15 + "px")
+                                .css("top", event.pageY - 10 + "px")
+                                .css("visibility", "visible");
+                        });
+                });
+            });
+
+            // Optional: Hide the tooltip when clicking anywhere else on the page
+            $(document).on("click", function (e) {
+                if (!$(e.target).closest("circle").length) {
+                    tooltip.css("visibility", "hidden");
+                }
+            });
+        }
+
+        appendPersonIcons(svg, graphLinks, this.peopleArray);
     }
 
     sankeyFormatMigrationData() {
         // Assuming migrationData is your data from extractMigrationFlows for a single period
         const allMigrationData = this.extractMigrationFlows(); // Replace with your actual method call
         const migrationData = allMigrationData["1801-1900"]; // Assuming you're working with the first period
-
+        this.peopleArray = this.statsByPeriod["1801-1900"].locationStatistics.peopleArray; // Replace with your actual data
         const { nodes, links } = this.prepareSankeyData(migrationData);
         // Help
 

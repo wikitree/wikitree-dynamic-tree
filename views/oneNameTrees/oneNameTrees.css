@@ -823,7 +823,7 @@ input[type="submit"],
 }
 
 .oneNameTrees #locationsVisualisation,
-.oneNameTrees #migrationVisualisation {
+.oneNameTrees #migrationSankey {
   display: none;
   position: fixed;
   z-index: 100000;
@@ -840,6 +840,10 @@ input[type="submit"],
   bottom: 5%;
   overflow: hidden;
 }
+.oneNameTrees #migrationSankey {
+  overflow: auto;
+}
+
 .oneNameTrees #locationsVisualisation .mainTitle {
   cursor: move;
 }
@@ -1081,4 +1085,14 @@ input[type="submit"],
 .oneNameTrees #oneNameTreesSettings label {
   display: inline-block;
   margin-right: 1em;
+}
+
+.oneNameTrees #tooltip {
+  position: absolute;
+  visibility: hidden;
+  background-color: white;
+  border: 1px solid #d3d3d3;
+  padding: 10px;
+  border-radius: 5px;
+  pointer-events: none; /* Ignore mouse events */
 }
