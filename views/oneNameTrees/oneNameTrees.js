@@ -5333,7 +5333,7 @@ class D3DataFormatter {
         // Append the svg object to the body
         if ($("#migrationSankey").length === 0) {
             $("body").append("<div id='migrationSankey' class='popup graph'><h2>Migrants</h2><x>x</x></div>");
-            $("#migrationSankey").draggable();
+            // $("#migrationSankey").draggable();
         }
 
         // Ensure there's a minimum height for smaller datasets
@@ -5473,71 +5473,10 @@ class D3DataFormatter {
 
         /*
         function appendPersonIcons(svg, graphLinks, peopleArray) {
-            if ($("#personTooltip").length === 0) {
-                $("body").append("<div id='personTooltip' class='tooltip'></div>");
-            }
-            const tooltip = d3.select("#personTooltip");
-
-            graphLinks.forEach((link) => {
-                link.peopleIds.forEach((id, index) => {
-                    const person = peopleArray.find((p) => p.Id === id);
-                    if (!person) return;
-
-                    // For the birth circle, use the starting point of the link
-                    let birthCircleY = link.y0;
-
-                    // For the death circle, use the ending point of the link
-                    let deathCircleY = link.y1;
-
-                    // Circle for the birth (left of the link)
-                    svg.append("circle")
-                        .attr("cx", link.source.x0 + 20) // Adjust as needed
-                        .attr("cy", birthCircleY)
-                        .attr("r", 10)
-                        .attr("fill", "green") // Indicate birth with green
-                        .on("mouseover", function (event) {
-                            tooltip
-                                .style("visibility", "visible")
-                                .html(`Name: ${person.FirstName}<br>Birth: ${person.BirthDate}`)
-                                .style("left", `${event.pageX + 15}px`)
-                                .style("top", `${event.pageY - 10}px`);
-                        })
-                        .on("mousemove", function (event) {
-                            tooltip.style("left", `${event.pageX + 15}px`).style("top", `${event.pageY - 10}px`);
-                        })
-                        .on("mouseout", function () {
-                            tooltip.style("visibility", "hidden");
-                        });
-
-                    // Circle for the death (right of the link)
-                    svg.append("circle")
-                        .attr("cx", link.target.x1 - 20) // Adjust as needed
-                        .attr("cy", deathCircleY)
-                        .attr("r", 10)
-                        .attr("fill", "red") // Indicate death with red
-                        .on("mouseover", function (event) {
-                            tooltip
-                                .style("visibility", "visible")
-                                .html(`Name: ${person.FirstName}<br>Death: ${person.DeathDate}`)
-                                .style("left", `${event.pageX + 15}px`)
-                                .style("top", `${event.pageY - 10}px`);
-                        })
-                        .on("mousemove", function (event) {
-                            tooltip.style("left", `${event.pageX + 15}px`).style("top", `${event.pageY - 10}px`);
-                        })
-                        .on("mouseout", function () {
-                            tooltip.style("visibility", "hidden");
-                        });
-                });
-            });
-        }
-        */
-
-        function appendPersonIcons(svg, graphLinks, peopleArray) {
             // Ensure the tooltip container is available
             if ($("#personTooltip").length === 0) {
                 $("body").append(
-                    "<div id='personTooltip' class='tooltip' style='position: absolute; visibility: hidden;'></div>"
+                    "<div id='personTooltip' class='tooltip' style='position: absolute; visibility: hidden; z-index:100000000'></div>"
                 );
             }
 
@@ -5547,6 +5486,8 @@ class D3DataFormatter {
                 link.peopleIds.forEach((id, index) => {
                     const person = peopleArray.find((p) => p.Id === id);
                     if (!person) return;
+
+                    let personHTML = tooltipHTML(person);
 
                     let birthCircleY = link.y0;
                     let deathCircleY = link.y1;
@@ -5559,8 +5500,10 @@ class D3DataFormatter {
                         .attr("fill", "green")
                         .on("click", function (event) {
                             // Position and show the tooltip next to the circle
+
                             tooltip
-                                .html(`Name: ${person.FirstName}<br>Birth: ${person.BirthDate}`)
+                                .html(personHTML)
+                                .attr("class", `${person.Gender}`)
                                 .css("left", event.pageX + 15 + "px")
                                 .css("top", event.pageY - 10 + "px")
                                 .css("visibility", "visible");
@@ -5575,8 +5518,10 @@ class D3DataFormatter {
                         .on("click", function (event) {
                             // Position and show the tooltip next to the circle
                             tooltip
-                                .html(`Name: ${person.FirstName}<br>Death: ${person.DeathDate}`)
-                                .css("left", event.pageX + 15 + "px")
+                                .html(personHTML)
+                                .attr("class", `${person.Gender}`)
+
+                                .css("left", event.pageX - 400 + "px")
                                 .css("top", event.pageY - 10 + "px")
                                 .css("visibility", "visible");
                         });
@@ -5589,6 +5534,131 @@ class D3DataFormatter {
                     tooltip.css("visibility", "hidden");
                 }
             });
+        }
+        */
+        function appendPersonIcons(svg, graphLinks, peopleArray) {
+            // Move the tooltip container inside the migrationSankey div for better control
+            if ($("#migrationSankey #personTooltip").length === 0) {
+                $("#migrationSankey").append(
+                    "<div id='personTooltip' class='tooltip' style='position: absolute; visibility: hidden; z-index: 100000000'></div>"
+                );
+            }
+
+            const tooltip = $("#migrationSankey #personTooltip");
+
+            graphLinks.forEach((link) => {
+                link.peopleIds.forEach((id, index) => {
+                    const person = peopleArray.find((p) => p.Id === id);
+                    if (!person) return;
+
+                    let personHTML = tooltipHTML(person);
+
+                    // Calculating Y position based on the link's y0 and y1 positions
+                    let birthCircleY = link.y0;
+                    let deathCircleY = link.y1;
+
+                    // Birth circle positioned +20 from the source x0
+                    svg.append("circle")
+                        .attr("cx", link.source.x0 + 20)
+                        .attr("cy", birthCircleY)
+                        .attr("r", 10)
+                        .attr("fill", "green")
+                        .on("click", function () {
+                            // Adjust the tooltip's position
+                            showTooltip(tooltip, personHTML, $(this), "birth");
+                        });
+
+                    // Death circle positioned -20 from the target x1
+                    svg.append("circle")
+                        .attr("cx", link.target.x1 - 20)
+                        .attr("cy", deathCircleY)
+                        .attr("r", 10)
+                        .attr("fill", "red")
+                        .on("click", function () {
+                            // Adjust the tooltip's position
+                            showTooltip(tooltip, personHTML, $(this), "death");
+                        });
+                });
+            });
+
+            // Optional: Hide the tooltip when clicking outside the circles
+            $(document).on("click", function (e) {
+                if (!$(e.target).closest("circle, #personTooltip").length) {
+                    tooltip.css("visibility", "hidden");
+                }
+            });
+        }
+
+        function showTooltip(tooltip, personHTML, circle, type) {
+            const circlePos = circle.position(); // Using position relative to the parent div
+            const migrationSankey = $("#migrationSankey");
+
+            // Adjusted offset values based on feedback
+            const offsetX = type === "death" ? -430 : 0; // Increase for birth, decrease for death
+            const offsetY = -30; // Increase upward shift
+            const scrollY = migrationSankey.scrollTop(); // Vertical scroll position of the migrationSankey div
+
+            tooltip.html(personHTML).css({
+                top: circlePos.top + offsetY + scrollY + "px", // Adjust for the scroll
+                left: circlePos.left + offsetX + "px",
+                visibility: "visible",
+            });
+
+            // Additional check and adjustment if needed
+            adjustTooltipPosition(tooltip, migrationSankey, type);
+        }
+
+        function adjustTooltipPosition(tooltip, container, type) {
+            // Get the bounding rectangle of the container
+            const containerRect = container[0].getBoundingClientRect();
+            const tooltipRect = tooltip[0].getBoundingClientRect();
+
+            // Adjust so it's inside the container bounds
+            if (type === "death" && tooltipRect.left < containerRect.left) {
+                tooltip.css("left", containerRect.left + 10 + "px"); // Slight adjustment to avoid touching the edge
+            } else if (type !== "death" && tooltipRect.right > containerRect.right) {
+                tooltip.css("left", containerRect.right - tooltipRect.width - 10 + "px"); // Slight adjustment
+            }
+
+            if (tooltipRect.top < containerRect.top) {
+                tooltip.css("top", containerRect.top + 10 + "px"); // Slight adjustment to avoid touching the edge
+            } else if (tooltipRect.bottom > containerRect.bottom) {
+                tooltip.css("top", containerRect.bottom - tooltipRect.height - 10 + "px"); // Slight adjustment
+            }
+        }
+
+        function tooltipHTML(person) {
+            const fullName = new PersonName(person).withParts(["FullName"]);
+
+            // Safely gets the status with a default fallback
+            const getStatus = (status) => status || "";
+
+            const formatDate = (date, status) => {
+                if (!date || date === "0000-00-00" || date === "Unknown") return "";
+                const dateStatusMap = { guess: "abt.", before: "bef.", after: "aft." };
+                const statusPrefix = dateStatusMap[getStatus(status)] || "";
+                return `${statusPrefix} ${date.replace(/\-00/g, "")}`;
+            };
+
+            const birthDateText = formatDate(
+                person.BirthDate || person.BirthDateDecade,
+                person.DataStatus ? person.DataStatus.BirthDate : ""
+            );
+            const deathDateText = formatDate(
+                person.DeathDate || person.DeathDateDecade,
+                person.DataStatus ? person.DataStatus.DeathDate : ""
+            );
+
+            const locationText = (location) => (location ? `in ${location}` : "");
+
+            const detailText = (label, dateText, location) =>
+                dateText ? `<p>${label}: <span class="date">${dateText}</span> ${locationText(location)}</p>` : "";
+
+            return `
+        <a href="https://www.wikitree.com/wiki/${person.Name}" target='_blank'>${fullName}</a>
+        ${detailText("Born", birthDateText, person.BirthLocation)}
+        ${detailText("Died", deathDateText, person.DeathLocation)}
+    `;
         }
 
         appendPersonIcons(svg, graphLinks, this.peopleArray);
