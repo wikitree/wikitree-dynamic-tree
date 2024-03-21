@@ -603,6 +603,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 ".noRelations": "#noRelationsProfiles",
                 ".mostCommonLocations": "#locationsVisualisation",
                 ".migrants": "#migrationSankey",
+                ".periodMigrants": "#periodMigrants",
             };
 
             // Find the graph ID based on the closest matching class
@@ -669,6 +670,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                 unconnectedProfiles: ".unconnected label",
                 noRelationsProfiles: ".noRelations label",
                 locationsVisualisation: ".mostCommonLocations label",
+                migrationSankey: ".migrants label",
+                periodMigrants: ".periodMigrants label",
             };
 
             const labelSelector = idToLabelMap[el.prop("id")];
@@ -2978,6 +2981,32 @@ window.OneNameTrees = class OneNameTrees extends View {
         return totalWithTargetLNABs;
     }
 
+    createPopupDiv(divId, title) {
+        const $div = $(`
+        <div id='${divId}' class='popup'><x>x</x>
+        <h2>${title}</h2>
+        </div>`);
+        $("body").append($div);
+        $div.draggable();
+        return $div;
+    }
+
+    populateDivWithProfiles($this, $div, profiles) {
+        profiles.forEach((person) => {
+            const aName = new PersonName(person);
+            let fullName = aName.withParts(["FullName"]);
+            const dates = $this.displayDates(person);
+            let id = person.Name;
+            let link = `<a href="https://www.wikitree.com/wiki/${id}" target="_blank" class="${
+                person.Gender || ""
+            }">${fullName} ${dates}</a>`;
+            if (!person.Name) {
+                link = `<a>Private ${dates}</a>`;
+            }
+            $div.append(link);
+        });
+    }
+
     generateStatsHTML(stats) {
         $("#statisticsContainer li").off();
         $("#statisticsContainer").remove(); // Remove any existing statistics container
@@ -3035,35 +3064,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             );
 
             if (statItems.length > 0) {
-                const $div = createPopupDiv(divId, title);
-                populateDivWithProfiles($this, $div, statItems);
+                const $div = $this.createPopupDiv(divId, title);
+                $this.populateDivWithProfiles($this, $div, statItems);
             }
-        }
-
-        function createPopupDiv(divId, title) {
-            const $div = $(`
-            <div id='${divId}' class='popup'><x>x</x>
-            <h2>${title}</h2>
-            </div>`);
-            $("body").append($div);
-            $div.draggable();
-            return $div;
-        }
-
-        function populateDivWithProfiles($this, $div, profiles) {
-            profiles.forEach((person) => {
-                const aName = new PersonName(person);
-                let fullName = aName.withParts(["FullName"]);
-                const dates = $this.displayDates(person);
-                let id = person.Name;
-                let link = `<a href="https://www.wikitree.com/wiki/${id}" target="_blank" class="${
-                    person.Gender || ""
-                }">${fullName} ${dates}</a>`;
-                if (!person.Name) {
-                    link = `<a>Private ${dates}</a>`;
-                }
-                $div.append(link);
-            });
         }
 
         // Using the functions
@@ -3344,6 +3347,23 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.createStatItem("Average Children per Couple: ", periodStats.averageChildrenPerCouple)
         );
 
+        // Migrants
+        $statsContainer.append(
+            this.createStatItem("Migrants: ", periodStats.migrantIds.length || "0", {
+                classes: "periodMigrants clicker",
+            })
+        );
+
+        let $periodMigrants = $("#periodMigrants");
+        if ($("#periodMigrants").length === 0) {
+            $periodMigrants = this.createPopupDiv("periodMigrants", "Migrants").hide();
+        }
+        $periodMigrants.find("a").remove();
+        const $migrantList = Object.values($this.filteredResults).filter((person) =>
+            periodStats.migrantIds.includes(person.Id)
+        );
+        this.populateDivWithProfiles($this, $periodMigrants, $migrantList);
+
         // Most Common Names
         const $namesDiv = this.generateNamesHTMLForPeriod(periodStats.names);
         $statsContainer.append($this.createStatItem("Names: ", $namesDiv, { id: "commonNames" }));
@@ -3360,8 +3380,11 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     generateNamesHTMLForPeriod(namesData) {
         let $namesContainer = $("<div>");
-
-        Object.entries(namesData).forEach(([gender, names]) => {
+        console.log("generateNamesHTMLForPeriod", namesData);
+        Object.entries(namesData).forEach(([gender, namesObj]) => {
+            // Convert object of names to array of [name, count] pairs
+            let names = Object.entries(namesObj);
+            console.log(names);
             if (["Male", "Female"].includes(gender) && names.length > 0) {
                 let $genderContainer = $("<div>").appendTo($namesContainer);
                 $genderContainer.append(
@@ -3393,7 +3416,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             }
         });
-
+        console.log("generateNamesHTMLForPeriod", $namesContainer.html());
         return $namesContainer;
     }
 
@@ -3591,11 +3614,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         const migrants = this.familyTreeStats.getMigrants();
-        migrants.forEach((migrant) => {
-            console.log("Migrant", migrant.Name);
-            console.log("BirthLocation: ", migrant.BirthLocation);
-            console.log("DeathLocation: ", migrant.DeathLocation);
-        });
 
         // Get top 10 male names
         const topMaleNames = this.familyTreeStats.getTopNamesByGender("Male");
@@ -3606,8 +3624,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         console.log("Top 10 Female Names:", topFemaleNames);
 
         // Get stats for each 50-year period
-        const periodStats = this.familyTreeStats.getStatsBy50YearPeriods();
-        console.log("Stats by 50-Year Periods:", periodStats);
+        const periodStats = this.familyTreeStats.getStatsInPeriods();
+        console.log("Stats in Periods:", periodStats);
 
         const d3DataFormatter = new D3DataFormatter(periodStats);
         // d3DataFormatter.lifespanGraph();
@@ -3618,8 +3636,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         d3DataFormatter.initVisualization();
 
-        d3DataFormatter.extractMigrationFlows();
-        d3DataFormatter.sankeyFormatMigrationData();
+        const migrations = d3DataFormatter.extractMigrationFlows();
+        //d3DataFormatter.sankeyFormatMigrationData();
+
+        d3DataFormatter.startMigrationEvolution(5000);
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -4468,7 +4488,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         XLSX.utils.book_append_sheet(wb, wsGeneralStats, "General Statistics");
 
         // Prepare sheets for each period with most common names and locations
-        const periodData = $this.familyTreeStats.getStatsBy50YearPeriods();
+        const periodData = $this.familyTreeStats.getStatsInPeriods();
 
         Object.keys(periodData).forEach((periodKey) => {
             const periodStats = periodData[periodKey];
@@ -5283,58 +5303,52 @@ class D3DataFormatter {
     drawSankey(nodes, links) {
         const $this = this;
         const countryColors = {
-            "Ireland": "#4daf4a",
-            "Canada": "#377eb8",
-            "Australia": "#ff7f00",
-            "United States": "#e41a1c",
-            "New Zealand": "#984ea3",
-            "United Kingdom": "#a65628", // Adjusted to a unique color
-            "South Africa": "#f781bf", // Adjusted to a unique color
-            "India": "#999999", // Adjusted to a unique color
-            "Philippines": "#ffff33", // Adjusted to a unique color
-            "China": "#a6cee3",
-            "Netherlands": "#1f78b4",
-            "Germany": "#b2df8a",
-            "Italy": "#33a02c",
-            "France": "#fb9a99",
-            "Spain": "#e31a1c",
-            "Portugal": "#fdbf6f",
-            "Brazil": "#ff7f00",
-            "Argentina": "#cab2d6",
-            "Chile": "#6a3d9a",
-            "Mexico": "#ffff99",
-            "Russia": "#b15928",
-            "Poland": "#fb8072",
-            "Sweden": "#80b1d3",
-            "Norway": "#fdb462",
-            "Finland": "#b3de69",
-            "Denmark": "#fccde5",
-            "Belgium": "#d9d9d9",
-            "Switzerland": "#bc80bd",
-            "Austria": "#ccebc5",
-            "Czech Republic": "#ffed6f",
-            "Slovakia": "#8dd3c7",
-            "Hungary": "#ffffb3",
-            "Romania": "#bebada",
-            "Bulgaria": "#fb8072",
-            "Greece": "#80b1d3",
-            "Turkey": "#fdb462",
-            "England": "#b3de69",
-            "Scotland": "#fccde5",
-            "Wales": "#d9d9d9",
-            "Northern Ireland": "#bc80bd",
+            "Ireland": "#a6d7a4",
+            "Canada": "#9bbedc",
+            "Australia": "#ffbf80",
+            "United States": "#f28c8e",
+            "New Zealand": "#cca6d1",
+            "United Kingdom": "#d2aa94",
+            "South Africa": "#fbc0df",
+            "India": "#cccccc",
+            "Philippines": "#ffff99",
+            "China": "#d2e6f1",
+            "Netherlands": "#8fbcda",
+            "Germany": "#d8efc4",
+            "Italy": "#99d096",
+            "France": "#fdcccc",
+            "Spain": "#f18c8e",
+            "Portugal": "#fedfb7",
+            "Brazil": "#ffbf80",
+            "Argentina": "#e4d8ea",
+            "Chile": "#b49ecc",
+            "Mexico": "#ffffcc",
+            "Russia": "#d8ac94",
+            "Poland": "#fdc0b8",
+            "Sweden": "#c0d8e9",
+            "Norway": "#fedab0",
+            "Finland": "#d9eeb4",
+            "Denmark": "#fee6f2",
+            "Belgium": "#ececec",
+            "Switzerland": "#dec0de",
+            "Austria": "#e6f5e2",
+            "Czech Republic": "#fff6b7",
+            "Slovakia": "#c6e9e3",
+            "Hungary": "#ffffd9",
+            "Romania": "#dedcec",
+            "Bulgaria": "#fdc0b8",
+            "Greece": "#c0d8e9",
+            "Turkey": "#fedab0",
+            "England": "#d9eeb4",
+            "Scotland": "#fee6f2",
+            "Wales": "#ececec",
+            "Northern Ireland": "#dec0de",
         };
 
         // Calculate dynamic height
         const nodePadding = 40; // Adjust based on your styling
         const margin = { top: 10, right: 10, bottom: 10, left: 10 };
         let dynamicHeight = nodes.length * nodePadding + margin.top + margin.bottom;
-
-        // Append the svg object to the body
-        if ($("#migrationSankey").length === 0) {
-            $("body").append("<div id='migrationSankey' class='popup graph'><h2>Migrants</h2><x>x</x></div>");
-            // $("#migrationSankey").draggable();
-        }
 
         // Ensure there's a minimum height for smaller datasets
         const minHeight = 500; // Adjust as needed
@@ -5343,13 +5357,24 @@ class D3DataFormatter {
         //const width = 960 - margin.left - margin.right;
         const width = $("#migrationSankey").width() - margin.left - margin.right;
 
-        const svg = d3
-            .select("#migrationSankey")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
+        // Select or append SVG container
+        let svg = d3.select("#migrationSankey svg");
+        if (svg.empty()) {
+            svg = d3
+                .select("#migrationSankey")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+        } else {
+            // If SVG exists, clear its contents (optional)
+            svg.selectAll("*").remove();
+            // Adjust size if necessary
+            svg.attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom);
+            // Re-append the g element
+            svg = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        }
 
         // Set the sankey diagram properties
         const sankey = d3
@@ -5362,6 +5387,18 @@ class D3DataFormatter {
             nodes: nodes.map((d) => ({ ...d })),
             links: links.map((d) => ({ ...d })),
         });
+
+        function sortNodesByCountry(nodes) {
+            // Example sorting function: split by comma, take the first part, and trim
+            return nodes.sort((a, b) => {
+                let aCountry = a.name.split(",")[0].trim();
+                let bCountry = b.name.split(",")[0].trim();
+                return aCountry.localeCompare(bCountry);
+            });
+        }
+
+        // Usage
+        sortNodesByCountry(nodes);
 
         // Define gradients for the links
         const gradients = svg
@@ -5386,7 +5423,7 @@ class D3DataFormatter {
             .attr("stop-color", (d) => {
                 // Extracting country name considering the format "Country, County/State"
                 const countryName = d.source.name.split(/,\s?/).shift(); // Use .pop() to get the last part
-                console.log(`Adjusted Source country name: ${countryName}`);
+                //console.log(`Adjusted Source country name: ${countryName}`);
                 // Use a function or a direct map to get the corresponding color
                 return countryColors[countryName] || "#cccccc"; // Default color if not found
             });
@@ -5397,7 +5434,7 @@ class D3DataFormatter {
             .attr("stop-color", (d) => {
                 // Extracting country name considering the format "Country, County/State"
                 const countryName = d.target.name.split(/,\s?/).shift(); // Use .pop() to get the last part
-                console.log(`Adjusted Target country name: ${countryName}`);
+                // console.log(`Adjusted Target country name: ${countryName}`);
                 // Use a function or a direct map to get the corresponding color
                 return countryColors[countryName] || "#cccccc"; // Default color if not found
             });
@@ -5448,6 +5485,7 @@ class D3DataFormatter {
             .attr("y", function (d) {
                 return (d.y1 - d.y0) / 2;
             })
+            .style("font-weight", "bold")
             .attr("dy", "0.35em")
             .attr("text-anchor", "end")
             .text(function (d) {
@@ -5458,89 +5496,13 @@ class D3DataFormatter {
             })
             .attr("x", 6 + sankey.nodeWidth())
             .attr("text-anchor", "start");
+        // add bold
 
-        function sortNodesByCountry(nodes) {
-            // Example sorting function: split by comma, take the first part, and trim
-            return nodes.sort((a, b) => {
-                let aCountry = a.name.split(",")[0].trim();
-                let bCountry = b.name.split(",")[0].trim();
-                return aCountry.localeCompare(bCountry);
-            });
-        }
-
-        // Usage
-        let sortedNodes = sortNodesByCountry(nodes);
-
-        /*
-        function appendPersonIcons(svg, graphLinks, peopleArray) {
-            // Ensure the tooltip container is available
-            if ($("#personTooltip").length === 0) {
-                $("body").append(
-                    "<div id='personTooltip' class='tooltip' style='position: absolute; visibility: hidden; z-index:100000000'></div>"
-                );
-            }
-
-            const tooltip = $("#personTooltip");
-
-            graphLinks.forEach((link) => {
-                link.peopleIds.forEach((id, index) => {
-                    const person = peopleArray.find((p) => p.Id === id);
-                    if (!person) return;
-
-                    let personHTML = tooltipHTML(person);
-
-                    let birthCircleY = link.y0;
-                    let deathCircleY = link.y1;
-
-                    // Birth circle
-                    svg.append("circle")
-                        .attr("cx", link.source.x0 + 20)
-                        .attr("cy", birthCircleY)
-                        .attr("r", 10)
-                        .attr("fill", "green")
-                        .on("click", function (event) {
-                            // Position and show the tooltip next to the circle
-
-                            tooltip
-                                .html(personHTML)
-                                .attr("class", `${person.Gender}`)
-                                .css("left", event.pageX + 15 + "px")
-                                .css("top", event.pageY - 10 + "px")
-                                .css("visibility", "visible");
-                        });
-
-                    // Death circle
-                    svg.append("circle")
-                        .attr("cx", link.target.x1 - 20)
-                        .attr("cy", deathCircleY)
-                        .attr("r", 10)
-                        .attr("fill", "red")
-                        .on("click", function (event) {
-                            // Position and show the tooltip next to the circle
-                            tooltip
-                                .html(personHTML)
-                                .attr("class", `${person.Gender}`)
-
-                                .css("left", event.pageX - 400 + "px")
-                                .css("top", event.pageY - 10 + "px")
-                                .css("visibility", "visible");
-                        });
-                });
-            });
-
-            // Optional: Hide the tooltip when clicking anywhere else on the page
-            $(document).on("click", function (e) {
-                if (!$(e.target).closest("circle").length) {
-                    tooltip.css("visibility", "hidden");
-                }
-            });
-        }
-        */
         function appendPersonIcons(svg, graphLinks, peopleArray) {
             // Move the tooltip container inside the migrationSankey div for better control
             if ($("#migrationSankey #personTooltip").length === 0) {
                 $("#migrationSankey").append(
-                    "<div id='personTooltip' class='tooltip' style='position: absolute; visibility: hidden; z-index: 100000000'></div>"
+                    "<div id='personTooltip' class='tooltip' style='position: absolute; display: none; z-index: 100000000'></div>"
                 );
             }
 
@@ -5584,7 +5546,7 @@ class D3DataFormatter {
             // Optional: Hide the tooltip when clicking outside the circles
             $(document).on("click", function (e) {
                 if (!$(e.target).closest("circle, #personTooltip").length) {
-                    tooltip.css("visibility", "hidden");
+                    tooltip.hide();
                 }
             });
         }
@@ -5598,11 +5560,13 @@ class D3DataFormatter {
             const offsetY = -30; // Increase upward shift
             const scrollY = migrationSankey.scrollTop(); // Vertical scroll position of the migrationSankey div
 
-            tooltip.html(personHTML).css({
-                top: circlePos.top + offsetY + scrollY + "px", // Adjust for the scroll
-                left: circlePos.left + offsetX + "px",
-                visibility: "visible",
-            });
+            tooltip
+                .html(personHTML)
+                .css({
+                    top: circlePos.top + offsetY + scrollY + "px", // Adjust for the scroll
+                    left: circlePos.left + offsetX + "px",
+                })
+                .show();
 
             // Additional check and adjustment if needed
             adjustTooltipPosition(tooltip, migrationSankey, type);
@@ -5664,6 +5628,7 @@ class D3DataFormatter {
         appendPersonIcons(svg, graphLinks, this.peopleArray);
     }
 
+    /*
     sankeyFormatMigrationData() {
         // Assuming migrationData is your data from extractMigrationFlows for a single period
         const allMigrationData = this.extractMigrationFlows(); // Replace with your actual method call
@@ -5672,9 +5637,92 @@ class D3DataFormatter {
         const { nodes, links } = this.prepareSankeyData(migrationData);
         // Help
 
-        console.log("Sankey nodes:", nodes);
-        console.log("Sankey links:", links);
+        // console.log("Sankey nodes:", nodes);
+        //  console.log("Sankey links:", links);
         this.drawSankey(nodes, links);
+    }
+    */
+
+    startMigrationEvolution(intervalMs) {
+        if (this.migrationEvolutionInterval) {
+            clearInterval(this.migrationEvolutionInterval); // Clear existing interval if it's already running
+        }
+        this.migrationEvolutionInterval = setInterval(() => {
+            this.showNextMigrationPeriod();
+        }, intervalMs);
+    }
+
+    stopMigrationEvolution() {
+        if (this.migrationEvolutionInterval) {
+            clearInterval(this.migrationEvolutionInterval);
+            this.migrationEvolutionInterval = null; // Clear the interval ID
+        }
+    }
+
+    showNextMigrationPeriod() {
+        // Update this.currentPeriodIndex and redraw the Sankey diagram for the new period
+        if (!this.currentPeriodIndex) {
+            this.currentPeriodIndex = 0;
+        }
+        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % Object.keys(this.statsByPeriod).length;
+        const periodKey = Object.keys(this.statsByPeriod)[this.currentPeriodIndex];
+        this.drawMigrationSankeyForPeriod(periodKey);
+    }
+
+    showPreviousMigrationPeriod() {
+        // Update this.currentPeriodIndex and redraw the Sankey diagram for the new period
+        this.currentPeriodIndex = (this.currentPeriodIndex - 1) % Object.keys(this.statsByPeriod).length;
+        const periodKey = Object.keys(this.statsByPeriod)[this.currentPeriodIndex];
+        this.drawMigrationSankeyForPeriod(periodKey);
+    }
+
+    drawMigrationSankeyForPeriod(periodKey) {
+        const $this = this;
+        // Append the svg object to the body
+        if ($("#migrationSankey").length === 0) {
+            $("body").append(`
+            <div id='migrationSankey' class='popup graph'>
+            <h2>Migrants</h2>
+            <x>x</x>
+                <div id="migrationControls">
+                    <button id="prevMigrationPeriod" title="See migrants born in the previous period">⏪</button>
+                    <button id="nextMigrationPeriod" title="See migrants born in the next period">⏩</button>
+                    <button id="startMigrationEvolution" class="active" title="Automatically move from one period to the next">▶️</button>
+                    <button id="stopMigrationEvolution" title="Stop automatic movement through the periods">⏹️</button>
+                </div>
+            </div>`);
+            $("#prevMigrationPeriod").on("click", function () {
+                $this.showPreviousMigrationPeriod();
+            });
+
+            $("#nextMigrationPeriod").on("click", function () {
+                $this.showNextMigrationPeriod();
+            });
+
+            $("#startMigrationEvolution").on("click", function () {
+                $this.startMigrationEvolution(5000); // You can adjust the interval as needed
+            });
+
+            $("#stopMigrationEvolution").on("click", function () {
+                $this.stopMigrationEvolution();
+            });
+            // $("#migrationSankey").draggable();
+        }
+
+        // Find migration data for the given periodKey and draw the Sankey diagram
+        const migrationData = this.extractMigrationFlows()[periodKey];
+        if (!migrationData) {
+            console.error("No migration data for period:", periodKey);
+            return;
+        }
+        const { nodes, links } = this.prepareSankeyData(migrationData);
+        if (nodes.length === 0 || links.length === 0) {
+            console.log("No data available to draw the Sankey diagram.");
+            // Optionally, display a message to the user or handle the empty data case differently here.
+        } else {
+            // Proceed with drawing the Sankey diagram.
+            this.drawSankey(nodes, links);
+        }
     }
 }
 

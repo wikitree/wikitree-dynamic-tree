@@ -14,7 +14,7 @@ export class FamilyTreeStatistics {
         this.locationStats = new LocationStatistics(this.peopleArray);
         this.locationStats.processLocations();
         this.updatePeopleWithChildCounts();
-        this.periodData = this.getStatsBy50YearPeriods();
+        this.periodData = this.getStatsInPeriods();
     }
 
     getSettings() {
@@ -308,7 +308,7 @@ export class FamilyTreeStatistics {
         return parts;
     }
 
-    getStatsBy50YearPeriods() {
+    getStatsInPeriods() {
         const statsByPeriod = {};
         const childCounts = this.getChildCounts();
         const couples = {};
@@ -438,6 +438,9 @@ export class FamilyTreeStatistics {
             const birthYear = this.getYear(migrant.BirthDate);
             if (birthYear) {
                 const period = this.getPeriod(birthYear, periodLength);
+                if (!statsByPeriod[period]) {
+                    statsByPeriod[period] = 0;
+                } // Initialize the statsByPeriod object
                 // Check if the period exists in statsByPeriod
                 if (statsByPeriod[period]) {
                     // Increment the migrant count

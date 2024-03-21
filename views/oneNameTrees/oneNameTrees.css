@@ -800,7 +800,8 @@ input[type="submit"],
 }
 .oneNameTrees #unsourcedProfiles,
 .oneNameTrees #unconnectedProfiles,
-.oneNameTrees #noRelationsProfiles {
+.oneNameTrees #noRelationsProfiles,
+.oneNameTrees #periodMigrants {
   display: none;
   position: fixed;
   z-index: 100000;
@@ -816,7 +817,8 @@ input[type="submit"],
 }
 .oneNameTrees #unsourcedProfiles a,
 .oneNameTrees #unconnectedProfiles a,
-.oneNameTrees #noRelationsProfiles a {
+.oneNameTrees #noRelationsProfiles a,
+.oneNameTrees #periodMigrants a {
   display: block;
   margin: 0.5em;
   padding-left: 0.2em;
@@ -1093,11 +1095,11 @@ input[type="submit"],
 
 .oneNameTrees #personTooltip {
   position: absolute;
-  visibility: hidden;
-  background-color: white;
+  display: none;
   border: 1px solid #d3d3d3;
   padding: 10px;
   border-radius: 5px;
+  background-color: #f9f9f9;
 }
 .oneNameTrees #personTooltip a {
   display: block;
