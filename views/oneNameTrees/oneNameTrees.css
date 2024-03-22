@@ -853,17 +853,20 @@ input[type="submit"],
 .oneNameTrees #locationsVisualisation .mainTitle {
   cursor: move;
 }
-.oneNameTrees #locationsVisualisation #controlButtons {
+.oneNameTrees #locationsVisualisation #controlButtons,
+.oneNameTrees #migrationSankey #migrationControls {
   position: absolute;
   top: 0.2em;
   left: 0.2em;
 }
-.oneNameTrees #locationsVisualisation #controlButtons button {
+.oneNameTrees #locationsVisualisation #controlButtons button,
+.oneNameTrees #migrationSankey #migrationControls button {
   margin: 0;
   padding: 0;
   border: 3px solid white;
 }
-.oneNameTrees #locationsVisualisation #controlButtons button.active {
+.oneNameTrees #locationsVisualisation #controlButtons button.active,
+.oneNameTrees #migrationSankey #migrationControls button.active {
   background-color: lightgreen;
   color: #fff;
   border: 3px solid lightgreen;
@@ -903,7 +906,7 @@ input[type="submit"],
 }
 
 .oneNameTress #locationsVisualisation,
-.oneNameTress #migrationVisualisation {
+.oneNameTress #migrationSankey {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -911,7 +914,8 @@ input[type="submit"],
   overflow: hidden; /* Adjust based on your scrolling/zooming setup */
 }
 
-.oneNameTress #locationsVisualisation h2 {
+.oneNameTress #locationsVisualisation h2,
+.oneNameTress #migrationSankey h2 {
   text-align: center;
   margin-bottom: 10px; /* Space between title and SVG */
   position: absolute;

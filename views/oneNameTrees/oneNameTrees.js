@@ -2930,11 +2930,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     reset() {
         clearInterval(D3DataFormatter.evolutionInterval);
+        clearInterval(D3DataFormatter.migrationEvolutionInterval);
         $("#stopEvolution").trigger("click");
         $("div.message,.popup").remove();
         $("#toggleDetails,#toggleWTIDs").removeClass("on");
         $("#searchContainer,#toggleDetails,#toggleWTIDs,#tableViewButton").hide();
         $("#tableViewButton").removeClass("on");
+        $("#migrationSankey *").off();
+        $("#migrationSankey").empty().remove();
         $(
             "#locationsVisualisation,.duplicateLink,#wideTableButton,#noResults,#statisticsContainer,#periodButtonsContainer,#tableView,#clearFilters,#tableView_wrapper,#filtersButton,#flipLocationsButton,#nameSelectsSwitchButton,#nameSelects"
         ).off();
@@ -3627,7 +3630,21 @@ window.OneNameTrees = class OneNameTrees extends View {
         const periodStats = this.familyTreeStats.getStatsInPeriods();
         console.log("Stats in Periods:", periodStats);
 
+        clearD3DataFormatterEffects();
+
         const d3DataFormatter = new D3DataFormatter(periodStats);
+
+        function clearD3DataFormatterEffects() {
+            // Remove visual elements
+            d3.select("#migrationSankey").remove();
+            $("#locationsVisualization").remove();
+            // Detach event listeners
+            $("#prevPeriod").off("click.oneNameTrees");
+            $("#nextPeriod").off("click.oneNameTrees");
+            // Clear intervals or timeouts if set
+            // Example: clearInterval(d3DataFormatter.someInterval);
+            // Reset any modified global/shared state
+        }
         // d3DataFormatter.lifespanGraph();
         d3DataFormatter.doDrawGraph("lifespanGraph");
         d3DataFormatter.doDrawGraph("peopleCountGraph");
@@ -3636,10 +3653,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         d3DataFormatter.initVisualization();
 
-        const migrations = d3DataFormatter.extractMigrationFlows();
+        //const migrations = d3DataFormatter.extractMigrationFlows();
         //d3DataFormatter.sankeyFormatMigrationData();
 
-        d3DataFormatter.startMigrationEvolution(5000);
+        d3DataFormatter.startMigrationEvolution(10000);
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -4531,6 +4548,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 class D3DataFormatter {
     constructor(statsByPeriod) {
         $("#locationsVisualization").remove();
+        $("#lifespanGraph").remove();
+        $("#peopleCountGraph").remove();
+        $("#migrationSankey").remove();
         this.statsByPeriod = statsByPeriod;
         this.currentPeriodIndex = 0;
         this.locationHierarchy = { name: "All Periods", children: [] };
@@ -5400,16 +5420,27 @@ class D3DataFormatter {
         // Usage
         sortNodesByCountry(nodes);
 
-        // Define gradients for the links
-        const gradients = svg
-            .append("defs")
-            .selectAll(".gradient")
-            .data(graphLinks, (d) => d.source.name + "-" + d.target.name) // Unique identifier for each link
+        // Step 1: Ensure a single <defs> section
+        let defs = svg.select("defs");
+        if (defs.empty()) {
+            defs = svg.append("defs");
+        }
+
+        // Step 2: Bind data to existing gradient definitions
+        let gradients = defs
+            .selectAll("linearGradient")
+            .data(
+                graphLinks,
+                (d) => `gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")}`
+            );
+
+        // Step 3: Enter selection - Append new gradients
+        let enterGradients = gradients
             .enter()
             .append("linearGradient")
             .attr(
                 "id",
-                (d) => "gradient-" + d.source.name.replace(/[\s,]/g, "_") + "-" + d.target.name.replace(/[\s,]/g, "_")
+                (d) => `gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")}`
             )
             .attr("gradientUnits", "userSpaceOnUse")
             .attr("x1", (d) => d.source.x1)
@@ -5417,88 +5448,93 @@ class D3DataFormatter {
             .attr("x2", (d) => d.target.x0)
             .attr("y2", (d) => (d.target.y1 + d.target.y0) / 2);
 
-        gradients
+        // Append stops to new gradients
+        enterGradients
             .append("stop")
             .attr("offset", "0%")
-            .attr("stop-color", (d) => {
-                // Extracting country name considering the format "Country, County/State"
-                const countryName = d.source.name.split(/,\s?/).shift(); // Use .pop() to get the last part
-                //console.log(`Adjusted Source country name: ${countryName}`);
-                // Use a function or a direct map to get the corresponding color
-                return countryColors[countryName] || "#cccccc"; // Default color if not found
-            });
+            .attr("stop-color", (d) => countryColors[d.source.name.split(/,\s?/).shift()] || "#cccccc");
 
-        gradients
+        enterGradients
             .append("stop")
             .attr("offset", "100%")
-            .attr("stop-color", (d) => {
-                // Extracting country name considering the format "Country, County/State"
-                const countryName = d.target.name.split(/,\s?/).shift(); // Use .pop() to get the last part
-                // console.log(`Adjusted Target country name: ${countryName}`);
-                // Use a function or a direct map to get the corresponding color
-                return countryColors[countryName] || "#cccccc"; // Default color if not found
-            });
+            .attr("stop-color", (d) => countryColors[d.target.name.split(/,\s?/).shift()] || "#cccccc");
+        gradients.exit().remove();
 
-        // Add in the links with gradient
-        const link = svg
-            .append("g")
-            .selectAll(".link")
-            .data(graphLinks)
-            .enter()
-            .append("path")
-            .attr("class", "link")
+        // First, select the links layer or create it if it doesn't exist
+        let linksLayer = svg.select("g.linksLayer");
+        if (linksLayer.empty()) {
+            linksLayer = svg.append("g").classed("linksLayer", true);
+        }
+
+        // Bind the data to existing elements, creating a update selection
+        const linkUpdate = linksLayer.selectAll(".link").data(graphLinks, (d) => d.source.name + "-" + d.target.name);
+
+        // Remove any links that are no longer needed
+        linkUpdate.exit().remove();
+
+        // Enter any new links
+        const linkEnter = linkUpdate.enter().append("path").attr("class", "link");
+
+        // Merge the enter and update selections, then apply attributes to both
+        linkEnter
+            .merge(linkUpdate)
             .attr("d", d3.sankeyLinkHorizontal())
             .style(
                 "stroke",
                 (d) => `url(#gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")})`
-            ) // Reference the sanitized ID
+            )
             .style("stroke-width", (d) => Math.max(1, d.width));
 
-        // add in the nodes
-        const node = svg
-            .append("g")
-            .selectAll(".node")
-            .data(graphNodes)
-            .enter()
-            .append("g")
-            .attr("class", "node")
-            .attr("transform", function (d) {
-                return "translate(" + d.x0 + "," + d.y0 + ")";
-            });
+        let nodesLayer = svg.select("g.nodesLayer");
+        if (nodesLayer.empty()) {
+            nodesLayer = svg.append("g").classed("nodesLayer", true);
+        }
+        // Bind the data to existing node groups, creating an update selection
+        const nodeUpdate = nodesLayer.selectAll(".node").data(graphNodes, (d) => d.name);
 
-        // add the rectangles for the nodes
-        node.append("rect")
-            .attr("height", function (d) {
-                return d.y1 - d.y0;
-            })
+        // Remove nodes that are no longer needed
+        nodeUpdate.exit().remove();
+
+        // Enter any new nodes
+        const nodeEnter = nodeUpdate.enter().append("g").attr("class", "node");
+
+        // Merge the enter and update selections, then apply shared attributes
+        nodeEnter.merge(nodeUpdate).attr("transform", (d) => `translate(${d.x0},${d.y0})`);
+
+        // Handling rectangles for both new and updated nodes
+        nodeEnter
+            .append("rect")
+            .merge(nodeUpdate.select("rect")) // Select and merge existing rects to update them
+            .attr("height", (d) => d.y1 - d.y0)
             .attr("width", sankey.nodeWidth())
-            .style("fill", function (d) {
-                return (d.color = "#b3cde3");
-            })
-            .style("stroke", function (d) {
-                return d3.rgb(d.color).darker(2);
-            });
+            .style("fill", "#b3cde3")
+            .style("stroke", (d) => d3.rgb(d.color).darker(2));
 
-        // add in the title for the nodes
-        node.append("text")
+        // Handling text for both new and updated nodes
+        nodeEnter
+            .append("text")
+            .merge(nodeUpdate.select("text")) // Select and merge existing texts to update them
             .attr("x", -6)
-            .attr("y", function (d) {
-                return (d.y1 - d.y0) / 2;
-            })
+            .attr("y", (d) => (d.y1 - d.y0) / 2)
             .style("font-weight", "bold")
             .attr("dy", "0.35em")
             .attr("text-anchor", "end")
-            .text(function (d) {
-                return d.name;
-            })
-            .filter(function (d) {
-                return d.x0 < width / 2;
-            })
+            .text((d) => d.name)
+            .filter((d) => d.x0 < width / 2)
             .attr("x", 6 + sankey.nodeWidth())
             .attr("text-anchor", "start");
-        // add bold
 
-        function appendPersonIcons(svg, graphLinks, peopleArray) {
+        let iconsLayer = svg.select("g.iconsLayer");
+        if (iconsLayer.empty()) {
+            iconsLayer = svg.append("g").classed("iconsLayer", true);
+        }
+
+        appendPersonIcons(iconsLayer, graphLinks, $this.peopleArray);
+        separateOverlappingCircles(iconsLayer);
+
+        // Assume showTooltip and tooltipHTML are implemented elsewhere
+
+        function appendPersonIcons(iconsLayer, graphLinks, peopleArray) {
             // Move the tooltip container inside the migrationSankey div for better control
             if ($("#migrationSankey #personTooltip").length === 0) {
                 $("#migrationSankey").append(
@@ -5506,11 +5542,14 @@ class D3DataFormatter {
                 );
             }
 
+            console.log("People array:", peopleArray);
             const tooltip = $("#migrationSankey #personTooltip");
 
             graphLinks.forEach((link) => {
+                console.log("Link:", link);
                 link.peopleIds.forEach((id, index) => {
                     const person = peopleArray.find((p) => p.Id === id);
+                    console.log("Person:", person);
                     if (!person) return;
 
                     let personHTML = tooltipHTML(person);
@@ -5520,25 +5559,27 @@ class D3DataFormatter {
                     let deathCircleY = link.y1;
 
                     // Birth circle positioned +20 from the source x0
-                    svg.append("circle")
+                    iconsLayer
+                        .append("circle")
                         .attr("cx", link.source.x0 + 20)
                         .attr("cy", birthCircleY)
                         .attr("r", 10)
                         .attr("fill", "green")
                         .on("click", function () {
                             // Adjust the tooltip's position
-                            showTooltip(tooltip, personHTML, $(this), "birth");
+                            showTooltip(tooltip, personHTML, $(this), "birth", person);
                         });
 
                     // Death circle positioned -20 from the target x1
-                    svg.append("circle")
+                    iconsLayer
+                        .append("circle")
                         .attr("cx", link.target.x1 - 20)
                         .attr("cy", deathCircleY)
                         .attr("r", 10)
                         .attr("fill", "red")
                         .on("click", function () {
                             // Adjust the tooltip's position
-                            showTooltip(tooltip, personHTML, $(this), "death");
+                            showTooltip(tooltip, personHTML, $(this), "death", person);
                         });
                 });
             });
@@ -5551,7 +5592,43 @@ class D3DataFormatter {
             });
         }
 
-        function showTooltip(tooltip, personHTML, circle, type) {
+        function separateOverlappingCircles(iconsLayer) {
+            const circleData = [];
+
+            // Gather circle positions and data
+            iconsLayer.selectAll("circle").each(function () {
+                const circle = d3.select(this);
+                const cx = parseFloat(circle.attr("cx"));
+                const cy = parseFloat(circle.attr("cy"));
+                circleData.push({ circle, cx, cy });
+            });
+
+            // Group by position
+            const groupedByPosition = {};
+            circleData.forEach((data) => {
+                const positionKey = `${data.cx},${data.cy}`;
+                if (!groupedByPosition[positionKey]) {
+                    groupedByPosition[positionKey] = [];
+                }
+                groupedByPosition[positionKey].push(data);
+            });
+
+            // Adjust positions within each group
+            Object.values(groupedByPosition).forEach((group) => {
+                if (group.length > 1) {
+                    // Only adjust if there are overlaps
+                    const spacing = 25; // Vertical spacing between circles
+                    const totalHeight = (group.length - 1) * spacing;
+                    let startY = group[0].cy - totalHeight / 2;
+
+                    group.forEach((data, index) => {
+                        data.circle.attr("cy", startY + index * spacing);
+                    });
+                }
+            });
+        }
+
+        function showTooltip(tooltip, personHTML, circle, type, person) {
             const circlePos = circle.position(); // Using position relative to the parent div
             const migrationSankey = $("#migrationSankey");
 
@@ -5562,6 +5639,7 @@ class D3DataFormatter {
 
             tooltip
                 .html(personHTML)
+                .attr("class", `tooltip ${person.Gender}`)
                 .css({
                     top: circlePos.top + offsetY + scrollY + "px", // Adjust for the scroll
                     left: circlePos.left + offsetX + "px",
@@ -5624,25 +5702,8 @@ class D3DataFormatter {
         ${detailText("Died", deathDateText, person.DeathLocation)}
     `;
         }
-
-        appendPersonIcons(svg, graphLinks, this.peopleArray);
     }
-
     /*
-    sankeyFormatMigrationData() {
-        // Assuming migrationData is your data from extractMigrationFlows for a single period
-        const allMigrationData = this.extractMigrationFlows(); // Replace with your actual method call
-        const migrationData = allMigrationData["1801-1900"]; // Assuming you're working with the first period
-        this.peopleArray = this.statsByPeriod["1801-1900"].locationStatistics.peopleArray; // Replace with your actual data
-        const { nodes, links } = this.prepareSankeyData(migrationData);
-        // Help
-
-        // console.log("Sankey nodes:", nodes);
-        //  console.log("Sankey links:", links);
-        this.drawSankey(nodes, links);
-    }
-    */
-
     startMigrationEvolution(intervalMs) {
         if (this.migrationEvolutionInterval) {
             clearInterval(this.migrationEvolutionInterval); // Clear existing interval if it's already running
@@ -5658,6 +5719,36 @@ class D3DataFormatter {
             this.migrationEvolutionInterval = null; // Clear the interval ID
         }
     }
+    */
+
+    startMigrationEvolution(intervalMs) {
+        // Clear any existing interval to prevent multiple instances running.
+        if (this.migrationEvolutionInterval) {
+            clearInterval(this.migrationEvolutionInterval);
+        }
+        // Set a new interval for automatically moving through the migration periods.
+        this.migrationEvolutionInterval = setInterval(() => {
+            // Update the current period and redraw the Sankey diagram.
+            this.showNextMigrationPeriod();
+        }, intervalMs);
+
+        // Optionally, update the UI to reflect that the evolution has started.
+        // For example, disable the start button and enable the stop button.
+        $("#startMigrationEvolution").prop("disabled", true);
+        $("#stopMigrationEvolution").prop("disabled", false);
+    }
+
+    stopMigrationEvolution() {
+        // Clear the interval when stopping the evolution.
+        if (this.migrationEvolutionInterval) {
+            clearInterval(this.migrationEvolutionInterval);
+            this.migrationEvolutionInterval = null; // Clear the interval ID
+        }
+        // Optionally, update the UI to reflect that the evolution has stopped.
+        // For example, enable the start button and disable the stop button.
+        $("#startMigrationEvolution").prop("disabled", false);
+        $("#stopMigrationEvolution").prop("disabled", true);
+    }
 
     showNextMigrationPeriod() {
         // Update this.currentPeriodIndex and redraw the Sankey diagram for the new period
@@ -5670,19 +5761,28 @@ class D3DataFormatter {
     }
 
     showPreviousMigrationPeriod() {
-        // Update this.currentPeriodIndex and redraw the Sankey diagram for the new period
-        this.currentPeriodIndex = (this.currentPeriodIndex - 1) % Object.keys(this.statsByPeriod).length;
+        // Calculate the total number of periods
+        const totalPeriods = Object.keys(this.statsByPeriod).length;
+
+        // Update this.currentPeriodIndex to the previous period, wrapping around if necessary
+        // Adjust the calculation to handle negative indices correctly
+        this.currentPeriodIndex = (this.currentPeriodIndex - 1 + totalPeriods) % totalPeriods;
+
+        // Determine the periodKey for the new currentPeriodIndex
         const periodKey = Object.keys(this.statsByPeriod)[this.currentPeriodIndex];
+
+        // Redraw the Sankey diagram for the new period
         this.drawMigrationSankeyForPeriod(periodKey);
     }
 
     drawMigrationSankeyForPeriod(periodKey) {
         const $this = this;
+        this.peopleArray = this.statsByPeriod[periodKey]?.locationStatistics?.peopleArray;
         // Append the svg object to the body
         if ($("#migrationSankey").length === 0) {
             $("body").append(`
             <div id='migrationSankey' class='popup graph'>
-            <h2>Migrants</h2>
+            <h2>Migrants born <span id="h2MigrantPeriod">${periodKey}</span></h2>
             <x>x</x>
                 <div id="migrationControls">
                     <button id="prevMigrationPeriod" title="See migrants born in the previous period">⏪</button>
@@ -5691,19 +5791,30 @@ class D3DataFormatter {
                     <button id="stopMigrationEvolution" title="Stop automatic movement through the periods">⏹️</button>
                 </div>
             </div>`);
-            $("#prevMigrationPeriod").on("click", function () {
+
+            $("#migrationControls button").on("click.oneNameTrees", function () {
+                $("#migrationControls button").removeClass("active");
+                $this.stopMigrationEvolution();
+                if ($(this).prop("id") === "startMigrationEvolution") {
+                    $(this).addClass("active");
+                    $this.startMigrationEvolution(10000);
+                }
+            });
+
+            $("body").on("click.oneNameTrees", "#prevMigrationPeriod", function () {
                 $this.showPreviousMigrationPeriod();
             });
 
-            $("#nextMigrationPeriod").on("click", function () {
+            $("body").on("click.oneNameTrees", "#nextMigrationPeriod", function () {
                 $this.showNextMigrationPeriod();
             });
 
-            $("#startMigrationEvolution").on("click", function () {
-                $this.startMigrationEvolution(5000); // You can adjust the interval as needed
+            $("body").on("click.oneNameTrees", "#startMigrationEvolution", function () {
+                clearInterval($this.migrationEvolutionInterval);
+                $this.startMigrationEvolution(7000); // You can adjust the interval as needed
             });
 
-            $("#stopMigrationEvolution").on("click", function () {
+            $("body").on("click.oneNameTrees", "#stopMigrationEvolution", function () {
                 $this.stopMigrationEvolution();
             });
             // $("#migrationSankey").draggable();
@@ -5718,9 +5829,18 @@ class D3DataFormatter {
         const { nodes, links } = this.prepareSankeyData(migrationData);
         if (nodes.length === 0 || links.length === 0) {
             console.log("No data available to draw the Sankey diagram.");
+            // Get next periodKey
+            const periodKeys = Object.keys(this.statsByPeriod);
+            const nextIndex = (periodKeys.indexOf(periodKey) + 1) % periodKeys.length;
+            const nextPeriodKey = periodKeys[nextIndex];
+            this.drawMigrationSankeyForPeriod(nextPeriodKey);
+
             // Optionally, display a message to the user or handle the empty data case differently here.
         } else {
             // Proceed with drawing the Sankey diagram.
+
+            $("#h2MigrantPeriod").text(periodKey);
+
             this.drawSankey(nodes, links);
         }
     }
