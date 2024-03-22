@@ -725,6 +725,8 @@ input[type="submit"],
   background-color: #25422d;
   color: white;
   border-radius: 1em;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
 }
 .oneNameTrees #statsDisplay .stat-item.clicker label:hover {
   background-color: gold;
@@ -1107,7 +1109,6 @@ input[type="submit"],
 }
 .oneNameTrees #personTooltip a {
   display: block;
-  margin: 0.5em;
   padding-left: 0.2em;
   font-size: large;
   font-weight: bold;
@@ -1122,4 +1123,28 @@ input[type="submit"],
 }
 .oneNameTrees #personTooltip span.date {
   font-weight: bold;
+}
+
+.oneNameTrees .profile-list {
+  list-style-type: none; /* Removes default list bullets */
+  padding: 0;
+  margin-left: 0;
+  border-left: none;
+}
+
+.oneNameTrees .profile-item {
+  margin-bottom: 0;
+}
+
+.oneNameTrees .profile-item a {
+  display: block; /* Make links block to occupy their own line */
+  font-weight: bold; /* Example style */
+  color: #333; /* Example style */
+  padding: 0.2em;
+}
+
+.oneNameTrees .location-info {
+  font-size: 0.9em; /* Smaller font size for location info */
+  color: #666; /* Dimmed color for location info */
+  padding-left: 1em; /* Indent location info */
 }

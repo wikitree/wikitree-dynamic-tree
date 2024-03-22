@@ -59,7 +59,9 @@ export class FamilyTreeStatistics {
                 (!person.Mother || person.Mother === 0) &&
                 !person.HasChildren &&
                 person.Privacy >= 40 &&
-                this.isSpousesObjectEmpty(person.Spouses)
+                this.isSpousesObjectEmpty(person.Spouses) &&
+                person.Father != null &&
+                person.Mother != null
         );
         // Proceed with sorting as before
         noRelations.sort((a, b) => {

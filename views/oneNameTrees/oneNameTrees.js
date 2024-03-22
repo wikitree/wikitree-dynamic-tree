@@ -206,6 +206,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 whose children would tend to take their father's surname 
                 (due to this being a name study, mostly based on last name at birth).</li>
                 <li><label>Average Children per Couple</label>: This is the average number of children per couple.</li>
+                <li><label>Migrants</label>: The number of profiles with a birth place that is not the same as the death place. Click the button for a graph of migrations.</li>
                 <li><label>Unsourced</label>: The number of profiles without sources. Click the button to see a list of the profiles.</li>
                 <li><label>Unconnected</label>: The number of profiles not connected to the big trees. Click the button to see a list of the profiles.</li>
                 <li><label>No Connections</label>: The number of profiles with no relations/connections in the WikTree database. Click the button to see a list of the profiles.</li>
@@ -407,7 +408,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.header.on("click.oneNameTrees", "#refreshData", async function () {
             const surname = $("#surname").val();
             const location = $("#location").val();
-            const centuries = this.parseCenturies($("#centuries").val());
+            const centuries = $this.parseCenturies($("#centuries").val());
             this.centuries = centuries;
 
             $("#cancelFetch").trigger("click");
@@ -516,6 +517,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                 const reader = new FileReader();
                 reader.onload = function (e) {
+                    wtViewRegistry.showWarning("Loading data...");
                     const storageObject = JSON.parse(e.target.result);
                     $this.combinedResults = storageObject.data;
                     const treeHtml = storageObject.html;
@@ -1435,7 +1437,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         function cancelIt() {
-            wtViewRegistry.showWarning("Data retrieval cancelled.");
+            wtViewRegistry.showWarning("Data retrieval cancelled");
             $this.disableCancel();
             $this.shakingTree.hide();
             // TODO: do whatever other cleanup should be done
@@ -2511,6 +2513,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $children.remove();
             }
         });
+        wtViewRegistry.showWarning("Building statistics...");
 
         this.showStatistics();
         this.createNameSelectBoxes();
@@ -2994,6 +2997,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         return $div;
     }
 
+    /*
     populateDivWithProfiles($this, $div, profiles) {
         profiles.forEach((person) => {
             const aName = new PersonName(person);
@@ -3007,6 +3011,40 @@ window.OneNameTrees = class OneNameTrees extends View {
                 link = `<a>Private ${dates}</a>`;
             }
             $div.append(link);
+        });
+    }
+    */
+    populateDivWithProfiles($this, $div, profiles) {
+        // Ensure the container has a <ul> element
+        const $ul = $("<ul class='profile-list'></ul>").appendTo($div); // Add class for styling
+
+        profiles.forEach((person) => {
+            const aName = new PersonName(person);
+            let fullName = aName.withParts(["FullName"]);
+            const dates = $this.displayDates(person);
+
+            let id = person.Name;
+            let profileLink = `<a href="https://www.wikitree.com/wiki/${id}" target="_blank" class="${
+                person.Gender || ""
+            }">${fullName} ${dates}</a>`;
+
+            if (!person.Name) {
+                profileLink = `<a>Private ${dates}</a>`;
+            }
+
+            // Construct list item with profile link and location data
+            const $li = $("<li class='profile-item'></li>");
+            const $link = $(profileLink).appendTo($li);
+
+            // Add birth and death location if available, on new lines
+            if (person.BirthLocation) {
+                $li.append(`<div class="location-info">b. ${person.BirthLocation}</div>`);
+            }
+            if (person.DeathLocation) {
+                $li.append(`<div class="location-info">d. ${person.DeathLocation}</div>`);
+            }
+
+            $ul.append($li);
         });
     }
 
@@ -3602,6 +3640,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     showStatistics() {
+        wtViewRegistry.showWarning("Building statistics...");
         const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
         this.familyTreeStats = new FamilyTreeStatistics(dataset);
         //  console.log("Total People: ", this.familyTreeStats.getTotalPeople());
@@ -3656,7 +3695,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         //const migrations = d3DataFormatter.extractMigrationFlows();
         //d3DataFormatter.sankeyFormatMigrationData();
 
-        d3DataFormatter.startMigrationEvolution(10000);
+        // d3DataFormatter.startMigrationEvolution(10000, true);
+        d3DataFormatter.initMigration();
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
@@ -4553,6 +4593,7 @@ class D3DataFormatter {
         $("#migrationSankey").remove();
         this.statsByPeriod = statsByPeriod;
         this.currentPeriodIndex = 0;
+        this.currentMigrationPeriodIndex = 0;
         this.locationHierarchy = { name: "All Periods", children: [] };
         this.peopleArray = [];
         this.nameBackgroundColours = [
@@ -5320,6 +5361,10 @@ class D3DataFormatter {
         return { nodes, links };
     }
 
+    sanitizeId(id) {
+        return id.replace(/[\s,']/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+    }
+
     drawSankey(nodes, links) {
         const $this = this;
 
@@ -5330,14 +5375,34 @@ class D3DataFormatter {
             "Canada": "#9bbedc",
             "Australia": "#ffbf80",
             "United States": "#f28c8e",
+            "USA": "#f28c8e",
+            "U.S.A.": "#f28c8e",
+            "United States of America": "#f28c8e",
             "New Zealand": "#cca6d1",
             "United Kingdom": "#d2aa94",
+            "UK": "#d2aa94",
             "South Africa": "#fbc0df",
             "India": "#cccccc",
             "Philippines": "#ffff99",
             "China": "#d2e6f1",
             "Netherlands": "#8fbcda",
             "Germany": "#d8efc4",
+            "Deutschland": "#d8efc4",
+
+            // Historical variants of Deutschland
+            "German Empire": "#d8efc4",
+            "Deutsches Reich": "#d8efc4",
+            "Bundesrepublik Deutschland": "#d8efc4",
+            "Prussia": "#d8efc4",
+            "Bavaria": "#d8efc4",
+            "Heiliges Römisches Reich": "#d8efc4",
+            "Weimar Republic": "#d8efc4",
+            "Duchy of Bavaria": "#d8efc4",
+            "Deutscher Bund": "#d8efc4",
+            "Rhinebund": "#d8efc4",
+            "Frankreich": "#d8efc4",
+
+            "DDR": "#d8efc4",
             "Italy": "#99d096",
             "France": "#fdcccc",
             "Spain": "#f18c8e",
@@ -5363,7 +5428,7 @@ class D3DataFormatter {
             "Bulgaria": "#f0e68c",
             "Greece": "#e0ffff",
             "Turkey": "#fafad2",
-            "England": "#d3d3d3",
+            "England": "#ffffff",
             "Scotland": "#ffb6c1",
             "Wales": "#ffa07a",
             "Northern Ireland": "#20b2aa",
@@ -5498,19 +5563,13 @@ class D3DataFormatter {
         // Step 2: Bind data to existing gradient definitions
         let gradients = defs
             .selectAll("linearGradient")
-            .data(
-                graphLinks,
-                (d) => `gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")}`
-            );
+            .data(graphLinks, (d) => `gradient-${this.sanitizeId(d.source.name)}-${this.sanitizeId(d.target.name)}`);
 
         // Step 3: Enter selection - Append new gradients
         let enterGradients = gradients
             .enter()
             .append("linearGradient")
-            .attr(
-                "id",
-                (d) => `gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")}`
-            )
+            .attr("id", (d) => `gradient-${this.sanitizeId(d.source.name)}-${this.sanitizeId(d.target.name)}`)
             .attr("gradientUnits", "userSpaceOnUse")
             .attr("x1", (d) => d.source.x1)
             .attr("y1", (d) => (d.source.y1 + d.source.y0) / 2)
@@ -5550,7 +5609,7 @@ class D3DataFormatter {
             .attr("d", d3.sankeyLinkHorizontal())
             .style(
                 "stroke",
-                (d) => `url(#gradient-${d.source.name.replace(/[\s,]/g, "_")}-${d.target.name.replace(/[\s,]/g, "_")})`
+                (d) => `url(#gradient-${this.sanitizeId(d.source.name)}-${this.sanitizeId(d.target.name)})`
             )
             .style("stroke-width", (d) => Math.max(1, d.width));
 
@@ -5772,37 +5831,140 @@ class D3DataFormatter {
     `;
         }
     }
+
+    initMigration() {
+        // Sort period keys once and store them for consistent ordered access
+        this.sortedPeriodKeys = Object.keys(this.statsByPeriod).sort();
+
+        // Set the initial current period index
+        this.currentMigrationPeriodIndex = 0;
+
+        // Prepare the initial UI and bind event listeners
+        this.setupUI();
+
+        // Draw the Sankey diagram for the first period immediately
+        //  const firstPeriodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
+        // this.drawMigrationSankeyForPeriod(firstPeriodKey);
+        this.startMigrationEvolution(10000, true);
+    }
+
+    setupUI() {
+        // Check if the migrationSankey div exists, if not, create it
+        if ($("#migrationSankey").length === 0) {
+            $("body").append(`
+                <div id='migrationSankey' class='popup graph'>
+                    <h2>Migrants born <span id="h2MigrantPeriod"></span></h2>
+                    <x>x</x>
+                    <div id="migrationControls">
+                        <button id="prevMigrationPeriod">⏪</button>
+                        <button id="nextMigrationPeriod">⏩</button>
+                        <button id="startMigrationEvolution" class="active">▶️</button>
+                        <button id="stopMigrationEvolution">⏹️</button>
+                    </div>
+                </div>`);
+
+            // Adjust the initial h2MigrantPeriod text
+            $("#h2MigrantPeriod").text(this.sortedPeriodKeys[this.currentMigrationPeriodIndex]);
+        }
+
+        // Bind event listeners
+        const $this = this;
+        $("#prevMigrationPeriod").on("click", function () {
+            $this.showPreviousMigrationPeriod();
+        });
+
+        $("#nextMigrationPeriod").on("click", function () {
+            $this.showNextMigrationPeriod();
+        });
+
+        $("#startMigrationEvolution").on("click", function () {
+            // Only start the evolution if it's not already running
+            if (!$this.migrationEvolutionInterval) {
+                $this.startMigrationEvolution(7000, true);
+                $(this).addClass("active");
+            }
+        });
+
+        $("#stopMigrationEvolution").on("click", function () {
+            $this.stopMigrationEvolution();
+            $("#startMigrationEvolution").removeClass("active");
+        });
+
+        // Ensure the stop button is initially disabled
+        $("#stopMigrationEvolution").prop("disabled", true);
+
+        // Make the migrationSankey div draggable if needed
+        // $("#migrationSankey").draggable();
+    }
+
     /*
-    startMigrationEvolution(intervalMs) {
-        if (this.migrationEvolutionInterval) {
-            clearInterval(this.migrationEvolutionInterval); // Clear existing interval if it's already running
-        }
-        this.migrationEvolutionInterval = setInterval(() => {
-            this.showNextMigrationPeriod();
-        }, intervalMs);
-    }
-
-    stopMigrationEvolution() {
-        if (this.migrationEvolutionInterval) {
-            clearInterval(this.migrationEvolutionInterval);
-            this.migrationEvolutionInterval = null; // Clear the interval ID
-        }
-    }
-    */
-
-    startMigrationEvolution(intervalMs) {
-        // Clear any existing interval to prevent multiple instances running.
+    startMigrationEvolution(intervalMs, immediateStart = false) {
         if (this.migrationEvolutionInterval) {
             clearInterval(this.migrationEvolutionInterval);
         }
-        // Set a new interval for automatically moving through the migration periods.
-        this.migrationEvolutionInterval = setInterval(() => {
-            // Update the current period and redraw the Sankey diagram.
-            this.showNextMigrationPeriod();
-        }, intervalMs);
 
-        // Optionally, update the UI to reflect that the evolution has started.
-        // For example, disable the start button and enable the stop button.
+        const moveToNextPeriod = () => {
+            // Increment and wrap the currentPeriodIndex
+            this.currentMigrationPeriodIndex = (this.currentMigrationPeriodIndex + 1) % this.sortedPeriodKeys.length;
+
+            const periodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
+            const migrationData = this.extractMigrationFlows()[periodKey];
+
+            // Check if the current period has data; if not, move to the next one
+            if (!migrationData || migrationData.length === 0) {
+                moveToNextPeriod();
+            } else {
+                this.drawMigrationSankeyForPeriod(periodKey);
+            }
+        };
+
+        // Immediately trigger the next migration period if requested
+        if (immediateStart) {
+            moveToNextPeriod();
+        }
+
+        // Set the interval
+        this.migrationEvolutionInterval = setInterval(moveToNextPeriod, intervalMs);
+        $("#startMigrationEvolution").prop("disabled", true);
+        $("#stopMigrationEvolution").prop("disabled", false);
+    }
+*/
+
+    startMigrationEvolution(intervalMs, immediateStart = false) {
+        if (this.migrationEvolutionInterval) {
+            clearInterval(this.migrationEvolutionInterval);
+        }
+
+        // New parameter to track recursion depth, initialized here
+        const attemptToMoveToNextPeriod = (attempts = 0) => {
+            // Increment and wrap the currentPeriodIndex
+            this.currentMigrationPeriodIndex = (this.currentMigrationPeriodIndex + 1) % this.sortedPeriodKeys.length;
+
+            const periodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
+            const migrationData = this.extractMigrationFlows()[periodKey];
+
+            // Check if the current period has data; if not, move to the next one
+            // Also, ensure we don't loop infinitely by limiting attempts to the number of periods
+            if ((!migrationData || migrationData.length === 0) && attempts < this.sortedPeriodKeys.length) {
+                attemptToMoveToNextPeriod(attempts + 1); // Pass the incremented attempts
+            } else if (attempts >= this.sortedPeriodKeys.length) {
+                console.log("All periods are empty or attempted to check all periods."); // Optionally handle this case
+                clearInterval(this.migrationEvolutionInterval); // Stop the interval as there's no valid data to display
+                return; // Exit the function to prevent further execution
+            } else {
+                this.drawMigrationSankeyForPeriod(periodKey);
+            }
+        };
+
+        // Immediately trigger the next migration period if requested
+        if (immediateStart) {
+            attemptToMoveToNextPeriod();
+        }
+
+        // Set the interval
+        this.migrationEvolutionInterval = setInterval(() => {
+            attemptToMoveToNextPeriod();
+        }, intervalMs);
         $("#startMigrationEvolution").prop("disabled", true);
         $("#stopMigrationEvolution").prop("disabled", false);
     }
@@ -5820,28 +5982,56 @@ class D3DataFormatter {
     }
 
     showNextMigrationPeriod() {
-        // Update this.currentPeriodIndex and redraw the Sankey diagram for the new period
-        if (!this.currentPeriodIndex) {
-            this.currentPeriodIndex = 0;
-        }
-        this.currentPeriodIndex = (this.currentPeriodIndex + 1) % Object.keys(this.statsByPeriod).length;
-        const periodKey = Object.keys(this.statsByPeriod)[this.currentPeriodIndex];
-        this.drawMigrationSankeyForPeriod(periodKey);
+        const periodKeys = this.sortedPeriodKeys; // Assuming this is already sorted
+        let attempts = 0;
+
+        const moveToNextPeriodWithData = () => {
+            if (attempts >= periodKeys.length) {
+                console.log("All periods are empty or checked.");
+                return; // Avoid infinite loop
+            }
+
+            this.currentMigrationPeriodIndex = (this.currentMigrationPeriodIndex + 1) % periodKeys.length;
+            const periodKey = periodKeys[this.currentMigrationPeriodIndex];
+            const migrationData = this.extractMigrationFlows()[periodKey];
+
+            // If there's no data, move to the next period
+            if (!migrationData || migrationData.length === 0) {
+                attempts++;
+                moveToNextPeriodWithData();
+            } else {
+                this.drawMigrationSankeyForPeriod(periodKey);
+            }
+        };
+
+        moveToNextPeriodWithData();
     }
 
     showPreviousMigrationPeriod() {
-        // Calculate the total number of periods
-        const totalPeriods = Object.keys(this.statsByPeriod).length;
+        const periodKeys = this.sortedPeriodKeys; // Assuming this is already sorted
+        let attempts = 0;
 
-        // Update this.currentPeriodIndex to the previous period, wrapping around if necessary
-        // Adjust the calculation to handle negative indices correctly
-        this.currentPeriodIndex = (this.currentPeriodIndex - 1 + totalPeriods) % totalPeriods;
+        const moveToPreviousPeriodWithData = () => {
+            if (attempts >= periodKeys.length) {
+                console.log("All periods are empty or checked.");
+                return; // Avoid infinite loop
+            }
 
-        // Determine the periodKey for the new currentPeriodIndex
-        const periodKey = Object.keys(this.statsByPeriod)[this.currentPeriodIndex];
+            this.currentMigrationPeriodIndex =
+                (this.currentMigrationPeriodIndex - 1 + periodKeys.length) % periodKeys.length;
+            const periodKey = periodKeys[this.currentMigrationPeriodIndex];
+            const migrationData = this.extractMigrationFlows()[periodKey];
 
-        // Redraw the Sankey diagram for the new period
-        this.drawMigrationSankeyForPeriod(periodKey);
+            // If there's no data, move to the previous period
+            if (!migrationData || migrationData.length === 0) {
+                attempts++;
+                moveToPreviousPeriodWithData();
+            } else {
+                this.drawMigrationSankeyForPeriod(periodKey);
+            }
+        };
+
+        moveToPreviousPeriodWithData();
     }
 
     drawMigrationSankeyForPeriod(periodKey) {
@@ -5849,47 +6039,6 @@ class D3DataFormatter {
         $("#migrationSankey #personTooltip").hide();
 
         this.peopleArray = this.statsByPeriod[periodKey]?.locationStatistics?.peopleArray;
-        // Append the svg object to the body
-        if ($("#migrationSankey").length === 0) {
-            $("body").append(`
-            <div id='migrationSankey' class='popup graph'>
-            <h2>Migrants born <span id="h2MigrantPeriod">${periodKey}</span></h2>
-            <x>x</x>
-                <div id="migrationControls">
-                    <button id="prevMigrationPeriod" title="See migrants born in the previous period">⏪</button>
-                    <button id="nextMigrationPeriod" title="See migrants born in the next period">⏩</button>
-                    <button id="startMigrationEvolution" class="active" title="Automatically move from one period to the next">▶️</button>
-                    <button id="stopMigrationEvolution" title="Stop automatic movement through the periods">⏹️</button>
-                </div>
-            </div>`);
-
-            $("#migrationControls button").on("click.oneNameTrees", function () {
-                $("#migrationControls button").removeClass("active");
-                $this.stopMigrationEvolution();
-                if ($(this).prop("id") === "startMigrationEvolution") {
-                    $(this).addClass("active");
-                    $this.startMigrationEvolution(10000);
-                }
-            });
-
-            $("body").on("click.oneNameTrees", "#prevMigrationPeriod", function () {
-                $this.showPreviousMigrationPeriod();
-            });
-
-            $("body").on("click.oneNameTrees", "#nextMigrationPeriod", function () {
-                $this.showNextMigrationPeriod();
-            });
-
-            $("body").on("click.oneNameTrees", "#startMigrationEvolution", function () {
-                clearInterval($this.migrationEvolutionInterval);
-                $this.startMigrationEvolution(7000); // You can adjust the interval as needed
-            });
-
-            $("body").on("click.oneNameTrees", "#stopMigrationEvolution", function () {
-                $this.stopMigrationEvolution();
-            });
-            // $("#migrationSankey").draggable();
-        }
 
         // Find migration data for the given periodKey and draw the Sankey diagram
         const migrationData = this.extractMigrationFlows()[periodKey];
