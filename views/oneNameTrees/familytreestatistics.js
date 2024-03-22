@@ -9,12 +9,19 @@ import { historicalCountries } from "./location_data.js";
 
 export class FamilyTreeStatistics {
     constructor(combinedResults) {
+        this.clearPreviousResults();
         this.combinedResults = combinedResults;
         this.peopleArray = Object.values(combinedResults);
         this.locationStats = new LocationStatistics(this.peopleArray);
         this.locationStats.processLocations();
         this.updatePeopleWithChildCounts();
         this.periodData = this.getStatsInPeriods();
+    }
+
+    clearPreviousResults() {
+        this.peopleArray = [];
+        this.locationStats = new LocationStatistics([]);
+        this.periodData = {};
     }
 
     getSettings() {
@@ -198,6 +205,111 @@ export class FamilyTreeStatistics {
     }
 
     getMigrants() {
+        let shouldLog = false;
+        const log = console.log; // Shortcut for logging
+        // Only if person.Name is "Anderson-79237", log the details
+
+        // Helper function to map location to its broader region or country
+        const getTopLocation = (locationParts) => {
+            if (!locationParts || locationParts.length === 0) {
+                if (shouldLog) {
+                    log("getTopLocation: locationParts is empty or undefined.");
+                }
+                return null;
+            }
+
+            let topLocation = locationParts[0];
+            if (shouldLog) {
+                log(`getTopLocation: topLocation: ${topLocation}`);
+            }
+            //            log(`Processing topLocation: ${topLocation}`);
+
+            // Mapping for UK counties to "United Kingdom" and handling Ireland separately
+            if (
+                EnglandCounties.includes(topLocation) ||
+                ScotlandCounties.includes(topLocation) ||
+                WalesCounties.includes(topLocation)
+            ) {
+                return "United Kingdom";
+            } else if (IrelandCounties.includes(topLocation)) {
+                return "Ireland";
+            }
+
+            // Handling US states and their historical names
+            const stateOrHistoricalName = usStatesDetails.find(
+                (s) =>
+                    s.name.toLowerCase() === topLocation.toLowerCase() ||
+                    (s.former_names &&
+                        Object.keys(s.former_names).some((fn) => fn.toLowerCase() === topLocation.toLowerCase()))
+            );
+            if (stateOrHistoricalName) return "United States";
+
+            // Checking modern and historical countries
+            const country = countries.find(
+                (c) =>
+                    c.name.toLowerCase() === topLocation.toLowerCase() ||
+                    (c.aliases && c.aliases.some((alias) => alias.toLowerCase() === topLocation.toLowerCase()))
+            );
+            if (country) return country.name;
+
+            const historicalCountry = historicalCountries.find((c) => c.toLowerCase() === topLocation.toLowerCase());
+            if (historicalCountry) return historicalCountry.name;
+            if (shouldLog) {
+                log(`getTopLocation: No matching country or region found for ${topLocation}`);
+            }
+            return null; // Return null if no match is found
+        };
+
+        // Function to determine if the migration is between different regions/countries
+        const isDifferentMigration = (birthLocation, deathLocation, birthParts, deathParts) => {
+            const birthCountry = getTopLocation(birthParts);
+            const deathCountry = getTopLocation(deathParts);
+
+            if (shouldLog) {
+                log(`isDifferentMigration: birthCountry: ${birthCountry}, deathCountry: ${deathCountry}`);
+            }
+
+            // Special handling for Ireland and Northern Ireland
+            if (
+                birthLocation &&
+                birthLocation.includes("Ireland") &&
+                deathLocation &&
+                deathLocation.includes("Ireland")
+            ) {
+                if (shouldLog) {
+                    log("Special handling for Ireland migration, treating as same region.");
+                }
+                return false; // Treat as same region migration
+            }
+
+            return birthCountry && deathCountry && birthCountry !== deathCountry;
+        };
+
+        const migrants = this.peopleArray.filter((person) => {
+            const birthParts = this.getReverseLocationArray(person.BirthLocation);
+            const deathParts = this.getReverseLocationArray(person.DeathLocation);
+            if (person.Name == "Anderson-79237") {
+                shouldLog = true;
+                // Log with colour and bold and big font
+                console.log("%cAnderson-79237", "color: blue; font-weight: bold; font-size: 20px;");
+                console.log("Anderson-79237", person.BirthLocation, person.DeathLocation, birthParts, deathParts);
+
+                console.log(
+                    "isDifferentMigration",
+                    isDifferentMigration(person.BirthLocation, person.DeathLocation, birthParts, deathParts)
+                );
+            } else {
+                shouldLog = false;
+            }
+            return isDifferentMigration(person.BirthLocation, person.DeathLocation, birthParts, deathParts);
+        });
+
+        log(`Found ${migrants.length} migrants.`);
+        return migrants;
+    }
+
+    /*
+    getMigrants() {
         // Helper function to map location to its broader region or country
         const getTopLocation = (locationParts) => {
             if (!locationParts || locationParts.length === 0) return null;
@@ -262,6 +374,7 @@ export class FamilyTreeStatistics {
 
         return migrants;
     }
+    */
 
     getReverseLocationArray(location) {
         if (!location) return null;

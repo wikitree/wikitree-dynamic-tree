@@ -29,7 +29,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.parentToChildrenMap = {};
         this.peopleById = {};
         this.peopleByIdKeys = [];
-        this.familyTreeStats;
+        this.familyTreeStats = {};
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         this.familyTreeStatistics = {};
         this.locationStats = {};
@@ -148,7 +148,8 @@ window.OneNameTrees = class OneNameTrees extends View {
           plus any with variants of the surname as entered in the Google Sheet (click 'Variants')*, are fetched from
           WikiTree+**. This list is stored for the next time you enter the same surname. To refresh this list (to get the
           most up-to-date list available on WikiTree+), hit the 'Refresh' button.<br>
-          * Alternatively, you can enter a list of surnames separated by commas in the Name box.<br>
+          * Alternatively, you can enter a list of surnames separated by commas in the Name box. If you want one name without
+           the variants, just put the name and a comma in the box.<br> 
           ** Note that WikiTree+ is updated once a week, so new profiles may be missing from the results.
         </li>
         <li>
@@ -366,7 +367,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             if (value && localStorage.getItem(cacheKey)) {
                 $("#refreshData").show();
                 // Make the refresh button stand out a little, briefly
-                $("#refreshData").fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+                //$("#refreshData").fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
             } else {
                 $("#refreshData").hide();
             }
@@ -2959,14 +2960,17 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.displayedSpouses = new Set();
         this.combinedResults = {};
         this.filteredResults = {};
+        this.onlyLastNameAtBirth = {};
         this.sortedPeople = [];
         this.peopleById = {};
         this.peopleByIdKeys = [];
         this.locationStats = {};
         this.familyTreeStatistics = {};
+        this.familyTreeStats = {};
         this.parentToChildrenMap = {};
         this.surname = $("#surname").val().replaceAll("_", " ").replace(/\-\d+/, "").trim();
         this.surnameVariants = this.findSurnameVariants(this.surname);
+
         $("section#results").empty();
         $("#statsDisplay #periodStatisticsContainer").empty();
         $("#treesButtons,#tableLabel").removeClass("visible");
@@ -3396,6 +3400,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         );
 
         let $periodMigrants = $("#periodMigrants");
+        $periodMigrants.find("ul").remove();
         if ($("#periodMigrants").length === 0) {
             $periodMigrants = this.createPopupDiv("periodMigrants", "Migrants").hide();
         }
@@ -3642,6 +3647,10 @@ window.OneNameTrees = class OneNameTrees extends View {
     showStatistics() {
         wtViewRegistry.showWarning("Building statistics...");
         const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
+        // Clear any existing statistics by unbinding event listeners and removing elements
+        this.familyTreeStatistics = {};
+        this.familyTreeStats = {};
+
         this.familyTreeStats = new FamilyTreeStatistics(dataset);
         //  console.log("Total People: ", this.familyTreeStats.getTotalPeople());
         //  console.log("Average Lifespan: ", this.familyTreeStats.getAverageLifespan(), "years");
@@ -3656,6 +3665,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         const migrants = this.familyTreeStats.getMigrants();
+        console.log("Migrants: ", migrants.length);
+        console.log("Migrants: ", migrants);
 
         // Get top 10 male names
         const topMaleNames = this.familyTreeStats.getTopNamesByGender("Male");
@@ -3675,13 +3686,26 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         function clearD3DataFormatterEffects() {
             // Remove visual elements
+            d3.select("#lifespanGraph").remove();
+            d3.select("#peopleCountGraph").remove();
             d3.select("#migrationSankey").remove();
             $("#locationsVisualization").remove();
+            // Clear any popups
+            $(".popup:not(.message,#oneNameTreesSettings)").remove();
+
             // Detach event listeners
             $("#prevPeriod").off("click.oneNameTrees");
             $("#nextPeriod").off("click.oneNameTrees");
+            // For migration evolution
+            $("#startMigrationEvolution").off("click.oneNameTrees");
+            $("#stopMigrationEvolution").off("click.oneNameTrees");
+
             // Clear intervals or timeouts if set
             // Example: clearInterval(d3DataFormatter.someInterval);
+            //if (d3DataFormatter) {
+            clearInterval(D3DataFormatter.evolutionInterval);
+            clearInterval(D3DataFormatter.migrationEvolutionInterval);
+            //}
             // Reset any modified global/shared state
         }
         // d3DataFormatter.lifespanGraph();
@@ -4265,6 +4289,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.addCategoryKeyToHelp();
         const $this = this;
         $("#submit").on("click.oneNameTrees", async function () {
+            $this.reset();
             $this.shakingTree.show();
             $("div.error").remove(); // Remove any existing error messages
             wtViewRegistry.clearStatus();
@@ -4327,72 +4352,79 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        $("#toggleDetails").on("click.oneNameTrees", function () {
-            if ($(this).hasClass("off")) {
-                $(this).removeClass("off").addClass("on");
-                $(".dates").each(function () {
-                    $this.showMoreDetails($(this), "show");
-                });
-            } else {
-                $(this).removeClass("on").addClass("off");
-                $(".dates").each(function () {
-                    $this.showMoreDetails($(this), "hide");
-                });
-            }
-        });
-
-        $("#toggleWTIDs").on("click.oneNameTrees", function () {
-            if ($(this).hasClass("off")) {
-                $(this).removeClass("off").addClass("on");
-                $(".wtid").show();
-            } else {
-                $(this).removeClass("on").addClass("off");
-                $(".wtid").hide();
-            }
-        });
-
-        $("#toggleGeneralStats").on("click.oneNameTrees", function () {
-            if ($(this).hasClass("on") == false) {
-                $(this).removeClass("off").addClass("on");
-                $("#statsDisplay").slideDown();
-            } else {
-                $(this).removeClass("on").addClass("off");
-                $("#statsDisplay").slideUp();
-            }
-        });
-
-        $("#tableViewButton").on("click.oneNameTrees", function () {
-            const $tableViewContainer = $("section#table");
-            const $treeViewContainer = $("section#results");
-
-            // Toggle visibility
-            if ($treeViewContainer.is(":visible")) {
-                $treeViewContainer.hide();
-                $tableViewContainer.show();
-                $(this).addClass("on").attr("title", "Click to return to trees view");
-                // Check if the table needs to be built
-                if ($tableViewContainer.find("table").length === 0) {
-                    $this.shakingTree.show();
-                    setTimeout(function () {
-                        $this.buildTable(); // Function to dynamically build the table
-                        $this.shakingTree.hide();
-                    }, 0);
+        $("#toggleDetails")
+            .off()
+            .on("click.oneNameTrees", function () {
+                if ($(this).hasClass("off")) {
+                    $(this).removeClass("off").addClass("on");
+                    $(".dates").each(function () {
+                        $this.showMoreDetails($(this), "show");
+                    });
+                } else {
+                    $(this).removeClass("on").addClass("off");
+                    $(".dates").each(function () {
+                        $this.showMoreDetails($(this), "hide");
+                    });
                 }
-                $("#treesButtons").removeClass("visible");
-            } else {
-                $treeViewContainer.show();
-                $tableViewContainer.hide();
-                $(this).removeClass("on").attr("title", "Show table view");
-                $("#clearFilters").off().remove();
-                $("#treesButtons").addClass("visible");
-            }
-            if ($("#periodButtonsContainer button.on").length) {
-                $("#birthDateFilter").val($("#periodButtonsContainer button.on").text());
-                $("#birthDateFilter").trigger("change");
-            }
+            });
 
-            $this.clearFiltersButton();
-        });
+        $("#toggleWTIDs")
+            .off()
+            .on("click.oneNameTrees", function () {
+                if ($(this).hasClass("off")) {
+                    $(this).removeClass("off").addClass("on");
+                    $(".wtid").show();
+                } else {
+                    $(this).removeClass("on").addClass("off");
+                    $(".wtid").hide();
+                }
+            });
+
+        $("#toggleGeneralStats")
+            .off()
+            .on("click.oneNameTrees", function () {
+                if ($(this).hasClass("on") == false) {
+                    $(this).removeClass("off").addClass("on");
+                } else {
+                    $(this).removeClass("on").addClass("off");
+                }
+                $("#statsDisplay").slideToggle();
+            });
+
+        $("#tableViewButton")
+            .off()
+            .on("click.oneNameTrees", function () {
+                const $tableViewContainer = $("section#table");
+                const $treeViewContainer = $("section#results");
+
+                // Toggle visibility
+                if ($treeViewContainer.is(":visible")) {
+                    $treeViewContainer.hide();
+                    $tableViewContainer.show();
+                    $(this).addClass("on").attr("title", "Click to return to trees view");
+                    // Check if the table needs to be built
+                    if ($tableViewContainer.find("table").length === 0) {
+                        $this.shakingTree.show();
+                        setTimeout(function () {
+                            $this.buildTable(); // Function to dynamically build the table
+                            $this.shakingTree.hide();
+                        }, 0);
+                    }
+                    $("#treesButtons").removeClass("visible");
+                } else {
+                    $treeViewContainer.show();
+                    $tableViewContainer.hide();
+                    $(this).removeClass("on").attr("title", "Show table view");
+                    $("#clearFilters").off().remove();
+                    $("#treesButtons").addClass("visible");
+                }
+                if ($("#periodButtonsContainer button.on").length) {
+                    $("#birthDateFilter").val($("#periodButtonsContainer button.on").text());
+                    $("#birthDateFilter").trigger("change");
+                }
+
+                $this.clearFiltersButton();
+            });
 
         $this.loadFromURL();
     }
@@ -4587,6 +4619,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 
 class D3DataFormatter {
     constructor(statsByPeriod) {
+        console.log("D3DataFormatter constructor called");
+        console.log("statsByPeriod", statsByPeriod);
+        this.clearExistingData();
         $("#locationsVisualization").remove();
         $("#lifespanGraph").remove();
         $("#peopleCountGraph").remove();
@@ -4642,8 +4677,41 @@ class D3DataFormatter {
         this.createLocationHierarchy(statsByPeriod);
         this.sortLocationHierarchy();
         this.aggregateCounts(this.locationHierarchy);
+        this.migrationEvolutionInterval = null;
         // console.log("Location Hierarchy:", JSON.parse(JSON.stringify(this.locationHierarchy)));
         // this.initVisualization();
+    }
+
+    clearExistingData() {
+        // Remove existing SVG elements related to D3 visualizations
+
+        d3.select("#migrationSankey svg").selectAll("*").data([]).exit().remove();
+        d3.select("#locationsVisualization svg").selectAll("*").data([]).exit().remove();
+        d3.select("#lifespanGraph svg").selectAll("*").data([]).exit().remove();
+        d3.select("#peopleCountGraph svg").selectAll("*").data([]).exit().remove();
+        d3.select("#migrationSankey svg").remove();
+        d3.select("#locationsVisualization svg").remove();
+        d3.select("#lifespanGraph svg").remove();
+        d3.select("#peopleCountGraph svg").remove();
+
+        // Reset any data structures that might hold old data
+        this.peopleArray = [];
+        this.locationHierarchy = { name: "All Periods", children: [] };
+        this.currentPeriodIndex = 0;
+        this.currentMigrationPeriodIndex = 0;
+
+        // Clear intervals
+        clearInterval(this.migrationInterval);
+        clearInterval(this.periodInterval);
+        clearInterval(this.migrationPeriodInterval);
+        // etc. for other relevant properties
+
+        // Optionally, reset UI elements or visual indicators
+        // For example, clear out any existing tooltips or interactive elements
+        $("#migrationSankey #personTooltip").empty();
+        $("#locationsVisualization #locationTooltip").empty();
+
+        // etc. for other UI elements
     }
 
     aggregateCounts(node) {
@@ -5657,7 +5725,7 @@ class D3DataFormatter {
             iconsLayer = svg.append("g").classed("iconsLayer", true);
         }
 
-        appendPersonIcons(iconsLayer, graphLinks, $this.peopleArray);
+        appendPersonIcons(iconsLayer, graphLinks, this.peopleArray);
         separateOverlappingCircles(iconsLayer);
 
         // Assume showTooltip and tooltipHTML are implemented elsewhere
@@ -5843,9 +5911,9 @@ class D3DataFormatter {
         this.setupUI();
 
         // Draw the Sankey diagram for the first period immediately
-        //  const firstPeriodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
-        // this.drawMigrationSankeyForPeriod(firstPeriodKey);
-        this.startMigrationEvolution(10000, true);
+        const firstPeriodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
+        this.drawMigrationSankeyForPeriod(firstPeriodKey);
+        // this.startMigrationEvolution(10000, true);
     }
 
     setupUI() {
@@ -5931,6 +5999,8 @@ class D3DataFormatter {
 */
 
     startMigrationEvolution(intervalMs, immediateStart = false) {
+        console.log("Starting migration evolution...");
+        this.stopMigrationEvolution();
         if (this.migrationEvolutionInterval) {
             clearInterval(this.migrationEvolutionInterval);
         }
@@ -5971,10 +6041,13 @@ class D3DataFormatter {
 
     stopMigrationEvolution() {
         // Clear the interval when stopping the evolution.
+        console.log("Stopping migration evolution...");
         if (this.migrationEvolutionInterval) {
             clearInterval(this.migrationEvolutionInterval);
             this.migrationEvolutionInterval = null; // Clear the interval ID
         }
+        console.log("Migration evolution stopped.");
+        console.log("Migration evolution interval ID:", this.migrationEvolutionInterval);
         // Optionally, update the UI to reflect that the evolution has stopped.
         // For example, enable the start button and disable the stop button.
         $("#startMigrationEvolution").prop("disabled", false);
@@ -6033,7 +6106,7 @@ class D3DataFormatter {
 
         moveToPreviousPeriodWithData();
     }
-
+    /*
     drawMigrationSankeyForPeriod(periodKey) {
         const $this = this;
         $("#migrationSankey #personTooltip").hide();
@@ -6062,6 +6135,45 @@ class D3DataFormatter {
             $("#h2MigrantPeriod").text(periodKey);
 
             this.drawSankey(nodes, links);
+        }
+    }*/
+
+    drawMigrationSankeyForPeriod(periodKey, attemptedPeriods = []) {
+        $("#migrationSankey #personTooltip").hide();
+        this.peopleArray = this.statsByPeriod[periodKey]?.locationStatistics?.peopleArray;
+
+        const migrationData = this.extractMigrationFlows()[periodKey];
+        if (!migrationData) {
+            console.log("No migration data for period:", periodKey);
+            return this.attemptNextPeriod(periodKey, attemptedPeriods);
+        }
+
+        // Prepare data for Sankey diagram
+        const { nodes, links } = this.prepareSankeyData(migrationData);
+
+        if (nodes.length === 0 || links.length === 0) {
+            console.log("No data available to draw the Sankey diagram for period:", periodKey);
+            return this.attemptNextPeriod(periodKey, attemptedPeriods);
+        }
+
+        // Proceed with drawing the Sankey diagram for the period with data
+        $("#h2MigrantPeriod").text(periodKey);
+        this.drawSankey(nodes, links);
+    }
+
+    attemptNextPeriod(currentPeriodKey, attemptedPeriods) {
+        attemptedPeriods.push(currentPeriodKey);
+
+        // Stop if all periods have been attempted
+        if (attemptedPeriods.length >= Object.keys(this.statsByPeriod).length) {
+            console.log("All periods attempted, no data available for any period.");
+            return;
+        }
+
+        // Find the next period that hasn't been attempted yet
+        let nextPeriodKey = Object.keys(this.statsByPeriod).find((pk) => !attemptedPeriods.includes(pk));
+        if (nextPeriodKey) {
+            this.drawMigrationSankeyForPeriod(nextPeriodKey, attemptedPeriods);
         }
     }
 }

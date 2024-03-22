@@ -1148,3 +1148,8 @@ input[type="submit"],
   color: #666; /* Dimmed color for location info */
   padding-left: 1em; /* Indent location info */
 }
+
+.oneNameTrees #startMigrationEvolution,
+.oneNameTrees #stopMigrationEvolution {
+  display: none;
+}
