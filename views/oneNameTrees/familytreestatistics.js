@@ -248,8 +248,10 @@ export class FamilyTreeStatistics {
             const country = countries.find(
                 (c) =>
                     c.name.toLowerCase() === topLocation.toLowerCase() ||
-                    (c.aliases && c.aliases.some((alias) => alias.toLowerCase() === topLocation.toLowerCase()))
+                    (c.aliases && c.aliases.some((alias) => alias.toLowerCase() === topLocation.toLowerCase())) ||
+                    c.nativeName.toLowerCase() === topLocation.toLowerCase()
             );
+
             if (country) return country.name;
 
             const historicalCountry = historicalCountries.find((c) => c.toLowerCase() === topLocation.toLowerCase());
