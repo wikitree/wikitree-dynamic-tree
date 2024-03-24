@@ -976,6 +976,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         if (surname.includes(",")) {
             this.surnames = surname.split(/,\s*/);
+            // Trim and remove any blank surnames
+            this.surnames = this.surnames.map((name) => name.trim()).filter((name) => name);
             return this.surnames;
         }
         return this.nameVariants.get(surname) || [surname];
