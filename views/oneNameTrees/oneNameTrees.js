@@ -625,6 +625,15 @@ window.OneNameTrees = class OneNameTrees extends View {
                     graph.css("display", "inline-block");
                     if (!["#locationsVisualisation", "#namesTable", "#migrationSankey"].includes(graphId)) {
                         graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
+                        // Make sure it's not off the right side of the screen
+                        const windowWidth = $(window).width();
+                        const graphWidth = graph.outerWidth();
+                        const leftPosition = $(this).position().left + $(this).outerWidth() / 2 - graphWidth / 2;
+                        if (leftPosition + graphWidth > windowWidth) {
+                            graph.css("left", windowWidth - graphWidth - 20 + "px");
+                        } else {
+                            graph.css("left", leftPosition + "px");
+                        }
                     }
                     $this.popupZindex++;
                     const graphZindex = graph.css("z-index");
@@ -4727,87 +4736,77 @@ class LocalStorageManager {
         this.accessOrder = []; // Assuming it's feasible to keep this in memory
         this.maxCapacity = 5 * 1024 * 1024; // 5MB, adjust as needed
         this.threshold = this.maxCapacity * 0.7; // Cleanup when 70% full
+        // Attempt to read the accessOrder from localStorage or initialize it
+        const storedOrder = localStorage.getItem("accessOrder");
+        if (storedOrder) {
+            this.accessOrder = JSON.parse(storedOrder);
+        }
+        this.checkAndRebuildAccessOrderIfNeeded(); // Ensure accessOrder is accurate on initialization
+    }
+
+    checkAndRebuildAccessOrderIfNeeded() {
+        let ontidsItemCount = 0;
+        // Count ONTids items in localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            if (localStorage.key(i).startsWith("ONTids_")) {
+                ontidsItemCount++;
+            }
+        }
+        // Log the counts for debugging
+        console.log(`ONTids items count: ${ontidsItemCount}, AccessOrder length: ${this.accessOrder.length}`);
+
+        // If accessOrder is too short compared to the number of ONTids items, rebuild it
+        if (this.accessOrder.length < ontidsItemCount) {
+            console.log("Rebuilding access order from dataDate due to discrepancy.");
+            this.rebuildAccessOrderFromDataDate();
+        }
+    }
+
+    rebuildAccessOrderFromDataDate() {
+        const itemDates = [];
+        // Loop through localStorage items to find ONTids items and extract their dataDate
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith("ONTids_")) {
+                const item = JSON.parse(localStorage.getItem(key));
+                const dataDate = item.debug && item.debug.dataDate;
+                if (dataDate) {
+                    itemDates.push({ key, dataDate });
+                }
+            }
+        }
+        // Sort items by dataDate to rebuild access order
+        itemDates.sort((a, b) => new Date(a.dataDate) - new Date(b.dataDate));
+        // Update accessOrder with sorted keys
+        this.accessOrder = itemDates.map((item) => item.key);
+        // Persist the updated access order
+        this.updateLocalStorageAccessOrder();
     }
 
     removeItems(criteria) {
-        for (let i = this.accessOrder.length - 1; i >= 0; i--) {
-            const key = this.accessOrder[i];
+        // Remove items based on a criteria and update access order accordingly
+        this.accessOrder = this.accessOrder.filter((key) => {
             if (key.includes(criteria)) {
                 localStorage.removeItem(key);
-                this.accessOrder.splice(i, 1);
                 console.log(`Removed item with key: ${key}`);
+                return false; // Exclude from new accessOrder
             }
-        }
+            return true; // Include in new accessOrder
+        });
         this.updateLocalStorageAccessOrder();
     }
 
     getItemAndUpdateAccessOrder(key) {
+        // Retrieve an item and update its position in the accessOrder
         const value = localStorage.getItem(key);
         if (value) {
             this.updateAccessOrder(key);
-            localStorage.setItem("accessOrder", JSON.stringify(this.accessOrder));
         }
         return value;
     }
 
-    checkStorageUsage() {
-        let total = 0;
-        for (let key in localStorage) {
-            if (localStorage.hasOwnProperty(key)) {
-                total += localStorage.getItem(key).length;
-            }
-        }
-        return total;
-    }
-
-    proactiveCleanup(newItemSize) {
-        console.log("Proactive cleanup initiated");
-        let currentUsage = this.checkStorageUsage();
-        console.log(`Current usage before cleanup: ${currentUsage}, newItemSize: ${newItemSize}`);
-
-        // Aggressively remove items starting with "ONT" or "ONSids"
-        this.accessOrder.forEach((key, index) => {
-            if (key.startsWith("ONT") || key.startsWith("ONSids")) {
-                const itemSize = localStorage.getItem(key)?.length || 0;
-                localStorage.removeItem(key);
-                currentUsage -= itemSize;
-                this.accessOrder.splice(index, 1, null); // Mark for deletion
-                console.log(
-                    `Aggressively removed item ${key}, freed ${itemSize} bytes. Current usage: ${currentUsage}`
-                );
-            }
-        });
-        // Clean up the accessOrder array
-        this.accessOrder = this.accessOrder.filter((key) => key !== null);
-
-        this.updateLocalStorageAccessOrder();
-
-        // If necessary, proceed with general cleanup
-        if (currentUsage + newItemSize > this.maxCapacity) {
-            while (this.accessOrder.length > 0 && currentUsage + newItemSize > this.maxCapacity) {
-                const oldestKey = this.accessOrder.shift();
-                const itemSize = localStorage.getItem(oldestKey)?.length || 0;
-                localStorage.removeItem(oldestKey);
-                currentUsage -= itemSize;
-                console.log(
-                    `General cleanup removed ${oldestKey}, freed ${itemSize} bytes. Current usage: ${currentUsage}`
-                );
-            }
-            this.updateLocalStorageAccessOrder();
-        }
-
-        // Final check and log
-        if (currentUsage + newItemSize > this.maxCapacity) {
-            console.error(
-                "Not enough space even after aggressive cleanup of ONT and ONSids items. Consider using a different storage solution."
-            );
-            return false; // Indicate failure due to insufficient space
-        }
-
-        return true; // Indicate success or that further cleanup was not necessary
-    }
-
     saveWithLRUStrategy(key, value) {
+        // Save an item with LRU strategy, invoking proactive cleanup if necessary
         const newItemSize = new Blob([value]).size;
         if (this.proactiveCleanup(newItemSize)) {
             try {
@@ -4820,13 +4819,64 @@ class LocalStorageManager {
         }
     }
 
+    checkStorageUsage() {
+        // Check the current usage of the localStorage
+        let total = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                total += localStorage.getItem(key).length;
+            }
+        }
+        return total;
+    }
+
+    proactiveCleanup(newItemSize) {
+        this.checkAndRebuildAccessOrderIfNeeded(); // Ensure accessOrder is accurate before cleanup
+
+        // Perform proactive cleanup based on LRU strategy
+        console.log("Proactive cleanup initiated");
+        let currentUsage = this.checkStorageUsage();
+        console.log(`Current usage before cleanup: ${currentUsage}, newItemSize: ${newItemSize}`);
+
+        let index = 0;
+        while (currentUsage + newItemSize > this.threshold && index < this.accessOrder.length) {
+            const key = this.accessOrder[index];
+            if (key.startsWith("ONT") || key.startsWith("ONSids")) {
+                const itemSize = localStorage.getItem(key)?.length || 0;
+                localStorage.removeItem(key);
+                currentUsage -= itemSize;
+                console.log(`Targeted cleanup removed ${key}, freed ${itemSize} bytes. Current usage: ${currentUsage}`);
+                this.accessOrder.splice(index, 1); // Adjust index accordingly
+            } else {
+                index++;
+            }
+        }
+
+        // General LRU cleanup if necessary
+        while (currentUsage + newItemSize > this.threshold && this.accessOrder.length > 0) {
+            const oldestKey = this.accessOrder.shift(); // Remove the oldest accessed item
+            const itemSize = localStorage.getItem(oldestKey)?.length || 0;
+            localStorage.removeItem(oldestKey);
+            currentUsage -= itemSize;
+            console.log(
+                `General LRU cleanup removed ${oldestKey}, freed ${itemSize} bytes. Current usage: ${currentUsage}`
+            );
+        }
+
+        this.updateLocalStorageAccessOrder();
+
+        return currentUsage + newItemSize <= this.maxCapacity;
+    }
+
     updateAccessOrder(key) {
+        // Update the access order, ensuring no duplicates and the most recent access is at the end
         this.accessOrder = this.accessOrder.filter((item) => item !== key);
         this.accessOrder.push(key);
         this.updateLocalStorageAccessOrder();
     }
 
     updateLocalStorageAccessOrder() {
+        // Update the localStorage with the current access order
         localStorage.setItem("accessOrder", JSON.stringify(this.accessOrder));
     }
 }
