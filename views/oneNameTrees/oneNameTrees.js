@@ -4461,6 +4461,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Prepare data for Excel
         let dataForExcel = [
             [
+                "WT ID",
                 "First",
                 "LNAB",
                 "Current",
@@ -4523,6 +4524,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             const modified = person.Touched ? formatDate(person.Touched) : "";
 
             dataForExcel.push([
+                person.Name,
                 givenNames,
                 person.LastNameAtBirth,
                 person.LastNameCurrent,
