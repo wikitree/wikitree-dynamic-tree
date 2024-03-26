@@ -491,6 +491,7 @@ export class CC7 {
             CC7.firstTimeLoad = false;
             $("#getPeopleButton").prop("disabled", true);
             $("#getDegreeButton").prop("disabled", true);
+            $("#getExtraDegrees").prop("disabled", true);
             $("#cancelLoad").show();
             CC7.cancelLoadController = new AbortController();
             CC7.clearDisplay();
@@ -544,6 +545,7 @@ export class CC7 {
             }
             $("#getPeopleButton").prop("disabled", false);
             $("#getDegreeButton").prop("disabled", false);
+            $("#getExtraDegrees").prop("disabled", false);
             $("#cancelLoad").hide();
             CC7.setInfoPanelMessage();
         }
@@ -823,6 +825,7 @@ export class CC7 {
         const getExtra = document.getElementById("getExtraDegrees").checked;
         $("#getPeopleButton").prop("disabled", true);
         $("#getDegreeButton").prop("disabled", true);
+        $("#getExtraDegrees").prop("disabled", true);
         $("#cancelLoad").show();
         CC7.cancelLoadController = new AbortController();
         Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID);
@@ -898,6 +901,7 @@ export class CC7 {
         }
         $("#getPeopleButton").prop("disabled", false);
         $("#getDegreeButton").prop("disabled", false);
+        $("#getExtraDegrees").prop("disabled", false);
         $("#cancelLoad").hide();
         CC7.setInfoPanelMessage();
         CC7.firstTimeLoad = false;
