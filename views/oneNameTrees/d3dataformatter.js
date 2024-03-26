@@ -839,7 +839,8 @@ export class D3DataFormatter {
             "India": "#cccccc",
             "Philippines": "#ffff99",
             "China": "#d2e6f1",
-            "Netherlands": "#8fbcda",
+            "Netherlands": "#ffcc99",
+            "Nederland": "#ffcc99",
             "Germany": "#d8efc4",
             "Deutschland": "#d8efc4",
 
