@@ -2052,99 +2052,100 @@ export const usStatesDetails = [
 ];
 
 export const countriesWithPrecedingPhrases = {
-    "France": ["New", "Nouvelle"], // Preceding phrases
-    "Guinea": ["Papua New"], // Preceding phrase
-    "Spain": ["New", "Nueva"], // Preceding phrases
-    "Mexico": ["United States of"], // Full country name
-    "Korea": ["North", "South"], // Preceding words within the name
-    "Zealand": ["New"], // Preceding phrase
-    "Argentina": ["Federative Republic of"], // Preceding phrase
-    "Bahamas": ["The Commonwealth of the"], // Preceding phrase
-    "Brunei": ["The Sultanate of"], // Preceding phrase
-    "China": ["People's Republic of"], // Preceding phrase
-    "Congo": ["Democratic Republic of the", "Republic of the"], // Multiple preceding phrases
-    "Gambia": ["The Republic of the"], // Preceding phrase
-    "Georgia": ["The Republic of"], // Preceding phrase
-    "Guinea-Bissau": ["Republic of"], // Full country name
-    "Guinea-Conakry": ["Republic of"], // Full country name (alternative to "Guinea")
-    "Holy See": ["The Vatican City State of the"], // Full country name
-    "India": ["Republic of"], // Preceding phrase
-    "Indonesia": ["Republic of"], // Preceding phrase
-    "Iran": ["Islamic Republic of"], // Preceding phrase
-    "Ireland": ["Republic of", "Northern"], // Multiple preceding phrases
-    "Ivory Coast": ["Côte d'Ivoire"], // Alternative country name
-    "Kazakhstan": ["Republic of"], // Preceding phrase
-    "Kyrgyzstan": ["Kyrgyz Republic"], // Alternative country name
-    "Laos": ["People's Democratic Republic of"], // Preceding phrase
-    "Macedonia": ["Republic of North Macedonia"], // Full country name
-    "Madagascar": ["Republic of"], // Preceding phrase
-    "Maldives": ["Republic of the"], // Preceding phrase
-    "Mali": ["Republic of"], // Preceding phrase
-    "Marshall Islands": ["Republic of the"], // Full country name
-    "Mauritania": ["Islamic Republic of"], // Preceding phrase
-    "Mauritius": ["Republic of"], // Preceding phrase
-    "Micronesia": ["Federated States of"], // Alternative country name
-    "Moldova": ["Republic of"], // Preceding phrase
-    "Myanmar": ["Republic of the Union of"], // Full country name
-    "Namibia": ["Republic of"], // Preceding phrase
-    "Netherlands": ["Kingdom of the"], // Full country name
-    "Niger": ["Republic of the"], // Preceding phrase
-    "Nigeria": ["Federal Republic of"], // Preceding phrase
-    "Palau": ["Republic of"], // Full country name
-    "Panama": ["Republic of"], // Preceding phrase
-    "Papua New Guinea": ["Independent State of"], // Full country name (alternative to "Guinea")
-    "Philippines": ["Republic of the"], // Preceding phrase
-    "Qatar": ["State of"], // Preceding phrase
-    "Rwanda": ["Republic of"], // Preceding phrase
-    "São Tomé and Príncipe": ["Democratic Republic of"], // Full country name
-    "Saudi Arabia": ["Kingdom of Saudi"], // Preceding phrase
-    "Senegal": ["Republic of"], // Preceding phrase
-    "Seychelles": ["Republic of the"], // Preceding phrase
-    "Sierra Leone": ["Republic of"], // Preceding phrase
-    "Singapore": ["Republic of"], // Preceding phrase
-    "Slovenia": ["Republic of"], // Preceding phrase
+    "France": ["New", "Nouvelle"],
+    "Guinea": ["Papua New"],
+    "Spain": ["New", "Nueva"],
+    "Mexico": ["United States of"],
+    "Korea": ["North", "South"],
+    "Zealand": ["New"],
+    "Argentina": ["Federative Republic of"],
+    "Bahamas": ["The Commonwealth of the"],
+    "Brunei": ["The Sultanate of"],
+    "Canada": ["Dominion of", "Bas", "Upper", "Lower"],
+    "China": ["People's Republic of"],
+    "Congo": ["Democratic Republic of the", "Republic of the"],
+    "Gambia": ["The Republic of the"],
+    "Georgia": ["The Republic of"],
+    "Guinea-Bissau": ["Republic of"],
+    "Guinea-Conakry": ["Republic of"],
+    "Holy See": ["The Vatican City State of the"],
+    "India": ["Republic of"],
+    "Indonesia": ["Republic of"],
+    "Iran": ["Islamic Republic of"],
+    "Ireland": ["Republic of", "Northern"],
+    "Ivory Coast": ["Côte d'Ivoire"],
+    "Kazakhstan": ["Republic of"],
+    "Kyrgyzstan": ["Kyrgyz Republic"],
+    "Laos": ["People's Democratic Republic of"],
+    "Macedonia": ["Republic of North Macedonia"],
+    "Madagascar": ["Republic of"],
+    "Maldives": ["Republic of the"],
+    "Mali": ["Republic of"],
+    "Marshall Islands": ["Republic of the"],
+    "Mauritania": ["Islamic Republic of"],
+    "Mauritius": ["Republic of"],
+    "Micronesia": ["Federated States of"],
+    "Moldova": ["Republic of"],
+    "Myanmar": ["Republic of the Union of"],
+    "Namibia": ["Republic of"],
+    "Netherlands": ["Kingdom of the"],
+    "Niger": ["Republic of the"],
+    "Nigeria": ["Federal Republic of"],
+    "Palau": ["Republic of"],
+    "Panama": ["Republic of"],
+    "Papua New Guinea": ["Independent State of"],
+    "Philippines": ["Republic of the"],
+    "Qatar": ["State of"],
+    "Rwanda": ["Republic of"],
+    "São Tomé and Príncipe": ["Democratic Republic of"],
+    "Saudi Arabia": ["Kingdom of Saudi"],
+    "Senegal": ["Republic of"],
+    "Seychelles": ["Republic of the"],
+    "Sierra Leone": ["Republic of"],
+    "Singapore": ["Republic of"],
+    "Slovenia": ["Republic of"],
     "Solomon Islands": ["Independent State of the"],
-    "South Africa": ["Republic of"], // Preceding phrase
-    "Sudan": ["Republic of the"], // Full country name
-    "Suriname": ["Republic of"], // Preceding phrase
-    "Sweden": ["Kingdom of"], // Preceding phrase
-    "Tanzania": ["United Republic of"], // Preceding phrase
-    "Thailand": ["Kingdom of"], // Preceding phrase
-    "Togo": ["Togolese Republic"], // Alternative country name
-    "Tonga": ["Kingdom of"], // Preceding phrase
-    "Trinidad and Tobago": ["Republic of Trinidad and Tobago"], // Full country name
-    "Tunisia": ["Republic of"], // Preceding phrase
-    "Turkey": ["Republic of"], // Preceding phrase
-    "Turkmenistan": ["State of"], // Preceding phrase
-    "Tuvalu": ["Independent State of Tuvalu"], // Full country name
-    "Uganda": ["Republic of"], // Preceding phrase
-    "Ukraine": ["State of"], // Preceding phrase
-    "United Arab Emirates": ["UAE", "The"], // Multiple preceding phrases
-    "United Kingdom": ["UK", "The"], // Multiple preceding phrases
-    "United States of America": ["USA", "US", "the US"], // Multiple preceding phrases
-    "Uruguay": ["Eastern Republic of"], // Preceding phrase
-    "Uzbekistan": ["Republic of"], // Preceding phrase
-    "Vanuatu": ["Republic of"], // Preceding phrase
-    "Venezuela": ["Bolivarian Republic of"], // Preceding phrase
-    "Vietnam": ["Socialist Republic of"], // Preceding phrase
-    "Yemen": ["Republic of"], // Preceding phrase
-    "Zambia": ["Republic of"], // Preceding phrase
-    "Zimbabwe": ["Republic of"], // Preceding phrase
-    "Virginia": ["Colony of", "West"], // Preceding phrase
-    "New York": ["Province of"], // Preceding phrase
-    "Massachusetts Bay": ["Colony of"], // Preceding phrase
-    "New Jersey": ["Province of"], // Preceding phrase
-    "New Hampshire": ["Province of"], // Preceding phrase
-    "New Mexico": ["Province of"], // Preceding phrase
+    "South Africa": ["Republic of"],
+    "Sudan": ["Republic of the"],
+    "Suriname": ["Republic of"],
+    "Sweden": ["Kingdom of"],
+    "Tanzania": ["United Republic of"],
+    "Thailand": ["Kingdom of"],
+    "Togo": ["Togolese Republic"],
+    "Tonga": ["Kingdom of"],
+    "Trinidad and Tobago": ["Republic of Trinidad and Tobago"],
+    "Tunisia": ["Republic of"],
+    "Turkey": ["Republic of"],
+    "Turkmenistan": ["State of"],
+    "Tuvalu": ["Independent State of Tuvalu"],
+    "Uganda": ["Republic of"],
+    "Ukraine": ["State of"],
+    "United Arab Emirates": ["UAE", "The"],
+    "United Kingdom": ["UK", "The"],
+    "United States of America": ["USA", "US", "the US"],
+    "Uruguay": ["Eastern Republic of"],
+    "Uzbekistan": ["Republic of"],
+    "Vanuatu": ["Republic of"],
+    "Venezuela": ["Bolivarian Republic of"],
+    "Vietnam": ["Socialist Republic of"],
+    "Yemen": ["Republic of"],
+    "Zambia": ["Republic of"],
+    "Zimbabwe": ["Republic of"],
+    "Virginia": ["Colony of", "West"],
+    "New York": ["Province of"],
+    "Massachusetts Bay": ["Colony of"],
+    "New Jersey": ["Province of"],
+    "New Hampshire": ["Province of"],
+    "New Mexico": ["Province of"],
     /* Other old US state names */
-    "Georgia": ["Province of"], // Preceding phrase
-    "Maryland": ["Province of"], // Preceding phrase
-    "North Carolina": ["Province of"], // Preceding phrase
-    "South Carolina": ["Province of"], // Preceding phrase
-    "Pennsylvania": ["Province of"], // Preceding phrase
-    "Rhode Island": ["Colony of"], // Preceding phrase
-    "Connecticut": ["Colony of"], // Preceding phrase
-    "Delaware": ["Colony of"], // Preceding phrase
+    "Georgia": ["Province of"],
+    "Maryland": ["Province of"],
+    "North Carolina": ["Province of"],
+    "South Carolina": ["Province of"],
+    "Pennsylvania": ["Province of"],
+    "Rhode Island": ["Colony of"],
+    "Connecticut": ["Colony of"],
+    "Delaware": ["Colony of"],
 };
 
 export const countries = [

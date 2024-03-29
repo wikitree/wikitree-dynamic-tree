@@ -4070,7 +4070,10 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             });
             // Standard location filtering
-            if (locationFilterValue && !correctedLocation.toLowerCase().includes(locationFilterValue)) {
+            const correctedLocationFilter = correctedLocation
+                ? String(correctedLocation).toLowerCase().includes(locationFilterValue)
+                : false;
+            if (locationFilterValue && !correctedLocationFilter) {
                 isValid = false;
             }
             // Handling other filters that are not date filters
