@@ -1078,14 +1078,15 @@ window.OneNameTrees = class OneNameTrees extends View {
         */
     }
 
-    buildQuery(centuries, locationBit, surname, surnameVariants) {
+    buildQuery(centuries, locationBit, surname, surnameVariants, dna = "") {
         // Helper function to create query parts for a single century
+        const dnaBit = dna ? ` DNA%3D"${dna}"` : "";
         const queryPartForCentury = (century, locationBit, variant) => {
             const centuryBit = century ? `${century}Cen+` : "";
             return (
-                `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"` +
-                `+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"` +
-                `+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"`
+                `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"${dnaBit}` +
+                `+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"${dnaBit}` +
+                `+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"${dnaBit}`
             );
         };
 
@@ -1129,82 +1130,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
         return cacheKey;
     }
-    /*
-    async getONSids(surname, location, centuries) {
-        console.log("Fetching ONTids for:", surname, location, centuries);
-        wtViewRegistry.clearStatus();
-        this.setNewTitle();
-        const cacheKey = this.buildCacheKey(surname, location, centuries);
-        this.activateCancel();
-
-        const cachedData = localStorage.getItem(cacheKey);
-        if (cachedData) {
-            console.log("Returning cached data for ONTids from localStorage");
-            $("#refreshData").show();
-            return [false, JSON.parse(cachedData)];
-        }
-
-        // Fetch all variants for the surname
-        let locationBit = "";
-        if (location) {
-            locationBit = `Location%3D"${location.trim().replace(/,/, "%2C").replace(" ", "+")}"+`;
-        }
-
-        let surnameVariants = this.findSurnameVariants(surname);
-        if (surname.includes(",")) {
-            this.surnames = surname.split(/,\s/);  // \s*
-            surnameVariants = this.surnames;
-            surname = this.surnames[0];
-        }
-        if (this.surnames) {
-            this.surnameVariants = this.surnames;
-            surname = this.surnames[0];
-        }
-
-        const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
-
-        const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
-        console.log(url);
-        let data;
-        try {
-            this.cancelFetchController = new AbortController();
-            const response = await fetch(url, { signal: this.cancelFetchController.signal });
-
-            // Check if the response is ok (status in the range 200-299)
-            if (!response.ok) {
-                // Throw an error with response status and statusText
-                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
-            }
-
-            data = await response.json();
-            console.log("Data fetched from WT+:", data);
-            // Handle your data here
-        } catch (error) {
-            if (error.name !== "AbortError") {
-                console.error("Error when fetching from WT+:", error);
-                $("#dancingTree").fadeOut();
-                wtViewRegistry.showWarning("No response from WikiTree +. Please try again later.");
-                return;
-            } else {
-                // Handle fetch abortion as a special case
-                return [true, null];
-            }
-        }
-
-        // After fetching data, instead of directly using localStorage.setItem, use saveWithLRUStrategy
-
-        try {
-            const dataString = JSON.stringify(data); // Ensure data is serialized before saving
-            this.storageManager.saveWithLRUStrategy(cacheKey, dataString);
-            console.log("Data saved with LRU strategy");
-        } catch (error) {
-            console.error("Error saving data with LRU strategy:", error);
-        }
-
-        // console.log(data);
-        return [false, data];
-    }
-*/
 
     async getONSids(surname, location, centuries) {
         const $this = this;
@@ -1239,19 +1164,29 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
+        const auDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "auDNA");
+        const yDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "yDNA");
 
         const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
         console.log(url);
+        const auDNAurl = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${auDNAquery}&MaxProfiles=100000&Format=JSON`;
+        const yDNAurl = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${yDNAquery}&MaxProfiles=100000&Format=JSON`;
         try {
             this.cancelFetchController = new AbortController();
             const response = await fetch(url, { signal: this.cancelFetchController.signal });
+            const auDNAresponse = await fetch(auDNAurl, { signal: this.cancelFetchController.signal });
+            const yDNAresponse = await fetch(yDNAurl, { signal: this.cancelFetchController.signal });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
+            $this.auDNAdata = await auDNAresponse.json();
+            $this.yDNAdata = await yDNAresponse.json();
             console.log("Data fetched from WT+:", data);
+            console.log("auDNAdata fetched from WT+:", $this.auDNAdata);
+            console.log("yDNAdata fetched from WT+:", $this.yDNAdata);
 
             // Save fetched data using LocalStorageManager with LRU strategy
             $this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(data));
