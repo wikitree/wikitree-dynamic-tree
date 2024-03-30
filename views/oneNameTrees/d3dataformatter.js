@@ -630,25 +630,11 @@ export class D3DataFormatter {
 
         $("#prevPeriod").on("click.oneNameTrees", () => this.showPreviousPeriod());
         $("#nextPeriod").on("click.oneNameTrees", () => this.showNextPeriod());
-        // $("#stopEvolution").on("click.oneNameTrees", () => this.stopEvolution());
-        const $this = this;
-        /*
-        $("#controlButtons button").on("click.oneNameTrees", function () {
-           // $("#controlButtons button").removeClass("active");
-           // $this.stopEvolution();
-            if ($(this).prop("id") === "startEvolution") {
-                $(this).addClass("active");
-                $this.startEvolution(7000);
-            }
-        });
-        */
 
         this.visualizeDataWithD3();
-        //this.startEvolution(7000);
     }
 
     updateVisualizationForPeriod() {
-        // this.currentPeriodIndex = (this.currentPeriodIndex + 1) % this.locationHierarchy.children.length;
         this.visualizeDataWithD3();
     }
 
@@ -1146,7 +1132,7 @@ export class D3DataFormatter {
                         .append("circle")
                         .attr("cx", link.source.x0 + 20)
                         .attr("cy", birthCircleY)
-                        .attr("r", 10)
+                        .attr("r", 5)
                         .attr("fill", "green")
                         .on("click", function () {
                             // Adjust the tooltip's position
@@ -1158,7 +1144,7 @@ export class D3DataFormatter {
                         .append("circle")
                         .attr("cx", link.target.x1 - 20)
                         .attr("cy", deathCircleY)
-                        .attr("r", 10)
+                        .attr("r", 5)
                         .attr("fill", "red")
                         .on("click", function () {
                             // Adjust the tooltip's position
@@ -1211,6 +1197,7 @@ export class D3DataFormatter {
             });
         }
 
+        /*
         function showTooltip(tooltip, personHTML, circle, type, person) {
             const circlePos = circle.position(); // Using position relative to the parent div
             const migrationSankey = $("#migrationSankey");
@@ -1232,7 +1219,57 @@ export class D3DataFormatter {
             // Additional check and adjustment if needed
             adjustTooltipPosition(tooltip, migrationSankey, type);
         }
+        */
 
+        function showTooltip(tooltip, personHTML, circle, type, person) {
+            const circleOffset = circle.offset();
+            const migrationSankeyOffset = $("#migrationSankey").offset();
+            const migrationSankeyHeight = $("#migrationSankey").height();
+
+            // Adjust offsetX based on the type. For "death", set it to about 430px to the left.
+            let offsetX = type === "death" ? -430 : 20; // Shift left for "death", right otherwise.
+            let offsetY = 10; // Default offset to position tooltip below the circle, adjust as needed.
+
+            // Calculate the proposed top and left positions for the tooltip.
+            let proposedTop =
+                circleOffset.top - migrationSankeyOffset.top + offsetY + $("#migrationSankey").scrollTop();
+            let proposedLeft = circleOffset.left - migrationSankeyOffset.left + offsetX;
+
+            tooltip
+                .html(personHTML)
+                .attr("class", `tooltip ${person.Gender}`)
+                .css({
+                    top: proposedTop + "px",
+                    left: proposedLeft + "px",
+                })
+                .show();
+
+            // After showing the tooltip, we can get its actual height and width to check for overflows.
+            const tooltipHeight = tooltip.outerHeight(true);
+            const tooltipWidth = tooltip.outerWidth(true);
+
+            // Adjust if the tooltip goes beyond the bottom of the migrationSankey div.
+            if (proposedTop + tooltipHeight > migrationSankeyHeight) {
+                // Position it above the circle instead.
+                proposedTop -= tooltipHeight + offsetY + 2 * circle.outerHeight(true); // Adjusted for the circle's height.
+                tooltip.css("top", proposedTop + "px");
+            }
+
+            // Check for left side overflow for "death" tooltips.
+            if (type === "death" && proposedLeft < 0) {
+                // Adjust so it doesn't go outside the left boundary of the container.
+                proposedLeft = 10; // Slight padding from the left edge of the container.
+                tooltip.css("left", proposedLeft + "px");
+            }
+
+            // Check for right side overflow for non-"death" tooltips if needed.
+            if (type !== "death" && proposedLeft + tooltipWidth > $("#migrationSankey").width()) {
+                // Adjust so it doesn't go outside the right boundary of the container.
+                proposedLeft -= tooltipWidth + offsetX - 20; // Adjust back by its width and offset.
+                tooltip.css("left", proposedLeft + "px");
+            }
+        }
+        /*
         function adjustTooltipPosition(tooltip, container, type) {
             // Get the bounding rectangle of the container
             const containerRect = container[0].getBoundingClientRect();
@@ -1251,6 +1288,7 @@ export class D3DataFormatter {
                 tooltip.css("top", containerRect.bottom - tooltipRect.height - 10 + "px"); // Slight adjustment
             }
         }
+        */
 
         function tooltipHTML(person) {
             const fullName = new PersonName(person).withParts(["FullName"]);
