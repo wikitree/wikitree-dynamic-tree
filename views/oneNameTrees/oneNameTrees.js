@@ -781,6 +781,52 @@ window.OneNameTrees = class OneNameTrees extends View {
                 alert("Unable to open the print window. Please check your popup blocker settings.");
             }
         });
+
+        $(document).on("click.oneNameTrees", ".auDNA", async function () {
+            const wtid = $(this).data("name");
+            try {
+                this.cancelFetchController = new AbortController();
+                const signal = this.cancelFetchController.signal;
+
+                const dNATestsPromise = WikiTreeAPI.postToAPI(
+                    {
+                        appId: OneNameTrees.APP_ID,
+                        action: "getDNATestsByTestTaker",
+                        key: wtid,
+                    },
+                    signal
+                );
+
+                const connectedDNATestsPromise = WikiTreeAPI.postToAPI(
+                    {
+                        // Assuming it needs similar parameters; adjust as necessary
+                        appId: OneNameTrees.APP_ID,
+                        action: "getConnectedDNATestsByTestTaker",
+                        key: wtid,
+                    },
+                    signal
+                );
+
+                const [dNATestsResult, connectedDNATestsResult] = await Promise.all([
+                    dNATestsPromise,
+                    connectedDNATestsPromise,
+                ]);
+
+                // Use dNATestsResult and connectedDNATestsResult as needed
+                console.log("DNA Tests:", dNATestsResult);
+                console.log("Connected DNA Tests:", connectedDNATestsResult);
+
+                // Return or process the results as needed
+            } catch (error) {
+                console.error("An error occurred:", error);
+                // Handle error, possibly aborting the fetch or notifying the user
+                if (error.name === "AbortError") {
+                    console.log("Fetch aborted.");
+                } else {
+                    // Handle other errors
+                }
+            }
+        });
     }
 
     parseCenturies(input) {
@@ -1146,11 +1192,32 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.activateCancel();
 
         // Retrieve cached data using LocalStorageManager
+        /*
         const cachedData = this.storageManager.getItemAndUpdateAccessOrder(cacheKey);
         if (cachedData) {
             console.log("Returning cached data for ONTids from localStorage");
             $("#refreshData").show();
             return [false, JSON.parse(cachedData)];
+        }
+        */
+        // Retrieving the bundled data from cache
+        const cachedDataString = this.storageManager.getItemAndUpdateAccessOrder(cacheKey);
+        if (cachedDataString) {
+            const cachedData = JSON.parse(cachedDataString);
+
+            // Extracting the components from the bundled data
+            const { data, auDNAdata, yDNAdata } = cachedData;
+
+            // Use the retrieved data as needed
+            console.log("Cached data loaded:", data);
+            console.log("auDNAdata loaded from cache:", auDNAdata);
+            console.log("yDNAdata loaded from cache:", yDNAdata);
+
+            // Showing refresh data option in UI
+            console.log("Returning cached data for identifiers from localStorage");
+            $("#refreshData").show();
+
+            return [false, data]; // or return [false, cachedData] to return the entire bundle
         }
 
         let locationBit = "";
@@ -1168,7 +1235,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.surnameVariants = this.surnames;
             surname = this.surnames[0];
         }
-
+        /*
         const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
         const auDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "auDNA");
         const yDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "yDNA");
@@ -1197,6 +1264,62 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Save fetched data using LocalStorageManager with LRU strategy
             $this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(data));
             console.log("Data saved with LRU strategy");
+
+            return [false, data];
+        } catch (error) {
+            console.error("Error when fetching from WT+ or saving data:", error);
+            if (error.name !== "AbortError") {
+                $("#dancingTree").fadeOut();
+                wtViewRegistry.showWarning("No response from WikiTree +. Please try again later.");
+            }
+            return [true, null];
+        }
+        */
+
+        const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
+        const auDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "auDNA");
+        const yDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "yDNA");
+
+        const urls = [
+            `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`,
+            `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${auDNAquery}&MaxProfiles=100000&Format=JSON`,
+            `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${yDNAquery}&MaxProfiles=100000&Format=JSON`,
+        ];
+
+        try {
+            this.cancelFetchController = new AbortController();
+            const signal = this.cancelFetchController.signal;
+            const fetchPromises = urls.map((url) =>
+                fetch(url, { signal }).then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+            );
+
+            const results = await Promise.all(fetchPromises);
+
+            // Assigning the results to properties of $this
+            let data;
+            [data, $this.auDNAdata, $this.yDNAdata] = results;
+
+            console.log("Data fetched from WT+:", data);
+            console.log("auDNAdata fetched from WT+:", this.auDNAdata);
+            console.log("yDNAdata fetched from WT+:", this.yDNAdata);
+
+            const cacheData = {
+                data, // Assuming 'data' contains your primary dataset
+                auDNAdata: this.auDNAdata,
+                yDNAdata: this.yDNAdata,
+            };
+
+            // Use a unique cache key for storing the bundled data
+            const cacheKey = "uniqueKeyForBundledData"; // Make sure this is unique and descriptive
+
+            // Save the bundled data
+            this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(cacheData));
+            console.log("All data saved with LRU strategy");
 
             return [false, data];
         } catch (error) {
@@ -2031,11 +2154,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             .join("");
 
         let dnaOut = "";
-        if (this.auDNAdata?.response?.profiles?.includes(person.Id)) {
-            dnaOut += "<img src='https://www.wikitree.com/images/icons/dna/au.gif'>";
+        if (this.auDNAdata?.response?.profiles?.includes(person.Id) || this.combinedResults[person.Id].auDNA) {
+            this.combinedResults[person.Id].auDNA = true;
+            dnaOut += "<img class='auDNA DNA' src='https://www.wikitree.com/images/icons/dna/au.gif'>";
         }
-        if (this.yDNAdata?.response?.profiles?.includes(person.Id)) {
-            dnaOut += "<img src='https://www.wikitree.com/images/icons/dna/y.gif'>";
+        if (this.yDNAdata?.response?.profiles?.includes(person.Id) || this.combinedResults[person.Id].yDNA) {
+            this.combinedResults[person.Id].yDNA = true;
+            dnaOut += "<img class='yDNA DNA' src='https://www.wikitree.com/images/icons/dna/y.gif'>";
         }
 
         return dnaOut + out;

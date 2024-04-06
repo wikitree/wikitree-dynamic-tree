@@ -1153,3 +1153,8 @@ input[type="submit"],
 .oneNameTrees #stopMigrationEvolution {
   display: none;
 }
+
+.oneNameTrees .DNA {
+  display: inline-block;
+  margin: 0 0.2em;
+}
