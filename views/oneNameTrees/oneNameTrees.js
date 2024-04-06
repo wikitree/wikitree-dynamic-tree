@@ -785,50 +785,56 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     parseCenturies(input) {
         let centuries = [];
-
         if (!input) return centuries;
 
-        input = input.toLowerCase().trim();
-        input = input.replace(/\s+to\s+|[\u2013\u2014-]/g, "-"); // Handle "to" and different dash types
-        input = input.replace(/\s*,\s*/g, ","); // Normalize comma spacing
-        input = input.replace(/\s+/g, " "); // Normalize spaces
+        // Splitting the input on commas and spaces for processing
+        input = input
+            .toLowerCase()
+            .replace(/ to /g, "-")
+            .replace(/[\u2013\u2014]/g, "-")
+            .trim();
+        let parts = input.split(/[\s,]+/);
 
-        // Helper function to convert year or century to the correct century number
-        const yearOrCenturyToCentury = (value) => {
-            // Handle ordinal indicators by removing them
-            value = value.replace(/(st|nd|rd|th)/g, "");
-            if (value.endsWith("s")) value = value.slice(0, -1); // Handle decades (1500s)
-            let year = parseInt(value, 10);
-            // Convert year to century if necessary
-            if (year < 100) return year; // Assume values < 100 are already centuries
-            return Math.ceil(year / 100);
-        };
-
-        // Split input by comma or space to handle lists and ranges separately
-        input.split(/[\s,]+/).forEach((part) => {
+        parts.forEach((part) => {
             if (part.includes("-")) {
-                // Handle ranges
-                let [start, end] = part.split("-").map((part) => yearOrCenturyToCentury(part.trim()));
-                centuries.push(...Array.from({ length: end - start + 1 }, (_, i) => start + i));
-                // Increase each by 1 as 1500 should be the 16th century, not the 15th
-                centuries = centuries.map((century) => century + 1);
-                if (input.match(/\-\d+00$/)) {
-                    centuries.pop();
+                // Handling ranges
+                let [start, end] = part.split("-").map((p) => p.trim());
+                let startCentury, endCentury;
+
+                // Adjust for start of range
+                startCentury = start.match(/\d{4}s?$/) ? Math.ceil(parseInt(start) / 100) : parseInt(start);
+                if (start.match(/\d{4}s$/)) startCentury++; // Increment for decades '1500s'
+
+                // Adjust for end of range
+                endCentury = end.match(/\d{4}s?$/) ? Math.ceil(parseInt(end) / 100) : parseInt(end);
+                if (end.match(/\d{4}s$/)) endCentury++; // Increment for decades '2000s'
+
+                // For cases like '1500-1800' where start is a year without 's'
+                if (start.match(/\d{4}$/) && !start.endsWith("s")) startCentury++;
+
+                // Populate range
+                for (let i = startCentury; i <= endCentury; i++) {
+                    centuries.push(i);
                 }
             } else {
-                // Handle single values
-                if (part < 30) {
-                    centuries.push(part);
-                }
-                centuries.push(yearOrCenturyToCentury((parseInt(part) + 1).toString()));
-                //centuries = centuries.map((century) => century + 1);
+                // Handling individual years, centuries, and decades
+                let century = part.match(/\d{4}s?$/) ? Math.ceil(parseInt(part) / 100) : parseInt(part);
+                if (part.match(/\d{4}s$/)) century++; // Increment for decades '1500s'
+                centuries.push(century);
             }
         });
 
-        // Ensure unique centuries, sorted in ascending order
+        // Adjust for specific years like '1500' directly
+        centuries = centuries.map((c) => {
+            if (input.match(/\d{4}(?!s)/) && !input.includes("-")) {
+                return c + 1;
+            }
+            return c;
+        });
+
+        // Deduplicate and sort
         centuries = Array.from(new Set(centuries)).sort((a, b) => a - b);
 
-        //console.log("Centuries:", centuries);
         return centuries;
     }
 
@@ -1898,7 +1904,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     categoryMap[title] = $tag;
                 }
                 // If both are links, prioritize the more specific one based on URL length
-                else if (isLink && current.is("a") && $tag.attr("href").length > current.attr("href").length) {
+                else if (isLink && current.is("a") && $tag.attr("href")?.length > current.attr("href")?.length) {
                     categoryMap[title] = $tag;
                 }
                 // Additional logic could go here for other prioritization as needed
@@ -1992,13 +1998,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Combine person.Categories and templateNames into a single array
         const categoriesAndTemplates = person.Categories.concat(templateNames);
+        //categoriesAndTemplates
 
         if (categoriesAndTemplates.length > 2 && !this.shownCats.has(person.Id)) {
             // console.log(categoriesAndTemplates);
             this.shownCats.add(person.Id);
         }
 
-        return categoriesAndTemplates
+        let out = categoriesAndTemplates
             .filter((category) => {
                 // Check if pattern matches the category or template name
                 const matchesPattern = pattern?.test(category);
@@ -2022,6 +2029,16 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             })
             .join("");
+
+        let dnaOut = "";
+        if (this.auDNAdata?.response?.profiles?.includes(person.Id)) {
+            dnaOut += "<img src='https://www.wikitree.com/images/icons/dna/au.gif'>";
+        }
+        if (this.yDNAdata?.response?.profiles?.includes(person.Id)) {
+            dnaOut += "<img src='https://www.wikitree.com/images/icons/dna/y.gif'>";
+        }
+
+        return dnaOut + out;
     }
 
     createCategoryLink(link, category, symbol, options = {}) {

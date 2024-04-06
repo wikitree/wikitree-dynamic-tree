@@ -1,54 +1,55 @@
 function parseCenturies(input) {
     let centuries = [];
 
-    // Normalize the input for easier processing
+    // Splitting the input on commas and spaces for processing
     input = input
         .toLowerCase()
-        .replace(/to|[\u2013\u2014-]/g, "-")
-        .replace(/\s*,\s*/g, ",")
-        .replace(/\s+/g, ",")
+        .replace(/ to /g, "-")
+        .replace(/[\u2013\u2014]/g, "-")
         .trim();
+    let parts = input.split(/[\s,]+/);
 
-    input.split(",").forEach((part) => {
-        part = part.trim();
-
+    parts.forEach((part) => {
         if (part.includes("-")) {
-            // Handle ranges explicitly
+            // Handling ranges
             let [start, end] = part.split("-").map((p) => p.trim());
             let startCentury, endCentury;
 
-            if (start.endsWith("s")) {
-                startCentury = parseInt(start.slice(0, -1)) / 100 + 1;
-            } else {
-                startCentury = Math.ceil(parseInt(start) / 100);
-            }
+            // Adjust for start of range
+            startCentury = start.match(/\d{4}s?$/) ? Math.ceil(parseInt(start) / 100) : parseInt(start);
+            if (start.match(/\d{4}s$/)) startCentury++; // Increment for decades '1500s'
 
-            if (end.endsWith("s")) {
-                endCentury = parseInt(end.slice(0, -1)) / 100 + 1;
-            } else {
-                endCentury = Math.ceil(parseInt(end) / 100);
-            }
+            // Adjust for end of range
+            endCentury = end.match(/\d{4}s?$/) ? Math.ceil(parseInt(end) / 100) : parseInt(end);
+            if (end.match(/\d{4}s$/)) endCentury++; // Increment for decades '2000s'
 
-            // Add 1 to each century in the range for specific adjustments
+            // For cases like '1500-1800' where start is a year without 's'
+            if (start.match(/\d{4}$/) && !start.endsWith("s")) startCentury++;
+
+            // Populate range
             for (let i = startCentury; i <= endCentury; i++) {
-                centuries.push(i + 1); // Adjusting as per the new requirement
+                centuries.push(i);
             }
         } else {
-            // Individual years or centuries
-            let century;
-            if (part.endsWith("s")) {
-                century = parseInt(part.slice(0, -1)) / 100 + 1; // For decades
-            } else if (part.match(/\d{4}/)) {
-                century = Math.ceil(parseInt(part) / 100); // For specific years
-            } else {
-                century = parseInt(part); // For already specified centuries
-            }
-            centuries.push(century + 1); // Adjusting as per the new requirement
+            // Handling individual years, centuries, and decades
+            let century = part.match(/\d{4}s?$/) ? Math.ceil(parseInt(part) / 100) : parseInt(part);
+            if (part.match(/\d{4}s$/)) century++; // Increment for decades '1500s'
+            centuries.push(century);
         }
     });
 
-    // Remove duplicates, sort, and then adjust the centuries as required
-    return Array.from(new Set(centuries)).sort((a, b) => a - b);
+    // Adjust for specific years like '1500' directly
+    centuries = centuries.map((c) => {
+        if (input.match(/\d{4}(?!s)/) && !input.includes("-")) {
+            return c + 1;
+        }
+        return c;
+    });
+
+    // Deduplicate and sort
+    centuries = Array.from(new Set(centuries)).sort((a, b) => a - b);
+
+    return centuries;
 }
 
 // Example usage
