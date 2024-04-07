@@ -782,13 +782,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        $(document).on("click.oneNameTrees", ".auDNA", async function () {
-            const wtid = $(this).data("name");
+        $(document).on("click.oneNameTrees", ".DNA", async function () {
+            $this.shakingTree.show();
+            const wtid = $(this).parent().data("name");
             try {
                 this.cancelFetchController = new AbortController();
                 const signal = this.cancelFetchController.signal;
 
-                const dNATestsPromise = WikiTreeAPI.postToAPI(
+                // First call: Get DNA Tests by Test Taker
+                const dNATestsResult = await WikiTreeAPI.postToAPI(
                     {
                         appId: OneNameTrees.APP_ID,
                         action: "getDNATestsByTestTaker",
@@ -797,36 +799,167 @@ window.OneNameTrees = class OneNameTrees extends View {
                     signal
                 );
 
-                const connectedDNATestsPromise = WikiTreeAPI.postToAPI(
+                console.log("DNA Tests Result:", dNATestsResult);
+
+                // Example of handling for the second call, if needed based on your requirements
+                // Second call: Get Connected DNA Tests by Profile (if this call is required)
+                const connectedDNATestsResult = await WikiTreeAPI.postToAPI(
                     {
-                        // Assuming it needs similar parameters; adjust as necessary
                         appId: OneNameTrees.APP_ID,
-                        action: "getConnectedDNATestsByTestTaker",
+                        action: "getConnectedDNATestsByProfile",
                         key: wtid,
                     },
                     signal
                 );
 
-                const [dNATestsResult, connectedDNATestsResult] = await Promise.all([
-                    dNATestsPromise,
-                    connectedDNATestsPromise,
-                ]);
+                console.log("Connected DNA Tests Result:", connectedDNATestsResult);
 
-                // Use dNATestsResult and connectedDNATestsResult as needed
-                console.log("DNA Tests:", dNATestsResult);
-                console.log("Connected DNA Tests:", connectedDNATestsResult);
+                // Assuming the results from the second call are used for the third call
+                if (connectedDNATestsResult && connectedDNATestsResult.length > 0) {
+                    // Prepare and execute the third call for each dna_id found
+                    const connectedProfilesPromises = connectedDNATestsResult[0].dnaTests.map((test) => {
+                        console.log("Connected DNA Test:", test);
+                        return WikiTreeAPI.postToAPI(
+                            {
+                                appId: OneNameTrees.APP_ID,
+                                action: "getConnectedProfilesByDNATest",
+                                key: wtid, // Or use a specific key if required
+                                dna_id: test.dna_id,
+                            },
+                            signal
+                        );
+                    });
 
-                // Return or process the results as needed
+                    // Wait for all connected profiles fetches to complete
+                    const connectedProfilesResults = await Promise.all(connectedProfilesPromises);
+                    console.log("Connected Profiles Results:", connectedProfilesResults);
+
+                    // Show the results in a popup
+                    $this.showDNATestResults(
+                        dNATestsResult,
+                        connectedDNATestsResult,
+                        connectedProfilesResults,
+                        $(this).parent()
+                    );
+                } else {
+                    console.log("No Connected DNA Tests Found or Invalid Response Structure");
+                }
             } catch (error) {
                 console.error("An error occurred:", error);
-                // Handle error, possibly aborting the fetch or notifying the user
-                if (error.name === "AbortError") {
-                    console.log("Fetch aborted.");
-                } else {
-                    // Handle other errors
-                }
             }
+            $this.shakingTree.hide();
         });
+    }
+    showDNATestResults(dnaTests, connectedDNATests, connectedProfiles, parent) {
+        // Ensure only one modal instance
+        if ($("#dnaTestModal").length) {
+            $("#dnaTestModal").remove();
+        }
+
+        const data = parent.data();
+        const popup = $(`
+            <div id="dnaTestModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close-button">×</span>
+                    <h2>${data.fullName}: DNA Test Results</h2>
+                    <div id="dnaTestResults" class="results-container"><h3>DNA Tests</h3></div>
+                </div>
+            </div>
+        `);
+
+        $("body").append(popup);
+        popup.off("dblclick.oneNameTrees").on("dblclick.oneNameTrees", function (e) {
+            $(this).fadeOut();
+            setTimeout(() => {
+                $(this).remove();
+            }, 500);
+        });
+        const parentTop = parent.offset().top - $(window).scrollTop();
+        const modalTop = parentTop + parent.outerHeight() + 20;
+        $("#dnaTestModal").css("top", modalTop + "px");
+        $("#dnaTestModal").fadeIn();
+
+        // Method to populate DNA Test results, modified to handle the provided data structure.
+        this.populateTestResults("#dnaTestResults", connectedDNATests, connectedProfiles);
+
+        $(".close-button").click(() => {
+            $("#dnaTestModal").fadeOut();
+        });
+    }
+
+    populateTestResults(containerSelector, connectedDNATests, connectedProfiles) {
+        const container = $(containerSelector);
+        container.empty(); // Clear previous content
+
+        // Since dnaTests array doesn't directly contain test details in the given structure, use connectedDNATests for test details.
+        connectedDNATests.forEach((testGroup) => {
+            testGroup.dnaTests.forEach((test) => {
+                // Attempt to find connected profiles for this test
+                const connectedTestProfiles = this.findConnectedProfiles(test.dna_id, connectedProfiles);
+
+                // Building the test card HTML
+                const testHtml = this.buildTestCardHtml(test, connectedTestProfiles);
+                container.append(testHtml);
+            });
+        });
+    }
+
+    findConnectedProfiles(dnaTestId, connectedProfiles) {
+        // Flattening the nested array structure of connectedProfiles to search for the dnaTestId
+        const flatProfiles = connectedProfiles.flat();
+        return flatProfiles.find((profile) => profile.dnaTest?.dna_id === dnaTestId)?.connections || [];
+    }
+
+    makeWikiTreeLink(wtid, person = null) {
+        let fullName;
+        if (person) {
+            const aName = new PersonName(person);
+            fullName = aName.withParts(["FullName"]);
+        }
+        return `<a href="https://www.wikitree.com/wiki/${wtid}" target="_blank">${fullName ? fullName : wtid}</a>`;
+    }
+
+    buildTestCardHtml(test, connectedProfiles) {
+        const $this = this;
+        let connectionsHtml = "<ul class='dnaConnections'>";
+        if (connectedProfiles.length > 0) {
+            connectedProfiles.forEach((profile) => {
+                const person = $this.combinedResults[profile.Id];
+                console.log("Connected Profile:", person);
+                // use PersonName to get the name of the person
+                if (person) {
+                    connectionsHtml += `<li class='${person.Gender}'>${$this.makeWikiTreeLink(
+                        profile.Name,
+                        person
+                    )} (${this.formatDate(person.BirthDate)}–${this.formatDate(person.DeathDate)})</li>`;
+                } else {
+                    connectionsHtml += `<li>${$this.makeWikiTreeLink(profile.Name)}</li>`;
+                }
+            });
+        } else {
+            connectionsHtml = "<li>No connections available.</li>";
+        }
+        connectionsHtml += "</ul>";
+
+        return `
+            <div class="dna-test-card">
+                <h4>${test.dna_name} (${test.dna_type})</h4>
+                <p>Assigned by: ${test.assignedBy || "N/A"}</p>
+                <p>Date Assigned: ${test.assigned ? new Date(test.assigned).toLocaleDateString() : "N/A"}</p>
+                ${test.markers ? `<p>Markers: ${test.markers}</p>` : ""}
+                ${test.haplo ? `<p>Haplogroup: ${test.haplo}</p>` : ""}
+                ${test.mttype ? `<p>MT Type: ${test.mttype}</p>` : ""}
+                ${test.ysearch ? `<p>YSearch ID: ${test.ysearch}</p>` : ""}
+                ${test.mitosearch ? `<p>MitoSearch ID: ${test.mitosearch}</p>` : ""}
+                ${test.ancestry ? `<p>Ancestry: ${test.ancestry}</p>` : ""}
+                ${test.ftdna ? `<p>FTDNA: ${test.ftdna}</p>` : ""}
+                ${test.gedmatch ? `<p>Gedmatch ID: ${test.gedmatch}</p>` : ""}
+                ${test.haplom ? `<p>Maternal Haplogroup: ${test.haplom}</p>` : ""}
+                ${test.mitoydna ? `<p>MITO YDNA: ${test.mitoydna}</p>` : ""}
+                ${test.yourDNAportal ? `<p>Your DNA Portal: ${test.yourDNAportal}</p>` : ""}
+                ${connectedProfiles.length > 0 ? `<div>Connections: ${connectionsHtml}</div>` : ""}
+            </div>
+        `;
     }
 
     parseCenturies(input) {
@@ -2053,6 +2186,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     createCategoryHTML(person) {
         let categoryHTML = ``;
         const tags = [];
+
         if (person.Categories && person.Categories.length > 0) {
             categoryHTML += this.processNameStudies(person);
 
@@ -2061,9 +2195,36 @@ window.OneNameTrees = class OneNameTrees extends View {
             });
         }
 
+        let log = false;
+        if (person.Id == 39892371) {
+            log = true;
+        }
+
+        log ? console.log("Tags:", tags) : null;
+        const hasDNA =
+            this.combinedResults[person.Id].auDNA ||
+            this.combinedResults[person.Id].yDNA ||
+            this.yDNAdata?.response?.profiles?.includes(person.Id) ||
+            this.auDNAdata?.response?.profiles?.includes(person.Id);
+
+        log ? console.log("Has DNA:", hasDNA) : null;
+
+        if (hasDNA) {
+            const dnaTags = this.processDNA(person);
+            log ? console.log("DNA Tags:", dnaTags) : null;
+            // if dnaTags.length > 0, add each one to the tags array
+            dnaTags.length > 0
+                ? dnaTags.forEach((tag) => {
+                      tags.push(tag);
+                  })
+                : null;
+        }
+        //
         // Convert HTML strings to jQuery objects for filtering
         const jqueryTags = this.createJQueryObjects(tags);
+        log ? console.log("jQuery Tags:", jqueryTags) : null;
         const filteredTags = this.filterAndPrioritizeCategories(jqueryTags);
+        log ? console.log("Filtered Tags:", filteredTags) : null;
 
         if (filteredTags.length > 0) {
             categoryHTML += filteredTags.join("");
@@ -2152,18 +2313,24 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             })
             .join("");
+        return out;
+    }
 
-        let dnaOut = "";
+    processDNA(person) {
+        let dnaOut = [];
         if (this.auDNAdata?.response?.profiles?.includes(person.Id) || this.combinedResults[person.Id].auDNA) {
             this.combinedResults[person.Id].auDNA = true;
-            dnaOut += "<img class='auDNA DNA' src='https://www.wikitree.com/images/icons/dna/au.gif'>";
+            dnaOut.push(
+                "<img class='auDNA DNA' title='Click for autosomal DNA details' src='https://www.wikitree.com/images/icons/dna/au.gif'>"
+            );
         }
         if (this.yDNAdata?.response?.profiles?.includes(person.Id) || this.combinedResults[person.Id].yDNA) {
             this.combinedResults[person.Id].yDNA = true;
-            dnaOut += "<img class='yDNA DNA' src='https://www.wikitree.com/images/icons/dna/y.gif'>";
+            dnaOut.push(
+                "<img class='yDNA DNA' title='Click for Y DNA details' src='https://www.wikitree.com/images/icons/dna/Y.gif'>"
+            );
         }
-
-        return dnaOut + out;
+        return dnaOut;
     }
 
     createCategoryLink(link, category, symbol, options = {}) {
@@ -2290,7 +2457,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     formatDate(date) {
-        if (!date || date === "0000-00-00") return "[date unknown]";
+        if (!date || date === "0000-00-00") return "";
         let [year, month, day] = date.split("-");
         month = parseInt(month, 10);
         day = parseInt(day, 10);
@@ -2365,26 +2532,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         return spouseHtml;
     }
-
-    /*
-    createParentToChildrenMap(peopleArray) {
-        peopleArray.forEach((person) => {
-            if (person.Father) {
-                if (!this.parentToChildrenMap[person.Father]) {
-                    this.parentToChildrenMap[person.Father] = [];
-                }
-                this.parentToChildrenMap[person.Father].push(person.Id);
-            }
-            if (person.Mother) {
-                if (!this.parentToChildrenMap[person.Mother]) {
-                    this.parentToChildrenMap[person.Mother] = [];
-                }
-                this.parentToChildrenMap[person.Mother].push(person.Id);
-            }
-        });
-        return this.parentToChildrenMap;
-    }
-    */
 
     createParentToChildrenMap(peopleArray) {
         this.parentToChildrenMap = {}; // Assuming initialization elsewhere
