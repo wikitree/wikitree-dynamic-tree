@@ -300,6 +300,10 @@ window.OneNameTrees = class OneNameTrees extends View {
                     this.settings.onlyLastNameAtBirth ? "checked" : ""
                 } /> 
                 </label>
+                <button id="clearCache" title="Clear the cache of stored data for this surname">Clear cached ${
+                    this.surname
+                } items</button>
+                <button id="clearCacheAll" title="Clear the cache of all stored data">Clear all cached items</button>
             </div>
         </div>`);
     }
@@ -491,11 +495,40 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#toggleGeneralStats").trigger("click");
         });
 
+        /*
         $("#downloadData").on("click.oneNameTrees", function () {
             if (Object.keys($this.combinedResults).length > 0) {
                 const surname = $("#surname").val();
                 const fileName = "ONT_" + surname + "_" + new Date().toISOString().substring(0, 16) + ".json";
                 const treeHtml = $("section#results").html(); // Get the HTML of the tree
+                $this.downloadResults($this.combinedResults, treeHtml, fileName);
+            } else {
+                alert("No data to download.");
+            }
+        });
+*/
+
+        $("#downloadData").on("click.oneNameTrees", function () {
+            if (Object.keys($this.combinedResults).length > 0) {
+                const surname = $("#surname").val();
+                const location = $("#location").val();
+                const centuries = $("#centuries").val();
+
+                // Prepare the file name with surname, location, and centuries
+                // Replace spaces with underscores and remove characters that might be problematic in file names
+
+                const safeSurname = surname.replace(/\s+/g, "_").replace(/[\\/:*?"<>|]/g, "");
+                const safeLocation = location.replace(/\s+/g, "_").replace(/[\\/:*?"<>|]/g, "");
+                const safeCenturies = centuries.replace(/\s+/g, "_").replace(/[\\/:*?"<>|]/g, "");
+
+                // Conditionally add location and centuries to the file name if they are provided
+                let fileNameParts = [`ONT_${safeSurname}`];
+                if (safeLocation) fileNameParts.push(safeLocation);
+                if (safeCenturies) fileNameParts.push(safeCenturies);
+
+                const fileName = fileNameParts.join("_") + "_" + new Date().toISOString().substring(0, 16) + ".json";
+                const treeHtml = $("section#results").html(); // Get the HTML of the tree
+
                 $this.downloadResults($this.combinedResults, treeHtml, fileName);
             } else {
                 alert("No data to download.");
@@ -523,6 +556,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                     const storageObject = JSON.parse(e.target.result);
                     $this.combinedResults = storageObject.data;
                     const treeHtml = storageObject.html;
+                    $("#surname").val(storageObject.surname);
+                    $("#location").val(storageObject.location);
+                    $("#centuries").val(storageObject.centuries);
                     $("section#results").empty().html(treeHtml); // Load the HTML
                     $this.setupToggleButtons(); // Reinitialize any event listeners
 
@@ -537,7 +573,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                     let sortedPeople = $this.sortPeopleByBirthDate(theSet);
                     $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
                     $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
-                    $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
+                    $this.completeDisplay();
+                    //                    $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
                 };
 
                 reader.onprogress = function (e) {
@@ -552,6 +589,72 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $("#tableViewButton").removeClass("on");
             }
         });
+
+        /*
+        this.header.on("change.oneNameTrees", "#fileInput", function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                $this.reset();
+                $this.showLoadingBar();
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    wtViewRegistry.showWarning("Loading data...");
+                    const storageObject = JSON.parse(e.target.result);
+
+                    // Extract the surname either from the file content or the file name
+                    const surname = storageObject.surname || file.name.split("_")[1] || "";
+                    $("#surname").val(surname);
+                    $this.setNewTitle();
+
+                    // Check for and set location and centuries if present in the new file format
+                    if (storageObject.location) {
+                        $("#location").val(storageObject.location);
+                    }
+                    if (storageObject.centuries) {
+                        $("#centuries").val(storageObject.centuries);
+                    }
+
+                    // Load results and tree HTML
+                    $this.combinedResults = storageObject.results || storageObject.data || {};
+                    const treeHtml = storageObject.treeHtml || storageObject.html || "";
+                    $("section#results").empty().html(treeHtml);
+                    $this.setupToggleButtons();
+
+                    // Process the loaded data for display
+                    $this.prepareDataAfterLoading();
+
+                    reader.onprogress = function (e) {
+                        if (e.lengthComputable) {
+                            const percentage = (e.loaded / e.total) * 100;
+                            $this.updateLoadingBar(percentage);
+                        }
+                    };
+
+                    reader.readAsText(file);
+                    $("#tableViewButton").removeClass("on");
+                };
+
+                reader.readAsText(file); // This needs to be outside and after the onload handler setup
+            }
+        });
+
+        // Consolidate repeated logic into a new function for clarity
+        this.prepareDataAfterLoading = function () {
+            $this.displayedIndividuals.clear();
+            $this.displayedSpouses.clear();
+            $this.parentToChildrenMap = {};
+
+            $this.filterResults();
+            $this.filterFilteredResultsByLNAB();
+            let sortedPeople = $this.sortPeopleByBirthDate(
+                $this.settings.onlyLastNameAtBirth ? $this.onlyLastNameAtBirth : $this.filteredResults
+            );
+            $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
+            $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
+            $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
+        };
+        */
 
         this.header.on("click.oneNameTrees", "#loadButton", function () {
             $("#cancelFetch").trigger("click");
@@ -711,13 +814,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             if ($("#oneNameTreesSettings").length == 0) {
                 $this.settingsBox.appendTo($("body"));
             }
-            // Get position of the settings icon and show the settings box below it.
-            const position = $(this).position();
-            $this.settingsBox.css("top", position.top + 30 + "px");
-            const windowWidth = $(window).width();
-            const settingsBoxWidth = $this.settingsBox.outerWidth();
-            const leftPosition = (windowWidth - settingsBoxWidth) / 2;
-            $this.settingsBox.css("left", leftPosition + "px");
+
+            // Place the settings box in the centre of the screen and make it draggable.
+            $this.centerAndMakeDraggable($this.settingsBox);
             $this.settingsBox.fadeToggle();
         });
 
@@ -849,7 +948,44 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
             $this.shakingTree.hide();
         });
+        $(document).on("click.oneNameTrees", "#clearCache", function () {
+            const surname = $("#surname").val();
+            $this.storageManager.clearCachedItems(surname);
+        });
+        $(document).on("click.oneNameTrees", "#clearCacheAll", function () {
+            $this.storageManager.clearCachedItems();
+        });
     }
+
+    centerAndMakeDraggable(thing) {
+        // Function to center the settings box
+        function center(thing) {
+            const winWidth = $(window).width();
+            const winHeight = $(window).height();
+            const boxWidth = thing.outerWidth();
+            const boxHeight = thing.outerHeight();
+
+            // Calculate positions
+            const leftPosition = (winWidth - boxWidth) / 2;
+            const topPosition = (winHeight - boxHeight) / 2;
+
+            // Apply positions
+            thing.css({
+                left: `${leftPosition}px`,
+                top: `${topPosition}px`,
+            });
+        }
+
+        // Center the settings box initially
+        center(thing);
+
+        // Make the settings box draggable
+        thing.draggable();
+
+        // Optional: Recenter the settings box on window resize
+        $(window).resize(center(thing));
+    }
+
     showDNATestResults(dnaTests, connectedDNATests, connectedProfiles, parent) {
         // Ensure only one modal instance
         if ($("#dnaTestModal").length) {
@@ -868,6 +1004,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         `);
 
         $("body").append(popup);
+        popup.draggable({ handle: "h2" });
         popup.off("dblclick.oneNameTrees").on("dblclick.oneNameTrees", function (e) {
             $(this).fadeOut();
             setTimeout(() => {
@@ -1263,7 +1400,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         */
     }
 
-    buildQuery(centuries, locationBit, surname, surnameVariants, dna = "") {
+    buildQuery(centuries, locationBit, surname, dna = "") {
+        const surnameVariants = this.getSurnameVariants();
         // Helper function to create query parts for a single century
         const dnaBit = dna ? ` DNA%3D"${dna}"` : "";
         const queryPartForCentury = (century, locationBit, variant) => {
@@ -1300,159 +1438,88 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     buildCacheKey(surname, location, centuries) {
-        let cacheKey = `ONTids_${surname.replace(" ", "_").toLowerCase()}`;
+        // Normalize surname: lowercase and replace spaces with underscores
+        let cacheKey = `ONTids_${surname.replace(/\s+/g, "_").toLowerCase()}`;
+
+        // Normalize location: lowercase, trim, replace spaces with underscores, and encode URI components
         if (location) {
-            cacheKey += `_${location}`;
+            let normalizedLocation = location.trim().replace(/\s+/g, "_").toLowerCase();
+            normalizedLocation = encodeURIComponent(normalizedLocation);
+            cacheKey += `_${normalizedLocation}`;
+        } else {
+            cacheKey += "_";
         }
-        // If centuries is not an array, use parseCenturies to convert it
+
+        // Ensure centuries is an array and sort it to avoid duplicate keys for the same set of centuries in different orders
         if (!Array.isArray(centuries)) {
-            console.log("Converting centuries to array:", centuries);
             centuries = this.parseCenturies(centuries);
-            console.log("Converting centuries to array:", centuries);
         }
+        centuries.sort((a, b) => a - b); // Sort centuries in ascending order
+
+        // Append centuries to the key, joined with a consistent delimiter
         if (centuries.length) {
-            cacheKey += `_${centuries.join("C_")}`;
+            cacheKey += `_${centuries.join("-")}`; // Use a hyphen to separate centuries for readability
+        } else {
+            cacheKey += "_";
         }
+
         return cacheKey;
     }
 
-    async getONSids(surname, location, centuries) {
-        const $this = this;
+    async getONTids(surname, location, centuries) {
+        this.storageManager.clearONSidsCache();
         console.log("Fetching ONTids for:", surname, location, centuries);
         wtViewRegistry.clearStatus();
         this.setNewTitle();
+
+        // Generate a cache key that includes the surname, location, and centuries
         const cacheKey = this.buildCacheKey(surname, location, centuries);
         this.activateCancel();
 
-        // Retrieve cached data using LocalStorageManager
-        /*
-        const cachedData = this.storageManager.getItemAndUpdateAccessOrder(cacheKey);
-        if (cachedData) {
-            console.log("Returning cached data for ONTids from localStorage");
-            $("#refreshData").show();
-            return [false, JSON.parse(cachedData)];
-        }
-        */
-        // Retrieving the bundled data from cache
-        const cachedDataString = this.storageManager.getItemAndUpdateAccessOrder(cacheKey);
+        // Attempt to retrieve cached data using the generated cache key
+        const cachedDataString = localStorage.getItem(cacheKey);
         if (cachedDataString) {
             const cachedData = JSON.parse(cachedDataString);
 
-            // Extracting the components from the bundled data
-            const { data, auDNAdata, yDNAdata } = cachedData;
-
-            // Use the retrieved data as needed
-            console.log("Cached data loaded:", data);
-            console.log("auDNAdata loaded from cache:", auDNAdata);
-            console.log("yDNAdata loaded from cache:", yDNAdata);
-
-            // Showing refresh data option in UI
-            console.log("Returning cached data for identifiers from localStorage");
+            console.log("Cached data loaded:", cachedData);
             $("#refreshData").show();
 
-            return [false, data]; // or return [false, cachedData] to return the entire bundle
+            this.yDNAdata = cachedData.yDNA;
+            this.auDNAdata = cachedData.auDNA;
+
+            return [false, cachedData]; // Return cached data if available
         }
 
-        let locationBit = "";
-        if (location) {
-            locationBit = `Location%3D"${location.trim().replace(/,/, "%2C").replace(" ", "+")}"+`;
-        }
-
-        let surnameVariants = this.findSurnameVariants(surname);
-        if (surname.includes(",")) {
-            this.surnames = surname.split(/,\s*/);
-            surnameVariants = this.surnames;
-            surname = this.surnames[0];
-        }
-        if (this.surnames) {
-            this.surnameVariants = this.surnames;
-            surname = this.surnames[0];
-        }
-        /*
-        const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
-        const auDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "auDNA");
-        const yDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "yDNA");
-
-        const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
-        console.log(url);
-        const auDNAurl = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${auDNAquery}&MaxProfiles=100000&Format=JSON`;
-        const yDNAurl = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${yDNAquery}&MaxProfiles=100000&Format=JSON`;
-        try {
-            this.cancelFetchController = new AbortController();
-            const response = await fetch(url, { signal: this.cancelFetchController.signal });
-            const auDNAresponse = await fetch(auDNAurl, { signal: this.cancelFetchController.signal });
-            const yDNAresponse = await fetch(yDNAurl, { signal: this.cancelFetchController.signal });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            $this.auDNAdata = await auDNAresponse.json();
-            $this.yDNAdata = await yDNAresponse.json();
-            console.log("Data fetched from WT+:", data);
-            console.log("auDNAdata fetched from WT+:", $this.auDNAdata);
-            console.log("yDNAdata fetched from WT+:", $this.yDNAdata);
-
-            // Save fetched data using LocalStorageManager with LRU strategy
-            $this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(data));
-            console.log("Data saved with LRU strategy");
-
-            return [false, data];
-        } catch (error) {
-            console.error("Error when fetching from WT+ or saving data:", error);
-            if (error.name !== "AbortError") {
-                $("#dancingTree").fadeOut();
-                wtViewRegistry.showWarning("No response from WikiTree +. Please try again later.");
-            }
-            return [true, null];
-        }
-        */
-
-        const query = this.buildQuery(centuries, locationBit, surname, surnameVariants);
-        const auDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "auDNA");
-        const yDNAquery = this.buildQuery(centuries, locationBit, surname, surnameVariants, "yDNA");
-
-        const urls = [
-            `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`,
-            `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${auDNAquery}&MaxProfiles=100000&Format=JSON`,
-            `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${yDNAquery}&MaxProfiles=100000&Format=JSON`,
+        // Prepare queries for data fetching
+        const queries = [
+            { name: "main", query: this.buildQuery(centuries, location, surname) },
+            { name: "auDNA", query: this.buildQuery(centuries, location, surname, "auDNA") },
+            { name: "yDNA", query: this.buildQuery(centuries, location, surname, "yDNA") },
         ];
 
         try {
             this.cancelFetchController = new AbortController();
-            const signal = this.cancelFetchController.signal;
-            const fetchPromises = urls.map((url) =>
-                fetch(url, { signal }).then((response) => {
+
+            const data = await Promise.all(
+                queries.map(async ({ name, query }) => {
+                    const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
+                    const response = await fetch(url, { signal: this.cancelFetchController.signal });
+
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
                     }
-                    return response.json();
+
+                    return { [name]: await response.json() };
                 })
-            );
+            ).then((results) => Object.assign({}, ...results));
 
-            const results = await Promise.all(fetchPromises);
-
-            // Assigning the results to properties of $this
-            let data;
-            [data, $this.auDNAdata, $this.yDNAdata] = results;
-
-            console.log("Data fetched from WT+:", data);
-            console.log("auDNAdata fetched from WT+:", this.auDNAdata);
-            console.log("yDNAdata fetched from WT+:", this.yDNAdata);
-
-            const cacheData = {
-                data, // Assuming 'data' contains your primary dataset
-                auDNAdata: this.auDNAdata,
-                yDNAdata: this.yDNAdata,
-            };
-
-            // Use a unique cache key for storing the bundled data
-            const cacheKey = "uniqueKeyForBundledData"; // Make sure this is unique and descriptive
-
-            // Save the bundled data
-            this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(cacheData));
-            console.log("All data saved with LRU strategy");
+            // Cache the fetched data
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+            console.log("Data fetched and cached:", data);
+            this.yDNAdata = data.yDNA;
+            this.auDNAdata = data.auDNA;
+            console.log("yDNAdata:", this.yDNAdata);
+            console.log("auDNAdata:", this.auDNAdata);
 
             return [false, data];
         } catch (error) {
@@ -1482,6 +1549,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let profiles = {};
         while (true) {
             callNr += 1;
+            /*
             if (callNr == 1) {
                 console.log(
                     `Calling getPeople with ${ids.length} keys, start:${start}, limit:${limit}, options:`,
@@ -1492,7 +1560,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     `Retrieving getPeople result page ${callNr}. ${ids.length} keys, start:${start}, limit:${limit}`,
                     options
                 );
-            }
+            }*/
             const starttime = performance.now();
             const [aborted, theresMore, people] = await this.getPeople(ids, start, limit, options);
             if (aborted) {
@@ -1501,7 +1569,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             // console.log("People", people);
             const callTime = performance.now() - starttime;
             const nrProfiles = this.numberOfProfiles(people);
-            console.log(`Page ${callNr}: Received ${nrProfiles} profiles (start:${start}) in ${callTime}ms`);
+            //log(`Page ${callNr}: Received ${nrProfiles} profiles (start:${start}) in ${callTime}ms`);
             if (nrProfiles === 0) {
                 // An empty result means we've got all the results.
                 // Checking for an empty object above, as opposed to an arrya is just belts and braces
@@ -1512,11 +1580,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                 const beforeCnt = Object.keys(profiles).length;
                 Object.assign(profiles, people);
                 const afterCnt = Object.keys(profiles).length;
+                /*
                 console.log(
                     `Page ${callNr}: Collected ${
                         afterCnt - beforeCnt
                     } of ${nrProfiles} new profiles. We now have ${afterCnt}.`
                 );
+                */
                 // return if there is no more data
                 if (!theresMore) return [false, profiles];
             } else {
@@ -1605,6 +1675,11 @@ window.OneNameTrees = class OneNameTrees extends View {
             surnameVariants.push(this.surname);
         }
         console.log("Surname variants:", surnameVariants);
+
+        // Retrieve the century filter and parse it into an array of centuries
+        const centuries = this.parseCenturies($("#centuries").val());
+        const firstCentury = centuries.length > 0 ? Math.min(...centuries) : null;
+
         const $this = this;
         Object.values(this.combinedResults).forEach((person) => {
             //  console.log(person);
@@ -1615,15 +1690,26 @@ window.OneNameTrees = class OneNameTrees extends View {
             const standardizedLastNameOther = $this.standardizeString(person?.LastNameOther) || "";
 
             // Check if any standardized surname variants include the standardized person's surnames
-            const isMatch = surnameVariants.some(
+            const isSurnameMatch = surnameVariants.some(
                 (variant) =>
                     $this.standardizeString(variant) === standardizedLastNameAtBirth ||
                     $this.standardizeString(variant) === standardizedLastNameCurrent ||
                     $this.standardizeString(variant) === standardizedLastNameOther
             );
 
+            // Determine the person's birth century for filtering
+            const birthYear = parseInt(person?.BirthDate?.substring(0, 4));
+            const birthCentury = birthYear ? Math.ceil(birthYear / 100) : null;
+
+            // Check if the person's birth century matches the filter
+            const isCenturyMatch =
+                !firstCentury ||
+                (birthCentury && birthCentury >= firstCentury) ||
+                !person.BirthDate ||
+                person.BirthDate == "0000-00-00";
+
             // console.log("Is match:", isMatch);
-            if (isMatch) {
+            if (isSurnameMatch && isCenturyMatch) {
                 $this.filteredResults[person.Id] = person;
                 // console.log("Added to filtered results:", person);
                 // console.log("Filtered results:", filteredResults);
@@ -1730,7 +1816,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             });
         }
-        console.log(`Number of ids to use in retrieving of missing relatives: ${secondCall.size}`);
+        // console.log(`Number of ids to use in retrieving of missing relatives: ${secondCall.size}`);
         if (OneNameTrees.VERBOSE) console.log(`These are the profiles triggering the extra search:`, [...hasMissing]);
         hasMissing.clear();
 
@@ -1773,8 +1859,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                         const fetchedIdsSet = new Set(Object.keys(people));
                         const newIds = setDifference(fetchedIdsSet, currentIds);
                         const dups = setIntersection(fetchedIdsSet, currentIds);
-                        console.log(`Adding ${newIds.size} new people from ${nrProfiles} received`, [...newIds]);
-                        console.log("Duplicates not added", [...dups]);
+                        //console.log(`Adding ${newIds.size} new people from ${nrProfiles} received`, [...newIds]);
+                        //console.log("Duplicates not added", [...dups]);
                         currentIds = setUnion(currentIds, newIds);
                         additionalIds = setUnion(additionalIds, newIds);
                     }
@@ -1797,8 +1883,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         // console.log("Processing complete.");
 
         const profileCount = Object.keys(this.combinedResults).length;
-        console.log(`Fetched profiles count: ${profileCount}`);
-        console.log(`Total fetch time: ${fetchTime}ms`);
+        //console.log(`Fetched profiles count: ${profileCount}`);
+        // console.log(`Total fetch time: ${fetchTime}ms`);
 
         // Now 'combinedResults' contains the combined data from all batches
         // console.log(this.combinedResults);
@@ -1823,14 +1909,15 @@ window.OneNameTrees = class OneNameTrees extends View {
         const filteredCount = Object.keys($this.filteredResults).length || 0;
         if (OneNameTrees.VERBOSE) {
             const removedNew = setDifference(additionalIds, new Set(Object.keys($this.filteredResults)));
+            /*
             console.log(
                 `Last name filtering removed ${currentIds.size - filteredCount} profiles (${removedNew.size} of ${
                     additionalIds.size
                 } additionally retrieved profiles) from ${currentIds.size} leaving ${filteredCount} profiles.`
-            );
+            );*/
         } else {
             // console.log("Filtered results:", filteredResults);
-            console.log(`Last name filtering left ${filteredCount} profiles.`);
+            // console.log(`Last name filtering left ${filteredCount} profiles.`);
         }
 
         // After batch processing, update the progress bar for additional steps (the last 10% of the work)
@@ -1868,7 +1955,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     prioritizeTargetName(sortedPeople) {
-        console.log("in prioritizeTargetName");
+        //console.log("in prioritizeTargetName");
         let updatedPeople = [...sortedPeople]; // Clone the array to avoid direct modifications
 
         for (let i = 0; i < updatedPeople.length; i++) {
@@ -1876,14 +1963,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             let personShouldLog = this.shouldLog(person.Id);
 
             if (personShouldLog) {
-                console.log("Person:", person);
+                // console.log("Person:", person);
             }
 
             if (person.Spouses && person.Spouses.length > 0) {
                 const spouseIds = person.Spouses.map((spouse) => spouse.Id);
 
                 if (personShouldLog) {
-                    console.log("Spouse IDs:", spouseIds);
+                    //  console.log("Spouse IDs:", spouseIds);
                 }
 
                 spouseIds.forEach((spouseId) => {
@@ -1895,12 +1982,12 @@ window.OneNameTrees = class OneNameTrees extends View {
                         let spouseShouldLog = this.shouldLog(spouse.Id);
 
                         if (personShouldLog || spouseShouldLog) {
-                            console.log(`Person: ${person.Id} Spouse: (${spouse.Id})`);
+                            // console.log(`Person: ${person.Id} Spouse: (${spouse.Id})`);
                         }
 
                         if (this.shouldPrioritize(spouse, person)) {
                             if (personShouldLog || spouseShouldLog) {
-                                console.log(`Prioritizing spouse of ${person.Id} (${spouse.Id}) over ${person.Id}`);
+                                //     console.log(`Prioritizing spouse of ${person.Id} (${spouse.Id}) over ${person.Id}`);
                             }
 
                             spouse.shouldBeRoot = false;
@@ -2208,6 +2295,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.auDNAdata?.response?.profiles?.includes(person.Id);
 
         log ? console.log("Has DNA:", hasDNA) : null;
+        log ? console.log("this.yDNAdata", this.yDNAdata) : null;
+        log ? console.log("this.auDNAdata", this.auDNAdata) : null;
 
         if (hasDNA) {
             const dnaTags = this.processDNA(person);
@@ -2734,10 +2823,52 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Yield control back to the browser to update UI
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
-
         await this.arrangeTreeElements();
+
+        /*
+
         this.setupToggleButtons();
 
+        resultsContainer.fadeIn();
+
+        $(
+            "#searchContainer,#toggleDetails,#toggleWTIDs,#toggleGeneralStats,#tableViewButton,#locationSelects,#sheetButton"
+        ).show();
+        $("#tableLabel,#treesButtons").addClass("visible");
+
+        // Temporary fix (Maybe)
+        // Remove any ul.children whose parent is not a li.person
+        $("ul.children").each((index, children) => {
+            const $children = $(children);
+            if (!$children.parent().hasClass("person")) {
+                $children.remove();
+            }
+        });
+        wtViewRegistry.showWarning("Building statistics...");
+
+        this.showStatistics();
+        this.createNameSelectBoxes();
+        this.hideLoadingBar();
+        this.shakingTree.hide();
+        $("#refreshData").prop("disabled", false);
+        $("#loadButton").prop("disabled", false);
+        wtViewRegistry.clearStatus();
+        */
+        this.completeDisplay();
+    }
+
+    completeDisplay() {
+        // If this.displayedIndividuals (set) is empty, create it by getting all the IDs from the HTML
+        if (this.displayedIndividuals.size === 0) {
+            $("li.person").each((index, person) => {
+                const $person = $(person);
+                const id = $person.data("id");
+                this.displayedIndividuals.add(id);
+            });
+        }
+
+        this.setupToggleButtons();
+        let resultsContainer = $("section#results");
         resultsContainer.fadeIn();
 
         $(
@@ -3100,6 +3231,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         const storageObject = {
             data: data,
             html: htmlContent,
+            surname: this.surname,
+            location: $("#location").val().trim(),
+            centuries: this.parseCenturies($("#centuries").val().trim()).join(","),
         };
         const blob = new Blob([JSON.stringify(storageObject, null, 2)], { type: "application/json" });
         const href = URL.createObjectURL(blob);
@@ -4192,56 +4326,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
             });
         });
-        /*
-        $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
-            // Access the DataTable instance and the row element
-            const table = $(settings.nTable).DataTable();
-            const row = table.row(dataIndex).node();
-            const correctedLocation = $(row).data("corrected-location") || "";
-            const locationFilterValue = $("#birthPlaceFilter").val().toLowerCase();
-
-            let isValid = true; // Initialize as true and set to false if any condition fails
-            $(".dateFilter").each(function () {
-                const columnIndex = $(this).closest("th").index(); // Get column index based on the position of the input
-                const filterValue = $(this).val();
-                const cellValue = data[columnIndex] || ""; // Get the value from the cell in the current column
-                let year = cellValue.split("-")[0]; // Assuming the date is in YYYY-MM-DD format
-
-                let minYear, maxYear, excludeYear, exactYear;
-
-                // Interpret filterValue
-                if (filterValue.startsWith("!")) {
-                    excludeYear = parseInt(filterValue.substring(1), 10);
-                } else if (filterValue.includes("-")) {
-                    [minYear, maxYear] = filterValue.split("-").map(Number);
-                } else if (filterValue.startsWith("<")) {
-                    maxYear = parseInt(filterValue.substring(1), 10);
-                } else if (filterValue.startsWith(">")) {
-                    minYear = parseInt(filterValue.substring(1), 10) + 1; // +1 to make it exclusive
-                } else if (filterValue.length === 4 && /^\d+$/.test(filterValue)) {
-                    // Check for an exact year match
-                    exactYear = parseInt(filterValue, 10);
-                }
-
-                // Apply filter logic
-                if (
-                    (minYear && year < minYear) ||
-                    (maxYear && year > maxYear) ||
-                    (excludeYear && year == excludeYear) ||
-                    (exactYear !== undefined && year !== exactYear)
-                ) {
-                    isValid = false; // If any condition fails, set isValid to false
-                }
-            });
-
-            // Standard location filtering
-            if (locationFilterValue && !correctedLocation.toLowerCase().includes(locationFilterValue)) {
-                isValid = false;
-            }
-
-            return isValid; // Only include rows where isValid remains true
-        });
-*/
 
         function escapeRegExp(string) {
             return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
@@ -4445,20 +4529,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
     }
 
-    /*
-    countDescendants(personId, parentToChildrenMap) {
-        let count = 0;
-        if (parentToChildrenMap[personId]) {
-            const children = parentToChildrenMap[personId];
-            count += children.length; // Add direct children
-            children.forEach((childId) => {
-                count += this.countDescendants(childId, parentToChildrenMap); // Recursively add the count of descendants
-            });
-        }
-        return count;
-    }
-    */
-
     loadFromURL() {
         // Check name parameter of URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -4477,7 +4547,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     async startTheFetching(surname, location, centuries) {
         const $this = this;
         $this.reset();
-        const [aborted, data] = await $this.getONSids(surname, location, centuries);
+        const [aborted, data] = await $this.getONTids(surname, location, centuries);
         if (aborted) {
             wtViewRegistry.showWarning("Data retrieval cancelled.");
             $this.disableCancel();
@@ -4485,8 +4555,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             // TODO: do whatever other cleanup should be done
             return;
         }
-        const ids = data.response.profiles;
-        const found = data.response.found;
+        const ids = data.main.response.profiles;
+        const found = data.main.response.found;
         if (found === 0) {
             $this.disableCancel();
             $this.shakingTree.hide();
@@ -4537,7 +4607,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.clearStatus();
 
             let surname = $("#surname").val();
-            let location = $("#location").val().trim(); // Get the location from the new input field
+            let location = $("#location").val().trim() + " "; // Get the location from the new input field
             const centuries = $this.parseCenturies($("#centuries").val());
 
             // If surname includes a comma, it's a list of surnames.
@@ -4872,6 +4942,73 @@ class LocalStorageManager {
             this.accessOrder = JSON.parse(storedOrder);
         }
         this.checkAndRebuildAccessOrderIfNeeded(); // Ensure accessOrder is accurate on initialization
+    }
+
+    clearONSidsCache() {
+        const prefix = "ONSids_";
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith(prefix)) {
+                localStorage.removeItem(key);
+                console.log(`Removed cached item: ${key}`);
+            }
+        }
+    }
+
+    clearCachedItems(surname = null) {
+        const prefix = "ONTids_";
+        // Prepare two patterns: one for exact matches and another for prefixed matches
+        let pattern;
+
+        if (surname) {
+            // Normalize surname as it's done in key generation
+            const normalizedSurname = surname.replace(/\s+/g, "_").toLowerCase();
+            // Exact match pattern: matches exactly "ONTids_surname" (end of string)
+            const exactMatchPattern = new RegExp(`^${prefix}${normalizedSurname}$`);
+            // Prefix match pattern: matches "ONTids_surname_" with anything following the underscore
+            const prefixMatchPattern = new RegExp(`^${prefix}${normalizedSurname}_`);
+
+            pattern = (key) => exactMatchPattern.test(key) || prefixMatchPattern.test(key);
+        } else {
+            // If no surname is provided, use a simpler check for the base prefix
+            pattern = (key) => key.startsWith(prefix);
+        }
+
+        console.log(`Clearing cached items with prefix: ${prefix}`);
+
+        for (const key of Object.keys(localStorage)) {
+            console.log(`Checking key: ${key}`);
+
+            // Use the pattern to check the key
+            if (pattern(key)) {
+                localStorage.removeItem(key);
+                console.log(`Removed cached item: ${key}`);
+            }
+        }
+
+        // Show a temporary message instead of an alert
+        this.showTempMessage("Clearing cached data...");
+    }
+
+    showTempMessage(message) {
+        // Check if the message element already exists
+        let messageElement = document.getElementById("tempMessage");
+
+        // If it doesn't exist, create it
+        if (!messageElement) {
+            messageElement = document.createElement("div");
+            messageElement.setAttribute("id", "tempMessage");
+            messageElement.classList.add("temp-message");
+            document.body.appendChild(messageElement);
+        }
+
+        // Set the message and show the element
+        messageElement.textContent = message;
+        messageElement.style.display = "block";
+
+        // Hide the message after 3 seconds
+        setTimeout(() => {
+            messageElement.style.display = "none";
+        }, 3000);
     }
 
     checkAndRebuildAccessOrderIfNeeded() {

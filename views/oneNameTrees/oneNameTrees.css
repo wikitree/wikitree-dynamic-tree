@@ -1228,7 +1228,9 @@ input[type="submit"],
   font-size: 1.4em;
 }
 .oneNameTrees #dnaTestModal h2 {
+  cursor: move;
   font-size: 1.3em;
+  background-color: #f7f6f0;
 }
 .oneNameTrees #dnaTestModal h3 {
   font-size: 1.2em;
@@ -1243,4 +1245,29 @@ input[type="submit"],
 
 .oneNameTrees .dnaConnections li {
   padding-left: 0.2em;
+}
+
+.oneNameTrees .temp-message {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: black;
+  color: white;
+  padding: 20px;
+  border-radius: 5px;
+  z-index: 100000000; /* Ensure it's above other content */
+  font-size: 16px;
+}
+.oneNameTrees #clearCache,
+.oneNameTrees #clearCacheAll {
+  font-size: 1em;
+  margin: 0.2em;
+  padding: 0.2em;
+}
+.oneNameTrees #settings-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 0.5em;
 }
