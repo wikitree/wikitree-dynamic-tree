@@ -136,7 +136,7 @@ window.OneNameTrees = class OneNameTrees extends View {
       </div>`;
 
         this.bodyHTML = `
-      <div id="help">
+      <div id="help" class="modal">
       <h2>About This</h2> 
       <button id="closeHelp">×</button>
       <button id="print">⎙</button>
@@ -495,19 +495,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#toggleGeneralStats").trigger("click");
         });
 
-        /*
-        $("#downloadData").on("click.oneNameTrees", function () {
-            if (Object.keys($this.combinedResults).length > 0) {
-                const surname = $("#surname").val();
-                const fileName = "ONT_" + surname + "_" + new Date().toISOString().substring(0, 16) + ".json";
-                const treeHtml = $("section#results").html(); // Get the HTML of the tree
-                $this.downloadResults($this.combinedResults, treeHtml, fileName);
-            } else {
-                alert("No data to download.");
-            }
-        });
-*/
-
         $("#downloadData").on("click.oneNameTrees", function () {
             if (Object.keys($this.combinedResults).length > 0) {
                 const surname = $("#surname").val();
@@ -590,72 +577,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        /*
-        this.header.on("change.oneNameTrees", "#fileInput", function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                $this.reset();
-                $this.showLoadingBar();
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    wtViewRegistry.showWarning("Loading data...");
-                    const storageObject = JSON.parse(e.target.result);
-
-                    // Extract the surname either from the file content or the file name
-                    const surname = storageObject.surname || file.name.split("_")[1] || "";
-                    $("#surname").val(surname);
-                    $this.setNewTitle();
-
-                    // Check for and set location and centuries if present in the new file format
-                    if (storageObject.location) {
-                        $("#location").val(storageObject.location);
-                    }
-                    if (storageObject.centuries) {
-                        $("#centuries").val(storageObject.centuries);
-                    }
-
-                    // Load results and tree HTML
-                    $this.combinedResults = storageObject.results || storageObject.data || {};
-                    const treeHtml = storageObject.treeHtml || storageObject.html || "";
-                    $("section#results").empty().html(treeHtml);
-                    $this.setupToggleButtons();
-
-                    // Process the loaded data for display
-                    $this.prepareDataAfterLoading();
-
-                    reader.onprogress = function (e) {
-                        if (e.lengthComputable) {
-                            const percentage = (e.loaded / e.total) * 100;
-                            $this.updateLoadingBar(percentage);
-                        }
-                    };
-
-                    reader.readAsText(file);
-                    $("#tableViewButton").removeClass("on");
-                };
-
-                reader.readAsText(file); // This needs to be outside and after the onload handler setup
-            }
-        });
-
-        // Consolidate repeated logic into a new function for clarity
-        this.prepareDataAfterLoading = function () {
-            $this.displayedIndividuals.clear();
-            $this.displayedSpouses.clear();
-            $this.parentToChildrenMap = {};
-
-            $this.filterResults();
-            $this.filterFilteredResultsByLNAB();
-            let sortedPeople = $this.sortPeopleByBirthDate(
-                $this.settings.onlyLastNameAtBirth ? $this.onlyLastNameAtBirth : $this.filteredResults
-            );
-            $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
-            $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
-            $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
-        };
-        */
-
         this.header.on("click.oneNameTrees", "#loadButton", function () {
             $("#cancelFetch").trigger("click");
             wtViewRegistry.clearStatus();
@@ -726,19 +647,26 @@ window.OneNameTrees = class OneNameTrees extends View {
                 graph.toggle();
                 if (graph.is(":visible")) {
                     graph.css("display", "inline-block");
+
                     if (!["#locationsVisualisation", "#namesTable", "#migrationSankey"].includes(graphId)) {
                         graph.css("top", $(this).position().top + $(this).outerHeight() + 20 + "px");
                         // Make sure it's not off the right side of the screen
                         const windowWidth = $(window).width();
                         const graphWidth = graph.outerWidth();
-                        const leftPosition = $(this).position().left + $(this).outerWidth() / 2 - graphWidth / 2;
+                        let leftPosition = $(this).position().left + $(this).outerWidth() / 2 - graphWidth / 2;
+
+                        // Adjust if off the right side of the screen
                         if (leftPosition + graphWidth > windowWidth) {
-                            graph.css("left", windowWidth - graphWidth - 20 + "px");
-                        } else {
-                            graph.css("left", leftPosition + "px");
+                            leftPosition = windowWidth - graphWidth - 20;
                         }
+                        // Adjust if off the left side of the screen
+                        if (leftPosition < 0) {
+                            leftPosition = 20;
+                        }
+
+                        graph.css("left", leftPosition + "px");
                     }
-                    $this.popupZindex++;
+                    /*
                     const graphZindex = graph.css("z-index");
                     if (graphZindex < $this.popupZindex) {
                         graph.css("z-index", $this.popupZindex);
@@ -746,6 +674,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                         $this.popupZindex++;
                         graph.css("z-index", parseInt(graphZindex) + 1);
                     }
+                    */
+                    $this.setHighestZIndex(graph);
                     $(this).addClass("on");
                 } else {
                     $(this).removeClass("on");
@@ -757,21 +687,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Add Esc to close family sheet
         $(document).on("keyup.oneNameTrees", function (e) {
             if (e.key === "Escape") {
-                // Find the .familySheet with the highest z-index
-                let highestZIndex = 0;
-                let lastPopup = null;
+                const highestZIndex = $this.getElementWithHighestZIndex(".popup,.modal");
 
-                $(".popup:visible").each(function () {
-                    const zIndex = parseInt($(this).css("z-index"), 10);
-                    if (zIndex > highestZIndex) {
-                        highestZIndex = zIndex;
-                        lastPopup = $(this);
-                    }
-                });
-
-                if (lastPopup) {
-                    closePopup(lastPopup);
-                    lastPopup.fadeOut();
+                if (highestZIndex) {
+                    closePopup(highestZIndex);
+                    highestZIndex.fadeOut();
                 }
             }
         });
@@ -881,9 +801,22 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
+        $(document).on("click.oneNameTrees", ".popup,.modal", function (e) {
+            $this.setHighestZIndex($(this));
+        });
+
         $(document).on("click.oneNameTrees", ".DNA", async function () {
             $this.shakingTree.show();
             const wtid = $(this).parent().data("name");
+
+            let existingModal = $(`.dnaTestModal[data-id="${wtid}"]`);
+            if (existingModal.length) {
+                $this.setHighestZIndex(existingModal);
+                existingModal.show();
+                $this.shakingTree.hide();
+                return;
+            }
+
             try {
                 this.cancelFetchController = new AbortController();
                 const signal = this.cancelFetchController.signal;
@@ -955,6 +888,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(document).on("click.oneNameTrees", "#clearCacheAll", function () {
             $this.storageManager.clearCachedItems();
         });
+
+        $(document).on("click.oneNameTrees", ".dnaTestModal .close-button", function () {
+            $(this).closest(".dnaTestModal").fadeOut();
+        });
     }
 
     centerAndMakeDraggable(thing) {
@@ -986,7 +923,41 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(window).resize(center(thing));
     }
 
-    showDNATestResults(dnaTests, connectedDNATests, connectedProfiles, parent) {
+    setHighestZIndex(jq) {
+        // find the highest z-index of all elements on the page
+        this.popupZindex = Math.max.apply(
+            null,
+            $.map($("*"), function (e) {
+                if ($(e).css("position") == "absolute" || $(e).css("position") == "fixed")
+                    return parseInt($(e).css("z-index")) || 1;
+            })
+        );
+        console.log("Highest Z-Index:", this.popupZindex);
+        this.popupZindex++;
+        console.log("Highest Z-Index:", this.popupZindex);
+        jq.css("z-index", this.popupZindex);
+    }
+
+    getElementWithHighestZIndex(classes) {
+        let highestZIndex = 0;
+        let elementWithHighestZIndex = null;
+
+        // Iterate over each element that matches the classes
+        $(classes).each(function () {
+            // Get the current z-index of the element
+            const currentZIndex = parseInt($(this).css("z-index"), 10);
+
+            // Check if the current z-index is higher than what we've seen so far
+            if (currentZIndex > highestZIndex) {
+                highestZIndex = currentZIndex; // Update the highest known z-index
+                elementWithHighestZIndex = $(this); // Keep a reference to the element with this z-index
+            }
+        });
+
+        return elementWithHighestZIndex; // Return the element with the highest z-index
+    }
+
+    async showDNATestResults(dnaTests, connectedDNATests, connectedProfiles, parent) {
         // Ensure only one modal instance
         if ($("#dnaTestModal").length) {
             $("#dnaTestModal").remove();
@@ -994,51 +965,71 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const data = parent.data();
         const popup = $(`
-            <div id="dnaTestModal" class="modal" style="display:none;">
+            <div class="modal dnaTestModal" data-id="${data.name}" style="display:none;">
                 <div class="modal-content">
                     <span class="close-button">×</span>
                     <h2>${data.fullName}: DNA Test Results</h2>
-                    <div id="dnaTestResults" class="results-container"><h3>DNA Tests</h3></div>
+                    <div class="dnaTestResults" class="results-container"><h3>DNA Tests</h3></div>
                 </div>
             </div>
         `);
+        // find the highest z-index of all elements on the page
+        this.popupZindex = Math.max.apply(
+            null,
+            $.map($("*"), function (e) {
+                if ($(e).css("position") == "absolute") return parseInt($(e).css("z-index")) || 1;
+            })
+        );
+        this.popupZindex++;
+        popup.css("z-index", this.popupZindex);
 
         $("body").append(popup);
         popup.draggable({ handle: "h2" });
         popup.off("dblclick.oneNameTrees").on("dblclick.oneNameTrees", function (e) {
             $(this).fadeOut();
-            setTimeout(() => {
-                $(this).remove();
-            }, 500);
         });
-        const parentTop = parent.offset().top - $(window).scrollTop();
-        const modalTop = parentTop + parent.outerHeight() + 20;
-        $("#dnaTestModal").css("top", modalTop + "px");
-        $("#dnaTestModal").fadeIn();
 
         // Method to populate DNA Test results, modified to handle the provided data structure.
-        this.populateTestResults("#dnaTestResults", connectedDNATests, connectedProfiles);
+        const selector = popup.find(".dnaTestResults");
+        await this.populateTestResults(selector, connectedDNATests, connectedProfiles);
 
-        $(".close-button").click(() => {
-            $("#dnaTestModal").fadeOut();
-        });
+        const parentTop = parent.offset().top - $(window).scrollTop();
+        const modalTop = parentTop + parent.outerHeight() + 20;
+        popup.css("top", modalTop + "px");
+
+        // Adjust if the popup goes off the bottom of the screen
+        const windowHeight = $(window).height();
+        const modalHeight = popup.outerHeight(true);
+        const bottomOverlap = modalTop + modalHeight - windowHeight;
+        if (bottomOverlap > 0) {
+            popup.css("top", modalTop - bottomOverlap - 20 + "px"); // Extra 20px for margin
+        }
+
+        popup.fadeIn();
     }
 
-    populateTestResults(containerSelector, connectedDNATests, connectedProfiles) {
+    async populateTestResults(containerSelector, connectedDNATests, connectedProfiles) {
         const container = $(containerSelector);
         container.empty(); // Clear previous content
 
-        // Since dnaTests array doesn't directly contain test details in the given structure, use connectedDNATests for test details.
+        // Prepare an array to hold all promises created by the async operations
+        const promises = [];
+
         connectedDNATests.forEach((testGroup) => {
             testGroup.dnaTests.forEach((test) => {
                 // Attempt to find connected profiles for this test
                 const connectedTestProfiles = this.findConnectedProfiles(test.dna_id, connectedProfiles);
 
-                // Building the test card HTML
-                const testHtml = this.buildTestCardHtml(test, connectedTestProfiles);
-                container.append(testHtml);
+                // Add the promise returned by buildTestCardHtml to our array
+                const promise = this.buildTestCardHtml(test, connectedTestProfiles).then((testHtml) => {
+                    container.append(testHtml);
+                });
+                promises.push(promise);
             });
         });
+
+        // Wait for all promises to resolve
+        await Promise.all(promises);
     }
 
     findConnectedProfiles(dnaTestId, connectedProfiles) {
@@ -1056,8 +1047,43 @@ window.OneNameTrees = class OneNameTrees extends View {
         return `<a href="https://www.wikitree.com/wiki/${wtid}" target="_blank">${fullName ? fullName : wtid}</a>`;
     }
 
-    buildTestCardHtml(test, connectedProfiles) {
+    async getDNAConnections(connectedProfiles) {
         const $this = this;
+        // Assuming connectedProfiles is an array of profile IDs that were found
+        let missingProfileIds = connectedProfiles
+            .filter((profile) => !$this.combinedResults[profile.Id])
+            .map((profile) => profile.Id);
+
+        // Check if there are any missing profiles to fetch
+        if (missingProfileIds.length > 0) {
+            try {
+                // Construct your API call to fetch missing profiles. The specifics of this call
+                // depend on the API you're using (e.g., batch requests or individual gets)
+                const fetchedProfiles = await this.getPeople(missingProfileIds, 0, 1000);
+                console.log("Fetched Profiles:", fetchedProfiles);
+                const theProfiles = fetchedProfiles?.[2];
+                // These are objects with the profile ID as the key.  Need an array of the profiles.
+                if (!theProfiles) {
+                    console.error("No profiles found for the provided IDs.");
+                    return;
+                }
+                const people = Object.keys(theProfiles).map((key) => theProfiles[key]);
+                // Process and integrate fetched profiles into $this.combinedResults
+                people.forEach((profile) => {
+                    // Assume the API returns an array of profile objects
+                    // This assumes you have a method to process or directly use the profile data
+                    $this.combinedResults[profile.Id] = profile;
+                });
+                return;
+            } catch (error) {
+                console.error("Failed to fetch data for missing profiles:", error);
+            }
+        }
+    }
+
+    async buildTestCardHtml(test, connectedProfiles) {
+        const $this = this;
+        await this.getDNAConnections(connectedProfiles);
         let connectionsHtml = "<ul class='dnaConnections'>";
         if (connectedProfiles.length > 0) {
             connectedProfiles.forEach((profile) => {
@@ -1549,18 +1575,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         let profiles = {};
         while (true) {
             callNr += 1;
-            /*
-            if (callNr == 1) {
-                console.log(
-                    `Calling getPeople with ${ids.length} keys, start:${start}, limit:${limit}, options:`,
-                    options
-                );
-            } else {
-                console.log(
-                    `Retrieving getPeople result page ${callNr}. ${ids.length} keys, start:${start}, limit:${limit}`,
-                    options
-                );
-            }*/
             const starttime = performance.now();
             const [aborted, theresMore, people] = await this.getPeople(ids, start, limit, options);
             if (aborted) {
@@ -4656,12 +4670,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         helpModal.on("dblclick.oneNameTrees", function (e) {
             e.preventDefault();
             helpModal.slideUp();
-        });
-        // Escape key closes the modal
-        $(document).keyup(function (e) {
-            if (e.key === "Escape") {
-                helpModal.slideUp();
-            }
         });
 
         $("#toggleDetails")
