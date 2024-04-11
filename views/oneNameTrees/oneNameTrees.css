@@ -1069,7 +1069,10 @@ input[type="submit"],
   width: 1.5em;
   height: 1.5em;
   cursor: pointer;
+  position: relative;
+  top: 0.3em;
 }
+
 /* #setting-icon is png. Change its appearance on hover and active */
 .oneNameTrees #setting-icon:hover {
   filter: invert(0.5);

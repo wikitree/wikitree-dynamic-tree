@@ -112,6 +112,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
             <button id="sheetButton" title="Download a spreadsheet file">Sheet</button>
             <button id="helpButton" title="About this">?</button>
+            <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
         </div>
 
         <div id="tableLabel" class="controlGroup">Table:
@@ -125,7 +126,7 @@ window.OneNameTrees = class OneNameTrees extends View {
           <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
           <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
         </div>
-        <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
+        
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
         </div>
@@ -894,7 +895,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
     }
 
-    centerAndMakeDraggable(thing) {
+    centerAndMakeDraggable(thing, options = {}) {
         // Function to center the settings box
         function center(thing) {
             const winWidth = $(window).width();
@@ -917,7 +918,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         center(thing);
 
         // Make the settings box draggable
-        thing.draggable();
+        if (options.handle) {
+            thing.draggable({ handle: options.handle });
+        } else {
+            thing.draggable();
+        }
 
         // Optional: Recenter the settings box on window resize
         $(window).resize(center(thing));
@@ -984,7 +989,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         popup.css("z-index", this.popupZindex);
 
         $("body").append(popup);
-        popup.draggable({ handle: "h2" });
+        this.centerAndMakeDraggable(popup, { handle: "h2" });
         popup.off("dblclick.oneNameTrees").on("dblclick.oneNameTrees", function (e) {
             $(this).fadeOut();
         });
