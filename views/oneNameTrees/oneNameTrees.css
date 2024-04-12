@@ -602,7 +602,8 @@ input[type="submit"],
 }
 
 .oneNameTrees section#table #wideTableButton,
-.oneNameTrees section#table #flipLocationsButton {
+.oneNameTrees section#table #flipLocationsButton,
+.oneNameTrees section#table #checkLocationsButton {
   margin-left: 2em !important;
 }
 
@@ -1284,4 +1285,9 @@ input[type="submit"],
   display: grid;
   grid-template-columns: 1fr;
   grid-gap: 0.5em;
+}
+
+.oneNameTrees #tableView tr.locationIssue .birthPlace {
+  color: red;
+  font-weight: bold;
 }

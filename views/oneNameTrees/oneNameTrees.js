@@ -372,8 +372,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             const cacheKey = $this.buildCacheKey(value, location, centuries);
             if (value && localStorage.getItem(cacheKey)) {
                 $("#refreshData").show();
-                // Make the refresh button stand out a little, briefly
-                //$("#refreshData").fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
             } else {
                 $("#refreshData").hide();
             }
@@ -847,7 +845,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                 console.log("Connected DNA Tests Result:", connectedDNATestsResult);
 
-                // Assuming the results from the second call are used for the third call
                 if (connectedDNATestsResult && connectedDNATestsResult.length > 0) {
                     // Prepare and execute the third call for each dna_id found
                     const connectedProfilesPromises = connectedDNATestsResult[0].dnaTests.map((test) => {
@@ -1054,7 +1051,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     async getDNAConnections(connectedProfiles) {
         const $this = this;
-        // Assuming connectedProfiles is an array of profile IDs that were found
         let missingProfileIds = connectedProfiles
             .filter((profile) => !$this.combinedResults[profile.Id])
             .map((profile) => profile.Id);
@@ -1955,7 +1951,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.peopleById = this.createPeopleByIdMap(this.sortedPeople);
 
         // Update progress bar after sorting and mapping
-        processed += (extendedTotal - total) * 0.5; // Assuming these take about half of the remaining 20%
+        processed += (extendedTotal - total) * 0.5;
         this.updateLoadingBar(90 + (processed / extendedTotal) * 10);
 
         console.log("People by ID:", this.peopleById);
@@ -2642,7 +2638,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     createParentToChildrenMap(peopleArray) {
-        this.parentToChildrenMap = {}; // Assuming initialization elsewhere
+        this.parentToChildrenMap = {};
 
         peopleArray.forEach((person) => {
             ["Father", "Mother"].forEach((parentType) => {
@@ -2972,7 +2968,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Now we map to the full person object using the Id from each child entry in the map
             let sortedChildren = parentToChildrenMap[parentId]
                 .map((childEntry) => peopleById[childEntry.Id])
-                // Assuming getComparableDate can handle cases where a person might not have a direct BirthDate
                 .sort((a, b) => {
                     // Compare using getComparableDate, which needs to handle both BirthDate and BirthDateDecade
                     let dateA = this.getComparableDate(a) || "9999"; // Defaulting to a high value for missing dates
@@ -3686,7 +3681,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         Object.entries(subdivisionData).forEach(([key, value]) => {
             if (key !== "count" && typeof value === "object") {
                 // Adjusted to generate button HTML string
-                const buttonHTML = this.locationCountButton(key, value.count); // Assuming value.count is the count you want to show
+                const buttonHTML = this.locationCountButton(key, value.count);
                 let $nestedItem = $("<li>");
 
                 // Creating a span with class .locationPart as the clickable part
@@ -3877,7 +3872,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     let $subdivisionList = $("<ul class='locationSubdivision'>");
                     Object.entries(subdivisions)
                         .filter(([subdivision, _]) => subdivision !== "count" && subdivision !== "") // Filter out 'count' and empty strings
-                        .sort((a, b) => b[1].count - a[1].count) // Assuming 'count' is a property of the object
+                        .sort((a, b) => b[1].count - a[1].count)
                         .forEach(([subdivision, subData]) => {
                             const countButton = $this.locationCountButton(subdivision, subData.count);
                             let $subItem = $("<li>").html(
@@ -4409,7 +4404,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                 const filterElement = $(this);
                 const filterValue = filterElement.val().trim().toLowerCase(); // Trim and lowercase the filter value
-                const columnIndex = $(this).closest("th").index(); // Assuming filter is placed within a column header or related structure
+                const columnIndex = $(this).closest("th").index();
                 const cellData = data[columnIndex]?.toString().toLowerCase() || ""; // Cell data in lowercase for case-insensitive comparison
 
                 if (filterValue.startsWith("!")) {
@@ -4435,6 +4430,35 @@ window.OneNameTrees = class OneNameTrees extends View {
         wideTableButton.on("click.oneNameTrees", function () {
             $("section#table").toggleClass("wide");
             $(this).toggleClass("on");
+        });
+        const checkLocationsButton = $("<button>", { id: "checkLocationsButton" }).text("Check Locations");
+        checkLocationsButton.attr("title", "Highlight locations with possible errors");
+        wideTableButton.after(checkLocationsButton);
+        checkLocationsButton.on("click.oneNameTrees", function () {
+            // Find all people in the table who's .birthPlace is different from tr data-corrected-location
+            const table = $("#tableView").DataTable();
+            table.rows().every(function () {
+                const row = this.node();
+                const correctedLocation = $(row).data("corrected-location") || "";
+                const birthPlaceCell = $(row).find(".birthPlace");
+                const birthPlace = birthPlaceCell.text();
+                if (birthPlace && birthPlace.toLowerCase() !== correctedLocation.toLowerCase()) {
+                    $(row).addClass("locationIssue");
+                    birthPlaceCell.attr("title", `${correctedLocation}?`);
+                } else {
+                    $(row).removeClass("locationIssue");
+                }
+            });
+        });
+
+        $(document).on("click.oneNameTrees", ".locationIssue .birthPlace", function () {
+            // Briefly show the title attribute
+            const birthPlace = $(this).text();
+            const title = $(this).attr("title");
+            $(this).text(title);
+            setTimeout(() => {
+                $(this).text(birthPlace);
+            }, 2000);
         });
 
         function flipLocationOrder() {
@@ -4794,8 +4818,8 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         Object.keys(dataset).forEach(function (key) {
             const person = dataset[key];
-            const aName = new PersonName(person); // Assuming PersonName is a function you've defined elsewhere
-            let givenNames = aName.withParts(["FirstNames"]); // Modify based on your actual method
+            const aName = new PersonName(person);
+            let givenNames = aName.withParts(["FirstNames"]);
 
             // Calculate age
             const age =
@@ -4946,7 +4970,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
 class LocalStorageManager {
     constructor() {
-        this.accessOrder = []; // Assuming it's feasible to keep this in memory
+        this.accessOrder = [];
         this.maxCapacity = 5 * 1024 * 1024; // 5MB, adjust as needed
         this.threshold = this.maxCapacity * 0.7; // Cleanup when 70% full
         // Attempt to read the accessOrder from localStorage or initialize it
