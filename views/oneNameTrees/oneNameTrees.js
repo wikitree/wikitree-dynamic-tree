@@ -4286,6 +4286,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             $row.attr("data-mother", person.Mother);
             $row.attr("data-gender", person.Gender);
             $row.attr("data-corrected-location", person.CorrectedBirthLocation);
+            $row.attr("data-birthplace", birthPlace);
+            $row.attr("data-deathplace", deathPlace);
             const categoryHTML = $this.createCategoryHTML(person);
             const rowData = {
                 givenNames: givenNames,
@@ -4441,7 +4443,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 const row = this.node();
                 const correctedLocation = $(row).data("corrected-location") || "";
                 const birthPlaceCell = $(row).find(".birthPlace");
-                const birthPlace = birthPlaceCell.text();
+                const birthPlace = $(row).data("birthplace");
                 if (birthPlace && birthPlace.toLowerCase() !== correctedLocation.toLowerCase()) {
                     $(row).addClass("locationIssue");
                     birthPlaceCell.attr("title", `${correctedLocation}?`);
