@@ -174,7 +174,7 @@ export class FamilyTreeStatistics {
                 });
             }
         });
-        // console.log("Name Counts", nameCounts);
+
         return nameCounts;
     }
 
@@ -292,21 +292,12 @@ export class FamilyTreeStatistics {
             const deathParts = this.getReverseLocationArray(person.DeathLocation);
             if (person.Name == "Anderson-79237") {
                 shouldLog = true;
-                // Log with colour and bold and big font
-                console.log("%cAnderson-79237", "color: blue; font-weight: bold; font-size: 20px;");
-                console.log("Anderson-79237", person.BirthLocation, person.DeathLocation, birthParts, deathParts);
-
-                console.log(
-                    "isDifferentMigration",
-                    isDifferentMigration(person.BirthLocation, person.DeathLocation, birthParts, deathParts)
-                );
             } else {
                 shouldLog = false;
             }
             return isDifferentMigration(person.BirthLocation, person.DeathLocation, birthParts, deathParts);
         });
 
-        log(`Found ${migrants.length} migrants.`);
         return migrants;
     }
 
@@ -430,9 +421,6 @@ export class FamilyTreeStatistics {
         const childCounts = this.getChildCounts();
         const couples = {};
         const periodLength = parseInt(this.getSettings()?.periodLength) || 50;
-        console.log("Period Length", periodLength);
-        console.log("Settings", this.getSettings());
-
         this.peopleArray.forEach((person) => {
             const birthYear = this.getYear(person.BirthDate);
             if (birthYear) {
@@ -455,8 +443,6 @@ export class FamilyTreeStatistics {
                     const ageAtDeath = this.calculateAgeAtDeath(person.BirthDate, person.DeathDate);
                     const isOver16 =
                         ageAtDeath >= 16 || (ageAtDeath === null && this.isAdultBasedOnYear(person.BirthDate));
-
-                    //    console.log(`Person ID: ${person.Id}, Age: ${ageAtDeath}, Is Over 16: ${isOver16}, Period: ${period}`);
 
                     if (isOver16) {
                         statsByPeriod[period].malesOver16Count++;
@@ -512,8 +498,6 @@ export class FamilyTreeStatistics {
             periodData.averageAgeAtDeath =
                 periodData.deathsCount > 0 ? (periodData.totalAgeAtDeath / periodData.deathsCount).toFixed(2) : 0;
 
-            // console.log(JSON.parse(JSON.stringify(periodData.names)));
-
             ["Male", "Female", "Unknown"].forEach((gender) => {
                 const names = periodData.names[gender];
                 // Convert back to an object after sorting and slicing
@@ -527,7 +511,6 @@ export class FamilyTreeStatistics {
 
                 periodData.names[gender] = sortedSlicedNames;
             });
-            // console.log(JSON.parse(JSON.stringify(periodData.names)));
 
             let totalCouples = 0;
             let totalChildrenForCouples = 0;
@@ -587,13 +570,12 @@ export class FamilyTreeStatistics {
         // Calculate most common names and locations for each period
         Object.keys(statsByPeriod).forEach((periodKey) => {
             const periodData = statsByPeriod[periodKey];
-            // console.log("periodData", periodData);
+
             periodData.mostCommonNames = this.getMostCommonNamesForPeriod(periodData.names);
-            // console.log("Location Counts for period", periodKey, periodData.locationStatistics.locationCounts);
+
             periodData.mostCommonLocations = this.getTopNLocations(periodData.subdivisionCounts, 10);
 
             // Debug: Check if most common locations are calculated as expected
-            // console.log("Most common locations for period", periodKey, periodData.mostCommonLocations);
         });
 
         // Use sortedStatsByPeriod for further processing
@@ -689,7 +671,6 @@ export class FamilyTreeStatistics {
         const death = this.parseDate(deathDate);
 
         if (!birth || !death || birthDate == "0000-00-00" || deathDate == "0000-00-00") {
-            // console.log(`Invalid or missing date: BirthDate = ${birthDate}, DeathDate = ${deathDate}`);
             return -1;
         }
 
@@ -799,9 +780,6 @@ export class FamilyTreeStatistics {
 
     // Helper method to get most common names for a period
     getMostCommonNamesForPeriod(namesObject) {
-        //  console.log("namesObject", namesObject);
-        // console.log("Male names", this.getSortedNames(namesObject.Male, 10));
-
         return {
             Male: this.getSortedNames(namesObject.Male, 10),
             Female: this.getSortedNames(namesObject.Female, 10),
@@ -810,14 +788,10 @@ export class FamilyTreeStatistics {
 
     // Helper method to get most common locations for a period
     getMostCommonLocationsForPeriod(locationCounts) {
-        //  console.log("Received location counts for period:", locationCounts);
-
         const sortedLocations = Object.entries(locationCounts)
             .sort((a, b) => b[1].count - a[1].count)
             .slice(0, 10)
             .map(([name, data]) => ({ name, count: data.count }));
-
-        //  console.log("Sorted locations for period:", sortedLocations);
 
         return sortedLocations;
     }

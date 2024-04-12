@@ -1,7 +1,5 @@
 export class D3DataFormatter {
     constructor(statsByPeriod) {
-        console.log("D3DataFormatter constructor called");
-        console.log("statsByPeriod", statsByPeriod);
         this.clearExistingData();
         $("#locationsVisualization").remove();
         $("#lifespanGraph").remove();
@@ -59,7 +57,7 @@ export class D3DataFormatter {
         this.sortLocationHierarchy();
         this.aggregateCounts(this.locationHierarchy);
         this.migrationEvolutionInterval = null;
-        // console.log("Location Hierarchy:", JSON.parse(JSON.stringify(this.locationHierarchy)));
+        //
         // this.initVisualization();
     }
 
@@ -610,7 +608,6 @@ export class D3DataFormatter {
                 stop: function (event, ui) {
                     // Save the new position
                     const position = ui.position;
-                    //  console.log("New position:", position);
                 },
             }
         );
@@ -731,8 +728,6 @@ export class D3DataFormatter {
             // Store migrations for the current period
             periodMigrations[periodName] = Object.values(migrations);
         });
-
-        console.log("Period-specific migration flows:", periodMigrations);
 
         return periodMigrations;
     }
@@ -1111,14 +1106,12 @@ export class D3DataFormatter {
                 );
             }
 
-            console.log("People array:", peopleArray);
             const tooltip = $("#migrationSankey #personTooltip");
 
             graphLinks.forEach((link) => {
-                console.log("Link:", link);
                 link.peopleIds.forEach((id, index) => {
                     const person = peopleArray.find((p) => p.Id === id);
-                    console.log("Person:", person);
+
                     if (!person) return;
 
                     let personHTML = tooltipHTML(person);
@@ -1385,98 +1378,6 @@ export class D3DataFormatter {
 
         // Ensure the stop button is initially disabled
         $("#stopMigrationEvolution").prop("disabled", true);
-
-        // Make the migrationSankey div draggable if needed
-        // $("#migrationSankey").draggable();
-    }
-
-    /*
-    startMigrationEvolution(intervalMs, immediateStart = false) {
-        if (this.migrationEvolutionInterval) {
-            clearInterval(this.migrationEvolutionInterval);
-        }
-
-        const moveToNextPeriod = () => {
-            // Increment and wrap the currentPeriodIndex
-            this.currentMigrationPeriodIndex = (this.currentMigrationPeriodIndex + 1) % this.sortedPeriodKeys.length;
-
-            const periodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
-            const migrationData = this.extractMigrationFlows()[periodKey];
-
-            // Check if the current period has data; if not, move to the next one
-            if (!migrationData || migrationData.length === 0) {
-                moveToNextPeriod();
-            } else {
-                this.drawMigrationSankeyForPeriod(periodKey);
-            }
-        };
-
-        // Immediately trigger the next migration period if requested
-        if (immediateStart) {
-            moveToNextPeriod();
-        }
-
-        // Set the interval
-        this.migrationEvolutionInterval = setInterval(moveToNextPeriod, intervalMs);
-        $("#startMigrationEvolution").prop("disabled", true);
-        $("#stopMigrationEvolution").prop("disabled", false);
-    }
-*/
-
-    startMigrationEvolution(intervalMs, immediateStart = false) {
-        console.log("Starting migration evolution...");
-        this.stopMigrationEvolution();
-        if (this.migrationEvolutionInterval) {
-            clearInterval(this.migrationEvolutionInterval);
-        }
-
-        // New parameter to track recursion depth, initialized here
-        const attemptToMoveToNextPeriod = (attempts = 0) => {
-            // Increment and wrap the currentPeriodIndex
-            this.currentMigrationPeriodIndex = (this.currentMigrationPeriodIndex + 1) % this.sortedPeriodKeys.length;
-
-            const periodKey = this.sortedPeriodKeys[this.currentMigrationPeriodIndex];
-            const migrationData = this.extractMigrationFlows()[periodKey];
-
-            // Check if the current period has data; if not, move to the next one
-            // Also, ensure we don't loop infinitely by limiting attempts to the number of periods
-            if ((!migrationData || migrationData.length === 0) && attempts < this.sortedPeriodKeys.length) {
-                attemptToMoveToNextPeriod(attempts + 1); // Pass the incremented attempts
-            } else if (attempts >= this.sortedPeriodKeys.length) {
-                console.log("All periods are empty or attempted to check all periods."); // Optionally handle this case
-                clearInterval(this.migrationEvolutionInterval); // Stop the interval as there's no valid data to display
-                return; // Exit the function to prevent further execution
-            } else {
-                this.drawMigrationSankeyForPeriod(periodKey);
-            }
-        };
-
-        // Immediately trigger the next migration period if requested
-        if (immediateStart) {
-            attemptToMoveToNextPeriod();
-        }
-
-        // Set the interval
-        this.migrationEvolutionInterval = setInterval(() => {
-            attemptToMoveToNextPeriod();
-        }, intervalMs);
-        $("#startMigrationEvolution").prop("disabled", true);
-        $("#stopMigrationEvolution").prop("disabled", false);
-    }
-
-    stopMigrationEvolution() {
-        // Clear the interval when stopping the evolution.
-        console.log("Stopping migration evolution...");
-        if (this.migrationEvolutionInterval) {
-            clearInterval(this.migrationEvolutionInterval);
-            this.migrationEvolutionInterval = null; // Clear the interval ID
-        }
-        console.log("Migration evolution stopped.");
-        console.log("Migration evolution interval ID:", this.migrationEvolutionInterval);
-        // Optionally, update the UI to reflect that the evolution has stopped.
-        // For example, enable the start button and disable the stop button.
-        $("#startMigrationEvolution").prop("disabled", false);
-        $("#stopMigrationEvolution").prop("disabled", true);
     }
 
     showNextMigrationPeriod() {
@@ -1485,7 +1386,6 @@ export class D3DataFormatter {
 
         const moveToNextPeriodWithData = () => {
             if (attempts >= periodKeys.length) {
-                console.log("All periods are empty or checked.");
                 return; // Avoid infinite loop
             }
 
@@ -1511,7 +1411,6 @@ export class D3DataFormatter {
 
         const moveToPreviousPeriodWithData = () => {
             if (attempts >= periodKeys.length) {
-                console.log("All periods are empty or checked.");
                 return; // Avoid infinite loop
             }
 
@@ -1538,7 +1437,6 @@ export class D3DataFormatter {
 
         const migrationData = this.extractMigrationFlows()[periodKey];
         if (!migrationData) {
-            console.log("No migration data for period:", periodKey);
             return this.attemptNextPeriod(periodKey, attemptedPeriods);
         }
 
@@ -1546,7 +1444,6 @@ export class D3DataFormatter {
         const { nodes, links } = this.prepareSankeyData(migrationData);
 
         if (nodes.length === 0 || links.length === 0) {
-            console.log("No data available to draw the Sankey diagram for period:", periodKey);
             return this.attemptNextPeriod(periodKey, attemptedPeriods);
         }
 
@@ -1560,7 +1457,6 @@ export class D3DataFormatter {
 
         // Stop if all periods have been attempted
         if (attemptedPeriods.length >= Object.keys(this.statsByPeriod).length) {
-            console.log("All periods attempted, no data available for any period.");
             return;
         }
 

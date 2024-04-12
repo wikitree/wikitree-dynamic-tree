@@ -17,58 +17,73 @@ export class LocationStatistics {
         this.peopleArray = peopleArray;
         this.countryCounts = {};
         this.subdivisionCounts = {};
-        this.correctBirthLocations();
+        this.correctLocations();
         this.locationCounts = {};
         this.countLocations();
     }
 
-    correctBirthLocations() {
+    correctLocations() {
         this.peopleArray.forEach((person) => {
+            // Correcting birth location
             const birthLocation = person.BirthLocation;
             const birthDate = person.BirthDate;
-            const correctedLocation = this.correctBirthLocation(birthLocation, birthDate);
-            person.CorrectedBirthLocation = correctedLocation;
-            if (correctedLocation !== birthLocation) {
-                /*
-        console.log(`Original: ${birthLocation}`);
-        console.log(
-          "%cCorrected: %s",
-          "background: yellow; color: black; font-size: 14px;",
-          person.CorrectedBirthLocation,
-          person?.BirthDate
-        );
-        */
-            } else {
-                // if correctedLocation contains/includes a US alias or an abbreviation, log it
-                // Need to check if correctedLocation contains/includes a US alias or an US state abbreviation or UK County abbreviation
-                // May need regex to check for US alias or US state abbreviation or UK County abbreviation
+            const correctedBirthPlace = this.correctLocation(birthLocation, birthDate);
+            person.CorrectedBirthLocation = correctedBirthPlace;
 
-                const regex = /USA|U.S.A.|U.S.|US|United States of America|U.K.|UK/g;
-                const regex2 =
-                    /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/g;
-                // Build regex3 for UK County abbreviations from values of englandCountyAbbreviations
-                const regex3 =
-                    /\b(Beds|Berks|Bucks|Cambs|Ches|Derbys|Gloucs|Hants|Heref|Herts|Lancs|Leics|Lincs|Middx|Northants|Northumb|Notts|Oxon|Salop|Shrops|Som|Staffs|Warks|Wilts|Worcs|Yorks)\b/g;
+            // Correcting death location
+            const deathLocation = person.DeathLocation;
+            const deathDate = person.DeathDate;
+            const correctedDeathPlace = this.correctLocation(deathLocation, deathDate);
+            person.CorrectedDeathLocation = correctedDeathPlace;
 
-                if (
-                    correctedLocation.match(regex) ||
-                    correctedLocation.match(regex2) ||
-                    correctedLocation.match(regex3)
-                ) {
-                    //  console.log(`Original: ${birthLocation}\nCorrected: ${correctedLocation}`);
-                    //  console.log(correctedLocation.match(regex3));
-                }
-            }
+            // Logging corrections and checking for specific patterns
+            this.logCorrectionsAndCheckPatterns(
+                person,
+                birthLocation,
+                correctedBirthPlace,
+                deathLocation,
+                correctedDeathPlace
+            );
         });
     }
 
-    correctBirthLocation(birthLocation, birthDate) {
-        if (!birthLocation) {
+    logCorrectionsAndCheckPatterns(
+        person,
+        originalBirthLocation,
+        correctedBirthPlace,
+        originalDeathLocation,
+        correctedDeathPlace
+    ) {
+        if (correctedBirthPlace !== originalBirthLocation || correctedDeathPlace !== originalDeathLocation) {
+        } else {
+            const regex = /USA|U.S.A.|U.S.|US|United States of America|U.K.|UK/g;
+            const regex2 =
+                /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/g;
+            const regex3 =
+                /\b(Beds|Berks|Bucks|Cambs|Ches|Derbys|Gloucs|Hants|Heref|Herts|Lancs|Leics|Lincs|Middx|Northants|Northumb|Notts|Oxon|Salop|Shrops|Som|Staffs|Warks|Wilts|Worcs|Yorks)\b/g;
+
+            if (
+                correctedBirthPlace.match(regex) ||
+                correctedBirthPlace.match(regex2) ||
+                correctedBirthPlace.match(regex3)
+            ) {
+            }
+            if (
+                correctedDeathPlace.match(regex) ||
+                correctedDeathPlace.match(regex2) ||
+                correctedDeathPlace.match(regex3)
+            ) {
+            }
+        }
+    }
+
+    correctLocation(location, date) {
+        if (!location) {
             return "";
         }
 
         // Replace "United States of America" with "United States" at the start
-        let normalizedLocation = birthLocation.replace("United States of America", "United States");
+        let normalizedLocation = location.replace("United States of America", "United States");
 
         let correctedLocation = this.normalizeLocationString(normalizedLocation);
         let parts = correctedLocation.split(",").map((part) => {
@@ -87,8 +102,8 @@ export class LocationStatistics {
 
         // Separate processing for the last part
         let lastPart = parts.pop();
-        lastPart = this.needsCountryAtEnd(lastPart, birthLocation, birthDate);
-        let processedLastPart = this.processLastPart(lastPart, birthDate, parts);
+        lastPart = this.needsCountryAtEnd(lastPart, location, date);
+        let processedLastPart = this.processLastPart(lastPart, date, parts);
 
         // Reassemble the location string
         let finalLocationParts = parts.length > 0 ? [...parts, processedLastPart] : [processedLastPart];
@@ -121,7 +136,6 @@ export class LocationStatistics {
     }
 
     processLastPart(lastPart, birthDate, precedingParts) {
-        // console.log("Processing last part:", lastPart, "with preceding parts:", precedingParts.join(","));
         let lastParts = lastPart.split(/\s+/).reverse(); // Reverse the array to start from the end
         let longestKnownPlace = "";
         let indexForLongestKnownPlace = -1;
@@ -138,16 +152,12 @@ export class LocationStatistics {
                 .slice(0, i + 1)
                 .reverse()
                 .join(" "); // Reverse again to get the correct order
-            //   console.log("Checking combined part:", combinedPart);
 
             if (this.isKnownPlace(combinedPart) && combinedPart.length > longestKnownPlace.length) {
                 longestKnownPlace = combinedPart;
                 indexForLongestKnownPlace = i;
-                // console.log("New longest known place:", longestKnownPlace, "starting at index:", indexForLongestKnownPlace);
             }
         }
-
-        // console.log("Final longest known place:", longestKnownPlace, "starting at index:", indexForLongestKnownPlace);
 
         // Reconstruct the location with the correct comma placement
         if (indexForLongestKnownPlace >= 0) {
@@ -158,7 +168,7 @@ export class LocationStatistics {
             let reconstructedLocation = partsBeforeKnownPlace
                 ? partsBeforeKnownPlace + ", " + longestKnownPlace
                 : longestKnownPlace;
-            // console.log("Reconstructed location:", reconstructedLocation);
+
             return this.normalizeLocationString(reconstructedLocation);
         }
 
@@ -287,7 +297,6 @@ export class LocationStatistics {
 
     // Helper function to check if a combined part is a known place
     isKnownPlace(combinedPart) {
-        // console.log("Checking if known place:", combinedPart);
         let isKnown =
             this.isCountryName(combinedPart) ||
             this.isUSState(combinedPart) ||
@@ -295,14 +304,13 @@ export class LocationStatistics {
             this.expandUSStateAbbreviation(combinedPart) !== combinedPart ||
             this.expandEnglandCounty(combinedPart) !== combinedPart ||
             historicalCountries.includes(combinedPart); // Added to check historical countries
-        //console.log("Is known place:", isKnown);
+
         return isKnown;
     }
 
     processSubPart(subPart, index, lastParts, fullLocation, birthDate) {
         // Check if a comma should be inserted before this subpart
         if (this.shouldInsertComma(subPart, index, lastParts, fullLocation, birthDate)) {
-            // console.log(`Inserting comma before: ${subPart}`);
             return ", " + subPart;
         }
 
@@ -311,8 +319,6 @@ export class LocationStatistics {
 
     // Method to check if a part is part of a larger historical or geographical name
     isPartOfLargerName(part, fullLocation) {
-        // console.log(`Checking if '${part}' is part of a larger name in '${fullLocation}'`);
-
         if (!fullLocation || !part) {
             console.warn("Invalid parameters passed to isPartOfLargerName");
             return false;
@@ -329,7 +335,6 @@ export class LocationStatistics {
 
                 // Check if the part and its subsequent elements match a historical phrase
                 if (fullLocationParts.slice(partIndex, partIndex + phraseLength).join(" ") === phraseParts.join(" ")) {
-                    //   console.log(`'${part}' is part of '${phrase} ${country}'`);
                     return true;
                 }
             }
@@ -338,12 +343,10 @@ export class LocationStatistics {
         // Check if the part is part of a historicalCountries name
         for (let historicalCountry of historicalCountries) {
             if (fullLocationParts.slice(partIndex, partIndex + 2).join(" ") === historicalCountry) {
-                // console.log(`'${part}' is part of '${historicalCountry}'`);
                 return true;
             }
         }
 
-        //console.log(`'${part}' is not part of a larger name in '${fullLocation}'`);
         return false;
     }
 
@@ -377,20 +380,12 @@ export class LocationStatistics {
 
         // Process each element in the part
         for (let i = 0; i < elements.length; i++) {
-            // if (isTarget) {
-            // console.log(targetWord, "Processing element:" + elements[i]);
-            //  }
-
             if (this.isUSAlias(elements[i])) {
                 // Expand any US alias to "United States"
                 elements[i] = "United States";
             } else if (i === lastIndex) {
                 // Expand the last element if it's an abbreviation
                 elements[i] = this.expandElement(elements[i]);
-
-                //  if (isTarget) {
-                //    console.log(targetWord, "Processing element:", elements[i]);
-                //  }
             } else if (elements[i].toLowerCase() === "co") {
                 // Special handling for "Co" to avoid incorrect expansion to "Colorado"
                 const nextPart = locationParts[locationParts.indexOf(part) + 1];
@@ -398,21 +393,10 @@ export class LocationStatistics {
                     elements[i] = "County";
                 }
             } else if (["de", "De", "In", "in", "La", "la"].includes(elements[i])) {
-                // Special handling for "De" to avoid incorrect expansion to "Delaware"
-                // Special handling for "In" to avoid incorrect expansion to "Indiana"
-                // Special handling for "La" to avoid incorrect expansion to "Louisiana"
-                // Do nothing
+                // Expand "de", "in", "la" to lowercase
             } else {
-                //  if (isTarget) {
-                //    console.log(targetWord, "Processing element:", elements[i]);
-                //  }
-
                 // Expand other abbreviations
-                const expanded = this.expandElement(elements[i]);
                 elements[i] = this.expandElement(elements[i]);
-                // if (isTarget) {
-                //    console.log(targetWord, "Processing element:", elements[i], expanded);
-                //  }
             }
         }
 
