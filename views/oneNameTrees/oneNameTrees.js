@@ -1,6 +1,13 @@
 import { FamilyTreeStatistics } from "./familytreestatistics.js";
 import { D3DataFormatter } from "./d3dataformatter.js";
 import { categoryMappings } from "./category_mappings.js";
+import { usStatesDetails } from "./location_data.js";
+import { EnglandCounties } from "./location_data.js";
+import { ScotlandCounties } from "./location_data.js";
+import { WalesCounties } from "./location_data.js";
+import { IrelandCounties } from "./location_data.js";
+import { canadaProvincesDetails } from "./location_data.js";
+import { englandCountyAbbreviations } from "./location_data.js";
 
 window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "ONS";
@@ -142,7 +149,7 @@ window.OneNameTrees = class OneNameTrees extends View {
       <button id="closeHelp">×</button>
       <button id="print">⎙</button>
       <ol>
-        <li>Put a surname in the box and hit 'Go'. If you're likely to get to many results, you can enter a location and/or
+        <li>Put a surname in the box and hit 'Go'. If you're likely to get too many results, you can enter a location and/or
          a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"), 
          a list of numbers ("16,17" or "16 17"), a range of numbers ("16-19"), and a range of years (1500-1900).)</li>
         <li>
@@ -1749,6 +1756,38 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         }
     }
+    isCorrectLocationMatch(location, input, exclusionMap) {
+        const lowerLocation = this.standardizeString(location);
+        const lowerInput = this.standardizeString(input);
+
+        if (lowerLocation.includes(lowerInput)) {
+            const exclusion = exclusionMap[lowerInput];
+            if (exclusion && lowerLocation.includes(this.standardizeString(exclusion))) {
+                return false; // Exclude because the long name is present which should not be
+            }
+            return true; // Valid match found
+        }
+        return false; // No match found
+    }
+
+    isLocationMatch(person, locationInput) {
+        const birthLocation = this.standardizeString(person.BirthLocation);
+        const deathLocation = this.standardizeString(person.DeathLocation);
+        const exclusionMap = {
+            wales: "new south wales",
+            york: "new york",
+            jersey: "new jersey",
+            hampshire: "new hampshire",
+            mexico: "new mexico",
+            // Add more as needed
+        };
+
+        // General location match for any other country
+        return (
+            this.isCorrectLocationMatch(birthLocation, locationInput, exclusionMap) ||
+            this.isCorrectLocationMatch(deathLocation, locationInput, exclusionMap)
+        );
+    }
 
     filterResults() {
         // Get all variants for the surname
@@ -1762,6 +1801,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Retrieve the century filter and parse it into an array of centuries
         const centuries = this.parseCenturies($("#centuries").val());
         const firstCentury = centuries.length > 0 ? Math.min(...centuries) : null;
+        const locationInput = $("#location").val()?.trim();
 
         const $this = this;
         Object.values(this.combinedResults).forEach((person) => {
@@ -1791,7 +1831,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 !person.BirthDate ||
                 person.BirthDate == "0000-00-00";
 
-            if (isSurnameMatch && isCenturyMatch) {
+            if (isSurnameMatch && isCenturyMatch && this.isLocationMatch(person, locationInput)) {
                 $this.filteredResults[person.Id] = person;
             }
         });

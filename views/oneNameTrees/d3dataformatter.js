@@ -440,7 +440,9 @@ export class D3DataFormatter {
             }
         };
         // Start adding nodes and links from the children of the period node, skipping the period node itself
-        periodData.children.forEach((child) => addNodesAndLinks(child));
+        if (periodData?.children) {
+            periodData.children.forEach((child) => addNodesAndLinks(child));
+        }
         return { nodes, links };
     }
 
@@ -479,8 +481,9 @@ export class D3DataFormatter {
             );
 
         // Initialize or update the main title
-        updateVisualizationTitle(periodData.name);
-
+        if (periodData?.name) {
+            updateVisualizationTitle(periodData.name);
+        }
         // Initialize layers
         const linkLayer = g.append("g").attr("class", "link-layer");
         const nodeLayer = g.append("g").attr("class", "node-layer");

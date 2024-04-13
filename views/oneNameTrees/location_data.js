@@ -164,6 +164,23 @@ export const IrelandCounties = [
     "County Wexford",
     "County Wicklow",
 ];
+
+export const canadaProvincesDetails = [
+    { name: "Alberta", abbreviation: "AB" },
+    { name: "British Columbia", abbreviation: "BC" },
+    { name: "Manitoba", abbreviation: "MB" },
+    { name: "New Brunswick", abbreviation: "NB" },
+    { name: "Newfoundland and Labrador", abbreviation: "NL" },
+    { name: "Nova Scotia", abbreviation: "NS" },
+    { name: "Ontario", abbreviation: "ON" },
+    { name: "Prince Edward Island", abbreviation: "PE" },
+    { name: "Quebec", abbreviation: "QC" },
+    { name: "Saskatchewan", abbreviation: "SK" },
+    { name: "Northwest Territories", abbreviation: "NT" },
+    { name: "Nunavut", abbreviation: "NU" },
+    { name: "Yukon", abbreviation: "YT" },
+];
+
 export const usStates = [
     "Alabama",
     "Alaska",
