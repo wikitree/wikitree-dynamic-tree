@@ -1265,9 +1265,9 @@ input[type="submit"],
 .oneNameTrees .temp-message {
   display: none;
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 10%; /* Position from the bottom of the viewport */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center horizontally */
   background-color: black;
   color: white;
   padding: 20px;
@@ -1275,6 +1275,7 @@ input[type="submit"],
   z-index: 100000000; /* Ensure it's above other content */
   font-size: 16px;
 }
+
 .oneNameTrees #clearCache,
 .oneNameTrees #clearCacheAll {
   font-size: 1em;

@@ -1,13 +1,15 @@
 import { FamilyTreeStatistics } from "./familytreestatistics.js";
 import { D3DataFormatter } from "./d3dataformatter.js";
 import { categoryMappings } from "./category_mappings.js";
-import { usStatesDetails } from "./location_data.js";
-import { EnglandCounties } from "./location_data.js";
-import { ScotlandCounties } from "./location_data.js";
-import { WalesCounties } from "./location_data.js";
-import { IrelandCounties } from "./location_data.js";
-import { canadaProvincesDetails } from "./location_data.js";
-import { englandCountyAbbreviations } from "./location_data.js";
+import {
+    usStatesDetails,
+    EnglandCounties,
+    ScotlandCounties,
+    WalesCounties,
+    IrelandCounties,
+    canadaProvincesDetails,
+    englandCountyAbbreviations,
+} from "./location_data.js";
 
 window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "ONS";
@@ -1770,23 +1772,91 @@ window.OneNameTrees = class OneNameTrees extends View {
         return false; // No match found
     }
 
+    // Helper function for location matching
     isLocationMatch(person, locationInput) {
+        const standardizedLocationInput = this.standardizeString(locationInput);
         const birthLocation = this.standardizeString(person.BirthLocation);
         const deathLocation = this.standardizeString(person.DeathLocation);
-        const exclusionMap = {
-            wales: "new south wales",
-            york: "new york",
-            jersey: "new jersey",
-            hampshire: "new hampshire",
-            mexico: "new mexico",
-            // Add more as needed
-        };
+
+        // Evaluate each location against potential confusion
+        let matchBirthLocation =
+            birthLocation.includes(standardizedLocationInput) &&
+            !this.isConfusingLocation(locationInput, birthLocation);
+        let matchDeathLocation =
+            deathLocation.includes(standardizedLocationInput) &&
+            !this.isConfusingLocation(locationInput, deathLocation);
+
+        // Check for US location match
+        if (
+            ["united states", "u.s.a.", "united states of america"].some((term) =>
+                standardizedLocationInput.includes(term)
+            )
+        ) {
+            if (
+                usStatesDetails.some(
+                    (state) =>
+                        (matchBirthLocation &&
+                            (birthLocation.includes(this.standardizeString(state.name)) ||
+                                birthLocation.includes(state.abbreviation.toLowerCase()))) ||
+                        (matchDeathLocation &&
+                            (deathLocation.includes(this.standardizeString(state.name)) ||
+                                deathLocation.includes(state.abbreviation.toLowerCase())))
+                )
+            ) {
+                return true;
+            }
+        }
+
+        // Check for Canada location match
+        if (standardizedLocationInput.includes("canada")) {
+            if (
+                canadaProvincesDetails.some(
+                    (province) =>
+                        (matchBirthLocation &&
+                            (birthLocation.includes(this.standardizeString(province.name)) ||
+                                birthLocation.includes(province.abbreviation.toLowerCase()))) ||
+                        (matchDeathLocation &&
+                            (deathLocation.includes(this.standardizeString(province.name)) ||
+                                deathLocation.includes(province.abbreviation.toLowerCase())))
+                )
+            ) {
+                return true;
+            }
+        }
+
+        // Check for UK location match
+        if (["united kingdom", "uk"].some((term) => standardizedLocationInput.includes(term))) {
+            const allUKCounties = [...EnglandCounties, ...ScotlandCounties, ...WalesCounties, ...IrelandCounties];
+            if (
+                allUKCounties.some(
+                    (county) =>
+                        (matchBirthLocation && birthLocation.includes(this.standardizeString(county))) ||
+                        (matchDeathLocation && deathLocation.includes(this.standardizeString(county)))
+                ) ||
+                Object.keys(englandCountyAbbreviations).some(
+                    (abb) =>
+                        (matchBirthLocation && birthLocation.endsWith(abb.toLowerCase())) ||
+                        (matchDeathLocation && deathLocation.endsWith(abb.toLowerCase()))
+                )
+            ) {
+                return true;
+            }
+        }
 
         // General location match for any other country
-        return (
-            this.isCorrectLocationMatch(birthLocation, locationInput, exclusionMap) ||
-            this.isCorrectLocationMatch(deathLocation, locationInput, exclusionMap)
-        );
+        return matchBirthLocation || matchDeathLocation;
+    }
+
+    // Helper function to check for directional prefixes in location names
+    isConfusingLocation(input, locationField) {
+        const locationNormalized = this.standardizeString(locationField).toLowerCase();
+        const inputNormalized = this.standardizeString(input).toLowerCase();
+
+        // Define the list of directional prefixes
+        const prefixes = ["new ", "north ", "south ", "east ", "west "];
+
+        // Check if locationNormalized starts with any prefix followed by the inputNormalized
+        return prefixes.some((prefix) => locationNormalized.includes(prefix + inputNormalized));
     }
 
     filterResults() {
@@ -1830,7 +1900,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 (birthCentury && birthCentury >= firstCentury) ||
                 !person.BirthDate ||
                 person.BirthDate == "0000-00-00";
-
+            //
             if (isSurnameMatch && isCenturyMatch && this.isLocationMatch(person, locationInput)) {
                 $this.filteredResults[person.Id] = person;
             }
@@ -2664,6 +2734,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                 const spouseName = new PersonName(spouseInfo).withParts(["FullName"]);
                 if (married && married !== "0000-00-00") {
+                    married = this.formatDate(married);
                     married = ` (Married: ${married})`;
                 } else {
                     married = "";
