@@ -19,6 +19,9 @@ div.cc7Table table th {
   text-align: left;
   padding-right: 3px;
 }
+div.cc7Table table td.relation {
+  text-align: center;
+}
 div.cc7Table table th.tlBioAge {
   text-align: center;
 }

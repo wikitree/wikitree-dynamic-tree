@@ -238,6 +238,7 @@ export class CC7 {
     static cancelLoadController;
 
     constructor(selector, startId) {
+        this.startId = startId;
         this.selector = selector;
         Settings.restoreSettings();
         $(selector).html(
@@ -894,13 +895,136 @@ export class CC7 {
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1);
+            console.log(window.people);
+            this.addRelationships();
             PeopleTable.addPeopleTable(PeopleTable.tableCaption());
         }
+
         $("#getPeopleButton").prop("disabled", false);
         $("#getDegreeButton").prop("disabled", false);
         $("#cancelLoad").hide();
         CC7.setInfoPanelMessage();
         CC7.firstTimeLoad = false;
+    }
+
+    static addRelationships() {
+        let familyMap = window.people;
+        const rootName = $("#wt-id-text").val().trim();
+        let rootId = null;
+        for (let [key, value] of familyMap.entries()) {
+            if (value.Name === rootName) {
+                rootId = key;
+                break;
+            }
+        }
+
+        let rootPersonId = rootId;
+        let ancestorMaps = new Map();
+        ancestorMaps.set("familyMap", familyMap);
+
+        const worker = new Worker("views/cc7/js/relationshipWorker.js");
+
+        worker.onmessage = function (event) {
+            if (event.data.type === "completed") {
+                // Destroy the old Select2 instance before updating the table
+                if ($("#cc7PBFilter").data("select2")) {
+                    $("#cc7PBFilter").select2("destroy");
+                }
+                const updatedTable = CC7.updateTableWithResults(
+                    document.querySelector("#peopleTable"),
+                    event.data.results
+                );
+                document
+                    .getElementById("cc7Container")
+                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
+                CC7.initializeSelect2();
+                worker.terminate();
+            } else {
+                console.error("Worker returned an error:", event.data.message);
+            }
+        };
+
+        worker.onerror = function (error) {
+            console.error("Error in worker:", error.message);
+        };
+
+        const familyMapEntries = Array.from(familyMap.entries());
+        worker.postMessage({
+            cmd: "start",
+            familyMap: familyMapEntries,
+            rootPersonId: rootPersonId,
+        });
+    }
+
+    static updateTableWithResults(table, results) {
+        const clone = table.cloneNode(true); // Deep clone the table
+        results.forEach((result) => {
+            const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
+            if (row) {
+                row.setAttribute("data-relation", result.relationship.abbr);
+                const relationCell = row.querySelector("td.relation");
+                relationCell.textContent = result.relationship.abbr;
+                relationCell.setAttribute("title", result.relationship.full);
+            }
+        });
+        return clone;
+    }
+
+    static initializeSelect2() {
+        // Check if select2 is already initialized and destroy it if so
+        if ($("#cc7PBFilter").data("select2")) {
+            $("#cc7PBFilter").select2("destroy");
+        }
+        function formatOptions(option) {
+            if (!option.id || option.id == "all") {
+                return option.text;
+            }
+            return $(`<img class="privacyImage" src="./${option.text}"/>`);
+        }
+        $("#cc7PBFilter").select2({
+            templateResult: formatOptions,
+            templateSelection: formatOptions,
+            dropdownParent: $("#cc7Container"),
+            minimumResultsForSearch: Infinity,
+            width: "100%",
+        });
+        $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
+    }
+
+    // Throttle function to limit the rate of function execution
+    static throttle(func, limit) {
+        let inThrottle;
+        return function () {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => (inThrottle = false), limit);
+            }
+        };
+    }
+
+    static isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return rect.top < window.innerHeight && rect.bottom >= 0 && rect.left < window.innerWidth && rect.right >= 0;
+    }
+
+    // Debounce function to limit the rate at which a function is executed
+    static debounce(func, wait, immediate) {
+        let timeout;
+        return function () {
+            const context = this,
+                args = arguments;
+            const later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            const callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
     }
 
     static getIdsOf(arrayOfPeople) {
