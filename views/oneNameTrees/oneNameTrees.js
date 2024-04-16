@@ -809,104 +809,27 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(document).on("click.oneNameTrees", ".popup,.modal", function (e) {
             $this.setHighestZIndex($(this));
         });
-        /*
-        $(document).on("click.oneNameTrees", ".DNA", async function () {
-            $this.shakingTree.show();
-            const wtid = $(this).parent().data("name");
-
-            let existingModal = $(`.dnaTestModal[data-id="${wtid}"]`);
-            if (existingModal.length) {
-                $this.setHighestZIndex(existingModal);
-                existingModal.show();
-                $this.shakingTree.hide();
-                return;
-            }
-
-            try {
-                this.cancelFetchController = new AbortController();
-                const signal = this.cancelFetchController.signal;
-
-                // First call: Get DNA Tests by Test Taker
-                const dNATestsResult = await WikiTreeAPI.postToAPI(
-                    {
-                        appId: OneNameTrees.APP_ID,
-                        action: "getDNATestsByTestTaker",
-                        key: wtid,
-                    },
-                    signal
-                );
-
-                // Example of handling for the second call, if needed based on your requirements
-                // Second call: Get Connected DNA Tests by Profile (if this call is required)
-                const connectedDNATestsResult = await WikiTreeAPI.postToAPI(
-                    {
-                        appId: OneNameTrees.APP_ID,
-                        action: "getConnectedDNATestsByProfile",
-                        key: wtid,
-                    },
-                    signal
-                );
-
-                if (connectedDNATestsResult && connectedDNATestsResult.length > 0) {
-                    // Prepare and execute the third call for each dna_id found
-                    const connectedProfilesPromises = connectedDNATestsResult[0].dnaTests.map((test) => {
-                        return WikiTreeAPI.postToAPI(
-                            {
-                                appId: OneNameTrees.APP_ID,
-                                action: "getConnectedProfilesByDNATest",
-                                key: wtid, // Or use a specific key if required
-                                dna_id: test.dna_id,
-                            },
-                            signal
-                        );
-                    });
-
-                    // Wait for all connected profiles fetches to complete
-                    const connectedProfilesResults = await Promise.all(connectedProfilesPromises);
-
-                    // Show the results in a popup
-                    $this.showDNATestResults(
-                        dNATestsResult,
-                        connectedDNATestsResult,
-                        connectedProfilesResults,
-                        $(this).parent()
-                    );
-                } else {
-                    console.log("No Connected DNA Tests Found or Invalid Response Structure");
-                }
-            } catch (error) {
-                console.error("An error occurred:", error);
-            }
-            $this.shakingTree.hide();
-        });
-*/
 
         $(document).on("click.oneNameTrees", ".DNA", async function () {
-            console.log("DNA button clicked.");
-
             $this.shakingTree.show();
-            console.log("Shaking tree animation shown.");
 
             const wtid = $(this).parent().data("name") || $(this).closest("tr").data("name");
-            console.log("WTID retrieved:", wtid);
 
             let existingModal = $(`.dnaTestModal[data-id="${wtid}"]`);
             if (existingModal.length) {
-                console.log("Existing modal found.");
                 $this.setHighestZIndex(existingModal);
                 existingModal.show();
                 $this.shakingTree.hide();
-                console.log("Existing modal displayed and shaking tree animation hidden.");
+
                 return;
             }
 
             try {
                 this.cancelFetchController = new AbortController();
                 const signal = this.cancelFetchController.signal;
-                console.log("AbortController created for fetch operations.");
 
                 // First API call: Get DNA Tests by Test Taker
-                console.log("Starting API call: getDNATestsByTestTaker with wtid:", wtid);
+
                 const dNATestsResult = await WikiTreeAPI.postToAPI(
                     {
                         appId: OneNameTrees.APP_ID,
@@ -915,10 +838,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                     },
                     signal
                 );
-                console.log("getDNATestsByTestTaker result:", dNATestsResult);
 
                 // Conditional second API call
-                console.log("Starting API call: getConnectedDNATestsByProfile with wtid:", wtid);
+
                 const connectedDNATestsResult = await WikiTreeAPI.postToAPI(
                     {
                         appId: OneNameTrees.APP_ID,
@@ -927,13 +849,10 @@ window.OneNameTrees = class OneNameTrees extends View {
                     },
                     signal
                 );
-                console.log("getConnectedDNATestsByProfile result:", connectedDNATestsResult);
 
                 // Further processing if connected DNA tests are found
                 if (connectedDNATestsResult && connectedDNATestsResult.length > 0) {
-                    console.log("Processing connected DNA tests.");
                     const connectedProfilesPromises = connectedDNATestsResult[0].dnaTests.map((test) => {
-                        console.log("Preparing API call for connected profile by DNA test, dna_id:", test.dna_id);
                         return WikiTreeAPI.postToAPI(
                             {
                                 appId: OneNameTrees.APP_ID,
@@ -946,7 +865,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                     });
 
                     const connectedProfilesResults = await Promise.all(connectedProfilesPromises);
-                    console.log("Connected profiles results:", connectedProfilesResults);
 
                     let dataThing = $(this).parent();
                     if (!dataThing.data("name")) {
@@ -960,16 +878,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                         connectedProfilesResults,
                         dataThing
                     );
-                    console.log("Results displayed in modal.");
                 } else {
-                    console.log("No connected DNA tests found or invalid response structure.");
                 }
             } catch (error) {
                 console.error("An error occurred:", error);
                 console.log("Error handling DNA data fetching or processing.");
             }
             $this.shakingTree.hide();
-            console.log("Shaking tree animation hidden after processing.");
         });
 
         $(document).on("click.oneNameTrees", "#clearCache", function () {
@@ -1154,7 +1069,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 // Construct your API call to fetch missing profiles. The specifics of this call
                 // depend on the API you're using (e.g., batch requests or individual gets)
                 const fetchedProfiles = await this.getPeople(missingProfileIds, 0, 1000);
-                console.log("Fetched Profiles:", fetchedProfiles);
+
                 const theProfiles = fetchedProfiles?.[2];
                 // These are objects with the profile ID as the key.  Need an array of the profiles.
                 if (!theProfiles) {
@@ -2000,7 +1915,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             });
         }
 
-        if (OneNameTrees.VERBOSE) console.log(`These are the profiles triggering the extra search:`, [...hasMissing]);
         hasMissing.clear();
 
         // this.hideLoadingBar(); // Reset the loading bar for processing missing parents
@@ -2099,7 +2013,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.filterFilteredResultsByLNAB();
         const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
         this.sortedPeople = this.sortPeopleByBirthDate(dataset);
-        if (OneNameTrees.VERBOSE) console.log("sortedPeople", this.sortedPeople);
         this.prioritizeTargetName(this.sortedPeople);
 
         let parentToChildrenMap = this.createParentToChildrenMap(this.sortedPeople);
@@ -2137,10 +2050,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             if (person.Spouses && person.Spouses.length > 0) {
                 const spouseIds = person.Spouses.map((spouse) => spouse.Id);
 
-                if (personShouldLog) {
-                    //  console.log("Spouse IDs:", spouseIds);
-                }
-
                 spouseIds.forEach((spouseId) => {
                     // Find the spouse in sortedPeople by comparing Id values after type conversion
                     let spouseIndex = sortedPeople.findIndex((p) => String(p.Id) === String(spouseId));
@@ -2153,10 +2062,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                         }
 
                         if (this.shouldPrioritize(spouse, person)) {
-                            if (personShouldLog || spouseShouldLog) {
-                                //     console.log(`Prioritizing spouse of ${person.Id} (${spouse.Id}) over ${person.Id}`);
-                            }
-
                             spouse.shouldBeRoot = false;
                             // Remove the spouse from their original position in the updated list
                             updatedPeople = updatedPeople.filter((p) => String(p.Id) !== String(spouse.Id));
@@ -2286,7 +2191,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         const fullName = aName.withParts(["FullName"]);
 
         if (!fullName) {
-            //  console.log("No name found for person:", person);
             return ""; // Skip if no name found
         }
 
@@ -2452,9 +2356,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         //
         // Convert HTML strings to jQuery objects for filtering
         const jqueryTags = this.createJQueryObjects(tags);
-        log ? console.log("jQuery Tags:", jqueryTags) : null;
         const filteredTags = this.filterAndPrioritizeCategories(jqueryTags);
-        log ? console.log("Filtered Tags:", filteredTags) : null;
 
         if (filteredTags.length > 0) {
             categoryHTML += filteredTags.join("");
