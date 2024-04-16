@@ -991,42 +991,6 @@ export class CC7 {
         $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
     }
 
-    // Throttle function to limit the rate of function execution
-    static throttle(func, limit) {
-        let inThrottle;
-        return function () {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => (inThrottle = false), limit);
-            }
-        };
-    }
-
-    static isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
-        return rect.top < window.innerHeight && rect.bottom >= 0 && rect.left < window.innerWidth && rect.right >= 0;
-    }
-
-    // Debounce function to limit the rate at which a function is executed
-    static debounce(func, wait, immediate) {
-        let timeout;
-        return function () {
-            const context = this,
-                args = arguments;
-            const later = function () {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
-            };
-            const callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow) func.apply(context, args);
-        };
-    }
-
     static getIdsOf(arrayOfPeople) {
         return arrayOfPeople.map((p) => +p.Id);
     }
@@ -1492,6 +1456,7 @@ export class CC7 {
                 $(`#${CC7Utils.CC7_CONTAINER_ID}`).removeClass("degreeView");
             }
             Utils.hideShakingTree();
+            CC7.addRelationships();
             PeopleTable.addPeopleTable(PeopleTable.tableCaption());
             $(`#${CC7Utils.CC7_CONTAINER_ID} #cc7Subset`).before(
                 $(
