@@ -740,6 +740,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             if ($("#oneNameTreesSettings").length == 0) {
                 $this.settingsBox.appendTo($("body"));
             }
+            $("#clearCache").text(`Clear cached ${$this.surname} items`);
 
             // Place the settings box in the centre of the screen and make it draggable.
             $this.centerAndMakeDraggable($this.settingsBox);
@@ -4621,6 +4622,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.clearStatus();
 
             let surname = $("#surname").val();
+            $this.surname = surname;
+            $("#clearCache").text(`Clear cached ${surname} items`);
             let location = $("#location").val().trim() + " "; // Get the location from the new input field
             const centuries = $this.parseCenturies($("#centuries").val());
 
