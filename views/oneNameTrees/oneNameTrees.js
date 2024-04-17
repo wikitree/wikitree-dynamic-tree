@@ -14,6 +14,15 @@ import {
 window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "ONS";
     static VERBOSE = false;
+    static PRIVACY_LEVELS = new Map([
+        [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
+        [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
+        [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
+        [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
+        [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
+        [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
+        [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
+    ]);
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
         this.defaultSettings = { periodLength: 50, onlyLastNameAtBirth: false };
@@ -4145,6 +4154,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $tbody = $("<tbody>");
         const $tfoot = $("<tfoot>");
 
+        /*
         // Define your headers
         const headers = {
             givenNames: "First",
@@ -4159,6 +4169,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             managers: "Managers",
             created: "Created",
             modified: "Modified",
+            privacy: "P",
         };
 
         const $tr = $("<tr>");
@@ -4173,6 +4184,41 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
             $tr2.append($("<th>").append(filterElement));
         });
+        */
+
+        // Define your headers with custom hover titles
+        const headers = {
+            givenNames: { text: "First", title: "First Names" },
+            lastNameAtBirth: { text: "LNAB", title: "Last Name at Birth" },
+            lastNameCurrent: { text: "Current", title: "Current Last Name" },
+            birthDate: { text: "Birth Date", title: "Date of Birth" },
+            birthPlace: { text: "Birth Place", title: "Place of Birth" },
+            deathDate: { text: "Death Date", title: "Date of Death" },
+            deathPlace: { text: "Death Place", title: "Place of Death" },
+            age: { text: "Age", title: "Age at Death" },
+            categoryHTML: { text: "Cats. & Stickers", title: "Categories, Stickers, and DNA Tags" },
+            managers: { text: "Managers", title: "Profile Managers" },
+            created: { text: "Created", title: "Creation Date" },
+            modified: { text: "Modified", title: "Last Modified Date" },
+            privacy: { text: "P", title: "Privacy Level" },
+        };
+
+        const $tr = $("<tr>");
+        const $tr2 = $("<tr id='filterRow'>");
+
+        // Iterate over each header to create table headers and filter inputs
+        Object.keys(headers).forEach(function (key) {
+            const header = headers[key];
+            const $th = $("<th>").text(header.text).attr("title", header.title).addClass(key);
+            $tr.append($th);
+            const filterElement = $(`<input type="text" class="filter" />`).attr("id", key + "Filter");
+
+            if (["birthDate", "deathDate", "created", "modified"].includes(key)) {
+                filterElement.addClass("dateFilter");
+            }
+            $tr2.append($("<th>").append(filterElement));
+        });
+
         $thead.append($tr);
         $tfoot.append($tr2);
 
@@ -4221,6 +4267,11 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             const created = person.Created ? formatCreatedModifiedDates(person.Created) : "";
             const touched = person.Touched ? formatCreatedModifiedDates(person.Touched) : "";
+            const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
+            const privacyImg = privacyLevel ? privacyLevel.img : "";
+            const privacyTitle = privacyLevel ? privacyLevel.title : "";
+            const privacy = privacyImg ? `<img src="${privacyImg}" title="${privacyTitle}" />` : "";
+
             const $row = $("<tr>");
             // Add data to the row: data-name, data-id, data-father, data-mother, data-gender
             $row.attr("data-name", person.Name);
@@ -4233,6 +4284,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $row.attr("data-corrected-deathplace", person.CorrectedDeathLocation);
             $row.attr("data-birthplace", birthPlace);
             $row.attr("data-deathplace", deathPlace);
+            $row.attr("data-privacy", person.Privacy);
             const categoryHTML = $this.createCategoryHTML(person);
             const rowData = {
                 givenNames: givenNames,
@@ -4247,6 +4299,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 managers: managers,
                 created: created,
                 touched: touched,
+                privacy: privacy,
             };
             Object.keys(rowData).forEach(function (key) {
                 const cellData = rowData[key];

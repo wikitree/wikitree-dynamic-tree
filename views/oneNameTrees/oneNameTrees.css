@@ -1293,3 +1293,10 @@ input[type="submit"],
   color: red;
   font-weight: bold;
 }
+
+.oneNameTrees td.privacy {
+  text-align: center;
+}
+.oneNameTrees td.privacy img {
+  width: 1.5em;
+}
