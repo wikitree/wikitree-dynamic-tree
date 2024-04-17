@@ -121,6 +121,8 @@ function determineRelationship(rootPersonId, personId, ancestorMaps) {
         personId,
         relationship,
         ancestorId,
+        gen1: gen1,
+        gen2: gen2,
     };
 }
 

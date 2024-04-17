@@ -925,6 +925,7 @@ export class CC7 {
         const worker = new Worker("views/cc7/js/relationshipWorker.js");
 
         worker.onmessage = function (event) {
+            console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
                 // Destroy the old Select2 instance before updating the table
                 if ($("#cc7PBFilter").data("select2")) {
@@ -956,7 +957,61 @@ export class CC7 {
         });
     }
 
+    static addToIndexedDBs() {
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const thisCC7 = $("#wt-id-text").val().trim();
+        console.log("loggedInUser", loggedInUser);
+        console.log("thisCC7", thisCC7);
+    }
+
+    static addToDB(db, dbv, os, obj) {
+        const aDB = window.indexedDB.open(db, dbv);
+        aDB.onsuccess = function (event) {
+            const xdb = aDB.result;
+            const transaction = xdb.transaction([os], "readwrite");
+            transaction.oncomplete = function (event) {
+                xdb.transaction([os], "readwrite").objectStore(os).put(obj);
+            };
+        };
+    }
+
+    static connectionFinderDBVersion = 1;
+    static relationshipFinderDBVersion = 1;
+
+    static addDistance(data) {
+        const connectionFinderResultsDBReq = window.indexedDB.open("ConnectionFinder", this.connectionFinderDBVersion);
+        connectionFinderResultsDBReq.onsuccess = function (event) {
+            const obj = {
+                userId: data.userID,
+                id: data.profileID,
+                distance: data.distance,
+            };
+            addToDB("ConnectionFinderWTE", window.connectionFinderDBVersion, "distance", obj);
+        };
+        connectionFinderResultsDBReq.onerror = function (error) {
+            console.log(error);
+        };
+    }
+
+    static addRelationship(data) {
+        const relationshipFinderResultsDBReq = window.indexedDB.open(
+            "RelationshipFinderWTE",
+            window.relationshipFinderDBVersion
+        );
+        relationshipFinderResultsDBReq.onsuccess = function (event) {
+            const obj = {
+                userId: data.userID,
+                id: data.profileID,
+                distance: data.distance,
+                relationship: data.relationship,
+                commonAncestors: data.commonAncestors,
+            };
+            addToDB("RelationshipFinderWTE", window.relationshipFinderDBVersion, "relationship", obj);
+        };
+    }
+
     static updateTableWithResults(table, results) {
+        this.addToIndexedDBs();
         const clone = table.cloneNode(true); // Deep clone the table
         results.forEach((result) => {
             const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
