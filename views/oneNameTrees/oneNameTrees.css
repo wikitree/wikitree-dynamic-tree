@@ -1085,7 +1085,7 @@ input[type="submit"],
 /* The settings popup */
 .oneNameTrees #oneNameTreesSettings {
   display: none;
-  position: absolute;
+  position: fixed;
   z-index: 100000;
   background-color: #fff;
   border: 2px solid forestgreen;

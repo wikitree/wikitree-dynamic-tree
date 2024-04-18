@@ -4037,36 +4037,17 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Detach event listeners
             $("#prevPeriod").off("click.oneNameTrees");
             $("#nextPeriod").off("click.oneNameTrees");
-            // For migration evolution
-            $("#startMigrationEvolution").off("click.oneNameTrees");
-            $("#stopMigrationEvolution").off("click.oneNameTrees");
-
-            // Clear intervals or timeouts if set
-            // Example: clearInterval(d3DataFormatter.someInterval);
-            //if (d3DataFormatter) {
-            clearInterval(D3DataFormatter.evolutionInterval);
-            clearInterval(D3DataFormatter.migrationEvolutionInterval);
-            //}
-            // Reset any modified global/shared state
         }
         // d3DataFormatter.lifespanGraph();
         d3DataFormatter.doDrawGraph("lifespanGraph");
         d3DataFormatter.doDrawGraph("peopleCountGraph");
 
         d3DataFormatter.formatNamesData();
-
         d3DataFormatter.initVisualization();
-
-        //const migrations = d3DataFormatter.extractMigrationFlows();
-        //d3DataFormatter.sankeyFormatMigrationData();
-
-        // d3DataFormatter.startMigrationEvolution(10000, true);
         d3DataFormatter.initMigration();
 
         // Accessing location statistics
         const locationStats = this.familyTreeStats.getLocationStatistics();
-
-        // Show number of keys in locationStats.locationCounts
 
         // Category count
         const categoryCount = this.familyTreeStats.getCategoryCounts();
@@ -4153,38 +4134,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $thead = $("<thead>");
         const $tbody = $("<tbody>");
         const $tfoot = $("<tfoot>");
-
-        /*
-        // Define your headers
-        const headers = {
-            givenNames: "First",
-            lastNameAtBirth: "LNAB",
-            lastNameCurrent: "Current",
-            birthDate: "Birth Date",
-            birthPlace: "Birth Place",
-            deathDate: "Death Date",
-            deathPlace: "Death Place",
-            age: "Age",
-            categoryHTML: "Cats. & Stickers",
-            managers: "Managers",
-            created: "Created",
-            modified: "Modified",
-            privacy: "P",
-        };
-
-        const $tr = $("<tr>");
-        const $tr2 = $("<tr id='filterRow'>");
-        Object.keys(headers).forEach(function (key) {
-            const header = headers[key];
-            const $th = $("<th>").text(header).addClass(key);
-            $tr.append($th);
-            const filterElement = $(`<input type="text" class="filter" />`).attr("id", key + "Filter");
-            if (["birthDate", "deathDate", "created", "touched"].includes(key)) {
-                filterElement.addClass("dateFilter");
-            }
-            $tr2.append($("<th>").append(filterElement));
-        });
-        */
 
         // Define your headers with custom hover titles
         const headers = {
@@ -4318,18 +4267,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             lengthMenu: [50, 100, 200, 500, 1000],
         });
 
-        /*
-
-          search: {
-                smart: true,
-                regex: true,
-            },
-
-            */
-
         // Apply the filter
         table.columns().every(function () {
-            var column = this;
+            const column = this;
 
             $("input", this.footer()).on("change", function () {
                 column.search(this.value).draw();
@@ -4341,10 +4281,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             });
         });
 
-        function escapeRegExp(string) {
-            return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
-        }
-
         $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
             let isValid = true; // Initialize as true and set to false if any condition fails
 
@@ -4355,6 +4291,56 @@ window.OneNameTrees = class OneNameTrees extends View {
             const birthLocationFilterValue = $("#birthPlaceFilter").val().toLowerCase();
             const correctedDeathPlace = $(row).data("corrected-deathplace") || "";
             const deathLocationFilterValue = $("#deathPlaceFilter").val().toLowerCase();
+
+            // Apply and log privacy filter result
+            const privacyFilterBox = $("#privacyFilter");
+            const privacyFilterValue = privacyFilterBox.val().toLowerCase();
+            const privacyColumnIndex = 12;
+            const privacyTitleElement = $(row).find("td").eq(privacyColumnIndex).find("img");
+
+            if (privacyTitleElement.length > 0 && privacyTitleElement.attr("title")) {
+                const privacyTitle = privacyTitleElement.attr("title").toLowerCase();
+                if (privacyFilterValue && !privacyTitle.includes(privacyFilterValue)) {
+                    isValid = false;
+                }
+            }
+
+            // Cats and stickers filtering
+            const categoryFilterValue = $("#categoryHTMLFilter").val().toLowerCase();
+            const categoryColumnIndex = 8;
+            const categoryElement = $(row).find("td").eq(categoryColumnIndex);
+
+            // Initially assume the category does not match
+            let categoryMatchFound = false;
+
+            // Check if the category filter value is in the text of the cell
+            if (categoryElement.text().toLowerCase().includes(categoryFilterValue)) {
+                categoryMatchFound = true; // The main cell text contains the filter
+            }
+
+            // If not found in the main text, check within link titles and image titles
+            if (!categoryMatchFound) {
+                const categoryLinks = categoryElement.find("a");
+                categoryMatchFound = categoryLinks.toArray().some((link) => {
+                    const title = $(link).attr("title");
+                    return title ? title.toLowerCase().includes(categoryFilterValue) : false;
+                });
+
+                // Check image titles only if no link titles matched
+                if (!categoryMatchFound) {
+                    const categoryImages = categoryElement.find("img");
+                    categoryMatchFound = categoryImages.toArray().some((img) => {
+                        const imgTitle = $(img).attr("title");
+                        return imgTitle ? imgTitle.toLowerCase().includes(categoryFilterValue) : false;
+                    });
+                }
+            }
+
+            // If no matches were found in either text or link/image titles, set isValid to false
+            if (categoryFilterValue && !categoryMatchFound) {
+                isValid = false;
+            }
+
             $(".dateFilter").each(function () {
                 const columnIndex = $(this).closest("th").index(); // Get column index based on the position of the input
                 const filterValue = $(this).val().trim(); // Trim whitespace from the filter value
@@ -4400,7 +4386,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 isValid = false;
             }
             // Handling other filters that are not date filters
-            $(".filter:not(.dateFilter)").each(function () {
+            $(".filter:not(.dateFilter,#privacyFilter,#categoryHTMLFilter)").each(function () {
                 if (!isValid) return; // Skip if already invalid
 
                 const filterElement = $(this);
