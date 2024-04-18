@@ -26,7 +26,8 @@ and determine if it can be used to check sources and style
 #### Parameters
 
 *   `profileObj` **[Object][5]** containing the profile as returned from WikiTree APIs
-*   `mustBeOpen` **[Boolean][6]** true if profile must be open privacy
+*   `mustBeOpen` **[Boolean][6]** true if profile must not have a manager
+*   `mustBeOrphan` &#x20;
 *   `ignorePre1500` **[Boolean][6]** true to ignore Pre1500 profiles
 *   `userId` **[String][7]** wikiTreeId of the person running the app
 
@@ -73,17 +74,17 @@ Get manager Id for the person
 
 Returns **[String][7]** manager Id
 
-### getWikiTreeLink
-
-Get WikiTree link
-
-Returns **[String][7]** link to the WikiTree person
-
 ### isMember
 
 Is profile for a member
 
 Returns **[Boolean][6]** true if profile for a member
+
+### isOrphan
+
+Is profile an orphan
+
+Returns **[Boolean][6]** true if profile is an orphan
 
 ### getPrivacy
 
