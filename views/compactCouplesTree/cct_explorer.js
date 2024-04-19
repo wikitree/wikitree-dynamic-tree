@@ -885,8 +885,8 @@ export class CCTE {
                 tInfo.minBirthYear = bYear;
             }
         }
-        console.log(`nr profiles=${tInfo.profileCount}, nr duplicates=${tInfo.duplicates.size}`);
-        console.log(`generation counts: ${tInfo.genCounts}`, tInfo.genCounts);
+        // console.log(`nr profiles=${tInfo.profileCount}, nr duplicates=${tInfo.duplicates.size}`);
+        // console.log(`generation counts: ${tInfo.genCounts}`, tInfo.genCounts);
 
         return tInfo;
 

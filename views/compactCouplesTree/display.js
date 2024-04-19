@@ -207,7 +207,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         const displayGenCounts = getDisplayableGenerationCounts(d3Root, []);
         const treeHeight = calculateTreeHeight(displayGenCounts);
         const [treeWidth, svgWidth] = calculateWidths();
-        console.log(`Update: treeHeight=${treeHeight}, treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`);
+        // console.log(`Update: treeHeight=${treeHeight}, treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`);
         d3.select("#theSvg svg")
             .attr("width", svgWidth)
             .attr("height", treeHeight + margin.top + margin.bottom);
@@ -216,7 +216,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         treeLayout = treeLayout.size([treeHeight, treeWidth]);
         const treeData = treeLayout(d3Root);
         //console.log("treeData", treeData);
-        console.log(`d3Root updated: (x,y)=(${d3Root.x},${d3Root.y}) (x0,y0)=(${d3Root.x0},${d3Root.y0})`, d3Root);
+        // console.log(`d3Root updated: (x,y)=(${d3Root.x},${d3Root.y}) (x0,y0)=(${d3Root.x0},${d3Root.y0})`, d3Root);
 
         if (!hideTreeHeader) {
             d3.select("#theSvg table.treeHeader").remove();
@@ -650,7 +650,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const d = d3.select(parentNode).datum();
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
+                // console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
             const epIds = d.data[side]?.getExpandedParentIds();
@@ -1107,7 +1107,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         return treeLink;
     }
     function sleep(ms) {
-        console.log("Sleeping...");
+        // console.log("Sleeping...");
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 }
