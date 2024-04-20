@@ -1,0 +1,1302 @@
+/* Normalise */
+input[type="button"],
+input[type="submit"],
+.oneNameTrees #controls button,
+.oneNameTrees #help button,
+.oneNameTrees #helpButton,
+.oneNameTrees #table button,
+.oneNameTrees #view-container select {
+  font-weight: normal;
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+.oneNameTrees #tableView_length select {
+  width: 7em;
+  margin: 0;
+}
+.oneNameTrees header select {
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  padding-right: 4em !important;
+  margin-bottom: 0 !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+.oneNameTrees header input[type="text"] {
+  padding-right: 1em;
+  padding: 0.3em;
+  background-size: 1em 2em;
+  min-width: 90px;
+}
+.oneNameTrees #view-container li {
+  margin: 0.2em;
+}
+
+.oneNameTrees body {
+  padding: 0;
+  background-color: #fff;
+}
+
+.oneNameTrees p {
+  margin: 0.5em;
+}
+
+/* ONS */
+
+.oneNameTrees header {
+  z-index: 2;
+}
+.oneNameTrees #logo {
+  margin-bottom: 1em;
+}
+
+.oneNameTrees #view-container {
+  background: white;
+  height: auto;
+  min-height: auto;
+}
+
+.oneNameTrees #loginForm,
+.oneNameTrees #locationSelects {
+  margin-bottom: auto !important;
+}
+
+.oneNameTrees #locationSelects select {
+  margin-left: 0;
+}
+
+.oneNameTrees header {
+  position: sticky;
+  top: 0;
+}
+
+.oneNameTrees #results > ul {
+  margin-left: 4.7em !important;
+}
+
+.oneNameTrees #results ul {
+  list-style-type: none;
+  margin-left: 1.4em;
+  margin-bottom: 0;
+}
+
+.oneNameTrees #results ul ul {
+  padding-left: 0.2em;
+}
+
+.oneNameTrees #results ul li {
+  border-left-width: 2px !important;
+  padding: 0.2em 0 0.2em 0.2em;
+}
+
+.oneNameTrees span.spouse {
+  margin: 0.3em 0 0.3em 1em;
+  display: block;
+}
+
+.oneNameTrees #loadingBarContainer {
+  width: 100%;
+  margin: 0.5em 0;
+  border-radius: 1em;
+  background-color: #ddd;
+  display: none;
+}
+
+.oneNameTrees #loadingBar {
+  width: 0%;
+  height: 30px;
+  border-radius: 1em;
+  background-color: #4caf50;
+}
+
+.oneNameTrees .toggle-button {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.oneNameTrees .level-container {
+  margin-left: 20px;
+}
+
+.oneNameTrees button.toggle-children,
+.oneNameTrees button.descendantsCount {
+  padding: 0.2em !important;
+  line-height: 0.7em;
+  margin-left: -1.8em;
+  margin-right: 0.5em;
+  width: 1em;
+  font-size: 0.9em;
+}
+.oneNameTrees span.descendantsCount {
+  width: 3.3em;
+  font-weight: bold;
+  color: #4caf50;
+  cursor: default;
+  position: absolute;
+  margin-left: -5em;
+  text-align: right;
+}
+.oneNameTrees span.descendantsCountText {
+  padding: 0 0.2em;
+  background-color: #ffffff;
+  border-radius: 0.3em;
+}
+
+.oneNameTrees button.toggleAll {
+  margin-left: 0.5em;
+  display: none;
+}
+
+.oneNameTrees #controls button,
+.oneNameTrees #controls input[type="submit"],
+.oneNameTrees #wideTableButton {
+  margin-left: 0.3em !important;
+  margin-right: 0.3em !important;
+}
+
+.oneNameTrees button#refreshData,
+.oneNameTrees button#downloadData,
+.oneNameTrees button#loadButton,
+.oneNameTrees button#addNameVariants,
+.oneNameTrees button#toggleDetails,
+.oneNameTrees button#toggleWTIDs,
+.oneNameTrees button#toggleGeneralStats {
+  display: none;
+}
+
+.oneNameTrees #controls button.on,
+.oneNameTrees button#toggleDetails.on,
+.oneNameTrees button#toggleWTIDs.on,
+.oneNameTrees button#toggleGeneralStats.on,
+.oneNameTrees #periodButtonsContainer button.on,
+.oneNameTrees #wideTableButton.on {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.oneNameTrees .person .wtid {
+  display: none;
+}
+
+.oneNameTrees button#loadButton,
+.oneNameTrees button#addNameVariants {
+  display: inline-block;
+}
+
+.oneNameTrees section#results [data-gender="Female"] {
+  background-color: #fee;
+}
+.oneNameTrees section#results [data-gender="Male"] {
+  background-color: #eef;
+}
+.oneNameTrees section#results [data-gender="blank"] {
+  background-color: #efe;
+}
+
+.oneNameTrees section#results .details .row {
+  margin: 0.2em;
+}
+
+.oneNameTrees .details .row span:last-child {
+  text-align: left;
+  flex-grow: 1; /* Ensures it takes up the rest of the row */
+}
+
+.oneNameTrees span.dates {
+  cursor: pointer;
+}
+
+.oneNameTrees div.error {
+  color: red;
+  font-weight: bold;
+  border: black solid 2px;
+  padding: 0.5em;
+  margin: 0.5em;
+  text-align: center;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-5px, -5px);
+  }
+  50% {
+    transform: translate(5px, 5px);
+  }
+  75% {
+    transform: translate(-5px, 5px);
+  }
+}
+
+.oneNameTrees .shake {
+  animation: shake 0.5s; /* Run for 0.5 seconds */
+  animation-iteration-count: 2; /* Shake two times */
+}
+
+.oneNameTrees #help {
+  display: none;
+}
+.oneNameTrees #help .symbol {
+  font-weight: bold;
+  margin-right: 1em;
+}
+
+.oneNameTrees #help #closeHelp {
+  position: absolute;
+  cursor: pointer;
+  right: 0.5em;
+  top: 0.5em;
+}
+.oneNameTrees #help #print {
+  position: absolute;
+  cursor: pointer;
+  right: 2.5em;
+  top: 0.5em;
+}
+
+.oneNameTrees #help {
+  width: 40em;
+  margin: 1em;
+  border: 2px solid forestgreen;
+  padding: 1em;
+  background-color: #fff;
+  border-radius: 1em;
+  position: absolute;
+  z-index: 100000;
+  box-shadow: 0 0 10px #000;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.oneNameTrees #help #generalStatsHelp label {
+  font-weight: bold;
+}
+
+.oneNameTrees #help h2 {
+  font-size: large;
+  text-align: center;
+  background-color: #f7f6f0;
+}
+.oneNameTrees #help h3 {
+  font-size: medium;
+  margin: 1em 0 0.5em 0;
+  background-color: #f7f6f0;
+}
+
+.oneNameTrees #help ol {
+  margin: 1em;
+}
+
+.oneNameTrees #help .categoryKeyItem span.symbol {
+  display: inline-block;
+  width: 1em;
+}
+.oneNameTrees #help .categoryKeyItem span.symbol img {
+  width: 1.3em;
+}
+
+.oneNameTrees #toggleButtons,
+.oneNameTrees #searchContainer {
+  display: inline-block;
+}
+
+.oneNameTrees #searchContainer {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  display: none;
+}
+
+.oneNameTrees #searchInput,
+.oneNameTrees #surname,
+.oneNameTrees #location {
+  width: 9em;
+}
+.oneNameTrees #centuries {
+  width: 10em;
+}
+
+.oneNameTrees #location {
+  width: 10em;
+}
+
+.oneNameTrees .person.highlight {
+  border: 3px solid gold;
+  border-radius: 3px;
+}
+
+.oneNameTrees #searchButton,
+.oneNameTrees #submit {
+  margin-left: 0 !important;
+}
+
+.oneNameTrees #noResults {
+  margin: 1em;
+}
+
+.oneNameTrees #statisticsContainer,
+.oneNameTrees #periodStatisticsContainer {
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  margin: 0.5em;
+}
+
+.oneNameTrees #periodStatisticsContainer,
+.oneNameTrees #statisticsContainer {
+  max-height: 30vh;
+  overflow: auto;
+}
+
+.oneNameTrees .stat-item {
+  margin-bottom: 10px;
+  display: inline-block;
+  margin: 0 1em;
+}
+
+.oneNameTrees .stat-item label {
+  font-weight: bold;
+}
+
+.oneNameTrees ul.locationSubdivision,
+.oneNameTrees ul.locationSubdivision li {
+  display: inline-block;
+  margin: 0 0.5em;
+}
+
+.oneNameTrees div.country {
+  display: inline-block;
+  margin: 0 0.3em;
+}
+
+.oneNameTrees div.genderNameList {
+  display: inline-block;
+  margin: 0 0.3em;
+}
+
+.oneNameTrees ul.commonNameList,
+.oneNameTrees ul.commonNameList li {
+  display: inline-block;
+  margin: 0 0.3em;
+}
+
+.oneNameTrees ul.commonNameList li {
+  list-style-type: none;
+  font-weight: normal;
+}
+
+.oneNameTrees #periodButtonsContainer {
+  border: 1px solid forestgreen;
+  border-radius: 0.5em;
+  text-align: center;
+  background: beige;
+  margin: 0.5em;
+  padding: 0.2em;
+}
+
+.oneNameTrees #periodButtonsContainer button {
+  margin: 0.2em 0.3em;
+}
+
+.oneNameTrees div.country {
+  display: inline-block;
+  margin: 0.2em 0.3em;
+  padding: 0.2em;
+  border: 1px solid gray;
+}
+
+.oneNameTrees div#commonNames {
+  display: block;
+}
+
+.oneNameTrees li.expandable {
+  cursor: pointer;
+  color: blue !important;
+}
+
+.oneNameTrees li.expandable li:not(.expandable) {
+  cursor: auto;
+  color: black;
+}
+
+.oneNameTrees li.expanded > ul.nestedSubdivision {
+  display: inline-block !important;
+  margin-left: 0.5em;
+}
+
+.oneNameTrees li.expanded {
+  border: 1px solid forestgreen;
+}
+.oneNameTrees .category {
+  text-decoration: none;
+  font-size: 1.3em;
+  cursor: default;
+}
+.oneNameTrees a.category {
+  cursor: pointer;
+}
+.oneNameTrees .category img {
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: bottom;
+}
+.oneNameTrees a.thisNameStudy {
+  background: #ffffff;
+  border-radius: 50%;
+  padding: 0 0.1em 0.1em;
+  border: 1px solid forestgreen;
+}
+
+.oneNameTrees span.toggleIcon {
+  cursor: pointer;
+}
+
+.oneNameTrees #ancestralLinePopup {
+  z-index: 1000000;
+  background: white;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  position: absolute;
+}
+
+.oneNameTrees #ancestralLinePopup .highlighted {
+  background-color: #f0f0f0; /* Light grey background */
+  border-left: 5px solid #007bff; /* Blue left border */
+  padding: 5px;
+  margin: 2px 0;
+}
+
+.oneNameTrees #ancestralLinePopup .highlighted[data-gender="Female"] {
+  border-color: rgb(252, 181, 193);
+}
+
+.oneNameTrees #ancestralLinePopup ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.oneNameTrees #ancestralLinePopup ul li {
+  padding: 0.2em;
+  margin: 0.2em;
+}
+
+.oneNameTrees #tableViewButton,
+.oneNameTrees #sheetButton {
+  display: none;
+}
+
+.oneNameTrees #table #tableView th,
+.oneNameTrees #table #tableView td {
+  padding: 0 0.3em;
+}
+
+.oneNameTrees #view-container {
+  margin: 0.5em;
+}
+
+.oneNameTrees section#table td.date {
+  text-wrap: nowrap;
+}
+.oneNameTrees section#table td.categoryHTML,
+.oneNameTrees section#table th.categoryHTML {
+  max-width: 4em;
+}
+.oneNameTrees section#table th {
+  text-align: left;
+}
+.oneNameTrees section#table tr[data-gender="Male"],
+.oneNameTrees #ancestralLinePopup li[data-gender="Male"] {
+  background-color: #eef;
+}
+.oneNameTrees section#table tr[data-gender="Female"],
+.oneNameTrees #ancestralLinePopup li[data-gender="Female"] {
+  background-color: #fee;
+}
+.oneNameTrees section#table td.age {
+  text-align: center;
+}
+.oneNameTrees section#table input.filter {
+  width: 100%;
+}
+
+.oneNameTrees #table #tableView td {
+  border-bottom: 2px solid #fff;
+  border-right: 2px solid #fff;
+}
+
+.oneNameTrees div.commonLocations a.locationCount {
+  cursor: pointer;
+}
+
+.oneNameTrees div.commonLocations a.locationCount {
+  padding: 0.1em 0.2em !important;
+  margin: 0.1em !important;
+}
+
+.oneNameTrees #dancingTree {
+  /* Small with a round 2px forestgreen border */
+  border: 2px solid forestgreen;
+  border-radius: 50%;
+  /* Small */
+  width: 7em;
+  height: 7em;
+  /* Centre of the screen */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* Move it back by half the width and height */
+  transform: translate(-50%, -50%);
+  z-index: 1000000;
+}
+.oneNameTrees #locationSelects {
+  display: inline-block;
+  margin: 0.2em;
+}
+.oneNameTrees #locationSelects select {
+  width: 12em;
+}
+.oneNameTrees #locationSelects #locationSelectAlpha {
+  display: none;
+}
+.oneNameTrees #locationSelects button#locationSelectsSwitchButton,
+.oneNameTrees #nameSelects button#nameSelectsSwitchButton {
+  margin-left: 0 !important;
+  padding-bottom: 0.4em !important;
+}
+.oneNameTrees #locationSelects select {
+  margin-right: 0 !important;
+}
+
+.oneNameTrees #wtidGo,
+.oneNameTrees #nameSelect {
+  width: 9em;
+}
+.oneNameTrees #nameSelects {
+  display: inline-block;
+  margin: 0 0.5em;
+}
+.oneNameTrees #nameSelects select {
+  margin: 0;
+}
+
+.oneNameTrees select {
+  margin-bottom: 0.5em !important;
+}
+
+.oneNameTrees #statsDisplay {
+  display: none;
+}
+
+.oneNameTrees #topRightStuff {
+  margin: 0.5em;
+  float: right;
+}
+
+.oneNameTrees section#table #wideTableButton,
+.oneNameTrees section#table #flipLocationsButton,
+.oneNameTrees section#table #checkLocationsButton {
+  margin-left: 2em !important;
+}
+
+.oneNameTrees section#table.wide td {
+  white-space: nowrap;
+}
+
+.oneNameTrees #table #tableView thead {
+  position: sticky;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.oneNameTrees table {
+  width: 100%;
+}
+
+.oneNameTrees tfoot {
+  position: sticky;
+  bottom: 0;
+  background: white; /* Ensure visibility over table rows */
+}
+
+.oneNameTrees .locationToggler {
+  cursor: pointer !important;
+}
+.oneNameTrees div.locationToggler {
+  display: inline-block;
+}
+.oneNameTrees span.toggleMoreNames {
+  cursor: pointer;
+  margin-left: 0.5em;
+}
+
+.oneNameTrees #periodButtonsContainer {
+  display: grid;
+  grid-gap: 0.5em; /* Adjust the space between items */
+  padding: 10px; /* Add some padding around the grid if needed */
+  grid-template-columns: repeat(auto-fit, minmax(6.5em, 1fr));
+}
+
+.oneNameTrees #view-container {
+  overflow: visible;
+}
+
+.oneNameTrees #filterRow input {
+  padding: 0.2em;
+  margin: 0.2em 0;
+  border: 3px solid darkgray;
+}
+
+.oneNameTrees th.categoryHTML {
+  word-wrap: break-word;
+}
+
+.oneNameTrees #table #clearFilters {
+  margin-left: 2em !important;
+}
+
+.oneNameTrees .controlGroup {
+  font-weight: bold;
+  border: 2px solid forestgreen;
+  padding: 0.2em 0.3em 0.2em;
+  border-radius: 0.5em;
+  margin-right: 0.5em;
+  background: #fff;
+  margin-top: 0.2em;
+  display: inline-block;
+}
+
+.oneNameTrees #tableLabel,
+.oneNameTrees #treesButtons {
+  display: none;
+}
+.oneNameTrees #tableLabel.visible,
+.oneNameTrees #treesButtons.visible {
+  display: inline-block;
+}
+
+.oneNameTrees #controls .controlGroup input {
+  margin-bottom: 0;
+}
+.oneNameTrees #controls #locationSelects,
+.oneNameTrees #controls #locationSelects select,
+.oneNameTrees #controls #nameSelects,
+.oneNameTrees #controls #nameSelects select {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+}
+
+.oneNameTrees .duplicateLink {
+  cursor: pointer;
+}
+
+.oneNameTrees #lifespanGraph,
+.oneNameTrees #peopleCountGraph {
+  display: none;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  position: fixed;
+  z-index: 100000;
+  padding: 1em;
+  box-shadow: 0 0 10px #000;
+  width: 90%;
+  height: 50%;
+}
+.oneNameTrees #statsDisplay .stat-item.clicker label.on {
+  background-color: #4caf50;
+  color: #fff;
+  border: forestgreen 2px solid;
+}
+.oneNameTrees #statsDisplay .stat-item label {
+  border: #f9f9f9 2px solid;
+  border-radius: 1em;
+}
+
+.oneNameTrees #statsDisplay .stat-item.clicker label {
+  cursor: pointer;
+  background-color: #25422d;
+  color: white;
+  border-radius: 1em;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+}
+.oneNameTrees #statsDisplay .stat-item.clicker label:hover {
+  background-color: gold;
+  color: black;
+}
+.oneNameTrees #statsDisplay .stat-item.clicker label:active {
+  background-color: darkgoldenrod;
+}
+
+.oneNameTrees #namesTable {
+  display: none;
+  position: fixed;
+  z-index: 100000;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  height: 90%;
+  width: 90%;
+  top: 5%;
+  left: 5%;
+  overflow-y: auto;
+  cursor: default;
+}
+.oneNameTrees #namesTable table tr {
+  border-top: 2px solid #ddd;
+}
+.oneNameTrees #namesTable table caption {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+  cursor: move;
+}
+
+.oneNameTrees .popup {
+  left: 5%;
+  max-width: 90%;
+}
+.oneNameTrees .popup h2 {
+  text-align: center;
+  margin: 0.2em;
+  padding: 0.2em;
+  background-color: #f7f6f0;
+  font-size: 1.2em;
+  font-variant: small-caps;
+  cursor: move;
+}
+
+.oneNameTrees .popup x {
+  position: absolute;
+  top: 0.3em;
+  right: 0.3em;
+  cursor: pointer;
+  font-size: 1.5em;
+  color: forestgreen;
+  font-weight: bold;
+}
+.oneNameTrees .popup x:hover {
+  color: darkgreen;
+}
+.oneNameTrees .popup x:active {
+  color: green;
+}
+
+.oneNameTrees .popup a.Male {
+  background-color: #eef;
+  border-left: 5px solid #007bff;
+}
+.oneNameTrees .popup a.Female {
+  background-color: #fee;
+  border-left: 5px solid #ff69b4;
+}
+.oneNameTrees #unsourcedProfiles,
+.oneNameTrees #unconnectedProfiles,
+.oneNameTrees #noRelationsProfiles,
+.oneNameTrees #periodMigrants {
+  display: none;
+  position: fixed;
+  z-index: 100000;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  max-height: 50vh;
+  max-width: 90vw;
+  width: max-content;
+  overflow-y: auto;
+}
+.oneNameTrees #unsourcedProfiles a,
+.oneNameTrees #unconnectedProfiles a,
+.oneNameTrees #noRelationsProfiles a,
+.oneNameTrees #periodMigrants a {
+  display: block;
+  margin: 0.5em;
+  padding-left: 0.2em;
+}
+
+.oneNameTrees #locationsVisualisation,
+.oneNameTrees #migrationSankey {
+  display: none;
+  position: fixed;
+  z-index: 100000;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  height: 90%;
+  width: 90%;
+  top: 5%;
+  left: 5%;
+  right: 5%;
+  bottom: 5%;
+  overflow: hidden;
+}
+.oneNameTrees #migrationSankey {
+  height: auto;
+  overflow: auto;
+}
+.oneNameTrees #migrationSankey h2 {
+  cursor: auto;
+}
+
+.oneNameTrees #locationsVisualisation .mainTitle {
+  cursor: move;
+}
+.oneNameTrees #locationsVisualisation #controlButtons,
+.oneNameTrees #migrationSankey #migrationControls {
+  position: absolute;
+  top: 0.2em;
+  left: 0.2em;
+}
+.oneNameTrees #locationsVisualisation #controlButtons button,
+.oneNameTrees #migrationSankey #migrationControls button {
+  margin: 0;
+  padding: 0;
+  border: 3px solid white;
+}
+.oneNameTrees #locationsVisualisation #controlButtons button.active,
+.oneNameTrees #migrationSankey #migrationControls button.active {
+  background-color: lightgreen;
+  color: #fff;
+  border: 3px solid lightgreen;
+}
+.oneNameTrees #expandButton {
+  position: absolute;
+  top: 0.2em;
+  right: 1em;
+  margin: 0;
+  padding: 0;
+}
+
+.oneNameTrees #locationsVisualisation.expanded {
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  width: 90%;
+  height: 90%;
+  z-index: 100000;
+  transform: none;
+}
+
+.oneNameTrees #locationsVisualisation svg,
+.oneNameTrees #migrationVisualisation svg {
+  width: 100%;
+  height: 100%;
+}
+.oneNameTrees #locationsVisualisation x {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  font-size: 2.5em;
+  color: forestgreen;
+  font-weight: bold;
+  margin-top: -0.3em;
+}
+
+.oneNameTress #locationsVisualisation,
+.oneNameTress #migrationSankey {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Adjust based on your scrolling/zooming setup */
+}
+
+.oneNameTress #locationsVisualisation h2,
+.oneNameTress #migrationSankey h2 {
+  text-align: center;
+  margin-bottom: 10px; /* Space between title and SVG */
+  position: absolute;
+}
+
+.oneNameTrees .parent-child-0 {
+  border-left: 2px solid forestgreen;
+}
+.oneNameTrees .parent-child-1 {
+  border-left: 2px solid #007bff;
+}
+.oneNameTrees .parent-child-2 {
+  border-left: 2px solid #ff69b4;
+}
+.oneNameTrees .parent-child-3 {
+  border-left: 2px solid #ff8c00;
+}
+.oneNameTrees .parent-child-4 {
+  border-left: 2px solid #4caf50;
+}
+.oneNameTrees .parent-child-5 {
+  border-left: 2px solid #ffeb3b;
+}
+.oneNameTrees .parent-child-6 {
+  border-left: 2px solid #9c27b0;
+}
+.oneNameTrees .parent-child-7 {
+  border-left: 2px solid #f44336;
+}
+.oneNameTrees .parent-child-8 {
+  border-left: 2px solid #00bcd4;
+}
+.oneNameTrees .parent-child-9 {
+  border-left: 2px solid #3f51b5;
+}
+.oneNameTrees .parent-child-10 {
+  border-left: 2px solid #9e9e9e;
+}
+.oneNameTrees .parent-child-11 {
+  border-left: 2px solid #795548;
+}
+.oneNameTrees .parent-child-12 {
+  border-left: 2px solid #607d8b;
+}
+.oneNameTrees .parent-child-13 {
+  border-left: 2px solid #8bc34a;
+}
+.oneNameTrees .parent-child-14 {
+  border-left: 2px solid #ff5722;
+}
+.oneNameTrees .parent-child-15 {
+  border-left: 2px solid #cddc39;
+}
+.oneNameTrees .parent-child-16 {
+  border-left: 2px solid #e91e63;
+}
+.oneNameTrees .parent-child-17 {
+  border-left: 2px solid #2196f3;
+}
+.oneNameTrees .parent-child-18 {
+  border-left: 2px solid #9c27b0;
+}
+.oneNameTrees .parent-child-19 {
+  border-left: 2px solid #ffeb3b;
+}
+.oneNameTrees .parent-child-20 {
+  border-left: 2px solid #4caf50;
+}
+.oneNameTrees .parent-child-21 {
+  border-left: 2px solid #ff8c00;
+}
+.oneNameTrees .parent-child-22 {
+  border-left: 2px solid #ff69b4;
+}
+.oneNameTrees .parent-child-23 {
+  border-left: 2px solid #007bff;
+}
+.oneNameTrees .parent-child-24 {
+  border-left: 2px solid forestgreen;
+}
+.oneNameTrees .parent-child-25 {
+  border-left: 2px solid #ff5722;
+}
+.oneNameTrees .parent-child-26 {
+  border-left: 2px solid #cddc39;
+}
+.oneNameTrees .parent-child-27 {
+  border-left: 2px solid #e91e63;
+}
+.oneNameTrees .parent-child-28 {
+  border-left: 2px solid #2196f3;
+}
+.oneNameTrees .parent-child-29 {
+  border-left: 2px solid #9c27b0;
+}
+.oneNameTrees .parent-child-30 {
+  border-left: 2px solid #ffeb3b;
+}
+.oneNameTrees .parent-child-31 {
+  border-left: 2px solid #4caf50;
+}
+.oneNameTrees .parent-child-32 {
+  border-left: 2px solid #ff8c00;
+}
+.oneNameTrees .parent-child-33 {
+  border-left: 2px solid #ff69b4;
+}
+.oneNameTrees .parent-child-34 {
+  border-left: 2px solid #007bff;
+}
+.oneNameTrees .parent-child-35 {
+  border-left: 2px solid forestgreen;
+}
+.oneNameTrees .parent-child-36 {
+  border-left: 2px solid #ff5722;
+}
+.oneNameTrees .parent-child-37 {
+  border-left: 2px solid #cddc39;
+}
+.oneNameTrees .parent-child-38 {
+  border-left: 2px solid #e91e63;
+}
+.oneNameTrees .parent-child-39 {
+  border-left: 2px solid #2196f3;
+}
+.oneNameTrees .parent-child-40 {
+  border-left: 2px solid #9c27b0;
+}
+.oneNameTrees .parent-child-41 {
+  border-left: 2px solid #ffeb3b;
+}
+.oneNameTrees .parent-child-42 {
+  border-left: 2px solid #4caf50;
+}
+.oneNameTrees .parent-child-43 {
+  border-left: 2px solid #ff8c00;
+}
+.oneNameTrees .parent-child-44 {
+  border-left: 2px solid #ff69b4;
+}
+.oneNameTrees .parent-child-45 {
+  border-left: 2px solid #007bff;
+}
+.oneNameTrees .parent-child {
+  padding-left: 0.2em;
+}
+
+.oneNameTrees #setting-icon {
+  width: 1.5em;
+  height: 1.5em;
+  cursor: pointer;
+  position: relative;
+  top: 0.3em;
+}
+
+/* #setting-icon is png. Change its appearance on hover and active */
+.oneNameTrees #setting-icon:hover {
+  filter: invert(0.5);
+}
+.oneNameTrees #setting-icon:active {
+  filter: invert(0.8);
+}
+
+/* The settings popup */
+.oneNameTrees #oneNameTreesSettings {
+  display: none;
+  position: fixed;
+  z-index: 100000;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  max-height: 50vh;
+  max-width: 90vw;
+  width: max-content;
+  overflow-y: auto;
+}
+
+.oneNameTrees #oneNameTreesSettings label {
+  display: inline-block;
+  margin-right: 1em;
+}
+
+.oneNameTrees #personTooltip {
+  position: absolute;
+  display: none;
+  border: 1px solid #d3d3d3;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+.oneNameTrees #personTooltip a {
+  display: block;
+  padding-left: 0.2em;
+  font-size: large;
+  font-weight: bold;
+}
+.oneNameTrees #personTooltip.Male {
+  background-color: #eef;
+  border-left: 5px solid #007bff;
+}
+.oneNameTrees #personTooltip.Female {
+  background-color: #fee;
+  border-left: 5px solid #ff69b4;
+}
+.oneNameTrees #personTooltip span.date {
+  font-weight: bold;
+}
+
+.oneNameTrees .profile-list {
+  list-style-type: none; /* Removes default list bullets */
+  padding: 0;
+  margin-left: 0;
+  border-left: none;
+}
+
+.oneNameTrees .profile-item {
+  margin-bottom: 0;
+}
+
+.oneNameTrees .profile-item a {
+  display: block; /* Make links block to occupy their own line */
+  font-weight: bold; /* Example style */
+  color: #333; /* Example style */
+  padding: 0.2em;
+}
+
+.oneNameTrees .location-info {
+  font-size: 0.9em; /* Smaller font size for location info */
+  color: #666; /* Dimmed color for location info */
+  padding-left: 1em; /* Indent location info */
+}
+
+.oneNameTrees #startMigrationEvolution,
+.oneNameTrees #stopMigrationEvolution {
+  display: none;
+}
+
+.oneNameTrees .DNA {
+  display: inline-block;
+  margin: 0 0.2em;
+}
+.oneNameTrees .DNA:hover {
+  cursor: pointer;
+  text-decoration: underline;
+  background-color: #f9f9f9;
+}
+.oneNameTrees .DNA:active {
+  background-color: #f0f0f0;
+  box-shadow: inset 0 0 10px #000;
+}
+
+.oneNameTrees #dnaTestModal,
+.oneNameTrees .dnaTestModal {
+  display: none;
+  position: fixed;
+  z-index: 1000000000;
+  left: 5em;
+  top: 0;
+  max-height: 60%;
+  overflow: auto;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0;
+  border: 1px solid forestgreen;
+  border-radius: 1em;
+  width: 40em;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  animation-name: zoom;
+  animation-duration: 0.6s;
+}
+
+@keyframes zoom {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.oneNameTrees #dnaTestModal .close-button,
+.oneNameTrees .dnaTestModal .close-button {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.oneNameTrees #dnaTestModal .close-button:hover,
+.oneNameTrees #dnaTestModal .close-button:focus,
+.oneNameTrees .dnaTestModal .close-button:hover,
+.oneNameTrees .dnaTestModal .close-button:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.oneNameTrees #dnaTestModal .dna-test-card .oneNameTrees .dnaTestModal .dna-test-card {
+  background: #f9f9f9;
+  border-radius: 5px;
+  margin: 0.5em;
+}
+
+.oneNameTrees #dnaTestModal h1,
+.oneNameTrees #dnaTestModal h2,
+.oneNameTrees #dnaTestModal h3,
+.oneNameTrees #dnaTestModal h4,
+.oneNameTrees .dnaTestModal h1,
+.oneNameTrees .dnaTestModal h2,
+.oneNameTrees .dnaTestModal h3,
+.oneNameTrees .dnaTestModal h4 {
+  margin: 0.2em;
+  padding: 0.2em;
+}
+.oneNameTrees #dnaTestModal h1 .oneNameTrees .dnaTestModal h1 {
+  font-size: 1.4em;
+}
+.oneNameTrees #dnaTestModal h2,
+.oneNameTrees .dnaTestModal h2 {
+  cursor: move;
+  font-size: 1.3em;
+  background-color: #f7f6f0;
+}
+.oneNameTrees #dnaTestModal h3,
+.oneNameTrees .dnaTestModal h3 {
+  font-size: 1.2em;
+}
+.oneNameTrees #dnaTestModal h4,
+.oneNameTrees .dnaTestModal h4 {
+  font-size: 1.1em;
+}
+.oneNameTrees #dnaTestModal div,
+.oneNameTrees .dnaTestModal div {
+  margin: 0.2em;
+  padding: 0.2em;
+}
+
+.oneNameTrees .dnaConnections li {
+  padding-left: 0.2em;
+}
+
+.oneNameTrees .temp-message {
+  display: none;
+  position: fixed;
+  bottom: 10%; /* Position from the bottom of the viewport */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center horizontally */
+  background-color: black;
+  color: white;
+  padding: 20px;
+  border-radius: 5px;
+  z-index: 100000000; /* Ensure it's above other content */
+  font-size: 16px;
+}
+
+.oneNameTrees #clearCache,
+.oneNameTrees #clearCacheAll {
+  font-size: 1em;
+  margin: 0.2em;
+  padding: 0.2em;
+}
+.oneNameTrees #settings-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 0.5em;
+}
+
+.oneNameTrees #tableView tr.birthLocationIssue .birthPlace,
+.oneNameTrees #tableView tr.deathLocationIssue .deathPlace {
+  color: red;
+  font-weight: bold;
+}
+
+.oneNameTrees td.privacy {
+  text-align: center;
+}
+.oneNameTrees td.privacy img {
+  width: 1.5em;
+}
