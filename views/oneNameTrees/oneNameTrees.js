@@ -25,6 +25,8 @@ window.OneNameTrees = class OneNameTrees extends View {
     ]);
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
+        this.userId =
+            Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
         this.defaultSettings = { periodLength: 50, onlyLastNameAtBirth: false };
         this.settings = JSON.parse(localStorage.getItem("oneNameTreesSettings")) || this.defaultSettings;
         this.popupZindex = 1000;
@@ -37,6 +39,10 @@ window.OneNameTrees = class OneNameTrees extends View {
             : this.wtid
             ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
             : "";
+        this.surnameWatchlistIds = null;
+        this.watchlistIds = [];
+        this.watchlist = JSON.parse(localStorage.getItem(`${this.userId}_watchlist`)) || null;
+        this.watchlistPromise = null;
         this.centuries = this.parseCenturies($("#centuries").val());
         this.header = $("header");
         this.displayedIndividuals = new Set();
@@ -173,14 +179,13 @@ window.OneNameTrees = class OneNameTrees extends View {
           ** Note that WikiTree+ is updated once a week, so new profiles may be missing from the results.
         </li>
         <li>
+        As all of the IDs returned by WikiTree+ are for open public profiles, if you are logged into the apps server,
+        you may be able to retrieve the data of more profiles. The app gets your watchlist to find any people who are 
+        missing from the WikiTree+ results.
+      </li>
+        <li>
           The data of all of the profiles is fetched from the WikiTree apps server. This may take a very long time (see
           #8).
-        </li>
-        <li>
-          As all of the IDs returned by WikiTree+ are for open public profiles, if you are logged into the apps server,
-          you may be able to retrieve the data of more profiles. A check is made of post-19th century profiles for any
-          parents whose data is not among the retrieved data and for children of those at the end of the lines 
-          (if they do not have the No Children flag set). If any are found, the data of those profiles is fetched.
         </li>
         <li>
           The people are sorted by birth date. (For profiles with only a death date, the death date is used for
@@ -299,6 +304,8 @@ window.OneNameTrees = class OneNameTrees extends View {
           box shows the number of profiles that include that location part in the birth location. The toggle button next
           to it turns the list alphabetical.
         </li>
+        <li>Settings: The period length can be changed. The 'Only Last Name at Birth' checkbox will show only profiles with the target surname(s) as Last Name at Birth.
+         The settings popup also has buttons to clear your cached data.</li>
         <li>Have I missed anything?</li>
       </ol>
     </div>
@@ -322,6 +329,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <button id="clearCache" title="Clear the cache of stored data for this surname">Clear cached ${
                     this.surname
                 } items</button>
+                <button id="clearCachedWatchlist" title="Clear the cache of stored data for the watchlist">Clear cached watchlist</button>
                 <button id="clearCacheAll" title="Clear the cache of all stored data">Clear all cached items</button>
             </div>
         </div>`);
@@ -440,7 +448,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $this.shakingTree.show();
                 setTimeout(function () {
                     wtViewRegistry.clearStatus();
-                    wtViewRegistry.showWarning("Refreshing data...");
+                    wtViewRegistry.showNotice("Refreshing data...");
                 }, 100);
                 $this.reset();
                 $this.clearONSidsCache(surname); // Clear the cache for this surname
@@ -554,7 +562,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    wtViewRegistry.showWarning("Loading data...");
+                    wtViewRegistry.showNotice("Loading data...");
                     const storageObject = JSON.parse(e.target.result);
                     $this.combinedResults = storageObject.data;
                     const treeHtml = storageObject.html;
@@ -904,6 +912,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(document).on("click.oneNameTrees", "#clearCacheAll", function () {
             $this.storageManager.clearCachedItems();
         });
+        $(document).on("click.oneNameTrees", "#clearCachedWatchlist", function () {
+            $this.storageManager.clearCachedWatchlist();
+        });
 
         $(document).on("click.oneNameTrees", ".dnaTestModal .close-button", function () {
             $(this).closest(".dnaTestModal").fadeOut();
@@ -1234,6 +1245,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         let sortedPeople = $this.sortPeopleByBirthDate(theSet);
         $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
         $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
+        wtViewRegistry.showNotice("Rebuilding trees...");
         $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
     }
 
@@ -1429,7 +1441,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     cancelFetch() {
-        wtViewRegistry.showWarning("Cancelling data retrieval...");
+        wtViewRegistry.showNotice("Cancelling data retrieval...");
         this.cancelling = true;
         if (this.cancelFetchController) {
             this.cancelFetchController.abort();
@@ -1543,6 +1555,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 queries.map(async ({ name, query }) => {
                     const url = `https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json?Query=${query}&MaxProfiles=100000&Format=JSON`;
                     const response = await fetch(url, { signal: this.cancelFetchController.signal });
+                    wtViewRegistry.showNotice(`Fetching ${name} IDs from WikiTree+...`);
 
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
@@ -1835,18 +1848,15 @@ window.OneNameTrees = class OneNameTrees extends View {
     async processBatches(ids, surname) {
         const $this = this;
 
-        const userId =
-            Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
-
         if (!ids || ids.length === 0) {
             console.error("No IDs provided for processing.");
-            wtViewRegistry.showWarning("No results found");
+            wtViewRegistry.showNotice("No results found");
             $("#refreshData").prop("disabled", false);
             return;
         }
 
         function cancelIt() {
-            wtViewRegistry.showWarning("Data retrieval cancelled");
+            wtViewRegistry.showNotice("Data retrieval cancelled");
             $this.disableCancel();
             $this.shakingTree.hide();
             // TODO: do whatever other cleanup should be done
@@ -1859,12 +1869,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         this.showLoadingBar();
-        this.updateLoadingBar(1); // we've done some work... :)
+        this.updateLoadingBar(20); // we've done some work... :)
         let processed = 0;
         let total = ids.length;
         let extendedTotal = total * 1.2;
-
-        const secondCall = new Set();
 
         const starttime = performance.now();
         for (let i = 0; i < ids.length && !$this.cancelling; i += 1000) {
@@ -1880,116 +1888,20 @@ window.OneNameTrees = class OneNameTrees extends View {
                 cancelIt();
                 return;
             }
-            const nrProfiles = this.numberOfProfiles(people);
 
             // Combine the 'people' object with 'combinedResults'
 
-            //
             if (people && typeof people === "object") {
                 Object.assign(this.combinedResults, people);
             }
 
             //
             processed += batchIds.length;
-            // We arbitrarily regard fetching the intial profiles as 45% of the work,
-            // fetching missing parents as a further 45% and port-processing the last 10%
-            let percentage = (processed / total) * 45;
+            let percentage = (processed / total) * 100 + 20;
             this.updateLoadingBar(percentage);
         }
 
-        // We do the below because the IDs we get from WT+ would be for public profiles only.
-        // So here, since the user might be logged in and may have access to some of the
-        // private profiles that should be part of the set, we try and collect some of those
-        // private profiles via the WT getPeople api.
-        const hasMissing = new Set();
-        if (userId && !$this.cancelling) {
-            Object.values(this.combinedResults).forEach((person) => {
-                if (person?.BirthDateDecade?.replace(/s/, "") > 1890) {
-                    if (person?.Father > 0 && !this.combinedResults[person.Father]) {
-                        secondCall.add(person.Father);
-                        if (OneNameTrees.VERBOSE) hasMissing.add(person.Name || person.Id);
-                    }
-                    if (person?.Mother > 0 && !this.combinedResults[person.Mother]) {
-                        secondCall.add(person.Mother);
-                        if (OneNameTrees.VERBOSE) hasMissing.add(person.Name || person.Id);
-                    }
-                    // Add possible missing children to the list of missing parents
-                    // If NoChildren is not set on a profile, we add that profile to possibleMissingPeople
-                    // so we gan get their children.
-                    if (!person.NoChildren) {
-                        secondCall.add(person.Id);
-
-                        if (OneNameTrees.VERBOSE) hasMissing.add(person.Name || person.Id);
-                    }
-                }
-            });
-        }
-
-        hasMissing.clear();
-
-        // this.hideLoadingBar(); // Reset the loading bar for processing missing parents
-        // this.showLoadingBar();
-        let processedParents = 0;
-        let totalSecondCall = secondCall.size;
-
-        function setDifference(a, b) {
-            return new Set([...a].filter((x) => !b.has(x)));
-        }
-        function setUnion(a, b) {
-            return new Set([...a, ...b]);
-        }
-        function setIntersection(a, b) {
-            return new Set([...a].filter((x) => b.has(x)));
-        }
-
-        let currentIds = new Set(OneNameTrees.VERBOSE ? Object.keys(this.combinedResults) : []);
-        let additionalIds = new Set();
-        if (this.centuries && this.centuries.length > 0 && parseInt(this.centuries[this.centuries.length - 1]) < 19) {
-            secondCall.clear();
-        }
-
-        if (secondCall.size > 0) {
-            const secondCallIds = [...secondCall];
-            for (let i = 0; i < secondCallIds.length && !$this.cancelling; i += 100) {
-                const batchIds = secondCallIds.slice(i, i + 100);
-                const [aborted, people] = await this.getPeopleViaPagedCalls(batchIds, {
-                    ancestors: 1,
-                    descendants: 2,
-                });
-                if (aborted || $this.cancelling) {
-                    cancelIt();
-                    return;
-                }
-                const nrProfiles = this.numberOfProfiles(people);
-                if (nrProfiles > 0) {
-                    if (OneNameTrees.VERBOSE) {
-                        const fetchedIdsSet = new Set(Object.keys(people));
-                        const newIds = setDifference(fetchedIdsSet, currentIds);
-                        const dups = setIntersection(fetchedIdsSet, currentIds);
-                        //
-                        //
-                        currentIds = setUnion(currentIds, newIds);
-                        additionalIds = setUnion(additionalIds, newIds);
-                    }
-
-                    Object.assign(this.combinedResults, people);
-                }
-                processedParents += batchIds.length;
-                // We claim fetching missing parents is the 2nd 45% of the work
-                let percentage = 45 + (processedParents / totalSecondCall) * 45;
-                this.updateLoadingBar(percentage);
-            }
-        } else {
-            this.updateLoadingBar(90);
-        }
-        const fetchTime = performance.now() - starttime;
-
-        // this.hideLoadingBar();
-
-        const profileCount = Object.keys(this.combinedResults).length;
-        //
-
-        // Now 'combinedResults' contains the combined data from all batches
+        this.updateLoadingBar(100);
 
         // If the surname is not LNAB, LNC, or LNO, filter out
 
@@ -2009,11 +1921,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         $this.disableCancel();
 
         this.filterResults();
-        const filteredCount = Object.keys($this.filteredResults).length || 0;
-        if (OneNameTrees.VERBOSE) {
-            const removedNew = setDifference(additionalIds, new Set(Object.keys($this.filteredResults)));
-        } else {
-        }
 
         // After batch processing, update the progress bar for additional steps (the last 10% of the work)
         processed = ids.length;
@@ -2034,6 +1941,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.updateLoadingBar(90 + (processed / extendedTotal) * 10);
 
         this.peopleByIdKeys = Object.keys(this.peopleById);
+        wtViewRegistry.showNotice("Building trees...");
         this.displayDescendantsTree(this.peopleById, parentToChildrenMap);
 
         // Update progress bar to complete
@@ -2901,7 +2809,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 $children.remove();
             }
         });
-        wtViewRegistry.showWarning("Building statistics...");
+        wtViewRegistry.showNotice("Building statistics...");
 
         this.showStatistics();
         this.createNameSelectBoxes();
@@ -4010,7 +3918,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     showStatistics() {
-        wtViewRegistry.showWarning("Building statistics...");
+        wtViewRegistry.showNotice("Building statistics...");
         const dataset = this.settings.onlyLastNameAtBirth ? this.onlyLastNameAtBirth : this.filteredResults;
         // Clear any existing statistics by unbinding event listeners and removing elements
         this.familyTreeStatistics = {};
@@ -4599,11 +4507,21 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     async startTheFetching(surname, location, centuries) {
+        if (this.userId) {
+            if (!this.surnameWatchlistNames) {
+                this.watchlistPromise = WikiTreeAPI.getWatchlist("One Name Trees", 5000, 1, 0, [
+                    "Id",
+                    "LastNameAtBirth",
+                    "LastNameCurrent",
+                    "LastNameOther",
+                ]);
+            }
+        }
         const $this = this;
         $this.reset();
         const [aborted, data] = await $this.getONTids(surname, location, centuries);
         if (aborted) {
-            wtViewRegistry.showWarning("Data retrieval cancelled.");
+            wtViewRegistry.showNotice("Data retrieval cancelled.");
             $this.disableCancel();
             $this.shakingTree.hide();
             // TODO: do whatever other cleanup should be done
@@ -4614,7 +4532,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (found === 0) {
             $this.disableCancel();
             $this.shakingTree.hide();
-            wtViewRegistry.showWarning("No results found.");
+            wtViewRegistry.showNotice("No results found.");
             $("#refreshData").prop("disabled", false);
             return;
         } else if (found > 10000) {
@@ -4639,15 +4557,57 @@ window.OneNameTrees = class OneNameTrees extends View {
                 message = `<p>There are over ${formattedRoundedFound} results.</p>
                                    <p>This is too many for the app to handle.</p>
                                    <p>Please add a location or a century (or centuries) and go again.</p>`;
-                wtViewRegistry.showWarning(message);
+                wtViewRegistry.showNotice(message);
                 $this.disableCancel();
                 $this.shakingTree.hide();
                 return;
             }
-            wtViewRegistry.showWarning(message);
+            wtViewRegistry.showNotice(message);
         }
         $("#cancelFetch").show();
 
+        let watchlistFetched = false;
+        if (!this.watchlist && this.userId) {
+            this.showLoadingBar();
+            this.updateLoadingBar(5);
+            wtViewRegistry.showNotice("Fetching your watchlist...");
+            const watchlist = await this.watchlistPromise;
+            watchlistFetched = true;
+            wtViewRegistry.showNotice("Watchlist retrieved...");
+            this.updateLoadingBar(10);
+            // Store the watchlist in localStorage with a timestamp and the user's ID and LRU strategy
+            const watchlistData = {
+                timestamp: Date.now(),
+                userId: this.userId,
+                watchlist: watchlist,
+            };
+            this.saveWithLRUStrategy(`${this.userId}_watchlist`, JSON.stringify(watchlistData));
+            this.watchlist = watchlistData;
+            wtViewRegistry.showNotice("Watchlist saved...");
+        }
+        const surnameVariants = this.getSurnameVariants(surname);
+        if (this.watchlist) {
+            if (!watchlistFetched) {
+                wtViewRegistry.showNotice("Using stored watchlist...");
+            }
+            // Get Ids of all people whose Name is a variant of the surname.
+            this.surnameWatchlistIds = [];
+            this.watchlist.watchlist.forEach((person) => {
+                if (person.Name) {
+                    if (
+                        (surnameVariants.includes(person.LastNameAtBirth) ||
+                            surnameVariants.includes(person.LastNameCurrent) ||
+                            surnameVariants.includes(person.LastNameOther)) &&
+                        !ids.includes(person.Id)
+                    ) {
+                        this.surnameWatchlistIds.push(person.Id);
+                        ids.push(person.Id);
+                    }
+                }
+            });
+        }
+
+        wtViewRegistry.showNotice("Fetching profiles...");
         $this.processBatches(ids, surname).then(() => $this.disableCancel());
     }
 
@@ -5031,6 +4991,16 @@ class LocalStorageManager {
         this.showTempMessage("Clearing cached data...");
     }
 
+    clearCachedWatchlist() {
+        const suffix = "_watchlist";
+        for (const key of Object.keys(localStorage)) {
+            if (key.endsWith(suffix)) {
+                localStorage.removeItem(key);
+                this.showTempMessage("Clearing cached watchlist...");
+            }
+        }
+    }
+
     showTempMessage(message) {
         // Check if the message element already exists
         let messageElement = document.getElementById("tempMessage");
@@ -5142,7 +5112,7 @@ class LocalStorageManager {
         let index = 0;
         while (currentUsage + newItemSize > this.threshold && index < this.accessOrder.length) {
             const key = this.accessOrder[index];
-            if (key.startsWith("ONT") || key.startsWith("ONSids")) {
+            if (key.startsWith("ONT") || key.startsWith("ONSids") || key.includes("watchlist")) {
                 const itemSize = localStorage.getItem(key)?.length || 0;
                 localStorage.removeItem(key);
                 currentUsage -= itemSize;

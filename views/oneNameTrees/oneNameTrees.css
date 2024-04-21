@@ -1277,7 +1277,8 @@ input[type="submit"],
 }
 
 .oneNameTrees #clearCache,
-.oneNameTrees #clearCacheAll {
+.oneNameTrees #clearCacheAll,
+.oneNameTrees #clearCachedWatchlist {
   font-size: 1em;
   margin: 0.2em;
   padding: 0.2em;
@@ -1299,4 +1300,9 @@ input[type="submit"],
 }
 .oneNameTrees td.privacy img {
   width: 1.5em;
+}
+
+.oneNameTrees #wt-status.green {
+  border-radius: 1em;
+  background-image: none;
 }
