@@ -1445,6 +1445,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.cancelling = true;
         if (this.cancelFetchController) {
             this.cancelFetchController.abort();
+            this.updateLoadingBar(0);
+            this.hideLoadingBar();
         }
         /*
         $("#refreshData").prop("disabled", false);
