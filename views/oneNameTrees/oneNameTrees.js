@@ -25,6 +25,9 @@ window.OneNameTrees = class OneNameTrees extends View {
     ]);
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
+
+        this.shouldLogIds = [9202358, 9202367];
+
         this.userId =
             Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
         this.defaultSettings = { periodLength: 50, onlyLastNameAtBirth: false };
@@ -577,12 +580,35 @@ window.OneNameTrees = class OneNameTrees extends View {
                     $this.parentToChildrenMap = {};
 
                     $this.filterResults();
+
+                    // Find people in this.filteredResults in shouldLogIds
+                    $this.shouldLogIds.forEach((id) => {
+                        // find person from id in this.filteredResults object
+                        console.log($this.filteredResults[id]);
+                    });
+
                     $this.filterFilteredResultsByLNAB();
+
+                    // Find people in this.filteredResults in shouldLogIds
+                    $this.shouldLogIds.forEach((id) => {
+                        // find person from id in this.filteredResults object
+                        console.log($this.filteredResults[id]);
+                    });
+
                     const theSet =
                         $this.settings.onlyLastNameAtBirth == true ? $this.onlyLastNameAtBirth : $this.filteredResults;
                     let sortedPeople = $this.sortPeopleByBirthDate(theSet);
+
+                    console.log("People sorted by birth date:", sortedPeople);
+
                     $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
+
+                    console.log("Parent to children map:", $this.parentToChildrenMap);
+
                     $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
+
+                    console.log("People by ID:", $this.peopleById);
+
                     $this.completeDisplay();
                     //                    $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
                 };
@@ -1714,6 +1740,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     // Helper function for location matching
     isLocationMatch(person, locationInput) {
+        if (!locationInput) {
+            return true;
+        }
         const standardizedLocationInput = this.standardizeString(locationInput);
         const birthLocation = this.standardizeString(person.BirthLocation);
         const deathLocation = this.standardizeString(person.DeathLocation);
@@ -1816,6 +1845,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $this = this;
         Object.values(this.combinedResults).forEach((person) => {
             //
+            if (this.shouldLog(person.Id)) {
+                console.log(`Processing ${person.Id}`);
+            }
 
             // Standardize the person's surnames for comparison
             const standardizedLastNameAtBirth = $this.standardizeString(person?.LastNameAtBirth) || "";
@@ -1841,8 +1873,15 @@ window.OneNameTrees = class OneNameTrees extends View {
                 !person.BirthDate ||
                 person.BirthDate == "0000-00-00";
             //
+            if (this.shouldLog(person.Id)) {
+                console.log(isSurnameMatch, isCenturyMatch, this.isLocationMatch(person, locationInput));
+            }
+
             if (isSurnameMatch && isCenturyMatch && this.isLocationMatch(person, locationInput)) {
                 $this.filteredResults[person.Id] = person;
+                if (this.shouldLog(person.Id)) {
+                    console.log(`Added ${person.Id}`);
+                }
             }
         });
     }
@@ -1923,6 +1962,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         $this.disableCancel();
 
         this.filterResults();
+
+        // Find people in this.filteredResults in shouldLogIds
+        this.shouldLogIds.forEach((id) => {
+            // find person from id in this.filteredResults object
+            console.log(this.filteredResults[id]);
+        });
 
         // After batch processing, update the progress bar for additional steps (the last 10% of the work)
         processed = ids.length;
@@ -2008,6 +2053,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             // Directly log persons and spouses if necessary
             if (this.shouldLog(person.Id)) {
+                console.log(`Checking root status for person: ${person.Id}`);
             }
 
             if (person.Spouses && person.Spouses.length > 0) {
@@ -2018,6 +2064,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     if (spouseIndex !== -1) {
                         let spouse = sortedPeople[spouseIndex];
                         if (this.shouldLog(spouse.Id)) {
+                            console.log(`Checking root status for spouse: ${spouse.Id}`);
                         }
 
                         // Prioritize LNAB status directly
@@ -2037,7 +2084,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     shouldLog(id) {
-        return id == 20988918 || id == 20330545;
+        return this.shouldLogIds.includes(id);
     }
 
     shouldPrioritize(spouse, person) {
@@ -2055,6 +2102,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Check if the person's LNAB is among the target surname or its variants
         const personHasTargetLNAB = standardizedVariants.includes(personLNAB);
 
+        if (this.shouldLog(person.Id) || this.shouldLog(spouse.Id)) {
+            console.log(`Person ${person.Id} has target LNAB: ${personHasTargetLNAB}`);
+
+            console.log(`Person ${person.Id} LNAB: ${personLNAB}`);
+
+            console.log(`Spouse ${spouse.Id} LNAB: ${spouseLNAB}`);
+        }
         // Priority is given if the person has the target LNAB directly, and the spouse does not
         if (personHasTargetLNAB && !standardizedVariants.includes(spouseLNAB)) {
             // Further check if spouse's current last name matches the person's to handle cases of marriage where names are changed
@@ -2091,10 +2145,13 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     shouldBeRoot(person, peopleById) {
-        console.log(`Checking root status for person: ${person.Id}`);
-
+        if (this.shouldLog(person.Id)) {
+            console.log(`Checking root status for person: ${person.Id}`);
+        }
         if (this.hasTargetLNAB(person)) {
-            console.log(`Person ${person.Id} is a root because they have the target LNAB.`);
+            if (this.shouldLog(person.Id)) {
+                console.log(`Person ${person.Id} is a root because they have the target LNAB.`);
+            }
             return true; // Direct LNAB match
         }
 
@@ -2102,15 +2159,20 @@ window.OneNameTrees = class OneNameTrees extends View {
         let isRoot = person.Spouses.every((spouseId) => {
             let spouse = peopleById[spouseId];
             if (!spouse) {
-                console.log(`Person ${person.Id} treated as root since spouse ${spouseId} not in dataset.`);
+                if (this.shouldLog(person.Id)) {
+                    console.log(`Person ${person.Id} treated as root since spouse ${spouseId} not in dataset.`);
+                }
                 return true; // Treat as root if spouse is not in dataset, no other qualifying information
             }
             let spouseHasLNAB = this.hasTargetLNAB(spouse);
-            console.log(`Spouse ${spouseId} of person ${person.Id} has LNAB: ${spouseHasLNAB}`);
+            if (this.shouldLog(person.Id)) {
+                console.log(`Spouse ${spouseId} of person ${person.Id} has LNAB: ${spouseHasLNAB}`);
+            }
             return !spouseHasLNAB; // Spouse does not have LNAB, therefore person can be root
         });
-
-        console.log(`Person ${person.Id} root status determined: ${isRoot}`);
+        if (this.shouldLog(person.Id)) {
+            console.log(`Person ${person.Id} root status determined: ${isRoot}`);
+        }
         return isRoot;
     }
 
