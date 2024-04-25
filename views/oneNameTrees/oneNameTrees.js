@@ -1957,6 +1957,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         return;
     }
 
+    /*
     prioritizeTargetName(sortedPeople) {
         let updatedPeople = [...sortedPeople]; // Clone the array to avoid direct modifications
 
@@ -1988,6 +1989,43 @@ window.OneNameTrees = class OneNameTrees extends View {
                             // Recalculate person's index in the updated list
                             let newPersonIndex = updatedPeople.findIndex((p) => String(p.Id) === String(person.Id));
                             // Insert the spouse after the person in the updated list
+                            updatedPeople.splice(newPersonIndex + 1, 0, spouse);
+                        }
+                    }
+                });
+            }
+        }
+
+        this.sortedPeople = updatedPeople; // Update the original array reference if needed
+    }
+    */
+
+    prioritizeTargetName(sortedPeople) {
+        let updatedPeople = [...sortedPeople]; // Clone the array to avoid direct modifications
+
+        for (let i = 0; i < updatedPeople.length; i++) {
+            let person = updatedPeople[i];
+
+            // Directly log persons and spouses if necessary
+            if (this.shouldLog(person.Id)) {
+            }
+
+            if (person.Spouses && person.Spouses.length > 0) {
+                const spouseIds = person.Spouses.map((spouse) => spouse.Id);
+
+                spouseIds.forEach((spouseId) => {
+                    let spouseIndex = sortedPeople.findIndex((p) => String(p.Id) === String(spouseId));
+                    if (spouseIndex !== -1) {
+                        let spouse = sortedPeople[spouseIndex];
+                        if (this.shouldLog(spouse.Id)) {
+                        }
+
+                        // Prioritize LNAB status directly
+                        if (this.shouldPrioritize(spouse, person)) {
+                            // Mark spouses who should not be roots
+                            spouse.shouldBeRoot = false;
+                            updatedPeople = updatedPeople.filter((p) => String(p.Id) !== String(spouse.Id));
+                            let newPersonIndex = updatedPeople.findIndex((p) => String(p.Id) === String(person.Id));
                             updatedPeople.splice(newPersonIndex + 1, 0, spouse);
                         }
                     }
@@ -2029,6 +2067,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         return false;
     }
 
+    /*
     findRootIndividuals(parentToChildrenMap, peopleById) {
         let childIds = new Set();
         Object.values(parentToChildrenMap).forEach((children) => {
@@ -2041,6 +2080,70 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         return rootIndividuals;
     }
+    */
+
+    hasTargetLNAB(person) {
+        // Assuming you have a method to get the list of target LNAB variants
+        const targetLNABs = this.getSurnameVariants(); // Make sure this function exists and returns the correct data
+        const standardizedPersonLNAB = this.standardizeString(person.LastNameAtBirth); // Assuming this method standardizes the string
+
+        return targetLNABs.includes(standardizedPersonLNAB);
+    }
+
+    shouldBeRoot(person, peopleById) {
+        console.log(`Checking root status for person: ${person.Id}`);
+
+        if (this.hasTargetLNAB(person)) {
+            console.log(`Person ${person.Id} is a root because they have the target LNAB.`);
+            return true; // Direct LNAB match
+        }
+
+        // For non-LNAB persons, check if any spouse qualifies them as a non-root
+        let isRoot = person.Spouses.every((spouseId) => {
+            let spouse = peopleById[spouseId];
+            if (!spouse) {
+                console.log(`Person ${person.Id} treated as root since spouse ${spouseId} not in dataset.`);
+                return true; // Treat as root if spouse is not in dataset, no other qualifying information
+            }
+            let spouseHasLNAB = this.hasTargetLNAB(spouse);
+            console.log(`Spouse ${spouseId} of person ${person.Id} has LNAB: ${spouseHasLNAB}`);
+            return !spouseHasLNAB; // Spouse does not have LNAB, therefore person can be root
+        });
+
+        console.log(`Person ${person.Id} root status determined: ${isRoot}`);
+        return isRoot;
+    }
+
+    // Assuming this function is called when constructing the tree
+    findRootIndividuals(parentToChildrenMap, peopleById) {
+        let rootIndividuals = Object.keys(peopleById).filter((id) => {
+            let person = peopleById[id];
+            return !this.isChild(id, parentToChildrenMap) && this.shouldBeRoot(person, peopleById);
+        });
+
+        return rootIndividuals;
+    }
+
+    // Helper to determine if an ID represents a child in any relationship
+    isChild(id, parentToChildrenMap) {
+        return Object.values(parentToChildrenMap).flat().includes(id);
+    }
+
+    verifyRoots(peopleById, rootIndividuals) {
+        let verifiedRoots = rootIndividuals.filter((rootId) => {
+            let person = peopleById[rootId];
+            // Additional logic to handle special cases or inconsistencies
+            return this.hasAllRequiredInfo(person);
+        });
+        return verifiedRoots;
+    }
+
+    hasAllRequiredInfo(person) {
+        // Implement checks based on your specific requirements, e.g., check for missing data
+        return person.LastNameAtBirth && person.FirstName; // Example check
+    }
+
+    // Adjustments in arrangeTreeElements might be necessary to ensure proper placement based on these new rules
 
     displayDates(person) {
         let birthDate = person.BirthDate || person.BirthDateDecade || "";
@@ -2822,6 +2925,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         wtViewRegistry.clearStatus();
     }
 
+    /*
     async arrangeTreeElements() {
         const allChildrenElements = $("ul.children");
         const totalElements = allChildrenElements.length;
@@ -2843,6 +2947,51 @@ window.OneNameTrees = class OneNameTrees extends View {
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
         this.identifyChildrensParents();
+    }
+    */
+
+    async arrangeTreeElements() {
+        const allChildrenElements = $("ul.children");
+        const totalElements = allChildrenElements.length;
+        let processedElements = 0;
+
+        for (const childrenElement of allChildrenElements) {
+            const $childrenElement = $(childrenElement);
+            const thisParent = $childrenElement.data("parent-id");
+
+            // Append children to their respective parent
+            let parentElement = $("li.person[data-id='" + thisParent + "']");
+            if (parentElement.length > 0) {
+                parentElement.append($childrenElement);
+            } else {
+                // Handle cases where the parent is supposed to be a root but is not present
+                // This might happen if the parent is a non-LNAB root due to missing LNAB spouse
+                this.handleMissingParent(thisParent, $childrenElement);
+            }
+
+            processedElements++;
+            let percentage = (processedElements / totalElements) * 100;
+            this.updateLoadingBar(percentage);
+
+            // Check for errors where the parent is still missing after attempts to handle it
+            if ($childrenElement.parents("li.person").length === 0) {
+                console.log("Error: Parent not found for children element", $childrenElement);
+            }
+
+            // Yield control back to the browser
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        this.identifyChildrensParents();
+    }
+
+    // A method to handle cases where a supposed parent is missing from the DOM
+    handleMissingParent(parentId, childrenElement) {
+        // Create a new parent element if it doesn't exist and mark it visually or logistically as a root
+        let newParentElement = $('<li class="person" data-id="' + parentId + '">');
+        newParentElement.append(childrenElement);
+        $("ul.tree").append(newParentElement); // Assuming 'ul.tree' is your main tree container
+
+        console.log("New root created for missing LNAB spouse:", parentId);
     }
 
     identifyChildrensParents() {
