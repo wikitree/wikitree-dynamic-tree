@@ -581,36 +581,17 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                     $this.filterResults();
 
-                    // Find people in this.filteredResults in shouldLogIds
-                    $this.shouldLogIds.forEach((id) => {
-                        // find person from id in this.filteredResults object
-                        console.log($this.filteredResults[id]);
-                    });
-
                     $this.filterFilteredResultsByLNAB();
-
-                    // Find people in this.filteredResults in shouldLogIds
-                    $this.shouldLogIds.forEach((id) => {
-                        // find person from id in this.filteredResults object
-                        console.log($this.filteredResults[id]);
-                    });
 
                     const theSet =
                         $this.settings.onlyLastNameAtBirth == true ? $this.onlyLastNameAtBirth : $this.filteredResults;
                     let sortedPeople = $this.sortPeopleByBirthDate(theSet);
 
-                    console.log("People sorted by birth date:", sortedPeople);
-
                     $this.parentToChildrenMap = $this.createParentToChildrenMap(sortedPeople);
-
-                    console.log("Parent to children map:", $this.parentToChildrenMap);
 
                     $this.peopleById = $this.createPeopleByIdMap(sortedPeople);
 
-                    console.log("People by ID:", $this.peopleById);
-
                     $this.completeDisplay();
-                    //                    $this.displayDescendantsTree($this.peopleById, $this.parentToChildrenMap);
                 };
 
                 reader.onprogress = function (e) {
@@ -1844,11 +1825,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const $this = this;
         Object.values(this.combinedResults).forEach((person) => {
-            //
-            if (this.shouldLog(person.Id)) {
-                console.log(`Processing ${person.Id}`);
-            }
-
             // Standardize the person's surnames for comparison
             const standardizedLastNameAtBirth = $this.standardizeString(person?.LastNameAtBirth) || "";
             const standardizedLastNameCurrent = $this.standardizeString(person?.LastNameCurrent) || "";
@@ -1872,16 +1848,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 (birthCentury && birthCentury >= firstCentury) ||
                 !person.BirthDate ||
                 person.BirthDate == "0000-00-00";
-            //
-            if (this.shouldLog(person.Id)) {
-                console.log(isSurnameMatch, isCenturyMatch, this.isLocationMatch(person, locationInput));
-            }
 
             if (isSurnameMatch && isCenturyMatch && this.isLocationMatch(person, locationInput)) {
                 $this.filteredResults[person.Id] = person;
-                if (this.shouldLog(person.Id)) {
-                    console.log(`Added ${person.Id}`);
-                }
             }
         });
     }
@@ -1910,7 +1879,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
 
         this.showLoadingBar();
-        this.updateLoadingBar(20); // we've done some work... :)
+        this.updateLoadingBar(5); // we've done some work... :)
         let processed = 0;
         let total = ids.length;
         let extendedTotal = total * 1.2;
@@ -1962,12 +1931,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         $this.disableCancel();
 
         this.filterResults();
-
-        // Find people in this.filteredResults in shouldLogIds
-        this.shouldLogIds.forEach((id) => {
-            // find person from id in this.filteredResults object
-            console.log(this.filteredResults[id]);
-        });
 
         // After batch processing, update the progress bar for additional steps (the last 10% of the work)
         processed = ids.length;
@@ -2051,11 +2014,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         for (let i = 0; i < updatedPeople.length; i++) {
             let person = updatedPeople[i];
 
-            // Directly log persons and spouses if necessary
-            if (this.shouldLog(person.Id)) {
-                console.log(`Checking root status for person: ${person.Id}`);
-            }
-
             if (person.Spouses && person.Spouses.length > 0) {
                 const spouseIds = person.Spouses.map((spouse) => spouse.Id);
 
@@ -2063,9 +2021,6 @@ window.OneNameTrees = class OneNameTrees extends View {
                     let spouseIndex = sortedPeople.findIndex((p) => String(p.Id) === String(spouseId));
                     if (spouseIndex !== -1) {
                         let spouse = sortedPeople[spouseIndex];
-                        if (this.shouldLog(spouse.Id)) {
-                            console.log(`Checking root status for spouse: ${spouse.Id}`);
-                        }
 
                         // Prioritize LNAB status directly
                         if (this.shouldPrioritize(spouse, person)) {
@@ -2102,13 +2057,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Check if the person's LNAB is among the target surname or its variants
         const personHasTargetLNAB = standardizedVariants.includes(personLNAB);
 
-        if (this.shouldLog(person.Id) || this.shouldLog(spouse.Id)) {
-            console.log(`Person ${person.Id} has target LNAB: ${personHasTargetLNAB}`);
-
-            console.log(`Person ${person.Id} LNAB: ${personLNAB}`);
-
-            console.log(`Spouse ${spouse.Id} LNAB: ${spouseLNAB}`);
-        }
         // Priority is given if the person has the target LNAB directly, and the spouse does not
         if (personHasTargetLNAB && !standardizedVariants.includes(spouseLNAB)) {
             // Further check if spouse's current last name matches the person's to handle cases of marriage where names are changed
@@ -2121,21 +2069,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         return false;
     }
 
-    /*
-    findRootIndividuals(parentToChildrenMap, peopleById) {
-        let childIds = new Set();
-        Object.values(parentToChildrenMap).forEach((children) => {
-            children.forEach((childId) => childIds.add(String(childId)));
-        });
-
-        let rootIndividuals = Object.keys(peopleById).filter((id) => {
-            return !childIds.has(String(id)); // Ensure `id` is treated as a string
-        });
-
-        return rootIndividuals;
-    }
-    */
-
     hasTargetLNAB(person) {
         // Assuming you have a method to get the list of target LNAB variants
         const targetLNABs = this.getSurnameVariants(); // Make sure this function exists and returns the correct data
@@ -2145,34 +2078,19 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     shouldBeRoot(person, peopleById) {
-        if (this.shouldLog(person.Id)) {
-            console.log(`Checking root status for person: ${person.Id}`);
-        }
         if (this.hasTargetLNAB(person)) {
-            if (this.shouldLog(person.Id)) {
-                console.log(`Person ${person.Id} is a root because they have the target LNAB.`);
-            }
             return true; // Direct LNAB match
         }
 
         // For non-LNAB persons, check if any spouse qualifies them as a non-root
-        let isRoot = person.Spouses.every((spouseId) => {
-            let spouse = peopleById[spouseId];
-            if (!spouse) {
-                if (this.shouldLog(person.Id)) {
-                    console.log(`Person ${person.Id} treated as root since spouse ${spouseId} not in dataset.`);
-                }
+        let isRoot = person.Spouses.every((spouse) => {
+            let spouseInDataset = peopleById[spouse.Id];
+            if (!spouseInDataset) {
                 return true; // Treat as root if spouse is not in dataset, no other qualifying information
             }
             let spouseHasLNAB = this.hasTargetLNAB(spouse);
-            if (this.shouldLog(person.Id)) {
-                console.log(`Spouse ${spouseId} of person ${person.Id} has LNAB: ${spouseHasLNAB}`);
-            }
             return !spouseHasLNAB; // Spouse does not have LNAB, therefore person can be root
         });
-        if (this.shouldLog(person.Id)) {
-            console.log(`Person ${person.Id} root status determined: ${isRoot}`);
-        }
         return isRoot;
     }
 
@@ -2290,6 +2208,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
+        let privacySticker = this.getPrivacySticker(person);
+        if (person.Privacy >= 50) {
+            privacySticker = "";
+        }
 
         let html = `<li class='level_${level} person ${duplicateClass}' data-id='${personIdStr}' data-name='${
             person.Name
@@ -2299,7 +2221,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             person.Name
         }" target="_blank">${fullName}</a> <span class="wtid">(${
             person.Name || ""
-        })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} `;
+        })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} ${privacySticker}`;
 
         // Add Spouses
         html += this.displaySpouses(person, level);
@@ -2410,17 +2332,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         let categoryHTML = ``;
         const tags = [];
 
-        if (person.Categories && person.Categories.length > 0) {
-            categoryHTML += this.processNameStudies(person);
-
+        if (person?.Categories?.length > 0 || person?.Templates?.length > 0) {
+            if (person?.Categories?.length > 0) {
+                categoryHTML += this.processNameStudies(person);
+            }
             categoryMappings.forEach(({ pattern, symbol, not }) => {
                 tags.push(this.processCategories(person, pattern, symbol, { not }));
             });
-        }
-
-        let log = false;
-        if (person.Id == 39892371) {
-            log = true;
         }
 
         const hasDNA =
@@ -2495,18 +2413,18 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     processCategories(person, pattern, symbol, options = {}) {
         // Extract the 'name' values from person.Templates
-        const templateNames = person.Templates.map((template) => template.name);
+        const templateNames = person?.Templates?.map((template) => template.name);
 
         // Combine person.Categories and templateNames into a single array
-        const categoriesAndTemplates = person.Categories.concat(templateNames);
+        const categoriesAndTemplates = person?.Categories?.concat(templateNames);
         //categoriesAndTemplates
 
-        if (categoriesAndTemplates.length > 2 && !this.shownCats.has(person.Id)) {
+        if (categoriesAndTemplates?.length > 2 && !this.shownCats.has(person.Id)) {
             this.shownCats.add(person.Id);
         }
 
         let out = categoriesAndTemplates
-            .filter((category) => {
+            ?.filter((category) => {
                 // Check if pattern matches the category or template name
                 const matchesPattern = pattern?.test(category);
 
@@ -2970,10 +2888,11 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Temporary fix (Maybe)
         // Remove any ul.children whose parent is not a li.person
-        $("ul.children").each((index, children) => {
-            const $children = $(children);
-            if (!$children.parent().hasClass("person")) {
-                $children.remove();
+        $("ul.children").each((index, child) => {
+            const $child = $(child);
+            if (!$child.parent().hasClass("person")) {
+                console.log("Removing orphaned children element", $child);
+                $child.remove();
             }
         });
         wtViewRegistry.showNotice("Building statistics...");
@@ -2986,31 +2905,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#loadButton").prop("disabled", false);
         wtViewRegistry.clearStatus();
     }
-
-    /*
-    async arrangeTreeElements() {
-        const allChildrenElements = $("ul.children");
-        const totalElements = allChildrenElements.length;
-        let processedElements = 0;
-
-        for (const childrenElement of allChildrenElements) {
-            const $childrenElement = $(childrenElement);
-            const thisParent = $childrenElement.data("parent-id");
-            $("li.person[data-id='" + thisParent + "']").append($childrenElement);
-
-            processedElements++;
-            let percentage = (processedElements / totalElements) * 100;
-            this.updateLoadingBar(percentage);
-
-            if ($childrenElement.parent().hasClass("children")) {
-                console.log("Error: Parent not found for children element", $childrenElement);
-            }
-            // Yield control back to the browser
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-        this.identifyChildrensParents();
-    }
-    */
 
     async arrangeTreeElements() {
         const allChildrenElements = $("ul.children");
@@ -3052,8 +2946,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         let newParentElement = $('<li class="person" data-id="' + parentId + '">');
         newParentElement.append(childrenElement);
         $("ul.tree").append(newParentElement); // Assuming 'ul.tree' is your main tree container
-
-        console.log("New root created for missing LNAB spouse:", parentId);
     }
 
     identifyChildrensParents() {
@@ -3180,10 +3072,11 @@ window.OneNameTrees = class OneNameTrees extends View {
     getComparableDate(person, primaryDateType = "BirthDate") {
         // If both BirthDate and DeathDate are unknown, set the lowest priority
         if (
-            (person.BirthDate === "0000-00-00" || person.BirthDate === "unknown" || !person.BirthDate) &&
-            person.BirthDateDecade === "unknown" &&
-            (person.DeathDate === "0000-00-00" || person.DeathDate === "unknown" || !person.DeathDate) &&
-            person.DeathDateDecade === "unknown"
+            !person ||
+            ((person.BirthDate === "0000-00-00" || person.BirthDate === "unknown" || !person.BirthDate) &&
+                person.BirthDateDecade === "unknown" &&
+                (person.DeathDate === "0000-00-00" || person.DeathDate === "unknown" || !person.DeathDate) &&
+                person.DeathDateDecade === "unknown")
         ) {
             return "9999-12-31";
         }
@@ -4245,6 +4138,14 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
     }
 
+    getPrivacySticker(person) {
+        const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
+        const privacyImg = privacyLevel ? privacyLevel.img : "";
+        const privacyTitle = privacyLevel ? privacyLevel.title : "";
+        const privacy = privacyImg ? `<img src="${privacyImg}" class="privacySticker" title="${privacyTitle}" />` : "";
+        return privacy;
+    }
+
     buildTable() {
         const $this = this;
         if ($("#tableView").length) {
@@ -4337,10 +4238,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
             const created = person.Created ? formatCreatedModifiedDates(person.Created) : "";
             const touched = person.Touched ? formatCreatedModifiedDates(person.Touched) : "";
-            const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
-            const privacyImg = privacyLevel ? privacyLevel.img : "";
-            const privacyTitle = privacyLevel ? privacyLevel.title : "";
-            const privacy = privacyImg ? `<img src="${privacyImg}" title="${privacyTitle}" />` : "";
+            const privacy = $this.getPrivacySticker(person);
 
             const $row = $("<tr>");
             // Add data to the row: data-name, data-id, data-father, data-mother, data-gender
@@ -4782,12 +4680,12 @@ window.OneNameTrees = class OneNameTrees extends View {
         let watchlistFetched = false;
         if (!this.watchlist && this.userId) {
             this.showLoadingBar();
-            this.updateLoadingBar(5);
+            this.updateLoadingBar(2);
             wtViewRegistry.showNotice("Fetching your watchlist...");
             const watchlist = await this.watchlistPromise;
             watchlistFetched = true;
             wtViewRegistry.showNotice("Watchlist retrieved...");
-            this.updateLoadingBar(10);
+            this.updateLoadingBar(5);
             // Store the watchlist in localStorage with a timestamp and the user's ID and LRU strategy
             const watchlistData = {
                 timestamp: Date.now(),

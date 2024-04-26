@@ -1298,7 +1298,10 @@ input[type="submit"],
 .oneNameTrees td.privacy {
   text-align: center;
 }
-.oneNameTrees td.privacy img {
+.oneNameTrees li.person img.privacySticker {
+  float: right;
+}
+.oneNameTrees img.privacySticker {
   width: 1.5em;
 }
 
