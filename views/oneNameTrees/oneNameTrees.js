@@ -218,6 +218,7 @@ window.OneNameTrees = class OneNameTrees extends View {
           A key to the symbols can be found below (on this About page). One key one to know about it the red badge
           symbol, which represents a One Name Study category/sticker. If it has a green circle around it, it has a
           One Name Study sticker for this page's target surname.</li>
+        <li>Privacy icons are shown to the right of (semi-private) profiles.</li>
         <li>The numbers in green to the left of the person's name are
           the number of descendants that the person has in this dataset. Click the + button to see their children.</li>
         <li> 
@@ -228,6 +229,7 @@ window.OneNameTrees = class OneNameTrees extends View {
               <ul id="generalStatsHelp">
                 <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
                 as last name at birth. Click the button to see a graph.</li>
+                <li><label>Male/Female</label>: The gender distribution of the people in the dataset.</li>
                 <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
                 Click the button to see a graph.</li>
                 <li><label>Average Children per Male over 16</label>: This is per male over 16 
@@ -3455,6 +3457,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             })
         );
 
+        const genderDistribution = stats.getGenderDistribution();
+        const genderText = `${genderDistribution.Male}/${genderDistribution.Female}`;
+        $statsContainer.append(
+            this.createStatItem("Male/Female: ", genderText, {
+                title: "Gender distribution of the dataset.",
+                classes: "genderCount",
+            })
+        );
+
         // Average Lifespan
         $statsContainer.append(
             this.createStatItem("Average Lifespan: ", stats.getAverageLifespan() + " years", {
@@ -3754,6 +3765,10 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         // Total People
         $statsContainer.append(this.createStatItem("Total People: ", periodStats.peopleCount));
+
+        // Male/Female
+        const genderText = `${periodStats.males}/${periodStats.females}`;
+        $statsContainer.append(this.createStatItem("Male/Female: ", genderText));
 
         // Average Lifespan
         $statsContainer.append(
@@ -4987,7 +5002,6 @@ window.OneNameTrees = class OneNameTrees extends View {
             ["Total Children", familyTreeStats.getTotalChildren()],
             ["Average Children per Person", familyTreeStats.getAverageChildrenPerPerson()],
             ["Average Children per Male Over 16", familyTreeStats.getAverageChildrenPerMaleOver16()],
-            // ... add other general statistics you need ...
         ];
 
         // Generate most common names and locations for the general statistics

@@ -341,6 +341,8 @@ export class FamilyTreeStatistics {
                         totalAgeAtDeath: 0,
                         deathsCount: 0,
                         malesOver16Count: 0,
+                        males: 0,
+                        females: 0,
                         names: { Male: {}, Female: {}, Unknown: {} },
                         locationStatistics: new LocationStatistics([]), // Initialize LocationStatistics for the period
                         migrantIds: [],
@@ -348,6 +350,7 @@ export class FamilyTreeStatistics {
                 }
 
                 if (person.Gender === "Male") {
+                    statsByPeriod[period].males++;
                     const ageAtDeath = this.calculateAgeAtDeath(person.BirthDate, person.DeathDate);
                     const isOver16 =
                         ageAtDeath >= 16 || (ageAtDeath === null && this.isAdultBasedOnYear(person.BirthDate));
@@ -355,6 +358,10 @@ export class FamilyTreeStatistics {
                     if (isOver16) {
                         statsByPeriod[period].malesOver16Count++;
                     }
+                }
+
+                if (person?.Gender === "Female") {
+                    statsByPeriod[period].females++;
                 }
 
                 statsByPeriod[period].peopleCount++;
