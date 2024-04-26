@@ -229,7 +229,9 @@ window.OneNameTrees = class OneNameTrees extends View {
               <ul id="generalStatsHelp">
                 <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
                 as last name at birth. Click the button to see a graph.</li>
-                <li><label>Male/Female</label>: The gender distribution of the people in the dataset.</li>
+                <li><label>Male/Female</label>: The gender distribution of the people in the dataset. If the numbers don't add up to the 
+                same number as the 'Total People' number, it will be due to some people being either missing a gender (in the database) 
+                or being private.</li>
                 <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
                 Click the button to see a graph.</li>
                 <li><label>Average Children per Male over 16</label>: This is per male over 16 
