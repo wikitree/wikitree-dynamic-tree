@@ -2213,7 +2213,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
         let privacySticker = this.getPrivacySticker(person);
-        if (person.Privacy >= 50) {
+        if (person.Privacy == 60) {
             privacySticker = "";
         }
 
