@@ -5455,6 +5455,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 //     APP_ID,
                 //     newPrimeID,
             let theListOfIDs = [newPrimeID];    
+            let theOptions = {};
+            
             loadingTD.innerHTML = "loading";
             if (passNum == 1) {
                 theOptions = { ancestors: Math.min(9,WebsView.numGensRetrieved) };
