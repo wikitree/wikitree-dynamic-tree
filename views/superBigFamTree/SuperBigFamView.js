@@ -1383,6 +1383,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 { value: "Gender", text: "Gender" },
                                 { value: "Ancestor", text: "Ancestor family" },
                                 { value: "AncsAndDescs", text: "Ancestor / Descendant family" },
+                                { value: "Relationship", text: "Relationship" },
+                                { value: "RelationshipPlus", text: "Relationship++" },
 
                                 { value: "Family", text: "Family Stats" },
                                 // { value: "Location", text: "!* Location" },
@@ -1785,11 +1787,22 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     nodeWidth = boxWidth * 1.5;
                 }
 
-                if (showBadges || colourBy == "Family" || colourBy == "Location") {
+                if (
+                    showBadges ||
+                    colourBy == "Family" ||
+                    colourBy == "Location" ||
+                    colourBy == "Relationship" ||
+                    colourBy == "RelationshipPlus"
+                ) {
                     legendDIV.style.display = "block";
                     stickerLegend.style.display = "block";
                     legendToggle.style.display = "inline-block";
-                    if (colourBy == "Family" || colourBy == "Location") {
+                    if (
+                        colourBy == "Family" ||
+                        colourBy == "Location" ||
+                        colourBy == "Relationship" ||
+                        colourBy == "RelationshipPlus"
+                    ) {
                         BRbetweenLegendAndStickers.style.display = "block";
                         LegendTitleH3.style.display = "block";
                         condLog(
@@ -1800,6 +1813,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         );
                         if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
                             LegendTitle.textContent = "Age at death";
+                        } else if (colourBy == "Relationship") {
+                            LegendTitle.textContent = "Relationship";
+                        } else if (colourBy == "RelationshipPlus") {
+                            LegendTitle.textContent = "Specific Relationship";
+                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
                         } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
                             LegendTitle.textContent = "Birth Country";
                         } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
@@ -1933,6 +1951,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
                 LegendTitle.textContent = "Age at death";
+            } else if (colourBy == "Relationship") {
+                LegendTitle.textContent = "Relationship";
+            } else if (colourBy == "RelationshipPlus") {
+                LegendTitle.textContent = "Specific Relationship";
             } else if (colourBy == "Family" && colour_options_specifyByFamily == "numSpouses") {
                 LegendTitle.textContent = "Number of spouses";
             } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
@@ -12665,7 +12687,246 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         thisTextColourArray = {};
         let thisColourArray = getColourArray();
 
-        if (settingForColourBy == "Family") {
+        if ( settingForColourBy == "RelationshipPlus") {
+            // condLog("TextClrSetting = ", txtClrSetting);
+
+            let innerCode = "";
+            let clrSwatchArray = [];
+            for (let index = 0; index < 12; index++) {
+                let theTextFontClr = "Black";
+                let luminance = calcLuminance(thisColourArray[index]);
+                if (txtClrSetting == "B&W") {
+                    theTextFontClr = luminance > 0.179 ? "Black" : "White";
+                } else if (txtClrSetting == "alt") {
+                    theTextFontClr = fontList[(luminance > 0.179 ? 0 : 5) + (index % 5)]; // Math.max(0, Math.min(4, Math.round(5 * Math.random())))];
+                } else {
+                    theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
+                }
+                condLog("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
+
+                clrSwatchArray.push(
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                        thisColourArray[index] +
+                        ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" +
+                        theTextFontClr +
+                        "'>A</text></svg>"
+                );
+            }
+
+            let relationshipName = [
+                "Primary",
+                "Direct Ancestor",
+                "Spouse",
+                "Sibling",
+                "Child",
+                "Nibling (niece/nephew)",
+                "Pibling (aunt/uncle)",
+                "In-law",
+            ];
+            let relationshipColour = [
+                "#ffE000",
+                "red",
+                "pink",
+                "lightgreen",
+                "deepskyblue",
+                "cyan",
+                "orange",
+                "#EAE5E2",
+            ];
+
+            innerCode = "";
+            for (let R = 0; R < relationshipName.length; R++) {
+                // const element = relationshipName[R];
+                let thisClrSwatch =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    relationshipColour[R] +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                innerCode += thisClrSwatch + "&nbsp;" + relationshipName[R] + "<br/>";
+            }
+
+            innerCode += "<br/><B>Grandchildren</B> <br/>";
+            let legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
+            let legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+
+            for (let R = 0; R < legendLetters.length; R++) {
+                // const element = relationshipName[R];
+                let thisClr = hslToRGBhex(200, 1 , 0.6 + R*0.05);
+                let thisClrSwatch =
+                    "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                    thisClr +
+                    // legendColours[R] +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
+                    legendLetters[R] +
+                    "</text></svg>";
+                innerCode += thisClrSwatch + "&nbsp;&nbsp;&nbsp;";
+            }
+            innerCode += "<br/>";
+
+            innerCode += "<br/><B>Grand Nieces & Nephews</B> <br/>";
+            legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
+            legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+
+            for (let R = 0; R < legendLetters.length; R++) {
+                // const element = relationshipName[R];
+                let thisClr = hslToRGBhex(180, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
+                
+                let thisClrSwatch =
+                    "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                   thisClr +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
+                    legendLetters[R] +
+                    "</text></svg>";
+                innerCode += thisClrSwatch + "&nbsp;&nbsp;&nbsp;";
+            }
+            innerCode += "<br/>";
+
+            innerCode += "<br/><B>Grand Aunts & Uncles</B> <br/>";
+            legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
+            legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+
+            for (let R = 0; R < legendLetters.length; R++) {
+                // const element = relationshipName[R];
+                let thisClr = hslToRGBhex(30, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
+                let thisClrSwatch =
+                    "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                    thisClr +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
+                    legendLetters[R] +
+                    "</text></svg>";
+                innerCode += thisClrSwatch + "&nbsp;&nbsp;&nbsp;";
+            }
+            innerCode += "<br/>";
+
+            // hslToRGBhex(hue, sat, lum)
+
+            innerCode += "<br/><B>Cousins</B> <br/>";
+            legendLetters = ["1C", "2C", "3C", "4C", "5C", "6C"];
+            legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+
+            // for (let L = 0; L < legendLetters.length; L++) {
+            //     let thisClr = hslToRGBhex(290 + L*7, 1 -  0*L * 0.12, 1 / 2 + 0*L * 0.05);
+            //     // const element = relationshipName[L];
+            //     let thisClrSwatch =
+            //         "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+            //         thisClr +
+            //         ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
+            //         legendLetters[L] +
+            //         "</text></svg>";
+            //     innerCode += thisClrSwatch + "&nbsp;&nbsp;&nbsp;";
+            // }
+            // innerCode += "<br/>";
+
+
+            for (let R = 0; R < 3; R++) {
+                for (let L = 0; L < 6 - R; L++) {
+                    // const element = relationshipName[R];
+                    let thisClr = hslToRGBhex(280 + R*22, 1 - 0*L * 0.12, 1 / 2 + L * 0.08);
+                    let thisClrSwatch =
+                        "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                        thisClr +
+                        ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
+                        (R+1) + "C" + (L > 0 ? L + "R" : "") +
+                        "</text></svg>";
+                    innerCode += thisClrSwatch + "&nbsp;&nbsp;&nbsp;";
+                }
+                innerCode += "<br/>";
+            }
+
+            // let clrSwatchPrimary =
+            //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+            //     "yellow" +
+            //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+            // let clrSwatchDirects =
+            //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+            //     "red" +
+            //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+            // innerCode = clrSwatchPrimary + " Primary <br/>" + clrSwatchDirects + " Direct Ancestor";
+            // for (let index = 0; index < 10; index++) {
+            //     innerCode += "<br/>" + clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
+            // }
+            // innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
+
+            //  condLog("thisTextColourArray", thisTextColourArray);
+            innerLegendDIV.innerHTML = innerCode;
+            legendDIV.style.display = "block";
+        } else if (settingForColourBy == "Relationship") {
+            // condLog("TextClrSetting = ", txtClrSetting);
+
+            let innerCode = "";
+            let clrSwatchArray = [];
+            for (let index = 0; index < 12; index++) {
+                let theTextFontClr = "Black";
+                let luminance = calcLuminance(thisColourArray[index]);
+                if (txtClrSetting == "B&W") {
+                    theTextFontClr = luminance > 0.179 ? "Black" : "White";
+                } else if (txtClrSetting == "alt") {
+                    theTextFontClr = fontList[(luminance > 0.179 ? 0 : 5) + (index % 5)]; // Math.max(0, Math.min(4, Math.round(5 * Math.random())))];
+                } else {
+                    theTextFontClr = "Black"; // not really needed ... but for completeness sake, and to make sure there's a legit value
+                }
+                condLog("FamTxtClr: Bkgd:", thisColourArray[index], "lum:", luminance, "txt:", theTextFontClr);
+                thisTextColourArray[thisColourArray[index].toUpperCase()] = theTextFontClr;
+
+                clrSwatchArray.push(
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                        thisColourArray[index] +
+                        ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15 fill='" +
+                        theTextFontClr +
+                        "'>A</text></svg>"
+                );
+            }
+
+            let relationshipName = [
+                "Primary",
+                "Direct Ancestor",
+                "Spouse",
+                "Sibling",
+                "Child",
+                "Nibling (niece/nephew)",
+                "Pibling (aunt/uncle)",
+                "Cousin",
+                "In-law",
+            ];
+            let relationshipColour = [
+                "yellow",
+                "red",
+                "pink",
+                "lightgreen",
+                "deepskyblue",
+                "cyan",
+                "orange",
+                "magenta",
+                "#EAE5E2",
+            ];
+
+            innerCode = "";
+            for (let R = 0; R < relationshipName.length; R++) {
+                // const element = relationshipName[R];
+                let thisClrSwatch =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    relationshipColour[R] +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+                innerCode += thisClrSwatch + "&nbsp;" + relationshipName[R] + "<br/>";
+            }
+            // let clrSwatchPrimary =
+            //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+            //     "yellow" +
+            //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+            // let clrSwatchDirects =
+            //     "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+            //     "red" +
+            //     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+            // innerCode = clrSwatchPrimary + " Primary <br/>" + clrSwatchDirects + " Direct Ancestor";
+            // for (let index = 0; index < 10; index++) {
+            //     innerCode += "<br/>" + clrSwatchArray[index + 1] + " " + index * 10 + " - " + (index * 10 + 9);
+            // }
+            // innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
+
+            //  condLog("thisTextColourArray", thisTextColourArray);
+            innerLegendDIV.innerHTML = innerCode;
+            legendDIV.style.display = "block";
+        } else if (settingForColourBy == "Family") {
             // condLog("TextClrSetting = ", txtClrSetting);
 
             let innerCode = "";
@@ -14495,6 +14756,173 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
             }
             return thisColourArray[1 + (thisGen % thisColourArray.length)];
+
+        } else if (settingForColourBy == "RelationshipPlus") {
+            if (theCode.indexOf("IL") > -1 || theChunk.indexOf("IL") > -1) {
+                return "#E5E4E2";
+            } else if (theCode == "A0") {
+                return "#ffE000";
+            } else if (theChunk == "A0D1") {
+                if (theCode.indexOf("A0P") > -1) {
+                    return "pink";
+                } else if (theCode.indexOf("A0K") > -1) {
+                    return "deepskyblue";
+                }
+            } else if (theChunk == "S0") {
+                return "lightgreen";
+            } else if (theChunk.length == 2 && theChunk[0] == "A") {
+                return "red";
+            } else if (theChunk.length == 4 && theChunk == "A0D1") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else {
+                    return "deepskyblue";
+                }
+            } else if (theChunk.length == 4 && theChunk[0] == "A" && theChunk[2] == "D") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else {
+                    let R = 1.0 * theChunk[3] - 2;
+                    let thisClr = hslToRGBhex(200, 1, 0.6 + R * 0.05);
+                    return thisClr; // "deepskyblue";
+                }
+            } else if (theChunk.length == 4 && theChunk == "S0D1" ) {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else {
+                    return "cyan";
+                }
+            } else if (theChunk.length == 4 && theChunk[0] == "S" && theChunk[2] == "D") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else {
+                    let R = 1.0 * theChunk[3] - 2;
+                    let thisClr = hslToRGBhex(180, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
+                    return thisClr; //"cyan";
+                }
+            } else if (theChunk.length == 4 && theChunk == "A1C0" ) {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else if (theCode.indexOf("S") > -1) {
+                    if (theCode.indexOf("K") > -1) {
+                        return "magenta";
+                    } else {
+                        return "orange";
+                    }
+                }
+            } else if (theChunk.length == 4 && theChunk[0] == "A" && theChunk[2] == "C") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else if (theCode.indexOf("S") > -1) {
+                    let A = 1.0 * theChunk[1];
+                    let C = 1.0 * theChunk[3];
+                    if (theCode.indexOf("K") > -1) {
+                        // COUSINS
+                        let R = C - 1;
+                        let L = A - C;
+                        if (L < 0) {
+                            R += L;
+                            L = Math.abs(L);
+                        }
+                        let thisClr = hslToRGBhex(280 + R * 22, 1 - 0 * L * 0.12, 1 / 2 + L * 0.08);
+                        return thisClr; // "magenta";
+                    } else {
+                        // GRAND AUNT / UNCLES
+                        let R = A - 2;
+                        let L = C - 2;
+                        let thisClr = hslToRGBhex(30, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
+                        return thisClr; //"orange";
+                    }
+                }
+            }
+
+            // shouldn't venture beyond here ...
+
+            let thisRel = 0;
+            if (theChunk == "A0" || theChunk == "S0") {
+                thisRel = 8;
+            } else if (theChunk == "A0step") {
+                thisRel = 9;
+            } else if (theChunk.indexOf("A0D") > -1 || theChunk.indexOf("S0D") > -1) {
+                // down as many generations as there are Ds
+                thisRel = 8 - 1 * theChunk.substr(3, 1);
+                if (theCode.substr(-2, 1).indexOf("P") > -1) {
+                    thisRel += 1; // partner, not a kid, so up one generation
+                }
+            } else if (theChunk.indexOf("A") > -1) {
+                thisRel = 8 + 1 * theChunk.substr(1, 1);
+
+                if (theChunk.indexOf("C") > -1) {
+                    thisRel -= 1 * theChunk.substr(3, 1);
+                    if (theCode.substr(-2, 1).indexOf("P") > -1 && theChunk.substr(3, 1) > 0) {
+                        thisRel += 1; // partner, not a kid, so up one generation
+                    }
+                }
+            }
+            return thisColourArray[1 + (thisRel % thisColourArray.length)];
+        } else if (settingForColourBy == "Relationship") {
+            if (theCode.indexOf("IL") > -1 || theChunk.indexOf("IL") > -1) {
+                return "#E5E4E2";
+            } else if (theCode == "A0") {
+                return "#ffE000";
+            } else if (theChunk == "A0D1") {
+                if (theCode.indexOf("A0P") > -1) {
+                    return "pink";
+                } else if (theCode.indexOf("A0K") > -1) {
+                    return "deepskyblue";
+                }
+            } else if (theChunk == "S0") {
+                return "lightgreen";
+            } else if (theChunk.length == 2 && theChunk[0] == "A") {
+                return "red";
+            } else if (theChunk.length == 4 && theChunk[0] == "A" && theChunk[2] == "D") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else {
+                    return "deepskyblue";
+                }
+            } else if (theChunk.length == 4 && theChunk[0] == "S" && theChunk[2] == "D") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else {
+                    return "cyan";
+                }
+            } else if (theChunk.length == 4 && theChunk[0] == "A" && theChunk[2] == "C") {
+                if (theCode.indexOf("P") > -1) {
+                    return "#E5E4E2";
+                } else if (theCode.indexOf("S") > -1) {
+                    if (theCode.indexOf("K") > -1) {
+                        return "magenta";
+                    } else {
+                        return "orange";
+                    }
+                }
+            }
+
+            // shouldn't venture beyond here ....
+
+            let thisRel = 0;
+            if (theChunk == "A0" || theChunk == "S0") {
+                thisRel = 8;
+            } else if (theChunk == "A0step") {
+                thisRel = 9;
+            } else if (theChunk.indexOf("A0D") > -1 || theChunk.indexOf("S0D") > -1) {
+                // down as many generations as there are Ds
+                thisRel = 8 - 1 * theChunk.substr(3, 1);
+                if (theCode.substr(-2, 1).indexOf("P") > -1) {
+                    thisRel += 1; // partner, not a kid, so up one generation
+                }
+            } else if (theChunk.indexOf("A") > -1) {
+                thisRel = 8 + 1 * theChunk.substr(1, 1);
+
+                if (theChunk.indexOf("C") > -1) {
+                    thisRel -= 1 * theChunk.substr(3, 1);
+                    if (theCode.substr(-2, 1).indexOf("P") > -1 && theChunk.substr(3, 1) > 0) {
+                        thisRel += 1; // partner, not a kid, so up one generation
+                    }
+                }
+            }
+            return thisColourArray[1 + (thisRel % thisColourArray.length)];
         } else if (settingForColourBy == "Ancestor" || settingForColourBy == "AncsAndDescs") {
             let thisColourArray = [
                 "#FFFFFF",
