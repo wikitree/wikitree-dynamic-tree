@@ -11342,7 +11342,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 // do not show WikiTreeID during PRIVATIZE option
             } else {
                 // GO FOR IT
-                extrasAtBottom += "WikiTree ID: " + person._data.Name + `<button aria-label="Copy ID" class="copyWidget x-widget" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` + person._data.Name + `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
+                extrasAtBottom += "WikiTree ID: " + person._data.Name + `&nbsp;&nbsp;<button aria-label="Copy ID" class="copyWidget x-widget" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` + person._data.Name + `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
             }
 
         } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
@@ -12667,6 +12667,31 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         return inp.replace(/ /g, "_");
     }
 
+    SuperBigFamView.lastLegendColourHighlighted = "none";
+    SuperBigFamView.toggleLegendOptionToHighlight = function (option = 0, legend = "?") {
+        console.log("Just clicked on LEGEND TOGGLE for ",{option}, {legend});
+        if (SuperBigFamView.currentSettings["highlight_options_showHighlights"] == true) {
+            console.log("CANNOT show other highlights - must follow the Highlights By tab option");
+        } else {
+            console.log("CAN show highlights - bring it on !!!");
+            let highlightDescriptorDIV = document.getElementById("highlightDescriptor");
+            if (SuperBigFamView.lastLegendColourHighlighted == option) {
+                console.log("Click OFF - hide highlight");
+                SuperBigFamView.lastLegendColourHighlighted = "none";
+                highlightDescriptorDIV.style.display = "none";
+                document.getElementById("highlightPeepsDescriptor").innerText = "";
+            } else {
+                console.log("CLICK ON - SHOW a NEW COLOUR to Highlight!");
+                SuperBigFamView.lastLegendColourHighlighted = option;
+                highlightDescriptorDIV.style.display = "block";
+                document.getElementById("highlightPeepsDescriptor").innerText = legend;
+                
+            }
+            SuperBigFamView.redraw();
+
+        }
+    }
+
     var thisTextColourArray = {};
     function updateLegendIfNeeded() {
         condLog("DOING updateLegendIfNeeded");
@@ -12738,28 +12763,34 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 "deepskyblue",
                 "cyan",
                 "orange",
-                "#EAE5E2",
+                "#E5E4E2",
             ];
 
             innerCode = "";
             for (let R = 0; R < relationshipName.length; R++) {
                 // const element = relationshipName[R];
                 let thisClrSwatch =
-                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "<svg onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" + relationshipColour[R] + "','" + relationshipName[R]  + "');\" width=20 height=20><rect width=20 height=20 style='fill:" +
                     relationshipColour[R] +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
                 innerCode += thisClrSwatch + "&nbsp;" + relationshipName[R] + "<br/>";
             }
 
+            innerCode += "<br/>Click on a colour swatch to highlight a specific relationship.<br/>";
             innerCode += "<br/><B>Grandchildren</B> <br/>";
             let legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
-            let legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+            let legendDesc = ["Grandchildren", "Great Grandchildren", "2x Great Grandchildren", "3x Great Grandchildren", "4x Great Grandchildren", "5x Great Grandchildren"];
+            // let legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
 
             for (let R = 0; R < legendLetters.length; R++) {
                 // const element = relationshipName[R];
                 let thisClr = hslToRGBhex(200, 1 , 0.6 + R*0.05);
                 let thisClrSwatch =
-                    "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                    "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
+                    thisClr +
+                    "','" +
+                    legendDesc[R] +
+                    "');\" width=45 height=20><rect width=45 height=20 style='fill:" +
                     thisClr +
                     // legendColours[R] +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
@@ -12771,15 +12802,27 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             innerCode += "<br/><B>Grand Nieces & Nephews</B> <br/>";
             legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
-            legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+            legendDesc = [
+                "Grand-Niblings",
+                "Great Grand-Niblings",
+                "2x Great Grand-Niblings",
+                "3x Great Grand-Niblings",
+                "4x Great Grand-Niblings",
+                "5x Great Grand-Niblings",
+            ];
+            // legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
 
             for (let R = 0; R < legendLetters.length; R++) {
                 // const element = relationshipName[R];
                 let thisClr = hslToRGBhex(180, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
                 
                 let thisClrSwatch =
-                    "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
-                   thisClr +
+                    "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
+                    thisClr +
+                    "','" +
+                    legendDesc[R] +
+                    "');\" width=45 height=20><rect width=45 height=20 style='fill:" +
+                    thisClr +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
                     legendLetters[R] +
                     "</text></svg>";
@@ -12789,13 +12832,25 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             innerCode += "<br/><B>Grand Aunts & Uncles</B> <br/>";
             legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
-            legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+            legendDesc = [
+                "Grand-Piblings",
+                "Great Grand-Piblings",
+                "2x Great Grand-Piblings",
+                "3x Great Grand-Piblings",
+                "4x Great Grand-Piblings",
+                "5x Great Grand-Piblings",
+            ];
+            // legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
 
             for (let R = 0; R < legendLetters.length; R++) {
                 // const element = relationshipName[R];
                 let thisClr = hslToRGBhex(30, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
                 let thisClrSwatch =
-                    "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                    "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
+                    thisClr +
+                    "','" +
+                    legendDesc[R] +
+                    "');\" width=45 height=20><rect width=45 height=20 style='fill:" +
                     thisClr +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
                     legendLetters[R] +
@@ -12808,7 +12863,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             innerCode += "<br/><B>Cousins</B> <br/>";
             legendLetters = ["1C", "2C", "3C", "4C", "5C", "6C"];
-            legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
+            // legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
 
             // for (let L = 0; L < legendLetters.length; L++) {
             //     let thisClr = hslToRGBhex(290 + L*7, 1 -  0*L * 0.12, 1 / 2 + 0*L * 0.05);
@@ -12823,16 +12878,24 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // }
             // innerCode += "<br/>";
 
-
+            let which1st2nd3rd = ["1st","2nd","3rd"];
+            let whichOnceTwice = ["", "once removed", "twice removed", "3x removed", "4x removed", "5x removed"];
             for (let R = 0; R < 3; R++) {
                 for (let L = 0; L < 6 - R; L++) {
                     // const element = relationshipName[R];
                     let thisClr = hslToRGBhex(280 + R*22, 1 - 0*L * 0.12, 1 / 2 + L * 0.08);
+                    let thisLegendDesc = which1st2nd3rd[R] + " cousin " + whichOnceTwice[L];
                     let thisClrSwatch =
-                        "<svg width=45 height=20><rect width=45 height=20 style='fill:" +
+                        "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
+                        thisClr +
+                        "','" +
+                        thisLegendDesc +
+                        "');\" width=45 height=20><rect width=45 height=20 style='fill:" +
                         thisClr +
                         ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>" +
-                        (R+1) + "C" + (L > 0 ? L + "R" : "") +
+                        (R + 1) +
+                        "C" +
+                        (L > 0 ? L + "R" : "") +
                         "</text></svg>";
                     innerCode += thisClrSwatch + "&nbsp;&nbsp;&nbsp;";
                 }
@@ -14678,6 +14741,20 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         return theClr;
     }
 
+    function returnAfterCheckForHighlightColour( returnColour ) {
+        if (SuperBigFamView.lastLegendColourHighlighted == returnColour ) {
+            return "yellow";
+        } else {
+            console.log(
+                "Compare: ",
+                returnColour,
+                SuperBigFamView.lastLegendColourHighlighted,
+                SuperBigFamView.lastLegendColourHighlighted == returnColour
+            );
+            return returnColour;
+        }
+    }
+
     function getBackgroundColourFor(theDegree, theChunk, theId, theCode) {
         // e.g.  getBackgroundColourFor(2, "A0C1", 23683923, "A0RMS07")
 
@@ -14715,7 +14792,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         let numThisGen = 2 ** theDegree;
 
         if (theChunk.indexOf("IL") > -1) {
-            return "#E5E4E2";
+            return returnAfterCheckForHighlightColour("#E5E4E2");
         } else if (settingForColourBy == "Distance") {
             // if (
             //     SuperBigFamView.currentSettings["colour_options_primarySiblings"] == true &&
@@ -14765,60 +14842,60 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         } else if (settingForColourBy == "RelationshipPlus") {
             if (theCode.indexOf("IL") > -1 || theChunk.indexOf("IL") > -1) {
-                return "#E5E4E2";
+                return returnAfterCheckForHighlightColour("#E5E4E2");
             } else if (theCode == "A0") {
-                return "#ffE000";
+                return returnAfterCheckForHighlightColour("#ffE000");
             } else if (theChunk == "A0D1") {
                 if (theCode.indexOf("A0P") > -1) {
-                    return "pink";
+                    return returnAfterCheckForHighlightColour("pink");
                 } else if (theCode.indexOf("A0K") > -1) {
-                    return "deepskyblue";
+                    return returnAfterCheckForHighlightColour("deepskyblue");
                 }
             } else if (theChunk == "S0") {
-                return "lightgreen";
+                return returnAfterCheckForHighlightColour("lightgreen");
             } else if (theChunk.length == 2 && theChunk[0] == "A") {
-                return "red";
+                return returnAfterCheckForHighlightColour("red");
             } else if (theChunk.length == 4 && theChunk == "A0D1") {
                 if (theCode.indexOf("P") > -1) {
-                    return "#E5E4E2";
+                    return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else {
-                    return "deepskyblue";
+                    return returnAfterCheckForHighlightColour("deepskyblue");
                 }
             } else if (theChunk.length == 4 && theChunk[0] == "A" && theChunk[2] == "D") {
                 if (theCode.indexOf("P") > -1) {
-                    return "#E5E4E2";
+                    return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else {
                     let R = 1.0 * theChunk[3] - 2;
                     let thisClr = hslToRGBhex(200, 1, 0.6 + R * 0.05);
-                    return thisClr; // "deepskyblue";
+                    return returnAfterCheckForHighlightColour(thisClr); 
                 }
             } else if (theChunk.length == 4 && theChunk == "S0D1" ) {
                 if (theCode.indexOf("P") > -1) {
-                    return "#E5E4E2";
+                    return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else {
-                    return "cyan";
+                    return returnAfterCheckForHighlightColour("cyan");
                 }
             } else if (theChunk.length == 4 && theChunk[0] == "S" && theChunk[2] == "D") {
                 if (theCode.indexOf("P") > -1) {
-                    return "#E5E4E2";
+                    return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else {
                     let R = 1.0 * theChunk[3] - 2;
                     let thisClr = hslToRGBhex(180, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
-                    return thisClr; //"cyan";
+                    return returnAfterCheckForHighlightColour(thisClr);
                 }
             } else if (theChunk.length == 4 && theChunk == "A1C0" ) {
                 if (theCode.indexOf("P") > -1) {
-                    return "#E5E4E2";
+                    return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else if (theCode.indexOf("S") > -1) {
                     if (theCode.indexOf("K") > -1) {
-                        return "magenta";
+                        return returnAfterCheckForHighlightColour("magenta");
                     } else {
-                        return "orange";
+                        return returnAfterCheckForHighlightColour("orange");
                     }
                 }
             } else if (theChunk.length == 4 && theChunk[0] == "A" && theChunk[2] == "C") {
                 if (theCode.indexOf("P") > -1) {
-                    return "#E5E4E2";
+                    return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else if (theCode.indexOf("S") > -1) {
                     let A = 1.0 * theChunk[1];
                     let C = 1.0 * theChunk[3];
@@ -14831,13 +14908,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                             L = Math.abs(L);
                         }
                         let thisClr = hslToRGBhex(280 + R * 22, 1 - 0 * L * 0.12, 1 / 2 + L * 0.08);
-                        return thisClr; // "magenta";
+                        return returnAfterCheckForHighlightColour(thisClr); // "magenta";
                     } else {
                         // GRAND AUNT / UNCLES
                         let R = A - 2;
                         let L = C - 2;
                         let thisClr = hslToRGBhex(30, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
-                        return thisClr; //"orange";
+                        return returnAfterCheckForHighlightColour(thisClr); //"orange";
                     }
                 }
             }
@@ -14865,7 +14942,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     }
                 }
             }
-            return thisColourArray[1 + (thisRel % thisColourArray.length)];
+            return returnAfterCheckForHighlightColour(thisColourArray[1 + (thisRel % thisColourArray.length)]);
+
         } else if (settingForColourBy == "Relationship") {
             if (theCode.indexOf("IL") > -1 || theChunk.indexOf("IL") > -1) {
                 return "#E5E4E2";
