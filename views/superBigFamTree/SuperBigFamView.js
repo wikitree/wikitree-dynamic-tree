@@ -1759,6 +1759,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         };
 
+        SuperBigFamView.copyDataText = function (widget) {
+            navigator.clipboard.writeText(widget.getAttribute("data-copy-text"));
+            // console.log("copyDataText:", widget, widget.getAttribute("data-copy-text"));   
+        };
+        
+
         function settingsChanged(e) {
             if (SuperBigFamView.SBFtreeSettingsOptionsObject.hasSettingsChanged(SuperBigFamView.currentSettings)) {
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
@@ -11336,7 +11342,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 // do not show WikiTreeID during PRIVATIZE option
             } else {
                 // GO FOR IT
-                extrasAtBottom += "WikiTree ID: " + person._data.Name;            
+                extrasAtBottom += "WikiTree ID: " + person._data.Name + `<button aria-label="Copy ID" class="copyWidget x-widget" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` + person._data.Name + `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
             }
 
         } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
