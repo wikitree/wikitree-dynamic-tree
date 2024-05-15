@@ -365,8 +365,21 @@ does bio have unknown section headings
 
 Returns **[Boolean][6]** true if bio has unknown section headings
 
+### hasPaternalDnaConf
+
+does bio have paternal Dna confirmation
+
+Returns **[Boolean][6]** true if bio has paternal Dna confirmation
+
+### hasMaternalDnaConf
+
+does bio have maternal Dna confirmation
+
+Returns **[Boolean][6]** true if bio has maternal Dna confirmation
+
 ### getSectionMessages
 
+/\*\*
 Return messages for reporting
 
 Returns **[Array][10]** sectionMessages\[]
