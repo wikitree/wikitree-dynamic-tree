@@ -30,7 +30,7 @@ Cookies are used to store the API login id (if there is one), the starting profi
 
 This contains the code specific to drawing the WikiTree Dynamic Tree. It uses D3.js for the rendering and code from TreeAPI.js to pull data from the API.
 
-### [WikiTreeDynamicTree.js](views/restyledBaseExample/restyledBaseExample.js)
+### [restyledBaseExample.js](views/restyledBaseExample/restyledBaseExample.js)
 
 This contains the code specific to drawing the WikiTree Dynamic Tree. This is the same as the main version but with a different styling. The purpose is to show how new view types may be added.
 

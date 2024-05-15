@@ -5,6 +5,15 @@
   overflow-x: auto;
   width: 100%;
 }
+/* Normalise buttons */
+.ale button {
+  font-weight: normal;
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
 div.ale select,
 div.ale input {
   padding: 0.3em;
@@ -38,6 +47,7 @@ div.ale input {
   border-style: groove;
   border-color: rgb(192, 192, 192);
   border-image: initial;
+  border-radius: 5px;
   margin-bottom: 10px;
 }
 .ale fieldset input {
@@ -114,18 +124,6 @@ div.ale input {
 #edgeFactor,
 #tHFactor {
   width: 4em;
-}
-
-.ale #help-button {
-  background: darkgreen;
-  color: #fff;
-  font-size: 0.8em;
-  padding: 0.1em 0.5em;
-  border-radius: 50%;
-  float: right;
-  font-weight: bold;
-  cursor: pointer;
-  z-index: 11000;
 }
 
 .ale #help-text {
