@@ -1,29 +1,161 @@
 self.addEventListener(
     "message",
     function (e) {
-        console.log("Worker received data:", e.data);
+        console.log("4 Worker received data:", e.data);
         const familyMap = new Map(e.data.familyMap); // Reconstruct the map inside the worker
-        const results = processRelationships(familyMap, e.data.rootPersonId);
-        self.postMessage({ type: "completed", results: results });
+        const results = processRelationships(
+            familyMap,
+            e.data.rootPersonId,
+            e.data.loggedInUser,
+            e.data.loggedInUserId
+        );
+        console.log("7 Worker sending results:", results);
+        self.postMessage({ type: "completed", results: results.relationships, dbEntries: results.dbEntries });
     },
     false
 );
 
+/*
 self.addEventListener("error", function (e) {
-    console.error("Worker error:", e);
+    console.error("14 Worker error:", e);
     self.postMessage({ type: "error", message: `Worker error: ${e.message}` });
 });
+*/
 
-function processRelationships(familyMap, rootPersonId) {
+self.console.log = function (message) {
+    self.postMessage({ type: "log", message: message });
+};
+
+let logging = false;
+
+function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUserId) {
     // Logging to check the content
-    console.log("Processing relationships for root ID:", rootPersonId);
-    console.log("Family Map is:", familyMap);
+    console.log("27 Processing relationships for root ID:", rootPersonId);
+    console.log(familyMap);
 
     // Your previous relationship processing logic here
     let ancestorMaps = new Map();
     ancestorMaps.set("familyMap", familyMap);
     let relationships = determineAllRelationships(rootPersonId, ancestorMaps);
-    return relationships; // Assuming this returns the processed results
+
+    relationships.forEach((relationship) => {
+        if (relationship.personId) {
+            let rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
+            let personAncestors = buildAncestorMap(relationship.personId, familyMap, ancestorMaps);
+            let commonAncestors = findMostRecentCommonAncestors(
+                rootAncestors,
+                personAncestors,
+                familyMap,
+                rootPersonId,
+                relationship.personId,
+                ancestorMaps
+            );
+
+            if (commonAncestors.length > 0) {
+                relationship.commonAncestors = commonAncestors;
+            }
+        }
+    });
+
+    // Log logged in user and rootpersonid
+    console.log("Logged in user:" + loggedInUser);
+    console.log("Logged in user ID:" + loggedInUserId);
+    console.log("Root person ID:" + rootPersonId);
+
+    // Create data structure for IndexedDB entries
+    let dbEntries = createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap);
+
+    return { relationships, dbEntries }; // Return both processed results and db entries
+}
+
+function createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap) {
+    if (loggedInUserId != rootPersonId) {
+        return [];
+    }
+    return relationships.map((relationship) => {
+        const person = familyMap.get(relationship.personId);
+        return {
+            key: `${person.Name}:${loggedInUser}`,
+            value: {
+                theKey: `${person.Name}:${loggedInUser}`,
+                userId: loggedInUser,
+                id: person.Name,
+                distance: person?.Meta?.Degrees,
+                relationship: relationship.relationship,
+                commonAncestors: relationship.commonAncestors,
+            },
+        };
+    });
+}
+
+function findMostRecentCommonAncestors(
+    rootAncestors,
+    personAncestors,
+    familyMap,
+    rootPersonId,
+    personId,
+    ancestorMaps
+) {
+    let commonAncestors = [];
+    let minGeneration = Infinity;
+
+    rootAncestors.forEach((gen1, ancestorId) => {
+        if (personAncestors.has(ancestorId)) {
+            let gen2 = personAncestors.get(ancestorId);
+            let maxGen = Math.max(gen1, gen2);
+
+            if (maxGen < minGeneration) {
+                commonAncestors = [
+                    {
+                        ancestor_id: ancestorId,
+                        ancestor: getAncestorDetails(ancestorId, familyMap),
+                        relationshipToRoot: describeRelationshipFromGenerations(
+                            gen1,
+                            0,
+                            familyMap.get(ancestorId).Gender
+                        ),
+                        relationshipToPerson: describeRelationshipFromGenerations(
+                            gen2,
+                            0,
+                            familyMap.get(ancestorId).Gender
+                        ),
+                        path1Length: gen1,
+                        path2Length: gen2,
+                    },
+                ];
+                minGeneration = maxGen;
+            } else if (maxGen === minGeneration) {
+                commonAncestors.push({
+                    ancestor_id: ancestorId,
+                    ancestor: getAncestorDetails(ancestorId, familyMap),
+                    relationshipToRoot: describeRelationshipFromGenerations(gen1, 0, familyMap.get(ancestorId).Gender),
+                    relationshipToPerson: describeRelationshipFromGenerations(
+                        gen2,
+                        0,
+                        familyMap.get(ancestorId).Gender
+                    ),
+                    path1Length: gen1,
+                    path2Length: gen2,
+                });
+            }
+        }
+    });
+
+    return commonAncestors;
+}
+
+function getAncestorDetails(ancestorId, familyMap) {
+    let person = familyMap.get(ancestorId);
+    return {
+        mId: ancestorId,
+        mName: person.Name,
+        mFirstName: person.FirstName,
+        mLastNameCurrent: person.LastNameCurrent,
+        mLastNameAtBirth: person.LastNameAtBirth,
+        mSuffix: person.Suffix,
+        mGender: person.Gender,
+        displayName: person.LongNamePrivate,
+    };
 }
 
 /**
@@ -78,7 +210,7 @@ function findFirstIntersection(map1, map2) {
 // Function to determine relationships, assuming ancestorMaps includes familyMap
 function determineAllRelationships(rootPersonId, ancestorMaps) {
     if (!ancestorMaps || !ancestorMaps.get("familyMap")) {
-        console.error("Missing familyMap in ancestorMaps");
+        console.error("89 Missing familyMap in ancestorMaps");
         return [];
     }
 
@@ -96,23 +228,15 @@ function determineAllRelationships(rootPersonId, ancestorMaps) {
     return results;
 }
 
-let logging = false;
-
 function determineRelationship(rootPersonId, personId, ancestorMaps) {
     let familyMap = ancestorMaps.get("familyMap"); // Make sure this retrieval is valid
     let rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
     let personAncestors = buildAncestorMap(personId, familyMap, ancestorMaps);
 
     let intersection = findFirstIntersection(rootAncestors, personAncestors);
-    if (!intersection) return { personId, relationship: "No direct common ancestor", ancestorId: null };
+    if (!intersection) return { personId, relationship: "", ancestorId: null };
 
     let personData = familyMap.get(personId);
-
-    if (personData?.Name == "Boaz-310") {
-        logging = true;
-    } else {
-        logging = false;
-    }
 
     let { ancestorId, gen1, gen2 } = intersection;
     let relationship = describeRelationshipFromGenerations(gen1, gen2, personData.Gender);
@@ -130,7 +254,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     let diff = Math.abs(gen1 - gen2);
 
     if (logging) {
-        console.log("generations:", gen1, gen2, diff);
+        console.log("135 generations:", gen1, gen2, diff);
     }
 
     // Direct ancestor-descendant relationships
@@ -159,7 +283,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
 
     // Cousins, siblings, nieces, and nephews
     if (gen1 === gen2 && gen1 === 1) {
-        return { full: gender === "Male" ? "brother" : "sister", abbr: gender == "Male" ? "B" : "S" };
+        return { full: gender === "Male" ? "brother" : "sister", abbr: gender === "Male" ? "B" : "S" };
     }
 
     // Extended family (aunts/uncles, nieces/nephews, and further)
@@ -218,6 +342,11 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     if (removed > 0) {
         cousinDescription += ` ${onceTwice(removed)} removed`;
         cousinAbbr += `${removed}R`;
+    }
+
+    // Adjust description for first cousins
+    if (cousinLevel === 1) {
+        cousinDescription = removed > 0 ? "first" : "cousin";
     }
 
     return { full: cousinDescription, abbr: cousinAbbr.toUpperCase() };

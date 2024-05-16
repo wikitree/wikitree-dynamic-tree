@@ -237,6 +237,14 @@ export class CC7 {
 
     static cancelLoadController;
 
+    // Constants for IndexedDB
+    static CONNECTION_DB_NAME = "ConnectionFinderWTE";
+    static CONNECTION_DB_VERSION = 2;
+    static CONNECTION_STORE_NAME = "distance2";
+    static RELATIONSHIP_DB_NAME = "RelationshipFinderWTE";
+    static RELATIONSHIP_DB_VERSION = 2;
+    static RELATIONSHIP_STORE_NAME = "relationship2";
+
     constructor(selector, startId) {
         this.startId = startId;
         this.selector = selector;
@@ -906,6 +914,148 @@ export class CC7 {
         CC7.setInfoPanelMessage();
         CC7.firstTimeLoad = false;
     }
+    /*
+    static addRelationships() {
+        let familyMap = window.people;
+        const rootName = $("#wt-id-text").val().trim();
+        let rootId = null;
+        for (let [key, value] of familyMap.entries()) {
+            if (value.Name === rootName) {
+                rootId = key;
+                break;
+            }
+        }
+
+        let rootPersonId = rootId;
+        let ancestorMaps = new Map();
+        ancestorMaps.set("familyMap", familyMap);
+
+        const worker = new Worker("views/cc7/js/relationshipWorker.js");
+
+        const $this = this;
+        worker.onmessage = function (event) {
+            console.log("Worker returned:", event.data);
+            if (event.data.type === "completed") {
+                // Destroy the old Select2 instance before updating the table
+                if ($("#cc7PBFilter").data("select2")) {
+                    $("#cc7PBFilter").select2("destroy");
+                }
+                const updatedTable = CC7.updateTableWithResults(
+                    document.querySelector("#peopleTable"),
+                    event.data.results
+                );
+                document
+                    .getElementById("cc7Container")
+                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
+                CC7.initializeSelect2();
+
+                // Store data in IndexedDB
+                $this.storeDataInIndexedDB(event.data.dbEntries);
+
+                worker.terminate();
+            } else {
+                console.log("Worker log:", event.data.message);
+            }
+        };
+
+        worker.onerror = function (error) {
+            console.error("Error in worker:", error.message);
+        };
+
+        const familyMapEntries = Array.from(familyMap.entries());
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+
+        worker.postMessage({
+            cmd: "start",
+            familyMap: familyMapEntries,
+            rootPersonId: rootPersonId,
+            loggedInUser: loggedInUser,
+            loggedInUserId: loggedInUserId,
+        });
+    }
+
+    static storeDataInIndexedDB(dbEntries) {
+        const $this = this;
+        // Store in RelationshipFinderWTE
+        console.log("Storing data in IndexedDB.", dbEntries);
+        this.openDatabase(CC7.RELATIONSHIP_DB_NAME, CC7.RELATIONSHIP_DB_VERSION, CC7.RELATIONSHIP_STORE_NAME)
+            .then((db) => {
+                return $this.addDataToStore(db, CC7.RELATIONSHIP_STORE_NAME, dbEntries);
+            })
+            .then(() => {
+                console.log("Data added to RelationshipFinderWTE.");
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+
+        // Store in ConnectionFinderWTE
+        let connectionEntries = dbEntries.map((entry) => ({
+            theKey: entry.key,
+            userId: entry.value.userId,
+            id: entry.value.id,
+            distance: entry.value.distance,
+        }));
+
+        this.openDatabase(CC7.CONNECTION_DB_NAME, CC7.CONNECTION_DB_VERSION, CC7.CONNECTION_STORE_NAME)
+            .then((db) => {
+                return $this.addDataToStore(db, CC7.CONNECTION_STORE_NAME, connectionEntries);
+            })
+            .then(() => {
+                console.log("Data added to ConnectionFinderWTE.");
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+    }
+
+    static openDatabase(dbName, dbVersion, storeName) {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName, dbVersion);
+
+            request.onupgradeneeded = function (event) {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName, { keyPath: "key" });
+                }
+            };
+
+            request.onsuccess = function (event) {
+                resolve(event.target.result);
+            };
+
+            request.onerror = function (event) {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    static addDataToStore(db, storeName, data) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], "readwrite");
+            const objectStore = transaction.objectStore(storeName);
+
+            data.forEach((item) => {
+                const request = objectStore.add(item);
+                request.onsuccess = function () {
+                    // Successfully added item
+                };
+                request.onerror = function (event) {
+                    reject(event.target.error);
+                };
+            });
+
+            transaction.oncomplete = function () {
+                resolve();
+            };
+
+            transaction.onerror = function (event) {
+                reject(event.target.error);
+            };
+        });
+    }
+    */
 
     static addRelationships() {
         let familyMap = window.people;
@@ -924,6 +1074,7 @@ export class CC7 {
 
         const worker = new Worker("views/cc7/js/relationshipWorker.js");
 
+        const $this = this;
         worker.onmessage = function (event) {
             console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
@@ -939,8 +1090,14 @@ export class CC7 {
                     .getElementById("cc7Container")
                     .replaceChild(updatedTable, document.querySelector("#peopleTable"));
                 CC7.initializeSelect2();
+
+                // Store data in IndexedDB
+                $this.storeDataInIndexedDB(event.data.dbEntries);
+
                 worker.terminate();
-            } else {
+            } else if (event.data.type === "log") {
+                console.log("Worker log:", event.data.message);
+            } else if (event.data.type === "error") {
                 console.error("Worker returned an error:", event.data.message);
             }
         };
@@ -950,68 +1107,108 @@ export class CC7 {
         };
 
         const familyMapEntries = Array.from(familyMap.entries());
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+
         worker.postMessage({
             cmd: "start",
             familyMap: familyMapEntries,
             rootPersonId: rootPersonId,
+            metaData: { Degrees: 4 },
+            loggedInUser: loggedInUser,
+            loggedInUserId: loggedInUserId,
         });
     }
 
-    static addToIndexedDBs() {
-        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
-        const thisCC7 = $("#wt-id-text").val().trim();
-        console.log("loggedInUser", loggedInUser);
-        console.log("thisCC7", thisCC7);
+    static storeDataInIndexedDB(dbEntries) {
+        const $this = this;
+        console.log("Storing data in IndexedDB.", dbEntries);
+        this.openDatabase(CC7.RELATIONSHIP_DB_NAME, CC7.RELATIONSHIP_DB_VERSION, CC7.RELATIONSHIP_STORE_NAME)
+            .then((db) => {
+                return $this.addDataToStore(db, CC7.RELATIONSHIP_STORE_NAME, dbEntries);
+            })
+            .then(() => {
+                console.log("Data added to RelationshipFinderWTE.");
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+
+        let connectionEntries = dbEntries.map((entry) => ({
+            key: entry.key,
+            userId: entry.value.userId,
+            id: entry.value.id,
+            distance: entry.value.distance,
+        }));
+
+        this.openDatabase(CC7.CONNECTION_DB_NAME, CC7.CONNECTION_DB_VERSION, CC7.CONNECTION_STORE_NAME)
+            .then((db) => {
+                return $this.addDataToStore(db, CC7.CONNECTION_STORE_NAME, connectionEntries);
+            })
+            .then(() => {
+                console.log("Data added to ConnectionFinderWTE.");
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
     }
 
-    static addToDB(db, dbv, os, obj) {
-        const aDB = window.indexedDB.open(db, dbv);
-        aDB.onsuccess = function (event) {
-            const xdb = aDB.result;
-            const transaction = xdb.transaction([os], "readwrite");
-            transaction.oncomplete = function (event) {
-                xdb.transaction([os], "readwrite").objectStore(os).put(obj);
+    static openDatabase(dbName, dbVersion, storeName) {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName, dbVersion);
+
+            request.onupgradeneeded = function (event) {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName, { keyPath: "key" });
+                }
             };
-        };
+
+            request.onsuccess = function (event) {
+                resolve(event.target.result);
+            };
+
+            request.onerror = function (event) {
+                reject(event.target.error);
+            };
+        });
     }
 
-    static connectionFinderDBVersion = 1;
-    static relationshipFinderDBVersion = 1;
+    static addDataToStore(db, storeName, data) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], "readwrite");
+            const objectStore = transaction.objectStore(storeName);
 
-    static addDistance(data) {
-        const connectionFinderResultsDBReq = window.indexedDB.open("ConnectionFinder", this.connectionFinderDBVersion);
-        connectionFinderResultsDBReq.onsuccess = function (event) {
-            const obj = {
-                userId: data.userID,
-                id: data.profileID,
-                distance: data.distance,
-            };
-            addToDB("ConnectionFinderWTE", window.connectionFinderDBVersion, "distance", obj);
-        };
-        connectionFinderResultsDBReq.onerror = function (error) {
-            console.log(error);
-        };
-    }
+            data.forEach((item) => {
+                const getRequest = objectStore.get(item.key);
+                getRequest.onsuccess = function (event) {
+                    const existing = event.target.result;
+                    if (!existing || existing.value.relationship === "" || item.value.relationship !== "") {
+                        const request = objectStore.put(item);
+                        request.onsuccess = function () {
+                            // Successfully added/updated item
+                        };
+                        request.onerror = function (event) {
+                            reject(event.target.error);
+                        };
+                    }
+                };
+                getRequest.onerror = function (event) {
+                    reject(event.target.error);
+                };
+            });
 
-    static addRelationship(data) {
-        const relationshipFinderResultsDBReq = window.indexedDB.open(
-            "RelationshipFinderWTE",
-            window.relationshipFinderDBVersion
-        );
-        relationshipFinderResultsDBReq.onsuccess = function (event) {
-            const obj = {
-                userId: data.userID,
-                id: data.profileID,
-                distance: data.distance,
-                relationship: data.relationship,
-                commonAncestors: data.commonAncestors,
+            transaction.oncomplete = function () {
+                resolve();
             };
-            addToDB("RelationshipFinderWTE", window.relationshipFinderDBVersion, "relationship", obj);
-        };
+
+            transaction.onerror = function (event) {
+                reject(event.target.error);
+            };
+        });
     }
 
     static updateTableWithResults(table, results) {
-        this.addToIndexedDBs();
         const clone = table.cloneNode(true); // Deep clone the table
         results.forEach((result) => {
             const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
