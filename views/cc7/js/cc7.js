@@ -1071,6 +1071,9 @@ export class CC7 {
         let rootPersonId = rootId;
         let ancestorMaps = new Map();
         ancestorMaps.set("familyMap", familyMap);
+        const familyMapEntries = Array.from(familyMap.entries());
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
         const worker = new Worker("views/cc7/js/relationshipWorker.js");
 
@@ -1092,7 +1095,9 @@ export class CC7 {
                 CC7.initializeSelect2();
 
                 // Store data in IndexedDB
-                $this.storeDataInIndexedDB(event.data.dbEntries);
+                if (loggedInUserId == rootPersonId) {
+                    $this.storeDataInIndexedDB(event.data.dbEntries);
+                }
 
                 worker.terminate();
             } else if (event.data.type === "log") {
@@ -1106,15 +1111,10 @@ export class CC7 {
             console.error("Error in worker:", error.message);
         };
 
-        const familyMapEntries = Array.from(familyMap.entries());
-        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
-        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
-
         worker.postMessage({
             cmd: "start",
             familyMap: familyMapEntries,
             rootPersonId: rootPersonId,
-            metaData: { Degrees: 4 },
             loggedInUser: loggedInUser,
             loggedInUserId: loggedInUserId,
         });
