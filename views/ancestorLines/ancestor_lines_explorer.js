@@ -154,12 +154,13 @@ export class AncestorLinesExplorer {
                 Save</button
               ><button id="loadButton" class="small button" title="Load a previously saved data file and draw its tree.">
                 Load a File</button
+              ><button id="help-button" class="small button" title="About this application.">
+                ?</button
               ><input id="fileInput" type="file" style="display: none" />
-              <span id="help-button" title="About this">?</span>
               <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
               <br />
               <fieldset id="aleFieldset">
-                <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
+                <legend id="aleOptions" title="Click to Close/Open the options">Options - click here to close/open</legend>
                 <table id="optionsTbl">
                   <tr>
                     <td colspan="5">
@@ -203,10 +204,10 @@ export class AncestorLinesExplorer {
                       <input
                         id="hideTreeHeader"
                         type="checkbox"
-                        title="Remove the Parents, GrandParetns, etc header above the tree." />
+                        title="Remove the Parents, Grandparents, etc header above the tree." />
                       <label
                         for="hideTreeHeader"
-                        title="Remove the Parents, GrandParetns, etc header above the tree."
+                        title="Remove the Parents, Grandparents, etc header above the tree."
                         class="right">
                         Hide tree header</label
                       >
@@ -300,32 +301,76 @@ export class AncestorLinesExplorer {
                         Position relative to birth year</label
                       >
                     </td>
-                    <td style="text-align:right"><span title='Set what constitutes a "brick wall."'>
-                      Add to Brick Wall:&nbsp;<span></td>
-                    <td>
-                      <input
-                        id="noParents"
-                        type="checkbox"
-                        checked
-                        title="Anyone with no parents." />
-                      <label
-                        for="noParents"
-                        title="Anyone with no parents."
-                        class="right">
-                        No Parents [<span class="cnt" title="Number of profiles with no parent">?</span>]</label
-                      >
-                    </td>
-                    <td>
-                      <input
-                        id="oneParent"
-                        type="checkbox"
-                        title="Anyone with only one parent." />
-                      <label
-                        for="oneParent"
-                        title="Anyone with only one parent."
-                        class="right">
-                        Only 1 Parent [<span class="cnt" title="Number of profiles with only one parent">?</span>]</label
-                      >
+                    <td colspan=4 rowspan=2>
+                    <fieldset><legend title='Set what constitutes a "brick wall."'>Add to Brick Wall:</legend>
+                    <table>
+                      <tr>
+                        <td>
+                          <input
+                            id="noParents"
+                            type="checkbox"
+                            checked
+                            title="Anyone with no parents." />
+                          <label
+                            for="noParents"
+                            title="Anyone with no parents."
+                            class="right">
+                            No Parents [<span class="cnt" title="Number of profiles with no parent">?</span>]</label
+                          >
+                          </td>
+                        <td>
+                          <input
+                            id="oneParent"
+                            type="checkbox"
+                            title="Anyone with only one parent." />
+                          <label
+                            for="oneParent"
+                            title="Anyone with only one parent."
+                            class="right">
+                            Only 1 Parent [<span class="cnt" title="Number of profiles with only one parent">?</span>]</label
+                          >
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <input
+                            id="bioCheck"
+                            type="checkbox"
+                            title="Anyone with only one parent." />
+                          <label
+                            for="bioCheck"
+                            title="Anyone with issues reported by Bio Check."
+                            class="right">
+                            Bio Check [<span class="cnt" title="Number of profiles with Bio Check Issues">?</span>]</label
+                          >
+                        </td>
+                        <td>
+                          <input
+                            id="noNoSpouses"
+                            type="checkbox"
+                            title='Anyone who does not have their "No more spouses" checkbox set.' />
+                          <label
+                            for="noNoSpouses"
+                            title='Anyone who does not have their "No more spouses" checkbox set.'
+                            class="right">
+                            No "no more spouses" [<span class="cnt" title='Number of profiles with "No more spouses" not checked'>?</span>]</label
+                          >
+                        </td>
+                        <td>
+                          <input
+                            id="noNoChildren"
+                            type="checkbox"
+                            title='Anyone who does not have their "No more children" checkbox set.' />
+                          <label
+                            for="noNoChildren"
+                            title='Anyone who does not have their "No more children" checkbox set.'
+                            class="right">
+                            No "no more children" [<span class="cnt" title='Number of profiles with "No more children" not checked'>?</span>]</label
+                          >
+                        </td>
+                      </tr>
+                    </table></fieldset>
                     </td>
                   </tr>
                   <tr>
@@ -352,42 +397,6 @@ export class AncestorLinesExplorer {
                       >
                     </td>
                     <td></td>
-                    <td>
-                      <input
-                        id="bioCheck"
-                        type="checkbox"
-                        title="Anyone with only one parent." />
-                      <label
-                        for="bioCheck"
-                        title="Anyone with issues reported by Bio Check."
-                        class="right">
-                        Bio Check [<span class="cnt" title="Number of profiles with Bio Check Issues">?</span>]</label
-                      >
-                    </td>
-                    <td>
-                      <input
-                        id="noNoSpouses"
-                        type="checkbox"
-                        title='Anyone who does not have their "No more spouses" checkbox set.' />
-                      <label
-                        for="noNoSpouses"
-                        title='Anyone who does not have their "No more spouses" checkbox set.'
-                        class="right">
-                        No "no more spouses" [<span class="cnt" title='Number of profiles with "No more spouses" not checked'>?</span>]</label
-                      >
-                    </td>
-                    <td>
-                      <input
-                        id="noNoChildren"
-                        type="checkbox"
-                        title='Anyone who does not have their "No more children" checkbox set.' />
-                      <label
-                        for="noNoChildren"
-                        title='Anyone who does not have their "No more children" checkbox set.'
-                        class="right">
-                        No "no more children" [<span class="cnt" title='Number of profiles with "No more children" not checked'>?</span>]</label
-                      >
-                    </td>
                   </tr>
                 </table>
               </fieldset>

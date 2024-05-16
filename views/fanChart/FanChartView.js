@@ -19,6 +19,7 @@
 import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
+import { WTapps_Utils } from "./WTapps_Utils.js";
 
 (function () {
     const APP_ID = "FanChart";
@@ -32,13 +33,15 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
     let font4Info = "SansSerif";
 
     const numOfBadges = 5;
-    let badgeCharacters = " 12345";
+    
 
     /**
      * Constructor
      */
     var FanChartView = (window.FanChartView = function () {
         Object.assign(this, this?.meta());
+        // let theCookie = WTapps_Utils.getCookie("wtapps_fanchart");
+        // console.log(theCookie);
     });
 
     const PRINTER_ICON = "&#x1F4BE;";
@@ -48,13 +51,14 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "25 August 2023";
+    const AboutUpdateDate = "12 March 2024";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
         "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
-    const AboutAssistants = "Rob Pavey & Kay Knight";
-    const AboutLatestG2G = "https://www.wikitree.com/g2g/1621138/fan-chart-update-august-2023-chocolate-peanut-butter"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
+    const AboutAssistants = "Rob Pavey, Kay Knight, Riel Smit & Ian Beacall";
+    const AboutLatestG2G =
+        "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; //"https://www.wikitree.com/g2g/1621138/fan-chart-update-august-2023-chocolate-peanut-butter"; // "https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
     const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
@@ -427,6 +431,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
     /** Static variable to hold unique ids for private persons **/
     FanChartView.nextPrivateId = -1;
 
+    FanChartView.badgeCharacters = " 12345";
     FanChartView.theBadgeTracker = [];
 
     /** Static variable to hold the Maximum Angle for the Fan Chart (360 full circle / 240 partial / 180 semicircle)   **/
@@ -466,6 +471,113 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         };
     };
 
+  FanChartView.resetSettingsDIVtoDefaults = function () {
+      // console.log("Here you are inside FanChartView.resetSettingsDIVtoDefaults");
+      let theCookieString = JSON.stringify(FanChartView.currentSettings);
+      // console.log({ theCookieString });
+      if (theCookieString) {
+          FanChartView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+          FanChartView.tweakSettingsToHideShowElements();
+          FanChartView.updateLegendTitle();
+          FanChartView.updateHighlightDescriptor();
+
+          let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+          if (!showBadges) {
+              let stickerLegend = document.getElementById("stickerLegend");
+              stickerLegend.style.display = "none";
+              if (
+                  FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
+                  FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
+                  FanChartView.currentSettings["colour_options_colourBy"] != "Family"
+              ) {
+                  let legendDIV = document.getElementById("legendDIV");
+                  legendDIV.style.display = "none";
+              }
+          }
+
+          WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+              expires: 365,
+          });
+
+          FanChartView.redraw();
+      }
+  };
+
+  FanChartView.redrawAfterLoadSettings = function () {
+      // console.log("Here you are inside FanChartView.redrawAfterLoadSettings");
+
+      FanChartView.tweakSettingsToHideShowElements();
+      FanChartView.updateLegendTitle();
+      FanChartView.updateHighlightDescriptor();
+
+      let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+      if (!showBadges) {
+          let stickerLegend = document.getElementById("stickerLegend");
+          stickerLegend.style.display = "none";
+          if (
+              FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
+              FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
+              FanChartView.currentSettings["colour_options_colourBy"] != "Family"
+          ) {
+              let legendDIV = document.getElementById("legendDIV");
+              legendDIV.style.display = "none";
+          }
+      }
+
+      WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+          expires: 365,
+      });
+
+      FanChartView.redraw();
+  };
+
+     FanChartView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+         // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+         // console.log(theCookieString);
+         const theCookieSettings = JSON.parse(theCookieString);
+         // console.log("JSON version of the settings are:", theCookieSettings);
+         for (const key in theCookieSettings) {
+             if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                 const element = theCookieSettings[key];
+                 let theType = "";
+                 if (document.getElementById(key)) {
+                     theType = document.getElementById(key).type;
+                     if (theType == "checkbox") {
+                         document.getElementById(key).checked = element;
+                     } else if (theType == "number" || theType == "text") {
+                         document.getElementById(key).value = element;
+                     } else if (document.getElementById(key).classList.length > 0) {
+                         document.getElementById(key).value = element;
+                         theType = "optionSelect";
+                     } else {
+                         theType = document.getElementById(key);
+                     }
+                 } else {
+                     theType = "NO HTML OBJECT";
+                     let theRadioButtons = document.getElementsByName(key + "_radio");
+                     if (theRadioButtons) {
+                         // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                         theType = "radio x " + theRadioButtons.length;
+                         for (let i = 0; i < theRadioButtons.length; i++) {
+                             const btn = theRadioButtons[i];
+                             if (btn.value == element) {
+                                 btn.checked = true;
+                             }
+                         }
+                     }
+                 }
+                 // console.log(key, element, theType);
+                 if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
+                     FanChartView.currentSettings[key] = element;
+                 }
+             }
+         }
+
+         // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+         // FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
+         //     theCookieSettings["general_options_badgeLabels_otherValue"];
+     };
+
     FanChartView.theSVG = null; // to be assigned shortly
 
     FanChartView.prototype.init = function (selector, startId) {
@@ -479,6 +591,16 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         var self = this;
         FanChartView.fanchartSettingsOptionsObject = new SettingsOptions.SettingsOptionsObject({
             viewClassName: "FanChartView",
+            saveSettingsToCookie: true,
+            /*
+                IF this saveSettingsToCookie is set to TRUE, then additional functions are needed in this app
+
+                NEEDED:  The Tree App that uses this saveSettingsToCookie MUST have these functions defined:
+                        appObject.resetSettingsDIVtoDefaults
+                        appObject.redrawAfterLoadSettings
+                        appObject.updateCurrentSettingsBasedOnCookieValues
+                        
+                */
             tabs: [
                 {
                     name: "general",
@@ -1151,7 +1273,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                 "<text id=badgeCharacter" +
                 i +
                 " font-weight=bold x=8 y=17 fill='white'>" +
-                badgeCharacters[i] +
+                FanChartView.badgeCharacters[i] +
                 "</text></svg>" +
                 stickerCatNameSelectorHTML.replace(/1/g, i);
         }
@@ -1166,7 +1288,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             SVGbtnCLOSE +
             "</a></span>" +
             highlightHTML +
-            "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Update Legend</A></DIV><div id=innerLegend></div>" +
+            "<H3 class=quarterEmBottomMargin id=LegendTitleH3><span id=LegendTitle></span></H3><div id=refreshLegend style='display:none'><A onclick='FanChartView.refreshTheLegend();'>Click to Update Legend</A></DIV><div id=innerLegend></div>" +
             badgesHTML +
             "</div>";
 
@@ -1301,12 +1423,16 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             condLog("Update Badge Labels");
             for (let b = 1; b <= numOfBadges; b++) {
                 let badgeCharTxt = document.getElementById("badgeCharacter" + b);
-                badgeCharTxt.textContent = badgeCharacters[b];
+                badgeCharTxt.textContent = FanChartView.badgeCharacters[b];
             }
         }
 
         function settingsChanged(e) {
             if (FanChartView.fanchartSettingsOptionsObject.hasSettingsChanged(FanChartView.currentSettings)) {
+                console.log("Settings Changed:", FanChartView.currentSettings);
+                WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+                    expires: 365,
+                }); 
                 // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 // condLog("NEW settings are:", FanChartView.currentSettings);
 
@@ -1338,11 +1464,11 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                 ) {
                     let badgeLabels = FanChartView.currentSettings["general_options_badgeLabels"];
                     if (badgeLabels == "12345") {
-                        badgeCharacters = " 12345";
+                        FanChartView.badgeCharacters = " 12345";
                     } else if (badgeLabels == "ABCDE") {
-                        badgeCharacters = " ABCDE";
+                        FanChartView.badgeCharacters = " ABCDE";
                     } else if (badgeLabels == "custom") {
-                        badgeCharacters =
+                        FanChartView.badgeCharacters =
                             " " +
                             FanChartView.currentSettings["general_options_badgeLabels_otherValue"].trim() +
                             "*!@#^";
@@ -1373,37 +1499,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                             colour_options_specifyByFamily,
                             colour_options_specifyByLocation
                         );
-                        if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
-                            LegendTitle.textContent = "Age at death";
-                        } else if (colourBy == "Family" && colour_options_specifyByFamily == "numSpouses") {
-                            LegendTitle.textContent = "Number of spouses";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
-                            LegendTitle.textContent = "Birth Country";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
-                            LegendTitle.textContent = "Birth Region";
-                        } else if (
-                            colourBy == "Location" &&
-                            colour_options_specifyByLocation.indexOf("BirthTown") > -1
-                        ) {
-                            LegendTitle.textContent = "Birth Town";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
-                            LegendTitle.textContent = "Country of Death";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
-                            LegendTitle.textContent = "Region of Death";
-                        } else if (
-                            colourBy == "Location" &&
-                            colour_options_specifyByLocation.indexOf("DeathTown") > -1
-                        ) {
-                            LegendTitle.textContent = "Town of Death";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
-                            LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
-                        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
-                            LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
-                        } else if (colourBy == "BioCheck") {
-                            LegendTitle.textContent = "Bio Check status";
-                        } else if (colourBy == "DNAstatus") {
-                            LegendTitle.textContent = "Parental status";
-                        }
+                        FanChartView.updateLegendTitle();
                     } else {
                         BRbetweenLegendAndStickers.style.display = "none";
                         LegendTitleH3.style.display = "none";
@@ -1426,84 +1522,165 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                     FanChartView.removeBadges();
                 }
 
-                if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
-                    legendDIV.style.display = "block";
-                    legendToggle.style.display = "inline-block";
-
-                    document.getElementById("highlightDescriptor").style.display = "block";
-                    if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
-                        document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
-                        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
-                            document.getElementById("highlightPeepsDescriptor").innerHTML =
-                                "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
-                        }
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "mitochondrial DNA (mtDNA) ancestors";
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "X Chromosome inheritance path";
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "X, Y, mitochondrial DNA ancestors";
-                        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
-                            document.getElementById("highlightPeepsDescriptor").innerHTML =
-                                "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
-                        }
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Relationships confirmed by DNA";
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
-                        let catNameSelector = document.getElementById("highlight_options_catName");
-                        let rawValue = catNameSelector.value.trim();
-                        currentHighlightCategory = rawValue;
-                        document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Profiles that pass the Bio Check : have sources";
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Profiles that fail the Bio Check : no sources";
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckStyle") {
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Profiles that the Bio Check app flagged : style issues";
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
-                        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
-                        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
-                        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
-                        if (aliveYYYYSelector.value > 1) {
-                            document.getElementById("highlightPeepsDescriptor").textContent =
-                                "Alive on " +
-                                aliveDDSelector.value +
-                                " " +
-                                monthNames[aliveMMMSelector.value - 1] +
-                                " " +
-                                aliveYYYYSelector.value;
-                        } else {
-                            document.getElementById("highlightPeepsDescriptor").textContent =
-                                "Alive on " +
-                                aliveDDSelector.value +
-                                " " +
-                                monthNames[aliveMMMSelector.value - 1] +
-                                " " +
-                                1950;
-                        }
-                    } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioText") {
-                        let bioTextSelector = document.getElementById("highlight_options_bioText");
-                        document.getElementById("highlightPeepsDescriptor").textContent =
-                            'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
-                    } else {
-                        document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
-                    }
-                } else {
-                    document.getElementById("highlightDescriptor").style.display = "none";
-                }
-
+                FanChartView.updateHighlightDescriptor();
+               
                 FanChartView.myAncestorTree.draw();
             } else {
                 // condLog("NOTHING happened according to SETTINGS OBJ");
             }
         }
+
+        FanChartView.updateLegendTitle = function () {
+            let colourBy = FanChartView.currentSettings["colour_options_colourBy"];
+            let colour_options_specifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
+            let colour_options_specifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
+
+            let legendDIV = document.getElementById("legendDIV");
+            let LegendTitle = document.getElementById("LegendTitle");
+                
+            if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
+                LegendTitle.textContent = "Age at death";
+            } else if (colourBy == "Family" && colour_options_specifyByFamily == "numSpouses") {
+                LegendTitle.textContent = "Number of spouses";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
+                LegendTitle.textContent = "Birth Country";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
+                LegendTitle.textContent = "Birth Region";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("BirthTown") > -1) {
+                LegendTitle.textContent = "Birth Town";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
+                LegendTitle.textContent = "Country of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
+                LegendTitle.textContent = "Region of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("DeathTown") > -1) {
+                LegendTitle.textContent = "Town of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
+                LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
+                LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+            } else if (colourBy == "BioCheck") {
+                LegendTitle.textContent = "Bio Check status";
+            } else if (colourBy == "DNAstatus") {
+                LegendTitle.textContent = "Parental status";
+            }
+        }
+
+        FanChartView.updateHighlightDescriptor = function () {
+            let legendToggle = document.getElementById("legendASCII");
+            let innerLegend = document.getElementById("innerLegend");
+
+            if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
+                legendDIV.style.display = "block";
+                legendToggle.style.display = "inline-block";
+
+                document.getElementById("highlightDescriptor").style.display = "block";
+                if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
+                    if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                        document.getElementById("highlightPeepsDescriptor").innerHTML =
+                            "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                    }
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "mitochondrial DNA (mtDNA) ancestors";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "X, Y, mitochondrial DNA ancestors";
+                    if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                        document.getElementById("highlightPeepsDescriptor").innerHTML =
+                            "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
+                    }
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Relationships confirmed by DNA";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "cat") {
+                    let catNameSelector = document.getElementById("highlight_options_catName");
+                    let rawValue = catNameSelector.value.trim();
+                    currentHighlightCategory = rawValue;
+                    document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Profiles that pass the Bio Check : have sources";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Profiles that fail the Bio Check : no sources";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckStyle") {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Profiles that the Bio Check app flagged : style issues";
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
+                    let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+                    let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+                    let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+                    if (aliveYYYYSelector.value > 1) {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Alive on " +
+                            aliveDDSelector.value +
+                            " " +
+                            monthNames[aliveMMMSelector.value - 1] +
+                            " " +
+                            aliveYYYYSelector.value;
+                    } else {
+                        document.getElementById("highlightPeepsDescriptor").textContent =
+                            "Alive on " + aliveDDSelector.value + " " + monthNames[aliveMMMSelector.value - 1] + " " + 1950;
+                    }
+                } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+                    let bioTextSelector = document.getElementById("highlight_options_bioText");
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
+                } else {
+                    document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
+                }
+            } else {
+                document.getElementById("highlightDescriptor").style.display = "none";
+            }
+
+        }
+
+        // function updateCurrentSettingsBasedOnCookieValues(theCookieString){
+        //     const theCookieSettings = JSON.parse(theCookieString);
+        //     for (const key in theCookieSettings) {
+        //         if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+        //             const element = theCookieSettings[key];
+        //             let theType = "";
+        //             if (document.getElementById(key)) {
+        //                 theType = document.getElementById(key).type;
+        //                 if (theType == "checkbox") {
+        //                     document.getElementById(key).checked = element;
+        //                 } else if (theType == "number" || theType == "text") {
+        //                     document.getElementById(key).value = element;
+        //                 } else if (document.getElementById(key).classList.length > 0) {
+        //                     document.getElementById(key).value = element;
+        //                     theType = "optionSelect";
+        //                 } else {
+        //                     theType = document.getElementById(key);
+        //                 }
+        //             } else {
+        //                 theType = "NO HTML OBJECT";
+        //                 let theRadioButtons = document.getElementsByName(key + "_radio");
+        //                 if (theRadioButtons) {
+        //                     // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+        //                     theType = "radio x " + theRadioButtons.length;
+        //                     for (let i  = 0; i  < theRadioButtons.length; i ++) {
+        //                         const btn = theRadioButtons[i ];
+        //                         if(btn.value == element) {
+        //                             btn.checked = true;
+        //                         }
+                                
+        //                     }
+        //                 }
+        //             }
+        //             // console.log(key, element, theType);
+        //             if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
+        //                 FanChartView.currentSettings[key] = element;
+        //             }
+        //         }
+        //     }
+
+        //     // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+        //     FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
+        //         theCookieSettings["general_options_badgeLabels_otherValue"];
+        // }
+        
+        
 
         // NEXT STEPS : Assign thisVal to actual currentSetting object
         // NEXT STEPS : Transfer this function to SettingsObject class
@@ -1569,55 +1746,69 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         FanChartView.fanchartSettingsOptionsObject.setActiveTab("names");
         FanChartView.currentSettings = FanChartView.fanchartSettingsOptionsObject.getDefaultOptions();
 
-        // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
-        let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-        let showMarriageSelector = document.getElementById("date_options_showMarriage");
+        let theCookieString = WTapps_Utils.getCookie("wtapps_fanchart");
+        if (theCookieString) {
+            FanChartView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+        }
 
-        let colourizeColoursTab = document.getElementById("colour_options_colourizeRepeats");
-        let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
-        let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
-        colourizeColoursTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('colour');");
-        colourizeGeneralTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('general');");
-        colourizeHighlightTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('highlight');");
+        // SETUP some ON CHANGE events so that changing options INSIDE the Settings Panel
+        // will immediately HIDE / SHOW other elements, as necessary
 
-        // condLog("bkgdClrSelector", bkgdClrSelector);
+         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
+         let showMarriageSelector = document.getElementById("date_options_showMarriage");
         bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
         showMarriageSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
-        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
-        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
-        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
-        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
-        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
-        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-        specLocSelector.style.display = "none";
-        specFamSelector.style.display = "none";
-        specLocSelectorLabel.style.display = "none";
-        specFamSelectorLabel.style.display = "none";
-        specLocSelectorBR.style.display = "none";
-        specFamSelectorBR.style.display = "none";
 
-        // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
-        let highlightSelector = document.getElementById("highlight_options_highlightBy");
-        highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
-        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        let howDNAlinksSelector = document.getElementById("highlight_options_howDNAlinks");
-        let catNameSelector = document.getElementById("highlight_options_catName");
-        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
-        catNameSelector.style.display = "none";
-        catNameSelectorLabel.style.display = "none";
+         let colourizeColoursTab = document.getElementById("colour_options_colourizeRepeats");
+         let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
+         let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
+         colourizeColoursTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('colour');");
+         colourizeGeneralTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('general');");
+         colourizeHighlightTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('highlight');");
 
-        let bioTextSelector = document.getElementById("highlight_options_bioText");
-        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
-        bioTextSelector.style.display = "none";
-        bioTextSelectorLabel.style.display = "none";
+         let highlightSelector = document.getElementById("highlight_options_highlightBy");
+         highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+         
+        // CALL this FUNCTION to do the necessary tweaking to HIDE or SHOW elements
+        // from inside the Settings panel, based on options chosen
+        FanChartView.tweakSettingsToHideShowElements();
+            
+        FanChartView.updateHighlightDescriptor();
+        FanChartView.updateLegendTitle();
+        
+        let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+        let stickerLegend = document.getElementById("stickerLegend");
 
-        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
-        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
-        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+        if (showBadges == false) {
+            FanChartView.removeBadges();
+            stickerLegend.style.display = "none";
+        } else {
+            let badgeLabels = FanChartView.currentSettings["general_options_badgeLabels"];
+            if (badgeLabels == "12345") {
+                FanChartView.badgeCharacters = " 12345";
+            } else if (badgeLabels == "ABCDE") {
+                FanChartView.badgeCharacters = " ABCDE";
+            } else if (badgeLabels == "custom") {
+                FanChartView.badgeCharacters =
+                    " " + FanChartView.currentSettings["general_options_badgeLabels_otherValue"] + "*!@#^";
+            }
 
-        aliveYYYYSelector.parentNode.parentNode.style.display = "none";
-        aliveMMMSelector.parentNode.style.display = "none";
-        aliveDDSelector.parentNode.style.display = "none";
+            updateBadgeLabels();
+            // console.log(
+            //     "SHOW BADGES:",
+            //     showBadges,
+            //     stickerLegend,
+            //     badgeLabels,
+            //     FanChartView.badgeCharacters,
+            //     FanChartView.currentSettings
+            // );
+        }
+
+        // if (bkgdClrSelector.value == "Location") {
+        //     console.log("BKGD CLR ",bkgdClrSelector);
+        //     fillOutFamilyStatsLocsForAncestors();
+            // updateLegendIfNeeded();
+        // }
 
         condLog("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
         // FanChartView.showFandokuLink = theCheckIn;
@@ -1626,184 +1817,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let ahnNum = index + 2 ** genIndex;
-                //         g.append("g")
-                //             .attrs({
-                //                 id: "imgDNA-x-" + genIndex + "i" + index,
-                //                 class: "floatAbove",
-                //             })
-                //             .append("foreignObject")
-                //             .attrs({
-                //                 id: "imgDNA-x-" + genIndex + "i" + index + "inner",
-                //                 class: "centered",
-                //                 width: "20px",
-                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //                 x: 25 * index,
-                //                 y: 30 * genIndex,
-                //                 //
-                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //             })
-
-                //             .style("overflow", "visible") // so the name will wrap
-                //             .append("xhtml:div")
-                //             .attrs({
-                //                 id: "imgDNA-x-" + genIndex + "i" + index + "img",
-                //             })
-                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/X.gif'/>");
-
-                //         g.append("g")
-                //             .attrs({
-                //                 id: "imgDNA-y-" + genIndex + "i" + index,
-                //                 class: "floatAbove",
-                //             })
-                //             .append("foreignObject")
-                //             .attrs({
-                //                 id: "imgDNA-y-" + genIndex + "i" + index + "inner",
-                //                 class: "centered",
-                //                 width: "20px",
-                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //                 x: 25 * index,
-                //                 y: 30 * genIndex,
-                //                 //
-                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //             })
-
-                //             .style("overflow", "visible") // so the name will wrap
-                //             .append("xhtml:div")
-                //             .attrs({
-                //                 id: "imgDNA-y-" + genIndex + "i" + index + "img",
-                //             })
-                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/Y.gif'/>");
-
-                //         g.append("g")
-                //             .attrs({
-                //                 id: "imgDNA-mt-" + genIndex + "i" + index,
-                //                 class: "floatAbove",
-                //             })
-                //             .append("foreignObject")
-                //             .attrs({
-                //                 id: "imgDNA-mt-" + genIndex + "i" + index + "inner",
-                //                 class: "centered",
-                //                 width: "20px",
-                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //                 x: 25 * index,
-                //                 y: 30 * genIndex,
-                //                 //
-                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //             })
-
-                //             .style("overflow", "visible") // so the name will wrap
-                //             .append("xhtml:div")
-                //             .attrs({
-                //                 id: "imgDNA-mt-" + genIndex + "i" + index + "img",
-                //             })
-                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/mt.gif'/>");
-
-                //         g.append("g")
-                //             .attrs({
-                //                 id: "imgDNA-Ds-" + genIndex + "i" + index,
-                //                 class: "floatAbove",
-                //             })
-                //             .append("foreignObject")
-                //             .attrs({
-                //                 id: "imgDNA-Ds-" + genIndex + "i" + index + "inner",
-                //                 class: "centered",
-                //                 width: "20px",
-                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //                 x: 25 * index,
-                //                 y: 30 * genIndex,
-                //                 //
-                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //             })
-
-                //             .style("overflow", "visible") // so the name will wrap
-                //             .append("xhtml:div")
-                //             .attrs({
-                //                 id: "imgDNA-Ds-" + genIndex + "i" + index + "img",
-                //             })
-                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/descendant-link.gif'/>");
-
-                //         g.append("g")
-                //             .attrs({
-                //                 id: "imgDNA-As-" + genIndex + "i" + index,
-                //                 class: "floatAbove",
-                //             })
-                //             .append("foreignObject")
-                //             .attrs({
-                //                 id: "imgDNA-As-" + genIndex + "i" + index + "inner",
-                //                 class: "centered",
-                //                 width: "20px",
-                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //                 x: 25 * index,
-                //                 y: 30 * genIndex,
-                //                 //
-                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //             })
-
-                //             .style("overflow", "visible") // so the name will wrap
-                //             .append("xhtml:div")
-                //             .attrs({
-                //                 id: "imgDNA-As-" + genIndex + "i" + index + "img",
-                //             })
-                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/pedigree.gif'/>");
-
-                //         g.append("g")
-                //             .attrs({
-                //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index,
-                //                 class: "floatAbove",
-                //             })
-                //             .append("foreignObject")
-                //             .attrs({
-                //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index + "inner",
-                //                 class: "centered",
-                //                 width: "20px",
-                //                 height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //                 x: 25 * index,
-                //                 y: 30 * genIndex,
-                //                 //
-                //                 style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //             })
-
-                //             .style("overflow", "visible") // so the name will wrap
-                //             .append("xhtml:div")
-                //             .attrs({
-                //                 id: "imgDNA-Confirmed-" + genIndex + "i" + index + "img",
-                //             })
-                //             .html("<img height=24px src='https://www.wikitree.com/images/icons/dna/DNA-confirmed.gif'/>");
-
-                //         // for (let stickerCounter = 1; stickerCounter <= numOfBadges; stickerCounter++) {
-                //         //     const stickerPrefix = "badge" + stickerCounter + "-";
-
-                //         //     g.append("g")
-                //         //         .attrs({
-                //         //             id: stickerPrefix + ahnNum,
-                //         //             class: "floatAbove",
-                //         //         })
-                //         //         .append("foreignObject")
-                //         //         .attrs({
-                //         //             id: stickerPrefix + ahnNum + "inner",
-                //         //             class: "centered",
-                //         //             width: "20px",
-                //         //             height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                //         //             x: 25 * index,
-                //         //             y: 30 * genIndex + stickerCounter * 300,
-                //         //             //
-                //         //             style: "display:block;", //  // CHANGED FOR BADGE TESTING
-                //         //         })
-
-                //         //         .style("overflow", "visible") // so the name will wrap
-                //         //         .append("xhtml:div")
-                //         //         .attrs({
-                //         //             id: stickerPrefix + ahnNum + "svg",
-                //         //         })
-                //         //         .html(
-                //         //             "<svg width=24 height=24><rect width=24 height=24 rx=12 ry=12 style='fill:" +
-                //         //                 badgeClr[stickerCounter] +
-                //         //                 ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=7 y=17 fill='white'>" +
-                //         //                 stickerCounter +
-                //         //                 "</text></svg>"
-                //         //         );
-                //         // }
-
+                
                 if (ahnNum % 2 == 0 && ahnNum < 32) {
                     //             // "Portrait-ish" if you're looking at it from the spokes from the centre perspective
                     g.append("g")
@@ -1874,7 +1888,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         condLog("NOW IS THE TIME FOR ALL GOOD CHUMPS TO REFRESH THE LEGEND");
         let refreshLegendDIV = document.getElementById("refreshLegend");
         refreshLegendDIV.style.display = "none";
-        updateLegendIfNeeded();
+        FanChartView.updateLegendIfNeeded();
         FanChartView.redraw();
     };
 
@@ -1890,9 +1904,100 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         colourizeHighlightTab.checked = newSetting;
     };
 
+    FanChartView.tweakSettingsToHideShowElements = function () {
+        // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+
+        if (FanChartView.currentSettings["colour_options_colourBy"] != "Family") {
+            specFamSelector.style.display = "none";
+            specFamSelectorLabel.style.display = "none";
+            specFamSelectorBR.style.display = "none";
+        } else {
+            specFamSelector.style.display = "inline-block";
+            specFamSelectorLabel.style.display = "inline-block";
+            specFamSelectorBR.style.display = "inline-block";
+        }
+
+
+        if (FanChartView.currentSettings["colour_options_colourBy"] != "Location") {
+            specLocSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "none";
+        } else {
+            specLocSelector.style.display = "inline-block";
+            specLocSelectorLabel.style.display = "inline-block";
+            specLocSelectorBR.style.display = "inline-block";
+        }
+
+        // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
+        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+        let howDNAlinksRadiosBR = document.getElementById("highlight_options_howDNAlinks_BR");
+        let catNameSelector = document.getElementById("highlight_options_catName");
+        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+
+        if (FanChartView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") == -1) {
+            break4DNASelector.parentNode.style.display = "none";
+            howDNAlinksRadiosBR.parentNode.style.display = "none";
+        } else {
+            break4DNASelector.parentNode.style.display = "block";
+            howDNAlinksRadiosBR.parentNode.style.display = "block";
+        }
+
+        if (FanChartView.currentSettings["highlight_options_highlightBy"] != "cat") {
+            catNameSelector.style.display = "none";
+            catNameSelectorLabel.style.display = "none";
+        } else {
+            catNameSelector.style.display = "inline-block";
+            catNameSelectorLabel.style.display = "inline-block";
+        }
+
+        let bioTextSelector = document.getElementById("highlight_options_bioText");
+        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
+        if (FanChartView.currentSettings["highlight_options_highlightBy"] != "bioText") {
+            bioTextSelector.style.display = "none";
+            bioTextSelectorLabel.style.display = "none";
+        } else {
+            bioTextSelector.style.display = "inline-block";
+            bioTextSelectorLabel.style.display = "inline-block";
+        }
+
+        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+
+        if (FanChartView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+            aliveMMMSelector.parentNode.style.display = "none";
+            aliveDDSelector.parentNode.style.display = "none";
+        } else  {
+            aliveYYYYSelector.parentNode.parentNode.style.display = "block";
+            aliveMMMSelector.parentNode.style.display = "block";
+            aliveDDSelector.parentNode.style.display = "block";
+        }
+
+        if (document.getElementById("date_options_showMarriage").checked == true) {
+            document.getElementById("date_options_marriageBlend").parentNode.style.display = "inline-block";
+            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display =
+                "inline-block";
+        } else {
+            document.getElementById("date_options_marriageBlend").parentNode.style.display = "none";
+            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display =
+                "none";
+        }
+    }
+
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
     FanChartView.optionElementJustChanged = function () {
         condLog("optionElementJustChanged !!!!!");
+
+        // A SIMILAR FUNCTION to this one, but called initially when the app is loaded is this:
+        //  tweakSettingsToHideShowElements();
+        
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         let clrPaletteSelector = document.getElementById("colour_options_palette");
         let clrPaletteSelectorLabel = document.getElementById("colour_options_palette_label");
@@ -1989,10 +2094,6 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         catNameSelectorLabel.style.display = "none";
 
         if (highlightSelector.value == "cat") {
-            // break4DNASelector.parentNode.style.display = "none";
-            // howDNAlinksRadiosBR.parentNode.style.display = "none";
-            // bioTextSelector.style.display = "none";
-            // bioTextSelectorLabel.style.display = "none";
             catNameSelector.style.display = "inline-block";
             catNameSelectorLabel.style.display = "inline-block";
         } else if (highlightSelector.value == "aliveDay") {
@@ -2000,19 +2101,13 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             aliveMMMSelector.parentNode.style.display = "block";
             aliveDDSelector.parentNode.style.display = "block";
         } else if (highlightSelector.value == "bioText") {
-            // break4DNASelector.parentNode.style.display = "none";
-            // howDNAlinksRadiosBR.parentNode.style.display = "none";
             bioTextSelector.style.display = "inline-block";
             bioTextSelectorLabel.style.display = "inline-block";
-            // catNameSelector.style.display = "none";
-            // catNameSelectorLabel.style.display = "none";
+        } else if (highlightSelector.value == "bioCheckStyle" || highlightSelector.value == "bioCheckFail") {
+            // show nothing
         } else {
             break4DNASelector.parentNode.style.display = "block";
             howDNAlinksRadiosBR.parentNode.style.display = "inline-block";
-            // catNameSelector.style.display = "none";
-            // catNameSelectorLabel.style.display = "none";
-            // bioTextSelector.style.display = "none";
-            // bioTextSelectorLabel.style.display = "none";
         }
     };
 
@@ -2284,8 +2379,8 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
         window.setTimeout(FanChartView.resetView, 0); // use setTimeout to run in async mode so that the browser finishes rendering before calculating the bounding box
     }
 
-    function updateLegendIfNeeded() {
-        // condLog("DOING updateLegendIfNeeded");
+    FanChartView.updateLegendIfNeeded = function () {
+        // console.log("DOING updateLegendIfNeeded");
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -2425,6 +2520,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else if (settingForColourBy == "Location") {
+            // console.log("INSIDE Location IF");
             // thisTextColourArray = {};
             // let thisColourArray = getColourArray();
             let innerCode = "";
@@ -2432,6 +2528,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             uniqueLocationsArray = [];
             for (let index = 1; index < 2 ** FanChartView.numGens2Display; index++) {
                 const thisPerp = thePeopleList[FanChartView.myAhnentafel.list[index]];
+                // console.log(index, thisPerp, settingForSpecifyByLocation);
                 if (thisPerp) {
                     if (
                         settingForSpecifyByLocation == "BirthDeathCountry" ||
@@ -2450,6 +2547,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
                         if (thisLoc && uniqueLocationsArray.indexOf(thisLoc) == -1) {
                             uniqueLocationsArray.push(thisLoc);
                         }
+                        // console.log(thisLoc);
                     }
                 }
             }
@@ -3364,7 +3462,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
-            updateLegendIfNeeded();
+            FanChartView.updateLegendIfNeeded();
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
             hideMDateDIVs();
@@ -7975,7 +8073,7 @@ import { Biography } from "../../lib/biocheck-api/src/Biography.js";
             "text",
             thisBadge,
             { "font-weight": "bold", "fill": "white", "x": 10, "y": 22, "font-size": 20 },
-            badgeCharacters[badgeNum]
+            FanChartView.badgeCharacters[badgeNum]
         );
 
         // condLog("thisBadge:", thisRect, thisLabel,  thisBadge);

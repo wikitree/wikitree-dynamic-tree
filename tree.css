@@ -85,6 +85,7 @@ main {
   border: 1px solid #aaa;
   overflow: auto;
   min-height: 1000px;
+  margin: 0.5em;
 }
 
 /* A div that can be filled by launchTree() with specific information for each view. */
@@ -393,6 +394,12 @@ main {
   box-shadow: none;
 }
 
+/* Attempt to make something sticky so it doesn't scroll off the page */
+.stickyDIV {
+  position: sticky;
+  top: 1px;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
@@ -421,18 +428,21 @@ main {
     min-height: initial;
   }
 
-  #fanChartSVG, #superbigChartSVG {
+  #fanChartSVG,
+  #superbigChartSVG {
     /* fill a single page with the viewBox */
     max-width: 100vw !important;
     max-height: 99vh !important; /* 100vh seems to cause a second blank page */
   }
 
-  #fanChartSVG g.popup, #superbigChartSVG g.popup {
+  #fanChartSVG g.popup,
+  #superbigChartSVG g.popup {
     /* don't print popup elements */
     display: none !important;
   }
 
-  #fanChartSVG > #SVGgraphics, #superbigChartSVG>#SVGgraphics {
+  #fanChartSVG > #SVGgraphics,
+  #superbigChartSVG > #SVGgraphics {
     /* ignore the pan/zoom from the screen view */
     transform: translate(0, 0) scale(1) !important;
   }
@@ -441,4 +451,3 @@ main {
 /* This hides the unnecessary time column for the familyCalendar view's day/week displays. */
 /* Any use of the fullcalendar.js code that needs this column would mean doing this hiding differently. */
 /* td.fc-list-item-time { display: none; } !important; */
-

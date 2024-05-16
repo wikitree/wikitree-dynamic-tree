@@ -25,7 +25,12 @@ export class CC7 {
         <h2 style="text-align: center">About CC7 Views</h2>
         <p>
             CC7 Views allows you to retrieve the list of people connected to a profile within 7 degrees.
-            This guide explains how to use it.
+            This list of people does not include certain private profiles for which you are not on their
+            trusted list, therefore counts of relatives might not always be accurate.
+            Furthermore, sibling and child counts for people at the largest degree of separation will, by default, not be
+            accurate as the counts are calculated from other data loaded and for the outer ring, this data
+            is not always present. You can improve this by checking the "Improve count accuracy" checkbox and
+            re-loading the data, but this will result in slower rerieval times.
         </p>
         <h3>Loading the Data</h3>
         <p>
@@ -37,8 +42,7 @@ export class CC7 {
         </p>
         <ul>
             <li>Load fewer than the full 7 degrees.</li>
-            <li>Load only one degree at a time, but be aware that, in order to provide the correct relative
-                counts, we have to load degree N-1 and N+1 when loading degree N.</li>
+            <li>Load only one degree at a time.</li>
             <li>Save the data to a file for faster loading next time.</li>
             <li>If it takes too long, or you entered the wrong degree, you can cancel the profile load via
                 the Cancel button that appears during a load.</li>
@@ -75,8 +79,10 @@ export class CC7 {
         <h4>Selecting Subsets</h4>
         <ul>
             <li>Use the select option to the left of the HIERARCHY button to select which subset of the loaded profiles
-                should be displayed. This selection is also valid for the List View, but not for the Hierarchy View. You
-                have 6 choices:
+                should be displayed. This selection is also valid for the List View, but not for the Hierarchy View.
+                Note: Some of these subsets will be partial in the presence of private profiles since the latter will
+                "break" connections and the full subset then cannot be calculated.
+                You have 6 choices:
                 <ul>
                     <li><b>All</b> – All profiles.</li>
                     <li><b>Ancestors</b> – Only direct ancestors of the central person.</li>
@@ -133,7 +139,7 @@ export class CC7 {
         <h4>And...</h4>
         <ul>
             <li>
-                The Died Young images, <img src="./views/cc7/images/47px-RTC_-_Pictures.jpeg" /> and
+                The Died Young images, <img height=45px src="./views/cc7/images/pink-and-blue-ribbon.png" /> and
                 <img src="./views/cc7/images/50px-Remember_the_Children-26.png" /> by default, are used to flag people
                 (in their Children column) who died under age 5 and under age 16, respectively, provided they had
                 no children. You can change the image by clicking on the settings gear
@@ -256,6 +262,15 @@ export class CC7 {
             ><button id="savePeople" title="Save this data to a file for faster loading next time." class="small button">
                 Save</button
             ><button id="loadButton" class="small button" title="Load a previously saved data file.">Load A File</button
+            ><input
+              id="getExtraDegrees"
+              type="checkbox"
+              title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate." />
+            <label
+              for="getExtraDegrees"
+              title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate."
+              class="right">
+              Improve count accuracy</label
             ><input type="file" id="fileInput" style="display: none"/>
             <span id="adminButtons">
             <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
@@ -275,6 +290,12 @@ export class CC7 {
             .on("change", function () {
                 const theDegree = $("#cc7Degree").val();
                 CC7.handleDegreeChange(theDegree);
+            });
+        $("#getExtraDegrees")
+            .off("change")
+            .on("change", function () {
+                const theDegree = $("#cc7Degree").val();
+                CC7.updateButtonLabels(theDegree);
             });
         $("#fileInput").off("change").on("change", CC7.handleFileUpload);
         $("#getPeopleButton").off("click").on("click", CC7.getConnectionsAction);
@@ -333,8 +354,8 @@ export class CC7 {
     static setInfoPanelMessage() {
         const loadWarning = CC7.firstTimeLoad ? CC7.LONG_LOAD_WARNING : "";
         wtViewRegistry.setInfoPanel(
-            loadWarning +
-                `Bio Check is ${Settings.current["biocheck_options_biocheckOn"] ? "ENABLED" : "DISABLED"} in settings.`
+            `Bio Check is ${Settings.current["biocheck_options_biocheckOn"] ? "ENABLED" : "DISABLED"} in settings. ` +
+                loadWarning
         );
         wtViewRegistry.showInfoPanel();
     }
@@ -402,10 +423,18 @@ export class CC7 {
         });
     }
 
+    static updateButtonLabels(degree) {
+        const getExtra = document.getElementById("getExtraDegrees").checked;
+        $("#getPeopleButton").text(`Get CC${degree}${getExtra ? "+1" : ""}`);
+        $("#getDegreeButton").text(`Get Degree ${degree}${getExtra ? "±1" : ""} Only`);
+    }
+
     static handleDegreeChange(wantedDegree) {
         const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
-        $("#getPeopleButton").text(`Get CC${newDegree}`);
-        $("#getDegreeButton").text(`Get Degree ${newDegree} Only`);
+        CC7.updateButtonLabels(newDegree);
+        // const getExtra = document.getElementById("getExtraDegrees").checked;
+        // $("#getPeopleButton").text(`Get CC${newDegree}${getExtra ? "+1" : ""}`);
+        // $("#getDegreeButton").text(`Get Degree ${newDegree}${getExtra ? "±1" : ""} Only`);
         if (newDegree > 3) {
             CC7.LONG_LOAD_WARNING =
                 "Loading larger degrees may take a while, especially with Bio Check enabled " +
@@ -462,6 +491,7 @@ export class CC7 {
             CC7.firstTimeLoad = false;
             $("#getPeopleButton").prop("disabled", true);
             $("#getDegreeButton").prop("disabled", true);
+            $("#getExtraDegrees").prop("disabled", true);
             $("#cancelLoad").show();
             CC7.cancelLoadController = new AbortController();
             CC7.clearDisplay();
@@ -515,14 +545,15 @@ export class CC7 {
             }
             $("#getPeopleButton").prop("disabled", false);
             $("#getDegreeButton").prop("disabled", false);
+            $("#getExtraDegrees").prop("disabled", false);
             $("#cancelLoad").hide();
             CC7.setInfoPanelMessage();
         }
     }
 
     // Not only get people at degree 'theDegree' from 'wtid', but also those at degree (theDegree - 1) and
-    // (theDgree + 1), but flag the additional people as hidden. We get the extra degrees so that we can calculate
-    // the relatives counts correctly for the theDegree people.
+    // (theDgree + 1) (if the user chooses), but flag the additional people as hidden. We get the extra degrees
+    // so that we can calculate the relatives counts correctly for the theDegree people.
     static async collectPeopelAtNthDegree(wtId, theDegree, degreeCounts) {
         let start = 0;
         let isPartial = false;
@@ -534,7 +565,8 @@ export class CC7 {
         if (status == "aborted") {
             return [status, 0, false];
         }
-        if (status != "" && peopleData && peopleData.length > 0) {
+        let theresMore = status.startsWith("Maximum number of profiles");
+        if (status != "" && peopleData && peopleData.length > 0 && !theresMore) {
             isPartial = true;
         }
         let profiles = peopleData ? Object.values(peopleData) : [];
@@ -554,7 +586,8 @@ export class CC7 {
             Object.assign(resultByKeyReturned, resultByKey);
 
             // Check if we're done
-            if (profiles.length < limit) break;
+            // if (profiles.length < limit) break;
+            if (!theresMore) break;
 
             // We have more paged profiles to fetch
             ++callNr;
@@ -566,7 +599,8 @@ export class CC7 {
             if (sstatus == "aborted") {
                 return [sstatus, 0, false];
             }
-            if (sstatus != "") {
+            theresMore = sstatus.startsWith("Maximum number of profiles");
+            if (sstatus != "" && !theresMore) {
                 console.warn(`Partial results obtained when requesting relatives for ${wtId}: ${sstatus}`);
                 isPartial = true;
             }
@@ -585,15 +619,16 @@ export class CC7 {
 
     static async getPeopleForNthDegree(key, degree, start, limit) {
         // We get two more degrees than necessary to ensure we can calculate the relative counts
-        // correctly.
+        // correctly. --- We only do this if the user has asked us to do so
         try {
+            const getExtra = document.getElementById("getExtraDegrees").checked;
             const result = await WikiTreeAPI.postToAPI(
                 {
                     appId: Settings.APP_ID,
                     action: "getPeople",
                     keys: key,
-                    nuclear: degree + 1,
-                    minGeneration: degree - 1,
+                    nuclear: getExtra ? degree + 1 : degree,
+                    minGeneration: getExtra ? degree - 1 : degree,
                     start: start,
                     limit: limit,
                     fields: Settings.current["biocheck_options_biocheckOn"]
@@ -632,6 +667,10 @@ export class CC7 {
                 person.Id = id;
                 person.Name = `Private${id}`;
                 person.DataStatus = { Spouse: "", Gender: "" };
+            } else if (!person.Name) {
+                // WT seems not to return Name for some private profiles, even though they do
+                // return a positive id for them, so we just set Name to Id since WT URLs work for both.
+                person.Name = `${id}`;
             }
             if (!window.people.has(id)) {
                 if (id < 0) {
@@ -783,8 +822,10 @@ export class CC7 {
     }
 
     static async getConnections(maxWantedDegree) {
+        const getExtra = document.getElementById("getExtraDegrees").checked;
         $("#getPeopleButton").prop("disabled", true);
         $("#getDegreeButton").prop("disabled", true);
+        $("#getExtraDegrees").prop("disabled", true);
         $("#cancelLoad").show();
         CC7.cancelLoadController = new AbortController();
         Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID);
@@ -793,6 +834,7 @@ export class CC7 {
         const [resultByKey, isPartial, actualMaxDegree] = await CC7.makePagedCallAndAddPeople(
             wtId,
             maxWantedDegree,
+            getExtra,
             degreeCounts
         );
         if (resultByKey == "aborted") {
@@ -809,7 +851,16 @@ export class CC7 {
             window.rootId = +resultByKey[wtId]?.Id;
             CC7.populateRelativeArrays();
             const root = window.people.get(window.rootId);
-            const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root, maxWantedDegree);
+            let haveRoot = typeof root != "undefined";
+            if (!haveRoot) {
+                wtViewRegistry.showWarning(
+                    `The requested profile (${wtId}) was not returned by WikiTree, so some functionality, ` +
+                        "like the Hierarchy view and ancestor statistics, has been disabled and some filters " +
+                        "will return unexpected results."
+                );
+            }
+            const maxRequestedDeg = getExtra ? maxWantedDegree + 1 : maxWantedDegree;
+            const [nrDirectAncestors, nrDuplicateAncestors] = CC7.categoriseProfiles(root, maxRequestedDeg);
 
             window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
             Utils.hideShakingTree();
@@ -817,21 +868,32 @@ export class CC7 {
                 $("#degreesTable").remove();
                 $("#ancReport").remove();
             }
-            const maxNrPeople = 2 ** (maxWantedDegree + 3) - 2;
+
+            // A complete binary tree for N generations contains 2**N - 1 nodes.
+            // We requested maxRequestedDeg + 1 generations. However, the highest generation (like all others) contains
+            // parent ids, which we can examine to see if there are profiles for them (even though we did not load
+            // those profiles), therefore we actually know how many profiles exists in maxRequestedDeg + 2 generations.
+            // Furthermore we subtract 1 from the total because we are talking about direct ancestors, so the root
+            // is not counted.
+            const maxDirectAncestors = 2 ** (maxRequestedDeg + 2) - 2;
             $(`#${CC7Utils.CC7_CONTAINER_ID}`).append(
                 $(
                     "<table id='degreesTable'>" +
                         "<tr id='trDeg'><th>Degrees</th></tr>" +
                         "<tr id='trCon'><th>Connections</th></tr>" +
                         "<tr id='trTot'><th>Total</th></tr>" +
-                        `</table><p id="ancReport">Out of ${maxNrPeople} possible direct ancestors in ${
-                            maxWantedDegree + 3
-                        } generations, ${nrDirectAncestors} (${((nrDirectAncestors / maxNrPeople) * 100).toFixed(
-                            2
-                        )}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
-                            (nrDuplicateAncestors / nrDirectAncestors) *
-                            100
-                        ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
+                        '</table><p id="ancReport">' +
+                        (haveRoot && nrDirectAncestors > 0
+                            ? `Out of ${maxDirectAncestors} possible direct ancestors in ${
+                                  maxRequestedDeg + 2
+                              } generations, ${nrDirectAncestors} (${(
+                                  (nrDirectAncestors / maxDirectAncestors) *
+                                  100
+                              ).toFixed(2)}%) have WikiTree profiles and out of them, ${nrDuplicateAncestors} (${(
+                                  (nrDuplicateAncestors / nrDirectAncestors) *
+                                  100
+                              ).toFixed(2)}%) occur more than once due to pedigree collapse.</p>`
+                            : "</p>")
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1);
@@ -839,6 +901,7 @@ export class CC7 {
         }
         $("#getPeopleButton").prop("disabled", false);
         $("#getDegreeButton").prop("disabled", false);
+        $("#getExtraDegrees").prop("disabled", false);
         $("#cancelLoad").hide();
         CC7.setInfoPanelMessage();
         CC7.firstTimeLoad = false;
@@ -856,10 +919,10 @@ export class CC7 {
         return relIds;
     }
 
-    static async makePagedCallAndAddPeople(reqId, upToDegree, degreeCounts) {
-        // We get one more degree than necessary to ensure we can calculate the relative counts
+    static async makePagedCallAndAddPeople(reqId, upToDegree, getExtra, degreeCounts) {
+        // If the user wants, we get one more degree than necessary to ensure we can calculate the relative counts
         // correctly.
-        const upToDegreeToGet = upToDegree + 1;
+        const upToDegreeToGet = getExtra ? upToDegree + 1 : upToDegree;
         if ($("#degreesTable").length == 0) {
             $(`#${CC7Utils.CC7_CONTAINER_ID}`).append(
                 $(
@@ -909,7 +972,8 @@ export class CC7 {
                 return [status, false, 0];
             }
             const callTime = performance.now() - starttime;
-            if (status != "" && peopleData && peopleData.length > 0) {
+            getMore = status.startsWith("Maximum number of profiles");
+            if (status != "" && peopleData && peopleData.length > 0 && !getMore) {
                 isPartial = true;
             }
             const profiles = peopleData ? Object.values(peopleData) : [];
@@ -935,7 +999,7 @@ export class CC7 {
 
             start += limit;
             // Check if we're done
-            getMore = profiles.length == limit;
+            // getMore = profiles.length == limit;
         }
         console.log(
             `Retrieved ${window.people.size} unique CC${upToDegreeToGet} profiles with ${callNr} API call(s) in ${
@@ -972,8 +1036,8 @@ export class CC7 {
         }
     }
 
-    static categoriseProfiles(theRoot, maxWantedDegree) {
-        if (!theRoot) return;
+    static categoriseProfiles(theRoot, maxRequestedDegree) {
+        if (!theRoot) return [-1, -1];
         const ABOVE = true;
         const BELOW = false;
         const collator = new Intl.Collator();
@@ -1065,8 +1129,9 @@ export class CC7 {
                             }
                         }
 
-                        // Set ancestor relationship (we have requestd  maxWantedDegree + 1 from W^)
-                        if (parentDegree <= maxWantedDegree + 1) {
+                        // Set ancestor relationship. We have requestd maxRequestedDegree from WT, so to set isAncestor
+                        // we only check profiles up to and including that degree.
+                        if (parentDegree <= maxRequestedDegree) {
                             const parent = window.people.get(relId);
                             if (parent) {
                                 // console.log(
@@ -1332,14 +1397,14 @@ export class CC7 {
     static buildDegreeTableData(degreeCounts, fromDegree) {
         function addTableCol(i, degreeSum) {
             $("#trDeg").append($(`<td>${i}</td>`));
-            $("#trCon").append($(`<td>${degreeCounts[i]}</td>`));
+            $("#trCon").append($(`<td>${degreeCounts[i] || "?"}</td>`));
             if (fromDegree == 1) {
-                $("#trTot").append($(`<td>${degreeSum}</td>`));
+                $("#trTot").append($(`<td>${degreeSum || "?"}</td>`));
             }
         }
         let degreeSum = 0;
         for (let i = fromDegree; i <= window.cc7Degree; ++i) {
-            degreeSum = degreeSum + degreeCounts[i];
+            degreeSum = degreeSum + (degreeCounts[i] || 0);
             addTableCol(i, degreeSum);
         }
         if (degreeCounts[-1]) {
