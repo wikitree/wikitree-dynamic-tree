@@ -4663,34 +4663,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.showNotice("No results found.");
             $("#refreshData").prop("disabled", false);
             return;
-        } else if (found > 10000) {
-            // Number to the nearest 1000 (rounding down)
-            let roundedFound = Math.floor(found / 1000) * 1000;
-            function formatNumber(number, locales, options) {
-                return new Intl.NumberFormat(locales, options).format(number);
-            }
-            const formattedRoundedFound = formatNumber(roundedFound, "en-US");
-            let message;
-            let moreSpecific = "";
-            if ($("#location").val().trim() !== "") {
-                moreSpecific = "more specific ";
-            }
-
-            if (found < 40000) {
-                const howLong = Math.floor(roundedFound / 4000);
-                message = `<p>There are over ${formattedRoundedFound} results.</p>
-                                   <p>This may take over ${howLong} minutes to load.</p>
-                                   <p>You could cancel and try adding a ${moreSpecific}location.</p>`;
-            } else {
-                message = `<p>There are over ${formattedRoundedFound} results.</p>
-                                   <p>This is too many for the app to handle.</p>
+        } else if (found > 5000) {
+            message = `<p>There are over ${formattedRoundedFound} results.</p>
+                                   <p>This is too many for WikiTree to handle.</p>
                                    <p>Please add a location or a century (or centuries) and go again.</p>`;
-                wtViewRegistry.showNotice(message);
-                $this.disableCancel();
-                $this.shakingTree.hide();
-                return;
-            }
             wtViewRegistry.showNotice(message);
+            $this.disableCancel();
+            $this.shakingTree.hide();
+            return;
         }
         $("#cancelFetch").show();
 
