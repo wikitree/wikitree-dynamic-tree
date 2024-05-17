@@ -1057,6 +1057,7 @@ export class CC7 {
     }
     */
 
+    /*
     static addRelationships() {
         let familyMap = window.people;
         const rootName = $("#wt-id-text").val().trim();
@@ -1111,9 +1112,97 @@ export class CC7 {
             console.error("Error in worker:", error.message);
         };
 
-        worker.postMessage({
+        const messageData = {
             cmd: "start",
             familyMap: familyMapEntries,
+            rootPersonId: rootPersonId,
+            loggedInUser: loggedInUser,
+            loggedInUserId: loggedInUserId,
+        };
+        console.log("familyMapEntries:", familyMapEntries);
+        console.log("rootPersonId:", rootPersonId);
+        console.log("loggedInUser:", loggedInUser);
+        console.log("loggedInUserId:", loggedInUserId);
+
+        console.log("Sending data to worker:", messageData);
+
+        worker.postMessage(messageData);
+    }
+    */
+
+    static addRelationships() {
+        let familyMap = window.people;
+        const rootName = $("#wt-id-text").val().trim();
+        let rootId = null;
+        for (let [key, value] of familyMap.entries()) {
+            if (value.Name === rootName) {
+                rootId = key;
+                break;
+            }
+        }
+
+        let rootPersonId = rootId;
+        const familyMapEntries = Array.from(familyMap.entries());
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+
+        const worker = new Worker("views/cc7/js/relationshipWorker.js");
+
+        const $this = this;
+        worker.onmessage = function (event) {
+            console.log("Worker returned:", event.data);
+            if (event.data.type === "completed") {
+                if ($("#cc7PBFilter").data("select2")) {
+                    $("#cc7PBFilter").select2("destroy");
+                }
+                const updatedTable = CC7.updateTableWithResults(
+                    document.querySelector("#peopleTable"),
+                    event.data.results
+                );
+                document
+                    .getElementById("cc7Container")
+                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
+                CC7.initializeSelect2();
+
+                if (loggedInUserId == rootPersonId) {
+                    $this.storeDataInIndexedDB(event.data.dbEntries);
+                }
+
+                worker.terminate();
+            } else if (event.data.type === "log") {
+                console.log("Worker log:", event.data.message);
+            } else if (event.data.type === "error") {
+                console.error("Worker returned an error:", event.data.message);
+            }
+        };
+
+        worker.onerror = function (error) {
+            console.error("Error in worker:", error.message);
+        };
+
+        // Send data to worker in chunks
+        const chunkSize = 300;
+        for (let i = 0; i < familyMapEntries.length; i += chunkSize) {
+            const chunk = familyMapEntries.slice(i, i + chunkSize);
+            console.log(
+                `Sending chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(
+                    familyMapEntries.length / chunkSize
+                )} to worker:`,
+                chunk
+            );
+            worker.postMessage({ cmd: "chunk", data: chunk });
+        }
+
+        // Once all chunks are sent, send the process command
+        console.log("Sending process command to worker:", {
+            cmd: "process",
+            rootPersonId: rootPersonId,
+            loggedInUser: loggedInUser,
+            loggedInUserId: loggedInUserId,
+        });
+
+        worker.postMessage({
+            cmd: "process",
             rootPersonId: rootPersonId,
             loggedInUser: loggedInUser,
             loggedInUserId: loggedInUserId,
@@ -1125,7 +1214,7 @@ export class CC7 {
         console.log("Storing data in IndexedDB.", dbEntries);
         this.openDatabase(CC7.RELATIONSHIP_DB_NAME, CC7.RELATIONSHIP_DB_VERSION, CC7.RELATIONSHIP_STORE_NAME)
             .then((db) => {
-                return $this.addDataToStore(db, CC7.RELATIONSHIP_STORE_NAME, dbEntries);
+                return $this.addDataToStore(db, CC7.RELATIONSHIP_STORE_NAME, dbEntries, true);
             })
             .then(() => {
                 console.log("Data added to RelationshipFinderWTE.");
@@ -1143,7 +1232,7 @@ export class CC7 {
 
         this.openDatabase(CC7.CONNECTION_DB_NAME, CC7.CONNECTION_DB_VERSION, CC7.CONNECTION_STORE_NAME)
             .then((db) => {
-                return $this.addDataToStore(db, CC7.CONNECTION_STORE_NAME, connectionEntries);
+                return $this.addDataToStore(db, CC7.CONNECTION_STORE_NAME, connectionEntries, false);
             })
             .then(() => {
                 console.log("Data added to ConnectionFinderWTE.");
@@ -1174,7 +1263,7 @@ export class CC7 {
         });
     }
 
-    static addDataToStore(db, storeName, data) {
+    static addDataToStore(db, storeName, data, checkRelationship) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], "readwrite");
             const objectStore = transaction.objectStore(storeName);
@@ -1183,15 +1272,27 @@ export class CC7 {
                 const getRequest = objectStore.get(item.key);
                 getRequest.onsuccess = function (event) {
                     const existing = event.target.result;
-                    if (!existing || existing.value.relationship === "" || item.value.relationship !== "") {
-                        const request = objectStore.put(item);
-                        request.onsuccess = function () {
-                            // Successfully added/updated item
-                        };
-                        request.onerror = function (event) {
-                            reject(event.target.error);
-                        };
-                    }
+
+                    // Always update distance
+                    const updatedItem = {
+                        ...existing,
+                        ...item,
+                        value: {
+                            ...existing?.value,
+                            ...item.value,
+                            relationship: checkRelationship
+                                ? item.value.relationship || existing?.value.relationship
+                                : item.value?.relationship || existing?.value?.relationship,
+                        },
+                    };
+
+                    const request = objectStore.put(updatedItem);
+                    request.onsuccess = function () {
+                        // Successfully added/updated item
+                    };
+                    request.onerror = function (event) {
+                        reject(event.target.error);
+                    };
                 };
                 getRequest.onerror = function (event) {
                     reject(event.target.error);

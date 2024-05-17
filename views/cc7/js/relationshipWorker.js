@@ -1,46 +1,57 @@
-self.addEventListener(
-    "message",
-    function (e) {
-        console.log("4 Worker received data:", e.data);
-        const familyMap = new Map(e.data.familyMap); // Reconstruct the map inside the worker
-        const results = processRelationships(
-            familyMap,
-            e.data.rootPersonId,
-            e.data.loggedInUser,
-            e.data.loggedInUserId
-        );
-        console.log("7 Worker sending results:", results);
-        self.postMessage({ type: "completed", results: results.relationships, dbEntries: results.dbEntries });
-    },
-    false
-);
+let accumulatedFamilyMapEntries = [];
 
-/*
-self.addEventListener("error", function (e) {
-    console.error("14 Worker error:", e);
-    self.postMessage({ type: "error", message: `Worker error: ${e.message}` });
+self.addEventListener("message", function (e) {
+    console.log("Worker received data:", e.data);
+
+    if (!e.data || !e.data.cmd) {
+        console.error("Received null or undefined data or missing cmd");
+        self.postMessage({ type: "error", message: "Received null or undefined data or missing cmd" });
+        return;
+    }
+
+    if (e.data.cmd === "chunk") {
+        console.log("Worker received chunk:", e.data.data);
+        if (e.data.data && Array.isArray(e.data.data)) {
+            accumulatedFamilyMapEntries.push(...e.data.data);
+            self.postMessage({ type: "receivedChunk" });
+        } else {
+            console.error("Chunk data is not an array or is missing");
+            self.postMessage({ type: "error", message: "Chunk data is not an array or is missing" });
+        }
+    } else if (e.data.cmd === "process") {
+        console.log("Worker received process command");
+        try {
+            console.log("Reconstructing familyMap from chunks...");
+            const familyMap = new Map(accumulatedFamilyMapEntries);
+            accumulatedFamilyMapEntries = []; // Clear memory
+            console.log("Reconstructed familyMap:", familyMap);
+            const results = processRelationships(
+                familyMap,
+                e.data.rootPersonId,
+                e.data.loggedInUser,
+                e.data.loggedInUserId
+            );
+            self.postMessage({ type: "completed", results: results.relationships, dbEntries: results.dbEntries });
+        } catch (error) {
+            console.error("Error processing relationships:", error);
+            self.postMessage({ type: "error", message: error.message });
+        }
+    } else {
+        console.error("Unknown command:", e.data.cmd);
+        self.postMessage({ type: "error", message: `Unknown command: ${e.data.cmd}` });
+    }
 });
-*/
-
-self.console.log = function (message) {
-    self.postMessage({ type: "log", message: message });
-};
-
-let logging = false;
 
 function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUserId) {
-    // Logging to check the content
-    console.log("27 Processing relationships for root ID:", rootPersonId);
-    console.log(familyMap);
+    console.log("26: Processing relationships for root ID:", rootPersonId);
 
-    // Your previous relationship processing logic here
     let ancestorMaps = new Map();
     ancestorMaps.set("familyMap", familyMap);
     let relationships = determineAllRelationships(rootPersonId, ancestorMaps);
+    let rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
 
     relationships.forEach((relationship) => {
         if (relationship.personId) {
-            let rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
             let personAncestors = buildAncestorMap(relationship.personId, familyMap, ancestorMaps);
             let commonAncestors = findMostRecentCommonAncestors(
                 rootAncestors,
@@ -57,15 +68,13 @@ function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUse
         }
     });
 
-    // Log logged in user and rootpersonid
-    console.log("Logged in user:" + loggedInUser);
-    console.log("Logged in user ID:" + loggedInUserId);
-    console.log("Root person ID:" + rootPersonId);
+    console.log("Logged in user:", loggedInUser);
+    console.log("Logged in user ID:", loggedInUserId);
+    console.log("Root person ID:", rootPersonId);
 
-    // Create data structure for IndexedDB entries
     let dbEntries = createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap);
 
-    return { relationships, dbEntries }; // Return both processed results and db entries
+    return { relationships, dbEntries };
 }
 
 function createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap) {
@@ -81,8 +90,8 @@ function createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUser
                 userId: loggedInUser,
                 id: person.Name,
                 distance: person?.Meta?.Degrees,
-                relationship: relationship.relationship,
-                commonAncestors: relationship.commonAncestors,
+                relationship: relationship.relationship.full,
+                commonAncestors: relationship.commonAncestors || [],
             },
         };
     });
@@ -144,6 +153,60 @@ function findMostRecentCommonAncestors(
     return commonAncestors;
 }
 
+function makeDates(person) {
+    if (!person) return " ";
+    const yearFromDate = (date) => {
+        if (!date) return " ";
+        return date.split("-")[0];
+    };
+    let birthYear = " ";
+    if (person.BirthDate && person.BirthDate !== "0000-00-00") {
+        birthYear = yearFromDate(person.BirthDate);
+    } else if (person.BirthDateDecade) {
+        birthYear = person.BirthDateDecade;
+    }
+
+    let deathYear = " ";
+    if (person.DeathDate && person.DeathDate !== "0000-00-00") {
+        deathYear = yearFromDate(person.DeathDate);
+    } else if (person.DeathDateDecade) {
+        deathYear = person.DeathDateDecade;
+    }
+
+    let birthStatus = "";
+    let deathStatus = "";
+    if (person.DataStatus) {
+        if (person.DataStatus.BirthDate) {
+            switch (person.DataStatus.BirthDate) {
+                case "before":
+                    birthStatus = "bef.";
+                    break;
+                case "after":
+                    birthStatus = "aft.";
+                    break;
+                case "guess":
+                    birthStatus = "abt.";
+                    break;
+            }
+        }
+        if (person.DataStatus.DeathDate) {
+            switch (person.DataStatus.DeathDate) {
+                case "before":
+                    deathStatus = "bef.";
+                    break;
+                case "after":
+                    deathStatus = "aft.";
+                    break;
+                case "guess":
+                    deathStatus = "abt.";
+                    break;
+            }
+        }
+    }
+
+    return `${birthStatus}${birthYear}–${deathStatus}${deathYear}`;
+}
+
 function getAncestorDetails(ancestorId, familyMap) {
     let person = familyMap.get(ancestorId);
     return {
@@ -152,19 +215,12 @@ function getAncestorDetails(ancestorId, familyMap) {
         mFirstName: person.FirstName,
         mLastNameCurrent: person.LastNameCurrent,
         mLastNameAtBirth: person.LastNameAtBirth,
-        mSuffix: person.Suffix,
         mGender: person.Gender,
+        mDerived: { LongNameWithDates: `${person.LongNamePrivate} (${makeDates(person)})` },
         displayName: person.LongNamePrivate,
     };
 }
 
-/**
- * Builds an ancestor map for a given person.
- * @param {number} personId - The ID of the person to build the map for.
- * @param {Map} map - The map containing all people.
- * @param {Map} ancestorMaps - Cached ancestor maps for reuse.
- * @returns {Map} The ancestor map for the given person.
- */
 function buildAncestorMap(personId, map, ancestorMaps) {
     if (ancestorMaps.has(personId)) {
         return ancestorMaps.get(personId);
@@ -207,10 +263,9 @@ function findFirstIntersection(map1, map2) {
     return null;
 }
 
-// Function to determine relationships, assuming ancestorMaps includes familyMap
 function determineAllRelationships(rootPersonId, ancestorMaps) {
     if (!ancestorMaps || !ancestorMaps.get("familyMap")) {
-        console.error("89 Missing familyMap in ancestorMaps");
+        console.error("206: Missing familyMap in ancestorMaps");
         return [];
     }
 
@@ -252,10 +307,6 @@ function determineRelationship(rootPersonId, personId, ancestorMaps) {
 
 function describeRelationshipFromGenerations(gen1, gen2, gender) {
     let diff = Math.abs(gen1 - gen2);
-
-    if (logging) {
-        console.log("135 generations:", gen1, gen2, diff);
-    }
 
     // Direct ancestor-descendant relationships
     if (gen1 === 0 || gen2 === 0) {
@@ -345,8 +396,8 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     }
 
     // Adjust description for first cousins
-    if (cousinLevel === 1) {
-        cousinDescription = removed > 0 ? "first" : "cousin";
+    if (cousinLevel === 1 && removed === 0) {
+        cousinDescription = "cousin";
     }
 
     return { full: cousinDescription, abbr: cousinAbbr.toUpperCase() };
