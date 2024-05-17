@@ -45,15 +45,15 @@ self.addEventListener("message", function (e) {
 function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUserId) {
     console.log("26: Processing relationships for root ID:", rootPersonId);
 
-    let ancestorMaps = new Map();
+    const ancestorMaps = new Map();
     ancestorMaps.set("familyMap", familyMap);
-    let relationships = determineAllRelationships(rootPersonId, ancestorMaps);
-    let rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
+    const relationships = determineAllRelationships(rootPersonId, ancestorMaps);
+    const rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
 
     relationships.forEach((relationship) => {
         if (relationship.personId) {
-            let personAncestors = buildAncestorMap(relationship.personId, familyMap, ancestorMaps);
-            let commonAncestors = findMostRecentCommonAncestors(
+            const personAncestors = buildAncestorMap(relationship.personId, familyMap, ancestorMaps);
+            const commonAncestors = findMostRecentCommonAncestors(
                 rootAncestors,
                 personAncestors,
                 familyMap,
@@ -72,7 +72,7 @@ function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUse
     console.log("Logged in user ID:", loggedInUserId);
     console.log("Root person ID:", rootPersonId);
 
-    let dbEntries = createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap);
+    const dbEntries = createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap);
 
     return { relationships, dbEntries };
 }
@@ -110,7 +110,7 @@ function findMostRecentCommonAncestors(
 
     rootAncestors.forEach((gen1, ancestorId) => {
         if (personAncestors.has(ancestorId)) {
-            let gen2 = personAncestors.get(ancestorId);
+            const gen2 = personAncestors.get(ancestorId);
             let maxGen = Math.max(gen1, gen2);
 
             if (maxGen < minGeneration) {
@@ -208,7 +208,7 @@ function makeDates(person) {
 }
 
 function getAncestorDetails(ancestorId, familyMap) {
-    let person = familyMap.get(ancestorId);
+    const person = familyMap.get(ancestorId);
     return {
         mId: ancestorId,
         mName: person.Name,
@@ -230,23 +230,27 @@ function buildAncestorMap(personId, map, ancestorMaps) {
         return new Map(); // Return an empty map if the person ID is not found
     }
 
-    let person = map.get(personId);
-    let ancestorMap = new Map();
-    ancestorMap.set(personId, 0); // Add the current person at generation 0
+    const ancestorMap = new Map();
+    const queue = [{ personId, generation: 0 }];
 
-    // Handling Father
-    if (person.Father && person.Father !== 0) {
-        if (map.has(person.Father)) {
-            let parentMap = buildAncestorMap(person.Father, map, ancestorMaps);
-            parentMap.forEach((gen, id) => ancestorMap.set(id, gen + 1));
+    while (queue.length > 0) {
+        const { personId, generation } = queue.shift();
+        ancestorMap.set(personId, generation);
+
+        const person = map.get(personId);
+
+        // Handling Father
+        if (person.Father && person.Father !== 0) {
+            if (map.has(person.Father) && !ancestorMap.has(person.Father)) {
+                queue.push({ personId: person.Father, generation: generation + 1 });
+            }
         }
-    }
 
-    // Handling Mother
-    if (person.Mother && person.Mother !== 0) {
-        if (map.has(person.Mother)) {
-            let parentMap = buildAncestorMap(person.Mother, map, ancestorMaps);
-            parentMap.forEach((gen, id) => ancestorMap.set(id, gen + 1));
+        // Handling Mother
+        if (person.Mother && person.Mother !== 0) {
+            if (map.has(person.Mother) && !ancestorMap.has(person.Mother)) {
+                queue.push({ personId: person.Mother, generation: generation + 1 });
+            }
         }
     }
 
@@ -269,13 +273,12 @@ function determineAllRelationships(rootPersonId, ancestorMaps) {
         return [];
     }
 
-    let results = [];
-    let familyMap = ancestorMaps.get("familyMap");
-    let cache = new Map(); // Cache to optimize building ancestor maps
+    const results = [];
+    const familyMap = ancestorMaps.get("familyMap");
 
     familyMap.forEach((value, key) => {
         if (key !== rootPersonId) {
-            let relationshipData = determineRelationship(rootPersonId, key, ancestorMaps);
+            const relationshipData = determineRelationship(rootPersonId, key, ancestorMaps);
             results.push(relationshipData);
         }
     });
@@ -284,17 +287,16 @@ function determineAllRelationships(rootPersonId, ancestorMaps) {
 }
 
 function determineRelationship(rootPersonId, personId, ancestorMaps) {
-    let familyMap = ancestorMaps.get("familyMap"); // Make sure this retrieval is valid
-    let rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
-    let personAncestors = buildAncestorMap(personId, familyMap, ancestorMaps);
+    const familyMap = ancestorMaps.get("familyMap"); // Make sure this retrieval is valid
+    const rootAncestors = buildAncestorMap(rootPersonId, familyMap, ancestorMaps);
+    const personAncestors = buildAncestorMap(personId, familyMap, ancestorMaps);
 
-    let intersection = findFirstIntersection(rootAncestors, personAncestors);
+    const intersection = findFirstIntersection(rootAncestors, personAncestors);
     if (!intersection) return { personId, relationship: "", ancestorId: null };
+    const personData = familyMap.get(personId);
 
-    let personData = familyMap.get(personId);
-
-    let { ancestorId, gen1, gen2 } = intersection;
-    let relationship = describeRelationshipFromGenerations(gen1, gen2, personData.Gender);
+    const { ancestorId, gen1, gen2 } = intersection;
+    const relationship = describeRelationshipFromGenerations(gen1, gen2, personData.Gender);
 
     return {
         personId,
@@ -306,11 +308,9 @@ function determineRelationship(rootPersonId, personId, ancestorMaps) {
 }
 
 function describeRelationshipFromGenerations(gen1, gen2, gender) {
-    let diff = Math.abs(gen1 - gen2);
-
     // Direct ancestor-descendant relationships
     if (gen1 === 0 || gen2 === 0) {
-        let generation = Math.max(gen1, gen2);
+        const generation = Math.max(gen1, gen2);
         if (generation === 1) {
             return { full: gender === "Male" ? "father" : "mother", abbr: gender === "Male" ? "F" : "M" };
         } else if (generation === 2) {
@@ -324,7 +324,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
                 abbr: gender === "Male" ? "GGF" : "GGM",
             };
         } else {
-            let greats = generation - 3;
+            const greats = generation - 3;
             return {
                 full: `${ordinal(greats + 1)} great grand${gender === "Male" ? "father" : "mother"}`,
                 abbr: `${ordinal(greats + 1)} GG${gender === "Male" ? "F" : "M"}`,
@@ -338,13 +338,13 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     }
 
     // Extended family (aunts/uncles, nieces/nephews, and further)
-    let olderGeneration = Math.min(gen1, gen2);
-    let youngerGeneration = Math.max(gen1, gen2);
-    let removal = youngerGeneration - olderGeneration;
-    let isOne = gen1 === 1 || gen2 === 1;
+    const olderGeneration = Math.min(gen1, gen2);
+    const youngerGeneration = Math.max(gen1, gen2);
+    const removal = youngerGeneration - olderGeneration;
+    const isOne = gen1 === 1 || gen2 === 1;
 
     // Determine the relationship direction
-    let isRootCloser = gen1 < gen2;
+    const isRootCloser = gen1 < gen2;
 
     if (isOne) {
         if (removal === 1) {
@@ -363,17 +363,17 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
                 };
             }
         } else {
-            let greats = removal - 2;
-            let relationship = isRootCloser
+            const greats = removal - 2;
+            const relationship = isRootCloser
                 ? gender === "Male"
                     ? "nephew"
                     : "niece"
                 : gender === "Male"
                 ? "uncle"
                 : "aunt";
-            let abbr = isRootCloser ? "N" : gender === "Male" ? "U" : "A";
-            let relationshipPrefix = greats == 1 ? "great " : `${ordinal(greats)} great `;
-            let abbrPrefix = greats == 1 ? "G" : `${ordinal(greats)} G`;
+            const abbr = isRootCloser ? "N" : gender === "Male" ? "U" : "A";
+            const relationshipPrefix = greats == 1 ? "great " : `${ordinal(greats)} great `;
+            const abbrPrefix = greats == 1 ? "G" : `${ordinal(greats)} G`;
             return {
                 full: `${relationshipPrefix}grand${relationship}`,
                 abbr: `${abbrPrefix}G${abbr}`,
@@ -383,9 +383,9 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
 
     // Calculate the 'cousin level' based on the smaller generation number (subtracted by 1)
     // and the difference between the generations to determine how many times removed they are.
-    let baseGeneration = Math.min(gen1, gen2);
-    let cousinLevel = baseGeneration - 1; // cousin level is one less than the lower generation
-    let removed = Math.abs(gen1 - gen2); // the 'removed' count is the difference between the two generations
+    const baseGeneration = Math.min(gen1, gen2);
+    const cousinLevel = baseGeneration - 1; // cousin level is one less than the lower generation
+    const removed = Math.abs(gen1 - gen2); // the 'removed' count is the difference between the two generations
 
     // Determine the full description and abbreviation for the cousin relationship
     let cousinDescription = cousinLevel === 0 ? "cousin" : `${ordinal(cousinLevel)} cousin`;

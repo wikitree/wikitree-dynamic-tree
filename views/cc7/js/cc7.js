@@ -1131,18 +1131,38 @@ export class CC7 {
     */
 
     static addRelationships() {
-        let familyMap = window.people;
+        // const familyMap = window.people;
         const rootName = $("#wt-id-text").val().trim();
         let rootId = null;
-        for (let [key, value] of familyMap.entries()) {
+        const familyMapEntries = [];
+        for (let [key, value] of window.people.entries()) {
             if (value.Name === rootName) {
                 rootId = key;
-                break;
+                // break;
             }
+            familyMapEntries.push([
+                key,
+                {
+                    Name: value.Name,
+                    BirthDate: value.BirthDate,
+                    BirthDateDecade: value.BirthDateDecade,
+                    DeathDate: value.DeathDate,
+                    DeathDateDecade: value.DeathDateDecade,
+                    DataStatus: value.DataStatus,
+                    FirstName: value.FirstName,
+                    LastNameCurrent: value.LastNameCurrent,
+                    LastNameAtBirth: value.LastNameAtBirth,
+                    Gender: value.Gender,
+                    LongNamePrivate: value.LongNamePrivate,
+                    Father: value.Father,
+                    Mother: value.Mother,
+                    Meta: value.Meta,
+                },
+            ]);
         }
 
         let rootPersonId = rootId;
-        const familyMapEntries = Array.from(familyMap.entries());
+        // const familyMapEntries = Array.from(familyMap.entries());
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
