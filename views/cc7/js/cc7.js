@@ -388,9 +388,7 @@ export class CC7 {
     }
 
     static settingsChanged(e) {
-        // console.log("current settings:", Settings.current);
         if (Settings.hasSettingsChanged()) {
-            // console.log(`new settings: ${String(Settings.current)}`, Settings.current);
             const veryYoungImg = CC7Utils.imagePath(Settings.current["icons_options_veryYoung"]);
             const youngImg = CC7Utils.imagePath(Settings.current["icons_options_young"]);
             $("img.diedVeryYoungImg").each(function () {
@@ -914,224 +912,8 @@ export class CC7 {
         CC7.setInfoPanelMessage();
         CC7.firstTimeLoad = false;
     }
-    /*
-    static addRelationships() {
-        let familyMap = window.people;
-        const rootName = $("#wt-id-text").val().trim();
-        let rootId = null;
-        for (let [key, value] of familyMap.entries()) {
-            if (value.Name === rootName) {
-                rootId = key;
-                break;
-            }
-        }
-
-        let rootPersonId = rootId;
-        let ancestorMaps = new Map();
-        ancestorMaps.set("familyMap", familyMap);
-
-        const worker = new Worker("views/cc7/js/relationshipWorker.js");
-
-        const $this = this;
-        worker.onmessage = function (event) {
-            console.log("Worker returned:", event.data);
-            if (event.data.type === "completed") {
-                // Destroy the old Select2 instance before updating the table
-                if ($("#cc7PBFilter").data("select2")) {
-                    $("#cc7PBFilter").select2("destroy");
-                }
-                const updatedTable = CC7.updateTableWithResults(
-                    document.querySelector("#peopleTable"),
-                    event.data.results
-                );
-                document
-                    .getElementById("cc7Container")
-                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
-                CC7.initializeSelect2();
-
-                // Store data in IndexedDB
-                $this.storeDataInIndexedDB(event.data.dbEntries);
-
-                worker.terminate();
-            } else {
-                console.log("Worker log:", event.data.message);
-            }
-        };
-
-        worker.onerror = function (error) {
-            console.error("Error in worker:", error.message);
-        };
-
-        const familyMapEntries = Array.from(familyMap.entries());
-        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
-        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
-
-        worker.postMessage({
-            cmd: "start",
-            familyMap: familyMapEntries,
-            rootPersonId: rootPersonId,
-            loggedInUser: loggedInUser,
-            loggedInUserId: loggedInUserId,
-        });
-    }
-
-    static storeDataInIndexedDB(dbEntries) {
-        const $this = this;
-        // Store in RelationshipFinderWTE
-        console.log("Storing data in IndexedDB.", dbEntries);
-        this.openDatabase(CC7.RELATIONSHIP_DB_NAME, CC7.RELATIONSHIP_DB_VERSION, CC7.RELATIONSHIP_STORE_NAME)
-            .then((db) => {
-                return $this.addDataToStore(db, CC7.RELATIONSHIP_STORE_NAME, dbEntries);
-            })
-            .then(() => {
-                console.log("Data added to RelationshipFinderWTE.");
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
-
-        // Store in ConnectionFinderWTE
-        let connectionEntries = dbEntries.map((entry) => ({
-            theKey: entry.key,
-            userId: entry.value.userId,
-            id: entry.value.id,
-            distance: entry.value.distance,
-        }));
-
-        this.openDatabase(CC7.CONNECTION_DB_NAME, CC7.CONNECTION_DB_VERSION, CC7.CONNECTION_STORE_NAME)
-            .then((db) => {
-                return $this.addDataToStore(db, CC7.CONNECTION_STORE_NAME, connectionEntries);
-            })
-            .then(() => {
-                console.log("Data added to ConnectionFinderWTE.");
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
-    }
-
-    static openDatabase(dbName, dbVersion, storeName) {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(dbName, dbVersion);
-
-            request.onupgradeneeded = function (event) {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { keyPath: "key" });
-                }
-            };
-
-            request.onsuccess = function (event) {
-                resolve(event.target.result);
-            };
-
-            request.onerror = function (event) {
-                reject(event.target.error);
-            };
-        });
-    }
-
-    static addDataToStore(db, storeName, data) {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([storeName], "readwrite");
-            const objectStore = transaction.objectStore(storeName);
-
-            data.forEach((item) => {
-                const request = objectStore.add(item);
-                request.onsuccess = function () {
-                    // Successfully added item
-                };
-                request.onerror = function (event) {
-                    reject(event.target.error);
-                };
-            });
-
-            transaction.oncomplete = function () {
-                resolve();
-            };
-
-            transaction.onerror = function (event) {
-                reject(event.target.error);
-            };
-        });
-    }
-    */
-
-    /*
-    static addRelationships() {
-        let familyMap = window.people;
-        const rootName = $("#wt-id-text").val().trim();
-        let rootId = null;
-        for (let [key, value] of familyMap.entries()) {
-            if (value.Name === rootName) {
-                rootId = key;
-                break;
-            }
-        }
-
-        let rootPersonId = rootId;
-        let ancestorMaps = new Map();
-        ancestorMaps.set("familyMap", familyMap);
-        const familyMapEntries = Array.from(familyMap.entries());
-        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
-        const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
-
-        const worker = new Worker("views/cc7/js/relationshipWorker.js");
-
-        const $this = this;
-        worker.onmessage = function (event) {
-            console.log("Worker returned:", event.data);
-            if (event.data.type === "completed") {
-                // Destroy the old Select2 instance before updating the table
-                if ($("#cc7PBFilter").data("select2")) {
-                    $("#cc7PBFilter").select2("destroy");
-                }
-                const updatedTable = CC7.updateTableWithResults(
-                    document.querySelector("#peopleTable"),
-                    event.data.results
-                );
-                document
-                    .getElementById("cc7Container")
-                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
-                CC7.initializeSelect2();
-
-                // Store data in IndexedDB
-                if (loggedInUserId == rootPersonId) {
-                    $this.storeDataInIndexedDB(event.data.dbEntries);
-                }
-
-                worker.terminate();
-            } else if (event.data.type === "log") {
-                console.log("Worker log:", event.data.message);
-            } else if (event.data.type === "error") {
-                console.error("Worker returned an error:", event.data.message);
-            }
-        };
-
-        worker.onerror = function (error) {
-            console.error("Error in worker:", error.message);
-        };
-
-        const messageData = {
-            cmd: "start",
-            familyMap: familyMapEntries,
-            rootPersonId: rootPersonId,
-            loggedInUser: loggedInUser,
-            loggedInUserId: loggedInUserId,
-        };
-        console.log("familyMapEntries:", familyMapEntries);
-        console.log("rootPersonId:", rootPersonId);
-        console.log("loggedInUser:", loggedInUser);
-        console.log("loggedInUserId:", loggedInUserId);
-
-        console.log("Sending data to worker:", messageData);
-
-        worker.postMessage(messageData);
-    }
-    */
 
     static addRelationships() {
-        // const familyMap = window.people;
         const rootName = $("#wt-id-text").val().trim();
         let rootId = null;
         const familyMapEntries = [];
@@ -1162,7 +944,6 @@ export class CC7 {
         }
 
         let rootPersonId = rootId;
-        // const familyMapEntries = Array.from(familyMap.entries());
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
@@ -1204,22 +985,8 @@ export class CC7 {
         const chunkSize = 300;
         for (let i = 0; i < familyMapEntries.length; i += chunkSize) {
             const chunk = familyMapEntries.slice(i, i + chunkSize);
-            console.log(
-                `Sending chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(
-                    familyMapEntries.length / chunkSize
-                )} to worker:`,
-                chunk
-            );
             worker.postMessage({ cmd: "chunk", data: chunk });
         }
-
-        // Once all chunks are sent, send the process command
-        console.log("Sending process command to worker:", {
-            cmd: "process",
-            rootPersonId: rootPersonId,
-            loggedInUser: loggedInUser,
-            loggedInUserId: loggedInUserId,
-        });
 
         worker.postMessage({
             cmd: "process",
@@ -1231,7 +998,6 @@ export class CC7 {
 
     static storeDataInIndexedDB(dbEntries) {
         const $this = this;
-        console.log("Storing data in IndexedDB.", dbEntries);
         this.openDatabase(CC7.RELATIONSHIP_DB_NAME, CC7.RELATIONSHIP_DB_VERSION, CC7.RELATIONSHIP_STORE_NAME)
             .then((db) => {
                 return $this.addDataToStore(db, CC7.RELATIONSHIP_STORE_NAME, dbEntries, true);
@@ -1513,7 +1279,6 @@ export class CC7 {
         let nrProfiles = 0;
         let firstIteration = true;
         while (belowQ.length > 0 || aboveQ.length > 0 || descendantQ.length > 0 || ancestorQ.length > 0) {
-            // console.log("Queues", descendantQ, belowQ, ancestorQ, aboveQ);
             if (descendantQ.length > 0) {
                 const pId = descendantQ.shift();
                 const person = window.people.get(pId);
@@ -1524,9 +1289,6 @@ export class CC7 {
                         const relId = +rId;
                         const child = window.people.get(relId);
                         if (child) {
-                            // console.log(
-                            //     `Adding child for ${person.Id} (${person.Name}): ${child.Id} (${child.Name}) ${child.BirthNamePrivate}`
-                            // );
                             child.isAncestor = false;
                             descendantQ.push(relId);
                         }
@@ -1544,17 +1306,10 @@ export class CC7 {
                     const rels = firstIteration
                         ? CC7.getIdsOfRelatives(person, ["Sibling", "Spouse", "Child"])
                         : CC7.getIdsOfRelatives(person, ["Parent", "Sibling", "Spouse", "Child"]);
-                    // console.log(
-                    //     `Inspecting below for ${person.Id} (${person.Name}) ${person.BirthNamePrivate}`,
-                    //     belowQ,
-                    //     rels
-                    // );
                     for (const rId of rels) {
                         const relId = +rId;
                         if (setAndShouldAdd(relId, BELOW)) {
                             if (!belowQ.includes(relId)) {
-                                // const p = window.people.get(+relId);
-                                // console.log(`Adding below: ${p.Id} (${p.Name}) ${p.BirthNamePrivate}`);
                                 belowQ.push(relId);
                             }
                         }
@@ -1565,8 +1320,6 @@ export class CC7 {
                 const [pId, degree] = ancestorQ.shift();
                 const person = window.people.get(+pId);
                 if (person) {
-                    // Add this person's parents to the queue if necessary
-                    // console.log(`Adding parents for ${person.Id} (${person.Name})`, rels);
                     const parentDegree = degree + 1;
                     // Note that we're using the Parents array and not the Parent array here
                     // so that we can count profiles and duplicates to as high a degree as possible.
@@ -1591,9 +1344,6 @@ export class CC7 {
                         if (parentDegree <= maxRequestedDegree) {
                             const parent = window.people.get(relId);
                             if (parent) {
-                                // console.log(
-                                //     `Adding parent for ${person.Id} (${person.Name}): ${parent.Id} (${parent.Name}) ${parent.BirthNamePrivate}`
-                                // );
                                 parent.isAncestor = true;
                                 ancestorQ.push([rId, parentDegree]);
                             }
@@ -1612,17 +1362,10 @@ export class CC7 {
                     const rels = firstIteration
                         ? CC7.getIdsOfRelatives(person, ["Parent"])
                         : CC7.getIdsOfRelatives(person, ["Parent", "Sibling", "Spouse", "Child"]);
-                    // console.log(
-                    //     `Inspecting above for ${person.Id} (${person.Name}) ${person.BirthNamePrivate}`,
-                    //     aboveQ,
-                    //     rels
-                    // );
                     for (const rId of rels) {
                         const relId = +rId;
                         if (setAndShouldAdd(relId, ABOVE)) {
                             if (!aboveQ.includes(relId)) {
-                                // const p = window.people.get(+relId);
-                                // console.log(`Adding above: ${p.Id} (${p.Name}) ${p.BirthNamePrivate}`);
                                 aboveQ.push(relId);
                             }
                         }

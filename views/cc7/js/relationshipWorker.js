@@ -1,8 +1,6 @@
 let accumulatedFamilyMapEntries = [];
 
 self.addEventListener("message", function (e) {
-    console.log("Worker received data:", e.data);
-
     if (!e.data || !e.data.cmd) {
         console.error("Received null or undefined data or missing cmd");
         self.postMessage({ type: "error", message: "Received null or undefined data or missing cmd" });
@@ -10,21 +8,18 @@ self.addEventListener("message", function (e) {
     }
 
     if (e.data.cmd === "chunk") {
-        console.log("Worker received chunk:", e.data.data);
         if (e.data.data && Array.isArray(e.data.data)) {
             accumulatedFamilyMapEntries.push(...e.data.data);
-            self.postMessage({ type: "receivedChunk" });
+            // self.postMessage({ type: "receivedChunk" });
         } else {
             console.error("Chunk data is not an array or is missing");
             self.postMessage({ type: "error", message: "Chunk data is not an array or is missing" });
         }
     } else if (e.data.cmd === "process") {
-        console.log("Worker received process command");
         try {
-            console.log("Reconstructing familyMap from chunks...");
             const familyMap = new Map(accumulatedFamilyMapEntries);
             accumulatedFamilyMapEntries = []; // Clear memory
-            console.log("Reconstructed familyMap:", familyMap);
+
             const results = processRelationships(
                 familyMap,
                 e.data.rootPersonId,
@@ -43,8 +38,6 @@ self.addEventListener("message", function (e) {
 });
 
 function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUserId) {
-    console.log("26: Processing relationships for root ID:", rootPersonId);
-
     const ancestorMaps = new Map();
     ancestorMaps.set("familyMap", familyMap);
     const relationships = determineAllRelationships(rootPersonId, ancestorMaps);
@@ -67,10 +60,6 @@ function processRelationships(familyMap, rootPersonId, loggedInUser, loggedInUse
             }
         }
     });
-
-    console.log("Logged in user:", loggedInUser);
-    console.log("Logged in user ID:", loggedInUserId);
-    console.log("Root person ID:", rootPersonId);
 
     const dbEntries = createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUserId, familyMap);
 
@@ -236,7 +225,6 @@ function buildAncestorMap(personId, map, ancestorMaps) {
     while (queue.length > 0) {
         const { personId, generation } = queue.shift();
         ancestorMap.set(personId, generation);
-
         const person = map.get(personId);
 
         // Handling Father
@@ -269,7 +257,6 @@ function findFirstIntersection(map1, map2) {
 
 function determineAllRelationships(rootPersonId, ancestorMaps) {
     if (!ancestorMaps || !ancestorMaps.get("familyMap")) {
-        console.error("206: Missing familyMap in ancestorMaps");
         return [];
     }
 
