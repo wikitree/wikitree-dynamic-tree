@@ -312,6 +312,9 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     if (gen1 === 0 || gen2 === 0) {
         const generation = Math.max(gen1, gen2);
         if (generation === 1) {
+            if (gen1 == 0) {
+                return { full: gender === "Male" ? "son" : "daughter", abbr: gender === "Male" ? "So" : "D" };
+            }
             return { full: gender === "Male" ? "father" : "mother", abbr: gender === "Male" ? "F" : "M" };
         } else if (generation === 2) {
             return {
@@ -334,7 +337,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
 
     // Cousins, siblings, nieces, and nephews
     if (gen1 === gen2 && gen1 === 1) {
-        return { full: gender === "Male" ? "brother" : "sister", abbr: gender === "Male" ? "B" : "S" };
+        return { full: gender === "Male" ? "brother" : "sister", abbr: gender === "Male" ? "B" : "Si" };
     }
 
     // Extended family (aunts/uncles, nieces/nephews, and further)
