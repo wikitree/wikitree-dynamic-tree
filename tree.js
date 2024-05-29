@@ -215,21 +215,21 @@ window.ViewRegistry = class ViewRegistry {
                 action: "getPerson",
                 key: wtID,
                 fields: basicFields.join(),
-            }).then((data) => this.onPersonDataReceived(view, data));
+            }).then((data) => this.onPersonDataReceived(view, data, this.session.urlParams));
         } finally {
             viewLoader.classList.add("hidden");
         }
     }
 
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
-    onPersonDataReceived(view, data) {
+    onPersonDataReceived(view, data, urlParams) {
         const wtID = this.getCurrentWtId();
         const infoPanel = document.querySelector(this.INFO_PANEL);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
         if (data[0]["person"]) {
-            this.initView(view, data[0]["person"]);
+            this.initView(view, data[0]["person"], urlParams);
 
             this.session.personID = data[0]["person"]["Id"];
             this.session.personName = data[0]["person"]["Name"];
@@ -252,7 +252,7 @@ window.ViewRegistry = class ViewRegistry {
 
             try {
                 this.currentView = view;
-                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"], urlParams); // Pass urlParams here
             } catch (err) {
                 // If we have an unhandleable error from a view, display the error message and hide away
                 // the "info panel", since it's probably incomplete/broken.
@@ -278,31 +278,25 @@ window.ViewRegistry = class ViewRegistry {
     }
 
     initView(view, person) {
-        // const wtLink = document.querySelector(this.WT_ID_LINK);
-        // const viewTitle = document.querySelector(this.VIEW_TITLE);
-        // const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
-        // const name = document.querySelector(this.NAME_PLACEHOLDER);
-
-        // wtLink.href = `https://www.WikiTree.com/wiki/${person.Name}`;
-        // wtLink.innerHTML = person.Name;
-
-        // viewTitle.innerHTML = view.title;
-        // viewDescription.innerHTML = view.description;
-        // name.innerHTML = person.BirthName ? person.BirthName : person.BirthNamePrivate;
-
-        // Let the individual views do this if desired. Start things off hidden (in case the previous view revealed it).
-        //wtViewRegistry.showInfoPanel();
         wtViewRegistry.hideInfoPanel();
         wtViewRegistry.setInfoPanel("");
-
+    
         document.querySelector(this.VIEW_CONTAINER).innerHTML = "";
-
+    
         const wtID = this.getCurrentWtId();
         const viewSelect = document.querySelector(this.VIEW_SELECT).value;
-        let url = window.location.href.split("?")[0].split("#")[0];
-        url = `${url}#name=${wtID}&view=${viewSelect}`;
-        history.replaceState("", "", url);
-    }
+        
+        // Get all current URL parameters
+        const currentParams = new URLSearchParams(window.location.hash.slice(1));
+        
+        // Set the name and view parameters
+        currentParams.set('name', wtID);
+        currentParams.set('view', viewSelect);
+        
+        // Construct the new URL with all parameters
+        const newUrl = `${window.location.href.split("#")[0]}#${currentParams.toString()}`;
+        history.replaceState("", "", newUrl);
+    }    
 
     getCurrentWtId() {
         return document.querySelector(this.WT_ID_TEXT).value.trim();
@@ -420,10 +414,12 @@ window.LoginManager = class LoginManager {
         }
     }
 };
+
 window.SessionManager = class SessionManager {
     C_PERSON_ID = "viewTreePersonId";
     C_PERSON_NAME = "viewTreePersonName";
     C_VIEW_ID = "viewTreeId";
+    C_URL_PARAMS = "viewUrlParams"; // URL Parameters
 
     constructor(wtAPI, loginManager, events) {
         this.wtAPI = wtAPI;
@@ -433,6 +429,7 @@ window.SessionManager = class SessionManager {
         this.viewID = null;
         this.personID = null;
         this.personName = null;
+        this.urlParams = {}; // URL Parameters
 
         this.loadCookies();
 
@@ -454,8 +451,12 @@ window.SessionManager = class SessionManager {
     loadUrlHash(viewIDs, urlHash) {
         const fields = this.getHashParams(urlHash);
         this.personName = fields.get("name") || this.personName;
-
         const viewID = fields.get("view");
+
+        // Store additional URL parameters
+        fields.forEach((value, key) => {
+            this.urlParams[key] = value;
+        });
 
         if (viewID && viewIDs.includes(viewID)) {
             this.viewID = fields.get("view");
@@ -466,14 +467,14 @@ window.SessionManager = class SessionManager {
         this.viewID = this.wtAPI.cookie(this.C_VIEW_ID) || null;
         this.personID = this.wtAPI.cookie(this.C_PERSON_ID) || null;
         this.personName = this.wtAPI.cookie(this.C_PERSON_NAME) || null;
+        this.urlParams = JSON.parse(this.wtAPI.cookie(this.C_URL_PARAMS) || '{}'); // URL Parameters
     }
 
-    // For the version of the tree hosted on WikiTree.com itself, we want to be able to set the starting parameters by setting the cookies we use to store them.
-    // Since the tree can be hosted at other paths (e.g. /treewidget/...), we need to store the cookies at the root "/" path so they are shared.
     saveCookies() {
         this.wtAPI.cookie(this.C_VIEW_ID, this.viewID, { path: "/" });
         this.wtAPI.cookie(this.C_PERSON_ID, this.personID, { path: "/" });
         this.wtAPI.cookie(this.C_PERSON_NAME, this.personName, { path: "/" });
+        this.wtAPI.cookie(this.C_URL_PARAMS, JSON.stringify(this.urlParams), { path: "/" }); // URL Parameters
     }
 };
 

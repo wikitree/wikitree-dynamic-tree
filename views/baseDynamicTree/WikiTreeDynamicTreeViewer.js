@@ -31,35 +31,46 @@
         var container = document.querySelector(selector),
             width = container.offsetWidth,
             height = container.offsetHeight;
-
+    
         var self = this;
-
+    
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
         const g = svg.append("g");
-
+    
+        // Read URL parameters
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const zoomLevel = parseFloat(params.get('zoom')) || 1;
+        const panX = parseFloat(params.get('panX')) || originOffsetX;
+        const panY = parseFloat(params.get('panY')) || originOffsetY;
+    
         // Setup zoom and pan
         const zoom = d3
             .zoom()
             .scaleExtent([0.1, 1])
             .on("zoom", function (event) {
                 g.attr("transform", event.transform);
+                // Update URL parameters
+                params.set('zoom', event.transform.k);
+                params.set('panX', event.transform.x);
+                params.set('panY', event.transform.y);
+                window.location.hash = params.toString();
             });
         svg.call(zoom);
-        svg.call(zoom.transform, d3.zoomIdentity.translate(originOffsetX, originOffsetY).scale(1));
-
+        svg.call(zoom.transform, d3.zoomIdentity.translate(panX, panY).scale(zoomLevel));
+    
         // Setup controllers for the ancestor and descendant trees
         self.ancestorTree = new AncestorTree(g);
         self.descendantTree = new DescendantTree(g);
-
+    
         // Listen to tree events
         self.ancestorTree.expand(function (person) {
             return self.loadMore(person);
         });
-
+    
         self.descendantTree.expand(function (person) {
             return self.loadMore(person);
         });
-
+    
         // Setup pattern
         svg.append("defs")
             .append("pattern")
@@ -74,9 +85,10 @@
                 height: 20,
                 //'xlink:href': 'ringLoader.svg'
             });
-
+    
         self.load(startId);
     };
+    
 
     /** Static variable to hold unique ids for private persons **/
     WikiTreeDynamicTreeViewer.nextPrivateId = -1;
