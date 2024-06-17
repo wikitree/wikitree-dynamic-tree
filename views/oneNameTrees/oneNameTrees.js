@@ -121,40 +121,40 @@ window.OneNameTrees = class OneNameTrees extends View {
             <input type="text" id="centuries" placeholder="Centuries (Optional)" /> 
             <input type="submit" id="submit" name="submit" value="GO" />
         </div>
-        <div id="controlOptions">
-            <div id="otherControls" class="controlGroup">
-                <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
-                <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
-                <button
-                id="refreshData"
-                title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
-                >
-                Refresh
-                </button>
-                <button id="downloadData">Save</button>
-                <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
-                Load
-                </button>
-                <input type="file" id="fileInput" style="display: none" />
+        
+        <div id="otherControls" class="controlGroup">
+            <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
+            <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
+            <button
+            id="refreshData"
+            title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
+            >
+            Refresh
+            </button>
+            <button id="downloadData">Save</button>
+            <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
+            Load
+            </button>
+            <input type="file" id="fileInput" style="display: none" />
 
-                <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
-                <button id="sheetButton" title="Download a spreadsheet file">Sheet</button>
-                <button id="helpButton" title="About this">?</button>
-                <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
-            </div>
-
-            <div id="tableLabel" class="controlGroup">Table:
-                <button id="tableViewButton" title="View the data in a table">Table</button>
-            </div>
-            <div id="treesButtons" class="controlGroup">Trees:
-            <div id="toggleButtons">
-                <button class="toggleAll" id="showAll" title="show all descendants">+</button>
-                <button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
-            </div>
-            <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
-            <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
-            </div>
+            <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
+            <button id="sheetButton" title="Download a spreadsheet file">Sheet</button>
+            <button id="helpButton" title="About this">?</button>
+            <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
         </div>
+
+        <div id="tableLabel" class="controlGroup">Table:
+            <button id="tableViewButton" title="View the data in a table">Table</button>
+        </div>
+        <div id="treesButtons" class="controlGroup">Trees:
+        <div id="toggleButtons">
+            <button class="toggleAll" id="showAll" title="show all descendants">+</button>
+            <button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
+        </div>
+        <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
+        <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
+        </div>
+        
         
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
@@ -4785,7 +4785,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         $("#toggleOptions").on("click.oneNameTrees", function (e) {
             e.preventDefault();
-            $("#controlOptions").slideToggle();
+            $("#controls").slideToggle();
         });
 
         $("#toggleDetails")
