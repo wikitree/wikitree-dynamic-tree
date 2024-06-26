@@ -1,0 +1,18 @@
+table {
+    margin-left: 15px;
+}
+
+#loading-indicator {
+    width: max-content;
+    margin: auto;
+    font-size: x-large;
+}
+
+.baseline {
+    align-content: baseline;
+}
+
+#display-mode, #name-format, #suppress-unknown {
+    padding: 5px;
+    width: 110px;
+}
