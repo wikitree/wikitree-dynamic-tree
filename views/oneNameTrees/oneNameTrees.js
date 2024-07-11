@@ -4667,7 +4667,12 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#refreshData").prop("disabled", false);
             return;
         } else if (found > 5000) {
-            message = `<p>There are over ${formattedRoundedFound} results.</p>
+            let roundedFound = Math.floor(found / 1000) * 1000;
+            function formatNumber(number, locales, options) {
+                return new Intl.NumberFormat(locales, options).format(number);
+            }
+            const formattedRoundedFound = formatNumber(roundedFound, "en-US");
+            const message = `<p>There are over ${formattedRoundedFound} results.</p>
                                    <p>This is too many for WikiTree to handle.</p>
                                    <p>Please add a location or a century (or centuries) and go again.</p>`;
             wtViewRegistry.showNotice(message);
