@@ -107,6 +107,7 @@ export class CC7 {
                         You may fine-tune the above missing family setting by selecting any combination of the above values
                         in the Settings (see <img width=16px src="./views/cc7/images/setting-icon.png" /> at the top right).
                     </li>
+                    <li><b>Complete</b> – People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked.</li>
                 </ul>
             </li>
         </ul>

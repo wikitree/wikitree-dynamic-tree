@@ -76,7 +76,8 @@ export class PeopleTable {
         } else {
             aTable.appendTo($("#cc7Container"));
         }
-
+        let complete = 0;
+        let totalPeople = 0;
         function sortIdsByDegreeAndBirthDate(keys) {
             const collator = new Intl.Collator();
             return [...keys]
@@ -98,8 +99,23 @@ export class PeopleTable {
         }
 
         for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+            totalPeople++;
             const mPerson = window.people.get(id);
             if (mPerson.Hide) continue;
+
+            const completeCondition =
+                !isMissingFamily(mPerson) &&
+                mPerson.Father &&
+                mPerson.Mother &&
+                mPerson.DeathDate &&
+                mPerson.DeathLocation &&
+                mPerson.BirthDate &&
+                mPerson.BirthLocation &&
+                mPerson.NoChildren == 1 &&
+                mPerson.DataStatus.Spouse == "blank";
+            if (completeCondition) {
+                complete++;
+            }
             // Filter by the selected subset
             switch (subset) {
                 case "above":
@@ -122,9 +138,14 @@ export class PeopleTable {
                     if (isMissingFamily(mPerson)) break; // show
                     continue; // else hide
 
+                case "complete":
+                    if (completeCondition) break; // show
+                    continue; // else hide
+
                 default:
                     break;
             }
+
             function isMissingFamily(person) {
                 if (person.LastNameAtBirth == "Private") return false;
                 let val = false;
@@ -499,6 +520,16 @@ export class PeopleTable {
             aTable.find("tbody").append(aLine);
         }
 
+        const completeSpan = $("#completeSpan");
+        const ancReport = $("#ancReport");
+        const completePct = Math.round((complete / totalPeople) * 100);
+        const completeText = `<span id="completeSpan" title="Complete profiles are those with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked."> Complete: ${complete} (${completePct}%).</span>`;
+        if (completeSpan.length == 0) {
+            ancReport.append(completeText);
+        } else {
+            completeSpan.replaceWith(completeText);
+        }
+
         if (Utils.getCookie("w_wideTable") == "0") {
             CC7Utils.setOverflow("visible");
         } else {
@@ -540,6 +571,9 @@ export class PeopleTable {
                         '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
                         '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
                         '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
+                        '<option value="complete" ' +
+                        'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
+                        "Complete</option>" +
                         "</select>" +
                         "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='button small viewButton' id='listViewButton'>List</button>" +
@@ -581,6 +615,9 @@ export class PeopleTable {
                     break;
                 case "missing-links":
                     subsetWord = " (Missing Family)";
+                    break;
+                case "complete":
+                    subsetWord = " (Complete)";
                     break;
                 default:
                     break;
