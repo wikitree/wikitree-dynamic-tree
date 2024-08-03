@@ -266,7 +266,9 @@ function determineAllRelationships(rootPersonId, ancestorMaps) {
     familyMap.forEach((value, key) => {
         if (key !== rootPersonId) {
             const relationshipData = determineRelationship(rootPersonId, key, ancestorMaps);
-            results.push(relationshipData);
+            if (relationshipData) {
+                results.push(relationshipData);
+            }
         }
     });
 
@@ -285,13 +287,17 @@ function determineRelationship(rootPersonId, personId, ancestorMaps) {
     const { ancestorId, gen1, gen2 } = intersection;
     const relationship = describeRelationshipFromGenerations(gen1, gen2, personData.Gender);
 
-    return {
-        personId,
-        relationship,
-        ancestorId,
-        gen1: gen1,
-        gen2: gen2,
-    };
+    if (relationship && ancestorId) {
+        return {
+            personId,
+            relationship,
+            ancestorId,
+            gen1: gen1,
+            gen2: gen2,
+        };
+    } else {
+        return false;
+    }
 }
 
 function describeRelationshipFromGenerations(gen1, gen2, gender) {
@@ -324,7 +330,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
 
     // Cousins, siblings, nieces, and nephews
     if (gen1 === gen2 && gen1 === 1) {
-        return { full: gender === "Male" ? "brother" : "sister", abbr: gender === "Male" ? "B" : "Si" };
+        return { full: gender === "Male" ? "brother" : "sister", abbr: gender === "Male" ? "Bro." : "Sis." };
     }
 
     // Extended family (aunts/uncles, nieces/nephews, and further)
@@ -341,7 +347,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
             if (isRootCloser) {
                 return { full: gender === "Male" ? "nephew" : "niece", abbr: "N" };
             } else {
-                return { full: gender === "Male" ? "uncle" : "aunt", abbr: gender === "Male" ? "U" : "A" };
+                return { full: gender === "Male" ? "uncle" : "aunt", abbr: gender === "Male" ? "Uncle" : "Aunt" };
             }
         } else if (removal === 2) {
             if (isRootCloser) {
@@ -361,7 +367,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
                 : gender === "Male"
                 ? "uncle"
                 : "aunt";
-            const abbr = isRootCloser ? "N" : gender === "Male" ? "U" : "A";
+            const abbr = isRootCloser ? "N" : gender === "Male" ? "Uncle" : "Aunt";
             const relationshipPrefix = greats == 1 ? "great " : `${ordinal(greats)} great `;
             const abbrPrefix = greats == 1 ? "G" : `${ordinal(greats)} G`;
             return {

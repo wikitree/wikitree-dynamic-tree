@@ -1102,8 +1102,10 @@ export class CC7 {
             if (row) {
                 row.setAttribute("data-relation", result.relationship.abbr);
                 const relationCell = row.querySelector("td.relation");
-                relationCell.textContent = result.relationship.abbr;
-                relationCell.setAttribute("title", result.relationship.full);
+                if (relationCell) {
+                    relationCell.textContent = result.relationship.abbr;
+                    relationCell.setAttribute("title", result?.relationship?.full);
+                }
             }
         });
         return clone;
