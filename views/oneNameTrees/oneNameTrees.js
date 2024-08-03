@@ -381,7 +381,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#show-btn").css("background-color", "#25422d");
         $("#view-select").off("change.oneNameTrees");
         $("body").removeClass("oneNameTrees");
-        $("#controls,#dancingTree").remove();
+        $("#controls,#dancingTree,#toggleOptions").remove();
     }
 
     addListeners() {
