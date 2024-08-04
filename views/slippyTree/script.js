@@ -1072,7 +1072,7 @@ class SlippyTree extends View {
                     add = !otherincluded;
                 } else if (r.rel == "spouse") {
                     if (otherincluded) {
-                        add = person.index < r.person.index;
+                        add = person.ty < r.person.ty;
                     } else {
                         add = r.type != "inferred";
                     }
