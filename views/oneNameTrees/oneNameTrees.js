@@ -336,6 +336,11 @@ window.OneNameTrees = class OneNameTrees extends View {
                     this.settings.onlyLastNameAtBirth ? "checked" : ""
                 } /> 
                 </label>
+                <label for="onlyMales">Only Males:
+                <input type = "checkbox" id="onlyMales" title="Load only males" ${
+                    this.settings.onlyMales ? "checked" : ""
+                } />
+                </label>
                 <button id="clearCache" title="Clear the cache of stored data for this surname">Clear cached ${
                     this.surname
                 } items</button>
@@ -1472,12 +1477,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         const surnameVariants = this.getSurnameVariants();
         // Helper function to create query parts for a single century
         const dnaBit = dna ? ` DNA%3D"${dna}"` : "";
+        const maleBit = this.settings.onlyMales ? ` Gender=male` : "";
         const queryPartForCentury = (century, locationBit, variant) => {
             const centuryBit = century ? `${century}Cen+` : "";
             return (
-                `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"${dnaBit}` +
-                `+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"${dnaBit}` +
-                `+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"${dnaBit}`
+                `${centuryBit}${locationBit}LastNameatBirth%3D"${variant}"${dnaBit}${maleBit}` +
+                `+OR+${centuryBit}${locationBit}CurrentLastName%3D"${variant}"${dnaBit}${maleBit}` +
+                `+OR+${centuryBit}${locationBit}LastNameOther%3D"${variant}"${dnaBit}${maleBit}`
             );
         };
 
