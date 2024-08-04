@@ -31,20 +31,24 @@ class SlippyTree extends View {
   <svg xmlns="http://www.w3.org/2000/svg" class="slippy-tree">
    <defs>
     <linearGradient id="unloaded-father">
-     <stop offset="60%" style="stop-color: var(--father-transparent)"/>
+     <stop offset="0%" style="stop-color: var(--father-transparent)"/>
      <stop offset="100%" style="stop-color: var(--father)"/>
     </linearGradient>
     <linearGradient id="unloaded-mother">
-     <stop offset="60%" style="stop-color: var(--mother-transparent)"/>
+     <stop offset="0%" style="stop-color: var(--mother-transparent)"/>
      <stop offset="100%" style="stop-color: var(--mother)"/>
     </linearGradient>
     <linearGradient id="father-unloaded">
      <stop offset="0%" style="stop-color: var(--father)"/>
-     <stop offset="40%" style="stop-color: var(--father-transparent)"/>
+     <stop offset="100%" style="stop-color: var(--father-transparent)"/>
     </linearGradient>
     <linearGradient id="mother-unloaded">
      <stop offset="0%" style="stop-color: var(--mother)"/>
-     <stop offset="40%" style="stop-color: var(--mother-transparent)"/>
+     <stop offset="100%" style="stop-color: var(--mother-transparent)"/>
+    </linearGradient>
+    <linearGradient id="spouse-unloaded">
+     <stop offset="0%" style="stop-color: var(--spouse-transparent)"/>
+     <stop offset="100%" style="stop-color: var(--spouse)"/>
     </linearGradient>
    </defs>
    <g class="container">
@@ -80,15 +84,16 @@ class SlippyTree extends View {
      <g class="relations">
       <path class="father" d="M 639 19 C 594 19 594 56 549 56" transform="translate(-239 0)"></path>
       <path class="father uncertain" d="M 639 59 C 594 59 594 86 549 86" transform="translate(-239 0)"></path>
-      <path class="marriage" d="M 2.5 20 C 2.5 40 2.5 40 10.5 40" transform="translate(-100 0)"></path>
+      <path class="spouse" d="M 2.5 20 C 2.5 40 2.5 40 10.5 40" transform="translate(-100 0)"></path>
       <path class="father dna focus" d="M 339 26 C 289.25 26 289.25 10 239.5 10" transform="translate(-139 0)"></path>
       <path class="mother nonbiological focus" d="M 339 26 C 294.25 26 294.25 40 249.5 40" transform="translate(-139 0)"></path>
-      <path class="marriage focus" d="M 341 36 C 341 56 341 56 349 56" transform="translate(-139 0)"></path>
-      <path class="marriage focus" d="M 341 36 C 341 86 341 86 349 86" transform="translate(-139 0)"></path>
+      <path class="spouse focus" d="M 341 36 C 341 56 341 56 349 56" transform="translate(-139 0)"></path>
+      <path class="spouse focus" d="M 341 36 C 341 86 341 86 349 86" transform="translate(-139 0)"></path>
       <path class="mother confident focus" d="M 639 19 C 589 19 589 26 539 26" transform="translate(-239 0)"></path>
       <path class="mother focus" d="M 639 59 C 589 59 589 26 539 26" transform="translate(-239 0)"></path>
-      <path class="unloaded-father confident" d="M 339 26 C 289.25 26 289.25 10 239.5 10" transform="translate(-299 -17)"></path>
-      <path class="father-unloaded confident" d="M 339 26 C 289.25 26 289.25 10 239.5 10" transform="translate(219 50)"></path>
+      <path class="unloaded-father confident" d="M 339 26 C 319.25 26 319.25 16 289.5 16" transform="translate(-299 -17)"></path>
+      <path class="father-unloaded" d="M 279 10 L 239.5 11" transform="translate(219 50)"></path>
+      <path class="spouse-unloaded" d="M 339 26 C 329 26 329 46 329 46" transform="translate(-290 16)"></path>
      </g>
      <g class="labels">
       <text class="marriage focus" x="245" y="41">Marriage Date</text>
@@ -145,10 +150,12 @@ class SlippyTree extends View {
       <text x="430" y="-8">Living Person</text>
       <path d="M 410 85 L 407 59" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="400" y="98">WikiTree Member</text>
-      <path d="M 20 85 L 17 19" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 20 85 L 17 12" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="50" y="98">Ancestors to load</text>
       <path d="M 480 110 L 490 69" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="450" y="118">Descendants to load</text>
+      <path d="M 50 72 L 46 57" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <text x="70" y="85">Spouse to load</text>
      </g>
     </g>
    </svg>
@@ -168,7 +175,11 @@ class SlippyTree extends View {
         this.personMenu = container.querySelector(".personMenu");
         const helpButton = container.querySelector(".helpButton");
         const helpContainer = container.querySelector(".helpContainer");
+        const helpBox = helpContainer.querySelector(":scope > :first-child");
         helpButton.addEventListener("click", (e) => {
+            helpContainer.classList.toggle("hidden");
+        });
+        helpBox.addEventListener("click", (e) => {
             helpContainer.classList.toggle("hidden");
         });
 
@@ -279,6 +290,7 @@ class SlippyTree extends View {
                 this.view.cy = (((this.scrollPane.clientHeight / 2 + this.scrollPane.scrollTop) - this.view.pady0) / this.view.scale) + this.view.y0;
             });
             window.addEventListener("resize", (e) => { 
+                delete this.view.scrollPaneSize;
                 this.reposition({});
             });
         }
@@ -344,8 +356,11 @@ class SlippyTree extends View {
         this.view.scale = Math.max(this.#MINSCALE, Math.min(this.#MAXSCALE, this.view.scale));
         const targetWidth  = Math.round((this.view.x1 - this.view.x0) * this.view.scale);
         const targetHeight = Math.round((this.view.y1 - this.view.y0) * this.view.scale);
-        const viewWidth = this.scrollPane.clientWidth;
-        const viewHeight = this.scrollPane.clientHeight;
+        if (!this.view.scrollPaneSize) {
+            this.view.scrollPaneSize = { width: this.scrollPane.clientWidth, height: this.scrollPane.clientHeight };
+        }
+        const viewWidth = this.view.scrollPaneSize.width;
+        const viewHeight = this.view.scrollPaneSize.height;
         if (this.view.viewWidth != viewWidth || this.view.viewHeight != viewHeight) {
             this.view.viewWidth = viewWidth;
             this.view.viewHeight = viewHeight;
@@ -369,9 +384,13 @@ class SlippyTree extends View {
         }
         let tran = "scale(" + this.view.scale + " " + this.view.scale + ") ";
         tran += "translate(" + (-this.view.x0) + " " + (-this.view.y0) + ")";
-        this.svg.querySelector(".container").setAttribute("transform", tran);
-        this.svg.setAttribute("width", targetWidth);
-        this.svg.setAttribute("height", targetHeight);
+        if (tran != this.view.tran) {
+            this.svg.querySelector(".container").setAttribute("transform", this.view.tran = tran);
+        }
+        if (targetWidth != this.view.targetWidth || targetHeight != this.view.targetHeight) {
+            this.svg.setAttribute("width", this.view.targetWidth = targetWidth);
+            this.svg.setAttribute("height", this.view.targetHeight = targetHeight);
+        }
 
         const targetX = Math.round((this.view.cx - this.view.x0) * this.view.scale) + this.view.padx0;
         const targetY = Math.round((this.view.cy - this.view.y0) * this.view.scale) + this.view.pady0;
@@ -505,19 +524,9 @@ class SlippyTree extends View {
         // position based on focus node and priority
         // After this each person has "tx" and "ty" value set
         let ordered = this.order(focus, this.people);
-        let marriages = [];
-        this.placeNodes(focus, ordered, marriages);
-        this.redraw(focus, ordered, marriages, callback);
-    }
+        this.view.marriages = [];
+        this.placeNodes(focus, ordered, this.view.marriages);
 
-    redraw(focus, ordered, marriages, callback) {
-        if (ordered) {
-            this.svg.ordered = ordered;
-            this.svg.marriages = marriages;
-        } else {
-            ordered = this.svg.ordered;
-            marriages = this.svg.marriages;
-        }
         // Re-add edges, people, labels in priority order
         const peoplepane = this.svg.querySelector(".people");
         const edges = this.svg.querySelector(".relations");
@@ -541,109 +550,20 @@ class SlippyTree extends View {
                 person.y = person.ty;
             }
             peoplepane.appendChild(person.svg);
-
-            for (const r of person.relations) {
-                let path = null;
-                if (!r.person.hidden) {
-                    if (r.rel == "parent") {
-                        path = document.createElementNS(this.#SVG, "path");
-                        path.setAttribute("id", "edge-" + r.person.id + "-" + person.id);
-                        if (r.person.data.Gender == "Male") {
-                            path.classList.add("father");
-                        } else if (r.person.data.Gender == "Female") {
-                            path.classList.add("mother");
-                        } else {
-                            path.classList.add("parent");
-                        }
-                    } else if (r.rel == "spouse" && person.ty < r.person.ty) {
-                        path = document.createElementNS(this.#SVG, "path");
-                        path.setAttribute("id", "edge-" + r.person.id + "-" + person.id);
-                        if (r.type == "inferred") {
-                            path.classList.add("coparent");
-                        } else {
-                            path.classList.add("marriage");
-                        }
-                    }
-                    if (path) {
-                        if (r.type) {
-                            path.classList.add(r.type);
-                        }
-                        edges.appendChild(path);
-                        path.person0 = person;
-                        path.person1 = r.person;
-                        if (person == focus || r.person == focus) {
-                            path.classList.add("focus");
-                            focusedges.push(path);
-                        }
-                    }
-                } else if (r.rel == "parent") {
-                    path = document.createElementNS(this.#SVG, "path");
-                    path.setAttribute("id", "edge-" + r.person.id + "-" + person.id);
-                    if (r.person == person.father) {
-                        path.classList.add("unloaded-father");
-                    } else if (r.person == person.mother) {
-                        path.classList.add("unloaded-mother");
-                    }
-                    if (r.type) {
-                        path.classList.add(r.type);
-                    }
-                    edges.appendChild(path);
-                    path.person0 = person;
-                    if (person == focus || r.person == focus) {
-                        path.classList.add("focus");
-                        focusedges.push(path);
-                    }
-                } else if (r.rel == "child") {
-                    path = document.createElementNS(this.#SVG, "path");
-                    path.setAttribute("id", "edge-" + person.id + "-" + r.person.id);
-                    if (person == r.person.father) {
-                        path.classList.add("father-unloaded");
-                    } else if (person == r.person.mother) {
-                        path.classList.add("mother-unloaded");
-                    }
-                    if (r.type) {
-                        path.classList.add(r.type);
-                    }
-                    edges.appendChild(path);
-                    path.person1 = person;
-                    if (person == focus || r.person == focus) {
-                        path.classList.add("focus");
-                        focusedges.push(path);
-                    }
-                }
-            }
-            for (const marriage of marriages) {
-                const person = marriage.a;
-                const spouse = marriage.b;
-                for (const r of person.relations) {
-                    if (r.rel == "spouse" && r.person == spouse && r.type != "inferred" && r.date) {
-                        let text = document.createElementNS(this.#SVG, "text");
-                        text.appendChild(document.createTextNode(this.formatDate(r.date)));
-                        text.classList.add("marriage");
-                        text.setAttribute("id", "label-" + person.id + "-" + spouse.id);
-                        labels.appendChild(text);
-                        // Don't really have a good idea to display multiple spouses,
-                        // at the moment it looks like each spouse marries the next one.
-                        text.person0 = marriage.top;
-                        text.person1 = marriage.bot;
-                        if (person == focus || r.person == focus) {
-                            text.classList.add("focus");
-                        }
-                    }
-                }
-            }
         }
-        for (let path of focusedges) {
-            edges.appendChild(path);        // Focused edges go last
-        }
+        this.redrawEdges(focus);
         this.#refocusStart = Date.now();          // Begin our animation
         this.#refocusEnd = Date.now() + 1000;
         this.focus = focus;
         this.view.cx0 = this.view.cx;
         this.view.cy0 = this.view.cy;
         this.view.callback = callback;
-        this.view.peopleLength = this.people.length;
         window.requestAnimationFrame(() => { this.draw(); });
+
+        // Initiate a load to check for unloaded children, effects
+        // of which will be to add new paths. This can be done safely
+        // during or after the draw callbacks
+        this.checkForUnloadedChildren();
     }
 
     /**
@@ -1122,11 +1042,131 @@ class SlippyTree extends View {
     }
 
     /**
+     * Add any missing edges/labels
+     */
+    redrawEdges(focus) {
+        const style = getComputedStyle(this.svg);
+        const unloadedParentLength = this.#evalLength(style, style.getPropertyValue("--unloaded-parent-length"));
+        const unloadedChildLength = this.#evalLength(style, style.getPropertyValue("--unloaded-child-length"));
+        const unloadedSpouseLength = this.#evalLength(style, style.getPropertyValue("--unloaded-spouse-length"));
+        const peoplepane = this.svg.querySelector(".people");
+        const edges = this.svg.querySelector(".relations");
+        const labels = this.svg.querySelector(".labels");
+        let people = [];
+        for (let n=peoplepane.firstElementChild;n;n=n.nextElementSibling) {
+            const person = n.person;
+            if (person) {
+                people.push(person);
+            }
+        }
+        for (const person of people) {
+            const children = Array.from(person.children());
+            const childAngle = Math.min(25, 140 / (children.length));
+            const startAngle = 91 - (childAngle * (children.length - 1) / 2);       // horz lines not painted properly in Safari
+            for (const r of person.relations) {
+                let add = false;
+                const otherincluded = r.person.svg != null && r.person.svg.parentNode != null;
+                if (r.rel == "parent") {
+                    add = true;
+                } else if (r.rel == "child") {
+                    add = !otherincluded;
+                } else if (r.rel == "spouse") {
+                    if (otherincluded) {
+                        add = person.index < r.person.index;
+                    } else {
+                        add = r.type != "inferred";
+                    }
+                }
+                if (add) {
+                    let path = edges.querySelector("#edge-" + person.id + "-" + r.person.id);
+                    if (!path) {
+                        path = document.createElementNS(this.#SVG, "path");
+                        path.setAttribute("id", "edge-" + person.id + "-" + r.person.id);
+                        if (r.rel == "spouse") {        // Link to spouse
+                            if (otherincluded) {
+                                if (r.type == "inferred") {
+                                    path.classList.add("coparent");
+                                } else {
+                                    path.classList.add("spouse");
+                                }
+                            } else {
+                                path.classList.add("spouse-unloaded");
+                                path.targetLength = unloadedSpouseLength;
+                            }
+                        } else if (r.rel == "child") {  // Link to unloaded child
+                            if (person == r.person.father) {
+                                path.classList.add("father-unloaded");
+                            } else if (person == r.person.mother) {
+                                path.classList.add("mother-unloaded");
+                            }
+                            path.targetAngle = startAngle + children.indexOf(r.person) * childAngle;
+                            path.targetLength = unloadedChildLength;
+                        } else if (!otherincluded) { // Link to unloaded parent
+                            if (r.person == person.father) {
+                                path.classList.add("unloaded-father");
+                            } else if (r.person == person.mother) {
+                                path.classList.add("unloaded-mother");
+                            }
+                            path.targetLength = unloadedParentLength;
+                        } else {        // Loaded parent
+                            if (r.person.data.Gender == "Male") {
+                                path.classList.add("father");
+                            } else if (r.person.data.Gender == "Female") {
+                                path.classList.add("mother");
+                            } else {
+                                path.classList.add("parent");
+                            }
+                        }
+                        if (r.type) {
+                            path.classList.add(r.type);
+                        }
+                        path.person0 = person;
+                        path.person1 = r.person;
+                        if (person == focus || r.person == focus) {
+                            path.classList.add("focus");
+                            edges.appendChild(path);
+                        } else {
+                            edges.insertBefore(path, edges.firstChild);
+                        }
+                    }
+                }
+            }
+            for (const marriage of this.view.marriages) {
+                const person = marriage.a;
+                const spouse = marriage.b;
+                for (const r of person.relations) {
+                    if (r.rel == "spouse" && r.person == spouse && r.type != "inferred" && r.date) {
+                        let text = document.createElementNS(this.#SVG, "text");
+                        text.appendChild(document.createTextNode(this.formatDate(r.date)));
+                        text.classList.add("marriage");
+                        text.setAttribute("id", "label-" + person.id + "-" + spouse.id);
+                        labels.appendChild(text);
+                        // Don't really have a good idea to display multiple spouses,
+                        // at the moment it looks like each spouse marries the next one.
+                        text.person0 = marriage.top;
+                        text.person1 = marriage.bot;
+                        if (person == focus || r.person == focus) {
+                            text.classList.add("focus");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Redraw. This is the animation frame, don't repeat work here
      */
     draw() {
         const edges = this.svg.querySelector(".relations");
         const labels = this.svg.querySelector(".labels");
+        let people = [];
+        for (let i=0;i<this.people.length;i++) {
+            const person = this.people[i];
+            if (person.svg && person.svg.parentNode) {
+                people.push(person);
+            }
+        }
 
         // T from 0..1 depending on how far through animation we are
         let t = (Date.now() - this.#refocusStart) / (this.#refocusEnd - this.#refocusStart);
@@ -1140,41 +1180,41 @@ class SlippyTree extends View {
         t = t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;  // Simple cubic bezier easing
 
         let x0 = null, x1, y0, y1;
-        for (let i=0;i<this.view.peopleLength;i++) {
-            const person = this.people[i];
-            if (!person.hidden) {
-                person.cx = person.x + (person.tx - person.x) * t;
-                person.cy = person.y + (person.ty - person.y) * t;
-                if (t == 1) {
-                    person.x = person.tx;
-                    person.y = person.ty;
-                }
-        //        console.log("  tick: " + i + " " + person.relations.length);
-                let x = Math.round(person.cx);
-                let y = Math.round(person.cy);
-                let w = Math.round(person.genwidth / 2);
-                let h = Math.round(person.height / 2);
-                x -= w;
-                y -= h;
-                person.svg.setAttribute("transform", "translate(" + x + " " + y + ")");
-                if (x0 == null) {
-                    x0 = x;
-                    y0 = y;
-                    x1 = x + w*2;
-                    y1 = y + h*2;
-                } else {
-                    x0 = Math.min(x0, x);
-                    y0 = Math.min(y0, y);
-                    x1 = Math.max(x1, x + w*2);
-                    y1 = Math.max(y1, y + h*2);
-                }
+        for (const person of people) {
+            person.cx = person.x + (person.tx - person.x) * t;
+            person.cy = person.y + (person.ty - person.y) * t;
+            if (t == 1) {
+                person.x = person.tx;
+                person.y = person.ty;
+            }
+    //        console.log("  tick: " + i + " " + person.relations.length);
+            let x = Math.round(person.cx);
+            let y = Math.round(person.cy);
+            let w = Math.round(person.genwidth / 2);
+            let h = Math.round(person.height / 2);
+            x -= w;
+            y -= h;
+            person.svg.setAttribute("transform", "translate(" + x + " " + y + ")");
+            x = Math.round(person.tx - w);
+            y = Math.round(person.ty - h);
+            if (x0 == null) {
+                x0 = x;
+                y0 = y;
+                x1 = x + w*2;
+                y1 = y + h*2;
+            } else {
+                x0 = Math.min(x0, x);
+                y0 = Math.min(y0, y);
+                x1 = Math.max(x1, x + w*2);
+                y1 = Math.max(y1, y + h*2);
             }
         }
         for (let path=edges.firstElementChild;path;path=path.nextElementSibling) {
             const p0 = path.person0;
             const p1 = path.person1;
-            let px0, py0, px1, py1, px2, py2, px3, py3;
-            if (path.classList.contains("marriage") || path.classList.contains("coparent")) {
+            let px0 = 0, py0 = 0, px1 = 0, py1 = 0, px2 = 0, py2 = 0, px3 = 0, py3 = 0;
+            const cl = path.classList;
+            if (cl.contains("spouse") || cl.contains("coparent")) {
                 let edge = p0.cx < p1.cx ? -1 : 1;
                 px0 = Math.round(p0.cx) + p0.genwidth * 0.5 * edge;
                 py0 = Math.round(p0.cy) + p0.height   * 0;
@@ -1184,25 +1224,48 @@ class SlippyTree extends View {
                 py1 = py0;
                 px2 = px1;
                 py2 = py3;
-            } else {
-                const p0cx = p0 ? p0.cx : p1.cx + (p0.genwidth * 0.5) + 100
-                const p0cy = p0 ? p0.cy : p1.cy + (path.classList.contains("father-unloaded") ? -40 : 40);
-                const p1cx = p1 ? p1.cx : p0.cx - (p0.genwidth * 0.5) - 100
-                const p1cy = p1 ? p1.cy : p0.cy + (path.classList.contains("unloaded-father") ? -40 : 40);
-                const p0w = p0 ? p0.genwidth : 0;
-                const p0h = p0 ? p0.height : 0;
-                const p1w = p1 ? p1.genwidth : 0;
-                const p1h = p1 ? p1.height : 0;
-                px0 = Math.round(p0cx) + p0w * -0.5;
-                py0 = Math.round(p0cy) + p0h * 0;
-                px3 = Math.round(p1cx) + p1w * 0.5;
-                py3 = Math.round(p1cy) + p1h   * 0;
+            } else if (cl.contains("father") || cl.contains("mother") || cl.contains("parent")) {
+                px0 = Math.round(p0.cx) + p0.genwidth * -0.5;
+                py0 = Math.round(p0.cy) + p0.height * 0;
+                px3 = Math.round(p1.cx) + p1.genwidth * 0.5;
+                py3 = Math.round(p1.cy) + p1.height   * 0;
                 px1 = px0 + (px3 - px0) / 2;
                 py1 = py0;
                 px2 = px0 + (px3 - px0) / 2;
                 py2 = py3;
+            } else if (cl.contains("unloaded-father") || cl.contains("unloaded-mother")) {
+                // p0 has a position, p1 (parent) does not.
+                px0 = Math.round(p0.cx) + p0.genwidth * -0.5;
+                py0 = Math.round(p0.cy) + p0.height * 0;
+                px3 = px0 - path.targetLength;
+                py3 = py0 + path.targetLength / (path.classList.contains("unloaded-father") ? -4 : 4);
+                px1 = px0 + (px3 - px0) / 2;
+                py1 = py0;
+                px2 = px0 + (px3 - px0) / 2;
+                py2 = py3;
+            } else if (cl.contains("father-unloaded") || cl.contains("mother-unloaded")) {
+                // p0 has a position, p1 (child) does not.
+                px0 = px1 = Math.round(p0.cx) + p0.genwidth * +0.5;
+                py0 = py1 = Math.round(p0.cy) + p0.height * 0;
+                px2 = px3 = px0 + path.targetLength * Math.sin(path.targetAngle * Math.PI / 180);
+                py2 = py3 = py0 - path.targetLength * Math.cos(path.targetAngle * Math.PI / 180);
+            } else if (cl.contains("spouse-unloaded")) {
+                px0 = Math.round(p0.cx) + p0.genwidth * -0.5
+                py0 = Math.round(p0.cy) + p0.height   * 0;
+                px3 = px0 - path.targetLength / 2;
+                py3 = py0 + path.targetLength;
+                px1 = px2 = px3;
+                py1 = py0;
+                py2 = py3;
             }
-            let d = "M " + px0 + " " + py0 + " C " + px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
+            let d;
+            if (px1 == px0 && px2 == px0 && px3 == px0 && py1 == py0 && py2 == py0 && py3 == py0) {
+                d = "";
+            } else if (px1 != px0 || py1 != py0 || px2 != px3 || py2 != py3) {
+                d = "M " + px0 + " " + py0 + " C " + px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
+            } else {
+                d = "M " + px0 + " " + py0 + " L " + px3 + " " + py3;
+            }
             path.setAttribute("d", d);
         }
         for (let label=labels.firstElementChild;label;label=label.nextElementSibling) {
@@ -1321,6 +1384,7 @@ class SlippyTree extends View {
         fetch(url, { credentials: "include" })
             .then(x => x.json())
             .then(data => {
+//                console.log(JSON.stringify(data));
                 const len = this.people.length;
                 if (data[0].people) {
                     let newpeople = [];
@@ -1403,21 +1467,29 @@ class SlippyTree extends View {
         return length.replace(/px$/, "") * 1;
     }
 
+    /**
+     * Query loaded nodes to see if they have children. Ideally this would not
+     * be necessary, but the API makes us do this in two stages.
+     */
     checkForUnloadedChildren() {
         // For each node we have that does not have the "childrenLoaded" flag
         const keys = [];
         for (const person of this.people) {
-            if (!person.childrenLoaded && keys.length < 98) {
+            if (!person.isHidden() && !person.childrenLoaded && keys.length < 98) {
                 keys.push(person.id);
             }
         }
-        this.load({keys: keys, fields: ["Id","Father","Mother"], descendants:1}, () => {
-            for (const id of keys) {
-                let person = this.byid[id];
-                person.childrenLoaded = true;
-            }
-        });
-        this.refocus(this.focus);
+        if (keys.length) {
+            this.load({keys: keys, fields: ["Father","Mother"], descendants:1}, () => {
+                for (const id of keys) {
+                    let person = this.byid[id];
+                    person.childrenLoaded = true;
+                }
+                this.checkForUnloadedChildren();
+                this.redrawEdges(this.focus);
+                window.requestAnimationFrame(() => { this.draw(); });
+            });
+        }
     }
 
 }
@@ -1440,7 +1512,7 @@ class SlippyTreePerson {
         this.pruned = false;
         let changed = false;
         for (let key in data) {
-            if (!this.data[key]) {
+            if (typeof this.data[key] == "undefined") {
                 let val = data[key];
                 if ((key == "BirthDate" || key == "DeathDate") && val == "0000-00-00") {
                     val = "9999";
@@ -1717,6 +1789,10 @@ class SlippyTreePerson {
                 }
                 tree.refocus(this, () => {
                     // ... then load their unloaded spouses ...
+                    // This completely destroys performance, and TBH
+                    // we don't need it. We only need to indicate that
+                    // there are spouses to load.
+                    /*
                     let q = [];
                     q.push(this);
                     const func = function(person) {
@@ -1741,6 +1817,7 @@ class SlippyTreePerson {
                         // ... then focus again
                         tree.refocus(this);
                     });
+                    */
                 });
             });
         } else if (name == "prune") {

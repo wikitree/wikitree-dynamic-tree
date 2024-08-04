@@ -125,29 +125,34 @@ body:has(.slippy-tree-container) {
 }
 
 .slippy-tree-container .slippy-tree {
-    --mother:  red;
-    --father:  blue;
-    --parent:  #0A0;
-    --mother-transparent:  #F000;
-    --father-transparent:  #00F0;
-    --parent-transparent:  #0A00;
-    --neutral: #8C8;
-    --marriage: #181;
-    --coparent: none;
-    --header: 50px;
-    --living: #6c6;
-    --member: #ebba34;
-    /* These are accessed in JS. Values must be pixels, not other lengths */
-    --spouse-margin: 10px;
-    --spouse-indent: 10px;
-    --sibling-margin: 20px;
-    --other-margin: 40px;
-    --generation-margin: 100px;
-    --outer-margin: 20px;
-    --min-person-width: 50px;
+    --male:    #CCF;                    /* color of male person */
+    --female:  #FCC;                    /* color of female person */
+    --mother:  #F00;                    /* color of link to mother */
+    --father:  #00F;                    /* color of link to father */
+    --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
+    --spouse: #181;                     /* color of spouse link */
+    --coparent: none;                   /* color of coparent link (not drawn by default) */
+    --mother-transparent:  #F000;       /* transparent version of mother */
+    --father-transparent:  #00F0;       /* transparent version of father */
+    --parent-transparent:  #0A00;       /* transparent version of parent */
+    --spouse-transparent:  #1810;       /* transparent version of spouse */
+    --unloaded-parent-length: 40px;     /* The length of a fading line indicating an unloaded parent */
+    --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
+    --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
+    --living: #6c6;                     /* color of "living" tag on person */
+    --member: #ebba34;                  /* color of "member" tag on person */
+    /* These next properties are accessed in JS. Values must be pixels, not other lengths */
+    --spouse-margin: 10px;              /* vertical distance between two adjacent spouses */
+    --spouse-indent: 10px;              /* horizontal indent for a visually dependent spouse */
+    --sibling-margin: 20px;             /* min vertical distance between two adjacent siblings */
+    --other-margin: 40px;               /* min vertical distance between two unrelated nodes */
+    --generation-margin: 100px;         /* horizontal distance between two generations */
+    --min-person-width: 50px;           /* minimum width of a person rectangle */
 
     display: block;
     position: relative;
+    contain: style size layout paint;
+    overflow: hidden;
 
 }
 .slippy-tree-container .slippy-tree a[href] {
@@ -178,11 +183,11 @@ body:has(.slippy-tree-container) {
 }
 
 .slippy-tree-container .slippy-tree .people .male rect {
-    fill: #CCF;
+    fill: var(--male);
 }
 
 .slippy-tree-container .slippy-tree .people .female rect {
-    fill: #FCC;
+    fill: var(--female);
 }
 
 .slippy-tree-container .slippy-tree .people path {
@@ -212,21 +217,23 @@ body:has(.slippy-tree-container) {
     opacity: 0.1;
     fill: none;
     stroke-width: 4px;
-    stroke: #888;
+    stroke: #888;       /* default color, always overridden */
 }
 .slippy-tree-container .slippy-tree .relations .mother                 { stroke: var(--mother); }
 .slippy-tree-container .slippy-tree .relations .father                 { stroke: var(--father); }
-.slippy-tree-container .slippy-tree .relations .marriage               { stroke: var(--marriage); stroke-width: 2px; opacity: 0.3; }
-.slippy-tree-container .slippy-tree .relations .marriage.focus         { opacity: 0.6; }
+.slippy-tree-container .slippy-tree .relations .spouse                 { stroke: var(--spouse); stroke-width: 2px; opacity: 0.3; }
+.slippy-tree-container .slippy-tree .relations .spouse.focus           { opacity: 0.6; }
 .slippy-tree-container .slippy-tree .relations .coparent               { stroke: var(--coparent); stroke-width: 2px; opacity: 0.3; stroke-dasharray: 2px; }
 .slippy-tree-container .slippy-tree .relations .coparent.focus         { opacity: 0.6; }
 .slippy-tree-container .slippy-tree .relations .dna                    { stroke-width: 16px; }
 .slippy-tree-container .slippy-tree .relations .confident              { stroke-width: 9px; }
-.slippy-tree-container .slippy-tree .relations .nonbiological          { stroke: var(--neutral); }
+.slippy-tree-container .slippy-tree .relations :is(.nonbiological,.parent) { stroke: var(--neutral); }
 .slippy-tree-container .slippy-tree .relations .uncertain              { stroke-dasharray: 8px; }
 .slippy-tree-container .slippy-tree .relations .unloaded-mother        { stroke: url("#unloaded-mother"); }
 .slippy-tree-container .slippy-tree .relations .unloaded-father        { stroke: url("#unloaded-father"); }
-.slippy-tree-container .slippy-tree .relations .unloaded-child        { stroke: url("#unloaded-child"); }
+.slippy-tree-container .slippy-tree .relations .father-unloaded        { stroke: url("#father-unloaded"); }
+.slippy-tree-container .slippy-tree .relations .mother-unloaded        { stroke: url("#mother-unloaded"); }
+.slippy-tree-container .slippy-tree .relations .spouse-unloaded        { stroke: url("#spouse-unloaded"); stroke-width: 2px; opacity: 0.5 }
 
 .slippy-tree-container .slippy-tree .labels .marriage {
     font-size: 8px;
