@@ -1,3 +1,9 @@
+/**
+ * SlippyTree consists of two classes: SlippyTree itself, and the SlippyTreePerson.
+ *
+ * It doesn't use D3 and it doesn't use the default "WikiTreePerson" object - requests
+ * are done in SlippyTree.load() using the FetchAPI.
+ */
 class SlippyTree extends View {
 
     #APIURL = "https://api.wikitree.com/api.php";
@@ -10,11 +16,7 @@ class SlippyTree extends View {
     #refocusEnd;
 
     /**
-     * Props is a map with the following keys
-     *  - element: the element (or selector to find the element) that will contain the map. Must be relative or absolute positioned,
-     *    should be a block element and should have overflow:scrollable. Required.
-     *  - menu: the element (or selector to find it) of an absolutely-positioned element containing the popup menu
-     *          that will be displayed on a person when clicked. Required.
+     * Props is an (optional) map with the following keys
      *  - trackpad: if true, the mousewheel is identified a trackpad, if false it's a mouse. Optional, will auto-detect by default
      *  - profileTarget: the target for any links to profiles, eg "_blank". Optional
      *  - dragScrollReversed: set to true to inverse the way drag-scrolling works. Optional.
