@@ -1098,6 +1098,12 @@ export class CC7 {
     static updateTableWithResults(table, results) {
         const clone = table.cloneNode(true); // Deep clone the table
         results.forEach((result) => {
+            // window.people is an array of objects with the personId as the key
+            // Add the relationship to the person object
+            const person = window.people.get(result.personId);
+            if (person) {
+                person.Relationship = result.relationship;
+            }
             const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
             if (row) {
                 row.setAttribute("data-relation", result.relationship.abbr);

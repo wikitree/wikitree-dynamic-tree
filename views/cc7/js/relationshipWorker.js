@@ -306,7 +306,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
         const generation = Math.max(gen1, gen2);
         if (generation === 1) {
             if (gen1 == 0) {
-                return { full: gender === "Male" ? "son" : "daughter", abbr: gender === "Male" ? "So" : "D" };
+                return { full: gender === "Male" ? "son" : "daughter", abbr: gender === "Male" ? "Son" : "Dau." };
             }
             return { full: gender === "Male" ? "father" : "mother", abbr: gender === "Male" ? "F" : "M" };
         } else if (generation === 2) {

@@ -283,7 +283,9 @@ export class PeopleTable {
 
             if ($("#cc7Container").length) {
                 degreeCell = "<td class='degree'>" + mPerson.Meta.Degrees + "°</td>";
-                relationCell = "<td class='relation'></td>";
+                relationCell = `<td class='relation' title="${mPerson?.Relationship?.full || ""}">${
+                    mPerson?.Relationship?.abbr || ""
+                }</td>`;
                 ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
                 drelation = "data-relation=''";
                 if (mPerson.Created) {
