@@ -289,7 +289,7 @@ export class CC7Utils {
                 if (missingChildren) {
                     countBit.append(
                         $(
-                            "<span title='People with posiible missing children'>" +
+                            "<span title='People with possible missing children'>" +
                                 missingChildren +
                                 "<img class='missingChildrenCount missingCountIcon' src='./views/cc7/images/baby_bricks_small.png'></span>"
                         )

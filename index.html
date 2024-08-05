@@ -62,19 +62,24 @@
 
     <script src="views/nameTest/name_test.js"></script>
 
-    <!-- jquery-ui.min.js is used by couples_tree, cc7 and ancestorLines, but only for its draggable function.
-     It has been created at https://jqueryui.com/download/ to only contain draggable and its
-     dependencies. -->
+    <!-- jquery-ui.min.js is used by couplesTree, compactCouplesTree, cc7 and ancestorLines,
+      but only for its draggable function. It was created at https://jqueryui.com/download/
+      to only contain draggable and its dependencies. -->
     <script src="views/cc7/js/jquery-ui.min.js"></script>
-    <!-- floatingScroll comes with gratitude from https://github.com/Amphiluke/floating-scroll/
-    and is also used by Ancestor Line Explorer-->
+    <!-- floatingScroll is used by couplesTree, compactCouplesTree and ancestorLines and comes with gratitude
+      from https://github.com/Amphiluke/floating-scroll/ -->
     <script type="module" src="views/ancestorLines/jquery.floatingscroll.es6.min.js"></script>
+
     <script type="module" src="views/couplesTree/cached_person.js"></script>
     <script type="module" src="views/couplesTree/cache_loader.js"></script>
     <script type="module" src="views/couplesTree/people_cache.js"></script>
     <script type="module" src="views/couplesTree/couples_tree.js"></script>
     <link rel="stylesheet" href="views/ancestorLines/jquery.floatingscroll.css" />
     <link rel="stylesheet" href="views/couplesTree/couples_tree.css" />
+
+    <!-- compactCouplesTree also uses cached_person, cache_loader, and people_cache above -->
+    <script type="module" src="views/compactCouplesTree/cct_view.js"></script>
+    <link rel="stylesheet" href="views/compactCouplesTree/cct.css" />
 
     <script src="views/cc7/js/date.format.js"></script>
     <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -87,7 +92,7 @@
     <script type="module" src="views/cc7/cc7View.js"></script>
     <link rel="stylesheet" href="views/cc7/css/cc7.css" />
 
-    <!-- Beware, Ancestor Line Explorer uses FileSaver and floatingscroll above-->
+    <!-- Ancestor Line Explorer uses FileSaver and floatingscroll above-->
     <script type="module" src="views/ancestorLines/api.js"></script>
     <script type="module" src="views/ancestorLines/person.js"></script>
     <script type="module" src="views/ancestorLines/ancestor_tree.js"></script>
@@ -108,6 +113,18 @@
     <link rel="stylesheet" href="tree.css" />
 
     <script type="module" src="views/wtPlusMaps/wtPlusMaps.js"></script>
+
+    <!-- For One Name Trees-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <script type="module" src="views/oneNameTrees/location_data.js"></script>
+    <script type="module" src="views/oneNameTrees/locationstatistics.js"></script>
+    <script type="module" src="views/oneNameTrees/familytreestatistics.js"></script>
+    <script type="module" src="views/oneNameTrees/oneNameTrees.js"></script>
+    <script type="module" src="views/oneNameTrees/d3dataformatter.js"></script>
+
+    <link rel="stylesheet" href="views/oneNameTrees/oneNameTrees.css" />
   </head>
 
   <body>

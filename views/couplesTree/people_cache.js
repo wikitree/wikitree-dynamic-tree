@@ -22,7 +22,7 @@ export class PeopleCache {
         return this.#cache.get(+id);
     }
 
-    async getWithLoad(id, mustHaveFields = []) {
+    async getWithLoad(id, mustHaveFields, additionalFields) {
         const pId = +id;
         //condLog(`getWithLoad ${pId}`, [...this.#cache.keys()]);
         let cachedPerson = this.#cache.get(pId);
@@ -33,7 +33,7 @@ export class PeopleCache {
             });
         }
         if (this.#loader) {
-            const newPerson = await this.#loader.get(pId, mustHaveFields);
+            const newPerson = await this.#loader.get(pId, mustHaveFields, additionalFields);
             cachedPerson = this.#cache.get(pId);
             if (cachedPerson) {
                 if (isSameOrHigherRichness(newPerson._data, cachedPerson._data)) {
@@ -79,6 +79,10 @@ export class PeopleCache {
             cachedPerson = newPerson;
         }
         return cachedPerson;
+    }
+
+    has(id) {
+        return this.#cache.has(id);
     }
 
     isRequestCoveredByPerson(reqFields, person) {

@@ -3,7 +3,9 @@ Code to check a WikiTree biography
 
 ## Shared Code
 The following are **identical** classes found in the Bio Check app, in the 
-WikiTree Browser Extension, and in the WikiTree Dynamic Tree.
+WikiTree Browser Extension, and in the WikiTree Dynamic Tree. Please do not
+modify these classes to introduce items that are not available in those
+contexts.
 * Biography.js
 * BioCheckPerson.js
 * SourceRules.js
@@ -61,7 +63,8 @@ and determine if it can be used to check sources and style
 #### Parameters
 
 *   `profileObj` **[Object][5]** containing the profile as returned from WikiTree APIs
-*   `mustBeOpen` **[Boolean][6]** true if profile must be open privacy
+*   `mustBeOpen` **[Boolean][6]** true if profile must not have a manager
+*   `mustBeOrphan` &#x20;
 *   `ignorePre1500` **[Boolean][6]** true to ignore Pre1500 profiles
 *   `userId` **[String][7]** wikiTreeId of the person running the app
 
@@ -108,17 +111,17 @@ Get manager Id for the person
 
 Returns **[String][7]** manager Id
 
-### getWikiTreeLink
-
-Get WikiTree link
-
-Returns **[String][7]** link to the WikiTree person
-
 ### isMember
 
 Is profile for a member
 
 Returns **[Boolean][6]** true if profile for a member
+
+### isOrphan
+
+Is profile an orphan
+
+Returns **[Boolean][6]** true if profile is an orphan
 
 ### getPrivacy
 
@@ -399,8 +402,21 @@ does bio have unknown section headings
 
 Returns **[Boolean][6]** true if bio has unknown section headings
 
+### hasPaternalDnaConf
+
+does bio have paternal Dna confirmation
+
+Returns **[Boolean][6]** true if bio has paternal Dna confirmation
+
+### hasMaternalDnaConf
+
+does bio have maternal Dna confirmation
+
+Returns **[Boolean][6]** true if bio has maternal Dna confirmation
+
 ### getSectionMessages
 
+/\*\*
 Return messages for reporting
 
 Returns **[Array][10]** sectionMessages\[]
