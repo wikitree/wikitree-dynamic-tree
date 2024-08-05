@@ -3,6 +3,28 @@
  *
  * It doesn't use D3 and it doesn't use the default "WikiTreePerson" object - requests
  * are done in SlippyTree.load() using the FetchAPI.
+ *
+ * The init() method sets up, then the person is requested with "load()", which stores
+ * the people in both an array (this.people) and a map (this.byid, which is keyed on both
+ * the numeric ID and the "public" ID, eg "Windsor-1"). Relationships are added between
+ * the people at this time.
+ *
+ * The "refocus" method takes a person and rebuilds the tree from that position (most of
+ * this work being done in placeNodes()), before calling draw() on the next animation
+ * frame. This needs to be fast - it changes the node positions only and calls
+ * "reposition()", which resizes the SVG and positions the scrollPane. This also needs
+ * to be fast, as its called when scale or scroll takes place.
+ *
+ * The final operation in refocus() is checkForUnloadedChildren(), which checks all loaded
+ * nodes to see if they have children by making a second, limited call to "getPeople()".
+ * This is done asynchronously while the draw is going on - it may add edges to the tree,
+ * but nothing that requires new layout. Ideally this would not be necessary but until we
+ * can request a "Children" property, it is.
+ *
+ * The popup menu is created in the tree init() method, and actions set with "data-action"
+ * on the menu item. When selected, SlippyPerson.action is called with that action.
+ *
+ * Origin branch for this is https://github.com/faceless2/wikitree-dynamic-tree/
  */
 class SlippyTree extends View {
 
@@ -10,7 +32,7 @@ class SlippyTree extends View {
     #APPID = "SlippyTree";
     #SVG = "http://www.w3.org/2000/svg";
     #MINSCALE = 0.2;
-    #MAXSCALE = 2.5;
+    #MAXSCALE = 3;
 
     #refocusStart;
     #refocusEnd;
@@ -292,7 +314,8 @@ class SlippyTree extends View {
                 this.view.cy = (((this.scrollPane.clientHeight / 2 + this.scrollPane.scrollTop) - this.view.pady0) / this.view.scale) + this.view.y0;
             });
             window.addEventListener("resize", (e) => { 
-                delete this.view.scrollPaneSize;
+                delete this.view.viewWidth;
+                delete this.view.viewHeight;
                 this.reposition({});
             });
         }
@@ -358,16 +381,11 @@ class SlippyTree extends View {
         this.view.scale = Math.max(this.#MINSCALE, Math.min(this.#MAXSCALE, this.view.scale));
         const targetWidth  = Math.round((this.view.x1 - this.view.x0) * this.view.scale);
         const targetHeight = Math.round((this.view.y1 - this.view.y0) * this.view.scale);
-        if (!this.view.scrollPaneSize) {
-            this.view.scrollPaneSize = { width: this.scrollPane.clientWidth, height: this.scrollPane.clientHeight };
-        }
-        const viewWidth = this.view.scrollPaneSize.width;
-        const viewHeight = this.view.scrollPaneSize.height;
-        if (this.view.viewWidth != viewWidth || this.view.viewHeight != viewHeight) {
-            this.view.viewWidth = viewWidth;
-            this.view.viewHeight = viewHeight;
-            this.view.padx0 = this.view.padx1 = Math.floor(viewWidth / 2);
-            this.view.pady0 = this.view.pady1 = Math.floor(viewHeight / 2);
+        if (!this.view.viewWidth || !this.view.viewHeight) {
+            this.view.viewWidth = this.scrollPane.clientWidth;
+            this.view.viewHeight = this.scrollPane.clientHeight;
+            this.view.padx0 = this.view.padx1 = Math.floor(this.view.viewWidth / 2);
+            this.view.pady0 = this.view.pady1 = Math.floor(this.view.viewHeight / 2);
             if (!this.personMenu.previousClientHeight) {
                 const hidden = this.personMenu.classList.contains("hidden");
                 if (hidden) {
@@ -396,9 +414,9 @@ class SlippyTree extends View {
 
         const targetX = Math.round((this.view.cx - this.view.x0) * this.view.scale) + this.view.padx0;
         const targetY = Math.round((this.view.cy - this.view.y0) * this.view.scale) + this.view.pady0;
-        this.scrollPane.scrollLeft = Math.round(targetX - viewWidth / 2);
-        this.scrollPane.scrollTop  = Math.round(targetY - viewHeight / 2);
-//        console.log("RESCALE: scale="+JSON.stringify(o)+" target=["+targetWidth+" "+targetHeight+"] view=["+viewWidth+" "+viewHeight+"] center=["+targetX+" "+targetY+"] tr="+tran+" sp="+x+" "+y);
+        this.scrollPane.scrollLeft = Math.round(targetX - this.view.viewWidth / 2);
+        this.scrollPane.scrollTop  = Math.round(targetY - this.view.viewHeight / 2);
+//        console.log("RESCALE: scale="+JSON.stringify(o)+" target=["+targetWidth+" "+targetHeight+"] view=["+this.view.viewWidth+" "+this.view.viewHeight+"] center=["+targetX+" "+targetY+"] tr="+tran+" sp="+x+" "+y);
         if (!this.personMenu.classList.contains("hidden")) {
             this.showMenu();
         }
@@ -1323,11 +1341,11 @@ class SlippyTree extends View {
             date = new Intl.DateTimeFormat(undefined , { dateStyle: "medium", timeZone: "UTC"}).format(Date.parse(date));
         }
         if (state == "guess") {
-            date = "c" + date;
+            date = "c." + date;
         } else if (state == "before") {
-            date = "\u2264" + date;
+            date = "bef." + date;
         } else if (state == "after") {
-            date = "\u2265" + date;
+            date = "aft." + date;
         }
         return date;
     }
