@@ -193,6 +193,7 @@ class SlippyTree extends View {
 
 `;
 
+        container.style = "";   // Reset it, as some other tree types set style properties on it
         container.innerHTML = content.trim();
         this.scrollPane = container.querySelector(".slippy-tree-scrollpane");
         this.svg = container.querySelector(".slippy-tree-scrollpane > svg");
