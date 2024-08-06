@@ -29,7 +29,12 @@ export class PeopleTable {
 
     static async addPeopleTable(caption) {
         $("#savePeople").show();
-        // Get first name of root person
+        // Set root person if it is not already set
+        if (window.rootPerson) {
+            if (window.rootPerson?.Name != $("#wt-id-text").val()) {
+                window.rootPerson = false;
+            }
+        }
         let rootPerson = window.people.get(window.rootId) || window.rootPerson;
         if (!rootPerson) {
             rootPerson = await WikiTreeAPI.postToAPI({
@@ -38,9 +43,9 @@ export class PeopleTable {
                 keys: window.rootId,
                 fields: CC7.GET_PEOPLE_FIELDS,
             });
-            window.rootPerson = rootPerson;
         }
-        console.log("rootPerson", rootPerson);
+        window.rootPerson = rootPerson;
+        // Get first name of root person
         const rootFirstName = rootPerson?.FirstName || window.rootId;
         const sortTitle = "title='Click to sort'";
         const aCaption = `<caption>${caption}</caption>`;
