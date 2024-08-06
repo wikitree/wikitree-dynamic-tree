@@ -3,6 +3,7 @@ import { LanceView } from "./LanceView.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CC7 } from "./cc7.js";
 
 export class PeopleTable {
     static EXCEL = "xlsx";
@@ -29,8 +30,18 @@ export class PeopleTable {
     static async addPeopleTable(caption) {
         $("#savePeople").show();
         // Get first name of root person
-        const rootPerson = window.people.get(window.rootId);
-        const rootFirstName = rootPerson.FirstName;
+        let rootPerson = window.people.get(window.rootId) || window.rootPerson;
+        if (!rootPerson) {
+            rootPerson = await WikiTreeAPI.postToAPI({
+                appId: Settings.APP_ID,
+                action: "getPerson",
+                keys: window.rootId,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            });
+            window.rootPerson = rootPerson;
+        }
+        console.log("rootPerson", rootPerson);
+        const rootFirstName = rootPerson?.FirstName || window.rootId;
         const sortTitle = "title='Click to sort'";
         const aCaption = `<caption>${caption}</caption>`;
         const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
