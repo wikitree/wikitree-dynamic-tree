@@ -386,7 +386,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#show-btn").css("background-color", "#25422d");
         $("#view-select").off("change.oneNameTrees");
         $("body").removeClass("oneNameTrees");
-        $("#controls,#dancingTree,#toggleOptions").remove();
+        $(document).off("keyup.oneNameTrees");
+        $(document).off("click.oneNameTrees");
+        $("#controls,#dancingTree,#toggleOptions,#help").remove();
+        $(
+            "#lifespanGraph,#peopleCountGraph,#namesTable,#unsourcedProfiles,#unconnectedProfiles,#noRelationsProfiles,#locationsVisualisation,#migrationSankey,#periodMigrants"
+        ).remove();
+        $("title").text("Tree Apps");
     }
 
     addListeners() {
