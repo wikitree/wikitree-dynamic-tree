@@ -28,6 +28,7 @@
  */
 class SlippyTree extends View {
 
+    #VIEWPARAM = "slippyView";  // Param to store details of current view in window location
     #APIURL = "https://api.wikitree.com/api.php";
     #APPID = "SlippyTree";
     #SVG = "http://www.w3.org/2000/svg";
@@ -95,6 +96,7 @@ class SlippyTree extends View {
  </div>
 
  <a class="helpButton"></a>
+ <div class="loader"></div>
  <div class="helpContainer">
   <div>
    <h1>The Slippy Tree</h1>
@@ -320,7 +322,11 @@ class SlippyTree extends View {
                 this.reposition({});
             });
         }
-        if (person_id) {
+        let state = window.wtViewRegistry?.session?.fields;
+        if (state && state[this.#VIEWPARAM]) {
+            helpContainer.classList.add("hidden");
+            this.restoreState(state[this.#VIEWPARAM]);
+        } else if (person_id) {
             helpContainer.classList.add("hidden");
             this.reset(person_id);
         } else {
@@ -339,11 +345,122 @@ class SlippyTree extends View {
         };
     }
 
+    close() {
+        // Remove the #VIEWPARAM parameter
+        if (this.#VIEWPARAM) {
+            let v = new URLSearchParams(window.location.hash.substring(1));
+            v.delete(this.#VIEWPARAM);
+            window.history.replaceState(null, null, "#" + v);
+        }
+    }
+
+    saveState() {
+        // sort into order
+        // store id as 32 bits
+        // if next id - prev id < 256, store delta, otherwise store 0 and then 32-bit id.
+        //
+        let data = [];
+        for (let pass=0;pass<2;pass++) {
+            let ids = [];
+            for (const person of this.people) {
+                if (!person.isHidden()) {
+                    let acl = person.childrenLoaded;
+                    for (let child of person.children()) {
+                        if (!child.isLoaded()) {
+                            acl = false;
+                        }
+                    }
+                    if (pass == 0 ? acl : !acl) {
+                        ids.push(parseInt(person.id));
+                    }
+                }
+            }
+            ids.sort();
+            data[pass] = ids;
+        }
+        while (data[data.length - 1].length == 0) {
+            data.length--;
+        }
+        let out = [];
+        out.push((this.focus.id>>24)&0xFF);
+        out.push((this.focus.id>>16)&0xFF);
+        out.push((this.focus.id>>8)&0xFF);
+        out.push((this.focus.id>>0)&0xFF);
+        for (let j=0;j<data.length;j++) {
+            const ids = data[j];
+            if (j > 0) {
+                out.push(0);
+                out.push(0);
+                out.push(0);
+                out.push(0);
+            }
+            for (let i=0;i<ids.length;i++) {
+                if (i == 0 || ids[i] - ids[i - 1] > 255) {
+                    if (i > 0) {
+                        out.push(0);
+                    }
+                    out.push((ids[i]>>24)&0xFF);
+                    out.push((ids[i]>>16)&0xFF);
+                    out.push((ids[i]>>8)&0xFF);
+                    out.push((ids[i]>>0)&0xFF);
+                } else {
+                    out.push(ids[i] - ids[i - 1]);
+                }
+            }
+            out.push(0);
+        }
+        // console.log("SAVE: D="+JSON.stringify(data));
+        let s = out.map((b)=>String.fromCodePoint(b)).join("");
+        return btoa(s).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    }
+
+    restoreState(val) {
+        while ((val.length & 3) != 0) {
+            val += "=";
+        }
+        val = atob(val.replaceAll("-","+").replaceAll("_","/"));
+        let data = [[]];
+        let i = 0;
+        let focusid = (val.codePointAt(i++)<<24) | (val.codePointAt(i++)<<16) | (val.codePointAt(i++)<<8) | val.codePointAt(i++);
+        let id = 0, pass = 0;
+        while (i < val.length) {
+            if (id == 0) {
+                id = (val.codePointAt(i++)<<24) | (val.codePointAt(i++)<<16) | (val.codePointAt(i++)<<8) | val.codePointAt(i++);
+                if (id == 0) {
+                    pass++;
+                    data[pass] = [];
+                } else {
+                    data[pass].push(id);
+                }
+            } else {
+                let delta = val.codePointAt(i++);
+                if (delta > 0) {
+                    id += delta;
+                    data[pass].push(id);
+                } else {
+                    id = 0;
+                }
+            }
+        }
+        // console.log("RESTORE: D="+JSON.stringify(data));
+        this.reset();
+        this.load({keys:data.flat()}, () => {
+            for (const id of data[0]) {
+                const person = this.find(id);
+                person.childrenLoaded = true;
+            }
+            this.refocus(this.find(focusid));
+        });
+    }
+
     /**
      * Remove all nodes, start again
      * @param id the id to load, or null to just clear the tree.
      */
     reset(id) {
+        if (typeof id == "number") {
+            id = id.toString();
+        }
         this.view = {scale:1, cx:0, cy:0};
         this.people.length = 0;
         Object.keys(this.byid).forEach(key => delete this.byid[key]);
@@ -585,6 +702,11 @@ class SlippyTree extends View {
         // of which will be to add new paths. This can be done safely
         // during or after the draw callbacks
         this.checkForUnloadedChildren();
+        if (this.#VIEWPARAM) {
+            let v = new URLSearchParams(window.location.hash.substring(1));
+            v.set(this.#VIEWPARAM, this.saveState());
+            window.history.replaceState(null, null, "#" + v);
+        }
     }
 
     /**
@@ -1070,6 +1192,7 @@ class SlippyTree extends View {
         const unloadedParentLength = this.#evalLength(style, style.getPropertyValue("--unloaded-parent-length"));
         const unloadedChildLength = this.#evalLength(style, style.getPropertyValue("--unloaded-child-length"));
         const unloadedSpouseLength = this.#evalLength(style, style.getPropertyValue("--unloaded-spouse-length"));
+        const sameGenerationBend = this.#evalLength(style, style.getPropertyValue("--same-generation-bend"));
         const peoplepane = this.svg.querySelector(".people");
         const edges = this.svg.querySelector(".relations");
         const labels = this.svg.querySelector(".labels");
@@ -1136,6 +1259,11 @@ class SlippyTree extends View {
                                 path.classList.add("mother");
                             } else {
                                 path.classList.add("parent");
+                            }
+                            if (person.generation == r.person.generation) {
+                                path.targetSameGenerationBend = sameGenerationBend;
+                            } else {
+                                delete path.targetSameGenerationBend;
                             }
                         }
                         if (r.type) {
@@ -1235,6 +1363,7 @@ class SlippyTree extends View {
             const p1 = path.person1;
             let px0 = 0, py0 = 0, px1 = 0, py1 = 0, px2 = 0, py2 = 0, px3 = 0, py3 = 0;
             const cl = path.classList;
+            let xd = 0, yd = 0;
             if (cl.contains("spouse") || cl.contains("coparent")) {
                 let edge = p0.cx < p1.cx ? -1 : 1;
                 px0 = Math.round(p0.cx) + p0.genwidth * 0.5 * edge;
@@ -1250,6 +1379,10 @@ class SlippyTree extends View {
                 py0 = Math.round(p0.cy) + p0.height * 0;
                 px3 = Math.round(p1.cx) + p1.genwidth * 0.5;
                 py3 = Math.round(p1.cy) + p1.height   * 0;
+                if (path.targetSameGenerationBend) {
+                    yd = path.targetSameGenerationBend * (py0 < py3 ? 1 : -1);
+                    xd = path.targetSameGenerationBend * (px0 < px3 ? 1 : -1);
+                }
                 px1 = px0 + (px3 - px0) / 2;
                 py1 = py0;
                 px2 = px0 + (px3 - px0) / 2;
@@ -1283,7 +1416,18 @@ class SlippyTree extends View {
             if (px1 == px0 && px2 == px0 && px3 == px0 && py1 == py0 && py2 == py0 && py3 == py0) {
                 d = "";
             } else if (px1 != px0 || py1 != py0 || px2 != px3 || py2 != py3) {
-                d = "M " + px0 + " " + py0 + " C " + px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
+                d = "M " + px0 + " " + py0 + " C ";
+                if (xd || yd) {
+                    // If linking to same generation, add an extra curve at start and end
+                    d += (px0 - xd) + " " + py0 + " " + (px0 - xd) + " " + (py0 + yd) + " " + px0 + " " + (py0 + yd) + " ";
+                    py1 += yd;
+                    py2 -= yd;
+                    py3 -= yd;
+                }
+                d += px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
+                if (xd || yd) {
+                    d += " " + (px3 + xd) + " " + py3 + " " + (px3 + xd) + " " + (py3 + yd) + " " + px3 + " " + (py3 + yd);
+                }
             } else {
                 d = "M " + px0 + " " + py0 + " L " + px3 + " " + py3;
             }
@@ -1376,6 +1520,7 @@ class SlippyTree extends View {
      * @param callback the method to call once the people are loaded
      */
     load(params, callback) {
+        this.scrollPane.parentNode.classList.add("loading");
         let usedparams = {
             action: "getPeople",
             fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "HasChildren", "Father", "Mother" ],
@@ -1405,6 +1550,7 @@ class SlippyTree extends View {
         fetch(url, { credentials: "include" })
             .then(x => x.json())
             .then(data => {
+                this.scrollPane.parentNode.classList.remove("loading");
 //                console.log(JSON.stringify(data));
                 const len = this.people.length;
                 if (data[0].people) {
