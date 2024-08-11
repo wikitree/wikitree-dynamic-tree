@@ -28,7 +28,8 @@
  */
 class SlippyTree extends View {
 
-    #VIEWPARAM = "slippyView";  // Param to store details of current view in window location
+    static loadCount = 0;
+    #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
     #APIURL = "https://api.wikitree.com/api.php";
     #APPID = "SlippyTree";
     #SVG = "http://www.w3.org/2000/svg";
@@ -322,7 +323,12 @@ class SlippyTree extends View {
                 this.reposition({});
             });
         }
-        let state = window.wtViewRegistry?.session?.fields;
+        // We maintain our state in the URL hash, alongside some other properties
+        // that apply to all views. We need to then ignore this if the view is reloaded
+        // with a different ID, but because of the slightly bodgy way this is done in
+        // tree.js it's non-trivial to do this properly. Easy way is to honour the state
+        // only the first time a SlippyTree is instantiated.
+        let state = SlippyTree.loadCount ? null : window.wtViewRegistry?.session?.fields;
         if (state && state[this.#VIEWPARAM]) {
             helpContainer.classList.add("hidden");
             this.restoreState(state[this.#VIEWPARAM]);
@@ -332,6 +338,7 @@ class SlippyTree extends View {
         } else {
             helpContainer.classList.remove("hidden");
         }
+        SlippyTree.loadCount++;
     }
 
     meta() {
