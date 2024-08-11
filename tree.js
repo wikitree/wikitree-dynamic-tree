@@ -460,6 +460,8 @@ window.SessionManager = class SessionManager {
         if (viewID && viewIDs.includes(viewID)) {
             this.viewID = fields.get("view");
         }
+        // Store the hash parameters in "fields", allowing a view to access them if required
+        this.fields = Object.fromEntries(fields);
     }
 
     loadCookies() {
