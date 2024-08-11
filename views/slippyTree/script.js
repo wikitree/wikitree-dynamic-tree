@@ -395,7 +395,8 @@ class SlippyTree extends View {
                 out.push(0);
             }
             for (let i=0;i<ids.length;i++) {
-                if (i == 0 || ids[i] - ids[i - 1] > 255) {
+                let delta = i == 0 ? 0 : ids[i] - ids[i - 1];
+                if (i == 0 || (delta < 0 || delta > 255)) {
                     if (i > 0) {
                         out.push(0);
                     }
@@ -404,7 +405,7 @@ class SlippyTree extends View {
                     out.push((ids[i]>>8)&0xFF);
                     out.push((ids[i]>>0)&0xFF);
                 } else {
-                    out.push(ids[i] - ids[i - 1]);
+                    out.push(delta);
                 }
             }
             out.push(0);
