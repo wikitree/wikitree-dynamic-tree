@@ -107,6 +107,7 @@ export class CC7 {
                         You may fine-tune the above missing family setting by selecting any combination of the above values
                         in the Settings (see <img width=16px src="./views/cc7/images/setting-icon.png" /> at the top right).
                     </li>
+                    <li><b>Complete</b> – People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked.</li>
                 </ul>
             </li>
         </ul>
@@ -1102,12 +1103,20 @@ export class CC7 {
     static updateTableWithResults(table, results) {
         const clone = table.cloneNode(true); // Deep clone the table
         results.forEach((result) => {
+            // window.people is an array of objects with the personId as the key
+            // Add the relationship to the person object
+            const person = window.people.get(result.personId);
+            if (person) {
+                person.Relationship = result.relationship;
+            }
             const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
             if (row) {
                 row.setAttribute("data-relation", result.relationship.abbr);
                 const relationCell = row.querySelector("td.relation");
-                relationCell.textContent = result.relationship.abbr;
-                relationCell.setAttribute("title", result.relationship.full);
+                if (relationCell) {
+                    relationCell.textContent = result.relationship.abbr;
+                    relationCell.setAttribute("title", result?.relationship?.full);
+                }
             }
         });
         return clone;
