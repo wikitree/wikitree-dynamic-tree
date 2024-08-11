@@ -690,6 +690,10 @@ table tr.cc7filter-row input[type="text"] {
 #cc7Container .select2-dropdown {
   width: 40px !important;
 }
+#cc7Container #relation,
+#cc7Container td.relation {
+  width: 3em;
+}
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/
