@@ -1305,6 +1305,11 @@ class SlippyTree extends View {
                         edges.insertBefore(path, edges.firstChild);
                     }
                 }
+            } else {
+                let path = edges.querySelector("#noissue-" + person.id);
+                if (path) {
+                    path.remove();
+                }
             }
             for (const marriage of this.view.marriages) {
                 const person = marriage.a;
