@@ -289,6 +289,11 @@ body:has(.slippy-tree-container) {
     stroke-width: 2px;
     opacity: 0.5
 }
+.slippy-tree-container .slippy-tree .relations .noissue {
+    stroke: black;
+    stroke-width: 1;
+    opacity: 0.5;
+}
 
 /* labels */
 .slippy-tree-container .slippy-tree .labels .marriage {

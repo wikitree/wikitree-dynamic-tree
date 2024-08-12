@@ -121,6 +121,7 @@ class SlippyTree extends View {
       <path class="unloaded-father confident" d="M 339 26 C 319.25 26 319.25 16 289.5 16" transform="translate(-299 -17)"></path>
       <path class="father-unloaded" d="M 279 10 L 239.5 11" transform="translate(219 50)"></path>
       <path class="spouse-unloaded" d="M 339 26 C 329 26 329 46 329 46" transform="translate(-290 16)"></path>
+      <path class="noissue" d="M 460 19 l 5 0 m 0 -8 l 0 16"></path>
      </g>
      <g class="labels">
       <text class="marriage focus" x="245" y="41">Marriage Date</text>
@@ -174,7 +175,7 @@ class SlippyTree extends View {
       <path d="M 350 100 L 340 86" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="350" y="110">Father is uncertain</text>
       <path d="M 415 -5 L 410 6" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="430" y="-8">Living Person</text>
+      <text x="410" y="-8">Living Person</text>
       <path d="M 410 85 L 407 59" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="400" y="98">WikiTree Member</text>
       <path d="M 20 85 L 17 12" stroke="black" fill="none" marker-end="url(#arrow)"/>
@@ -183,6 +184,8 @@ class SlippyTree extends View {
       <text x="450" y="118">Descendants to load</text>
       <path d="M 50 72 L 46 57" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="70" y="85">Spouse to load</text>
+      <text x="480" y="-8">No Issue</text>
+      <path d="M 470 -5 L 467 7" stroke="black" fill="none" marker-end="url(#arrow)"/>
      </g>
     </g>
    </svg>
@@ -1288,6 +1291,21 @@ class SlippyTree extends View {
                     }
                 }
             }
+            if (children.length == 0 && person.data.NoChildren == 1) {
+                let path = edges.querySelector("#noissue-" + person.id);
+                if (!path) {
+                    path = document.createElementNS(this.#SVG, "path");
+                    path.classList.add("noissue");
+                    path.setAttribute("id", "noissue-" + person.id);
+                    path.person0 = person;
+                    if (person == focus) {
+                        path.classList.add("focus");
+                        edges.appendChild(path);
+                    } else {
+                        edges.insertBefore(path, edges.firstChild);
+                    }
+                }
+            }
             for (const marriage of this.view.marriages) {
                 const person = marriage.a;
                 const spouse = marriage.b;
@@ -1300,6 +1318,7 @@ class SlippyTree extends View {
                         labels.appendChild(text);
                         // Don't really have a good idea to display multiple spouses,
                         // at the moment it looks like each spouse marries the next one.
+                        text.person = person;
                         text.person0 = marriage.top;
                         text.person1 = marriage.bot;
                         if (person == focus || r.person == focus) {
@@ -1367,6 +1386,7 @@ class SlippyTree extends View {
             }
         }
         for (let path=edges.firstElementChild;path;path=path.nextElementSibling) {
+            let d = null;
             const p0 = path.person0;
             const p1 = path.person1;
             let px0 = 0, py0 = 0, px1 = 0, py1 = 0, px2 = 0, py2 = 0, px3 = 0, py3 = 0;
@@ -1419,32 +1439,39 @@ class SlippyTree extends View {
                 px1 = px2 = px3;
                 py1 = py0;
                 py2 = py3;
+            } else if (cl.contains("noissue")) {
+                px0 = Math.round(p0.cx) + p0.genwidth * 0.5
+                py0 = Math.round(p0.cy);
+                let h = p0.height;
+                d = "M " + px0 + " " + py0 + " l 5 0 m 0 " + (h / -2) + " l 0 " + h;
             }
-            let d;
-            if (px1 == px0 && px2 == px0 && px3 == px0 && py1 == py0 && py2 == py0 && py3 == py0) {
-                d = "";
-            } else if (px1 != px0 || py1 != py0 || px2 != px3 || py2 != py3) {
-                d = "M " + px0 + " " + py0 + " C ";
-                if (xd || yd) {
-                    // If linking to same generation, add an extra curve at start and end
-                    d += (px0 - xd) + " " + py0 + " " + (px0 - xd) + " " + (py0 + yd) + " " + px0 + " " + (py0 + yd) + " ";
-                    py1 += yd;
-                    py2 -= yd;
-                    py3 -= yd;
+            if (!d) {
+                if (px1 == px0 && px2 == px0 && px3 == px0 && py1 == py0 && py2 == py0 && py3 == py0) {
+                    d = "";
+                } else if (px1 != px0 || py1 != py0 || px2 != px3 || py2 != py3) {
+                    d = "M " + px0 + " " + py0 + " C ";
+                    if (xd || yd) {
+                        // If linking to same generation, add an extra curve at start and end
+                        d += (px0 - xd) + " " + py0 + " " + (px0 - xd) + " " + (py0 + yd) + " " + px0 + " " + (py0 + yd) + " ";
+                        py1 += yd;
+                        py2 -= yd;
+                        py3 -= yd;
+                    }
+                    d += px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
+                    if (xd || yd) {
+                        d += " " + (px3 + xd) + " " + py3 + " " + (px3 + xd) + " " + (py3 + yd) + " " + px3 + " " + (py3 + yd);
+                    }
+                } else {
+                    d = "M " + px0 + " " + py0 + " L " + px3 + " " + py3;
                 }
-                d += px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
-                if (xd || yd) {
-                    d += " " + (px3 + xd) + " " + py3 + " " + (px3 + xd) + " " + (py3 + yd) + " " + px3 + " " + (py3 + yd);
-                }
-            } else {
-                d = "M " + px0 + " " + py0 + " L " + px3 + " " + py3;
             }
             path.setAttribute("d", d);
         }
         for (let label=labels.firstElementChild;label;label=label.nextElementSibling) {
+            const p = label.person;
             const p0 = label.person0;
             const p1 = label.person1;
-            let cx = Math.round(Math.min(p0.cx - p0.genwidth * 0.5,  p1.cx - p0.genwidth * 0.5));
+            let cx = Math.round(p.cx - p.genwidth * 0.5);
             label.classList.add("left");
             let cy = Math.round(p0.cy + p1.cy) / 2;
             label.setAttribute("x", cx);
@@ -1531,7 +1558,7 @@ class SlippyTree extends View {
         this.scrollPane.parentNode.classList.add("loading");
         let usedparams = {
             action: "getPeople",
-            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "HasChildren", "Father", "Mother" ],
+            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother" ],
             "appid": this.#APPID
         };
         for (let key in params) {
@@ -1944,6 +1971,7 @@ class SlippyTreePerson {
             // Load 4 (the max) levels of descendants for this node, and their spouses. Multi stage.
             // Load ...
             const depth = 4;
+            this.childrenLoaded = false;
             tree.load({keys: this.id, descendants:depth}, () => {
                 // ... focus ...
                 this.childrenLoaded = true;
