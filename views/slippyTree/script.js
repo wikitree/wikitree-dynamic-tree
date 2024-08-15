@@ -30,6 +30,7 @@ class SlippyTree extends View {
 
     static loadCount = 0;
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
+    #VERSION = 0; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
     #APPID = "SlippyTree";
     #SVG = "http://www.w3.org/2000/svg";
@@ -334,12 +335,17 @@ class SlippyTree extends View {
         let state = SlippyTree.loadCount ? null : window.wtViewRegistry?.session?.fields;
         if (state && state[this.#VIEWPARAM]) {
             helpContainer.classList.add("hidden");
-            this.restoreState(state[this.#VIEWPARAM]);
-        } else if (person_id) {
-            helpContainer.classList.add("hidden");
-            this.reset(person_id);
-        } else {
-            helpContainer.classList.remove("hidden");
+            if (!this.restoreState(state[this.#VIEWPARAM])) {
+                state = null;
+            }
+        }
+        if (state == null) {
+            if (person_id) {
+                helpContainer.classList.add("hidden");
+                this.reset(person_id);
+            } else {
+                helpContainer.classList.remove("hidden");
+            }
         }
         SlippyTree.loadCount++;
     }
@@ -364,6 +370,10 @@ class SlippyTree extends View {
         }
     }
 
+    /**
+     * Serialize the current state of the view to a string, suitable for include in a URL parameter.
+     * The reverse operion is "restoreState"
+     */
     saveState() {
         // sort into order
         // store id as 32 bits
@@ -392,6 +402,7 @@ class SlippyTree extends View {
             data.length--;
         }
         let out = [];
+        out.push(this.#VERSION);    // Plan for expansion!
         out.push((this.focus.id>>24)&0xFF);
         out.push((this.focus.id>>16)&0xFF);
         out.push((this.focus.id>>8)&0xFF);
@@ -425,43 +436,56 @@ class SlippyTree extends View {
         return btoa(s).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
     }
 
+    /**
+     * Deserialize a state string as created by "saveState". Return true if the operation succeeded
+     */
     restoreState(val) {
         while ((val.length & 3) != 0) {
             val += "=";
         }
-        val = atob(val.replaceAll("-","+").replaceAll("_","/"));
-        let data = [[]];
-        let i = 0;
-        let focusid = (val.codePointAt(i++)<<24) | (val.codePointAt(i++)<<16) | (val.codePointAt(i++)<<8) | val.codePointAt(i++);
-        let id = 0, pass = 0;
-        while (i < val.length) {
-            if (id == 0) {
-                id = (val.codePointAt(i++)<<24) | (val.codePointAt(i++)<<16) | (val.codePointAt(i++)<<8) | val.codePointAt(i++);
+        try {
+            val = atob(val.replaceAll("-","+").replaceAll("_","/"));
+            let data = [[]];
+            let i = 0;
+            let version = val.codePointAt(i++);
+            if (version != this.#VERSION) {
+                return false;
+            }
+            let focusid = (val.codePointAt(i++)<<24) | (val.codePointAt(i++)<<16) | (val.codePointAt(i++)<<8) | val.codePointAt(i++);
+            let id = 0, pass = 0;
+            while (i < val.length) {
                 if (id == 0) {
-                    pass++;
-                    data[pass] = [];
+                    id = (val.codePointAt(i++)<<24) | (val.codePointAt(i++)<<16) | (val.codePointAt(i++)<<8) | val.codePointAt(i++);
+                    if (id == 0) {
+                        pass++;
+                        data[pass] = [];
+                    } else {
+                        data[pass].push(id);
+                    }
                 } else {
-                    data[pass].push(id);
-                }
-            } else {
-                let delta = val.codePointAt(i++);
-                if (delta > 0) {
-                    id += delta;
-                    data[pass].push(id);
-                } else {
-                    id = 0;
+                    let delta = val.codePointAt(i++);
+                    if (delta > 0) {
+                        id += delta;
+                        data[pass].push(id);
+                    } else {
+                        id = 0;
+                    }
                 }
             }
+            // console.log("RESTORE: D="+JSON.stringify(data));
+            this.reset();
+            this.load({keys:data.flat()}, () => {
+                for (const id of data[0]) {
+                    const person = this.find(id);
+                    person.childrenLoaded = true;
+                }
+                this.refocus(this.find(focusid));
+            });
+            return true;
+        } catch (e) {
+            console.warn(e);
+            return false;
         }
-        // console.log("RESTORE: D="+JSON.stringify(data));
-        this.reset();
-        this.load({keys:data.flat()}, () => {
-            for (const id of data[0]) {
-                const person = this.find(id);
-                person.childrenLoaded = true;
-            }
-            this.refocus(this.find(focusid));
-        });
     }
 
     /**
