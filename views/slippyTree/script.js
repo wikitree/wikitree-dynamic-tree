@@ -316,15 +316,19 @@ class SlippyTree extends View {
                 this.reposition(view);
             });
             this.state.scrollPane.addEventListener("scroll", () => {
+                if (!this.state) {
+                    return;
+                }
                 this.state.view.cx = (((this.state.scrollPane.clientWidth / 2 + this.state.scrollPane.scrollLeft) - this.state.view.padx0) / this.state.view.scale) + this.state.view.x0;
                 this.state.view.cy = (((this.state.scrollPane.clientHeight / 2 + this.state.scrollPane.scrollTop) - this.state.view.pady0) / this.state.view.scale) + this.state.view.y0;
             });
             this.state.resizeObserver = new ResizeObserver(entries => {
-                if (this.state) {
-                    delete this.state.view.viewWidth;
-                    delete this.state.view.viewHeight;
-                    this.reposition({});
+                if (!this.state) {
+                    return;
                 }
+                delete this.state.view.viewWidth;
+                delete this.state.view.viewHeight;
+                this.reposition({});
             });
             this.state.resizeObserver.observe(this.state.container);
         }
@@ -1367,6 +1371,9 @@ class SlippyTree extends View {
      * Redraw. This is the animation frame, don't repeat work here
      */
     draw() {
+        if (!this.state) {
+            return;
+        }
         const edges = this.state.svg.querySelector(".relations");
         const labels = this.state.svg.querySelector(".labels");
         let people = [];
@@ -1618,6 +1625,9 @@ class SlippyTree extends View {
         fetch(url, { credentials: "include" })
             .then(x => x.json())
             .then(data => {
+                if (!this.state) {
+                    return;
+                }
                 this.state.scrollPane.parentNode.classList.remove("loading");
 //                console.log(JSON.stringify(data));
                 const len = this.state.people.length;
