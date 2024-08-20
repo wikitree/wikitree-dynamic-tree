@@ -37,9 +37,6 @@ class SlippyTree extends View {
     #MINSCALE = 0.2;
     #MAXSCALE = 3;
 
-    #refocusStart;
-    #refocusEnd;
-
     /**
      * Props is an (optional) map with the following keys
      *  - trackpad: if true, the mousewheel is identified a trackpad, if false it's a mouse. Optional, will auto-detect by default
@@ -49,8 +46,9 @@ class SlippyTree extends View {
      *          spouses (so long as they have no other home in the tree), and so on. 0 disables bundling. Default is 2
      */
     init(container_selector, person_id, props) {
-        this.props = props || {};
-        const container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
+        this.state = {};
+        this.state.props = props || {};
+        this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
         const content = `
 
 <div class="slippy-tree-container">
@@ -200,13 +198,13 @@ class SlippyTree extends View {
 
 `;
 
-        container.style = "";   // Reset it, as some other tree types set style properties on it
-        container.innerHTML = content.trim();
-        this.scrollPane = container.querySelector(".slippy-tree-scrollpane");
-        this.svg = container.querySelector(".slippy-tree-scrollpane > svg");
-        this.personMenu = container.querySelector(".personMenu");
-        const helpButton = container.querySelector(".helpButton");
-        const helpContainer = container.querySelector(".helpContainer");
+        this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
+        this.state.container.innerHTML = content.trim();
+        this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
+        this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
+        this.state.personMenu = this.state.container.querySelector(".personMenu");
+        const helpButton = this.state.container.querySelector(".helpButton");
+        const helpContainer = this.state.container.querySelector(".helpContainer");
         const helpBox = helpContainer.querySelector(":scope > :first-child");
         helpButton.addEventListener("click", (e) => {
             helpContainer.classList.toggle("hidden");
@@ -215,29 +213,29 @@ class SlippyTree extends View {
             helpContainer.classList.toggle("hidden");
         });
 
-        this.people = [];
-        this.byid = {};
-        this.view = {scale: 1, cx:0, cy: 0};
-        this.focus = null;
-        this.#refocusStart = null;
-        this.#refocusEnd = null;
-        let trackpad = this.props.trackpad;
-        for (let elt of this.personMenu.querySelectorAll("[data-action]")) {
+        this.state.people = [];
+        this.state.byid = {};
+        this.state.view = {scale: 1, cx:0, cy: 0};
+        this.state.focus = null;
+        this.state.refocusStart = null;
+        this.state.refocusEnd = null;
+        let trackpad = this.state.props.trackpad;
+        for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
             if (elt.getAttribute("data-action") != "profile") {
                 elt.addEventListener("click", () => {
-                    this.personMenu.classList.add("hidden");
-                    this.personMenu.person.action(elt.getAttribute("data-action"));
+                    this.state.personMenu.classList.add("hidden");
+                    this.state.personMenu.person.action(elt.getAttribute("data-action"));
                 });
             }
         }
-        if (this.scrollPane) {
+        if (this.state.scrollPane) {
             // All the mouse/scroll events are here
             const pointers = [];
-            this.svg.addEventListener("pointerdown", (e) => {
+            this.state.svg.addEventListener("pointerdown", (e) => {
                 pointers.push({ id:e.pointerId, screenX: e.screenX, screenY: e.screenY });
-                this.personMenu.classList.add("hidden");
+                this.state.personMenu.classList.add("hidden");
             });
-            this.svg.addEventListener("pointerup", (e) => {
+            this.state.svg.addEventListener("pointerup", (e) => {
                 if (e.isPrimary) {
                     pointers.length = 0;
                 } else {
@@ -248,7 +246,7 @@ class SlippyTree extends View {
                     }
                 }
             });
-            this.svg.addEventListener("pointermove", (e) => {
+            this.state.svg.addEventListener("pointermove", (e) => {
                 e.preventDefault();
                 // Set dx/dy on pointers, because iOS doesn't have these standard props and e is read-only
                 for (const p of pointers) {
@@ -271,9 +269,9 @@ class SlippyTree extends View {
 
                 if (pointers.length == 1) {
                     let elt = document.elementFromPoint(e.pageX, e.pageY);
-                    if (elt == this.svg) {    // One finger dragging over background: scroll
-                        this.scrollPane.scrollLeft -= pointers[0].dx;
-                        this.scrollPane.scrollTop -= pointers[0].dy;
+                    if (elt == this.state.svg) {    // One finger dragging over background: scroll
+                        this.state.scrollPane.scrollLeft -= pointers[0].dx;
+                        this.state.scrollPane.scrollTop -= pointers[0].dy;
                     }
                 } else if (pointers.length == 2) {  // Two fingers: pinch zoom
                     let ox0 = pointers[0].screenX;
@@ -286,22 +284,22 @@ class SlippyTree extends View {
                     let ny1 = oy1 + pointers[1].dy;
                     let od = Math.sqrt((ox1-ox0)*(ox1-ox0) + (oy1-oy0)*(oy1-oy0));
                     let nd = Math.sqrt((nx1-nx0)*(nx1-nx0) + (ny1-ny0)*(ny1-ny0));
-                    const oscale = this.view.scale;
+                    const oscale = this.state.view.scale;
                     let nscale = oscale * nd / od;
                     let dx = ((nx1-ox1) + (nx0-ox0)) / 2;
                     let dy = ((ny1-oy1) + (ny0-oy0)) / 2;
-                    let ncx = this.view.cx - dx / oscale;
-                    let ncy = this.view.cy - dy / oscale;
+                    let ncx = this.state.view.cx - dx / oscale;
+                    let ncy = this.state.view.cy - dy / oscale;
                     this.reposition({scale:nscale, cx:ncx, cy:ncy});
                 }
             });
-            this.svg.addEventListener("wheel", (e) => {
+            this.state.svg.addEventListener("wheel", (e) => {
                 // If a trackpad, mousewheel will run in two directions and ctrl-wheel
                 // is used to pinch-zoom. If a normal mousewheel, wheel is used to zoom
                 // and only goes in one direction.
                 // Assume non-trackpad until proved otherwise
                 e.preventDefault();
-                let view = {scale: this.view.scale, cx:this.view.cx, cy:this.view.cy};
+                let view = {scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy};
                 if (typeof trackpad != "boolean" && (e.deltaX || !Number.isInteger(e.deltaY))) {
                     trackpad = true;
                 }
@@ -309,23 +307,26 @@ class SlippyTree extends View {
                     if (e.ctrlKey) {
                         view.scale -= e.deltaY * 0.01;
                     } else {
-                        view.cx += e.deltaX / view.scale * (this.props.dragScrollReversed ? -1 : 1);
-                        view.cy += e.deltaY / view.scale * (this.props.dragScrollReversed ? -1 : 1);
+                        view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
+                        view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                     }
                 } else {
                     view.scale -= e.deltaY * 0.01;
                 }
                 this.reposition(view);
             });
-            this.scrollPane.addEventListener("scroll", () => {
-                this.view.cx = (((this.scrollPane.clientWidth / 2 + this.scrollPane.scrollLeft) - this.view.padx0) / this.view.scale) + this.view.x0;
-                this.view.cy = (((this.scrollPane.clientHeight / 2 + this.scrollPane.scrollTop) - this.view.pady0) / this.view.scale) + this.view.y0;
+            this.state.scrollPane.addEventListener("scroll", () => {
+                this.state.view.cx = (((this.state.scrollPane.clientWidth / 2 + this.state.scrollPane.scrollLeft) - this.state.view.padx0) / this.state.view.scale) + this.state.view.x0;
+                this.state.view.cy = (((this.state.scrollPane.clientHeight / 2 + this.state.scrollPane.scrollTop) - this.state.view.pady0) / this.state.view.scale) + this.state.view.y0;
             });
-            window.addEventListener("resize", (e) => { 
-                delete this.view.viewWidth;
-                delete this.view.viewHeight;
-                this.reposition({});
+            this.state.resizeObserver = new ResizeObserver(entries => {
+                if (this.state) {
+                    delete this.state.view.viewWidth;
+                    delete this.state.view.viewHeight;
+                    this.reposition({});
+                }
             });
+            this.state.resizeObserver.observe(this.state.container);
         }
         // We maintain our state in the URL hash, alongside some other properties
         // that apply to all views. We need to then ignore this if the view is reloaded
@@ -362,12 +363,15 @@ class SlippyTree extends View {
     }
 
     close() {
-        // Remove the #VIEWPARAM parameter
+        // Remember this object persists even when other views are selected.
+        // Clear out all state - it's all under "this.state" now - and disconnect resize observer
+        this.state.resizeObserver.disconnect();
         if (this.#VIEWPARAM) {
             let v = new URLSearchParams(window.location.hash.substring(1));
             v.delete(this.#VIEWPARAM);
             window.history.replaceState(null, null, "#" + v);
         }
+        delete this.state;
     }
 
     /**
@@ -382,7 +386,7 @@ class SlippyTree extends View {
         let data = [];
         for (let pass=0;pass<2;pass++) {
             let ids = [];
-            for (const person of this.people) {
+            for (const person of this.state.people) {
                 if (!person.isHidden()) {
                     let acl = person.childrenLoaded;
                     for (let child of person.children()) {
@@ -403,10 +407,10 @@ class SlippyTree extends View {
         }
         let out = [];
         out.push(this.#VERSION);    // Plan for expansion!
-        out.push((this.focus.id>>24)&0xFF);
-        out.push((this.focus.id>>16)&0xFF);
-        out.push((this.focus.id>>8)&0xFF);
-        out.push((this.focus.id>>0)&0xFF);
+        out.push((this.state.focus.id>>24)&0xFF);
+        out.push((this.state.focus.id>>16)&0xFF);
+        out.push((this.state.focus.id>>8)&0xFF);
+        out.push((this.state.focus.id>>0)&0xFF);
         for (let j=0;j<data.length;j++) {
             const ids = data[j];
             if (j > 0) {
@@ -496,12 +500,12 @@ class SlippyTree extends View {
         if (typeof id == "number") {
             id = id.toString();
         }
-        this.view = {scale:1, cx:0, cy:0};
-        this.people.length = 0;
-        Object.keys(this.byid).forEach(key => delete this.byid[key]);
-        this.focus = this.#refocusStart = this.#refocusEnd = null;
+        this.state.view = {scale:1, cx:0, cy:0};
+        this.state.people.length = 0;
+        Object.keys(this.state.byid).forEach(key => delete this.state.byid[key]);
+        this.state.focus = this.state.refocusStart = this.state.refocusEnd = null;
         // Clearing is a bit ad-hoc
-        const container = this.svg.querySelector(".container");
+        const container = this.state.svg.querySelector(".container");
         for (let n=container.firstChild;n;n=n.nextSibling) {
             while (n.firstChild) {
                 n.firstChild.remove();
@@ -509,7 +513,7 @@ class SlippyTree extends View {
         }
         if (id) {
             this.load({keys:id, nuclear:1}, () => {
-                const person = this.byid[id];
+                const person = this.state.byid[id];
                 person.childrenLoaded = true;
                 this.refocus(person);
             });
@@ -521,56 +525,56 @@ class SlippyTree extends View {
      * @param props a map to merge over the current scale map
      */
     reposition(m) {
-        if (this.people.length == 0) {
-            this.view = {scale: 1, cx:0, cy: 0, x0:0, x1:0, y0:0, y1:0};
+        if (this.state.people.length == 0) {
+            this.state.view = {scale: 1, cx:0, cy: 0, x0:0, x1:0, y0:0, y1:0};
         } else {
             for (let key in m) {
                 let v = m[key];
                 if (typeof v != "number" || !isNaN(v)) {
-                    this.view[key] = m[key];
+                    this.state.view[key] = m[key];
                 }
             }
         }
-        this.view.scale = Math.max(this.#MINSCALE, Math.min(this.#MAXSCALE, this.view.scale));
-        const targetWidth  = Math.round((this.view.x1 - this.view.x0) * this.view.scale);
-        const targetHeight = Math.round((this.view.y1 - this.view.y0) * this.view.scale);
-        if (!this.view.viewWidth || !this.view.viewHeight) {
-            this.view.viewWidth = this.scrollPane.clientWidth;
-            this.view.viewHeight = this.scrollPane.clientHeight;
-            this.view.padx0 = this.view.padx1 = Math.floor(this.view.viewWidth / 2);
-            this.view.pady0 = this.view.pady1 = Math.floor(this.view.viewHeight / 2);
-            if (!this.personMenu.previousClientHeight) {
-                const hidden = this.personMenu.classList.contains("hidden");
+        this.state.view.scale = Math.max(this.#MINSCALE, Math.min(this.#MAXSCALE, this.state.view.scale));
+        const targetWidth  = Math.round((this.state.view.x1 - this.state.view.x0) * this.state.view.scale);
+        const targetHeight = Math.round((this.state.view.y1 - this.state.view.y0) * this.state.view.scale);
+        if (!this.state.view.viewWidth || !this.state.view.viewHeight) {
+            this.state.view.viewWidth = this.state.scrollPane.clientWidth;
+            this.state.view.viewHeight = this.state.scrollPane.clientHeight;
+            this.state.view.padx0 = this.state.view.padx1 = Math.floor(this.state.view.viewWidth / 2);
+            this.state.view.pady0 = this.state.view.pady1 = Math.floor(this.state.view.viewHeight / 2);
+            if (!this.state.personMenu.previousClientHeight) {
+                const hidden = this.state.personMenu.classList.contains("hidden");
                 if (hidden) {
-                    this.personMenu.classList.remove("hidden");
+                    this.state.personMenu.classList.remove("hidden");
                 }
-                this.personMenu.previousClientHeight = this.personMenu.clientHeight;
+                this.state.personMenu.previousClientHeight = this.state.personMenu.clientHeight;
                 if (hidden) {
-                    this.personMenu.classList.add("hidden");
+                    this.state.personMenu.classList.add("hidden");
                 }
             }
-            this.view.pady1 = Math.max(this.view.pady1, this.personMenu.previousClientHeight + 40);
-            this.svg.style.paddingLeft   = this.view.padx0 + "px";
-            this.svg.style.paddingRight  = this.view.padx1 + "px";
-            this.svg.style.paddingTop    = this.view.pady0 + "px";
-            this.svg.style.paddingBottom = this.view.pady1 + "px";
+            this.state.view.pady1 = Math.max(this.state.view.pady1, this.state.personMenu.previousClientHeight + 40);
+            this.state.svg.style.paddingLeft   = this.state.view.padx0 + "px";
+            this.state.svg.style.paddingRight  = this.state.view.padx1 + "px";
+            this.state.svg.style.paddingTop    = this.state.view.pady0 + "px";
+            this.state.svg.style.paddingBottom = this.state.view.pady1 + "px";
         }
-        let tran = "scale(" + this.view.scale + " " + this.view.scale + ") ";
-        tran += "translate(" + (-this.view.x0) + " " + (-this.view.y0) + ")";
-        if (tran != this.view.tran) {
-            this.svg.querySelector(".container").setAttribute("transform", this.view.tran = tran);
+        let tran = "scale(" + this.state.view.scale + " " + this.state.view.scale + ") ";
+        tran += "translate(" + (-this.state.view.x0) + " " + (-this.state.view.y0) + ")";
+        if (tran != this.state.view.tran) {
+            this.state.svg.querySelector(".container").setAttribute("transform", this.state.view.tran = tran);
         }
-        if (targetWidth != this.view.targetWidth || targetHeight != this.view.targetHeight) {
-            this.svg.setAttribute("width", this.view.targetWidth = targetWidth);
-            this.svg.setAttribute("height", this.view.targetHeight = targetHeight);
+        if (targetWidth != this.state.view.targetWidth || targetHeight != this.state.view.targetHeight) {
+            this.state.svg.setAttribute("width", this.state.view.targetWidth = targetWidth);
+            this.state.svg.setAttribute("height", this.state.view.targetHeight = targetHeight);
         }
 
-        const targetX = Math.round((this.view.cx - this.view.x0) * this.view.scale) + this.view.padx0;
-        const targetY = Math.round((this.view.cy - this.view.y0) * this.view.scale) + this.view.pady0;
-        this.scrollPane.scrollLeft = Math.round(targetX - this.view.viewWidth / 2);
-        this.scrollPane.scrollTop  = Math.round(targetY - this.view.viewHeight / 2);
-//        console.log("RESCALE: scale="+JSON.stringify(o)+" target=["+targetWidth+" "+targetHeight+"] view=["+this.view.viewWidth+" "+this.view.viewHeight+"] center=["+targetX+" "+targetY+"] tr="+tran+" sp="+x+" "+y);
-        if (!this.personMenu.classList.contains("hidden")) {
+        const targetX = Math.round((this.state.view.cx - this.state.view.x0) * this.state.view.scale) + this.state.view.padx0;
+        const targetY = Math.round((this.state.view.cy - this.state.view.y0) * this.state.view.scale) + this.state.view.pady0;
+        this.state.scrollPane.scrollLeft = Math.round(targetX - this.state.view.viewWidth / 2);
+        this.state.scrollPane.scrollTop  = Math.round(targetY - this.state.view.viewHeight / 2);
+//        console.log("RESCALE: scale="+JSON.stringify(o)+" target=["+targetWidth+" "+targetHeight+"] view=["+this.state.view.viewWidth+" "+this.state.view.viewHeight+"] center=["+targetX+" "+targetY+"] tr="+tran+" sp="+x+" "+y);
+        if (!this.state.personMenu.classList.contains("hidden")) {
             this.showMenu();
         }
     }
@@ -583,11 +587,11 @@ class SlippyTree extends View {
     showMenu(person, e) {
         // Note both person and e can be missing to reposition the currently displayed menu
         if (!person) {
-            person = this.personMenu.person;
+            person = this.state.personMenu.person;
         }
-        this.personMenu.classList.remove("hidden");
-        this.personMenu.showEvent = e;
-        let menuWidth = this.personMenu.clientWidth;
+        this.state.personMenu.classList.remove("hidden");
+        this.state.personMenu.showEvent = e;
+        let menuWidth = this.state.personMenu.clientWidth;
         let c = this.fromSVGCoords({x:person.x - person.genwidth / 2, y:person.y + person.height / 2});
         let x0 = c.x;
         let y = c.y;
@@ -599,21 +603,21 @@ class SlippyTree extends View {
             });
             document.querySelectorAll("[data-action=\"profile\"]").forEach((e) => {
                 // Do this to avoid issues with popup blockers if target=_blank
-                if (this.props.profileTarget) {
-                    e.target = this.props.profileTarget;
+                if (this.state.props.profileTarget) {
+                    e.target = this.state.props.profileTarget;
                 }
                 e.href = "https://www.wikitree.com/wiki/" + person.data.Name;
             });
             sx = (event.offsetX - x0) / (x1 - x0);
-            this.personMenu.sx = sx;
-            this.personMenu.person = person;
+            this.state.personMenu.sx = sx;
+            this.state.personMenu.person = person;
         } else {
-            sx = this.personMenu.sx;
+            sx = this.state.personMenu.sx;
         }
         let x = Math.max(x0, Math.min(x1 - menuWidth, x0 + (x1-x0)*sx - menuWidth / 2));
-        this.personMenu.style.left = x + "px";
-        this.personMenu.style.top = y + "px";
-        if (e && this.props.refocusOnClick) {
+        this.state.personMenu.style.left = x + "px";
+        this.state.personMenu.style.top = y + "px";
+        if (e && this.state.props.refocusOnClick) {
             this.refocus(person);
         }
     }
@@ -627,8 +631,8 @@ class SlippyTree extends View {
         console.log("Focus " + focus);
 
         // Setup: ensure every person has an SVG
-        for (const person of this.people) {
-            if (!this.svg) {
+        for (const person of this.state.people) {
+            if (!this.state.svg) {
                 person.width = 100; // Dummy value for layout testing
                 person.height = 20;
             } else if (!person.svg && !person.isHidden()) {
@@ -641,7 +645,7 @@ class SlippyTree extends View {
                 person.svg.setAttribute("id", "person-" + person.id);
                 person.svg.appendChild(rect = document.createElementNS(this.#SVG, "rect"));
                 person.svg.appendChild(path = document.createElementNS(this.#SVG, "path"));
-                this.svg.querySelector(".people").appendChild(person.svg);
+                this.state.svg.querySelector(".people").appendChild(person.svg);
                 if (person.data.Gender == "Male") {
                     person.svg.classList.add("male");
                 } else if (person.data.Gender == "Female") {
@@ -696,14 +700,14 @@ class SlippyTree extends View {
         // First sort people into priority, then
         // position based on focus node and priority
         // After this each person has "tx" and "ty" value set
-        let ordered = this.order(focus, this.people);
-        this.view.marriages = [];
-        this.placeNodes(focus, ordered, this.view.marriages);
+        let ordered = this.order(focus, this.state.people);
+        this.state.view.marriages = [];
+        this.placeNodes(focus, ordered, this.state.view.marriages);
 
         // Re-add edges, people, labels in priority order
-        const peoplepane = this.svg.querySelector(".people");
-        const edges = this.svg.querySelector(".relations");
-        const labels = this.svg.querySelector(".labels");
+        const peoplepane = this.state.svg.querySelector(".people");
+        const edges = this.state.svg.querySelector(".relations");
+        const labels = this.state.svg.querySelector(".labels");
         while (edges.firstChild) {
             edges.firstChild.remove();
         }
@@ -725,12 +729,12 @@ class SlippyTree extends View {
             peoplepane.appendChild(person.svg);
         }
         this.redrawEdges(focus);
-        this.#refocusStart = Date.now();          // Begin our animation
-        this.#refocusEnd = Date.now() + 1000;
-        this.focus = focus;
-        this.view.cx0 = this.view.cx;
-        this.view.cy0 = this.view.cy;
-        this.view.callback = callback;
+        this.state.refocusStart = Date.now();          // Begin our animation
+        this.state.refocusEnd = Date.now() + 1000;
+        this.state.focus = focus;
+        this.state.view.cx0 = this.state.view.cx;
+        this.state.view.cy0 = this.state.view.cy;
+        this.state.view.callback = callback;
         window.requestAnimationFrame(() => { this.draw(); });
 
         // Initiate a load to check for unloaded children, effects
@@ -817,7 +821,7 @@ class SlippyTree extends View {
      * @param marriages an array to be populated with [{a:person, b:person, top: person, bot: person}]. The marriage between a and b is to be positioned between top and bot
      */
     placeNodes(focus, ordered, marriages) {
-        const style = this.svg ? getComputedStyle(this.svg) : null;
+        const style = this.state.svg ? getComputedStyle(this.state.svg) : null;
         const MINWIDTH = style ? this.#evalLength(style, style.getPropertyValue("--min-person-width")) : 50;
         const SPOUSEMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--spouse-margin")) : 10;
         const SPOUSEINDENT = style ? this.#evalLength(style, style.getPropertyValue("--spouse-indent")) : 10;
@@ -826,7 +830,7 @@ class SlippyTree extends View {
         const GENERATIONMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--generation-margin")) : 100;
         const PASSES = 1000;
         const DEBUG = typeof window == "undefined";
-        const bundleSpouses = typeof this.props.bundleSpouses == "number" ? this.props.bundleSpouses : 2;
+        const bundleSpouses = typeof this.state.props.bundleSpouses == "number" ? this.state.props.bundleSpouses : 2;
 
         const genpeople = [];
         const genwidth = [];
@@ -848,7 +852,7 @@ class SlippyTree extends View {
                 shift: 0,
                 shiftCount: 0,
                 toString: function() {
-                    return "(" + this.people.length + " from \"" + this.people[0].presentationName() + "\" to \"" + this.people[this.people.length - 1].presentationName() + "\" shift="+(this.shift/this.shiftCount)+" from " + this.shiftCount + " gap=["+this.prevMargin+" "+this.nextMargin+"])";
+                    return "(" + this.state.people.length + " from \"" + this.state.people[0].presentationName() + "\" to \"" + this.state.people[this.people.length - 1].presentationName() + "\" shift="+(this.state.shift/this.state.shiftCount)+" from " + this.state.shiftCount + " gap=["+this.state.prevMargin+" "+this.state.nextMargin+"])";
                 }
             };
         }
@@ -1223,14 +1227,14 @@ class SlippyTree extends View {
      * Add any missing edges/labels
      */
     redrawEdges(focus) {
-        const style = getComputedStyle(this.svg);
+        const style = getComputedStyle(this.state.svg);
         const unloadedParentLength = this.#evalLength(style, style.getPropertyValue("--unloaded-parent-length"));
         const unloadedChildLength = this.#evalLength(style, style.getPropertyValue("--unloaded-child-length"));
         const unloadedSpouseLength = this.#evalLength(style, style.getPropertyValue("--unloaded-spouse-length"));
         const sameGenerationBend = this.#evalLength(style, style.getPropertyValue("--same-generation-bend"));
-        const peoplepane = this.svg.querySelector(".people");
-        const edges = this.svg.querySelector(".relations");
-        const labels = this.svg.querySelector(".labels");
+        const peoplepane = this.state.svg.querySelector(".people");
+        const edges = this.state.svg.querySelector(".relations");
+        const labels = this.state.svg.querySelector(".labels");
         let people = [];
         for (let n=peoplepane.firstElementChild;n;n=n.nextElementSibling) {
             const person = n.person;
@@ -1335,7 +1339,7 @@ class SlippyTree extends View {
                     path.remove();
                 }
             }
-            for (const marriage of this.view.marriages) {
+            for (const marriage of this.state.view.marriages) {
                 const person = marriage.a;
                 const spouse = marriage.b;
                 for (const r of person.relations) {
@@ -1363,18 +1367,18 @@ class SlippyTree extends View {
      * Redraw. This is the animation frame, don't repeat work here
      */
     draw() {
-        const edges = this.svg.querySelector(".relations");
-        const labels = this.svg.querySelector(".labels");
+        const edges = this.state.svg.querySelector(".relations");
+        const labels = this.state.svg.querySelector(".labels");
         let people = [];
-        for (let i=0;i<this.people.length;i++) {
-            const person = this.people[i];
+        for (let i=0;i<this.state.people.length;i++) {
+            const person = this.state.people[i];
             if (person.svg && person.svg.parentNode) {
                 people.push(person);
             }
         }
 
         // T from 0..1 depending on how far through animation we are
-        let t = (Date.now() - this.#refocusStart) / (this.#refocusEnd - this.#refocusStart);
+        let t = (Date.now() - this.state.refocusStart) / (this.state.refocusEnd - this.state.refocusStart);
         if (t < 0) {
             return;
         } else if (t >= 1) {
@@ -1507,27 +1511,27 @@ class SlippyTree extends View {
             label.setAttribute("y", cy);
         }
         let cx, cy;
-        if (this.people.length) {
-            cx = this.view.cx0 + (this.focus.tx - this.view.cx0) * t;
-            cy = this.view.cy0 + (this.focus.ty - this.view.cy0) * t;
+        if (this.state.people.length) {
+            cx = this.state.view.cx0 + (this.state.focus.tx - this.state.view.cx0) * t;
+            cy = this.state.view.cy0 + (this.state.focus.ty - this.state.view.cy0) * t;
         }
         x0 -= 50;
         x1 += 50;
         y0 -= 50;
         y1 += 50;
         this.reposition({x0:x0, y0:y0, x1:x1, y1:y1, cx:cx, cy:cy});
-        if (t == 1 && this.view.callback) {
-            setTimeout(() => { this.view.callback(); }, 0);
+        if (t == 1 && this.state.view.callback) {
+            setTimeout(() => { this.state.view.callback(); }, 0);
         }
 
     }
 
     dump() {
         let a = [];
-        for (const person of this.people) {
+        for (const person of this.state.people) {
             if (person.isLoaded()) {
                 person.data.Id = person.id;
-                if (person == this.focus) {
+                if (person == this.state.focus) {
                     a.unshift(person.data);
                 } else {
                     a.push(person.data);
@@ -1569,11 +1573,11 @@ class SlippyTree extends View {
         } else if (typeof id != "string") {
             throw new Error("bad argument");
         }
-        let person = this.byid[id]; 
+        let person = this.state.byid[id]; 
         if (!person) {
-            person = new SlippyTreePerson(this, this.people.length, id);
-            this.byid[id] = person;
-            this.people.push(person);
+            person = new SlippyTreePerson(this, this.state.people.length, id);
+            this.state.byid[id] = person;
+            this.state.people.push(person);
         }
         return person;
     }
@@ -1584,7 +1588,7 @@ class SlippyTree extends View {
      * @param callback the method to call once the people are loaded
      */
     load(params, callback) {
-        this.scrollPane.parentNode.classList.add("loading");
+        this.state.scrollPane.parentNode.classList.add("loading");
         let usedparams = {
             action: "getPeople",
             fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother" ],
@@ -1614,9 +1618,9 @@ class SlippyTree extends View {
         fetch(url, { credentials: "include" })
             .then(x => x.json())
             .then(data => {
-                this.scrollPane.parentNode.classList.remove("loading");
+                this.state.scrollPane.parentNode.classList.remove("loading");
 //                console.log(JSON.stringify(data));
-                const len = this.people.length;
+                const len = this.state.people.length;
                 if (data[0].people) {
                     let newpeople = [];
                     for (const id in data[0].people) {
@@ -1672,8 +1676,8 @@ class SlippyTree extends View {
     toSVGCoords(point) {
         let x = point.x;
         let y = point.y;
-        x = ((x - this.view.padx0) / this.view.scale) + this.view.x0;
-        y = ((y - this.view.pady0) / this.view.scale) + this.view.y0;
+        x = ((x - this.state.view.padx0) / this.state.view.scale) + this.state.view.x0;
+        y = ((y - this.state.view.pady0) / this.state.view.scale) + this.state.view.y0;
         return {x:x, y:y};
     }
 
@@ -1683,8 +1687,8 @@ class SlippyTree extends View {
     fromSVGCoords(point) {
         let x = point.x;
         let y = point.y;
-        x = (x - this.view.x0) * this.view.scale + this.view.padx0;
-        y = (y - this.view.y0) * this.view.scale + this.view.pady0;
+        x = (x - this.state.view.x0) * this.state.view.scale + this.state.view.padx0;
+        y = (y - this.state.view.y0) * this.state.view.scale + this.state.view.pady0;
         return {x:x, y:y};
     }
 
@@ -1705,7 +1709,7 @@ class SlippyTree extends View {
     checkForUnloadedChildren() {
         // For each node we have that does not have the "childrenLoaded" flag
         const keys = [];
-        for (const person of this.people) {
+        for (const person of this.state.people) {
             if (!person.isHidden() && !person.childrenLoaded && keys.length < 98) {
                 keys.push(person.id);
             }
@@ -1713,11 +1717,11 @@ class SlippyTree extends View {
         if (keys.length) {
             this.load({keys: keys, fields: ["Father","Mother"], descendants:1}, () => {
                 for (const id of keys) {
-                    let person = this.byid[id];
+                    let person = this.state.byid[id];
                     person.childrenLoaded = true;
                 }
                 this.checkForUnloadedChildren();
-                this.redrawEdges(this.focus);
+                this.redrawEdges(this.state.focus);
                 window.requestAnimationFrame(() => { this.draw(); });
             });
         }
@@ -1755,8 +1759,8 @@ class SlippyTreePerson {
                 changed = true;
             }
         }
-        if (data.Name && !this.tree.byid[data.Name]) {
-            this.tree.byid[data.Name] = this;
+        if (data.Name && !this.tree.state.byid[data.Name]) {
+            this.tree.state.byid[data.Name] = this;
         }
         if (changed) {
             if (this.svg) {
@@ -2055,7 +2059,7 @@ class SlippyTreePerson {
         } else if (name == "prune") {
             // Mark as pruned any nodes not reachable as a parent,
             // descendant, or spouse of a descendant
-            for (const person of tree.people) {
+            for (const person of tree.state.people) {
                 person.pruned = false;
             }
             const q = [];
@@ -2086,7 +2090,7 @@ class SlippyTreePerson {
                     }
                 }
             }
-            for (const person of tree.people) {
+            for (const person of tree.state.people) {
                 person.pruned = !q.includes(person);
             }
             tree.refocus(this);
