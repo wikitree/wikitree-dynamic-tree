@@ -5,6 +5,7 @@
  */
 :root:has(.slippy-tree-container) {
     height: 100%;
+     --content-padding: 0;
 }
 body:has(.slippy-tree-container) {
     display: flex;
