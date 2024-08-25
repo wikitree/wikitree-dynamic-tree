@@ -220,7 +220,8 @@ class SlippyTree extends View {
         this.state.focus = null;
         this.state.refocusStart = null;
         this.state.refocusEnd = null;
-        let trackpad = this.state.props.trackpad;
+        let trackpadReset = null;
+        let trackpad = null; // this.state.props.trackpad;
         for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
             if (elt.getAttribute("data-action") != "profile") {
                 elt.addEventListener("click", () => {
@@ -303,7 +304,7 @@ class SlippyTree extends View {
                 // If a trackpad, mousewheel will run in two directions and ctrl-wheel
                 // is used to pinch-zoom. If a normal mousewheel, wheel is used to zoom
                 // and only goes in one direction.
-                // Assume non-trackpad until proved otherwise
+                // Some device have both! So, for one second assume the same device, then reset.
                 e.preventDefault();
                 let view = {scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy};
                 if (typeof trackpad != "boolean" && e.deltaX != 0) {
@@ -320,6 +321,10 @@ class SlippyTree extends View {
                     view.scale -= e.deltaY * 0.01;
                 }
                 this.reposition(view);
+                clearTimeout(trackpadReset);
+                trackpadReset = setTimeout(() => {
+                    trackpad = trackpadReset = null;
+                }, 1000);
             });
             const self = this;
             this.state.keyListener = (e) => {
