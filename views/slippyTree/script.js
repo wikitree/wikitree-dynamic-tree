@@ -99,6 +99,7 @@ class SlippyTree extends View {
  <div class="loader"></div>
  <div class="helpContainer">
   <div>
+   <div class="helpCloseButton">&#x2715;</div>
    <h1>The Slippy Tree</h1>
    <svg class="slippy-tree" width="500" height="140" style="display:block">
     <defs>
@@ -246,6 +247,11 @@ class SlippyTree extends View {
                     }
                 }
             });
+            this.state.personMenu.addEventListener("pointermove", (e) => {
+                for (let n=this.state.personMenu.firstElementChild;n;n=n.nextElementSibling) {
+                    n.classList.remove("focus");
+                }
+            });
             this.state.svg.addEventListener("pointermove", (e) => {
                 e.preventDefault();
                 // Set dx/dy on pointers, because iOS doesn't have these standard props and e is read-only
@@ -300,7 +306,7 @@ class SlippyTree extends View {
                 // Assume non-trackpad until proved otherwise
                 e.preventDefault();
                 let view = {scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy};
-                if (typeof trackpad != "boolean" && (e.deltaX || !Number.isInteger(e.deltaY))) {
+                if (typeof trackpad != "boolean" && e.deltaX != 0) {
                     trackpad = true;
                 }
                 if (trackpad) {
@@ -315,6 +321,83 @@ class SlippyTree extends View {
                 }
                 this.reposition(view);
             });
+            const self = this;
+            this.state.keyListener = (e) => {
+                if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
+                    e.preventDefault();
+                    const menu = this.state.personMenu;
+                    if (menu.classList.contains("hidden")) {
+                        let view = {scale: self.state.view.scale, cx:self.state.view.cx, cy:self.state.view.cy};
+                        let focus = self.state.view.keyboardFocus;
+                        if (!focus) {
+                            focus = self.state.view.keyboardFocus = self.state.focus;
+                        }
+                        if (e.key == "Enter") {
+                            menu.selectedIndex = 0;
+                            self.showMenu(focus, e);
+                        } else if (e.key == "Escape") {
+                            helpContainer.classList.add("hidden");
+                        } else if (e.key == "?") {
+                            helpButton.click();
+                        } else if (e.key == "+") {
+                            view.scale *= 1.2;
+                        } else if (e.key == "-") {
+                            view.scale /= 1.2;
+                        } else {
+                            let score, best = null, max = 0x7FFFFFFF, threshold = 30;
+                            for (const person of self.state.people) {
+                                if (e.key == "ArrowUp" && Math.abs(person.cx - focus.cx) < threshold && person.cy < focus.cy && (score = focus.cy - person.cy) < max) {
+                                    best = person;
+                                    max = score;
+                                } else if (e.key == "ArrowDown" && Math.abs(person.cx - focus.cx) < threshold && person.cy > focus.cy && (score = person.cy - focus.cy) < max) {
+                                    best = person;
+                                    max = score;
+                                } else if (e.key == "ArrowRight" && person.cx - focus.cx > threshold && (score = ((person.cx - focus.cx) * 10) + Math.abs(person.cy - focus.cy)) < max) {
+                                    best = person;
+                                    max = score;
+                                } else if (e.key == "ArrowLeft" && focus.cx - person.cx > threshold && (score = ((focus.cx - person.cx) * 10) + Math.abs(person.cy - focus.cy)) < max) {
+                                    best = person;
+                                    max = score;
+                                }
+                            }
+                            if (best) {
+                                document.querySelectorAll(".keyboardfocus").forEach((e) => {
+                                    e.classList.remove("keyboardfocus");
+                                });
+                                view.cx = best.cx;
+                                view.cy = best.cy;
+                                view.keyboardFocus = best;
+                                view.keyboardFocus.svg.classList.add("keyboardfocus");
+                            }
+                        }
+                        self.reposition(view);
+                    } else {
+                        let focus = menu.querySelector(":scope > .focus");
+                        if (!focus) {
+                            focus = menu.firstElementChild;
+                            focus.classList.add("focus");
+                        }
+                        if (e.key == "Enter") {
+                            focus.classList.remove("focus");
+                            focus.click();
+                        } else if (e.key == "Escape") {
+                            focus.classList.remove("focus");
+                            menu.classList.add("hidden");
+                        } else if (e.key == "ArrowUp") {
+                            if (focus.previousElementSibling) {
+                                focus.previousElementSibling.classList.add("focus");
+                                focus.classList.remove("focus");
+                            }
+                        } else if (e.key == "ArrowDown") {
+                            if (focus.nextElementSibling) {
+                                focus.nextElementSibling.classList.add("focus");
+                                focus.classList.remove("focus");
+                            }
+                        }
+                    }
+                }
+            };
+            document.body.addEventListener("keydown", this.state.keyListener);
             this.state.scrollPane.addEventListener("scroll", () => {
                 if (!this.state) {
                     return;
@@ -370,6 +453,7 @@ class SlippyTree extends View {
         // Remember this object persists even when other views are selected.
         // Clear out all state - it's all under "this.state" now - and disconnect resize observer
         this.state.resizeObserver.disconnect();
+        document.body.removeEventListener("keydown", this.state.keyListener);
         if (this.#VIEWPARAM) {
             let v = new URLSearchParams(window.location.hash.substring(1));
             v.delete(this.#VIEWPARAM);
@@ -612,7 +696,7 @@ class SlippyTree extends View {
                 }
                 e.href = "https://www.wikitree.com/wiki/" + person.data.Name;
             });
-            sx = (event.offsetX - x0) / (x1 - x0);
+            sx = e.offsetX ? (e.offsetX - x0) / (x1 - x0) : 0;
             this.state.personMenu.sx = sx;
             this.state.personMenu.person = person;
         } else {
@@ -633,6 +717,12 @@ class SlippyTree extends View {
      */
     refocus(focus, callback) {
         console.log("Focus " + focus);
+        if (this.state.view.keyboardFocus) {
+            delete this.state.view.keyboardFocus;
+            document.querySelectorAll(".keyboardfocus").forEach((e) => {
+                e.classList.remove("keyboardfocus");
+            });
+        }
 
         // Setup: ensure every person has an SVG
         for (const person of this.state.people) {

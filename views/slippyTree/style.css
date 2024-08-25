@@ -70,6 +70,14 @@ body:has(.slippy-tree-container) {
     background: #0008;
 }
 
+.slippy-tree-container .helpContainer > div .helpCloseButton {
+    /* relatively positioning the div triggered a bug in webkit layout, so do this the hard way */
+    float: right;
+    position: relative;
+    font-size: 16px;
+    line-height: 0;
+}
+
 .slippy-tree-container .helpContainer > div {
     --width: 500px;
     text-align: center;
@@ -133,7 +141,7 @@ body:has(.slippy-tree-container) {
     user-select: text !important;
 }
 
-.slippy-tree-container .personMenu > *[data-action]:hover {
+.slippy-tree-container .personMenu > :is(*[data-action]:hover, *[data-action].focus) {
     background-color: #DED;
 }
 
@@ -225,6 +233,10 @@ body:has(.slippy-tree-container) {
 
 .slippy-tree-container .slippy-tree .people .focus rect {
     stroke: red;
+    stroke-width: 2px; 
+}
+.slippy-tree-container .slippy-tree .people .keyboardfocus:not(.focus) rect {
+    stroke: black;
     stroke-width: 2px; 
 }
 
