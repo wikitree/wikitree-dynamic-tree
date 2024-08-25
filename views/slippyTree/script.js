@@ -50,6 +50,15 @@ class SlippyTree extends View {
         this.state.props = props || {};
         this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : window.deubgLoggingOn;
         this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
+        // These two are not mutually exclusive.
+        // MQ can tell us only if no mouse is attached - if that's the case, hasMouse=false, hasTrackpad=true
+        this.hasTrackpad = this.state.props.trackpad;   // may be null
+        this.hasMouse = this.state.props.mouse;
+        if (window.matchMedia("not (hover: hover)").matches) {  // true if MQ recognised and primary device has no hover.
+            this.hasTrackpad = true;                            // this will be true for tablets with pencils.
+            this.hasMouse = false;
+        }
+//        console.log("Setup: hasTrackpad="+this.hasTrackpad+" hasMouse="+this.hasMouse);
         const content = `
 
 <div class="slippy-tree-container">
@@ -222,7 +231,7 @@ class SlippyTree extends View {
         this.state.refocusStart = null;
         this.state.refocusEnd = null;
         let trackpadReset = null;
-        let trackpad = null; // this.state.props.trackpad;
+        let trackpad = this.state.props.trackpad
         for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
             if (elt.getAttribute("data-action") != "profile") {
                 elt.addEventListener("click", () => {
@@ -302,14 +311,29 @@ class SlippyTree extends View {
                 }
             });
             this.state.svg.addEventListener("wheel", (e) => {
-                // If a trackpad, mousewheel will run in two directions and ctrl-wheel
-                // is used to pinch-zoom. If a normal mousewheel, wheel is used to zoom
-                // and only goes in one direction.
-                // Some device have both! So, for one second assume the same device, then reset.
+                // If a trackpad, mousewheel will run in two directions and ctrl-wheel is used to pinch-zoom.
+                // If a normal mousewheel, wheel is used to zoom and only goes in one direction.
+                // Some device have both! So this is complicated:
+                // 1. First we try and determine if the device HAS a trackpad or HAS a mousewheel. This is a latch
+                //    both start false and may become true, never the other way around.
+                // 2. If neither or both are detected, try and determine if THIS event comes from a trackpad or
+                //    a mouse - if it has deltaX, it's a trackpad.
+                // 3. If a trackpad, all wheel events for the next N seconds are treated the same way.
                 e.preventDefault();
-                let view = {scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy};
-                if (typeof trackpad != "boolean" && e.deltaX != 0) {
+                let view = { scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy };
+                if (e.deltaX != 0) {
                     trackpad = true;
+                    if (this.hasTrackpad == null) {
+                        this.hasTrackpad = true;
+                        // console.log("Trackpad due to movement");
+                    }
+                }
+                if (this.hasMouse == null && Math.abs(e.deltaY) > 20 && e.deltaX == 0) {
+                    this.hasMouse = true;       // Big Y movement, no X movement? Very straight finger, or a mouse.
+                    // console.log("Mousewheel due to scroll");
+                }
+                if ((this.hasTrackpad || false) != (this.hasMouse || false)) {
+                    trackpad = this.hasTrackpad;       // else both or neither detected: could be either
                 }
                 if (trackpad) {
                     if (e.ctrlKey) {
