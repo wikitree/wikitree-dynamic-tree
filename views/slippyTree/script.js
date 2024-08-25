@@ -48,6 +48,7 @@ class SlippyTree extends View {
     init(container_selector, person_id, props) {
         this.state = {};
         this.state.props = props || {};
+        this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : window.deubgLoggingOn;
         this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
         const content = `
 
@@ -721,7 +722,7 @@ class SlippyTree extends View {
      * @param callback an optional method to call when focus completes
      */
     refocus(focus, callback) {
-        console.log("Focus " + focus);
+        if (this.debug) console.log("Focus " + focus);
         if (this.state.view.keyboardFocus) {
             delete this.state.view.keyboardFocus;
             document.querySelectorAll(".keyboardfocus").forEach((e) => {
@@ -928,7 +929,7 @@ class SlippyTree extends View {
         const OTHERMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--other-margin")) : 40;
         const GENERATIONMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--generation-margin")) : 100;
         const PASSES = 1000;
-        const DEBUG = typeof window == "undefined";
+        const DEBUG = typeof window == "undefined";     // This is never run in a browser, it's for testing locally in nodejs. So always false.
         const bundleSpouses = typeof this.state.props.bundleSpouses == "number" ? this.state.props.bundleSpouses : 2;
 
         const genpeople = [];
@@ -1716,7 +1717,7 @@ class SlippyTree extends View {
             }
         }
         const url = this.#APIURL + qs;
-        console.log("Load " + url);
+        if (this.debug) console.log("Load " + url);
         fetch(url, { credentials: "include" })
             .then(x => x.json())
             .then(data => {
@@ -2087,7 +2088,7 @@ class SlippyTreePerson {
      * @param name the name of the action
      */
     action(name) {
-        console.log("Action " + name + " on " + this);
+        if (this.debug) console.log("Action " + name + " on " + this);
         const tree = this.tree;
         if (name == "focus") {
             // Refocus the tree on this node
