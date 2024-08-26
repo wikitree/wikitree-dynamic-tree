@@ -50,12 +50,12 @@ class SlippyTree extends View {
         this.state.props = props || {};
         this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : window.deubgLoggingOn;
         this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
-        // These two are not mutually exclusive.
+        // These two are not mutually exclusive, a device can have both. Values are tri-state - null means "unknown"
         // MQ can tell us only if no mouse is attached - if that's the case, hasMouse=false, hasTrackpad=true
-        this.hasTrackpad = this.state.props.trackpad;   // may be null
+        this.hasTrackpad = this.state.props.trackpad;
         this.hasMouse = this.state.props.mouse;
         if (window.matchMedia("not (hover: hover)").matches) {  // true if MQ recognised and primary device has no hover.
-            this.hasTrackpad = true;                            // this will be true for tablets with pencils.
+            this.hasTrackpad = true;                            // this will be true for tablets
             this.hasMouse = false;
         }
 //        console.log("Setup: hasTrackpad="+this.hasTrackpad+" hasMouse="+this.hasMouse);
@@ -93,6 +93,7 @@ class SlippyTree extends View {
    </g>
   </svg>
 
+  <div class="relationshipName"></div>
   <div class="personMenu hidden">
    <div class="output-name text-selectable"></div>
    <div data-action="focus">Focus</div>
@@ -284,7 +285,18 @@ class SlippyTree extends View {
                     }
                 }
 
-                if (pointers.length == 1) {
+                if (pointers.length == 0) {
+                    let found = null;
+                    for (let elt of document.elementsFromPoint(e.pageX, e.pageY)) {
+                        if (elt == this.svg) {
+                            break;
+                        } else if (elt.parentNode.person) {
+                            found = elt.parentNode.person;
+                            break;
+                        }
+                    }
+                    this.setSecondaryFocus(found);
+                } else if (pointers.length == 1) {
                     let elt = document.elementFromPoint(e.pageX, e.pageY);
                     if (elt == this.state.svg) {    // One finger dragging over background: scroll
                         this.state.scrollPane.scrollLeft -= pointers[0].dx;
@@ -398,6 +410,7 @@ class SlippyTree extends View {
                                 view.cy = best.cy;
                                 view.keyboardFocus = best;
                                 view.keyboardFocus.svg.classList.add("keyboardfocus");
+                                this.setSecondaryFocus(best);
                             }
                         }
                         self.reposition(view);
@@ -610,6 +623,35 @@ class SlippyTree extends View {
         }
     }
 
+    setSecondaryFocus(second) {
+        if (second != this.state.secondaryFocus) {
+            const first = this.state.focus;
+            this.state.secondaryFocus = second;
+            const elt = this.state.container.querySelector(".relationshipName");
+            if (elt) {
+                let val = "";
+                if (first && second && first != second) {
+                    let rels = first.relationshipNames(second, {half:true,gender:true});
+                    if (rels.length) {
+                        val = "<span class=\"name\">";
+                        val += second.presentationName();
+                        val += "</span> is <span class=\"name\">";
+                        val += first.presentationName();
+                        val += "</span>'s <span class=\"rel\">";
+                        val += rels[0];
+                        if (rels.length > 1) {
+                            val += "</span> (also <span class=\"rel\">";
+                            rels.shift();
+                            val += rels.join(", ");
+                        }
+                        val += "</span>";
+                    }
+                }
+                elt.innerHTML = val;
+            }
+        }
+    }
+
     /**
      * Remove all nodes, start again
      * @param id the id to load, or null to just clear the tree.
@@ -752,6 +794,7 @@ class SlippyTree extends View {
             document.querySelectorAll(".keyboardfocus").forEach((e) => {
                 e.classList.remove("keyboardfocus");
             });
+            this.setSecondaryFocus(null);
         }
 
         // Setup: ensure every person has an SVG
@@ -1144,8 +1187,9 @@ class SlippyTree extends View {
                 }
                 let y = NaN;
                 if (prev) { // Y value depends on previous element
-                    let rel = person.relationshipName(prev);
-                    if (rel == "spouse" || rel == "spouse-spouse") {
+                    let rel = person.relationshipNames(prev, {common: true});
+                    rel = rel.length ? rel[0] : null;
+                    if (rel == "spouse" || rel == "spouse's spouse") {
                         y = SPOUSEMARGIN;
                         rel = "spouse";
                     } else if (rel == "sibling" || rel == "step-sibling" || rel == "sibling-in-law") {
@@ -2068,45 +2112,299 @@ class SlippyTreePerson {
 
     /**
      * Return one of "parent", "child", "spouse", "child-inlaw", "spouse-inlaw", "parent-in-law", "step-child", "step-parent", "spouse-spouse" (ie spouse's other spouse), "sibling-in-law", "uncle/aunt', "nephew/niece"
+     * @param options may contain boolean values
+     *   -- common: co-parents are classed as spouses
+     *   -- gender: gendered names: sibling becomes brother/sister, etc.
+     *   -- half: half-siblings are distinguished
      */
-    relationshipName(other) {
-        let out = null;
-        if (other) {
-            for (let r of this.relations) {
-                if (r.person == other) {
-                    out = r.rel;
-                }
-                if (out) break;
-            }
-            if (!out) {
-                for (let r of this.relations) {
-                    for (let r2 of r.person.relations) {
-                        if (r2.person == other) {
-                            if (r.rel == "spouse") {  // relative of my spouse
-                                out = r2.rel == "child" ? "step-child" : r2.rel == "parent" ? "parent-in-law" : r2.rel == "sibling" ? "sibling-in-law" : "spouse-spouse";
-                            } else if (r.rel == "parent") {  // relative of my parent
-                                out = r2.rel == "child" ? "sibling" : r2.rel == "parent" ? "grand-parent" : r2.rel == "sibling" ? "uncle/aunt" : "parent-in-law";
-                            } else if (r.rel == "child") {  // relative of my child
-                                out = r2.rel == "child" ? "grand-child" : r2.rel == "parent" ? "spouse" : r2.rel == "sibling" ? "step-child" : "child-in-law";
-                            } else if (r.rel == "sibling") {  // relative of my sibling
-                                out = r2.rel == "child" ? "nephew/niece" : r2.rel == "parent" ? "step-parent" : r2.rel == "sibling" ? "sibling" : "sibling-in-law";
-                                // child's parent is technically "co-parent" but we've already presumed spouse when record was created
+    relationshipNames(other, options) {
+        if (!options) {
+            options = {};
+        }
+        let out = [];
+        let paths = [];
+        let q = [];
+        const debug = other.data.Name == "Hansen-21173" && this.data.Name == "Bremford-28";
+        if (other && other != this) {
+            // Enqueue current state.
+            // Pop state
+            // Depth first traverse of all unvisited nodes for that state
+            // if target found, add path to found paths
+            q.push({node: this, path:[], seen:[this]});
+            let s;
+            let count = 0;
+            while ((s=q.shift()) && count++ < 5000) {
+                for (let r of s.node.relations) {
+                    if (debug) console.log("--"+r.rel+" p="+r.person);
+                    let rel = r.rel;
+                    if (s.seen.includes(r.person)) {
+                        continue;
+                    }
+                    if (!options.common && rel == "spouse" && r.type == "inferred") {
+                        continue;
+                    }
+                    let newseen = s.seen.concat([s.node]);
+                    if (rel == "sibling" || rel == "parent") { // If we jump to a sibling or parent, don't jump from there to any of our other siblings
+                        if (rel == "sibling") {
+                            newseen.push(s.node.father);
+                            newseen.push(s.node.mother);
+                        }
+                        newseen.push(r.person.parent);
+                        for (const sibling of s.node.siblings()) {
+                            newseen.push(sibling);
+                        }
+                    } else if (rel == "child") { // If we jump to a child, don't jump from there to any of our other children
+                        for (const child of s.node.children()) {
+                            newseen.push(child);
+                        }
+                    }
+                    if (options.gender) {
+                        if (rel == "sibling" && r.person.data.Gender == "Male") {
+                            rel = "brother";
+                        } else if (rel == "sibling" && r.person.data.Gender == "Female") {
+                            rel = "sister";
+                        } else if (rel == "child" && r.person.data.Gender == "Male") {
+                            rel = "son";
+                        } else if (rel == "child" && r.person.data.Gender == "Female") {
+                            rel = "daughter";
+                        } else if (rel == "spouse" && r.person.data.Gender == "Male") {
+                            rel = "husband";
+                        } else if (rel == "spouse" && r.person.data.Gender == "Female") {
+                            rel = "wife";
+                        } else if (rel == "parent" && r.person.data.Gender == "Male") {
+                            rel = "father";
+                        } else if (rel == "parent" && r.person.data.Gender == "Female") {
+                            rel = "mother";
+                        }
+                    }
+                    if (options.half) {
+                        if (rel == "sibling" || rel == "brother" || rel == "sibling") {
+                            if (this.father != r.person.father || this.mother != r.person.mother) {
+                                rel = "half-" + rel;
                             }
                         }
-                        if (out) break;
                     }
-                    if (out) break;
+                    let newpath = s.path.concat([rel]);
+                    if (r.person == other) {
+                        paths.push(newpath);
+                    } else {
+                        q.push({node:r.person, path:newpath, seen:newseen});
+                    }
                 }
             }
+            let maxlength = 0;
+            for (let p of paths) {
+                maxlength = Math.max(p.length, maxlength);
+            }
+            // Now we scan for the shortest path (if two are of equal length, report both)
+            let pathdebug;
+            if (debug) pathdebug = JSON.stringify(paths);
+            let names = [];
+            for (let len=1;len<=maxlength;len++) {
+                for (let p of paths) {
+                    if (p.length == len) {
+                        name = this.computeEnglishRelationshipName(p);
+                        if (!names.includes(name)) {
+                            names.push(name);
+                        }
+                    }
+                }
+                if (names.length) {
+                    break;
+                }
+            }
+            // Now delete any paths containins spouses, and do it again, if any remain
+            for (let i=0;i<paths.length;i++) {
+                if (paths[i].includes("husband") || paths[i].includes("wife") || paths[i].includes("spouse")) {
+                    paths.splice(i--, 1);
+                }
+            }
+            for (let len=1;len<=maxlength;len++) {
+                for (let p of paths) {
+                    if (p.length == len) {
+                        name = this.computeEnglishRelationshipName(p);
+                        if (!names.includes(name)) {
+                            names.push(name);
+                        }
+                    }
+                }
+                if (names.length) {
+                    break;
+                }
+            }
+            if (debug) console.log(this + " => " + other + " = " + pathdebug + " = " + JSON.stringify(names)+"/"+names.length+" "+options.gender+" "+maxlength);
+            out = names;
         }
         return out;
     }
-    
+
     /**
-     * For any people in the tree that haven't been checked to see if they have
-     * unloaded children, check. If "Children" field ever arrives as a queryable
-     * key this can go away
+     * Turn an array of relationship steps into an english description of the relationship.
+     * This method is standalone, could be static
+     * @p an array of values which may include any of ["mother", "father", "parent", "son", "daughter", "child", "husband", "wife", "spouse", "brother", "sister", "sibling", "half-brother", "half-sister", "half-sibling"]
+     * @return is a string describing the relationship in english.
      */
+    computeEnglishRelationshipName(p) {
+        p = [...p]; // clone
+        const ggg = function(n) {
+            switch (n) {
+                case 0: return "";
+                case 1: return "great-";
+                case 2: return "great-great-";
+                default: return n + "×great-";
+            }
+        }
+        // cousins
+        for (let i=1;i + 1<p.length;i++) {
+            if (["parent","mother","father"].includes(p[i - 1]) && ["sibling","brother","sister","half-brother","half-sister","half-sibling"].includes(p[i]) && ["child","son","daughter"].includes(p[i + 1])) {
+                p[i] = "cousin";
+                p.splice(--i, 1);
+                p.splice(i + 1, 1);
+                let n = 1;
+                while (i > 0 && i + 1 < p.length && ["parent","mother","father"].includes(p[i - 1]) && ["child","son","daughter"].includes(p[i + 1])) {
+                    n++;
+                    p.splice(--i, 1);
+                    p.splice(i + 1, 1);
+                }
+                switch (n) {
+                    case 1: n = "first"; break;
+                    case 2: n = "second"; break;
+                    case 3: n = "third"; break;
+                    case 4: n = "fourth"; break;
+                    case 5: n = "fifth"; break;
+                    case 6: n = "sixth"; break;
+                    case 7: n = "seventh"; break;
+                    case 8: n = "eighth"; break;
+                    case 9: n = "ninth"; break;
+                    default: n = n + (n < 20 ? "th" : ((n%10)==1?"st":(n%10)==2?"nd":(n%10)==3?"rd":"th"));
+                }
+                p[i] = n + "-cousin";
+                n = 0;
+                while (i > 0 && ["parent","mother","father"].includes(p[i - 1])) {
+                    p.splice(--i, 1);
+                    n++;
+                }
+                while (i + 1 < p.length && ["child","son","daughter"].includes(p[i + 1])) {
+                    p.splice(i + 1, 1);
+                    n++;
+                }
+                if (n > 0) {
+                    switch (n) {
+                        case 1: n = "once"; break
+                        case 2: n = "twice"; break
+                        default: n += "×";
+                    }
+                    p[i] += " " + n + " removed";
+                }
+            }
+        }
+        // uncles/aunts
+        for (let i=0;i + 1 < p.length;i++) {
+            if (["parent","mother","father"].includes(p[i]) && ["sibling","brother","sister","half-brother","half-sister","half-sibling"].includes(p[i + 1])) {
+                p.splice(i, 1);
+                let n = 0;
+                while (i > 0 && ["parent","mother","father"].includes(p[i - 1])) {
+                    n++;
+                    p.splice(--i, 1);
+                }
+                p[i] = ["brother","half-brother"].includes(p[i]) ? "uncle" : ["sister","half-sister"].includes(p[i]) ? "aunt" : "uncle/aunt";
+                if (n > 0) {
+                    p[i] = ggg(n) + p[i];
+                }
+            }
+        }
+        // nephew/niece
+        for (let i=0;i + 1 < p.length;i++) {
+            if (["sibling","brother","sister","half-brother","half-sister","half-sibling"].includes(p[i]) && ["child","son","daughter"].includes(p[i + 1])) {
+                let n = 0;
+                p.splice(i, 1);
+                while (i + 1 < p.length && ["child","son","daughter"].includes(p[i + 1])) {
+                    n++;
+                    p.splice(i, 1);
+                }
+                p[i] = p[i] == "son" ? "nephew" : p[i] == "daughter" ? "niece" : "nephew/niece";
+                if (n > 0) {
+                    p[i] = ggg(n) + p[i];
+                }
+            }
+        }
+        // grandparent
+        for (let i=0;i + 1 < p.length;i++) {
+            if (["parent","mother","father"].includes(p[i]) && ["parent","mother","father"].includes(p[i + 1])) {
+                let n = 0;
+                p.splice(i, 1);
+                while (i + 1 < p.length && ["parent","mother","father"].includes(p[i + 1])) {
+                    n++;
+                    p.splice(i, 1);
+                }
+                p[i] = "grand" + p[i];
+                if (n > 0) {
+                    p[i] = ggg(n) + p[i];
+                }
+            }
+        }
+        // grandchild
+        for (let i=0;i + 1 < p.length;i++) {
+            if (["child","son","daughter"].includes(p[i]) && ["child","son","daughter"].includes(p[i + 1])) {
+                let n = 0;
+                p.splice(i, 1);
+                while (i + 1 < p.length && ["child","son","daughter"].includes(p[i + 1])) {
+                    n++;
+                    p.splice(i, 1);
+                }
+                p[i] = "grand" + p[i];
+                if (n > 0) {
+                    p[i] = ggg(n) + p[i];
+                }
+            }
+        }
+
+        // step-sibling: parent-spouse-child
+        for (let i=0;i + 2<p.length;i++) {
+            if (["parent","mother","father"].includes(p[0]) && ["spouse","husband","wife"].includes(p[i + 1]) && ["child","son","daughter"].includes(p[i + 2])) {
+                p.splice(i, 2);
+                p[i] = p[i] == "child" ? "step-sibling" : p[i] == "son" ? "step-brother" : "step-sister";
+            }
+        }
+        // sibling-in-law, case 3: spouse-sibling-spouse
+        for (let i=1;i + 1<p.length;i++) {
+            if (["spouse","husband","wife"].includes(p[i - 1]) && ["sibling","brother","sister","half-brother","half-sister","half-sibling"].includes(p[i]) && ["spouse","husband","wife"].includes(p[i + 1])) {
+                p.splice(--i, 1);
+                p.splice(i, 1);
+                p[i] = p[i] == "spouse" ? "sibling-in-law" : p[i] == "husband" ? "brother-in-law" : "sister-in-law";
+            }
+        }
+        // step-parent: parent-spouse
+        for (let i=0;i + 1<p.length;i++) {
+            if (["parent","mother","father"].includes(p[i]) && ["spouse","husband","wife"].includes(p[i + 1])) {
+                p.splice(i, 1);
+                p[i] = p[i] == "spouse" ? "step-parent" : p[i] == "husband" ? "step-father" : "step-mother";
+            }
+        }
+        // step-child: spouse-child
+        for (let i=0;i + 1<p.length;i++) {
+            if (["spouse","husband","wife"].includes(p[i]) && ["child","son","daughter"].includes(p[i])) {
+                p.splice(i, 1);
+                p[i] = "step-" + p[i];
+            }
+        }
+        // sibling-in-law: spouse-sibling
+        for (let i=1;i<p.length;i++) {
+            if (["spouse","husband","wife"].includes(p[i - 1]) && ["sibling","brother","sister","half-brother","half-sister","half-sibling"].includes(p[i])) {
+                p.splice(--i, 1);
+                p[i] += "-in-law";
+            }
+        }
+        // sibling-in-law: sibling-spouse
+        for (let i=0;i + 1<p.length;i++) {
+            if (["sibling","brother","sister","half-brother","half-sister","half-sibling"].includes(p[i]) && ["spouse","husband","wife"].includes(p[i + 1])) {
+                p.splice(i, 1);
+                p[i] = p[i] == "spouse" ? "sibling-in-law" : p[i] == "husband" ? "brother-in-law" : "sister-in-law";
+            }
+        }
+        return p.join("'s ");
+    }
+    
     /**
      * Execute a popupmenu action for this person
      * @param name the name of the action

@@ -35,6 +35,21 @@ body:has(.slippy-tree-container) {
     margin-top: 0;
 }
 
+@media (min-width: 800px) {
+    .slippy-tree-container .relationshipName {
+        position: fixed;
+        left: 16px;
+        bottom: 28px;
+        color: black;
+        -webkit-text-stroke: 6px #f0f0ef;
+        -webkit-text-fill: black;
+        paint-order: stroke fill;
+    }
+    .slippy-tree-container .relationshipName .name {
+        font-weight: bold;
+    }
+}
+
 .slippy-tree-container .helpButton {
     position: absolute;
     font-size: 30px;
