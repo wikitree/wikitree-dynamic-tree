@@ -91,6 +91,8 @@ body:has(.slippy-tree-container) {
     position: relative;
     font-size: 16px;
     line-height: 0;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .slippy-tree-container .helpContainer > div {
@@ -250,7 +252,7 @@ body:has(.slippy-tree-container) {
     stroke: red;
     stroke-width: 2px; 
 }
-.slippy-tree-container .slippy-tree .people .keyboardfocus:not(.focus) rect {
+.slippy-tree-container .slippy-tree .people .secondaryfocus:not(.focus) rect {
     stroke: black;
     stroke-width: 2px; 
 }

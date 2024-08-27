@@ -9,13 +9,13 @@
  * the numeric ID and the "public" ID, eg "Windsor-1"). Relationships are added between
  * the people at this time.
  *
- * The "refocus" method takes a person and rebuilds the tree from that position (most of
+ * The "setFocus" method takes a person and rebuilds the tree from that position (most of
  * this work being done in placeNodes()), before calling draw() on the next animation
  * frame. This needs to be fast - it changes the node positions only and calls
  * "reposition()", which resizes the SVG and positions the scrollPane. This also needs
  * to be fast, as its called when scale or scroll takes place.
  *
- * The final operation in refocus() is checkForUnloadedChildren(), which checks all loaded
+ * The final operation in setFocus() is checkForUnloadedChildren(), which checks all loaded
  * nodes to see if they have children by making a second, limited call to "getPeople()".
  * This is done asynchronously while the draw is going on - it may add edges to the tree,
  * but nothing that requires new layout. Ideally this would not be necessary but until we
@@ -219,6 +219,7 @@ class SlippyTree extends View {
         const helpContainer = this.state.container.querySelector(".helpContainer");
         const helpBox = helpContainer.querySelector(":scope > :first-child");
         helpButton.addEventListener("click", (e) => {
+            this.state.personMenu.classList.add("hidden");
             helpContainer.classList.toggle("hidden");
         });
         helpBox.addEventListener("click", (e) => {
@@ -286,16 +287,21 @@ class SlippyTree extends View {
                 }
 
                 if (pointers.length == 0) {
-                    let found = null;
-                    for (let elt of document.elementsFromPoint(e.pageX, e.pageY)) {
-                        if (elt == this.svg) {
-                            break;
-                        } else if (elt.parentNode.person) {
-                            found = elt.parentNode.person;
-                            break;
+                    if (e.screenX != this.state.hoverScreenX || e.screenY != this.state.hoverScreenY) {
+                        // Ignore pointer movements due to scrolling even though mouse is in same position on screen.
+                        let found = null;
+                        for (let elt of document.elementsFromPoint(e.pageX, e.pageY)) {
+                            if (elt == this.svg) {
+                                break;
+                            } else if (elt.parentNode.person) {
+                                found = elt.parentNode.person;
+                                break;
+                            }
                         }
+                        this.setDescriptionFocus(found);
+                        this.state.hoverScreenX = e.screenX;
+                        this.state.hoverScreenY = e.screenY;
                     }
-                    this.setSecondaryFocus(found);
                 } else if (pointers.length == 1) {
                     let elt = document.elementFromPoint(e.pageX, e.pageY);
                     if (elt == this.state.svg) {    // One finger dragging over background: scroll
@@ -403,14 +409,11 @@ class SlippyTree extends View {
                                 }
                             }
                             if (best) {
-                                document.querySelectorAll(".keyboardfocus").forEach((e) => {
-                                    e.classList.remove("keyboardfocus");
-                                });
                                 view.cx = best.cx;
                                 view.cy = best.cy;
                                 view.keyboardFocus = best;
-                                view.keyboardFocus.svg.classList.add("keyboardfocus");
                                 this.setSecondaryFocus(best);
+                                this.setDescriptionFocus(best);
                             }
                         }
                         self.reposition(view);
@@ -614,41 +617,12 @@ class SlippyTree extends View {
                     const person = this.find(id);
                     person.childrenLoaded = true;
                 }
-                this.refocus(this.find(focusid));
+                this.setFocus(this.find(focusid));
             });
             return true;
         } catch (e) {
             console.warn(e);
             return false;
-        }
-    }
-
-    setSecondaryFocus(second) {
-        if (second != this.state.secondaryFocus) {
-            const first = this.state.focus;
-            this.state.secondaryFocus = second;
-            const elt = this.state.container.querySelector(".relationshipName");
-            if (elt) {
-                let val = "";
-                if (first && second && first != second) {
-                    let rels = first.relationshipNames(second, {half:true,gender:true});
-                    if (rels.length) {
-                        val = "<span class=\"name\">";
-                        val += second.presentationName();
-                        val += "</span> is <span class=\"name\">";
-                        val += first.presentationName();
-                        val += "</span>'s <span class=\"rel\">";
-                        val += rels[0];
-                        if (rels.length > 1) {
-                            val += "</span> (also <span class=\"rel\">";
-                            rels.shift();
-                            val += rels.join(", ");
-                        }
-                        val += "</span>";
-                    }
-                }
-                elt.innerHTML = val;
-            }
         }
     }
 
@@ -675,7 +649,7 @@ class SlippyTree extends View {
             this.load({keys:id, nuclear:1}, () => {
                 const person = this.state.byid[id];
                 person.childrenLoaded = true;
-                this.refocus(person);
+                this.setFocus(person);
             });
         }
     }
@@ -778,7 +752,73 @@ class SlippyTree extends View {
         this.state.personMenu.style.left = x + "px";
         this.state.personMenu.style.top = y + "px";
         if (e && this.state.props.refocusOnClick) {
-            this.refocus(person);
+            this.setFocus(person);
+        }
+    }
+
+    /**
+     * "Secondary" focus is the person that the mouse/keyboard has currently
+     * selected but that hasn't been nominated as the focus. Has a black border
+     * around it
+     */
+    setSecondaryFocus(focus) {
+        if (focus != this.state.secondaryFocus) {
+            if (this.state.secondaryFocus) {
+                this.state.secondaryFocus.svg.classList.remove("secondaryfocus");
+                this.state.secondaryFocus = null;
+            }
+            if (focus) {
+                this.state.secondaryFocus = focus;
+                this.state.secondaryFocus.svg.classList.add("secondaryfocus");
+            }
+        }
+    }
+
+    /**
+     * "Description" focus" is the person that we're describing the relationship
+     * for. When secondary focus changes it mirrors that, but it also changes if
+     * the mouse moves over an element
+     */
+    setDescriptionFocus(focus) {
+        if (focus != this.state.descriptionFocus) {
+            this.state.descriptionFocus = focus;
+            const first = this.state.focus;
+            const second = focus;
+            const elt = this.state.container.querySelector(".relationshipName");
+            if (elt) {
+                let val = "";
+                if (first && second && first != second) {
+                    let rels = first.relationships(second, { half:true, gender:true });
+                    // Delete relationships with duplicate names, ie if we're second-cousin two ways.
+                    let names = [];
+                    for (let i=0;i<rels.length;i++) {
+                        if (names.includes(rels[i].name)) {
+                            rels.splice(i--, 1);
+                        } else {
+                            names.push(rels[i].name);
+                        }
+                    }
+                    if (rels.length) {
+                        val = "<span class=\"name\">";
+                        val += second.presentationName();
+                        val += "</span> is <span class=\"name\">";
+                        val += first.presentationName();
+                        val += "</span>'s <span class=\"rel\">";
+                        val += rels[0].name;
+                        if (rels.length > 1) {
+                            val += "</span> (also <span class=\"rel\">";
+                            for (let i=1;i<rels.length;i++) {
+                                if (i > 1) {
+                                    val += ", ";
+                                }
+                                val += rels[i].name;
+                            }
+                        }
+                        val += ")</span>";
+                    }
+                }
+                elt.innerHTML = val;
+            }
         }
     }
 
@@ -787,13 +827,11 @@ class SlippyTree extends View {
      * @param focus the person to focus the tree on. Required
      * @param callback an optional method to call when focus completes
      */
-    refocus(focus, callback) {
+    setFocus(focus, callback) {
         if (this.debug) console.log("Focus " + focus);
         if (this.state.view.keyboardFocus) {
             delete this.state.view.keyboardFocus;
-            document.querySelectorAll(".keyboardfocus").forEach((e) => {
-                e.classList.remove("keyboardfocus");
-            });
+            this.setDescriptionFocus(null);
             this.setSecondaryFocus(null);
         }
 
@@ -807,6 +845,8 @@ class SlippyTree extends View {
                 person.svg = document.createElementNS(this.#SVG, "g");
                 person.svg.person = person;
                 person.svg.addEventListener("click", (e) => {
+                    this.setSecondaryFocus(person);
+                    this.setDescriptionFocus(person);
                     this.showMenu(person, e);
                 });
                 person.svg.setAttribute("id", "person-" + person.id);
@@ -1187,17 +1227,19 @@ class SlippyTree extends View {
                 }
                 let y = NaN;
                 if (prev) { // Y value depends on previous element
-                    let rel = person.relationshipNames(prev, {common: true});
-                    rel = rel.length ? rel[0] : null;
-                    if (rel == "spouse" || rel == "spouse's spouse") {
-                        y = SPOUSEMARGIN;
-                        rel = "spouse";
-                    } else if (rel == "sibling" || rel == "step-sibling" || rel == "sibling-in-law") {
-                        y = SIBLINGMARGIN;
-                        rel = "sibling";
-                    } else {
-                        y = OTHERMARGIN;
-                        rel = null;
+                    let rels = person.relationships(prev, {common: true, maxlength:3});  // 3=spouse's sibling's spouses
+                    let rel = null;
+                    y = OTHERMARGIN;
+                    for (let r of person.relationships(prev, {common: true, maxlength:3})) {  // 3=spouse's sibling's spouses
+                        if (r.name == "spouse" || r.name == "spouse's spouse") {
+                            y = SPOUSEMARGIN;
+                            rel = "spouse";
+                            break;
+                        } else if (r.name == "sibling" || r.name == "step-sibling" || r.name == "sibling-in-law") {
+                            y = SIBLINGMARGIN;
+                            rel = "sibling";
+                            break;
+                        }
                     }
                     y += (prev.height + person.height) / 2;
                     person.clump.prev = prev.clump;
@@ -2111,51 +2153,62 @@ class SlippyTreePerson {
     };
 
     /**
-     * Return one of "parent", "child", "spouse", "child-inlaw", "spouse-inlaw", "parent-in-law", "step-child", "step-parent", "spouse-spouse" (ie spouse's other spouse), "sibling-in-law", "uncle/aunt', "nephew/niece"
+     * Return an array of relationships, each of the form
+     *  {name:"uncle", ancestral:true, path:[{name:"father",person:n},{name:"brother",person:n}]}
+     * where "name" is the english name, "ancestral" is true if there is a common ancestor, and "path" is the steps taken
+     *
      * @param options may contain boolean values
      *   -- common: co-parents are classed as spouses
      *   -- gender: gendered names: sibling becomes brother/sister, etc.
      *   -- half: half-siblings are distinguished
+     *   -- maxdistance: only steps up to N are tested
      */
-    relationshipNames(other, options) {
+    relationships(other, options) {
         if (!options) {
             options = {};
         }
-        let out = [];
         let paths = [];
-        let q = [];
-        const debug = other.data.Name == "Hansen-21173" && this.data.Name == "Bremford-28";
         if (other && other != this) {
-            // Enqueue current state.
-            // Pop state
-            // Depth first traverse of all unvisited nodes for that state
-            // if target found, add path to found paths
-            q.push({node: this, path:[], seen:[this]});
+            let q = [];
+            let ancestors = [];
             let s;
-            let count = 0;
-            while ((s=q.shift()) && count++ < 5000) {
-                for (let r of s.node.relations) {
-                    if (debug) console.log("--"+r.rel+" p="+r.person);
+            let minAncestralLength = 9999, minNonAncestralLength = 9999;
+            q.push({person:this,len:0});
+            q.push({person:other,len:0});
+            while (s=q.shift()) {
+                for (let p of [s.person.father, s.person.mother]) {
+                    if (p && !ancestors.includes(p)) {
+                        ancestors.push(p);
+                        if (!options.maxdistance || s.len < options.maxdistance) {
+                            q.push({person:p,len:s.len + 1});
+                        }
+                    }
+                }
+            }
+
+            q.push({person: this, ancestral: true, path:[], skip:[this]});
+            while (s=q.shift()) {
+                for (let r of s.person.relations) {
+                    const person = s.person;
                     let rel = r.rel;
-                    if (s.seen.includes(r.person)) {
+                    if (!options.common && rel == "spouse" && r.type == "inferred") {   // Don't classify co-parents as spouses in this algo
                         continue;
                     }
-                    if (!options.common && rel == "spouse" && r.type == "inferred") {
+                    if (s.skip.includes(r.person)) {
                         continue;
                     }
-                    let newseen = s.seen.concat([s.node]);
-                    if (rel == "sibling" || rel == "parent") { // If we jump to a sibling or parent, don't jump from there to any of our other siblings
-                        if (rel == "sibling") {
-                            newseen.push(s.node.father);
-                            newseen.push(s.node.mother);
-                        }
-                        newseen.push(r.person.parent);
-                        for (const sibling of s.node.siblings()) {
-                            newseen.push(sibling);
-                        }
-                    } else if (rel == "child") { // If we jump to a child, don't jump from there to any of our other children
-                        for (const child of s.node.children()) {
-                            newseen.push(child);
+                    let ancestral = s.ancestral;
+                    let newskip = s.skip.concat([person]);
+                    let skiprel;
+                    switch (rel) {
+                        case "parent":  skiprel = ["child", "parent", "sibling"]; break;
+                        case "sibling": skiprel = ["parent", "sibling"]; break;
+                        case "child":   skiprel = ["spouse", "child"]; break;
+                        case "spouse":  skiprel = ["child"]; ancestral = false; break;
+                    }
+                    for (let r2 of person.relations) {
+                        if (skiprel.includes(r2.rel) && !newskip.includes(r2.person)) {
+                            newskip.push(r2.person);
                         }
                     }
                     if (options.gender) {
@@ -2178,64 +2231,74 @@ class SlippyTreePerson {
                         }
                     }
                     if (options.half) {
-                        if (rel == "sibling" || rel == "brother" || rel == "sibling") {
-                            if (this.father != r.person.father || this.mother != r.person.mother) {
+                        if (rel == "sibling" || rel == "brother" || rel == "sister") {
+                            if (person.father != r.person.father || person.mother != r.person.mother) {
                                 rel = "half-" + rel;
                             }
                         }
                     }
-                    let newpath = s.path.concat([rel]);
+                    let newpath = s.path.concat([{rel:rel, person:r.person}]);
                     if (r.person == other) {
-                        paths.push(newpath);
+                        paths.push({path:newpath, ancestral:ancestral}); // We have found path! Add it.
+                        minNonAncestralLength = Math.min(minNonAncestralLength, newpath.length);
+                        if (ancestral) {
+                            minAncestralLength = Math.min(minAncestralLength, newpath.length);
+                        }
                     } else {
-                        q.push({node:r.person, path:newpath, seen:newseen});
-                    }
-                }
-            }
-            let maxlength = 0;
-            for (let p of paths) {
-                maxlength = Math.max(p.length, maxlength);
-            }
-            // Now we scan for the shortest path (if two are of equal length, report both)
-            let pathdebug;
-            if (debug) pathdebug = JSON.stringify(paths);
-            let names = [];
-            for (let len=1;len<=maxlength;len++) {
-                for (let p of paths) {
-                    if (p.length == len) {
-                        name = this.computeEnglishRelationshipName(p);
-                        if (!names.includes(name)) {
-                            names.push(name);
+                        if (ancestral && !ancestors.includes(r.person)) {
+                            ancestral = false;
+                        }
+                        if ((!options.maxdistance || newpath.length < options.maxdistance) && newpath.length < (ancestral ? minAncestralLength : minNonAncestralLength)) {
+                            q.push({person:r.person, ancestral: ancestral, path:newpath, skip:newskip});
                         }
                     }
                 }
-                if (names.length) {
-                    break;
-                }
             }
-            // Now delete any paths containins spouses, and do it again, if any remain
             for (let i=0;i<paths.length;i++) {
-                if (paths[i].includes("husband") || paths[i].includes("wife") || paths[i].includes("spouse")) {
-                    paths.splice(i--, 1);
-                }
-            }
-            for (let len=1;len<=maxlength;len++) {
-                for (let p of paths) {
-                    if (p.length == len) {
-                        name = this.computeEnglishRelationshipName(p);
-                        if (!names.includes(name)) {
-                            names.push(name);
+                let p = paths[i];
+                // delete any paths which are longer versions of other paths. Sanity check.
+                // delete any [non-ancestral] paths which are longer than the shortest path - lets keep the ancestral ones, just in case
+                if (!p.ancestral && p.path.length > (p.ancestral ? minAncestralLength : minNonAncestralLength)) {
+                    p = null;
+                } else {
+                    for (let p2 of paths) {
+                        if (p != p2 && p2.path.length > p.path.length) {
+                            let differs = false;
+                            for (let j=0;j<p.path.length;j++) {
+                                if (p.path[j].person != p2.path[j].person) {
+                                    differs = true;
+                                    break;
+                                }
+                            }
+                            if (!differs) {
+                                p = null;
+                                break;
+                            }
                         }
                     }
                 }
-                if (names.length) {
-                    break;
+                if (p) {
+                    p.name = this.computeEnglishRelationshipName(p.path);
+                } else {
+                    paths.splice(i--, 1);       // delete
                 }
             }
-            if (debug) console.log(this + " => " + other + " = " + pathdebug + " = " + JSON.stringify(names)+"/"+names.length+" "+options.gender+" "+maxlength);
-            out = names;
+            // length-1 paths go to the front, after that sorted by ancestry, then length
+            paths.sort((a,b) => {
+                if (a.path.length == 1) {
+                    return -1;
+                } else if (b.path.length == 1) {
+                    return 1;
+                } else {
+                    let d = (a.ancestral?0:1) - (b.ancestral?0:1);
+                    if (d == 0) {
+                        d = a.length - b.length;
+                    }
+                    return d;
+                }
+            });
         }
-        return out;
+        return paths;
     }
 
     /**
@@ -2246,6 +2309,14 @@ class SlippyTreePerson {
      */
     computeEnglishRelationshipName(p) {
         p = [...p]; // clone
+        for (let i=0;i<p.length;i++) {
+            if (p[i].rel) {
+                p[i] = p[i].rel;
+            }
+            if (typeof p[i] != "string") {
+                throw new Error("Invalid argument: item " +i + " is not a string");
+            }
+        }
         const ggg = function(n) {
             switch (n) {
                 case 0: return "";
@@ -2402,6 +2473,20 @@ class SlippyTreePerson {
                 p[i] = p[i] == "spouse" ? "sibling-in-law" : p[i] == "husband" ? "brother-in-law" : "sister-in-law";
             }
         }
+        // child-in-law: child-spouse
+        for (let i=0;i + 1<p.length;i++) {
+            if (["child","son","daughter"].includes(p[i]) && ["spouse","husband","wife"].includes(p[i + 1])) {
+                p.splice(i, 1);
+                p[i] = p[i] == "spouse" ? "child-in-law" : p[i] == "husband" ? "son-in-law" : "daughter-in-law";
+            }
+        }
+        // parent-in-law: spouse-parent
+        for (let i=1;i<p.length;i++) {
+            if (["spouse","husband","wife"].includes(p[i - 1]) && ["parent","mother","father"].includes(p[i])) {
+                p.splice(--i, 1);
+                p[i] += "-in-law";
+            }
+        }
         return p.join("'s ");
     }
     
@@ -2414,18 +2499,18 @@ class SlippyTreePerson {
         const tree = this.tree;
         if (name == "focus") {
             // Refocus the tree on this node
-            tree.refocus(this);
+            tree.setFocus(this);
 
         } else if (name == "nuclear") {
             // Load the "nuclear" family for this node
             tree.load({keys: this.id, nuclear:1}, () => { 
                 this.childrenLoaded = true;
-                tree.refocus(this);
+                tree.setFocus(this);
             });
         } else if (name == "ancestors") {
             // Load 4 (the max) levels of ancestors for this node
             tree.load({keys: this.id, ancestors:4}, () => { 
-                tree.refocus(this);
+                tree.setFocus(this);
             });
 
         } else if (name == "descendants") {
@@ -2451,11 +2536,13 @@ class SlippyTreePerson {
                         }
                     }
                 }
-                tree.refocus(this, () => {
+                tree.setFocus(this, () => {
                     // ... then load their unloaded spouses ...
                     // This completely destroys performance, and TBH
                     // we don't need it. We only need to indicate that
-                    // there are spouses to load.
+                    // there are spouses to load. How best to do that
+                    // with the current API? Not sure.
+                    // Load them and mark as hidden?
                     /*
                     let q = [];
                     q.push(this);
@@ -2479,7 +2566,7 @@ class SlippyTreePerson {
                     }
                     tree.load({keys: spouses}, () => {
                         // ... then focus again
-                        tree.refocus(this);
+                        tree.setFocus(this);
                     });
                     */
                 });
@@ -2521,7 +2608,7 @@ class SlippyTreePerson {
             for (const person of tree.state.people) {
                 person.pruned = !q.includes(person);
             }
-            tree.refocus(this);
+            tree.setFocus(this);
         }
     }
 }
