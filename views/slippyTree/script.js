@@ -61,7 +61,7 @@ class SlippyTree extends View {
 //        console.log("Setup: hasTrackpad="+this.hasTrackpad+" hasMouse="+this.hasMouse);
         const content = `
 
-<div class="slippy-tree-container">
+<div class="slippy-tree-container" tabindex="0">
  <div class="slippy-tree-scrollpane">
   <svg xmlns="http://www.w3.org/2000/svg" class="slippy-tree">
    <defs>
@@ -370,7 +370,7 @@ class SlippyTree extends View {
                 }, 1000);
             });
             const self = this;
-            this.state.keyListener = (e) => {
+            this.state.container.addEventListener("keydown", (e) => {
                 if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
                     e.preventDefault();
                     const menu = this.state.personMenu;
@@ -442,8 +442,7 @@ class SlippyTree extends View {
                         }
                     }
                 }
-            };
-            document.body.addEventListener("keydown", this.state.keyListener);
+            });
             this.state.scrollPane.addEventListener("scroll", () => {
                 if (!this.state) {
                     return;
@@ -499,7 +498,6 @@ class SlippyTree extends View {
         // Remember this object persists even when other views are selected.
         // Clear out all state - it's all under "this.state" now - and disconnect resize observer
         this.state.resizeObserver.disconnect();
-        document.body.removeEventListener("keydown", this.state.keyListener);
         if (this.#VIEWPARAM) {
             let v = new URLSearchParams(window.location.hash.substring(1));
             v.delete(this.#VIEWPARAM);
