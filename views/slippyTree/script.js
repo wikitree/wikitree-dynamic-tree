@@ -36,6 +36,7 @@ class SlippyTree extends View {
     #SVG = "http://www.w3.org/2000/svg";
     #MINSCALE = 0.2;
     #MAXSCALE = 3;
+    settings;
 
     /**
      * Props is an (optional) map with the following keys
@@ -50,14 +51,17 @@ class SlippyTree extends View {
         this.state.props = props || {};
         this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : window.deubgLoggingOn;
         this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
-        // These two are not mutually exclusive, a device can have both. Values are tri-state - null means "unknown"
-        // MQ can tell us only if no mouse is attached - if that's the case, hasMouse=false, hasTrackpad=true
-        this.hasTrackpad = this.state.props.trackpad;
-        this.hasMouse = this.state.props.mouse;
-        if (window.matchMedia("not (hover: hover)").matches) {  // true if MQ recognised and primary device has no hover.
-            this.hasTrackpad = true;                            // this will be true for tablets
-            this.hasMouse = false;
+
+        try {
+            this.settings = JSON.parse(window.localStorage.getItem("slippyTree-settings"));
+        } catch (e) {}
+        if (!this.settings) {
+            let hasMouse = !window.matchMedia("not (hover: hover)").matches; // true if MQ recognised and primary device has no hover.
+            this.settings = {
+                wheel: hasMouse ? "zoom" : "scroll" 
+            };
         }
+
 //        console.log("Setup: hasTrackpad="+this.hasTrackpad+" hasMouse="+this.hasMouse);
         const content = `
 
@@ -106,12 +110,12 @@ class SlippyTree extends View {
 
  </div>
 
- <a class="helpButton"></a>
+ <a class="slippy-help-button"></a>
  <div class="loader"></div>
  <div class="helpContainer">
   <div>
    <div class="helpCloseButton">&#x2715;</div>
-   <h1>The Slippy Tree</h1>
+   <h1 style="margin:0 0 0.5em 0">The Slippy Tree</h1>
    <svg class="slippy-tree" width="500" height="140" style="display:block">
     <defs>
      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -200,10 +204,21 @@ class SlippyTree extends View {
      </g>
     </g>
    </svg>
-   <p>
+   <p style="margin: 0.5em 0">
     A multi-root tree showing several parent and child relationships at once.<br/>
     Spouses are displayed together, refocus to change the order.
    </p>
+   <div class="slippy-settings-wheel">
+    <div class="slippy-settings-wheel-zoom">
+     <img src="views/slippyTree/resources/mouse.svg"/>
+     <span>Scroll-wheel zooms (best for mouse)</span>
+    </div>
+    <div class="slippy-settings-wheel-scroll">
+     <img src="views/slippyTree/resources/trackpad.svg"/>
+     <span>Scroll-wheel scrolls (best for trackpad)</span>
+    </div>
+   </div>
+   <div class="attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
   </div>
  </div>
 </div>
@@ -212,10 +227,12 @@ class SlippyTree extends View {
 
         this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
         this.state.container.innerHTML = content.trim();
+
+        this.setSettings();
         this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
         this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
         this.state.personMenu = this.state.container.querySelector(".personMenu");
-        const helpButton = this.state.container.querySelector(".helpButton");
+        const helpButton = this.state.container.querySelector(".slippy-help-button");
         const helpContainer = this.state.container.querySelector(".helpContainer");
         const helpBox = helpContainer.querySelector(":scope > :first-child");
         helpButton.addEventListener("click", (e) => {
@@ -225,6 +242,12 @@ class SlippyTree extends View {
         helpBox.addEventListener("click", (e) => {
             helpContainer.classList.toggle("hidden");
         });
+        document.querySelector(".slippy-settings-wheel-zoom").addEventListener("click", (e) => {
+            this.setSettings({wheel:"zoom"}, e);
+        });
+        document.querySelector(".slippy-settings-wheel-scroll").addEventListener("click", (e) => {
+            this.setSettings({wheel:"scroll"}, e);
+        });
 
         this.state.people = [];
         this.state.byid = {};
@@ -232,8 +255,6 @@ class SlippyTree extends View {
         this.state.focus = null;
         this.state.refocusStart = null;
         this.state.refocusEnd = null;
-        let trackpadReset = null;
-        let trackpad = this.state.props.trackpad
         for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
             if (elt.getAttribute("data-action") != "profile") {
                 elt.addEventListener("click", () => {
@@ -329,45 +350,20 @@ class SlippyTree extends View {
                 }
             });
             this.state.svg.addEventListener("wheel", (e) => {
-                // If a trackpad, mousewheel will run in two directions and ctrl-wheel is used to pinch-zoom.
-                // If a normal mousewheel, wheel is used to zoom and only goes in one direction.
-                // Some device have both! So this is complicated:
-                // 1. First we try and determine if the device HAS a trackpad or HAS a mousewheel. This is a latch
-                //    both start false and may become true, never the other way around.
-                // 2. If neither or both are detected, try and determine if THIS event comes from a trackpad or
-                //    a mouse - if it has deltaX, it's a trackpad.
-                // 3. If a trackpad, all wheel events for the next N seconds are treated the same way.
+                // Trackpad: wheel is scroll, wheel-with-ctrl is zoom (two finger pinch), drag is scroll
+                // Mouse: wheel is zoom, drag is scroll
+                // No way to auto-detect which.
                 e.preventDefault();
                 let view = { scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy };
-                if (e.deltaX != 0) {
-                    trackpad = true;
-                    if (this.hasTrackpad == null) {
-                        this.hasTrackpad = true;
-                        // console.log("Trackpad due to movement");
-                    }
-                }
-                if (this.hasMouse == null && Math.abs(e.deltaY) > 20 && e.deltaX == 0) {
-                    this.hasMouse = true;       // Big Y movement, no X movement? Very straight finger, or a mouse.
-                    // console.log("Mousewheel due to scroll");
-                }
-                if ((this.hasTrackpad || false) != (this.hasMouse || false)) {
-                    trackpad = this.hasTrackpad;       // else both or neither detected: could be either
-                }
-                if (trackpad) {
-                    if (e.ctrlKey) {
-                        view.scale -= e.deltaY * 0.01;
-                    } else {
-                        view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
-                        view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
-                    }
+                if (e.ctrlKey) {
+                    view.scale -= e.deltaY * 0.01;
+                } else if (this.settings.wheel == "scroll") {
+                    view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
+                    view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                 } else {
                     view.scale -= e.deltaY * 0.01;
                 }
                 this.reposition(view);
-                clearTimeout(trackpadReset);
-                trackpadReset = setTimeout(() => {
-                    trackpad = trackpadReset = null;
-                }, 1000);
             });
             const self = this;
             this.state.container.addEventListener("keydown", (e) => {
@@ -504,6 +500,22 @@ class SlippyTree extends View {
             window.history.replaceState(null, null, "#" + v);
         }
         delete this.state;
+    }
+
+    setSettings(patch, e) {
+        if (e) {
+            e.stopPropagation();
+        }
+        if (patch) {
+            for (let key in patch) {
+                this.settings[key] = patch[key];
+            }
+        }
+        let zoomButton = document.querySelector(".slippy-settings-wheel-zoom");
+        let scrollButton = document.querySelector(".slippy-settings-wheel-scroll");
+        zoomButton.classList.toggle("selected", this.settings.wheel == "zoom");
+        scrollButton.classList.toggle("selected", this.settings.wheel == "scroll");
+        window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
     }
 
     /**

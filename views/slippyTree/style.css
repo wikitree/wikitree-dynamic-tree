@@ -25,7 +25,7 @@ body:has(.slippy-tree-container) {
     font: 14px sans-serif;
     overflow: hidden;
     height: 100%;
-    --help-button-color: #639;
+    --button-color: #639;
 }
 .slippy-tree-container * {
     touch-action: none !important;
@@ -50,7 +50,7 @@ body:has(.slippy-tree-container) {
     }
 }
 
-.slippy-tree-container .helpButton {
+.slippy-tree-container .slippy-help-button {
     position: absolute;
     font-size: 30px;
     line-height: 1;
@@ -58,18 +58,18 @@ body:has(.slippy-tree-container) {
     width: 1em;
     height: 1em;
     top: 20px;
-    left: 20px;
     cursor: pointer;
     border-radius: 50%;
-    border: 4px solid var(--help-button-color);
+    border: 4px solid var(--button-color);
     color: white;
-    background: var(--help-button-color);
+    background: var(--button-color);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    left: 20px;
 }
-.slippy-tree-container .helpButton::before {
+.slippy-tree-container .slippy-help-button::before {
     content: "?";
 }
 
@@ -95,6 +95,43 @@ body:has(.slippy-tree-container) {
     -webkit-user-select: none;
 }
 
+.slippy-tree-container .helpContainer .slippy-settings-wheel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+.slippy-tree-container .helpContainer .attribution {
+    position: relative;
+    top: 12px;
+    font-size: 8px;
+    color: #aaa;
+}
+.slippy-tree-container .helpContainer .attribution a {
+    color: inherit;
+}
+.slippy-tree-container .helpContainer .slippy-settings-wheel img {
+    height: 2.9em;
+    margin-bottom: -1em;
+    float: left;
+}
+.slippy-tree-container .helpContainer .slippy-settings-wheel > div {
+    width: 12em;
+    padding: 4px;
+    border: 4px solid #888;
+    border-radius: 8px;
+    background: #eee;
+    color: black;
+}
+.slippy-tree-container .helpContainer .slippy-settings-wheel > div.selected {
+    border-color: red;
+}
+@media (not (hover:hover)) {
+    /* ambiguity is only present with mice */
+    .slippy-tree-container .helpContainer .slippy-settings-wheel {
+        display: none;
+    }
+}
+
 .slippy-tree-container .helpContainer > div {
     --width: 500px;
     text-align: center;
@@ -107,10 +144,10 @@ body:has(.slippy-tree-container) {
     transform-origin: 50% 50%;
 }
 /* A bodge to scaling down the help text to roughly fit on an iPhone screen */
-@media ((max-width: 480px) or (max-height: 295px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.9); } }
-@media ((max-width: 450px) or (max-height: 270px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.85); } }
-@media ((max-width: 420px) or (max-height: 255px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.8); } }
-@media ((max-width: 390px) or (max-height: 230px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.73); } }
+@media ((max-width: 480px) or (max-height: 295px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.89); } }
+@media ((max-width: 450px) or (max-height: 270px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.84); } }
+@media ((max-width: 420px) or (max-height: 255px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.79); } }
+@media ((max-width: 390px) or (max-height: 230px)) { .slippy-tree-container .helpContainer > div { transform: scale(0.72); } }
 
 .slippy-tree-container .hidden {
     display: none !important;
