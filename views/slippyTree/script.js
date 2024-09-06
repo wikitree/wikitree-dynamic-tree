@@ -204,7 +204,7 @@ class SlippyTree extends View {
      </g>
     </g>
    </svg>
-   <p style="margin: 0.5em 0">
+   <p class="slippy-about">
     A multi-root tree showing several parent and child relationships at once.<br/>
     Spouses are displayed together, refocus to change the order.
    </p>
@@ -217,8 +217,9 @@ class SlippyTree extends View {
      <img src="views/slippyTree/resources/trackpad.svg"/>
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
+    <p style="margin:0.5em 0 0 0">Or navigate with cursor keys and +/- to zoom</p>
    </div>
-   <div class="attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
+   <div class="icon-attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
   </div>
  </div>
 </div>

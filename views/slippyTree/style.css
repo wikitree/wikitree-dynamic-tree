@@ -85,6 +85,10 @@ body:has(.slippy-tree-container) {
     background: #0008;
 }
 
+.slippy-tree-container .helpContainer h1 {
+    margin-bottom: 0;
+}
+
 .slippy-tree-container .helpContainer > div .helpCloseButton {
     /* relatively positioning the div triggered a bug in webkit layout, so do this the hard way */
     float: right;
@@ -100,7 +104,7 @@ body:has(.slippy-tree-container) {
     flex-wrap: wrap;
     justify-content: space-around;
 }
-.slippy-tree-container .helpContainer .attribution {
+.slippy-tree-container .helpContainer .icon-attribution {
     position: relative;
     top: 12px;
     font-size: 8px;
@@ -126,8 +130,14 @@ body:has(.slippy-tree-container) {
     border-color: red;
 }
 @media (not (hover:hover)) {
-    /* ambiguity is only present with mice */
+    /* this block applies only if there is no mouse present */
     .slippy-tree-container .helpContainer .slippy-settings-wheel {
+        display: none;
+    }
+    .slippy-tree-container .helpContainer .slippy-about {
+        margin: 0.5em;
+    }
+    .slippy-tree-container .helpContainer .icon-attribution {
         display: none;
     }
 }
