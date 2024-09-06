@@ -110,7 +110,7 @@ body:has(.slippy-tree-container) {
     font-size: 8px;
     color: #aaa;
 }
-.slippy-tree-container .helpContainer .attribution a {
+.slippy-tree-container .helpContainer .icon-attribution a {
     color: inherit;
 }
 .slippy-tree-container .helpContainer .slippy-settings-wheel img {
