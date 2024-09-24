@@ -79,7 +79,7 @@ window.View = class View {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
 
-    close() {}
+    close() { }
 };
 
 window.ViewError = class ViewError extends Error {
@@ -205,6 +205,21 @@ window.ViewRegistry = class ViewRegistry {
         // This shouldn't happen, but perhaps we should display an error so new View builders can see what happened.
         if (view === undefined) return;
 
+        // Extract all parameters from the URL hash
+        const urlParams = new URLSearchParams(window.location.hash.slice(1));
+        let allParams = {};
+        urlParams.forEach((value, key) => {
+            allParams[key] = value;  // e.g., { ancestors: '10', siblings: '1' }
+        });
+        let filteredParams = {};
+        const acceptedParams = view.meta().params || [];
+
+        acceptedParams.forEach(param => {
+            if (allParams.hasOwnProperty(param)) {
+                filteredParams[param] = allParams[param];
+            }
+        });
+
         viewLoader.classList.remove("hidden");
 
         const basicFields = ["Id", "Name", "FirstName", "LastName", "Derived.BirthName", "Derived.BirthNamePrivate"];
@@ -215,21 +230,21 @@ window.ViewRegistry = class ViewRegistry {
                 action: "getPerson",
                 key: wtID,
                 fields: basicFields.join(),
-            }).then((data) => this.onPersonDataReceived(view, data));
+            }).then((data) => this.onPersonDataReceived(view, data, filteredParams));
         } finally {
             viewLoader.classList.add("hidden");
         }
     }
 
     // After the initial getPerson from the onSubmit() launch returns, this method is called.
-    onPersonDataReceived(view, data) {
+    onPersonDataReceived(view, data, filteredParams) {
         const wtID = this.getCurrentWtId();
         const infoPanel = document.querySelector(this.INFO_PANEL);
 
         // If we have a person, go forward with launching the view, sending it the div ID to use for the display and the ID of the starting profile.
         // If we have no person, we show an error div.
         if (data[0]["person"]) {
-            this.initView(view, data[0]["person"]);
+            this.initView(view, data[0]["person"], filteredParams);
 
             this.session.personID = data[0]["person"]["Id"];
             this.session.personName = data[0]["person"]["Name"];
@@ -252,7 +267,7 @@ window.ViewRegistry = class ViewRegistry {
 
             try {
                 this.currentView = view;
-                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"]);
+                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"], filteredParams);
             } catch (err) {
                 // If we have an unhandleable error from a view, display the error message and hide away
                 // the "info panel", since it's probably incomplete/broken.
@@ -277,7 +292,7 @@ window.ViewRegistry = class ViewRegistry {
         }
     }
 
-    initView(view, person) {
+    initView(view, person, filteredParams = {}) {
         // const wtLink = document.querySelector(this.WT_ID_LINK);
         // const viewTitle = document.querySelector(this.VIEW_TITLE);
         // const viewDescription = document.querySelector(this.VIEW_DESCRIPTION);
@@ -301,6 +316,11 @@ window.ViewRegistry = class ViewRegistry {
         const viewSelect = document.querySelector(this.VIEW_SELECT).value;
         let url = window.location.href.split("?")[0].split("#")[0];
         url = `${url}#name=${wtID}&view=${viewSelect}`;
+
+        Object.keys(filteredParams).forEach(key => {
+            url += `&${key}=${filteredParams[key]}`;
+        });
+
         history.replaceState("", "", url);
     }
 

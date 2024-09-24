@@ -52,7 +52,7 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
 
         `[class based]` Create descendant of View class and override method
 
-        `meta`: use you own title, description and docs
+        `meta`: use you own title, description, docs, and accept parameters
 
         `init`: use your own implementation of view
 
@@ -70,10 +70,11 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
                     description: "",
                     // link pointing at some webpage with documentation
                     docs: "",
+                    params: ["param1", "param2"]
                 };
             }
 
-            init(container_selector, person_id) {
+            init(container_selector, person_id, params) {
                 // do whathever you want there
                 // to showcase your awesome view, e.g.
                 document.querySelector(
@@ -93,7 +94,7 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
 
         alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
 
-1. link your new script file in `<head>` section of the `index.html` and register your new view in `ViewRegistry` in index.js, e.g.
+2. link your new script file in `<head>` section of the `index.html` and register your new view in `ViewRegistry` in index.js, e.g.
 
     ```js
     new ViewRegistry(
