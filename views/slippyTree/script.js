@@ -462,14 +462,14 @@ class SlippyTree extends View {
         // with a different ID, but because of the slightly bodgy way this is done in
         // tree.js it's non-trivial to do this properly. Easy way is to honour the state
         // only the first time a SlippyTree is instantiated.
-        let state = SlippyTree.loadCount ? null : window.wtViewRegistry?.session?.fields;
-        if (state && state[this.#VIEWPARAM]) {
+        let serializedState = SlippyTree.loadCount ? null : this.state.props[this.#VIEWPARAM];
+        if (serializedState) {
             helpContainer.classList.add("hidden");
-            if (!this.restoreState(state[this.#VIEWPARAM])) {
-                state = null;
+            if (!this.restoreState(serializedState)) {
+                serializedState = null;
             }
         }
-        if (state == null) {
+        if (serializedState == null) {
             if (person_id) {
                 helpContainer.classList.add("hidden");
                 this.reset(person_id);
@@ -488,6 +488,7 @@ class SlippyTree extends View {
             description: "A mobile friendly tree that shows multiple relationships at once",
             // link pointing at some webpage with documentation
             docs: "",
+            params: ["slippyTreeState"]
         };
     }
 
