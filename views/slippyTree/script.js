@@ -1063,6 +1063,94 @@ class SlippyTree extends View {
         const forces = [];       // includes func(d) where d is vertical distance from primary to secondary (may be -ve), and ret is +ve to bring closer together
         const q = []; // tmp working aray
 
+        class Clump {
+            #people = [];
+            #nextMargin = 0;
+            #prevMargin = 0;
+            #next;
+            #prev;
+            #shift;
+            constructor() {
+            }
+            addPerson(person) {
+                this.#people.push(person);
+                person.clump = this;
+                this.#shift = null;
+            }
+            setNext(clump, margin) {
+                this.#next = clump;
+                clump.#prev = this;
+                this.#nextMargin = clump.#prevMargin = margin;
+            }
+            shift() {
+                if (typeof(this.#shift) != "number") {
+                    let shift = 0, shiftCount = 0;
+                    for (let person of this.people()) {
+                        shift += person.shift;
+                        shiftCount += person.shiftCount;
+                    }
+                    this.#shift = shift == 0 || shiftCount == 0 ? 0 : shift / shiftCount;
+                    
+                }
+                return this.#shift;
+            }
+            scaleShift(scale) {
+                if (typeof scale != "number" || scale != scale) {
+                    throw new Error("NaN");
+                }
+                for (let person of this.people()) {
+                    person.shift *= scale;
+                }
+                this.#shift = null;
+            }
+            prevClump() {
+                return this.#prev;
+            }
+            nextClump() {
+                return this.#next;
+            }
+            topPerson() {
+                return this.#people[0];
+            }
+            bottomPerson() {
+                return this.#people[this.#people.length - 1];
+            }
+            prevMargin() {
+                return this.#prevMargin;
+            }
+            nextMargin() {
+                return this.#nextMargin;
+            }
+            *people() {
+                for (let person of this.#people) {
+                    yield person;
+                }
+            }
+            toString() {
+                let count = 0;
+                for (let p of this.people()) {
+                    count++;
+                }
+                return "(" + count + " from \"" + this.topPerson().presentationName() + "\" to \"" + this.bottomPerson().presentationName() + "\" shift="+this.shift().toFixed(1)+" gap=["+this.prevMargin()+" "+this.nextMargin()+"])";
+            }
+            mergeWithNext() {
+                let oldnext = this.#next;
+                for (let p of oldnext.#people) {
+                    this.#people.push(p);
+                    p.clump = this;
+                }
+                this.#next = oldnext.#next;
+                this.#nextMargin = oldnext.#nextMargin;
+                if (this.#next) {
+                    this.#next.#prev = this;
+                    this.#next.#prevMargin = this.#nextMargin;
+                }
+                this.#shift = null;
+            }
+            resetShift() {
+                this.#shift = null;
+            }
+       }
         // STEP 0
         // Preliminary stuff, work out the width for each generation,
         // reset some properties
@@ -1073,14 +1161,8 @@ class SlippyTree extends View {
                 genwidth[generation] = MINWIDTH;
             }
             genwidth[generation] = Math.max(genwidth[generation], person.width);
-            person.clump = {
-                people: [person],
-                shift: 0,
-                shiftCount: 0,
-                toString: function() {
-                    return "(" + this.people.length + " from \"" + this.people[0].presentationName() + "\" to \"" + this.people[this.people.length - 1].presentationName() + "\" shift="+(this.shift/this.shiftCount)+" from " + this.shiftCount + " gap=["+this.prevMargin+" "+this.nextMargin+"])";
-                }
-            };
+            person.clump = new Clump();
+            person.clump.addPerson(person);
         }
 
         // STEP 1
@@ -1135,7 +1217,12 @@ class SlippyTree extends View {
             }
             for (const par of person.parents()) {
                 if (!par.hidden) {
-                    forces.push({name: "child", a: par, b: person, iterations:1, func: (d) => Math.abs(d) < 1 ? Math.abs(d) : Math.log(Math.abs(d) - 1) * 4 });
+                    forces.push({
+                      name: "child",
+                      a: par,
+                      b: person,
+                      func: (d) => Math.abs(d) < 1 ? Math.abs(d) : Math.log(Math.abs(d) - 1) * 4
+                  });
                 }
             }
             if (person.svg) {
@@ -1218,8 +1305,7 @@ class SlippyTree extends View {
                                 spouse.tx += SPOUSEINDENT * spousecheck.depth;
                                 marriages.push({a:spousecheck.person, b:spouse, top:mylast, bot: spouse});
                                 mylast = spouse;
-                                person.clump.people.push(spouse);
-                                spouse.clump = person.clump;
+                                person.clump.addPerson(spouse);
                                 spouseheight += spouse.height + SPOUSEMARGIN;
                                 if (spousecheck.depth + 1 <= bundleSpouses) {
                                     sq.push({depth:spousecheck.depth + 1, person: spouse});
@@ -1261,10 +1347,7 @@ class SlippyTree extends View {
                         }
                     }
                     y += (prev.height + person.height) / 2;
-                    person.clump.prev = prev.clump;
-                    prev.clump.next = person.clump;
-                    person.clump.prevMargin = prev.clump.nextMargin = y;
-                    person.clump.prevRel = prev.clump.nextRel = rel;
+                    prev.clump.setNext(person.clump, y);
                     y += prev.ty;
                 }
                 if (firstchild) { // Y value also derived from mid-point of children
@@ -1285,7 +1368,7 @@ class SlippyTree extends View {
                 if (isNaN(person.ty)) { console.log(person); throw new Error("NAN"); }
                 // Node is positioned, now position spouses relative to this node.
                 prev = person;
-                for (const spouse of person.clump.people) {
+                for (const spouse of person.clump.people()) {
                     if (spouse != person) {
                         const distance = (prev.height + spouse.height) / 2 + SPOUSEMARGIN;
                         y += distance;
@@ -1337,113 +1420,115 @@ class SlippyTree extends View {
         for (let pass=0;pass<PASSES;pass++) {
             let maxdy = 0;
             if (DEBUG) console.log("pass " + pass);
+            for (const person of ordered) {
+                person.shift = person.shiftCount = 0;
+                person.clump.resetShift();
+                if (DEBUG) person.ty = Math.round(person.ty * 100) / 100;
+            }
             for (const f of forces) {
-                const oa = f.a.ty + (f.a.clump.shiftCount == 0 ? 0 : f.a.clump.shift / f.a.clump.shiftCount);
-                const ob = f.b.ty + (f.b.clump.shiftCount == 0 ? 0 : f.b.clump.shift / f.b.clump.shiftCount);
+                const oa = f.a.ty + f.a.clump.shift();
+                const ob = f.b.ty + f.b.clump.shift();
                 const distance = oa - ob;  // +ve if a is lower
                 const sign = Math.sign(distance);
                 let force = f.func(distance); // +ve if closer together
-                if (DEBUG) console.log("  f="+f.name+" a="+f.a+"@"+oa+" b="+f.b+"@"+ob+" d="+distance+" f="+force+"*"+sign);
-                f.a.clump.shift -= force * sign;
-                f.a.clump.shiftCount++;
-                f.b.clump.shift += force * sign;
-                f.b.clump.shiftCount++;
+                if (DEBUG) console.log("  f="+f.name+" a="+f.a+"@"+oa.toFixed(1)+" b="+f.b+"@"+ob.toFixed(1)+" d="+distance.toFixed(1)+" f="+force.toFixed(3)+"*"+sign);
+                f.a.shift -= force * sign;
+                f.a.shiftCount++;
+                f.b.shift += force * sign;
+                f.b.shiftCount++;
+                f.a.clump.resetShift();
+                f.b.clump.resetShift();
             }
             for (let a of genpeople) {
                 const MAXREPEAT = 1000; // just in case
                 for (let repeat=0;repeat < MAXREPEAT;repeat++) {
                     let repeatNeeded = false;
                     let numclumps = 0;
-                    for (let clump = a[0].clump;clump;clump=clump.next) {
-                        clump.index = numclumps++;
+                    if (DEBUG) {
+                        console.log("  repeat " + repeat + " column " + genpeople.indexOf(a) + " clumps:");
+                        let ix = 0;
+                        for (let clump = a[0].clump;clump;clump=clump.nextClump()) {
+                            console.log("    * clump " + ix + " shift=" + clump.shift().toFixed(1)+" margins=[" + clump.prevMargin().toFixed(1)+" "+clump.nextMargin().toFixed(1) + "]");
+                            for (let p of clump.people()) {
+                                console.log("      * " + p);
+                            }
+                            ix++;
+                        }
                     }
-                    if (DEBUG) console.log("  column " + genpeople.indexOf(a) + " has " + numclumps + " clumps");
-                    for (let clump = a[0].clump;clump;clump=clump.next) {
-                        const prev = clump.prev;
-                        const next = clump.next;
-                        let dy = clump.shift / clump.shiftCount;
+                    for (let clump = a[0].clump;clump;) {
+                        const prev = clump.prevClump();
+                        const next = clump.nextClump();
+                        let dy = clump.shift();
                         if (dy < 0) {
-                            const y = clump.people[0].ty;
-                            const gap = clump.prevMargin;
+                            const y = clump.topPerson().ty;
+                            const gap = clump.prevMargin();
                             if (prev) {
-                                let prevy = prev.people[prev.people.length - 1].ty;
-                                let prevdy = prev.shift / prev.shiftCount;
+                                let prevy = prev.bottomPerson().ty;
+                                let prevdy = prev.shift();
                                 let overlap = (prevy + prevdy + gap) - (y + dy) 
                                 if (overlap > 0) {  // Shift up collides
                                     dy = prevy - y + gap;
-                                    if (DEBUG) console.log("      clump #" + clump.index + clump + ",top="+y+" overlaps prev " + prev + ",bot="+(prevy+prevdy)+"+"+gap+"  by " + overlap + ", moving by " + dy + " and merging up");
-                                    for (const person of clump.people) {
+                                    if (DEBUG) console.log("    clump " + clump + ",top="+y.toFixed(1)+" overlaps prev " + prev + ",bot="+(prevy+prevdy).toFixed(1)+"+"+gap.toFixed(1)+"  by " + overlap.toFixed(1) + ", moving by " + dy.toFixed(1) + " and merging up");
+                                    for (const person of clump.people()) {
                                         person.ty += dy;
-                                        person.clump = prev;
                                     }
-                                    prev.people = prev.people.concat(clump.people);
-                                    prev.shift += clump.shift;
-                                    prev.shiftCount += clump.shiftCount;
-                                    prev.next = next;
-                                    if (next) {
-                                        next.prev = prev;
-                                    }
+                                    prev.mergeWithNext();
                                     repeatNeeded = true;
                                 } else {
-                                    if (DEBUG) console.log("      clump #" + clump.index + clump + ",top="+y+" has no overlap");
+                                    if (DEBUG) console.log("    clump " + clump + ",top="+y.toFixed(1)+" has no overlap");
                                 }
                             } else if (y + dy < 0) {
-                                let v = clump.shift * (y - 0) / -dy;
-                                if (DEBUG) console.log("      clump #" + clump.index + clump + ",top="+y+" hits min=0, reducing shift to " + (v / clump.shiftCount));
-                                clump.shift = v;
+                                let scale = (y - 0) / -dy;
+                                if (DEBUG) console.log("    clump " + clump + ",top="+y.toFixed(1)+" hits min=0, scaling shift by " + scale.toFixed(2));
+                                clump.scaleShift(scale);
                             }
                         } else if (dy > 0) {
-                            const y = clump.people[clump.people.length - 1].ty;
-                            const gap = clump.nextMargin;
-                            let dy = clump.shift / clump.shiftCount;
+                            const y = clump.bottomPerson().ty;
+                            const gap = clump.nextMargin();
+                            let dy = clump.shift();
                             if (next) {
-                                let nexty = next.people[0].ty;
-                                let nextdy = next.shift / next.shiftCount;
+                                let nexty = next.topPerson().ty;
+                                let nextdy = next.shift();
                                 let overlap = (y + dy) - (nexty + nextdy - gap);
                                 if (overlap > 0) {  // Shift down collides
                                     dy = nexty - y - gap;
-                                    if (DEBUG) console.log("      clump #" + clump.index + clump + ",bot="+y+" overlaps next " + next + ",top="+(nexty+nextdy)+"-"+gap+"  by " + overlap + ", moving by " + dy + " and merging down");
-                                    for (const person of clump.people) {
+                                    if (DEBUG) console.log("    clump " + clump + ",bot="+y.toFixed(1)+" overlaps next " + next + ",top="+(nexty+nextdy).toFixed(1)+"-"+gap.toFixed(1)+"  by " + overlap.toFixed(1) + ", moving by " + dy.toFixed(1) + " and merging down");
+                                    for (const person of clump.people()) {
                                         person.ty += dy;
-                                        person.clump = next;
                                     }
-                                    next.people = clump.people.concat(next.people);
-                                    next.shift += clump.shift;
-                                    next.shiftCount += clump.shiftCount;
-                                    next.prev = prev;
-                                    if (prev) {
-                                        prev.next = next;
-                                    }
+                                    clump.mergeWithNext();
                                     repeatNeeded = true;
+                                    continue;
                                 } else {
-                                    if (DEBUG) console.log("      clump #" + clump.index + clump + ",bot="+y+" has no overlap: y="+y+"+"+dy+" next.y="+nexty+"+"+nextdy+" gap="+gap+" ol="+overlap);
+                                    if (DEBUG) console.log("    clump " + clump + ",bot="+y.toFixed(1)+" has no overlap: y="+y.toFixed(1)+"+"+dy.toFixed(1)+" next.y="+nexty.toFixed(1)+"+"+nextdy.toFixed(1)+" gap="+gap.toFixed(1)+" ol="+overlap.toFixed(1));
                                 }
                             } else if (y + dy > maxy) {
-                                let v = clump.shift * (maxy - y) / dy;
-                                if (DEBUG) console.log("      clump #" + clump.index + clump + ",bot="+y+" hits max="+maxy+", reducing shift to " + (v / clump.shiftCount));
-                                clump.shift = v;
+                                let scale = (maxy - y) / dy;
+                                if (DEBUG) console.log("    clump " + clump + ",bot="+y.toFixed(1)+" hits max="+maxy.toFixed(1)+", scaling shift by " + scale.toFixed(1));
+                                clump.scaleShift(scale);
                                 repeatNeeded = true;
                             }
                         } else {
-                            if (DEBUG) console.log("      clump #" + clump.index + clump + " has no shift");
+                            if (DEBUG) console.log("    clump " + clump + " has no shift");
                         }
+                        clump = clump.nextClump();
                     }
                     if (!repeatNeeded) {
                         break;
                     }
                 }
                 let i = 0;
-                for (let clump = a[0].clump;clump;clump=clump.next) {
-                    clump.index = i++;
-                    if (clump.shiftCount) {
-                        let dy = clump.shift / clump.shiftCount;
+                if (DEBUG) console.log("    -- Done, moving");
+                for (let clump = a[0].clump;clump;clump=clump.nextClump()) {
+                    let dy = clump.shift();
+                    if (DEBUG) dy = Math.round(dy * 100) / 100;
+                    if (dy != 0) {
                         maxdy = Math.max(Math.abs(dy), maxdy);
-                        if (DEBUG) console.log("    clump #" + clump.index + clump + " moving by " + dy);
-                        for (const person of clump.people) {
+                        if (DEBUG) console.log("    clump " + clump + " moving by " + dy.toFixed(2));
+                        for (const person of clump.people()) {
                             person.ty += dy;
                         }
                     }
-                    clump.shift = clump.shiftCount = 0;
                 }
             }
             if (maxdy < 1) {
@@ -2638,4 +2723,14 @@ class SlippyTreePerson {
 
 if (typeof window != "undefined") {
     window.SlippyTree = SlippyTree; // for wikitree-dynamic-tree
+} else {
+    let tree = new SlippyTree();
+    tree.init(null, "Hansdatter-907", null);
+    let state;
+//    state = "AAJh4ewCYd6_jQACYeHsQSEsNx6jziUiCgQIGAUFCgUYETdDGQ03AAKWBZ0kJAAAAAAAAmHfmAA"           // for the many-wives issue
+//    state = "AAGKixEBiosRFQACDNRiNAACl6m2AACGh-MDAQHFAAAAAAABeKXgAAGKiwYUAAGQVVsAAbJvYgAB2Oopek0A"
+//    state = "AAHY6qMBiosGCxUAAdjqowAB5k_CFCUlBwACDNRiNAACl6m2AACGh-MDAQHFAAAAAAABeKXgAAGKixoAAZBVWwABsm9iAAHY6inHAA";
+    state = "AACGh-sBAIoLAAEVDI4AAXgwDA4NIgABeESfCgkfAAF4UJJMAAF6wglCAAGKiwYLFQABkvbzAAGTY0FOAAGUCT8FEAABmeDUNgABr_NfAAG1-C8AAbYiiBhDEAABt-rZeQABt_-7AAG4AeoAAbgoGiEoExcAAbg6DjYiJwABy0fuAAHQ0GcAAdjqo02CKDUAAdj7_0-sXgAB3gVsAAHeGVMAAeZPwhQlJQcAAghe-AACCMBOAAIM1GI0AAIaWMMAAhz7eAACIJ2uDAACJp6TFggnKQACLe16IAACMGJIAAJFJyhbChEeAAJFTXUYAAJZkgccAAJmcVMIQQACZnNlAAJuymAAAnHB6yQSMAACl6m2AAKdGJaPkR4AAp0mtRoAAHxAC0IAAIHRGwMFCgwYBAcEAACGhlkRRTgMCwsLCzw_GTADAQEDQgEBHQERAQEBTAAAlbWMBycCAAAAAAAA_7IMAAF4peAAAYqLGgABiqybAAGQVVsAAbJvYgAB2OopAAIc-vEAAhz8vwACYm3jAAJmc-kA";
+    state = "AAF41uYBAzXXAAEg3jQAAXiDPoQHDSgAAXiScgwXAAF4pL8GCQcHBCFOIBoTGylv4AABeNWkAAF41tAWAAF5F-MAAXkopAABeXk6AAF6AkkbDxIAAYJ9aDkLG3kgxQABhY5GAAGPFEkAAZAuGAABkFVbAAGQkUsjLQABk2G9FwYiJlELFQABmyRfAAGbOIQAAZxsNgcAAawHLLgDCQoDBwYIAAGyb8ajAAHBMloAAcJOMAABysWqAAHK8gUwHIshZg8AAcsALyEPD2MOGiWWKC41RhRDG1U1AAHLnbUAAcut8ubXAAHO9lMd6jYgCwAB0SK_AAHWuL2DAAHY_mEAAdoQPw0AAeA_UQAB4FizHwAB4IDOBQULBI4GhyIqFQoOAAHj2e1DAAHlww93UgAB5ej-PHgAAeX94QwKAAHonMQtQWwuPEwbKgAB6K5iAAHor5sAAejE4R0AAejVIosAAejvqS8AAex75hcAAeynJAAB76dOAAHvzGlNOWEAAffzgAAB-B2UAAH4QzcgCAAB-Ny9ngAB-N5zXQACABA2AAIAPLgqEigAAgIQbSEAAgI1fWoAAgJFsgACAloAIRwdAAICXUQAAgKCZQ4NDooUAAIIXvgAAgzUYjQAAgzVzwACDPxUEPscFFUbEQACDTU7AAIPZiwAAhGoFQACG5KaAAIchswTGjoAAhyiKAcTAAIfDw0AAh9lVSkAAh9mfgACH5aiKkULAAIf7EcGAAIf7nkAAiAC1wACICAzBgACIHR9AAImrt0AAibFxVFGMh8rLwACJtWL3gACJxT_AAInO1IuEA0VPxoPAAI_pwkAAj-o9QUAAj_CrgACP_RuEQACTr1VAAJip295dAACYqnSMwACYrbJSIUXigACZnFTAAJmdAIAAmaBYUsAAmaD5BIvAAJmq2MkMQACZzEtAAJnMkQAAmdAyQACZ0HjAAJnfMUeJ0huPAACZ42hEz5KAAJnj0AAAmepoxsAAmesawACaBTMCDp3AAJoI-wxQi0sAAJoTVR9PwACaMybAAJo408JNClOJQACaOY5IQACaPWbICVhAAJpD3sSAAJpNgUAAmk3Z49WAAJpiUA5ECsAAmmqQw1sXxQAAnHDhxsAAnNJBh8AAnQlmB28MREAAnw4KFwAAnyQdD0AAnyShU8AAn64tQACfxhaSSAAAn9GlVIAAonqHUQAAopQWwACis9JAAKK54thAAKQBRIAApGcZBUNAAKXqbYAApe8ZygAApe_kgACnsL6AAKe5aLhAAKfCQVQYD-IJQACnx6lWmF4AAKgdogAAqDHagACoXJRAAKhmcaIAAB8QA8VHgAAfPyhFAAAgdEeBQokCwQAAIaGzQuQAQEBAQEBAgFyAwEBLwEBHwEBAQpoAACWoW4AAJeu-yMAAAAAAAEDNdIAAXiD8gABeXhhAAF7je0AAYqLEQABkC4EAAGyb2IAAdEW3QAB2Oopek0AAeWZewAB5f4MAAHo1pkAAejvlzAAAe-m7wAB-EOGAAIc-3gAAic7bwACMlmFAAJIkR4AAmZzZQACZsIrAAJnjiIAAop31gACis_lAAKK57kAApGcTQACnyAVAAKhcwcAAHxACwAAgdEbHhwAAIaHZwAAlrTXAACXrw8A"
+    tree.restoreState(state);
 }
