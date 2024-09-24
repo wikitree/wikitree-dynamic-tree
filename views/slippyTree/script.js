@@ -47,16 +47,17 @@ class SlippyTree extends View {
      *          spouses (so long as they have no other home in the tree), and so on. 0 disables bundling. Default is 2
      */
     init(container_selector, person_id, props) {
-        this.state = {};
+        this.browser = typeof window != "undefined";    // The code is sometimes debugged locally in nodejs too.
+        this.state = {debug:{}};
         this.state.props = props || {};
-        this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : window.deubgLoggingOn;
+        this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : this.browser ? window.deubgLoggingOn : true;
         this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
 
         try {
             this.settings = JSON.parse(window.localStorage.getItem("slippyTree-settings"));
         } catch (e) {}
         if (!this.settings) {
-            let hasMouse = !window.matchMedia("not (hover: hover)").matches; // true if MQ recognised and primary device has no hover.
+            let hasMouse = this.browser && !window.matchMedia("not (hover: hover)").matches; // true if MQ recognised and primary device has no hover.
             this.settings = {
                 wheel: hasMouse ? "zoom" : "scroll" 
             };
@@ -226,45 +227,46 @@ class SlippyTree extends View {
 
 `;
 
-        this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
-        this.state.container.innerHTML = content.trim();
-
-        this.setSettings();
-        this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
-        this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
-        this.state.personMenu = this.state.container.querySelector(".personMenu");
-        const helpButton = this.state.container.querySelector(".slippy-help-button");
-        const helpContainer = this.state.container.querySelector(".helpContainer");
-        const helpBox = helpContainer.querySelector(":scope > :first-child");
-        helpButton.addEventListener("click", (e) => {
-            this.state.personMenu.classList.add("hidden");
-            helpContainer.classList.toggle("hidden");
-        });
-        helpBox.addEventListener("click", (e) => {
-            helpContainer.classList.toggle("hidden");
-        });
-        document.querySelector(".slippy-settings-wheel-zoom").addEventListener("click", (e) => {
-            this.setSettings({wheel:"zoom"}, e);
-        });
-        document.querySelector(".slippy-settings-wheel-scroll").addEventListener("click", (e) => {
-            this.setSettings({wheel:"scroll"}, e);
-        });
-
         this.state.people = [];
         this.state.byid = {};
         this.state.view = {scale: 1, cx:0, cy: 0};
         this.state.focus = null;
         this.state.refocusStart = null;
         this.state.refocusEnd = null;
-        for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
-            if (elt.getAttribute("data-action") != "profile") {
-                elt.addEventListener("click", () => {
-                    this.state.personMenu.classList.add("hidden");
-                    this.state.personMenu.person.action(elt.getAttribute("data-action"));
-                });
+
+        if (this.browser) {
+            this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
+            this.state.container.innerHTML = content.trim();
+
+            this.setSettings();
+            this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
+            this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
+            this.state.personMenu = this.state.container.querySelector(".personMenu");
+            const helpButton = this.state.container.querySelector(".slippy-help-button");
+            const helpContainer = this.state.container.querySelector(".helpContainer");
+            const helpBox = helpContainer.querySelector(":scope > :first-child");
+            helpButton.addEventListener("click", (e) => {
+                this.state.personMenu.classList.add("hidden");
+                helpContainer.classList.toggle("hidden");
+            });
+            helpBox.addEventListener("click", (e) => {
+                helpContainer.classList.toggle("hidden");
+            });
+            document.querySelector(".slippy-settings-wheel-zoom").addEventListener("click", (e) => {
+                this.setSettings({wheel:"zoom"}, e);
+            });
+            document.querySelector(".slippy-settings-wheel-scroll").addEventListener("click", (e) => {
+                this.setSettings({wheel:"scroll"}, e);
+            });
+
+            for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
+                if (elt.getAttribute("data-action") != "profile") {
+                    elt.addEventListener("click", () => {
+                        this.state.personMenu.classList.add("hidden");
+                        this.state.personMenu.person.action(elt.getAttribute("data-action"));
+                    });
+                }
             }
-        }
-        if (this.state.scrollPane) {
             // All the mouse/scroll events are here
             const pointers = [];
             this.state.svg.addEventListener("pointerdown", (e) => {
@@ -456,25 +458,26 @@ class SlippyTree extends View {
                 this.reposition({});
             });
             this.state.resizeObserver.observe(this.state.container);
-        }
-        // We maintain our state in the URL hash, alongside some other properties
-        // that apply to all views. We need to then ignore this if the view is reloaded
-        // with a different ID, but because of the slightly bodgy way this is done in
-        // tree.js it's non-trivial to do this properly. Easy way is to honour the state
-        // only the first time a SlippyTree is instantiated.
-        let serializedState = SlippyTree.loadCount ? null : this.state.props[this.#VIEWPARAM];
-        if (serializedState) {
-            helpContainer.classList.add("hidden");
-            if (!this.restoreState(serializedState)) {
-                serializedState = null;
-            }
-        }
-        if (serializedState == null) {
-            if (person_id) {
+
+            // We maintain our state in the URL hash, alongside some other properties
+            // that apply to all views. We need to then ignore this if the view is reloaded
+            // with a different ID, but because of the slightly bodgy way this is done in
+            // tree.js it's non-trivial to do this properly. Easy way is to honour the state
+            // only the first time a SlippyTree is instantiated.
+            let serializedState = SlippyTree.loadCount ? null : this.state.props[this.#VIEWPARAM];
+            if (serializedState) {
                 helpContainer.classList.add("hidden");
-                this.reset(person_id);
-            } else {
-                helpContainer.classList.remove("hidden");
+                if (!this.restoreState(serializedState)) {
+                    serializedState = null;
+                }
+            }
+            if (serializedState == null) {
+                if (person_id) {
+                    helpContainer.classList.add("hidden");
+                    this.reset(person_id);
+                } else {
+                    helpContainer.classList.remove("hidden");
+                }
             }
         }
         SlippyTree.loadCount++;
@@ -651,10 +654,12 @@ class SlippyTree extends View {
         Object.keys(this.state.byid).forEach(key => delete this.state.byid[key]);
         this.state.focus = this.state.refocusStart = this.state.refocusEnd = null;
         // Clearing is a bit ad-hoc
-        const container = this.state.svg.querySelector(".container");
-        for (let n=container.firstChild;n;n=n.nextSibling) {
-            while (n.firstChild) {
-                n.firstChild.remove();
+        if (this.browser) {
+            const container = this.state.svg.querySelector(".container");
+            for (let n=container.firstChild;n;n=n.nextSibling) {
+                while (n.firstChild) {
+                    n.firstChild.remove();
+                }
             }
         }
         if (id) {
@@ -924,46 +929,48 @@ class SlippyTree extends View {
         this.placeNodes(focus, ordered, this.state.view.marriages);
 
         // Re-add edges, people, labels in priority order
-        const peoplepane = this.state.svg.querySelector(".people");
-        const edges = this.state.svg.querySelector(".relations");
-        const labels = this.state.svg.querySelector(".labels");
-        while (edges.firstChild) {
-            edges.firstChild.remove();
-        }
-        while (labels.firstChild) {
-            labels.firstChild.remove();
-        }
-        while (peoplepane.firstChild) {
-            peoplepane.firstChild.remove();
-        }
-        let focusedges = [];
-        for (const person of ordered) {
-            if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
-            if (typeof person.x != "number") {
-                person.x = person.tx;
+        if (this.browser) {
+            const peoplepane = this.state.svg.querySelector(".people");
+            const edges = this.state.svg.querySelector(".relations");
+            const labels = this.state.svg.querySelector(".labels");
+            while (edges.firstChild) {
+                edges.firstChild.remove();
             }
-            if (typeof person.y != "number") {
-                person.y = person.ty;
+            while (labels.firstChild) {
+                labels.firstChild.remove();
             }
-            peoplepane.appendChild(person.svg);
-        }
-        this.redrawEdges(focus);
-        this.state.refocusStart = Date.now();          // Begin our animation
-        this.state.refocusEnd = Date.now() + 1000;
-        this.state.focus = focus;
-        this.state.view.cx0 = this.state.view.cx;
-        this.state.view.cy0 = this.state.view.cy;
-        this.state.view.callback = callback;
-        window.requestAnimationFrame(() => { this.draw(); });
+            while (peoplepane.firstChild) {
+                peoplepane.firstChild.remove();
+            }
+            let focusedges = [];
+            for (const person of ordered) {
+                if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
+                if (typeof person.x != "number") {
+                    person.x = person.tx;
+                }
+                if (typeof person.y != "number") {
+                    person.y = person.ty;
+                }
+                peoplepane.appendChild(person.svg);
+            }
+            this.redrawEdges(focus);
+            this.state.refocusStart = Date.now();          // Begin our animation
+            this.state.refocusEnd = Date.now() + 1000;
+            this.state.focus = focus;
+            this.state.view.cx0 = this.state.view.cx;
+            this.state.view.cy0 = this.state.view.cy;
+            this.state.view.callback = callback;
+            window.requestAnimationFrame(() => { this.draw(); });
 
-        // Initiate a load to check for unloaded children, effects
-        // of which will be to add new paths. This can be done safely
-        // during or after the draw callbacks
-        this.checkForUnloadedChildren();
-        if (this.#VIEWPARAM) {
-            let v = new URLSearchParams(window.location.hash.substring(1));
-            v.set(this.#VIEWPARAM, this.saveState());
-            window.history.replaceState(null, null, "#" + v);
+            // Initiate a load to check for unloaded children, effects
+            // of which will be to add new paths. This can be done safely
+            // during or after the draw callbacks
+            this.checkForUnloadedChildren();
+            if (this.#VIEWPARAM) {
+                let v = new URLSearchParams(window.location.hash.substring(1));
+                v.set(this.#VIEWPARAM, this.saveState());
+                window.history.replaceState(null, null, "#" + v);
+            }
         }
     }
 
@@ -1071,7 +1078,7 @@ class SlippyTree extends View {
                 shift: 0,
                 shiftCount: 0,
                 toString: function() {
-                    return "(" + this.state.people.length + " from \"" + this.state.people[0].presentationName() + "\" to \"" + this.state.people[this.people.length - 1].presentationName() + "\" shift="+(this.state.shift/this.state.shiftCount)+" from " + this.state.shiftCount + " gap=["+this.state.prevMargin+" "+this.state.nextMargin+"])";
+                    return "(" + this.people.length + " from \"" + this.people[0].presentationName() + "\" to \"" + this.people[this.people.length - 1].presentationName() + "\" shift="+(this.shift/this.shiftCount)+" from " + this.shiftCount + " gap=["+this.prevMargin+" "+this.nextMargin+"])";
                 }
             };
         }
@@ -1813,7 +1820,9 @@ class SlippyTree extends View {
      * @param callback the method to call once the people are loaded
      */
     load(params, callback) {
-        this.state.scrollPane.parentNode.classList.add("loading");
+        if (this.browser) {
+            this.state.scrollPane.parentNode.classList.add("loading");
+        }
         let usedparams = {
             action: "getPeople",
             fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother" ],
@@ -1846,7 +1855,9 @@ class SlippyTree extends View {
                 if (!this.state) {
                     return;
                 }
-                this.state.scrollPane.parentNode.classList.remove("loading");
+                if (this.browser) {
+                    this.state.scrollPane.parentNode.classList.remove("loading");
+                }
 //                console.log(JSON.stringify(data));
                 const len = this.state.people.length;
                 if (data[0].people) {
@@ -2625,4 +2636,6 @@ class SlippyTreePerson {
     }
 }
 
-window.SlippyTree = SlippyTree; // for wikitree-dynamic-tree
+if (typeof window != "undefined") {
+    window.SlippyTree = SlippyTree; // for wikitree-dynamic-tree
+}
