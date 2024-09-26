@@ -1494,6 +1494,28 @@ class SlippyTree extends View {
                 people.push(person);
             }
         }
+        // Any parent edge to anyone in "focuslist" gets focus.
+        // Originally it contained just the person and their parents,
+        // but it seems more useful to highlight all ancestors and children
+        // especially in very big trees
+        let focuslist = [];
+        focuslist.push(focus);
+        for (let i=0;i<focuslist.length;i++) {
+            let p = focuslist[i];
+            for (let n of p.parents()) {
+                focuslist.push(n);
+            }
+        }
+        let focuslist2 = [];
+        focuslist2.push(focus);
+        for (let i=0;i<focuslist2.length;i++) {
+            let p = focuslist2[i];
+            for (let n of p.children()) {
+                focuslist2.push(n);
+                focuslist.push(n);
+            }
+        }
+        focuslist2 = null;
         for (const person of people) {
             const children = Array.from(person.children());
             const childAngle = Math.min(25, 140 / (children.length));
@@ -1517,6 +1539,7 @@ class SlippyTree extends View {
                     if (!path) {
                         path = document.createElementNS(this.#SVG, "path");
                         path.setAttribute("id", "edge-" + person.id + "-" + r.person.id);
+                        let focaledge = false;
                         if (r.rel == "spouse") {        // Link to spouse
                             if (otherincluded) {
                                 if (r.type == "inferred") {
@@ -1551,6 +1574,7 @@ class SlippyTree extends View {
                             } else {
                                 path.classList.add("parent");
                             }
+                            focaledge = focuslist.includes(person) && focuslist.includes(r.person);
                             if (person.generation == r.person.generation) {
                                 path.targetSameGenerationBend = sameGenerationBend;
                             } else {
@@ -1562,7 +1586,7 @@ class SlippyTree extends View {
                         }
                         path.person0 = person;
                         path.person1 = r.person;
-                        if (person == focus || r.person == focus) {
+                        if (focaledge) {
                             path.classList.add("focus");
                             edges.appendChild(path);
                         } else {
@@ -1613,6 +1637,7 @@ class SlippyTree extends View {
                 }
             }
         }
+
     }
 
     /**
