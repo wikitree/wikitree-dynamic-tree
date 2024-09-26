@@ -47,7 +47,7 @@ class SlippyTree extends View {
      *  - profileTarget: the target for any links to profiles, eg "_blank". Optional
      *  - dragScrollReversed: set to true to inverse the way drag-scrolling works. Optional.
      *  - bundleSpouses: how many depths of spouses to bundle together in the tree - 1 includes spouses of the person, 2 includes their
-     *          spouses (so long as they have no other home in the tree), and so on. 0 disables bundling. Default is 2
+     *          spouses (so long as they have no other home in the tree), and so on. 0 disables bundling. Default is 1
      */
     init(container_selector, person_id, props) {
         this.browser = typeof window != "undefined";    // The code is sometimes debugged locally in nodejs too.
@@ -1062,7 +1062,7 @@ class SlippyTree extends View {
         const OTHERMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--other-margin")) : 40;
         const GENERATIONMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--generation-margin")) : 100;
         const DEBUG = typeof window == "undefined";     // This is never run in a browser, it's for testing locally in nodejs. So always false.
-        const bundleSpouses = typeof this.state.props.bundleSpouses == "number" ? this.state.props.bundleSpouses : 2;
+        const bundleSpouses = typeof this.state.props.bundleSpouses == "number" ? this.state.props.bundleSpouses : 1;
 
         const genpeople = [];
         const genwidth = [];
@@ -1283,9 +1283,11 @@ class SlippyTree extends View {
                 //  * no loaded father or mother
                 //  * only children they share are shared with the original spouse.
                 if (bundleSpouses > 0) {
-                    let sq = [{depth:1, person:person}];
+                    let spouses = [];
+                    let sq = [{depth:1, key: "0", person:person}];
                     for (const spousecheck of sq) {
                         if (DEBUG) console.log("Considering spouses("+spousecheck.depth+") for "+person);
+                        let order = 0;
                         for (const spouse of spousecheck.person.spouses()) {
                             let reason = null;
                             if (spouse.hidden) {
@@ -1302,7 +1304,7 @@ class SlippyTree extends View {
                                 } else {
                                     for (let child of spouse.children()) {
                                         if (((child.father == spouse && child.mother != spousecheck.person) || (child.mother == spouse && child.father != spousecheck.person))) {
-                                            reason = "different child " + c;
+                                            reason = "different child " + child;
                                             break;
                                         }
                                     }
@@ -1310,22 +1312,30 @@ class SlippyTree extends View {
                             }
                             if (!reason) {
                                 if (DEBUG) console.log("Accepting spouse " + spouse + " of " + spousecheck.person);
-                                genpeople[generation].push(spouse);
-                                if (spouse.svg) {
-                                    spouse.svg.classList.add("spouse");
-                                }
-                                spouse.tx += SPOUSEINDENT * spousecheck.depth;
-                                marriages.push({a:spousecheck.person, b:spouse, top:mylast, bot: spouse});
-                                mylast = spouse;
-                                person.clump.addPerson(spouse);
-                                spouseheight += spouse.height + SPOUSEMARGIN;
+                                let key = spousecheck.key + "." + (order++);
+                                spouses.push({p1: spousecheck.person, p2: spouse, depth: spousecheck.depth, key: key });
                                 if (spousecheck.depth + 1 <= bundleSpouses) {
-                                    sq.push({depth:spousecheck.depth + 1, person: spouse});
+                                    sq.push({depth:spousecheck.depth + 1, key: key, person: spouse});
                                 }
                             } else {
-                                if (DEBUG) console.log("Skipping spouse " + spouse + " of " + spousecheck.person + ": " + reason);
+                                if (DEBUG) console.log("Skippingu spouse " + spouse + " of " + spousecheck.person + ": " + reason);
                             }
                         }
+                    }
+                    // This sorts spouses "depth-first", so "second wife of first husband" is displayed before "second husband"
+                    spouses.sort((a,b) => {
+                        return a.key.localeCompare(b.key);
+                    });
+                    for (const spouse of spouses) {
+                        genpeople[generation].push(spouse.p2);
+                        if (spouse.p2.svg) {
+                            spouse.p2.svg.classList.add("spouse");
+                        }
+                        spouse.p2.tx += SPOUSEINDENT * spouse.depth;
+                        marriages.push({a:spouse.p1, b:spouse.p2, top:mylast, bot: spouse.p2});
+                        mylast = spouse.p2;
+                        person.clump.addPerson(spouse.p2);
+                        spouseheight += spouse.p2.height + SPOUSEMARGIN;
                     }
                 }
                 // Recursively position children, keeping track of first/last child.
