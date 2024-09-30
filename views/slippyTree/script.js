@@ -494,6 +494,16 @@ class SlippyTree extends View {
             }
         }
         SlippyTree.loadCount++;
+
+        // This is reasonable, isn't it? A country list is already defined, seems
+        // unnecessary to reinvent the wheel. If for any reason it's problematic or
+        // it fails, we simply lose the "Location" categories. Nothing else fails.
+        if (!SlippyTree.COUNTRIES) {
+            SlippyTree.COUNTRIES = [];
+            import("../oneNameTrees/location_data.js").then(module => {
+                SlippyTree.COUNTRIES = module.countries;
+            });
+        }
     }
 
     meta() {
@@ -2011,7 +2021,7 @@ class SlippyTree extends View {
         }
         let usedparams = {
             action: "getPeople",
-            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother", "Managers", "Categories", "Templates" ],
+            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "BirthLocation", "DeathLocation", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother", "Managers", "Categories", "Templates" ],
             "appid": this.#APPID
         };
         for (let key in params) {
@@ -2821,6 +2831,31 @@ class SlippyTreePerson {
         }
     }
 
+    /** 
+     * Given a place, eg "Blah, Cornwall, England, United Kingdom" return country ("England")
+     */
+    #countryName(name) {
+        if (SlippyTree.COUNTRIES) {
+            let all = name.split(/, */);
+            if (all.length) {
+                let v = all[all.length - 1];
+                for (let c of SlippyTree.COUNTRIES) {
+                    if (c.name == v || (c.aliases && c.aliases.includes(v))) {
+                        // Convert "England, United Kingdom" to "England"
+                        if (c.name == "United Kingdom" && all.length > 1) {
+                            v = all[all.length - 2];
+                            if (v != "England" && v != "Scotland" && v != "Wales" && v != "Northern Ireland") {
+                                v = "United Kingdom";
+                            }
+                        }
+                        return v;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Return a free-form list of categories (strings, or arrays-of-strings for hierarchical) that apply to this person. Can be anything.
      */
@@ -2916,6 +2951,8 @@ class SlippyTreePerson {
                     case "Unsourced":
                         categories.push([name]);
                         break;
+                    case "Occupation":
+                        break;
                     default:
                     // The rest? Add them as Templates I guess...
                         categories.push(["Templates", name]);
@@ -2931,9 +2968,19 @@ class SlippyTreePerson {
             }
         }
 
-        if (SlippyTree.COUNTRIES) {
-            // TODO load people birth/death places, and add categories
-            // like "Born: Australia" or "Died in different country to birth"
+        let birthCountry = null, deathCountry = null;
+        if (this.data.BirthLocation) {
+            birthCountry = this.#countryName(this.data.BirthLocation);
+        }
+        if (this.data.DeathLocation) {
+            deathCountry = this.#countryName(this.data.DeathLocation);
+        }
+        if (birthCountry && deathCountry && birthCountry != deathCountry) {
+            categories.push(["Location", birthCountry + " → " + deathCountry]);
+        } else if (birthCountry) {
+            categories.push(["Location", birthCountry]);
+        } else if (deathCountry) {
+            categories.push(["Location", deathCountry]);
         }
         
         return categories;
