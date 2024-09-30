@@ -129,6 +129,10 @@ body:has(.slippy-tree-container) {
 .slippy-tree-container .helpContainer .slippy-settings-wheel > div.selected {
     border-color: red;
 }
+.slippy-tree-container .helpContainer .slippy-categories {
+    display: block;
+    width: 100%;
+}
 @media (not (hover:hover)) {
     /* this block applies only if there is no mouse present */
     .slippy-tree-container .helpContainer .slippy-settings-wheel {
@@ -226,8 +230,8 @@ body:has(.slippy-tree-container) {
     --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
     --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
     --same-generation-bend: 20px;       /* The length of the extra curve to add for same-generation relations */
-    --living: #6c6;                     /* color of "living" tag on person */
     --member: #ebba34;                  /* color of "member" tag on person */
+    --highlight: #6c6;                  /* color of "highlight" tag on person */
     /* These next properties are accessed in JS. Values must be pixels, not other lengths */
     --spouse-margin: 10px;              /* vertical distance between two adjacent spouses */
     --spouse-indent: 10px;              /* horizontal indent for a visually dependent spouse */
@@ -281,15 +285,14 @@ body:has(.slippy-tree-container) {
     display: none;
 }
 
-.slippy-tree-container .slippy-tree .people .living path {
+.slippy-tree-container .slippy-tree .people .highlight path {
     display: initial;
-    fill: var(--living);
+    fill: var(--highlight);
 }
 .slippy-tree-container .slippy-tree .people .member path {
     display: initial;
     fill: var(--member);
 }
-
 
 .slippy-tree-container .slippy-tree .people .activeuser path {
     fill: var(--activeuser);

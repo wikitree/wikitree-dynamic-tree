@@ -32,6 +32,7 @@ if (typeof View != "function") { function View() { } } // To allow debugging in 
 class SlippyTree extends View {
 
     static loadCount = 0;
+    LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
     #VERSION = 0; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
@@ -39,6 +40,7 @@ class SlippyTree extends View {
     #SVG = "http://www.w3.org/2000/svg";
     #MINSCALE = 0.2;
     #MAXSCALE = 3;
+    #TAGSIZE = 20;
     settings;
 
     /**
@@ -146,39 +148,39 @@ class SlippyTree extends View {
       <text class="marriage focus" x="245" y="41">Marriage Date</text>
      </g>
      <g class="people">
-      <g class="female living member focus" transform="translate(200 16)">
+      <g class="female member focus" transform="translate(200 16)">
        <rect height="20" width="100"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="50">Focus</text>
       </g>
       <g class="male spouse" transform="translate(210 46)">
        <rect height="20" width="100"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="50">First Spouse</text>
       </g>
       <g class="male spouse" transform="translate(210 76)">
        <rect height="20" width="100"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="50">Second Spouse</text>
       </g>
-      <g class="male living" transform="translate(400 9)">
+      <g class="male highlight" transform="translate(400 9)">
        <rect height="20" width="60"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="30">Child</text>
       </g>
-      <g class="male living member privacy-semiopen" transform="translate(400 49)">
+      <g class="male member privacy-semiopen" transform="translate(400 49)">
        <rect height="20" width="60"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="30">Child</text>
       </g>
       <g class="male" transform="translate(40 0)">
        <rect height="20" width="60"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="30">Father</text>
       </g>
       <g class="female spouse" transform="translate(50 30)">
        <rect height="20" width="60"></rect>
-       <path d="M 0 0 H 12 L 0 12 Z"></path>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="30">Mother</text>
       </g>
      </g>
@@ -194,7 +196,7 @@ class SlippyTree extends View {
       <path d="M 350 100 L 340 86" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="350" y="110">Father is uncertain</text>
       <path d="M 415 -5 L 410 6" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="410" y="-8">Living Person</text>
+      <text x="410" y="-8">Highlight</text>
       <path d="M 410 85 L 407 59" stroke="black" fill="none" marker-end="url(#arrow)"/>
       <text x="400" y="98">WikiTree Member</text>
       <path d="M 20 85 L 17 12" stroke="black" fill="none" marker-end="url(#arrow)"/>
@@ -212,6 +214,7 @@ class SlippyTree extends View {
     A multi-root tree showing several parent and child relationships at once.<br/>
     Spouses are displayed together, refocus to change the order.
    </p>
+   <select class="slippy-categories"></select>
    <div class="slippy-settings-wheel">
     <div class="slippy-settings-wheel-zoom">
      <img src="views/slippyTree/resources/mouse.svg"/>
@@ -239,7 +242,7 @@ class SlippyTree extends View {
 
         if (this.browser) {
             this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
-            this.state.container.innerHTML = content.trim();
+            this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).trim();
 
             this.setSettings();
             this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
@@ -250,16 +253,23 @@ class SlippyTree extends View {
             const helpBox = helpContainer.querySelector(":scope > :first-child");
             helpButton.addEventListener("click", (e) => {
                 this.state.personMenu.classList.add("hidden");
-                helpContainer.classList.toggle("hidden");
+                this.showHelp(helpContainer.classList.contains("hidden"));
             });
             helpBox.addEventListener("click", (e) => {
-                helpContainer.classList.toggle("hidden");
+                this.showHelp(false);
             });
             document.querySelector(".slippy-settings-wheel-zoom").addEventListener("click", (e) => {
                 this.setSettings({wheel:"zoom"}, e);
             });
             document.querySelector(".slippy-settings-wheel-scroll").addEventListener("click", (e) => {
                 this.setSettings({wheel:"scroll"}, e);
+            });
+            document.querySelector(".slippy-categories").addEventListener("click", (e) => {
+                e.stopPropagation();
+            });
+            document.querySelector(".slippy-categories").addEventListener("change", (e) => {
+                let value = e.target.options[e.target.selectedIndex].fullValue;
+                this.setHighlightCategory(value);
             });
 
             for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
@@ -386,7 +396,7 @@ class SlippyTree extends View {
                             menu.selectedIndex = 0;
                             self.showMenu(focus, e);
                         } else if (e.key == "Escape") {
-                            helpContainer.classList.add("hidden");
+                            this.showHelp(false);
                         } else if (e.key == "?") {
                             helpButton.click();
                         } else if (e.key == "+") {
@@ -469,17 +479,17 @@ class SlippyTree extends View {
             // only the first time a SlippyTree is instantiated.
             let serializedState = SlippyTree.loadCount ? null : this.state.props[this.#VIEWPARAM];
             if (serializedState) {
-                helpContainer.classList.add("hidden");
+                this.showHelp(false);
                 if (!this.restoreState(serializedState)) {
                     serializedState = null;
                 }
             }
             if (serializedState == null) {
                 if (person_id) {
-                    helpContainer.classList.add("hidden");
+                    this.showHelp(false);
                     this.reset(person_id);
                 } else {
-                    helpContainer.classList.remove("hidden");
+                    this.showHelp(true);
                 }
             }
         }
@@ -508,6 +518,123 @@ class SlippyTree extends View {
             window.history.replaceState(null, null, "#" + v);
         }
         delete this.state;
+    }
+
+    #arrayEquals(a, b) {
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length == b.length) {
+                for (let i=0;i<a.length;i++) {
+                    if (a[i] != b[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    setHighlightCategory(category) {
+        for (const person of this.state.people) {
+            if (person.svg) {
+                let found = false;
+                for (let c of person.lastCats) {
+                    if (this.#arrayEquals(category, c)) {
+                        found = true;
+                        break;
+                    }
+                }
+                person.svg.classList.toggle("highlight", found);
+            }
+        }
+        this.state.highlightCategory = category;
+    }
+
+    showHelp(show) {
+        const helpContainer = this.state.container.querySelector(".helpContainer");
+        const catmenu = this.state.container.querySelector(".slippy-categories");
+        if (!show) {
+            helpContainer.classList.add("hidden");
+        } else {
+            try {
+            helpContainer.classList.remove("hidden");
+            let categories = [];
+            for (const person of this.state.people) {
+                person.lastCats = [];
+                if (!person.isHidden()) {
+                    let cats = person.categories();
+                    if (cats) {
+                        person.lastCats = cats;
+                        for (let j=0;j<cats.length;j++) {
+                            let c = cats[j];
+                            if (typeof c == "string") {
+                               cats[j] = c = [c];
+                            }
+                            if (c.length == 1 && c[0] == this.LIVINGPEOPLE) {
+                                continue;       // special
+                            }
+                            let found = false;
+                            for (let i=0;i<categories.length;i++) {
+                                if (this.#arrayEquals(c, categories[i])) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                categories.push(c);
+                            }
+                        }
+                    }
+                }
+            }
+            categories.sort((a,b) => {
+                if (a.length != b.length) {
+                    return a.length - b.length;
+                } else {
+                    for (let i=0;i<a.length;i++) {
+                        let v = a[i].localeCompare(b[i]);
+                        if (v != 0) {
+                            return v;
+                        }
+                    }
+                }
+            });
+            categories.unshift([this.LIVINGPEOPLE]);
+            if (!this.state.highlightCategory) {
+                this.state.highlightCategory = [this.LIVINGPEOPLE];
+            }
+            while (catmenu.firstChild) {
+                catmenu.firstChild.remove();
+            }
+            for (const cat of categories) {
+                let elt = catmenu;
+                for (let i=0;i+1<cat.length;i++) {
+                    let part = cat[i];
+                    for (let e=elt.firstElementChild;e;e=e.nextElementSibling) {
+                        if (e.tagName == "OPTGROUP" && e.label == part) {
+                            elt = e;
+                            part = null;
+                            break;
+                        }
+                    }
+                    if (part != null) {
+                        let optgroup = document.createElement("optgroup");
+                        optgroup.setAttribute("label", part);
+                        elt.appendChild(optgroup);
+                        elt = optgroup;
+                    }
+                }
+                let part = cat[cat.length - 1];
+                let opt = document.createElement("option");
+                opt.fullValue = cat;
+                opt.appendChild(document.createTextNode(part));
+                elt.appendChild(opt);
+                opt.selected = this.#arrayEquals(cat, this.state.highlightCategory);
+            }
+            } catch (e) {
+                console.error(e);
+            }
+        }
     }
 
     setSettings(patch, e) {
@@ -878,9 +1005,6 @@ class SlippyTree extends View {
                 } else if (person.data.Gender == "Female") {
                     person.svg.classList.add("female");
                 }
-                if (person.data.IsLiving) {
-                    person.svg.classList.add("living");
-                } 
                 if (person.data.IsMember) {
                     person.svg.classList.add("member");
                 } 
@@ -909,7 +1033,7 @@ class SlippyTree extends View {
                     person.height = Math.ceil(bbox.height + pt + pb);
                     text.setAttribute("y", Math.round(pt + (person.height - pb - pt) * 0.8));
                 }
-                const ps = person.height * 0.6;
+                const ps = this.#TAGSIZE; // person.height;
                 path.setAttribute("d", "M 0 0 H " + ps + " L 0 " + ps + " Z");
                 rect.setAttribute("height", person.height);
                 if (!person.x) {
@@ -1512,17 +1636,21 @@ class SlippyTree extends View {
         focuslist.push(focus);
         for (let i=0;i<focuslist.length;i++) {
             let p = focuslist[i];
-            for (let n of p.parents()) {
-                focuslist.push(n);
+            if (p) {
+                for (let n of p.parents()) {
+                    focuslist.push(n);
+                }
             }
         }
         let focuslist2 = [];
         focuslist2.push(focus);
         for (let i=0;i<focuslist2.length;i++) {
             let p = focuslist2[i];
-            for (let n of p.children()) {
-                focuslist2.push(n);
-                focuslist.push(n);
+            if (p) {
+                for (let n of p.children()) {
+                    focuslist2.push(n);
+                    focuslist.push(n);
+                }
             }
         }
         focuslist2 = null;
@@ -1883,7 +2011,7 @@ class SlippyTree extends View {
         }
         let usedparams = {
             action: "getPeople",
-            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother" ],
+            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother", "Managers", "Categories", "Templates" ],
             "appid": this.#APPID
         };
         for (let key in params) {
@@ -2692,6 +2820,125 @@ class SlippyTreePerson {
             tree.setFocus(this);
         }
     }
+
+    /**
+     * Return a free-form list of categories (strings, or arrays-of-strings for hierarchical) that apply to this person. Can be anything.
+     */
+    categories() {
+        // Ideas:
+        //   -- managed by me
+        //   -- created by me
+        //   -- on the trustlist
+        //   -- categories and templates
+        //   -- GEDCOM noise in bio
+        //   -- died in different country to birthplace
+        //   -- birth/death place uncertain
+        //   -- no sources
+        //   -- profile is not public
+        //   -- profile has photo
+        //   -- 
+        let categories = [];
+
+        if (this.data.IsLiving) {
+            categories.push(this.tree.LIVINGPEOPLE);
+        } 
+
+        let currentUserName = window?.wtViewRegistry?.session?.lm?.user?.name;
+        if (currentUserName) {
+            for (let p of this.data.Managers) {
+                if (p.Name == currentUserName) {
+                    categories.push(["Managed by me"]);
+                }
+            }
+        }
+        if (this.data.Privacy < 50) {
+            categories.push(["Profile not public"]);
+        }
+
+        if (this.data.Templates) {
+            for (let p of this.data.Templates) {
+                const name = p.name;
+                switch (name) {
+                    // Skip external link templates
+                    case "23AndMe":
+                    case "AFAOA":
+                    case "AIC-GIQ":
+                    case "AncestryDNA":
+                    case "Ancestry Image":
+                    case "Ancestry Image":
+                    case "Ancestry Record":
+                    case "Ancestry Sharing":
+                    case "Ancestry Tree":
+                    case "Ancestry Tree Media":
+                    case "Archives New Zealand":
+                    case "BurkeUSP":
+                    case "DAR-rgs":
+                    case "EE censusf":
+                    case "EE citation":
+                    case "EE source":
+                    case "EuroAristo Source":
+                    case "FMG":
+                    case "FamilySearch":
+                    case "FamilySearch Book":
+                    case "FamilySearch Image":
+                    case "FamilySearch Record":
+                    case "Family Tree DNA":
+                    case "FindAGrave":
+                    case "G2G":
+                    case "G2GLink":
+                    case "IMDb":
+                    case "Kb":
+                    case "MLA citation":
+                    case "Mendenhall":
+                    case "MyHeritageDNA":
+                    case "National Archives Australia":
+                    case "Newspapers.com":
+                    case "ODMP":
+                    case "PRDH":
+                    case "Register":
+                    case "SA-GA":
+                    case "SBL":
+                    case "SQ-NQ":
+                    case "Spotify":
+                    case "Tag":
+                    case "Tag Link":
+                    case "Texas History":
+                    case "WTPlusLink":
+                    case "Wikidata":
+                    case "YouTube":
+                        continue;
+                        break;
+                    // These templates are general, useful and unparameterised
+                    case "Conflated":
+                    case "Uncertain Existence":
+                    case "Uncertain Family":
+                    case "Uncertain Spouse":
+                    case "Unsourced":
+                        categories.push([name]);
+                        break;
+                    default:
+                    // The rest? Add them as Templates I guess...
+                        categories.push(["Templates", name]);
+                        break;
+                }
+            }
+        }
+
+        if (this.data.Categories) {
+            for (let p of this.data.Categories) {
+                const name = p.replace(/_/g, " ");
+                categories.push(["Categories", name]);
+            }
+        }
+
+        if (SlippyTree.COUNTRIES) {
+            // TODO load people birth/death places, and add categories
+            // like "Born: Australia" or "Died in different country to birth"
+        }
+        
+        return categories;
+    }
+
 }
 
 if (typeof window != "undefined") {
