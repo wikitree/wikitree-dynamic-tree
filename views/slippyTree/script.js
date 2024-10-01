@@ -560,14 +560,21 @@ class SlippyTree extends View {
         this.state.highlightCategory = category;
     }
 
-    showHelp(show) {
-        const helpContainer = this.state.container.querySelector(".helpContainer");
+    #resetCategories() {
         const catmenu = this.state.container.querySelector(".slippy-categories");
-        if (!show) {
-            helpContainer.classList.add("hidden");
-        } else {
-            try {
-            helpContainer.classList.remove("hidden");
+        while (catmenu.firstChild) {
+            catmenu.firstChild.remove();
+        }
+        delete this.state.highlightCategory;
+    }
+
+    #rebuildCategories() {
+        // Really we could do this on demand, but caching is tested because
+        // displaying the popup kills performance on iOS Safari. Turns out it's
+        // displaying, not rebuilding, so a browser bug and not much we can do
+        // about it.
+        const catmenu = this.state.container.querySelector(".slippy-categories");
+        if (!catmenu.firstElementChild) {
             let categories = [];
             for (const person of this.state.people) {
                 person.lastCats = [];
@@ -613,9 +620,6 @@ class SlippyTree extends View {
             if (!this.state.highlightCategory) {
                 this.state.highlightCategory = [this.LIVINGPEOPLE];
             }
-            while (catmenu.firstChild) {
-                catmenu.firstChild.remove();
-            }
             for (const cat of categories) {
                 let elt = catmenu;
                 for (let i=0;i+1<cat.length;i++) {
@@ -641,9 +645,17 @@ class SlippyTree extends View {
                 elt.appendChild(opt);
                 opt.selected = this.#arrayEquals(cat, this.state.highlightCategory);
             }
-            } catch (e) {
-                console.error(e);
-            }
+        }
+    }
+
+    showHelp(show) {
+        const helpContainer = this.state.container.querySelector(".helpContainer");
+        const catmenu = this.state.container.querySelector(".slippy-categories");
+        if (!show) {
+            helpContainer.classList.add("hidden");
+        } else {
+            helpContainer.classList.remove("hidden");
+            this.#rebuildCategories();
         }
     }
 
@@ -991,6 +1003,9 @@ class SlippyTree extends View {
             this.setDescriptionFocus(null);
             this.setSecondaryFocus(null);
         }
+        if (this.browser) {
+            this.state.scrollPane.parentNode.classList.add("loading");
+        }
 
         // Setup: ensure every person has an SVG
         for (const person of this.state.people) {
@@ -1063,52 +1078,53 @@ class SlippyTree extends View {
         // After this each person has "tx" and "ty" value set
         let ordered = this.order(focus, this.state.people);
         this.state.view.marriages = [];
-        this.placeNodes(focus, ordered, this.state.view.marriages);
-
-        // Re-add edges, people, labels in priority order
-        if (this.browser) {
-            const peoplepane = this.state.svg.querySelector(".people");
-            const edges = this.state.svg.querySelector(".relations");
-            const labels = this.state.svg.querySelector(".labels");
-            while (edges.firstChild) {
-                edges.firstChild.remove();
-            }
-            while (labels.firstChild) {
-                labels.firstChild.remove();
-            }
-            while (peoplepane.firstChild) {
-                peoplepane.firstChild.remove();
-            }
-            let focusedges = [];
-            for (const person of ordered) {
-                if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
-                if (typeof person.x != "number") {
-                    person.x = person.tx;
+        this.placeNodes(focus, ordered, this.state.view.marriages, () => {
+            // Re-add edges, people, labels in priority order
+            if (this.browser) {
+                this.state.scrollPane.parentNode.classList.remove("loading");
+                const peoplepane = this.state.svg.querySelector(".people");
+                const edges = this.state.svg.querySelector(".relations");
+                const labels = this.state.svg.querySelector(".labels");
+                while (edges.firstChild) {
+                    edges.firstChild.remove();
                 }
-                if (typeof person.y != "number") {
-                    person.y = person.ty;
+                while (labels.firstChild) {
+                    labels.firstChild.remove();
                 }
-                peoplepane.appendChild(person.svg);
-            }
-            this.redrawEdges(focus);
-            this.state.refocusStart = Date.now();          // Begin our animation
-            this.state.refocusEnd = Date.now() + 1000;
-            this.state.focus = focus;
-            this.state.view.cx0 = this.state.view.cx;
-            this.state.view.cy0 = this.state.view.cy;
-            this.state.view.callback = callback;
-            window.requestAnimationFrame(() => { this.draw(); });
+                while (peoplepane.firstChild) {
+                    peoplepane.firstChild.remove();
+                }
+                let focusedges = [];
+                for (const person of ordered) {
+                    if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
+                    if (typeof person.x != "number") {
+                        person.x = person.tx;
+                    }
+                    if (typeof person.y != "number") {
+                        person.y = person.ty;
+                    }
+                    peoplepane.appendChild(person.svg);
+                }
+                this.redrawEdges(focus);
+                this.state.refocusStart = Date.now();          // Begin our animation
+                this.state.refocusEnd = Date.now() + 1000;
+                this.state.focus = focus;
+                this.state.view.cx0 = this.state.view.cx;
+                this.state.view.cy0 = this.state.view.cy;
+                this.state.view.callback = callback;
+                window.requestAnimationFrame(() => { this.draw(); });
 
-            // Initiate a load to check for unloaded children, effects
-            // of which will be to add new paths. This can be done safely
-            // during or after the draw callbacks
-            this.checkForUnloadedChildren();
-            if (this.#VIEWPARAM) {
-                let v = new URLSearchParams(window.location.hash.substring(1));
-                v.set(this.#VIEWPARAM, this.saveState());
-                window.history.replaceState(null, null, "#" + v);
+                // Initiate a load to check for unloaded children, effects
+                // of which will be to add new paths. This can be done safely
+                // during or after the draw callbacks
+                this.checkForUnloadedChildren();
+                if (this.#VIEWPARAM) {
+                    let v = new URLSearchParams(window.location.hash.substring(1));
+                    v.set(this.#VIEWPARAM, this.saveState());
+                    window.history.replaceState(null, null, "#" + v);
+                }
             }
-        }
+        });
     }
 
     /**
@@ -1183,7 +1199,7 @@ class SlippyTree extends View {
      * @param ordered the ordered array of people in priority order
      * @param marriages an array to be populated with [{a:person, b:person, top: person, bot: person}]. The marriage between a and b is to be positioned between top and bot
      */
-    placeNodes(focus, ordered, marriages) {
+    placeNodes(focus, ordered, marriages, complete) {
         // These two adjust the layout quality.
         const PASSES = 5000;            // higher=slower, lower=worse layout. Visible issues with 1000, use 5000 
         const MINMOVE = 1;              // higher=faster, lower=more accuracy. Difference between 0.1 and 1 seems minimal but reduces 1000 people from 22s to 12s
@@ -1564,7 +1580,8 @@ class SlippyTree extends View {
             q.push(gen);
         }
         let maxmove = 0;
-        for (let pass=0;pass<PASSES && q.length;pass++) {
+        let pass = 0;
+        const bubble = () => {
             const gen = q.shift();
             const column = genpeople[gen];
             maxmove = 0;
@@ -1617,6 +1634,11 @@ class SlippyTree extends View {
                 }
             }
         }
+        // Tested breaking into smaller events, but makes no real difference
+        while (pass++ < PASSES && q.length) {
+            bubble();
+        }
+        complete();
     }
 
     /**
@@ -1939,7 +1961,7 @@ class SlippyTree extends View {
             label.setAttribute("y", cy);
         }
         let cx, cy;
-        if (this.state.people.length) {
+        if (this.state.people.length && this.state.focus) {
             cx = this.state.view.cx0 + (this.state.focus.tx - this.state.view.cx0) * t;
             cy = this.state.view.cy0 + (this.state.focus.ty - this.state.view.cy0) * t;
         }
@@ -1951,7 +1973,6 @@ class SlippyTree extends View {
         if (t == 1 && this.state.view.callback) {
             setTimeout(() => { this.state.view.callback(); }, 0);
         }
-
     }
 
     dump() {
@@ -2019,6 +2040,7 @@ class SlippyTree extends View {
         if (this.browser) {
             this.state.scrollPane.parentNode.classList.add("loading");
         }
+        this.#resetCategories();
         let usedparams = {
             action: "getPeople",
             fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "BirthLocation", "DeathLocation", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother", "Managers", "Categories", "Templates" ],
@@ -2886,6 +2908,9 @@ class SlippyTreePerson {
                 }
             }
         }
+        if (this.data.Managers.length == 0) {
+//            categories.push(["No profile manager"]); // Hmm, not always working!
+        }
         if (this.data.Privacy < 50) {
             categories.push(["Profile not public"]);
         }
@@ -2968,6 +2993,7 @@ class SlippyTreePerson {
             }
         }
 
+        // Locations - single country means "born or died there", "X->Y" means "Born X, Died Y"
         let birthCountry = null, deathCountry = null;
         if (this.data.BirthLocation) {
             birthCountry = this.#countryName(this.data.BirthLocation);
@@ -2975,11 +3001,13 @@ class SlippyTreePerson {
         if (this.data.DeathLocation) {
             deathCountry = this.#countryName(this.data.DeathLocation);
         }
-        if (birthCountry && deathCountry && birthCountry != deathCountry) {
+        if (birthCountry && deathCountry) {
             categories.push(["Location", birthCountry + " → " + deathCountry]);
-        } else if (birthCountry) {
+        }
+        if (birthCountry) {
             categories.push(["Location", birthCountry]);
-        } else if (deathCountry) {
+        }
+        if (deathCountry && deathCountry != birthCountry) {
             categories.push(["Location", deathCountry]);
         }
         
