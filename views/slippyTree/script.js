@@ -2927,7 +2927,10 @@ class SlippyTreePerson {
 
         if (this.data.Templates) {
             for (let p of this.data.Templates) {
-                const name = p.name;
+                if (!p.name || p.name.length == 0) {
+                    continue;
+                }
+                const name = p.name[0].toUpperCase() + p.name.substring(1);     // Sigh, case of first letter seems to be ignored, but not other letters.
                 switch (name) {
                     // Skip external link templates
                     case "23AndMe":
