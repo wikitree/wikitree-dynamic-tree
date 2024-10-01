@@ -2043,7 +2043,7 @@ class SlippyTree extends View {
         this.#resetCategories();
         let usedparams = {
             action: "getPeople",
-            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "BirthLocation", "DeathLocation", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother", "Managers", "Categories", "Templates" ],
+            fields: [ "Name", "FirstName", "MiddleName", "LastNameAtBirth", "LastNameCurrent", "Suffix", "BirthDate", "DeathDate", "BirthLocation", "DeathLocation", "Gender", "DataStatus", "IsLiving", "IsMember", "Privacy", "Spouses", "NoChildren", "HasChildren", "Father", "Mother", "Manager", "Managers", "Categories", "Templates" ],
             "appid": this.#APPID
         };
         for (let key in params) {
@@ -2908,8 +2908,10 @@ class SlippyTreePerson {
                 }
             }
         }
-        if (this.data.Managers.length == 0) {
-//            categories.push(["No profile manager"]); // Hmm, not always working!
+        if (this.data.Manager === 0) {
+            // If manager is private, "Managers" will return an empty list.
+            // But "Manager" will be null (meaning private), as opposed to 0 (meaning no manager)
+            categories.push(["No profile manager"]);
         }
         if (this.data.Privacy < 50) {
             categories.push(["Profile not public"]);
