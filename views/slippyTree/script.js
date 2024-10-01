@@ -269,7 +269,7 @@ class SlippyTree extends View {
             });
             document.querySelector(".slippy-categories").addEventListener("change", (e) => {
                 let value = e.target.options[e.target.selectedIndex].fullValue;
-                this.setHighlightCategory(value);
+                this.setCategory(value);
             });
 
             for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
@@ -544,7 +544,14 @@ class SlippyTree extends View {
         return false;
     }
 
-    setHighlightCategory(category) {
+    /**
+     * Set the current highlight category, or null for the default
+     */
+    setCategory(category) {
+        if (category == null) {
+            category = this.LIVINGPEOPLE;
+        }
+        this.#rebuildCategories();
         for (const person of this.state.people) {
             if (person.svg) {
                 let found = false;
@@ -565,7 +572,6 @@ class SlippyTree extends View {
         while (catmenu.firstChild) {
             catmenu.firstChild.remove();
         }
-        delete this.state.highlightCategory;
     }
 
     #rebuildCategories() {
@@ -617,9 +623,6 @@ class SlippyTree extends View {
                 }
             });
             categories.unshift([this.LIVINGPEOPLE]);
-            if (!this.state.highlightCategory) {
-                this.state.highlightCategory = [this.LIVINGPEOPLE];
-            }
             for (const cat of categories) {
                 let elt = catmenu;
                 for (let i=0;i+1<cat.length;i++) {
@@ -1008,6 +1011,7 @@ class SlippyTree extends View {
         }
 
         // Setup: ensure every person has an SVG
+        let newpeople = false;
         for (const person of this.state.people) {
             if (!this.state.svg) {
                 person.width = 100; // Dummy value for layout testing
@@ -1070,7 +1074,11 @@ class SlippyTree extends View {
                         person.y = focus.y;
                     }
                 }
+                newpeople = true;
             }
+        }
+        if (newpeople) {
+            this.setCategory(this.state.highlightCategory);
         }
 
         // First sort people into priority, then
