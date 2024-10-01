@@ -498,7 +498,7 @@ class SlippyTree extends View {
         // This is reasonable, isn't it? A country list is already defined, seems
         // unnecessary to reinvent the wheel. If for any reason it's problematic or
         // it fails, we simply lose the "Location" categories. Nothing else fails.
-        if (!SlippyTree.COUNTRIES) {
+        if (!SlippyTree.COUNTRIES && this.browser) {
             SlippyTree.COUNTRIES = [];
             import("../oneNameTrees/location_data.js").then(module => {
                 SlippyTree.COUNTRIES = module.countries;
@@ -568,9 +568,11 @@ class SlippyTree extends View {
     }
 
     #resetCategories() {
-        const catmenu = this.state.container.querySelector(".slippy-categories");
-        while (catmenu.firstChild) {
-            catmenu.firstChild.remove();
+        if (this.browser) {
+            const catmenu = this.state.container.querySelector(".slippy-categories");
+            while (catmenu.firstChild) {
+                catmenu.firstChild.remove();
+            }
         }
     }
 
@@ -2328,7 +2330,7 @@ class SlippyTreePerson {
         for (let i=0;i<this.relations.length;i++) {
             const r = this.relations[i];
             if (r.person == person && r.rel == rel) {
-                if ((r.date != date || r.type != type) && (type != "inferred" || date < r.date)) {
+                if ((r.date != date || r.type != type) && (type != "inferred" || (this.type == "inferred" && date < r.date))) {
                     r.date = date;
                     r.type = type;
                     changed = true;
