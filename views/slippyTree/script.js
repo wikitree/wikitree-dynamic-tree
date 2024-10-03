@@ -31,6 +31,7 @@ if (typeof View != "function") { function View() { } } // To allow debugging in 
 
 class SlippyTree extends View {
 
+    #PATHPREFIX = "/wikitree-dynamic-tree/";
     static loadCount = 0;
     LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
@@ -217,11 +218,11 @@ class SlippyTree extends View {
    <select class="slippy-categories"></select>
    <div class="slippy-settings-wheel">
     <div class="slippy-settings-wheel-zoom">
-     <img src="views/slippyTree/resources/mouse.svg"/>
+     <img src="{PATHPREFIX}views/slippyTree/resources/mouse.svg"/>
      <span>Scroll-wheel zooms (best for mouse)</span>
     </div>
     <div class="slippy-settings-wheel-scroll">
-     <img src="views/slippyTree/resources/trackpad.svg"/>
+     <img src="{PATHPREFIX}views/slippyTree/resources/trackpad.svg"/>
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
     <p style="margin:0.5em 0 0 0">Or navigate with cursor keys and +/- to zoom</p>
@@ -242,7 +243,7 @@ class SlippyTree extends View {
 
         if (this.browser) {
             this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
-            this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).trim();
+            this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).replace(/\{PATHPREFIX\}/g, this.#PATHPREFIX).trim();
 
             this.setSettings();
             this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
