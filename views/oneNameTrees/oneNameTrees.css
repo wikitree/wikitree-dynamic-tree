@@ -612,7 +612,7 @@ input[type="submit"],
 }
 
 .oneNameTrees #table #tableView thead {
-  position: sticky;
+  /* position: sticky; */
   background-color: #fff;
   z-index: 1;
 }
