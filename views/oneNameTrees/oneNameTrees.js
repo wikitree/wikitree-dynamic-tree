@@ -4545,17 +4545,17 @@ window.OneNameTrees = class OneNameTrees extends View {
         const header = document.querySelector("header");
         if (header) {
             const resizeObserver = new ResizeObserver((entries) => {
-                $this.setStickyHeader(); // Update the sticky header position whenever the header size changes
+                //   $this.setStickyHeader(); // Update the sticky header position whenever the header size changes
             });
             resizeObserver.observe(header);
         }
 
         $("#toggleGeneralStats").on("click.oneNameTrees", function () {
-            setTimeout($this.setStickyHeader, 300); // Adjust the timeout based on actual delay
+            //  setTimeout($this.setStickyHeader, 300); // Adjust the timeout based on actual delay
         });
 
         // Initial call to ensure the sticky header is correctly positioned on page load
-        this.setStickyHeader();
+        // this.setStickyHeader();
 
         $(".filter").off(); // Remove any existing event listeners
 
