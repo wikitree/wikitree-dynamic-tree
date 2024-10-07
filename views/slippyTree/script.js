@@ -31,6 +31,7 @@ if (typeof View != "function") { function View() { } } // To allow debugging in 
 
 class SlippyTree extends View {
 
+    #PATHPREFIX = "/wikitree-dynamic-tree/";
     static loadCount = 0;
     LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
@@ -217,11 +218,11 @@ class SlippyTree extends View {
    <select class="slippy-categories"></select>
    <div class="slippy-settings-wheel">
     <div class="slippy-settings-wheel-zoom">
-     <img src="views/slippyTree/resources/mouse.svg"/>
+     <img src="{PATHPREFIX}views/slippyTree/resources/mouse.svg"/>
      <span>Scroll-wheel zooms (best for mouse)</span>
     </div>
     <div class="slippy-settings-wheel-scroll">
-     <img src="views/slippyTree/resources/trackpad.svg"/>
+     <img src="{PATHPREFIX}views/slippyTree/resources/trackpad.svg"/>
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
     <p style="margin:0.5em 0 0 0">Or navigate with cursor keys and +/- to zoom</p>
@@ -242,7 +243,7 @@ class SlippyTree extends View {
 
         if (this.browser) {
             this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
-            this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).trim();
+            this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).replace(/\{PATHPREFIX\}/g, this.#PATHPREFIX).trim();
 
             this.setSettings();
             this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
@@ -749,7 +750,7 @@ class SlippyTree extends View {
     /**
      * Deserialize a state string as created by "saveState". Return true if the operation succeeded
      */
-    restoreState(val) {
+    restoreState(val, callback) {
         while ((val.length & 3) != 0) {
             val += "=";
         }
@@ -789,7 +790,7 @@ class SlippyTree extends View {
                     const person = this.find(id);
                     person.childrenLoaded = true;
                 }
-                this.setFocus(this.find(focusid));
+                this.setFocus(this.find(focusid), callback);
             });
             return true;
         } catch (e) {
@@ -1090,6 +1091,15 @@ class SlippyTree extends View {
         this.state.view.marriages = [];
         this.placeNodes(focus, ordered, this.state.view.marriages, () => {
             // Re-add edges, people, labels in priority order
+            for (const person of ordered) {
+                if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
+                if (typeof person.x != "number") {
+                    person.x = person.tx;
+                }
+                if (typeof person.y != "number") {
+                    person.y = person.ty;
+                }
+            }
             if (this.browser) {
                 this.state.scrollPane.parentNode.classList.remove("loading");
                 const peoplepane = this.state.svg.querySelector(".people");
@@ -1132,6 +1142,10 @@ class SlippyTree extends View {
                     let v = new URLSearchParams(window.location.hash.substring(1));
                     v.set(this.#VIEWPARAM, this.saveState());
                     window.history.replaceState(null, null, "#" + v);
+                }
+            } else {
+                if (callback) {
+                    callback();
                 }
             }
         });
@@ -1194,7 +1208,7 @@ class SlippyTree extends View {
             if (!person.hidden && !q.includes(person)) {
                 throw new Error("missing " + person);
             } else if (person.hidden && q.includes(person)) {
-                throw new Error("includes hudden " + person);
+                throw new Error("includes hidden " + person);
             }
         }
         for (let person of q) {
@@ -1318,7 +1332,12 @@ class SlippyTree extends View {
         // STEP 0
         // Preliminary stuff, work out the width for each generation,
         // reset some properties
-        for (let person of ordered) {
+        for (const person of this.state.people) {
+            delete person.forces;
+            delete person.clump;
+            delete person.numVisibleChildren;
+        }
+        for (const person of ordered) {
             const generation = person.generation;
             if (!genpeople[generation]) {
                 genpeople[generation] = [];
@@ -1335,7 +1354,9 @@ class SlippyTree extends View {
         // ------
         // Find the roots of the tree. For each node in our priority order,
         // traverse up on all branches and add any nodes that have no parents
-        // that we haven't previously added.
+        // that we haven't previously added. Note we are building a tree,
+        // so parents that are grouped in the same (or a lower!) generation
+        // to each node are ignored.
         //
         // Store the unseen roots for each node in [roots]
         const roots = [], seen = [];
@@ -1348,8 +1369,8 @@ class SlippyTree extends View {
                         n = null; // We have joined an already processed tree, go down again
                     } else {
                         seen.push(n);
-                        const mother = n.mother && !n.mother.hidden ? n.mother : null;
-                        const father = n.father && !n.father.hidden ? n.father : null;
+                        const mother = n.mother && !n.mother.hidden && n.mother.generation < n.generation ? n.mother : null;
+                        const father = n.father && !n.father.hidden && n.father.generation < n.generation ? n.father : null;
                         if (mother) {
                             q.push(mother);
                         } else if (!father) {
@@ -1422,16 +1443,13 @@ class SlippyTree extends View {
         // together. Clumps are initially set to a node and its spouses.
         //
         const func = function(owner, person) {
+            const generation = person.generation;
+            let prev = genpeople[generation].length == 0 ? null : genpeople[generation][genpeople[generation].length - 1];
             if (person.hidden) {
                 return null;
             }
-            const generation = person.generation;
             let mylast = person;
-            if (!genpeople[generation].includes(person)) {
-                let prev = genpeople[generation].length == 0 ? null : genpeople[generation][genpeople[generation].length - 1];
-                if (prev != null && isNaN(prev.ty)) {
-                    return NaN; // Following on from a half-complete item? Bail out
-                }
+            if (!genpeople[generation].includes(person) && (prev == null || !isNaN(prev.ty))) {
                 genpeople[generation].push(person);
                 let spouseheight = 0;
                 // Position spouses that have not previously been positioned
@@ -1478,7 +1496,7 @@ class SlippyTree extends View {
                                     sq.push({depth:spousecheck.depth + 1, key: key, person: spouse});
                                 }
                             } else {
-                                if (DEBUG) console.log("Skippingu spouse " + spouse + " of " + spousecheck.person + ": " + reason);
+                                if (DEBUG) console.log("Skipping spouse " + spouse + " of " + spousecheck.person + ": " + reason);
                             }
                         }
                     }
@@ -1502,13 +1520,15 @@ class SlippyTree extends View {
                 // As we position spouses, lastchild is quite possibly a spouse
                 let firstchild = null, lastchild = null;
                 for (const child of person.children()) {
-                    let p = func(person, child);
-                    if (p) {
-                        if (!firstchild) {
-                            firstchild = lastchild = p;
-                        } else {
-                            lastchild = p;
+                    if (child.generation > person.generation) {
+                        let p = func(person, child);
+                        if (p) {
+                            if (!firstchild) {
+                                firstchild = lastchild = p;
+                            } else {
+                                lastchild = p;
 
+                            }
                         }
                     }
                 }
@@ -1556,7 +1576,9 @@ class SlippyTree extends View {
                 // this node might have been positioned as another's spouse, and
                 // have different children to the spouse.
                 for (const child of person.children()) {
-                    func(person, child);
+                    if (child.generation > person.generation) {
+                        func(person, child);
+                    }
                 }
             }
             return null;
@@ -1567,7 +1589,19 @@ class SlippyTree extends View {
                 func(null, root);
             }
         }
+        // This is the last resort fallback attempt at positioning a person.
+        // If we see this something has gone wrong
+        for (let gen=0;gen<genpeople.length-1;gen++) {
+            for (const person of ordered) {
+                if (person.generation == gen && isNaN(person.ty) && !person.hidden) {
+                    console.warning("Emergency position! " + person);
+                    func(null, person);
+                }
+            }
+        }
+
         for (const person of ordered) {
+            if (isNaN(person.ty) && !person.hidden) throw new Error("Person " + person+" ty is NaN");
             miny = Math.min(person.ty, miny);
             maxy = Math.max(person.ty, maxy);
         }
@@ -3046,9 +3080,16 @@ if (typeof window != "undefined") {
         "AAEfmPYCLYV0AAIumGMAAkiNERgAAkiPXwACSzzLSQACXO6uAAJkzn0AAnQmBggAApAvNwACoLw1AAAAAAAAq2qxAQAAsOiTBgABBhOJAAEfmPYAAYx6rwMAAY8h5AABuPPIVCMAAbmlOwABzsYRAAHa7008AAHgxsEsAAILg2EAAgz9XwACEhTVAAISQV0AAi6YFG4UAAIumxsAAi92PAACOULqAAJIjVUNogACSI9sLAACSJEeZQACSLwEAAJIvWxhIjKgLSM7agACSQLJKKAAAks6_g8EJbUOAAJLt0hBYAACS7m3AAJLu7sAAkwykAACThNGAAJQf-0cAAJRy6kAAlHNjCGEJZkeAAJR0Z5VAAJR8nsAAlZ2qigAAlaDdwACVp0IAAJWnkMAAlagT08AAlaic78AAlbHJQACVtJiAAJW8WcAAlcXzwACVxn5AAJcpB4AAlzQ98wAAl3-mAACXi5KAAJeNi0eAAJizAoAAmLNTAACZFZ9AAJkwmEAAmTGIQACZNOcLAACZOILCgACZTabAAJmGKwAAmaZ9gACb5CYAAJv1fYAAm_XDAACb-GxAAJ0JZgAAny2yAACfYzcAAJ9jgwAAoXOvwAChnNGAAKShzYAApKI4gACkv41XgAAQn5rAgAAT0zyAACNTmtOAA",   // ancestors to one point
         "AABe0TUAorivAACi8roAABJtTgEAAPrv_xIAAQGSJi0AAQvH_XUAAQvJiQABC87aAAEOIagBAAEPADMAARHwXAABF0wxAAEca50AAR81DAABJLEOjnabAAEvz-5MAAEyhJsAATRwdgABNOp-AAFUsbQAAWDLYAABYkEuAAFjYrgLAAFpPG0uAAGPx2MAAZAd41EAAZBGSwABkHNaAAGQdGtAAAGSeRoXAAGU0EAAAZkVaAABmaztAAGa4Gh_AAGa4iAAAZsCw3MAAZ2uBgABncgugDkAAZ3MGQABndU9SQwKOwABnhmyrQABqafsAAGpqv4AAaq0VwABq3AZAAGw-NMAAbD62gABsPzyAAGw_sUAAbHsNQAALXyAAAHOcEYAADBe6QAAMGcdAQEBAgEBAQEBAQEBJAUBAQECAgAAMHGfAQIBAwEYBAECAQERBBkfAwYAAeqTPgAB6qCqES0AAeq64SUAADEu8QIDdwEAADFG5wICAQUAADFLCgwDAQIB_QIBAwEAAfumoQAB-6enAAIfZrMAAjOK7wACNWJuAAI2qukAAkcdIMEAAkiNVQACSQLJAAJJBlJiDwQAAlFMfgACUVb-AAJRecMAAlU-RBMAAlpqLwACX2DRAAJfempmAAJgIzMAAmAkxQACYCeEAAJkVn0AAmRZiSc4CgACZIdQnRUAAmSM0RIPNhYZTwwRBRMAAmSboQACZJ2VLAkhEQACZKLUBww8AAJl40oZAAJl6xcNAAJl8s8knAAAPXD4AAJmiAoAAmaJGJpdAAJmjWUAAmaOfQACZpr9FEYKAAJnMlEAAmdU6gACZ2JRAAJnsgAAAmfDpV1pKwACamNSEwACanfqDQACatRxAAJrSG1vGRlkIQACa0r_UQACa3UkAAJr22sAAnSv_gAAPz4XAAA_QoAwAAA_SlUCAAKLYOIAApcWQgACnE3iAAKcXWwzAAKc8QgAApz-BAACnRgUAAKeQjYEAgcRAAKeQ7UAAp5FuAYEDyUKAABDE0UAAp797wACnv8IFH0tLZh0AAKfBD8AAp8FVscAAp9CjR0AAp9D7jXJIC8MBAVuAAKfRr4AAEMpMwQCAwMCAABDLDMGBAAAQy_9AQMAAEMyWAICAABDNEwGBAEFBwYFBwgHAwcECgIEAAKgcyYAAqC4EgACoLwwBQ4EAABDVCoBAABDVskwAgMFAwAAQ2qCAQICAABGtDAEAQAATxoHAABPZlgcAABSWtULAABW4y8AAFsy9RkDAQEBAgIBAQQBBgIDAxETAABbNJMAAF3yWgAAXnI1BAoMAABemsoAAF6hyAAAXtEMAQEBAQEBAQEBAQEBHQIBAQEBAQEBAQEBAgEBAQEBAQFeAQEBAQAAXveRAAAJ2x8CAAAKjPAAAHk5XgYHCAYAAAAAAACit2MAAM4M6QABAZIbAAEW9YEAAS-7_QABMyjsAAE0cGAAAWDK8QABaTxUAAGHi3oAAZJ1AwABk407AAGUzuIAAZT2CgABlPkMAAGVHWoAAatvVQABx_i3AAHH-wsAAc7GEQAAMGdLAgMBAAAwcZ0ENQEDAgIRAQIBAiEAAeY0hQAAMS9jAgIBAQIEAgEAADFG5QoAADFLFwEDAAHz7WQAAjaV6wACSJKUXBcAAmRZoycRIAACZeM9HQACZesACQACZfK3AAJqYyIAAmt1DwACa9umGgACdQQbAAJ1BiYAAD8-CQAAP0J3DQAAQam7AAKWztUAApxC9QACnE5IAAKcXTIAApynjwACnKvsAAKcuTYAAEMTNwAAQyxGAABPGgoAAE9CxwoAAFJa3QAAVMpmAABd8kMAAF6h0QAACdsgAgEBAAAKjQIA",         // Many Mathesons
         "AAABKvkAp87nAAARwFoAALzs9AAAvPIFAAC-jVIAAMN6bQAAyLCaGA4AAM-bAAAA0CkPAADS1Z8CBAQGAwAA1p2IAADYuJUAANjINwAA2az9BgAA4yLwCANfAQ0IAADjwMgAAOsy6gAA68CXAwMBAADrznsCBgAA7b8PAAEQoBoAARChoAABEOTRAAETE3cAARqUgQABG-GvAAEb5D4AAR6IqoiKDmMQGGYAAB8XrWt3AAAfGu0AAB8ctQABO16RAAE7ZoUgAAFEJf8LKA4WAAFEWOcICAUFDAUMAw9SCFMQMVIkCNUFAAFEXYVL_gkHBA4AAURjaxZKRhEKDAkuExQAAURl7g0sHQABRHxODAZLJAZjAwQGAgYKBgMHCQABRIBEIRsAAUtIlgABTE_3AAFjtxwAAWO4yqIAAWyzRQABfaxHAAF9rZgHAAF9r80AAZA9zAABkD-7AAGrDMQAAasPugwMCQAABGUIAAG58lkAAbn5xQABvlFLAAHcGpUAAeb92wAB5wAJvxl5JiskAAICVHkAAgZbtAACCWhTAAIUwuUAAjLWQAACNIKvAAI6Ty5-HAACTJXzAAJOqfkMDQYKAxsAAk6ugAACTq_VUB8MCQgGBQACTrdNGQ8QDVIGBgYFVAkKBwdPFB8NDwmXCQQQBQQGAgoHMgQFCTVQCgACUCSSHgoHCwACUCXWDAsFCwUIkQpnCQ4FXQlOBAYJBQ0IB1AHBgwBbAoGBwYHEzEGEHgJAAJdsPAAAl4MwLEAAm0RTwACdfeVAAKSWf8AApc3JgACnlVlAAKe_nQODBA5GRYfCxsLHgACn1P4GgcAAp-ZqhAAAp_a7QULBxALFw4ZDDYPEBAKAAKgOkUDAgkAAqGglQEFZgACoaLlDifjCQIBAgIDAAKhzU0SIT8REQACoes4AgYCBgMCUQAAWknzAgcHAwYFBQcDAAABKvMFAQcJAAABLaQDAQQBAQEBAQIBAQEBAQEBAQEDAgMBAQEBAwEBAQEDAQEBAQMBAQEBAQEBAQEBAwEEAgMHAwUBBAMBAQEEAQQBCA0BAQEBAQEAAA1XNQAAjJi4AACRV18AAJZWOQAAAAAAAJyJLAAAzlk1AADQJ_IAANApDgIAANjQrQAA5XUpAAD_e3kAAQmhEwABEY3eAAES7WIAAR53NQABHohiAAEeie14GhoAADHDDQACFL_AAAA2KjEAAjLWiAACTJUOAAKfmcEAAGTrsgAAcPohAAABKwgAAAEtqwcOKCgHBgAADVddAACRlJEA",       // Four gens of Brigham Young
-        "AAJh3r8CYd6BPjEFV0xmDQACYeHsQSEsNx6jAAJh5IcKnaALCAYNCQAClgWdJCQAAAAAAAJdCxAA"  // Small but good test for spouse-bundling
+        "AAJh3r8CYd6BPjEFV0xmDQACYeHsQSEsNx6jAAJh5IcKnaALCAYNCQAClgWdJCQAAAAAAAJdCxAA", // Small but good test for spouse-bundling
+        "AAAGOg0AmMdyAACZJq0FAACdAbYEAgdRAACdcZgGAwICBQAAngpCAACeD3gKAACe4mUAAKFVqwYGAwMGAACiYWIGIwwCAQUDBAAAooieCgAAo3yRAACmgVkBAACoAacMAQcAAKhmYgEFAACofzkAAKiUtAAAqKeWAACpGwoPDAQTBQdzAACsCPYHIgQDAgAArTOxAACvZWgIAQAAr5bJAAC1Qa8AALhjwgAAuU-_DwYFBAAAur1BAAC69tYAALtPfQAAvUcKBwAAAeZOAADFGp8JBgQFAADFIMcAAMWcQgAAx7v5AADH1mQAAM09gjQnBQofARIBmEcDAwAAztQ_AADO1YkAANDKmQAA0j0vAADUNHwAAOCgGwAA4UkiGRUpAADpH6MZHicFAADukyc6AgAA8QwRAAAZIqQAABkkVDUAAPuFihIKFAAA_uFkNrIJAAEAfkkAAQCyfQABALaBAAEAt4MVAAEAx-J6AAEEcWUAAQV1Eg4AAQXN3QABBeVYAwABBrcXAAEICEkAAQhBW0ZlAAEIWt8OAAEI15oAAQ0_HAABDYrmAAEP8PsAAQ_0uAABEC8wAAEQgWsRAQABEOsV3gABEkDvAAEU77YAARYNKVUYAAEWD1EAARr_1QABH96ZAAEnWzEAASdiKQABJ47wEwABKCVpCiYAASpuDgABK22BAAErcmcAATezMQ4JAAE7V5sdGAQHDRA3AAE7XCoHAAE8Rz0AAT2R1wABPeNkxzEUCxcvAAFCM1EAAUPE_x0AAUTsLQABTFErAAFZXaIAAV019TwAAV06JAABYUhwAAFilxgAAWLOvwABY1tBAAFje90HCAABY6EcAAFnJYQAAWtmqwABbq-4AAFu8S4AAXCxeAABdbGtFwUMLwABdfXNAAF6IsEAAYT4EgABh7HVAAGQuKYAACq_uwAAKsEdAAGzbi8SDAkSAAG0L3sAAbuyiQABvA5sAAHC9-IAAcNR4gABw1VxAAHDefsgCQABw3umAAHDgxcAAcOF_gABw6STAAHDqLUAAcQHxwABzBrgAAHPuyIYKAAB0JEPBA0LCgAB0RpUAAHS3WQAAdS70AAB1MFfAAHUwm8AAdTJrwYAAdU0RDjmAAHVuEQAAdXDzgAB1qBrFwAB1qM7BwgAAdkpiwAB2sMUAAHmXfoAAenhFAAB7l0gAAHuXqb0AAHuY2YAAf6newACABUMAwACDNlooiYAAhBZUQACEqmOAAIbiyQAAiJXQAACJ9RsAAIn13YAAi_psAAAOG-gAQACNWzPAAJBGwsAAkGN4AACR50RLgACVG9fAAA-F0OBAAAGOZoYAQE9ChIAAAY7rAQBAQFdAQACcJi_DwoAAnFxXSgAAnH3oS4AAnWSWRgbGAACdcbHAAJ3et0AAneHbwACd4rdgvQAAoPIUgACj-9IAABCNXcAAp6OTQAASHVIBwAASIQQBAEEAQEAAEiMrAAASv3cAABK_3B8AABVL0QAAFgQqgEBAABkHDQGAwAAaAaUDwAAb3aJAAByCUUGAQQCAAB5ocQAAHwOBwAAfYYAF0MAAH2HdQAAgL4fAACBryMFCAQLAACCOFsAAIKsIwYAAIK5zgEAAILLkQ4EBgUHAwAAgvEFAQoDAwIAAIPY-wIAAIQv8AoGAgcDAgAAhDFeBQAAhJdeAACGucYAAIbMUQkEAACHVCgJBwIFAwAAh35TGwIGBAQAAIpjdwAAjJWTvwAADhbtAACNOpUPAACNZ2wjAwkCGQAAjZumCAAAjdpvDgAAjeB6AACPUuIBAwAAj8klAACRLX0HCQUAAJFEUT4WMgAAlV5IAgAAlWAzFAYHLj0AAJViBAAAlx-4GAAAlyQ5DgAAl23nBwEAAJhydAAAAAAAAJjHaAAAmP4UAACZEdwAAJkmjQAAmtHCAACa4CgAAJtOKQAAm4A1AACcKrsAAJyDewAAnInEAACdAfAAAJ1xRQAAngmFAACeD34TAAChMBYAAKFViQAApZ2ZAACl-toAAKZYlgAAprE0AACnG_g1WgAAqAHGKAAAqGZbAACofx9sAACpGwQrJgAArTOPUAAArWgKAACtiqEAALNupAAAs4aIAACzkisAALVAewAAtj8QAAC27ycAALpMGQAAu054AAC8oMsAAL1G7wUAAAHnEwAAwrr_AADFGoQ1AADGHSMAAMe1jA4AAMvMSwAAzT2tJwsGIQMHAADPPNUAANI85AAA0tDIAADUNGMAANzPswAA4KALAADhSSkAABaTYwAAFpYkAADidY4AAOX3LwAA6R_6FAAA7pMIAADwpgkAAPaXRwAAGNIRAAD5bAIAABkjpgAA_kWeAAEAshEAAQC4DQABBHFvAAAaDPQAAQXlTgABCEHJAAEIWskAAQiD3AABCqGvAAELLaIAAQ0_EQABD789AAEQLvoAARHczAABFO91AAEXZdoAAB0fYgABKmq_AAEwvVsAATHZQwABOCI_AAE5YW0AAT2QQgABPyJ6AAE_ZuYAAUAEyAABQjNdAAFCVR8AAUPE2wABRFS2AAFE4a8AAUWmVwABRk6NAAADSiEAAUs3oAABUg88AAFXLDIAAVldiwABW-BaAAFiesEAAWLenwABY1toAAFjfscAAWZJ4wAAJIhzAAFu8OCnAAFwdw8AAXMcggABczhRAAF1sc4AAXqAWAABhPgFMwAAJvkyAAGLGbAAAYzBEwABlHccAAGUqmoAAZYwugABmxdZAAGdiqQAAZ5KBAABou1AAAGjuOwAAaSThQAAKsIvAAGyyzcAAbPk2QABup84AAG7l3IAAb2SmwABw1GdAAHDeZsAAcN7NgABw7kFAAHE1CQAAccT5wAByqXNAAHPvRwFAAHP_kwAAdEafwAB0U2YAAHRZ-AAAdG1yQAB1MmqAAHZa9MAAC9mcgAB7gaNAAHuX7MAAe5jXQAB7oSAAAHxydUAAf65dgcAAf-iFQACABTPIgACAT8aAAIPEDYAAiGlkQACKBpgAAA4b54AAjVsnwACPwqxAAJDsZoAAkt7wAACTwXAAAJUcocAAlXnQAAAPheEJA4GCwACbWuWAAAGOZEkAAAGO60BAQUAAnH3EgACdWfiAAJ3MlAAAoPIWQAChsIDAAKG3iMAAEI1cwAASHVEDwAASIQOAABJd6UAAFUvQwAAVocjAABYEK0AAGHrjgAAYit9AABkHBEnBAAAaLsnAABp7r4AAG92dQAAcI70AAByCUQAAHMIuwAADCOjAAB8DgYAAIB3GwAAglPLAACCq6IAAIK54QMAAIMTMwAAhDASAACGucwAAIbMGAAAh1RAAACIYtwAAIloMAAAi4_oAACMlZkJqgAAjWbOAACNm6MAAI3axAAAj1LnAACRQtcAAJFEGBcIAACR6xgAAJUhFQAAlV5NAACVX58AAJVu1wAAlaZwAACVqV8AAJW9GgAAlyPuAACXb7MAAJgQfAAAmHIiFVUA", // Reed-16536 
+        "AACRLZIAmMdyAACZJq0FAACdAbYEAgdRAACdcZgGAwICBQAAngpCAACeD3gKAACe4mUAAKFVqwYGAwMGAACiYWIGIwwCAQUDBAAAooieCgAAo3yRAACmgVkBAACoAacMAQcAAKhmYgEFAACofzkAAKiUtAAAqKeWAACpGwoPDAQTBQdzAACsCPYHIgQDAgAArTOxAACvZWgIAQAAr5bJAAC1Qa8AALhjwgAAuU-_DwYFBAAAur1BAAC69tYAALtPfQAAvUcKBwAAAeZOAADFGp8JBgQFAADFIMcAAMWcQgAAx7v5AADH1mQAAM09gjQnBQofARIBmEcDAwAAztQ_AADO1YkAANDKmQAA0j0vAADUNHwAAOCgGwAA4UkiGRUpAADpH6MZHicFAADukyc6AgAA8QwRAAAZIqQAABkkVDUAAPuFihIKFAAA_uFkNrIJAAEAfkkAAQCyfQABALaBAAEAt4MVAAEAx-J6AAEEcWUAAQV1Eg4AAQXN3QABBeVYAwABBrcXAAEICEkAAQhBW0ZlAAEIWt8OAAEI15oAAQ0_HAABDYrmAAEP8PsAAQ_0uAABEC8wAAEQgWsRAQABEOsV3gABEkDvAAEU77YAARYNKVUYAAEWD1EAARr_1QABH96ZAAEnWzEAASdiKQABJ47wEwABKCVpCiYAASpuDgABK22BAAErcmcAATezMQ4JAAE7V5sdGAQHDRA3AAE7XCoHAAE8Rz0AAT2R1wABPeNkxzEUCxcvAAFCM1EAAUPE_x0AAUTsLQABTFErAAFZXaIAAV019TwAAV06JAABYUhwAAFilxgAAWLOvwABY1tBAAFje90HCAABY6EcAAFnJYQAAWtmqwABbq-4AAFu8S4AAXCxeAABdbGtFwUMLwABdfXNAAF6IsEAAYT4EgABh7HVAAGQuKYAACq_uwAAKsEdAAGzbi8SDAkSAAG0L3sAAbuyiQABvA5sAAHC9-IAAcNR4gABw1VxAAHDefsgCQABw3umAAHDgxcAAcOF_gABw6STAAHDqLUAAcQHxwABzBrgAAHPuyIYKAAB0JEPBA0LCgAB0RpUAAHS3WQAAdS70AAB1MFfAAHUwm8AAdTJrwYAAdU0RDjmAAHVuEQAAdXDzgAB1qBrFwAB1qM7BwgAAdkpiwAB2sMUAAHmXfoAAenhFAAB7l0gAAHuXqb0AAHuY2YAAf6newACABUMAwACDNlooiYAAhBZUQACEqmOAAIbiyQAAiJXQAACJ9RsAAIn13YAAi_psAAAOG-gAQACNWzPAAJBGwsAAkGN4AACR50RLgACVG9fAAA-F0OBAAAGOZoYAQE9ChIAAAY7rAQBAQFdAQACcJi_DwoAAnFxXSgAAnH3oS4AAnWSWRgbGAACdcbHAAJ3et0AAneHbwACd4rdgvQAAoPIUgACj-9IAABCNXcAAp6OTQAASHVIBwAASIQQBAEEAQEAAEiMrAAASv3cAABK_3B8AABVL0QAAFgQqgEBAABkHDQGAwAAaAaUDwAAb3aJAAByCUUGAQQCAAB5ocQAAHwOBwAAfYYAF0MAAH2HdQAAgL4fAACBryMFCAQLAACCOFsAAIKsIwYAAIK5zgEAAILLkQ4EBgUHAwAAgvEFAQoDAwIAAIPY-wIAAIQv8AoGAgcDAgAAhDFeBQAAhJdeAACGucYAAIbMUQkEAACHVCgJBwIFAwAAh35TGwIGBAQAAIpjdwAAjJWTvwAADhbtAACNOpUPAACNZ2wjAwkCGQAAjZumCAAAjdpvDgAAjeB6AACPUuIBAwAAj8klAACRLX0HCQUAAJFEUT4WMgAAlV5IAgAAlWAzFAYHLj0AAJViBAAAlx-4GAAAlyQ5DgAAl23nBwEAAJhydAAAAAAAAJjHaAAAmP4UAACZEdwAAJkmjQAAmtHCAACa4CgAAJtOKQAAm4A1AACcKrsAAJyDewAAnInEAACdAfAAAJ1xRQAAngmFAACeD34TAAChMBYAAKFViQAApZ2ZAACl-toAAKZYlgAAprE0AACnG_g1WgAAqAHGKAAAqGZbAACofx9sAACpGwQrJgAArTOPUAAArWgKAACtiqEAALNupAAAs4aIAACzkisAALVAewAAtj8QAAC27ycAALpMGQAAu054AAC8oMsAAL1G7wUAAAHnEwAAwrr_AADFGoQ1AADGHSMAAMe1jA4AAMvMSwAAzT2tJwsGIQMHAADPPNUAANI85AAA0tDIAADUNGMAANzPswAA4KALAADhSSkAABaTYwAAFpYkAADidY4AAOX3LwAA6R_6FAAA7pMIAADwpgkAAPaXRwAAGNIRAAD5bAIAABkjpgAA_kWeAAEAshEAAQC4DQABBHFvAAAaDPQAAQXlTgABCEHJAAEIWskAAQiD3AABCqGvAAELLaIAAQ0_EQABD789AAEQLvoAARHczAABFO91AAEXZdoAAB0fYgABKmq_AAEwvVsAATHZQwABOCI_AAE5YW0AAT2QQgABPyJ6AAE_ZuYAAUAEyAABQjNdAAFCVR8AAUPE2wABRFS2AAFE4a8AAUWmVwABRk6NAAADSiEAAUs3oAABUg88AAFXLDIAAVldiwABW-BaAAFiesEAAWLenwABY1toAAFjfscAAWZJ4wAAJIhzAAFu8OCnAAFwdw8AAXMcggABczhRAAF1sc4AAXqAWAABhPgFMwAAJvkyAAGLGbAAAYzBEwABlHccAAGUqmoAAZYwugABmxdZAAGdiqQAAZ5KBAABou1AAAGjuOwAAaSThQAAKsIvAAGyyzcAAbPk2QABup84AAG7l3IAAb2SmwABw1GdAAHDeZsAAcN7NgABw7kFAAHE1CQAAccT5wAByqXNAAHPvRwFAAHP_kwAAdEafwAB0U2YAAHRZ-AAAdG1yQAB1MmqAAHZa9MAAC9mcgAB7gaNAAHuX7MAAe5jXQAB7oSAAAHxydUAAf65dgcAAf-iFQACABTPIgACAT8aAAIPEDYAAiGlkQACKBpgAAA4b54AAjVsnwACPwqxAAJDsZoAAkt7wAACTwXAAAJUcocAAlXnQAAAPheEJA4GCwACbWuWAAAGOZEkAAAGO60BAQUAAnH3EgACdWfiAAJ3MlAAAoPIWQAChsIDAAKG3iMAAEI1cwAASHVEDwAASIQOAABJd6UAAFUvQwAAVocjAABYEK0AAGHrjgAAYit9AABkHBEnBAAAaLsnAABp7r4AAG92dQAAcI70AAByCUQAAHMIuwAADCOjAAB8DgYAAIB3GwAAglPLAACCq6IAAIK54QMAAIMTMwAAhDASAACGucwAAIbMGAAAh1RAAACIYtwAAIloMAAAi4_oAACMlZkJqgAAjWbOAACNm6MAAI3axAAAj1LnAACRQtcAAJFEGBcIAACR6xgAAJUhFQAAlV5NAACVX58AAJVu1wAAlaZwAACVqV8AAJW9GgAAlyPuAACXb7MAAJgQfAAAmHIiFVUA" // Reed-16536, different focus
     ];
     let tree = new SlippyTree();
     tree.init(null, "Hansdatter-907", null);
-    tree.restoreState(testvectors[0]);
+    tree.restoreState(testvectors[testvectors.length - 1], () => {
+        console.log("Layout 1 complete");
+        tree.setFocus(tree.find("Davis-27116"), () => {
+            console.log("Layout 2 complete");
+        });
+    });
 }
