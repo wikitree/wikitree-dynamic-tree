@@ -67,9 +67,11 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "xtree": new XTreeView(),
         "familyGroupApp": new FamilyGroupAppView(),
         "superbig": new SuperBigFamView(),
+        "slippyTree": new SlippyTree(),
 
         "stats": new StatsView(),
         "wtPlusMaps": new WtPlusMaps(),
+        "oneNameTrees": new OneNameTrees(),
     };
 
     for (let key in views) {

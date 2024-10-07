@@ -3,6 +3,7 @@ import { LanceView } from "./LanceView.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CC7 } from "./cc7.js";
 
 export class PeopleTable {
     static EXCEL = "xlsx";
@@ -28,9 +29,28 @@ export class PeopleTable {
 
     static async addPeopleTable(caption) {
         $("#savePeople").show();
+        // Set root person if it is not already set
+        if (window.rootPerson) {
+            if (window.rootPerson?.Name != $("#wt-id-text").val()) {
+                window.rootPerson = false;
+            }
+        }
+        let rootPerson = window.people.get(window.rootId) || window.rootPerson;
+        if (!rootPerson) {
+            rootPerson = await WikiTreeAPI.postToAPI({
+                appId: Settings.APP_ID,
+                action: "getPerson",
+                keys: window.rootId,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            });
+        }
+        window.rootPerson = rootPerson;
+        // Get first name of root person
+        const rootFirstName = rootPerson?.FirstName || window.rootId;
         const sortTitle = "title='Click to sort'";
         const aCaption = `<caption>${caption}</caption>`;
         const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
+        const relationTH = `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>`;
         const createdTH = `<th id='created' ${sortTitle} data-order='asc'>Created</th>`;
         const touchedTH = `<th id='touched' ${sortTitle} data-order='asc'>Modified</th>`;
         const parentsNum = "<th id='parent' title='Parents. Click to sort.' data-order='desc'>Par.</th>";
@@ -48,6 +68,7 @@ export class PeopleTable {
                     bioCheck ? "/B" : ""
                 }</th><th></th><th></th>` +
                 degreeTH +
+                relationTH +
                 parentsNum +
                 siblingsNum +
                 spousesNum +
@@ -71,7 +92,8 @@ export class PeopleTable {
         } else {
             aTable.appendTo($("#cc7Container"));
         }
-
+        let complete = 0;
+        let totalPeople = 0;
         function sortIdsByDegreeAndBirthDate(keys) {
             const collator = new Intl.Collator();
             return [...keys]
@@ -93,8 +115,23 @@ export class PeopleTable {
         }
 
         for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+            totalPeople++;
             const mPerson = window.people.get(id);
             if (mPerson.Hide) continue;
+
+            const completeCondition =
+                !isMissingFamily(mPerson) &&
+                mPerson.Father &&
+                mPerson.Mother &&
+                mPerson.DeathDate &&
+                mPerson.DeathLocation &&
+                mPerson.BirthDate &&
+                mPerson.BirthLocation &&
+                mPerson.NoChildren == 1 &&
+                mPerson.DataStatus.Spouse == "blank";
+            if (completeCondition) {
+                complete++;
+            }
             // Filter by the selected subset
             switch (subset) {
                 case "above":
@@ -117,9 +154,14 @@ export class PeopleTable {
                     if (isMissingFamily(mPerson)) break; // show
                     continue; // else hide
 
+                case "complete":
+                    if (completeCondition) break; // show
+                    continue; // else hide
+
                 default:
                     break;
             }
+
             function isMissingFamily(person) {
                 if (person.LastNameAtBirth == "Private") return false;
                 let val = false;
@@ -251,9 +293,11 @@ export class PeopleTable {
             }
 
             let degreeCell = "";
+            let relationCell = "";
             let touched = "";
             let created = "";
             let ddegree = "";
+            let drelation = "";
             let dtouched = "";
             let dcreated = "";
             let ageAtDeathCell = "";
@@ -276,7 +320,11 @@ export class PeopleTable {
 
             if ($("#cc7Container").length) {
                 degreeCell = "<td class='degree'>" + mPerson.Meta.Degrees + "°</td>";
+                relationCell = `<td class='relation' title="${mPerson?.Relationship?.full || ""}">${
+                    mPerson?.Relationship?.abbr || ""
+                }</td>`;
                 ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
+                drelation = "data-relation=''";
                 if (mPerson.Created) {
                     created =
                         "<td class='created aDate'>" +
@@ -394,6 +442,8 @@ export class PeopleTable {
                     " " +
                     ddegree +
                     " " +
+                    drelation +
+                    " " +
                     dAgeAtDeath +
                     " " +
                     dtouched +
@@ -446,6 +496,7 @@ export class PeopleTable {
                     `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
                     degreeCell +
+                    relationCell +
                     relNums["Parent_cell"] +
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
@@ -485,39 +536,46 @@ export class PeopleTable {
             aTable.find("tbody").append(aLine);
         }
 
+        const completeSpan = $("#completeSpan");
+        const ancReport = $("#ancReport");
+        const completePct = Math.round((complete / totalPeople) * 100);
+        const completeText = `<span id="completeSpan" title="Complete profiles are those with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked."> Complete: ${complete} (${completePct}%).</span>`;
+        if (completeSpan.length == 0) {
+            ancReport.append(completeText);
+        } else {
+            completeSpan.replaceWith(completeText);
+        }
+
         if (Utils.getCookie("w_wideTable") == "0") {
             CC7Utils.setOverflow("visible");
         } else {
             CC7Utils.setOverflow("auto");
         }
 
-        $("img.privacyImage, .bioIssue")
-            .off("click")
-            .on("click", function (event) {
-                event.stopImmediatePropagation();
-                const id = $(this).closest("tr").attr("data-id");
-                const p = window.people.get(+id);
-                if (event.altKey) {
-                    // Provide a way to examine the data record of a specific person
-                    console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
-                } else if (p.hasBioIssues) {
-                    PeopleTable.showBioCheckReport($(this));
-                }
-            });
-        $("img.familyHome")
-            .off("click")
-            .on("click", function () {
-                PeopleTable.showFamilySheet($(this));
-            });
-        $("img.timelineButton")
-            .off("click")
-            .on("click", function (event) {
-                PeopleTable.showTimeline($(this));
-            });
+        $("#cc7Container").on("click", "img.privacyImage, .bioIssue", function (event) {
+            event.stopImmediatePropagation();
+            const id = $(this).closest("tr").attr("data-id");
+            const p = window.people.get(+id);
+            if (event.altKey) {
+                // Provide a way to examine the data record of a specific person
+                console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
+            } else if (p.hasBioIssues) {
+                PeopleTable.showBioCheckReport($(this));
+            }
+        });
 
-        aTable.find("th[id]").each(function () {
+        $("#cc7Container").on("click", "img.familyHome", function () {
+            PeopleTable.showFamilySheet($(this));
+        });
+
+        $("#cc7Container").on("click", "img.timelineButton", function () {
+            PeopleTable.showTimeline($(this));
+        });
+
+        $("#cc7Container").on("click", "th[id]", function () {
             PeopleTable.sortByThis($(this));
         });
+
         PeopleTable.addWideTableButton();
         if ($("#hierarchyViewButton").length == 0) {
             $("#wideTableButton").before(
@@ -529,6 +587,9 @@ export class PeopleTable {
                         '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
                         '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
                         '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
+                        '<option value="complete" ' +
+                        'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
+                        "Complete</option>" +
                         "</select>" +
                         "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='button small viewButton' id='listViewButton'>List</button>" +
@@ -570,6 +631,9 @@ export class PeopleTable {
                     break;
                 case "missing-links":
                     subsetWord = " (Missing Family)";
+                    break;
+                case "complete":
+                    subsetWord = " (Complete)";
                     break;
                 default:
                     break;
@@ -695,71 +759,70 @@ export class PeopleTable {
 
     static sortByThis(el) {
         const aTable = $("#peopleTable");
-        el.off("click").on("click", function () {
-            let sorter = el.attr("id");
-            let rows = aTable.find("tbody tr");
-            if (sorter == "birthlocation" || sorter == "deathlocation") {
-                if (sorter == "birthlocation") {
-                    if (el.attr("data-order") == "s2b") {
-                        sorter = "birthlocation-reversed";
-                        el.attr("data-order", "b2s");
-                        rows = PeopleTable.fillLocations(rows, "-reversed");
-                    } else {
-                        el.attr("data-order", "s2b");
-                        rows = PeopleTable.fillLocations(rows, "");
-                    }
-                } else if (sorter == "deathlocation") {
-                    if (el.attr("data-order") == "s2b") {
-                        sorter = "deathlocation-reversed";
-                        el.attr("data-order", "b2s");
-                        rows = PeopleTable.fillLocations(rows, "-reversed");
-                    } else {
-                        el.attr("data-order", "s2b");
-                        rows = PeopleTable.fillLocations(rows, "");
-                    }
+
+        let sorter = el.attr("id");
+        let rows = aTable.find("tbody tr");
+        if (sorter == "birthlocation" || sorter == "deathlocation") {
+            if (sorter == "birthlocation") {
+                if (el.attr("data-order") == "s2b") {
+                    sorter = "birthlocation-reversed";
+                    el.attr("data-order", "b2s");
+                    rows = PeopleTable.fillLocations(rows, "-reversed");
+                } else {
+                    el.attr("data-order", "s2b");
+                    rows = PeopleTable.fillLocations(rows, "");
                 }
+            } else if (sorter == "deathlocation") {
+                if (el.attr("data-order") == "s2b") {
+                    sorter = "deathlocation-reversed";
+                    el.attr("data-order", "b2s");
+                    rows = PeopleTable.fillLocations(rows, "-reversed");
+                } else {
+                    el.attr("data-order", "s2b");
+                    rows = PeopleTable.fillLocations(rows, "");
+                }
+            }
+            rows.sort(function (a, b) {
+                if ($(b).data(sorter) == "") {
+                    return true;
+                }
+                return $(a).data(sorter).localeCompare($(b).data(sorter));
+            });
+        } else if (isNaN(rows.data(sorter))) {
+            if (el.attr("data-order") == "asc") {
+                rows.sort(function (a, b) {
+                    if ($(a).data(sorter) == "") {
+                        return true;
+                    }
+                    return $(b).data(sorter).toString().localeCompare($(a).data(sorter));
+                });
+                el.attr("data-order", "desc");
+            } else {
                 rows.sort(function (a, b) {
                     if ($(b).data(sorter) == "") {
                         return true;
                     }
-                    return $(a).data(sorter).localeCompare($(b).data(sorter));
+                    return $(a).data(sorter).toString().localeCompare($(b).data(sorter));
                 });
-            } else if (isNaN(rows.data(sorter))) {
-                if (el.attr("data-order") == "asc") {
-                    rows.sort(function (a, b) {
-                        if ($(a).data(sorter) == "") {
-                            return true;
-                        }
-                        return $(b).data(sorter).toString().localeCompare($(a).data(sorter));
-                    });
-                    el.attr("data-order", "desc");
-                } else {
-                    rows.sort(function (a, b) {
-                        if ($(b).data(sorter) == "") {
-                            return true;
-                        }
-                        return $(a).data(sorter).toString().localeCompare($(b).data(sorter));
-                    });
-                    el.attr("data-order", "asc");
-                }
-            } else {
-                if (el.attr("data-order") == "asc") {
-                    rows.sort((a, b) => ($(b).data(sorter) > $(a).data(sorter) ? 1 : -1));
-                    el.attr("data-order", "desc");
-                } else {
-                    rows.sort((a, b) => ($(a).data(sorter) > $(b).data(sorter) ? 1 : -1));
-                    el.attr("data-order", "asc");
-                }
+                el.attr("data-order", "asc");
             }
-            aTable.find("tbody").append(rows);
-            rows.each(function () {
-                const toBottom = ["", "00000000"];
-                if (toBottom.includes(el.data(sorter))) {
-                    aTable.find("tbody").append(el);
-                }
-            });
-            aTable.find("tr.main").prependTo(aTable.find("tbody"));
+        } else {
+            if (el.attr("data-order") == "asc") {
+                rows.sort((a, b) => ($(b).data(sorter) > $(a).data(sorter) ? 1 : -1));
+                el.attr("data-order", "desc");
+            } else {
+                rows.sort((a, b) => ($(a).data(sorter) > $(b).data(sorter) ? 1 : -1));
+                el.attr("data-order", "asc");
+            }
+        }
+        aTable.find("tbody").append(rows);
+        rows.each(function () {
+            const toBottom = ["", "00000000"];
+            if (toBottom.includes(el.data(sorter))) {
+                aTable.find("tbody").append(el);
+            }
         });
+        aTable.find("tr.main").prependTo(aTable.find("tbody"));
     }
 
     static async addWideTableButton() {
@@ -1040,9 +1103,13 @@ export class PeopleTable {
             width: "2em",
         });
 
-        document.querySelectorAll(".filter-input").forEach((input) => {
-            input.addEventListener("input", PeopleTable.filterListener);
+        document.getElementById("view-container").addEventListener("input", function (event) {
+            // Check if the event target matches .filter-input elements
+            if (event.target.matches(".filter-input")) {
+                PeopleTable.filterListener(event);
+            }
         });
+
         $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
 
         // Add Clear Filters button

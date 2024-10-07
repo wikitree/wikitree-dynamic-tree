@@ -19,6 +19,9 @@ div.cc7Table table th {
   text-align: left;
   padding-right: 3px;
 }
+div.cc7Table table td.relation {
+  text-align: center;
+}
 div.cc7Table table th.tlBioAge {
   text-align: center;
 }
@@ -686,6 +689,10 @@ table tr.cc7filter-row input[type="text"] {
 }
 #cc7Container .select2-dropdown {
   width: 40px !important;
+}
+#cc7Container #relation,
+#cc7Container td.relation {
+  width: 3em;
 }
 /* ---------------------------------------------------------
    Print styles

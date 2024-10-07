@@ -6,10 +6,17 @@ window.PortraitView = class PortraitView extends View {
             title: "Family Portraits",
             description: `Generate a photo gallery that displays portraits of ancestors. Click an image to visit the profile.`,
             docs: "",
+            params: ["ancestors", "siblings"]
         };
     }
 
-    init(selector, person_id) {
+    init(selector, person_id, params) {
+        console.log(params);
+
+        const ancestors = params.ancestors || 10;
+        const validSiblings = (siblings) => ['1', '0'].includes(siblings) ? siblings : '1';
+        const siblings = validSiblings(params.siblings);
+
         var pageNumber = 0;
         getPages(pageNumber);
 
@@ -19,8 +26,8 @@ window.PortraitView = class PortraitView extends View {
                 appId: PortraitView.APP_ID,
                 action: "getPeople",
                 keys: person_id,
-                ancestors: 10,
-                siblings: 1,
+                ancestors: ancestors,
+                siblings: siblings,
                 fields: "Name,PhotoData",
                 limit: 1000,
                 start: pageNumber
