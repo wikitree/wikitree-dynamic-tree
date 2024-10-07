@@ -31,6 +31,7 @@ import { Utils } from "../shared/Utils.js";
 
 window.CouplesTreeView = class CouplesTreeView extends View {
     static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
+    #container;
     constructor() {
         super();
         CachedPerson.init(new PeopleCache(new CacheLoader()));
@@ -49,7 +50,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         // this.#peopleCache.clear();
         wtViewRegistry.setInfoPanel(CouplesTreeView.#DESCRIPTION);
         wtViewRegistry.showInfoPanel();
+        this.#container = document.querySelector(container_selector);
         new CouplesTreeViewer(container_selector).loadAndDraw(person_id);
+    }
+
+    close() {
+        this.#container.classList.remove("cvtc");
     }
 };
 
