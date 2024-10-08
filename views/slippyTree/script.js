@@ -378,7 +378,10 @@ class SlippyTree extends View {
                     view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                     view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                 } else {
-                    view.scale -= e.deltaY * 0.01;
+//                    const mul = 0.01; // 0.01 is "2x cursor keys" - https://www.wikitree.com/g2g/1802306/announcing-a-new-tree-view-slippytree#1802760
+
+                    const mul = 0.005;
+                    view.scale -= e.deltaY * mul;
                 }
                 this.reposition(view);
             });
