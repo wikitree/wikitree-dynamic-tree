@@ -2887,6 +2887,9 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     completeDisplay() {
+        if (!document.body.classList.contains("oneNameTrees")) {
+            return; // If we are no longer the active view, do nothing
+        }
         // If this.displayedIndividuals (set) is empty, create it by getting all the IDs from the HTML
         if (this.displayedIndividuals.size === 0) {
             $("li.person").each((index, person) => {
