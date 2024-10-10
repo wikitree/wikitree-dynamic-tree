@@ -378,7 +378,10 @@ class SlippyTree extends View {
                     view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                     view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                 } else {
-                    view.scale -= e.deltaY * 0.01;
+//                    const mul = 0.01; // 0.01 is "2x cursor keys" - https://www.wikitree.com/g2g/1802306/announcing-a-new-tree-view-slippytree#1802760
+
+                    const mul = 0.005;
+                    view.scale -= e.deltaY * mul;
                 }
                 this.reposition(view);
             });
@@ -2093,82 +2096,91 @@ class SlippyTree extends View {
         for (let key in params) {
             usedparams[key] = params[key];
         }
-        let qs = "";
-        for (let key in usedparams) {
-            qs += (qs.length == 0 ? '?' : '&');
-            qs += encodeURIComponent(key) + "=";
-            let val = usedparams[key];
-            if (Array.isArray(val)) {
-                for (let i=0;i<val.length;i++) {
-                    if (i > 0) {
-                        qs += ",";
-                    }
-                    qs += encodeURIComponent(val[i]);
-                }
-            } else {
-                qs += encodeURIComponent(val);
+
+        const loader = (data) => {
+            if (!this.state) {
+                return;
             }
-        }
-        const url = this.#APIURL + qs;
-        if (this.debug) console.log("Load " + url);
-        fetch(url, { credentials: "include" })
-            .then(x => x.json())
-            .then(data => {
-                if (!this.state) {
-                    return;
-                }
-                if (this.browser) {
-                    this.state.scrollPane.parentNode.classList.remove("loading");
-                }
+            if (this.browser) {
+                this.state.scrollPane.parentNode.classList.remove("loading");
+            }
 //                console.log(JSON.stringify(data));
-                const len = this.state.people.length;
-                if (data[0].people) {
-                    let newpeople = [];
-                    for (const id in data[0].people) {
-                        const r = data[0].people[id];
-                        if (parseInt(id) > 0) {
-                            const person = this.find(id);
-                            person.load(data[0].people[id]);
-                            newpeople.push(person);
+            const len = this.state.people.length;
+            if (data[0].people) {
+                let newpeople = [];
+                for (const id in data[0].people) {
+                    const r = data[0].people[id];
+                    if (parseInt(id) > 0) {
+                        const person = this.find(id);
+                        person.load(data[0].people[id]);
+                        newpeople.push(person);
+                    }
+                }
+                for (const person of newpeople) {
+                    for (const key of ["Father", "Mother"]) {
+                        const id2 = person.data[key];
+                        if (id2) {
+                            const other = this.find(id2);
+                            let certainty = person.data.DataStatus ? person.data.DataStatus[key] : null;
+                            switch (certainty) {
+                                case "30": certainty = "dna"; break;
+                                case "20": certainty = "confident"; break;
+                                case "10": certainty = "uncertain"; break;
+                                case "5": certainty = "nonbiological"; break;
+                                default: certainty = null;
+                            }
+                            person.link(key == "Father" ? "father" : "mother", other, certainty);
                         }
                     }
-                    for (const person of newpeople) {
-                        for (const key of ["Father", "Mother"]) {
-                            const id2 = person.data[key];
-                            if (id2) {
-                                const other = this.find(id2);
-                                let certainty = person.data.DataStatus ? person.data.DataStatus[key] : null;
-                                switch (certainty) {
-                                    case "30": certainty = "dna"; break;
-                                    case "20": certainty = "confident"; break;
-                                    case "10": certainty = "uncertain"; break;
-                                    case "5": certainty = "nonbiological"; break;
-                                    default: certainty = null;
-                                }
-                                person.link(key == "Father" ? "father" : "mother", other, certainty);
+                    if (person.father && person.mother) {
+                        person.father.link("spouse", person.mother, "inferred", person.data.BirthDate);
+                    }
+                    if (person.data.Spouses) {
+                        for (const r of person.data.Spouses) {
+                            const id2 = r.Id.toString();
+                            const other = this.find(id2);
+                            let certainty = r.DataStatus.MarriageDate;
+                            if (certainty == "") {
+                                certainty = null;
                             }
-                        }
-                        if (person.father && person.mother) {
-                            person.father.link("spouse", person.mother, "inferred", person.data.BirthDate);
-                        }
-                        if (person.data.Spouses) {
-                            for (const r of person.data.Spouses) {
-                                const id2 = r.Id.toString();
-                                const other = this.find(id2);
-                                let certainty = r.DataStatus.MarriageDate;
-                                if (certainty == "") {
-                                    certainty = null;
-                                }
-                                let date = r.MarriageDate;
-                                person.link("spouse", other, certainty, date);
-                            }
+                            let date = r.MarriageDate;
+                            person.link("spouse", other, certainty, date);
                         }
                     }
                 }
-                if (callback) {
-                    callback();
+            }
+            if (callback) {
+                callback();
+            }
+        };
+
+        if (WikiTreeAPI && WikiTreeAPI.postToAPI) {
+            // We need to send "token" and do a POST on the live site, apparently.
+            // Tap into WikiTreeAPI for this to future-proof for any other requirements.
+            if (this.debug) console.log("Load " + JSON.stringify(usedparams));
+            WikiTreeAPI.postToAPI(usedparams).then(loader);
+        } else {
+            let qs = "";
+            for (let key in usedparams) {
+                qs += (qs.length == 0 ? '?' : '&');
+                qs += encodeURIComponent(key) + "=";
+                let val = usedparams[key];
+                if (Array.isArray(val)) {
+                    for (let i=0;i<val.length;i++) {
+                        if (i > 0) {
+                            qs += ",";
+                        }
+                        qs += encodeURIComponent(val[i]);
+                    }
+                } else {
+                    qs += encodeURIComponent(val);
                 }
-            });
+            }
+            const url = this.#APIURL + qs;
+            if (this.debug) console.log("Load " + url);
+            fetch(url, { credentials: "include" }).then(x => x.json()).then(loader);
+        }
+
     }
 
     /**
@@ -2301,10 +2313,11 @@ class SlippyTreePerson {
             return "Unloaded";
         }
         let out = "";
+        // Private Data will have no FirstName specified
         if (this.data.FirstName) {
             out += this.data.FirstName;
         } else {
-            out += "Unknown";
+            out += "[Private]";
         }
         if (this.data.MiddleName) {
             out += " " + this.data.MiddleName;
