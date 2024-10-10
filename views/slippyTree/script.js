@@ -2313,10 +2313,11 @@ class SlippyTreePerson {
             return "Unloaded";
         }
         let out = "";
+        // Private Data will have no FirstName specified
         if (this.data.FirstName) {
             out += this.data.FirstName;
         } else {
-            out += "Unknown";
+            out += "[Private]";
         }
         if (this.data.MiddleName) {
             out += " " + this.data.MiddleName;
