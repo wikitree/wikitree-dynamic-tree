@@ -1,3 +1,7 @@
+// TODO:
+//      1.  Get the Full Name and ID
+//      2.  Add the functionality to create a table with the list of cemeteries, name and person ID
+
 window.HelloWorldView = class HelloWorldView extends View {
     static APP_ID = "Cemeteries";
         
@@ -22,14 +26,15 @@ window.HelloWorldView = class HelloWorldView extends View {
                 action: "getAncestors",
                 key: person_id,
                 depth: 3,
-                fields: 'Id,Name,LastNameAtBirth,Categories',
+                fields: 'Id,Name,LastNameAtBirth,FirstName,Categories',
                 resolveRedirect: 1,                
             }).then(function (data) {
-                // console.log(data[0].ancestors[0].Categories[0]);   
+                console.log(data[0].ancestors);   
                 for (const key in data[0].ancestors) {                    
-                    const result = findCemetery(data[0].ancestors[key].Categories);
+                    const result = findCemetery(data[0].ancestors[key].Categories);                    
                     console.log(result);  
-                }
+                    document.querySelector(container_selector).innerText = result;
+                }                
             })
         }
     }
@@ -44,3 +49,4 @@ function findCemetery(data) {
 
     return result;
 }
+
