@@ -57,7 +57,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "surnames": new SurnamesView(),
         "webs": new WebsView(),
         "familygroup": new FamilyView(),
-        "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
+        "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 6),
         "calendar": new CalendarView(),
         "portraits": new PortraitView(),
         "nameTest": new NameTestView(),
