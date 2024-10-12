@@ -16,7 +16,7 @@ window.HelloWorldView = class HelloWorldView extends View {
     async init(container_selector, person_id) {        
         const personData = await WikiTreeAPI.getPerson("helloWorld", person_id, ["FirstName"]);                
         const name = personData["_data"]["FirstName"];
-        document.querySelector(container_selector).innerText = `Hello, ${name}`;
+        document.querySelector(container_selector).innerText = '<h1>Ancestors burials location</h1>';
 
         getAncestors();       
         
@@ -26,16 +26,17 @@ window.HelloWorldView = class HelloWorldView extends View {
                 action: "getAncestors",
                 key: person_id,
                 depth: 3,
-                fields: 'Id,Name,LastNameAtBirth,FirstName,Categories',
+                fields: 'Name,LastNameAtBirth,FirstName,Categories',
                 resolveRedirect: 1,                
             }).then(function (data) {
                 // console.log(data[0].ancestors);   
                 for (const key in data[0].ancestors) {                    
                     const result = findCemetery(data[0].ancestors[key].Categories);                    
                     // console.log(result);  
-                    document.querySelector(container_selector).innerText = result;
+                    //document.querySelector(container_selector).innerText = result;
                 }
-                generateTable(data[0].ancestors);                
+                const tblResult = generateTable(data[0].ancestors);                    
+                document.getElementById('view-container').appendChild(tblResult);
             })
         }
     }
