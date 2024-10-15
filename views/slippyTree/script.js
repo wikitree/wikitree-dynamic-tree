@@ -114,6 +114,7 @@ class SlippyTree extends View {
    <div data-action="ancestors">Load ancestors</div>
    <div data-action="descendants">Load descendants</div>
    <div data-action="prune">Prune to this branch</div>
+   <div data-action="remove">Remove</div>
    <a data-action="profile">View profile</a>
   </div>
 
@@ -913,6 +914,9 @@ class SlippyTree extends View {
         if (e) {
             document.querySelectorAll(".output-name").forEach((e) => {
                 e.innerHTML = person.data.Name;
+            });
+            document.querySelectorAll("[data-action=\"remove\"]").forEach((e) => {
+                e.classList.toggle("hidden", person == this.state.focus);
             });
             document.querySelectorAll("[data-action=\"profile\"]").forEach((e) => {
                 // Do this to avoid issues with popup blockers if target=_blank
@@ -2873,9 +2877,6 @@ class SlippyTreePerson {
         } else if (name == "prune") {
             // Mark as pruned any nodes not reachable as a parent,
             // descendant, or spouse of a descendant
-            for (const person of tree.state.people) {
-                person.pruned = false;
-            }
             const q = [];
             q.push(this);
             for (let i=0;i<q.length;i++) {
@@ -2905,9 +2906,38 @@ class SlippyTreePerson {
                 }
             }
             for (const person of tree.state.people) {
-                person.pruned = !q.includes(person);
+                person.pruned |= !q.includes(person);
             }
             tree.setFocus(this);
+        } else if (name == "remove") {
+            // Mark as pruned any nodes not reachable as a parent,
+            // descendant, or spouse of a descendant
+            const focus = tree.state.focus;
+            const q = [];
+            this.pruned = true;
+            q.push(focus);
+            for (let i=0;i<q.length;i++) {
+                const person = q[i];
+                for (const p of person.parents()) {
+                    if (!q.includes(p) && !p.isHidden()) {
+                        q.push(p);
+                    }
+                }
+                for (const p of person.children()) {
+                    if (!q.includes(p) && !p.isHidden()) {
+                        q.push(p);
+                    }
+                }
+                for (const p of person.spouses()) {
+                    if (!q.includes(p) && !p.isHidden()) {
+                        q.push(p);
+                    }
+                }
+            }
+            for (const person of tree.state.people) {
+                person.pruned |= !q.includes(person);
+            }
+            tree.setFocus(focus);
         }
     }
 
