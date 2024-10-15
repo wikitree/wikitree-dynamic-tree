@@ -31,6 +31,8 @@ if (typeof View != "function") { function View() { } } // To allow debugging in 
 
 class SlippyTree extends View {
 
+    #SCROLLSTEP_WHEEL = 0.002;  // Was 0.01, then 0.005
+    #SCROLLSTEP_KEYS = 1.1;     // Was 1.2
     #PATHPREFIX = "/wikitree-dynamic-tree/";
     static loadCount = 0;
     LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
@@ -373,15 +375,14 @@ class SlippyTree extends View {
                 e.preventDefault();
                 let view = { scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy };
                 if (e.ctrlKey) {
-                    view.scale -= e.deltaY * 0.01;
+                    view.scale -= e.deltaY * 0.01;      // Pinch-zoom with trackpad is different! 
                 } else if (this.settings.wheel == "scroll") {
                     view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                     view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                 } else {
 //                    const mul = 0.01; // 0.01 is "2x cursor keys" - https://www.wikitree.com/g2g/1802306/announcing-a-new-tree-view-slippytree#1802760
 
-                    const mul = 0.005;
-                    view.scale -= e.deltaY * mul;
+                    view.scale -= e.deltaY * this.#SCROLLSTEP_WHEEL;
                 }
                 this.reposition(view);
             });
@@ -404,9 +405,9 @@ class SlippyTree extends View {
                         } else if (e.key == "?") {
                             helpButton.click();
                         } else if (e.key == "+") {
-                            view.scale *= 1.2;
+                            view.scale *= this.#SCROLLSTEP_KEYS;
                         } else if (e.key == "-") {
-                            view.scale /= 1.2;
+                            view.scale /= this.#SCROLLSTEP_KEYS;
                         } else {
                             let score, best = null, max = 0x7FFFFFFF, threshold = 30;
                             for (const person of self.state.people) {
