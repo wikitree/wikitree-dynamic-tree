@@ -214,7 +214,7 @@ body:has(.slippy-tree-container) {
 }
 
 /** the tree itself */
-.slippy-tree-container .slippy-tree {
+.slippy-tree {
     --male:    #CCF;                    /* color of male person */
     --female:  #FCC;                    /* color of female person */
     --mother:  #F00;                    /* color of link to mother */
@@ -246,144 +246,149 @@ body:has(.slippy-tree-container) {
     overflow: hidden;
 
 }
-.slippy-tree-container .slippy-tree a[href] {
+
+.slippy-tree:root {
+    font-family: sans-serif;
+}
+
+.slippy-tree a[href] {
     fill: blue;
 }
 
-.slippy-tree-container .slippy-tree text {
+.slippy-tree text {
     font-size: 10px;
     text-anchor: middle;
     margin: 4px;    /* Hack! Margin doesnt apply in SVG, but we read this value in the JS to compute position */
 }
-.slippy-tree-container .slippy-tree text.left {
+.slippy-tree text.left {
     text-anchor: start;
 }
 
-.slippy-tree-container .slippy-tree .people rect {
+.slippy-tree .people rect {
     fill: white;
     stroke: #aaa;
     stroke-width: 1px;
 }
 
-.slippy-tree-container .slippy-tree .people > * {
+.slippy-tree .people > * {
     cursor: pointer;
 }
 
-.slippy-tree-container .slippy-tree .people .pending {
+.slippy-tree .people .pending {
     opacity: 0.3;
 }
 
-.slippy-tree-container .slippy-tree .people .male rect {
+.slippy-tree .people .male rect {
     fill: var(--male);
 }
 
-.slippy-tree-container .slippy-tree .people .female rect {
+.slippy-tree .people .female rect {
     fill: var(--female);
 }
 
-.slippy-tree-container .slippy-tree .people path {
+.slippy-tree .people path {
     display: none;
 }
 
-.slippy-tree-container .slippy-tree .people .highlight path {
+.slippy-tree .people .highlight path {
     display: initial;
     fill: var(--highlight);
 }
-.slippy-tree-container .slippy-tree .people .member path {
+.slippy-tree .people .member path {
     display: initial;
     fill: var(--member);
 }
 
-.slippy-tree-container .slippy-tree .people .activeuser path {
+.slippy-tree .people .activeuser path {
     fill: var(--activeuser);
 }
 
-.slippy-tree-container .slippy-tree .people .focus rect {
+.slippy-tree .people .focus rect {
     stroke: red;
     stroke-width: 2px; 
 }
-.slippy-tree-container .slippy-tree .people .secondaryfocus:not(.focus) rect {
+.slippy-tree .people .secondaryfocus:not(.focus) rect {
     stroke: black;
     stroke-width: 2px; 
 }
 
 /* relations */
-.slippy-tree-container .slippy-tree .relations :is(path, line) {
+.slippy-tree .relations :is(path, line) {
     opacity: 0.1;
     fill: none;
     stroke-width: 4px;
     stroke: #888;       /* default color, always overridden */
 }
-.slippy-tree-container .slippy-tree .relations .mother {
+.slippy-tree .relations .mother {
     stroke: var(--mother);
 }
-.slippy-tree-container .slippy-tree .relations .father {
+.slippy-tree .relations .father {
     stroke: var(--father);
 }
-.slippy-tree-container .slippy-tree .relations .spouse {
+.slippy-tree .relations .spouse {
     stroke: var(--spouse);
     stroke-width: 2px;
     opacity: 0.3;
 }
-.slippy-tree-container .slippy-tree .relations .spouse.focus {
+.slippy-tree .relations .spouse.focus {
     opacity: 0.6;
 }
-.slippy-tree-container .slippy-tree .relations .coparent {
+.slippy-tree .relations .coparent {
     stroke: var(--coparent);
     stroke-width: 2px;
     opacity: 0.3;
     stroke-dasharray: 2px;
 }
-.slippy-tree-container .slippy-tree .relations .coparent.focus {
+.slippy-tree .relations .coparent.focus {
     opacity: 0.6;
 }
-.slippy-tree-container .slippy-tree .relations .dna {
+.slippy-tree .relations .dna {
     stroke-width: 16px;
 }
-.slippy-tree-container .slippy-tree .relations .confident {
+.slippy-tree .relations .confident {
     stroke-width: 9px;
 }
-.slippy-tree-container .slippy-tree .relations .nonbiological {
+.slippy-tree .relations .nonbiological {
     stroke: var(--neutral);
 }
-.slippy-tree-container .slippy-tree .relations .parent {
+.slippy-tree .relations .parent {
     stroke: var(--neutral);
 }
-.slippy-tree-container .slippy-tree .relations .uncertain {
+.slippy-tree .relations .uncertain {
     stroke-dasharray: 8px;
 }
-.slippy-tree-container .slippy-tree .relations .unloaded-mother {
+.slippy-tree .relations .unloaded-mother {
     stroke: url("#unloaded-mother");
 }
-.slippy-tree-container .slippy-tree .relations .unloaded-father {
+.slippy-tree .relations .unloaded-father {
     stroke: url("#unloaded-father");
 }
-.slippy-tree-container .slippy-tree .relations .father-unloaded {
+.slippy-tree .relations .father-unloaded {
     stroke: url("#father-unloaded");
 }
-.slippy-tree-container .slippy-tree .relations .mother-unloaded {
+.slippy-tree .relations .mother-unloaded {
     stroke: url("#mother-unloaded");
 }
-.slippy-tree-container .slippy-tree .relations .spouse-unloaded {
+.slippy-tree .relations .spouse-unloaded {
     stroke: url("#spouse-unloaded");
     stroke-width: 2px;
     opacity: 0.5
 }
-.slippy-tree-container .slippy-tree .relations .noissue {
+.slippy-tree .relations .noissue {
     stroke: black;
     stroke-width: 1;
     opacity: 0.5;
 }
 
 /* labels */
-.slippy-tree-container .slippy-tree .labels .marriage {
+.slippy-tree .labels .marriage {
     font-size: 8px;
     fill: black;
     transform: translate(8px, 0.4em);
 }
 
 /* general */
-.slippy-tree-container .slippy-tree :is(.relations, .people. .labels) .focus {
+.slippy-tree :is(.relations, .people. .labels) .focus {
     opacity: 0.8;
 }
 

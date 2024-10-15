@@ -40,6 +40,7 @@ class SlippyTree extends View {
     #VERSION = 0; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
     #APPID = "SlippyTree";
+    #HTML = "http://www.w3.org/1999/xhtml";
     #SVG = "http://www.w3.org/2000/svg";
     #MINSCALE = 0.2;
     #MAXSCALE = 3;
@@ -228,7 +229,10 @@ class SlippyTree extends View {
      <img src="{PATHPREFIX}views/slippyTree/resources/trackpad.svg"/>
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
-    <p style="margin:0.5em 0 0 0">Or navigate with cursor keys and +/- to zoom</p>
+    <p style="margin:0.5em 0 0 0">
+    Or navigate with cursor keys and +/- to zoom.
+    <a href="#" class="download-link">Download Current View</a>
+    </p>
    </div>
    <div class="icon-attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
   </div>
@@ -271,6 +275,11 @@ class SlippyTree extends View {
             document.querySelector(".slippy-categories").addEventListener("click", (e) => {
                 e.stopPropagation();
             });
+            document.querySelector(".download-link").addEventListener("click", (e) => {
+                e.stopPropagation();
+                this.downloadTree();
+            });
+            document.querySelector(".download-link").style.color = getComputedStyle(document.querySelector(".download-link")).color;    // Deep magic. Remove the "visited" appearance from this link
             document.querySelector(".slippy-categories").addEventListener("change", (e) => {
                 let value = e.target.options[e.target.selectedIndex].fullValue;
                 this.setCategory(value);
@@ -684,6 +693,54 @@ class SlippyTree extends View {
         zoomButton.classList.toggle("selected", this.settings.wheel == "zoom");
         scrollButton.classList.toggle("selected", this.settings.wheel == "scroll");
         window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
+    }
+
+    downloadTree() {
+        let src = this.state.svg.outerHTML;
+        const doc = new DOMParser().parseFromString(src, "text/xml");
+        const anchor = doc.rootElement.firstChild;
+
+        doc.rootElement.style = null;
+        // Add metadata and stylesheet link
+        let link = doc.createElementNS(this.#HTML, "link");
+        link.setAttribute("rel", "stylesheet");
+        link.setAttribute("href", "https://www.wikitree.com/wikitree-dynamic-tree/views/slippyTree/style.css");
+//        link.setAttribute("href", "https://apps.wikitree.com/apps/bremford24/test/views/slippyTree/style.css");
+        doc.rootElement.insertBefore(link, anchor);
+        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
+        link = doc.createElementNS(this.#HTML, "link");
+        link.setAttribute("rel", "canonical");
+        link.setAttribute("href", window.location);
+        doc.rootElement.insertBefore(link, anchor);
+        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
+        const nowText = new Date().toDateString();
+        const isonowText = new Date().toISOString();
+        const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" at " + nowText;
+        let title = doc.createElementNS(this.#SVG, "title");
+        title.appendChild(doc.createTextNode(titleText));
+        doc.rootElement.insertBefore(title, anchor);
+        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
+        let meta = doc.createElementNS(this.#SVG, "metadata");
+        meta.innerHTML = "\n<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n <rdf:Description about=\"\">\n  <dc:title>" + titleText + "</dc:title>\n  <dc:date>"+isonowText+"</dc:date>\n </rdf:Description>\n</rdf:RDF>\n";
+        doc.rootElement.insertBefore(meta, anchor);
+        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
+
+        src = new XMLSerializer().serializeToString(doc);
+        console.log(src);
+        const blob = new Blob([src], { "type": "application/octet-stream" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.download = "slippy-tree.svg";
+        a.href = url;
+        setTimeout(() => {
+            a.click();
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                a.remove();
+            }, 0);
+        }, 0);
     }
 
     /**
