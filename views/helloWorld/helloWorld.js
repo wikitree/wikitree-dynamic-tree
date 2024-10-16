@@ -1,6 +1,11 @@
-// TODO:
-//      1.  Get the Full Name and ID
-//      2.  Add the functionality to create a table with the list of cemeteries, name and person ID
+// Application the get the cemeteries where Ancestors are buried.
+// Created By: Kohn-970
+
+/* 
+TODO:
+1.  If no cemetery available do not show ancestors - Changed to showing "No Cemetery Available"
+2.  Add Link to the ancestor on Wikitree 
+*/
 
 window.HelloWorldView = class HelloWorldView extends View {
     static APP_ID = "Cemeteries";
@@ -15,8 +20,7 @@ window.HelloWorldView = class HelloWorldView extends View {
 
     async init(container_selector, person_id) {        
         const personData = await WikiTreeAPI.getPerson("helloWorld", person_id, ["FirstName"]);                
-        const name = personData["_data"]["FirstName"];
-        document.querySelector(container_selector).innerText = '<h1>Ancestors burials location</h1>';
+        const name = personData["_data"]["FirstName"];       
 
         getAncestors();       
         
@@ -25,18 +29,17 @@ window.HelloWorldView = class HelloWorldView extends View {
                 appId: HelloWorldView.APP_ID,
                 action: "getAncestors",
                 key: person_id,
-                depth: 3,
+                depth: 5,
                 fields: 'Name,LastNameAtBirth,FirstName,Categories',
                 resolveRedirect: 1,                
-            }).then(function (data) {
-                // console.log(data[0].ancestors);   
-                for (const key in data[0].ancestors) {                    
-                    const result = findCemetery(data[0].ancestors[key].Categories);                    
-                    // console.log(result);  
-                    //document.querySelector(container_selector).innerText = result;
-                }
+            }).then(function (data) {                   
+                // for (const key in data[0].ancestors) {                    
+                //     const result = findCemetery(data[0].ancestors[key].Categories);                                        
+                // }
                 const tblResult = generateTable(data[0].ancestors);                    
                 document.getElementById('view-container').appendChild(tblResult);
+
+                new DataTable('#cemeteriesTable');
             })
         }
     }
@@ -56,17 +59,35 @@ function findCemetery(data) {
 function generateTable(data) {
     console.log(data);
     // creates a <table> element and a <tbody> element
-    const tbl = document.createElement("table");
+    let tbl = document.createElement("table");
+    tbl.id = 'cemeteriesTable';
+    let caption = tbl.createCaption();
+    caption.textContent = "Ancestors Cemeteries";
+
     const tblBody = document.createElement("tbody");
     
     // create table header
     const thead = document.createElement("thead");
     const headerRow = document.createElement('tr');
-    const headers = Object.keys(data[0]);
-    console.log(headers);
+    const headers = Object.keys(data[0]);    
 
     headers.forEach(header => {
         const th = document.createElement('th');
+        
+        if (header == 'Name') {
+            header = 'WikiTree ID';
+        }
+        else if (header == 'LastNameAtBirth') {
+            header = 'Last Name';
+        } 
+        else if (header == 'FirstName') {
+            header = 'First Name';
+        }
+        else if (header == 'Categories') {
+            header = 'Cemetery';
+        }
+
+
         th.textContent = header.charAt(0).toUpperCase() + header.slice(1); // Capitalize the first letter
         headerRow.appendChild(th);
     });
@@ -74,34 +95,21 @@ function generateTable(data) {
     thead.appendChild(headerRow);
     tbl.appendChild(thead);
 
-    // creating all cells
-    // for (let i = 0; i < 5; i++) {
-    //     // creates a table row
-    //     const row = document.createElement("tr");
-  
-    //     for (let j = 0; j < 2; j++) {
-    //         // Create a <td> element and a text node, make the text
-    //         // node the contents of the <td>, and put the <td> at
-    //         // the end of the table row
-    //         const cell = document.createElement("td");
-    //         const cellText = document.createTextNode(`cell in row ${i}, column ${j}`);
-    //         cell.appendChild(cellText);
-    //         row.appendChild(cell);
-    //     }
-  
-    //     // add the row to the end of the table body
-    //     tblBody.appendChild(row);
-    // }
-
     data.forEach(item => {
         const row = document.createElement('tr');
                
         headers.forEach(header => {
             const td = document.createElement('td');
             if (header == "Categories") {
-                item[header] = findCemetery(item[header]);
-                td.textContent = item[header];
-                
+                const cemetery = findCemetery(item[header]);
+                console.log(cemetery);
+                console.log(cemetery.length)
+                if (cemetery.length > 1) {
+                    td.textContent = cemetery;                    
+                }
+                else {
+                    td.textContent = "No Cemetery Available";
+                }
             } else {
                 td.textContent = item[header];                
             }            
@@ -115,7 +123,7 @@ function generateTable(data) {
     // appends <table> into <body>
     document.body.appendChild(tbl);
     // sets the border attribute of tbl to '2'
-    tbl.setAttribute("border", "2");
+    tbl.setAttribute("border", "2");  
 
     return tbl;
 }
