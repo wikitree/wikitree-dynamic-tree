@@ -33,7 +33,7 @@ class SlippyTree extends View {
 
     #SCROLLSTEP_WHEEL = 0.002;  // Was 0.01, then 0.005
     #SCROLLSTEP_KEYS = 1.1;     // Was 1.2
-    #PATHPREFIX = "/wikitree-dynamic-tree/";
+    #PATHPREFIX;
     static loadCount = 0;
     LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
@@ -249,6 +249,11 @@ class SlippyTree extends View {
         this.state.refocusEnd = null;
 
         if (this.browser) {
+            if (window.location.host == "apps.wikitree.com") {
+                this.#PATHPREFIX = "";
+            } else {
+                this.#PATHPREFIX = "/wikitree-dynamic-tree/";
+            }
             this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
             this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).replace(/\{PATHPREFIX\}/g, this.#PATHPREFIX).trim();
 
@@ -704,8 +709,11 @@ class SlippyTree extends View {
         // Add metadata and stylesheet link
         let link = doc.createElementNS(this.#HTML, "link");
         link.setAttribute("rel", "stylesheet");
-        link.setAttribute("href", "https://www.wikitree.com/wikitree-dynamic-tree/views/slippyTree/style.css");
-//        link.setAttribute("href", "https://apps.wikitree.com/apps/bremford24/test/views/slippyTree/style.css");
+        if (window.location.host == "apps.wikitree.com") {
+            link.setAttribute("href", "https://" + window.location.host + window.location.pathname + "views/slippyTree/style.css");
+        } else {
+            link.setAttribute("href", "https://" + window.location.host + "/wikitree-dynamic-tree/views/slippyTree/style.css");
+        }
         doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
         doc.rootElement.insertBefore(link, anchor);
         link = doc.createElementNS(this.#HTML, "link");
