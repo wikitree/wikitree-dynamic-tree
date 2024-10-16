@@ -231,7 +231,7 @@ class SlippyTree extends View {
     </div>
     <p style="margin:0.5em 0 0 0">
     Or navigate with cursor keys and +/- to zoom.
-    <a href="#" class="download-link">Download Current View</a>
+    <a href="" class="download-link">Download Current View</a>
     </p>
    </div>
    <div class="icon-attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
@@ -706,27 +706,42 @@ class SlippyTree extends View {
         link.setAttribute("rel", "stylesheet");
         link.setAttribute("href", "https://www.wikitree.com/wikitree-dynamic-tree/views/slippyTree/style.css");
 //        link.setAttribute("href", "https://apps.wikitree.com/apps/bremford24/test/views/slippyTree/style.css");
+        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
         doc.rootElement.insertBefore(link, anchor);
-        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
         link = doc.createElementNS(this.#HTML, "link");
         link.setAttribute("rel", "canonical");
         link.setAttribute("href", window.location);
+        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
         doc.rootElement.insertBefore(link, anchor);
-        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
         const nowText = new Date().toDateString();
         const isonowText = new Date().toISOString();
         const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" at " + nowText;
         let title = doc.createElementNS(this.#SVG, "title");
         title.appendChild(doc.createTextNode(titleText));
+        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
         doc.rootElement.insertBefore(title, anchor);
-        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
         let meta = doc.createElementNS(this.#SVG, "metadata");
-        meta.innerHTML = "\n<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n <rdf:Description about=\"\">\n  <dc:title>" + titleText + "</dc:title>\n  <dc:date>"+isonowText+"</dc:date>\n </rdf:Description>\n</rdf:RDF>\n";
+        let rdf = "\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n    <rdf:Description about=\"\">\n     <dc:title>" + titleText + "</dc:title>\n     <dc:date>" + isonowText + "</dc:date>\n     <dc:publisher>https://www.wikitree.com</dc:publisher>\n     <dc:source>" + window.location.toString().replace(/&/g, "&amp;") + "</dc:source>\n    </rdf:Description>\n   </rdf:RDF>\n  ";
+        meta.innerHTML = rdf;
+        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
         doc.rootElement.insertBefore(meta, anchor);
-        doc.rootElement.insertBefore(doc.createTextNode("\n"), anchor);
+        doc.rootElement.querySelectorAll(":is(.relations, .labels, .people) > *").forEach((e) => {
+            e.parentNode.insertBefore(doc.createTextNode("\n     "), e);
+        });
+        doc.rootElement.querySelectorAll(".people text").forEach((e) => {
+            const id = e.parentNode.id.replace(/person-/, "");
+            const person = this.find(id);
+            if (person) {
+                let a = doc.createElementNS(this.#SVG, "a");
+                a.setAttribute("href", "https://www.wikitree.com/wiki/" + person.data.Name);
+                while (e.firstChild) {
+                    a.appendChild(e.firstChild);
+                }
+                e.appendChild(a);
+            }
+        });
 
         src = new XMLSerializer().serializeToString(doc);
-        console.log(src);
         const blob = new Blob([src], { "type": "application/octet-stream" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");

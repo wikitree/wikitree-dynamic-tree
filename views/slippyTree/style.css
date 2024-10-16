@@ -252,7 +252,7 @@ body:has(.slippy-tree-container) {
 }
 
 .slippy-tree a[href] {
-    fill: blue;
+    fill: black;
 }
 
 .slippy-tree text {
