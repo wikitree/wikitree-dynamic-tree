@@ -715,7 +715,7 @@ class SlippyTree extends View {
         doc.rootElement.insertBefore(link, anchor);
         const nowText = new Date().toDateString();
         const isonowText = new Date().toISOString();
-        const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" at " + nowText;
+        const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" as of " + nowText;
         let title = doc.createElementNS(this.#SVG, "title");
         title.appendChild(doc.createTextNode(titleText));
         doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
