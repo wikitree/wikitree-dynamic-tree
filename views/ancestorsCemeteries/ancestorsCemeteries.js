@@ -3,12 +3,10 @@
 
 /* 
 TODO:
-1.  If no cemetery available do not show ancestors - Changed to showing "No Cemetery Available"
-2.  Add Link to the ancestor on Wikitree  https://www.wikitree.com/wiki/Ritzman-140
-3.  Add function to allow people to select depth of ancestors.
+1.  Add function to allow people to select depth of ancestors.
 */
 
-window.HelloWorldView = class HelloWorldView extends View {
+window.AncestorsCemeteriesView = class AncestorsCemeteriesView extends View {
     static APP_ID = "Cemeteries";
         
     meta() {
@@ -20,7 +18,7 @@ window.HelloWorldView = class HelloWorldView extends View {
     }
 
     async init(container_selector, person_id) {        
-        const personData = await WikiTreeAPI.getPerson("helloWorld", person_id, ["FirstName"]);                
+        const personData = await WikiTreeAPI.getPerson("ancestorsCemeteries", person_id, ["FirstName"]);                
         const name = personData["_data"]["FirstName"];       
         
         getAncestors();       
@@ -28,7 +26,7 @@ window.HelloWorldView = class HelloWorldView extends View {
         // Retrieve the ancestors from the api
         function getAncestors() {              
             WikiTreeAPI.postToAPI({
-                appId: HelloWorldView.APP_ID,
+                appId: AncestorsCemeteriesView.APP_ID,
                 action: "getAncestors",
                 key: person_id,
                 depth: 5,
@@ -56,7 +54,7 @@ function findCemetery(data) {
 
 
 function generateTable(data) {
-    console.log(data);
+    // console.log(data);
     // creates a <table> element and a <tbody> element
     let tbl = document.createElement("table");
     tbl.id = 'cemeteriesTable';
@@ -101,13 +99,13 @@ function generateTable(data) {
             const td = document.createElement('td');
             if (header == "Categories") {
                 const cemetery = findCemetery(item[header]);
-                console.log(cemetery);
-                console.log(cemetery.length)
+                // console.log(cemetery);
+                // console.log(cemetery.length)
                 if (cemetery.length > 1) {
                     td.textContent = cemetery;
                 }
                 else {
-                    td.textContent = "No Cemetery Available";
+                    td.textContent = "NA";
                 }
             } else if (header == "Name") {
                 const person = item[header];                

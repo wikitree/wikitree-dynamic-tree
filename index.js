@@ -72,7 +72,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "stats": new StatsView(),
         "wtPlusMaps": new WtPlusMaps(),
         "oneNameTrees": new OneNameTrees(),
-        "helloWorld": new HelloWorldView(),
+        "ancestorsCemeteries": new AncestorsCemeteriesView(),
     };
 
     for (let key in views) {
