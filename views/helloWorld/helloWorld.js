@@ -1,10 +1,11 @@
-// Application the get the cemeteries where Ancestors are buried.
+// Application the get the cemeteries where Ancestors are buried and place in a list.
 // Created By: Kohn-970
 
 /* 
 TODO:
 1.  If no cemetery available do not show ancestors - Changed to showing "No Cemetery Available"
-2.  Add Link to the ancestor on Wikitree 
+2.  Add Link to the ancestor on Wikitree  https://www.wikitree.com/wiki/Ritzman-140
+3.  Add function to allow people to select depth of ancestors.
 */
 
 window.HelloWorldView = class HelloWorldView extends View {
@@ -21,9 +22,10 @@ window.HelloWorldView = class HelloWorldView extends View {
     async init(container_selector, person_id) {        
         const personData = await WikiTreeAPI.getPerson("helloWorld", person_id, ["FirstName"]);                
         const name = personData["_data"]["FirstName"];       
-
+        
         getAncestors();       
         
+        // Retrieve the ancestors from the api
         function getAncestors() {              
             WikiTreeAPI.postToAPI({
                 appId: HelloWorldView.APP_ID,
@@ -32,10 +34,7 @@ window.HelloWorldView = class HelloWorldView extends View {
                 depth: 5,
                 fields: 'Name,LastNameAtBirth,FirstName,Categories',
                 resolveRedirect: 1,                
-            }).then(function (data) {                   
-                // for (const key in data[0].ancestors) {                    
-                //     const result = findCemetery(data[0].ancestors[key].Categories);                                        
-                // }
+            }).then(function (data) {                                   
                 const tblResult = generateTable(data[0].ancestors);                    
                 document.getElementById('view-container').appendChild(tblResult);
 
@@ -105,12 +104,17 @@ function generateTable(data) {
                 console.log(cemetery);
                 console.log(cemetery.length)
                 if (cemetery.length > 1) {
-                    td.textContent = cemetery;                    
+                    td.textContent = cemetery;
                 }
                 else {
                     td.textContent = "No Cemetery Available";
                 }
-            } else {
+            } else if (header == "Name") {
+                const person = item[header];                
+                const url = "https://www.wikitree.com/wiki/" + person;
+                td.innerHTML = `<a href="${url}">${person}</a>`;                  
+            }
+            else {
                 td.textContent = item[header];                
             }            
             row.appendChild(td);
