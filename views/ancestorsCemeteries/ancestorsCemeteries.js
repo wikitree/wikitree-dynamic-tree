@@ -4,6 +4,7 @@
 /* 
 TODO:
 1.  Add function to allow people to select depth of ancestors.
+2.  Have app check other areas for information about cemeteries.
 */
 
 window.AncestorsCemeteriesView = class AncestorsCemeteriesView extends View {
