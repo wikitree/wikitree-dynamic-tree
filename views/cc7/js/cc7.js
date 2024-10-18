@@ -905,7 +905,7 @@ export class CC7 {
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1);
-            console.log(window.people);
+            // console.log(window.people);
             this.addRelationships();
             PeopleTable.addPeopleTable(PeopleTable.tableCaption());
         }
