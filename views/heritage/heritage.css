@@ -1,0 +1,159 @@
+#heritageContainer {
+  padding: 0.3em;
+}
+
+#heritage-table {
+  border-collapse: collapse;
+  margin: 25px auto;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+#heritage-table thead tr {
+  background-color: #25422d;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+}
+
+#heritage-table th,
+#heritage-table td {
+  padding: 10px 12px;
+}
+
+#heritage-table tbody {
+  background-color: white;
+}
+
+#heritage-table tbody tr:nth-of-type(even) {
+  background-color: #f7f6f0;
+}
+
+#heritage-table tbody tr:last-of-type {
+  border-bottom: 2px solid #25422d;
+}
+
+#heritage-Table #tree {
+  display: block;
+  height: 5em;
+  border-radius: 50%;
+  border: 3px solid forestgreen;
+  width: 5em;
+  margin: auto;
+}
+
+#results-container {
+  margin: 25px auto;
+  text-align: center;
+}
+
+#results-container div {
+  margin: 10px auto;
+}
+
+div.heritage select {
+  padding: 0.3em;
+  width: auto;
+  background-size: 1em 2em;
+  margin: 5px 5px 0px 0px;
+}
+
+#generation {
+  width: 3em;
+  min-width: 3em;
+  margin-right: 10px;
+  margin-top: 0;
+}
+
+.heritage fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0.625em;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  margin-bottom: 10px;
+}
+.heritage fieldset input {
+  margin: 0;
+}
+.heritage fieldset label {
+  margin-right: 0;
+}
+.heritage fieldset label.left {
+  margin-left: 10px;
+}
+.heritage fieldset label.right {
+  margin-right: 10px;
+}
+
+#gender {
+  /* width: auto; */
+  min-width: auto;
+  margin-right: 10px;
+  margin-top: 0;
+  padding-right: 1.5em;
+}
+
+.heritage #help-button {
+  background: darkgreen;
+  color: #fff;
+  font-size: 0.8em;
+  padding: 0.1em 0.5em;
+  border-radius: 50%;
+  float: right;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 11000;
+}
+
+.heritage #help-text {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 50em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  z-index: 11000;
+  cursor: default;
+}
+
+.heritage xx {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+
+.heritage #help-text:hover {
+  cursor: grab;
+}
+.heritage #help-text:active {
+  cursor: grabbing;
+}
+
+#g2g {
+  text-align: center;
+  background: lightgoldenrodyellow;
+}
+
+@media print {
+  .heritage-not-printable {
+    display: none;
+  }
+}
