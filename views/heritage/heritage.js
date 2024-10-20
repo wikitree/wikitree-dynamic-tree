@@ -46,8 +46,9 @@ window.HeritageView = class HeritageView extends View {
         document.querySelector(container_selector).innerHTML = `
             <div id="heritageContainer" class="heritage">
                 <div id="controlBlock" class="heritage-not-printable">
-                    <label for="generations"  title="The number of generations to fetch from WikiTree">Max Generations:</label>
+                    <label for="generations" title="The number of generations to fetch from WikiTree">Max Generations:</label>
                     <select id="generations" title="The number of generations to fetch from WikiTree">
+                        <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
                         <option value="4">4</option>
@@ -58,7 +59,7 @@ window.HeritageView = class HeritageView extends View {
                         <option value="9">9</option>
                         <option value="10">10</option>
                     </select>
-                    <button id="getHeritageButton" class="small button" title="Show heritage by generation">Show heritage by generation</button>
+                    <button id="getHeritageButton" class="small button" title="Show heritage">Show heritage</button>
                     <span id="help-button" title="About this">?</span>
                     <div id="help-text">${window.HeritageView.#helpText}</div><br>
                     <fieldset id="heritageFieldset">
@@ -70,6 +71,12 @@ window.HeritageView = class HeritageView extends View {
                                     <label for="ancestor" title="Ancestor">Ancestors</label>
                                     <input type="radio" id="descendant" name="mode" value="descendant">
                                     <label for="descendant" title="Descendant">Descendants</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Missing Ancestors:
+                                    <input type="checkbox" id="missingAsUnknown" name="missingAsUnknown" value="missingAsUnknown">
+                                    <label for="missingAsUnknown" title="Show missing ancestors as 'Unknown' country">Show missing ancestors as 'Unknown' country</label>
                                 </td>
                             </tr>
                         </table>
@@ -126,6 +133,10 @@ window.HeritageView = class HeritageView extends View {
                 mode = "descendant";
             }
             const gender = $("#gender").val();
+            let missingAsUnknown = false;
+            if ($("#missingAsUnknown").is(":checked")) {
+                missingAsUnknown = true;
+            }
 
             let results = document.getElementById("results-container");
             results.innerHTML = ""; // Clear away any previous results
@@ -136,7 +147,7 @@ window.HeritageView = class HeritageView extends View {
 
             await getFamilyMembers(id, gender);
 
-            findCountryCountByGeneration(gender);
+            findCountryCountByGeneration(missingAsUnknown);
         }
 
         function fillGenNames() {
@@ -185,7 +196,7 @@ window.HeritageView = class HeritageView extends View {
             }
         }
 
-        async function findCountryCountByGeneration(gender) {
+        async function findCountryCountByGeneration(missingAsUnknown) {
             // setup birth and death country storage with an array for each generation
             const profileCounts = {};
             const birthCountries = {};
@@ -252,9 +263,29 @@ window.HeritageView = class HeritageView extends View {
                     }
                 });
 
+                let totalForGeneration = missingAsUnknown
+                    ? Math.pow(2, Number(generation) + 1)
+                    : profileCounts[generation];
+
+                if (missingAsUnknown) {
+                    // Find the unknown country entry and increase it if there are any missing profiles
+                    let missingProfiles = totalForGeneration - profileCounts[generation];
+                    if (missingProfiles > 0) {
+                        let item = countries.find((element) => {
+                            return element.name == "Unknown";
+                        });
+                        if (item) {
+                            // increment the profile count
+                            item.count += missingProfiles;
+                        } else {
+                            countries.push({ name: "Unknown", count: missingProfiles });
+                        }
+                    }
+                }
+
                 countries.sort(sortByCountDesc);
                 countries.forEach((entry) => {
-                    entry.percentage = entry.count / profileCounts[generation];
+                    entry.percentage = entry.count / totalForGeneration;
                 });
 
                 displayBirthCountries.push(countries);
@@ -315,7 +346,13 @@ window.HeritageView = class HeritageView extends View {
                 let heritageHTML = "";
                 values.displayBirthCountries[generation].forEach((item) => {
                     heritageHTML +=
-                        item.name + "&nbsp" + item.percentage.toLocaleString("en", { style: "percent" }) + "<br>";
+                        item.name +
+                        "&nbsp" +
+                        item.percentage.toLocaleString(undefined, {
+                            style: "percent",
+                            maximumSignificantDigits: 3,
+                        }) +
+                        "<br>";
                 });
                 row.insertCell(3).innerHTML = heritageHTML;
                 row.insertCell(4).appendChild(values.chartSVGs[generation]);
@@ -385,9 +422,12 @@ window.HeritageView = class HeritageView extends View {
                 .append("title")
                 .text(
                     (d) =>
-                        `${d.data.name}: ${d.data.count.toLocaleString()} (${d.data.percentage.toLocaleString("en", {
-                            style: "percent",
-                        })})`
+                        `${d.data.name}: ${d.data.count.toLocaleString()} (${d.data.percentage.toLocaleString(
+                            undefined,
+                            {
+                                style: "percent",
+                            }
+                        )})`
                 );
 
             // Create a new arc generator to place a label close to the edge.
@@ -417,9 +457,9 @@ window.HeritageView = class HeritageView extends View {
                         .attr("fill-opacity", 0.7)
                         .text(
                             (d) =>
-                                d.data.count.toLocaleString("en-US") +
+                                d.data.count.toLocaleString() +
                                 " (" +
-                                d.data.percentage.toLocaleString("en", {
+                                d.data.percentage.toLocaleString(undefined, {
                                     style: "percent",
                                 }) +
                                 ")"
@@ -436,6 +476,9 @@ window.HeritageView = class HeritageView extends View {
             return a.count - b.count;
         }
         function sortByCountDesc(a, b) {
+            if (a.count == b.count) {
+                return a.name < b.name ? -1 : 1;
+            }
             return sortByCount(b, a);
         }
     }
