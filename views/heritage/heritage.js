@@ -39,9 +39,9 @@ window.HeritageView = class HeritageView extends View {
         // to showcase your awesome view, e.g.
 
         let genNames = [];
-        let GENERATIONS = 5; // New default value
+        let GENERATIONS = 5; // default value
         var familyMembers = {};
-        let mode = "ancestor";
+        let direction = "ancestor"; // default value
 
         document.querySelector(container_selector).innerHTML = `
             <div id="heritageContainer" class="heritage">
@@ -67,9 +67,17 @@ window.HeritageView = class HeritageView extends View {
                         <table id="optionsTbl">
                             <tr>
                                 <td>Mode:
-                                    <input type="radio" id="ancestor" name="mode" value="ancestor" checked="checked">
+                                    <input type="radio" id="overview" name="mode" value="overview" checked="checked">
+                                    <label for="overview" title="Single overview chart">Overview</label>
+                                    <input type="radio" id="details" name="mode" value="details">
+                                    <label for="details" title="Table of details per generation">Details</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Direction:
+                                    <input type="radio" id="ancestor" name="direction" value="ancestor" checked="checked">
                                     <label for="ancestor" title="Ancestor">Ancestors</label>
-                                    <input type="radio" id="descendant" name="mode" value="descendant">
+                                    <input type="radio" id="descendant" name="direction" value="descendant">
                                     <label for="descendant" title="Descendant">Descendants</label>
                                 </td>
                             </tr>
@@ -105,7 +113,7 @@ window.HeritageView = class HeritageView extends View {
         });
 
         // Add click action to help button
-        const helpButton = document.getElementById("help-button");
+        const helpButton = document.getElementById("help-button"); // TODO: Close help in pressing 'ESC'
         helpButton.addEventListener("click", function () {
             $("#help-text").slideToggle();
         });
@@ -126,11 +134,19 @@ window.HeritageView = class HeritageView extends View {
             Utils.showShakingTree();
 
             GENERATIONS = $("#generations").val();
+            let outputMode = "overview"; // default value
+            if ($("#overview").is(":checked")) {
+                outputMode = "overview";
+            }
+            if ($("#details").is(":checked")) {
+                outputMode = "details";
+            }
+
             if ($("#ancestor").is(":checked")) {
-                mode = "ancestor";
+                direction = "ancestor";
             }
             if ($("#descendant").is(":checked")) {
-                mode = "descendant";
+                direction = "descendant";
             }
             const gender = $("#gender").val();
             let missingAsUnknown = false;
@@ -143,45 +159,29 @@ window.HeritageView = class HeritageView extends View {
             let table = document.querySelector("#heritage-table > tbody");
             table.innerHTML = ""; // Clear away any previous results
 
-            fillGenNames();
-
             await getFamilyMembers(id, gender);
 
-            findCountryCountByGeneration(missingAsUnknown);
-        }
-
-        function fillGenNames() {
-            let modifier = ""; // Either parents or children
-            if (mode == "ancestor") {
-                genNames[0] = "Parents";
-                modifier = "parents";
-            } else if (mode == "descendant") {
-                genNames[0] = "Children";
-                modifier = "children";
-            }
-            genNames[1] = "Grand" + modifier;
-            genNames[2] = "Great-Grand" + modifier;
-            if (GENERATIONS > 2) {
-                for (let i = 3; i <= GENERATIONS; i++) {
-                    let greats = i - 1;
-                    genNames[i] = greats + "x Great-Grand" + modifier;
-                }
+            if (outputMode == "overview") {
+                findOverallHeritage(id);
+            } else {
+                fillGenNames();
+                findCountryCountByGeneration(missingAsUnknown);
             }
         }
 
         async function getFamilyMembers(id, gender) {
             // get ancestors / descendants of given ID with getPeople
             const options = {};
-            if (mode == "ancestor") {
+            if (direction == "ancestor") {
                 options["ancestors"] = GENERATIONS;
             }
-            if (mode == "descendant") {
+            if (direction == "descendant") {
                 options["descendants"] = GENERATIONS;
             }
             const results = await WikiTreeAPI.getPeople(
                 "heritage",
                 id,
-                ["BirthLocation, BirthLocation, Name, Derived.BirthName, Gender, Meta"],
+                ["BirthLocation, BirthLocation, Name, Derived.BirthName, Gender, Father, Mother, Meta"],
                 options
             );
             // save the list of familyMembers
@@ -192,6 +192,99 @@ window.HeritageView = class HeritageView extends View {
                     if (familyMembers[profile].Gender != gender) {
                         delete familyMembers[profile];
                     }
+                }
+            }
+        }
+
+        function findOverallHeritage(id) {
+            let countries = []; // The data for the chart
+
+            let processingList = [];
+            // Add starting profile to the list to be processed
+            processingList.push(id);
+
+            let index = 0;
+            // Process the list
+            while (index < processingList.length) {
+                let familyMember = familyMembers[processingList[index]];
+                let generation = familyMember["Meta"]["Degrees"];
+                // Check father
+                if (familyMember.Father && generation < GENERATIONS) {
+                    processingList.push(familyMember.Father);
+                } else {
+                    let heritageFraction = 0.5 / Math.pow(2, Number(generation));
+
+                    let birthCountry;
+                    if (familyMember.hasOwnProperty("BirthLocation")) {
+                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
+                    }
+                    if (!birthCountry) {
+                        birthCountry = "Unknown";
+                    }
+
+                    // check if country is already in the list
+                    let item = countries.find((element) => {
+                        return element.name == birthCountry;
+                    });
+                    if (item) {
+                        // increase the percentage
+                        item.percentage += heritageFraction;
+                    } else {
+                        countries.push({ name: birthCountry, percentage: heritageFraction });
+                    }
+                }
+                // Check mother
+                if (familyMember.Mother && generation < GENERATIONS) {
+                    processingList.push(familyMember.Mother);
+                } else {
+                    let heritageFraction = 0.5 / Math.pow(2, Number(generation));
+
+                    let birthCountry;
+                    if (familyMember.hasOwnProperty("BirthLocation")) {
+                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
+                    }
+                    if (!birthCountry) {
+                        birthCountry = "Unknown";
+                    }
+
+                    // check if country is already in the list
+                    let item = countries.find((element) => {
+                        return element.name == birthCountry;
+                    });
+                    if (item) {
+                        // increase the percentage
+                        item.percentage += heritageFraction;
+                    } else {
+                        countries.push({ name: birthCountry, percentage: heritageFraction });
+                    }
+                }
+
+                index++;
+            }
+
+            countries.sort(sortByPercentageDesc);
+            var chart = generateChart(countries);
+            let results = document.getElementById("results-container");
+            results.appendChild(chart);
+
+            Utils.hideShakingTree();
+        }
+
+        function fillGenNames() {
+            let modifier = ""; // Either parents or children
+            if (direction == "ancestor") {
+                genNames[0] = "Parents";
+                modifier = "parents";
+            } else if (direction == "descendant") {
+                genNames[0] = "Children";
+                modifier = "children";
+            }
+            genNames[1] = "Grand" + modifier;
+            genNames[2] = "Great-Grand" + modifier;
+            if (GENERATIONS > 2) {
+                for (let i = 3; i <= GENERATIONS; i++) {
+                    let greats = i - 1;
+                    genNames[i] = greats + "x Great-Grand" + modifier;
                 }
             }
         }
@@ -337,7 +430,7 @@ window.HeritageView = class HeritageView extends View {
                 row.id = "heritage-row" + generation;
                 row.insertCell(0).innerHTML = generation + 1;
                 row.insertCell(1).innerHTML = genNames[generation];
-                if (mode == "ancestor") {
+                if (direction == "ancestor") {
                     row.insertCell(2).innerHTML = `${values.profileCounts[generation]}/${maxAncestorsForGen}`;
                 } else {
                     row.insertCell(2).innerHTML = `${values.profileCounts[generation]}`;
@@ -389,7 +482,8 @@ window.HeritageView = class HeritageView extends View {
             const pie = d3
                 .pie()
                 .sort(null)
-                .value((d) => d.count);
+                .value((d) => d.percentage);
+            // .value((d) => d.count);
 
             const arc = d3
                 .arc()
@@ -422,12 +516,14 @@ window.HeritageView = class HeritageView extends View {
                 .append("title")
                 .text(
                     (d) =>
-                        `${d.data.name}: ${d.data.count.toLocaleString()} (${d.data.percentage.toLocaleString(
-                            undefined,
-                            {
-                                style: "percent",
-                            }
-                        )})`
+                        d.data.name +
+                        ": " +
+                        // d.data.count.toLocaleString() +
+                        " (" +
+                        d.data.percentage.toLocaleString(undefined, {
+                            style: "percent",
+                        }) +
+                        ")"
                 );
 
             // Create a new arc generator to place a label close to the edge.
@@ -457,7 +553,7 @@ window.HeritageView = class HeritageView extends View {
                         .attr("fill-opacity", 0.7)
                         .text(
                             (d) =>
-                                d.data.count.toLocaleString() +
+                                // d.data.count.toLocaleString() +
                                 " (" +
                                 d.data.percentage.toLocaleString(undefined, {
                                     style: "percent",
@@ -480,6 +576,12 @@ window.HeritageView = class HeritageView extends View {
                 return a.name < b.name ? -1 : 1;
             }
             return sortByCount(b, a);
+        }
+        function sortByPercentageDesc(a, b) {
+            if (a.percentage == b.percentage) {
+                return a.name < b.name ? -1 : 1;
+            }
+            return b.percentage - a.percentage;
         }
     }
 };
