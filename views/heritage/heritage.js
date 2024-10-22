@@ -218,55 +218,10 @@ window.HeritageView = class HeritageView extends View {
                 let familyMember = familyMembers[processingList[index]];
                 let generation = familyMember["Meta"]["Degrees"];
                 // Check father
-                if (familyMember.Father && generation < GENERATIONS) {
-                    processingList.push(familyMember.Father);
-                } else {
-                    let heritageFraction = 0.5 / Math.pow(2, Number(generation));
+                checkParent(familyMember, familyMember.Father, generation);
 
-                    let birthCountry;
-                    if (familyMember.hasOwnProperty("BirthLocation")) {
-                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
-                    }
-                    if (!birthCountry) {
-                        birthCountry = "Unknown";
-                    }
-
-                    // check if country is already in the list
-                    let item = countries.find((element) => {
-                        return element.name == birthCountry;
-                    });
-                    if (item) {
-                        // increase the percentage
-                        item.percentage += heritageFraction;
-                    } else {
-                        countries.push({ name: birthCountry, percentage: heritageFraction });
-                    }
-                }
                 // Check mother
-                if (familyMember.Mother && generation < GENERATIONS) {
-                    processingList.push(familyMember.Mother);
-                } else {
-                    let heritageFraction = 0.5 / Math.pow(2, Number(generation));
-
-                    let birthCountry;
-                    if (familyMember.hasOwnProperty("BirthLocation")) {
-                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
-                    }
-                    if (!birthCountry) {
-                        birthCountry = "Unknown";
-                    }
-
-                    // check if country is already in the list
-                    let item = countries.find((element) => {
-                        return element.name == birthCountry;
-                    });
-                    if (item) {
-                        // increase the percentage
-                        item.percentage += heritageFraction;
-                    } else {
-                        countries.push({ name: birthCountry, percentage: heritageFraction });
-                    }
-                }
+                checkParent(familyMember, familyMember.Mother, generation);
 
                 index++;
             }
@@ -277,6 +232,40 @@ window.HeritageView = class HeritageView extends View {
             results.appendChild(chart);
 
             Utils.hideShakingTree();
+
+            function checkParent(familyMember, parent, generation) {
+                let birthLocation = "";
+                if (parent && generation < GENERATIONS) {
+                    familyMembers[parent];
+                    if (familyMembers[parent].hasOwnProperty("BirthLocation")) {
+                        birthLocation = familyMembers[parent]["BirthLocation"];
+                    }
+                }
+                if (birthLocation) {
+                    processingList.push(parent);
+                } else {
+                    let heritageFraction = 0.5 / Math.pow(2, Number(generation));
+
+                    let birthCountry;
+                    if (familyMember.hasOwnProperty("BirthLocation")) {
+                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
+                    }
+                    if (!birthCountry) {
+                        birthCountry = "Unknown";
+                    }
+
+                    // check if country is already in the list
+                    let item = countries.find((element) => {
+                        return element.name == birthCountry;
+                    });
+                    if (item) {
+                        // increase the percentage
+                        item.percentage += heritageFraction;
+                    } else {
+                        countries.push({ name: birthCountry, percentage: heritageFraction });
+                    }
+                }
+            }
         }
 
         function fillGenNames() {
