@@ -128,6 +128,12 @@ window.HeritageView = class HeritageView extends View {
             $(this).parent().slideUp();
         });
 
+        $(document).on("keyup", function (e) {
+            if (e.key === "Escape" || e.keyCode === 27) {
+                $("#help-text").slideUp();
+            }
+        });
+
         gatherHeritage(person_id);
 
         async function gatherHeritage(id) {
@@ -141,6 +147,9 @@ window.HeritageView = class HeritageView extends View {
             if ($("#details").is(":checked")) {
                 outputMode = "details";
             }
+            // toggle heritage-table visibility
+            let table = document.getElementById("heritage-table");
+            table.hidden = outputMode == "overview";
 
             if ($("#ancestor").is(":checked")) {
                 direction = "ancestor";
@@ -156,8 +165,8 @@ window.HeritageView = class HeritageView extends View {
 
             let results = document.getElementById("results-container");
             results.innerHTML = ""; // Clear away any previous results
-            let table = document.querySelector("#heritage-table > tbody");
-            table.innerHTML = ""; // Clear away any previous results
+            let tableBody = document.querySelector("#heritage-table > tbody");
+            tableBody.innerHTML = ""; // Clear away any previous results
 
             await getFamilyMembers(id, gender);
 
