@@ -186,7 +186,7 @@ window.HeritageView = class HeritageView extends View {
             let tableBody = document.querySelector("#heritage-table > tbody");
             tableBody.innerHTML = ""; // Clear away any previous results
 
-            await getFamilyMembers(id, gender);
+            await getFamilyMembers(id);
 
             if (outputMode == "overview") {
                 findOverallHeritage(id);
@@ -196,7 +196,7 @@ window.HeritageView = class HeritageView extends View {
             }
         }
 
-        async function getFamilyMembers(id, gender) {
+        async function getFamilyMembers(id) {
             // get ancestors / descendants of given ID with getPeople
             const options = {};
             if (direction == "ancestor") {
@@ -208,19 +208,11 @@ window.HeritageView = class HeritageView extends View {
             const results = await WikiTreeAPI.getPeople(
                 "heritage",
                 id,
-                ["BirthLocation, BirthLocation, Name, Derived.BirthName, Gender, Father, Mother, Meta"],
+                ["BirthLocation, BirthLocation, Name, Derived.BirthName, Father, Mother, Meta"],
                 options
             );
             // save the list of familyMembers
             familyMembers = results[2];
-
-            if (gender) {
-                for (const profile in familyMembers) {
-                    if (familyMembers[profile].Gender != gender) {
-                        delete familyMembers[profile];
-                    }
-                }
-            }
         }
 
         function findOverallHeritage(id) {
@@ -323,7 +315,6 @@ window.HeritageView = class HeritageView extends View {
                 let generation = familyMember["Meta"]["Degrees"] - 1;
                 // Ignore starting profile as their heritage is derived from their parents
                 if (generation >= 0) {
-                    let gender = familyMember["Gender"];
                     let birthCountry;
                     let deathCountry;
                     if (familyMember.hasOwnProperty("BirthLocation")) {
