@@ -243,7 +243,7 @@ export class PeopleTable {
             let dBirthDate;
             if (mPerson.BirthDate) {
                 dBirthDate = mPerson.BirthDate.replaceAll("-", "");
-            } else if (mPerson.BirthDateDecade) {
+            } else if (mPerson.BirthDateDecade && mPerson.BirthDateDecade != "unknown") {
                 dBirthDate = PeopleTable.getApproxDate2(mPerson.BirthDateDecade).Date.replace("-", "").padEnd(8, "0");
             } else {
                 dBirthDate = "00000000";
@@ -252,7 +252,7 @@ export class PeopleTable {
             let dDeathDate;
             if (mPerson.DeathDate) {
                 dDeathDate = mPerson.DeathDate.replaceAll("-", "");
-            } else if (mPerson.DeathDateDecade) {
+            } else if (mPerson.DeathDateDecade && mPerson.DeathDateDecade != "unknown") {
                 dDeathDate = PeopleTable.getApproxDate2(mPerson.DeathDateDecade).Date.replace("-", "").padEnd(8, "0");
             } else {
                 dDeathDate = "00000000";
@@ -764,30 +764,55 @@ export class PeopleTable {
         let rows = aTable.find("tbody tr");
         if (sorter == "birthlocation" || sorter == "deathlocation") {
             if (sorter == "birthlocation") {
-                if (el.attr("data-order") == "s2b") {
+                if (el.attr("data-order") == "s2b-a") {
+                    el.attr("data-order", "s2b-d");
+                    rows = PeopleTable.fillLocations(rows, "");
+                } else if (el.attr("data-order") == "s2b-d") {
                     sorter = "birthlocation-reversed";
-                    el.attr("data-order", "b2s");
+                    el.attr("data-order", "b2s-a");
+                    rows = PeopleTable.fillLocations(rows, "-reversed");
+                } else if (el.attr("data-order") == "b2s-a") {
+                    sorter = "birthlocation-reversed";
+                    el.attr("data-order", "b2s-d");
                     rows = PeopleTable.fillLocations(rows, "-reversed");
                 } else {
-                    el.attr("data-order", "s2b");
+                    el.attr("data-order", "s2b-a");
                     rows = PeopleTable.fillLocations(rows, "");
                 }
-            } else if (sorter == "deathlocation") {
-                if (el.attr("data-order") == "s2b") {
+            } else if (sorter.startsWith("deathlocation")) {
+                if (el.attr("data-order") == "s2b-a") {
+                    el.attr("data-order", "s2b-d");
+                    rows = PeopleTable.fillLocations(rows, "");
+                } else if (el.attr("data-order") == "s2b-d") {
                     sorter = "deathlocation-reversed";
-                    el.attr("data-order", "b2s");
+                    el.attr("data-order", "b2s-a");
+                    rows = PeopleTable.fillLocations(rows, "-reversed");
+                } else if (el.attr("data-order") == "b2s-a") {
+                    sorter = "deathlocation-reversed";
+                    el.attr("data-order", "b2s-d");
                     rows = PeopleTable.fillLocations(rows, "-reversed");
                 } else {
-                    el.attr("data-order", "s2b");
+                    el.attr("data-order", "s2b-a");
                     rows = PeopleTable.fillLocations(rows, "");
                 }
             }
-            rows.sort(function (a, b) {
-                if ($(b).data(sorter) == "") {
-                    return true;
-                }
-                return $(a).data(sorter).localeCompare($(b).data(sorter));
-            });
+            if (el.attr("data-order").endsWith("a")) {
+                // ascending sort
+                rows.sort(function (a, b) {
+                    if ($(b).data(sorter) == "") {
+                        return true;
+                    }
+                    return $(a).data(sorter).localeCompare($(b).data(sorter));
+                });
+            } else {
+                // descending sort
+                rows.sort(function (a, b) {
+                    if ($(a).data(sorter) == "") {
+                        return true;
+                    }
+                    return $(b).data(sorter).localeCompare($(a).data(sorter));
+                });
+            }
         } else if (isNaN(rows.data(sorter))) {
             if (el.attr("data-order") == "asc") {
                 rows.sort(function (a, b) {
