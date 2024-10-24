@@ -77,9 +77,13 @@ export class PeopleTable {
                 `<th data-order='' id='lnab' ${sortTitle}>Last Name at Birth</th>` +
                 `<th data-order='' id='lnc' ${sortTitle}>Current Last Name</th>` +
                 `<th data-order='' id='birthdate' ${sortTitle}>Birth Date</th>` +
-                `<th data-order='' id='birthlocation' ${sortTitle}>Birth Place</th>` +
+                `<th data-order='' id="birthlocation" data-flow="f2b" >` +
+                `<span class="sortColumn" ${sortTitle}>Birth Place</span>` +
+                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
                 `<th data-order='' id='deathdate' ${sortTitle}>Death Date</th>` +
-                `<th data-order='' id='deathlocation' ${sortTitle}>Death Place</th>` +
+                `<th data-order='' id="deathlocation" data-flow="f2b" >` +
+                `<span class="sortColumn" ${sortTitle}>Death Place</span>` +
+                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
                 ageAtDeathCol +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
@@ -573,7 +577,19 @@ export class PeopleTable {
         });
 
         $("#cc7Container").on("click", "th[id]", function () {
-            PeopleTable.sortByThis($(this));
+            const el = $(this);
+            const id = el.attr("id");
+            if (id !== "birthlocation" && id !== "deathlocation") {
+                PeopleTable.sortByThis(el);
+            }
+        });
+        $("#cc7Container").on("click", "th span.sortColumn", function () {
+            var el = $(this).closest("th");
+            PeopleTable.sortByThis(el);
+        });
+
+        $("#cc7Container").on("click", "th span.reverseWords", function () {
+            PeopleTable.reverseWordOrder($(this));
         });
 
         PeopleTable.addWideTableButton();
@@ -745,16 +761,25 @@ export class PeopleTable {
         return [s2b, b2s];
     }
 
-    static fillLocations(rows, order) {
+    static fillLocations(rows, colClass, order) {
         rows.each(function () {
             $(this)
-                .find("td.birthlocation")
-                .text($(this).attr("data-birthlocation" + order));
-            $(this)
-                .find("td.deathlocation")
-                .text($(this).attr("data-deathlocation" + order));
+                .find(`td.${colClass}`)
+                .text($(this).attr(`data-${colClass}${order}`));
         });
         return rows;
+    }
+
+    static reverseWordOrder(el) {
+        const th = el.closest("th");
+        const flow = th.attr("data-flow");
+        const newFlow = flow == "f2b" ? "b2f" : "f2b";
+        th.attr("data-flow", newFlow);
+        const col = th.attr("id");
+
+        const aTable = $("#peopleTable");
+        let rows = aTable.find("tbody tr");
+        PeopleTable.fillLocations(rows, col, newFlow == "b2f" ? "-reversed" : "");
     }
 
     static sortByThis(el) {
@@ -763,41 +788,13 @@ export class PeopleTable {
         let sorter = el.attr("id");
         let rows = aTable.find("tbody tr");
         if (sorter == "birthlocation" || sorter == "deathlocation") {
-            if (sorter == "birthlocation") {
-                if (el.attr("data-order") == "s2b-a") {
-                    el.attr("data-order", "s2b-d");
-                    rows = PeopleTable.fillLocations(rows, "");
-                } else if (el.attr("data-order") == "s2b-d") {
-                    sorter = "birthlocation-reversed";
-                    el.attr("data-order", "b2s-a");
-                    rows = PeopleTable.fillLocations(rows, "-reversed");
-                } else if (el.attr("data-order") == "b2s-a") {
-                    sorter = "birthlocation-reversed";
-                    el.attr("data-order", "b2s-d");
-                    rows = PeopleTable.fillLocations(rows, "-reversed");
-                } else {
-                    el.attr("data-order", "s2b-a");
-                    rows = PeopleTable.fillLocations(rows, "");
-                }
-            } else if (sorter.startsWith("deathlocation")) {
-                if (el.attr("data-order") == "s2b-a") {
-                    el.attr("data-order", "s2b-d");
-                    rows = PeopleTable.fillLocations(rows, "");
-                } else if (el.attr("data-order") == "s2b-d") {
-                    sorter = "deathlocation-reversed";
-                    el.attr("data-order", "b2s-a");
-                    rows = PeopleTable.fillLocations(rows, "-reversed");
-                } else if (el.attr("data-order") == "b2s-a") {
-                    sorter = "deathlocation-reversed";
-                    el.attr("data-order", "b2s-d");
-                    rows = PeopleTable.fillLocations(rows, "-reversed");
-                } else {
-                    el.attr("data-order", "s2b-a");
-                    rows = PeopleTable.fillLocations(rows, "");
-                }
-            }
-            if (el.attr("data-order").endsWith("a")) {
-                // ascending sort
+            const wasDescending = el.attr("data-order") == "desc";
+            // Determine which field to sort on
+            if (el.attr("data-flow") == "b2f") sorter = `${sorter}-reversed`;
+            // Flip the direction of sort
+            if (wasDescending) {
+                // Now we do an ascending sort
+                el.attr("data-order", "asc");
                 rows.sort(function (a, b) {
                     if ($(b).data(sorter) == "") {
                         return true;
@@ -805,7 +802,8 @@ export class PeopleTable {
                     return $(a).data(sorter).localeCompare($(b).data(sorter));
                 });
             } else {
-                // descending sort
+                // Now we do a descending sort
+                el.attr("data-order", "desc");
                 rows.sort(function (a, b) {
                     if ($(a).data(sorter) == "") {
                         return true;
