@@ -73,7 +73,7 @@ window.HeritageView = class HeritageView extends View {
                                     <label for="details" title="Table of details per generation">Details</label>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr id="details_options">
                                 <td>Direction:
                                     <input type="radio" id="ancestor" name="direction" value="ancestor" checked="checked">
                                     <label for="ancestor" title="Ancestor">Ancestors</label>
@@ -81,7 +81,7 @@ window.HeritageView = class HeritageView extends View {
                                     <label for="descendant" title="Descendant">Descendants</label>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr id="ancestors_options">
                                 <td>Missing Ancestors:
                                     <input type="checkbox" id="missingAsUnknown" name="missingAsUnknown" value="missingAsUnknown">
                                     <label for="missingAsUnknown" title="Show missing ancestors as 'Unknown' country">Show missing ancestors as 'Unknown' country</label>
@@ -134,6 +134,25 @@ window.HeritageView = class HeritageView extends View {
             }
         });
 
+        document.querySelector("#overview").addEventListener("change", optionsEventListner);
+        document.querySelector("#details").addEventListener("change", optionsEventListner);
+        document.querySelector("#ancestor").addEventListener("change", optionsEventListner);
+        document.querySelector("#descendant").addEventListener("change", optionsEventListner);
+
+        function optionsEventListner() {
+            if ($("#details").is(":checked")) {
+                document.querySelector("#details_options").style.display = "block";
+                if ($("#ancestor").is(":checked")) {
+                    document.querySelector("#ancestors_options").style.display = "block";
+                } else {
+                    document.querySelector("#ancestors_options").style.display = "none";
+                }
+            } else {
+                document.querySelector("#details_options").style.display = "none";
+                document.querySelector("#ancestors_options").style.display = "none";
+            }
+        }
+
         gatherHeritage(person_id);
 
         async function gatherHeritage(id) {
@@ -141,27 +160,26 @@ window.HeritageView = class HeritageView extends View {
 
             GENERATIONS = $("#generations").val();
             let outputMode = "overview"; // default value
+            let missingAsUnknown = false;
             if ($("#overview").is(":checked")) {
                 outputMode = "overview";
+                direction = "ancestor";
             }
             if ($("#details").is(":checked")) {
                 outputMode = "details";
+                if ($("#ancestor").is(":checked")) {
+                    direction = "ancestor";
+                    if ($("#missingAsUnknown").is(":checked")) {
+                        missingAsUnknown = true;
+                    }
+                }
+                if ($("#descendant").is(":checked")) {
+                    direction = "descendant";
+                }
             }
             // toggle heritage-table visibility
             let table = document.getElementById("heritage-table");
             table.hidden = outputMode == "overview";
-
-            if ($("#ancestor").is(":checked")) {
-                direction = "ancestor";
-            }
-            if ($("#descendant").is(":checked")) {
-                direction = "descendant";
-            }
-            const gender = $("#gender").val();
-            let missingAsUnknown = false;
-            if ($("#missingAsUnknown").is(":checked")) {
-                missingAsUnknown = true;
-            }
 
             let results = document.getElementById("results-container");
             results.innerHTML = ""; // Clear away any previous results

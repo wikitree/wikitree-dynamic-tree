@@ -94,14 +94,6 @@ div.heritage select {
   margin-right: 10px;
 }
 
-#gender {
-  /* width: auto; */
-  min-width: auto;
-  margin-right: 10px;
-  margin-top: 0;
-  padding-right: 1.5em;
-}
-
 .heritage #help-button {
   background: darkgreen;
   color: #fff;
@@ -156,4 +148,16 @@ div.heritage select {
   .heritage-not-printable {
     display: none;
   }
+}
+
+/* input#overview[type="radio"]:checked ~ #details_optons {
+  display: block;
+} */
+
+#details_options {
+  display: none;
+}
+
+#ancestors_options {
+  display: none;
 }
