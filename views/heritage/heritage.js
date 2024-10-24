@@ -18,7 +18,7 @@ window.HeritageView = class HeritageView extends View {
     </p>
     <p>
         If you find problems with this app or have suggestions for improvements, please
-        post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
+        post a comment on <a href="https://www.wikitree.com/g2g/1808677" target="_blank">the G2G post</a>.
     </p>
     <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
     `;
@@ -105,7 +105,7 @@ window.HeritageView = class HeritageView extends View {
                 <div id="results-container"></div>
             </div>
             <div id="g2g">If you have suggestions for this app, please post a comment on
-                <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.</div>
+                <a href="https://www.wikitree.com/g2g/1808677" target="_blank">the G2G post</a>.</div>
         `;
 
         $("#getHeritageButton").on("click", function () {
