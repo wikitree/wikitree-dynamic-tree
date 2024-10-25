@@ -55,59 +55,6 @@ export class Utils {
         return new Date(...parts);
     }
 
-    // Given a location string (birth, death or marriage) return the C-ountry, R-egion or else Town
-    // For example: if locString = "Edgware, Middlesex, England, United Kingdom"
-    //		getLocationFromString(locString, "C") = "United Kingdom"
-    //		getLocationFromString(locString, "R") = "England, United Kingdom"
-    //		getLocationFromString(locString, "T") = "Edgware"
-    static getLocationFromString(locString, locType) {
-        if (!locString || locString == "") {
-            return "";
-        }
-        if (locType == "C") {
-            if (locString.indexOf(",") > -1) {
-                let lastCommaAt = locString.indexOf(",");
-                let nextCommaAt = lastCommaAt;
-                while (nextCommaAt > -1) {
-                    nextCommaAt = locString.indexOf(",", lastCommaAt + 1);
-                    if (nextCommaAt > -1) {
-                        lastCommaAt = nextCommaAt;
-                    }
-                }
-
-                return locString.substr(lastCommaAt + 1).trim();
-            } else {
-                return locString;
-            }
-        } else if (locType == "R") {
-            if (locString.indexOf(",") > -1) {
-                let lastCommaAt = locString.indexOf(",");
-                let penultimateCommaAt = -1;
-                let nextCommaAt = lastCommaAt;
-                while (nextCommaAt > -1) {
-                    nextCommaAt = locString.indexOf(",", lastCommaAt + 1);
-                    if (nextCommaAt > -1) {
-                        penultimateCommaAt = lastCommaAt;
-                        lastCommaAt = nextCommaAt;
-                    }
-                }
-                if (penultimateCommaAt > -1) {
-                    return locString.substr(penultimateCommaAt + 1).trim();
-                } else {
-                    return locString.substr(lastCommaAt + 1).trim();
-                }
-            } else {
-                return locString;
-            }
-        } else {
-            if (locString.indexOf(",") > -1) {
-                return locString.substr(0, locString.indexOf(",")).trim();
-            } else {
-                return locString.trim();
-            }
-        }
-    }
-
     /**
      * Turn a wikitree Place into a location as per format string
      */
@@ -139,6 +86,10 @@ export class Utils {
         }
 
         if (formatString == "Country") {
+            // Specifically ignore United Kingdom and return the constituent country
+            if (country == "United Kingdom") {
+                return region;
+            }
             return country;
         } else if (formatString == "Region") {
             if (region > "") {
