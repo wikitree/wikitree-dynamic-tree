@@ -64,12 +64,9 @@ export class CC7 {
         <h4>Sorting the Table</h4>
         <ul>
             <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
-            <li>
-                Sort by Created/Modified to see new additions.
-            </li>
-            <li>
-                The location column sort toggles between sorting Town &rarr; Country or Country &rarr; Town on each click
-                on location header.
+            <li>Sort by Created/Modified to see new additions.</li>
+            <li>The names in the location columns can be reversed (and subsequently re-sorted) by clicking the ↻ symbol
+                in the header.
             </li>
         </ul>
         <h4>Scrolling the Wide Table</h4>
@@ -1111,7 +1108,7 @@ export class CC7 {
             }
             const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
             if (row) {
-                row.setAttribute("data-relation", result.relationship.abbr);
+                row.setAttribute("data-relation", result?.relationship?.abbr || "");
                 const relationCell = row.querySelector("td.relation");
                 if (relationCell) {
                     relationCell.textContent = result.relationship.abbr;

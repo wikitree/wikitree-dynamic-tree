@@ -556,41 +556,53 @@ export class PeopleTable {
             CC7Utils.setOverflow("auto");
         }
 
-        $("#cc7Container").on("click", "img.privacyImage, .bioIssue", function (event) {
-            event.stopImmediatePropagation();
-            const id = $(this).closest("tr").attr("data-id");
-            const p = window.people.get(+id);
-            if (event.altKey) {
-                // Provide a way to examine the data record of a specific person
-                console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
-            } else if (p.hasBioIssues) {
-                PeopleTable.showBioCheckReport($(this));
-            }
-        });
+        $("#cc7Container")
+            .off("click", "img.privacyImage, .bioIssue")
+            .on("click", "img.privacyImage, .bioIssue", function (event) {
+                event.stopImmediatePropagation();
+                const id = $(this).closest("tr").attr("data-id");
+                const p = window.people.get(+id);
+                if (event.altKey) {
+                    // Provide a way to examine the data record of a specific person
+                    console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
+                } else if (p.hasBioIssues) {
+                    PeopleTable.showBioCheckReport($(this));
+                }
+            });
 
-        $("#cc7Container").on("click", "img.familyHome", function () {
-            PeopleTable.showFamilySheet($(this));
-        });
+        $("#cc7Container")
+            .off("click", "img.familyHome")
+            .on("click", "img.familyHome", function () {
+                PeopleTable.showFamilySheet($(this));
+            });
 
-        $("#cc7Container").on("click", "img.timelineButton", function () {
-            PeopleTable.showTimeline($(this));
-        });
+        $("#cc7Container")
+            .off("click", "img.timelineButton")
+            .on("click", "img.timelineButton", function () {
+                PeopleTable.showTimeline($(this));
+            });
 
-        $("#cc7Container").on("click", "th[id]", function () {
-            const el = $(this);
-            const id = el.attr("id");
-            if (id !== "birthlocation" && id !== "deathlocation") {
+        $("#cc7Container")
+            .off("click", "th[id]")
+            .on("click", "th[id]", function () {
+                const el = $(this);
+                const id = el.attr("id");
+                if (id !== "birthlocation" && id !== "deathlocation") {
+                    PeopleTable.sortByThis(el);
+                }
+            });
+        $("#cc7Container")
+            .off("click", "th span.sortColumn")
+            .on("click", "th span.sortColumn", function () {
+                var el = $(this).closest("th");
                 PeopleTable.sortByThis(el);
-            }
-        });
-        $("#cc7Container").on("click", "th span.sortColumn", function () {
-            var el = $(this).closest("th");
-            PeopleTable.sortByThis(el);
-        });
+            });
 
-        $("#cc7Container").on("click", "th span.reverseWords", function () {
-            PeopleTable.reverseWordOrder($(this));
-        });
+        $("#cc7Container")
+            .off("click", "th span.reverseWords")
+            .on("click", "th span.reverseWords", function () {
+                PeopleTable.reverseWordOrder($(this));
+            });
 
         PeopleTable.addWideTableButton();
         if ($("#hierarchyViewButton").length == 0) {
@@ -783,69 +795,54 @@ export class PeopleTable {
     }
 
     static sortByThis(el) {
+        const collator = new Intl.Collator();
         const aTable = $("#peopleTable");
 
-        let sorter = el.attr("id");
+        let sortFieldName = el.attr("id");
         let rows = aTable.find("tbody tr");
-        if (sorter == "birthlocation" || sorter == "deathlocation") {
-            const wasDescending = el.attr("data-order") == "desc";
-            // Determine which field to sort on
-            if (el.attr("data-flow") == "b2f") sorter = `${sorter}-reversed`;
-            // Flip the direction of sort
-            if (wasDescending) {
-                // Now we do an ascending sort
-                el.attr("data-order", "asc");
-                rows.sort(function (a, b) {
-                    if ($(b).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(a).data(sorter).localeCompare($(b).data(sorter));
-                });
-            } else {
-                // Now we do a descending sort
-                el.attr("data-order", "desc");
-                rows.sort(function (a, b) {
-                    if ($(a).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(b).data(sorter).localeCompare($(a).data(sorter));
-                });
-            }
-        } else if (isNaN(rows.data(sorter))) {
+        const locationSort = sortFieldName == "birthlocation" || sortFieldName == "deathlocation";
+        // For location sorts, determine whether we sort on back-to-front or front-to-back names
+        if (locationSort && el.attr("data-flow") == "b2f") sortFieldName = `${sortFieldName}-reversed`;
+        // If the column wasn't sorted before, we sort it ascending, otherwise we flip the direction of sort
+        if (locationSort || hasNaN(rows, sortFieldName)) {
             if (el.attr("data-order") == "asc") {
+                // Sort descending
                 rows.sort(function (a, b) {
-                    if ($(a).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(b).data(sorter).toString().localeCompare($(a).data(sorter));
+                    return collator.compare($(b).data(sortFieldName), $(a).data(sortFieldName));
                 });
                 el.attr("data-order", "desc");
             } else {
+                // Sort ascending
                 rows.sort(function (a, b) {
-                    if ($(b).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(a).data(sorter).toString().localeCompare($(b).data(sorter));
+                    return collator.compare($(a).data(sortFieldName), $(b).data(sortFieldName));
                 });
                 el.attr("data-order", "asc");
             }
         } else {
+            // We're sorting only numeric values
             if (el.attr("data-order") == "asc") {
-                rows.sort((a, b) => ($(b).data(sorter) > $(a).data(sorter) ? 1 : -1));
+                // Sort descending
+                rows.sort((a, b) => $(b).data(sortFieldName) - $(a).data(sortFieldName));
                 el.attr("data-order", "desc");
             } else {
-                rows.sort((a, b) => ($(a).data(sorter) > $(b).data(sorter) ? 1 : -1));
+                // Sort ascending
+                rows.sort((a, b) => $(a).data(sortFieldName) - $(b).data(sortFieldName));
                 el.attr("data-order", "asc");
             }
         }
+        // Rewrite the table rows in the new order
         aTable.find("tbody").append(rows);
-        rows.each(function () {
-            const toBottom = ["", "00000000"];
-            if (toBottom.includes(el.data(sorter))) {
-                aTable.find("tbody").append(el);
-            }
-        });
-        aTable.find("tr.main").prependTo(aTable.find("tbody"));
+
+        function hasNaN(rows, sorter) {
+            let hasNaN = false;
+            rows.each(function () {
+                if (isNaN($(this).data(sorter))) {
+                    hasNaN = true;
+                    return false; // Stops further iteration
+                }
+            });
+            return hasNaN;
+        }
     }
 
     static async addWideTableButton() {
