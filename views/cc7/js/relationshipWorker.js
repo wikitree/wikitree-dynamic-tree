@@ -301,8 +301,14 @@ function determineRelationship(rootPersonId, personId, ancestorMaps) {
 }
 
 function describeRelationshipFromGenerations(gen1, gen2, gender) {
+    // Determine the relationship direction
+    const isRootCloser = gen1 < gen2;
+
     // Direct ancestor-descendant relationships
     if (gen1 === 0 || gen2 === 0) {
+        const genderedFullPart =
+            gender === "Male" ? (isRootCloser ? "son" : "father") : isRootCloser ? "daughter" : "mother";
+        const genderedAbbrPart = genderedFullPart.charAt(0).toUpperCase();
         const generation = Math.max(gen1, gen2);
         if (generation === 1) {
             if (gen1 == 0) {
@@ -311,19 +317,19 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
             return { full: gender === "Male" ? "father" : "mother", abbr: gender === "Male" ? "F" : "M" };
         } else if (generation === 2) {
             return {
-                full: gender === "Male" ? "grandfather" : "grandmother",
-                abbr: gender === "Male" ? "GF" : "GM",
+                full: `grand${genderedFullPart}`,
+                abbr: `G${genderedAbbrPart}`,
             };
         } else if (generation === 3) {
             return {
-                full: gender === "Male" ? "great grandfather" : "great grandmother",
-                abbr: gender === "Male" ? "GGF" : "GGM",
+                full: `great grand${genderedFullPart}`,
+                abbr: `GG${genderedAbbrPart}`,
             };
         } else {
             const greats = generation - 3;
             return {
-                full: `${ordinal(greats + 1)} great grand${gender === "Male" ? "father" : "mother"}`,
-                abbr: `${ordinal(greats + 1)} GG${gender === "Male" ? "F" : "M"}`,
+                full: `${ordinal(greats + 1)} great grand${genderedFullPart}`,
+                abbr: `${ordinal(greats + 1)} GG${genderedAbbrPart}`,
             };
         }
     }
@@ -338,9 +344,6 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     const youngerGeneration = Math.max(gen1, gen2);
     const removal = youngerGeneration - olderGeneration;
     const isOne = gen1 === 1 || gen2 === 1;
-
-    // Determine the relationship direction
-    const isRootCloser = gen1 < gen2;
 
     if (isOne) {
         if (removal === 1) {
