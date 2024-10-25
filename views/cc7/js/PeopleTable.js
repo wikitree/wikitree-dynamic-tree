@@ -328,7 +328,7 @@ export class PeopleTable {
                     mPerson?.Relationship?.abbr || ""
                 }</td>`;
                 ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
-                drelation = "data-relation=''";
+                drelation = `data-relation="${mPerson.Relationship?.abbr || ""}"`;
                 if (mPerson.Created) {
                     created =
                         "<td class='created aDate'>" +
