@@ -5,8 +5,41 @@ window.HeritageView = class HeritageView extends View {
     <xx>[ x ]</xx>
     <h2 style="text-align: center">About Heritage Charts</h2>
     <p>
-        This app shows the collective birth countries, by generation, of a profile's ancestors / decendant.
+        This app shows the heritage of a profile based on the birth countries of that profile's ancestors or descendants.
+        The birth country is the right most part of the birth location field. The number of generations to analyse can
+        be changed. Hover over any pie section to display the country name and percentage.  
     </p>
+    <h3>Overview Mode</h3>
+    <p>
+        In overview mode, the output is a single pie chart representing the overall distribution of birth countries for
+        the selected generations of ancestors. Each slice of the chart corresponds to a country, sized by the cumulative
+        "heritage value" from that country across all generations. This provides a high-level view of the person’s heritage.
+    </p>
+    <p>
+        This list of birth countries and their associated percentages is caclulated as follows:
+        <ul>
+            <li>
+                Starting at the chosen profile. Check if the parents have WikiTree profiles.
+            </li>
+            <li>
+                 Each parent is then checked to see if they have a recorded birth location.
+            </li>
+            <li>
+                If the parent is has a profile and that profile has a birth location, the process repeats for that
+                profiles parents. The process stops when the desired number of generations is reached.
+            </li>
+            <li>
+                At this point, the birth country is recorded. A fractional "heritage value" for each generation is
+                applied as a smaller fraction for farther generations (e.g., 50% per parents, halved to 25% for each
+                grandparent, etc for subsequent generation).
+            </li>
+            <li>
+                Where a parent is missing or has no birth location, the child's birth country is recorded with the
+                parent's percentage.
+            </li>
+        </ul>
+    </p>
+    <h3>Details Mode</h3>
     <p>
         Table columns explained:
         <ul>
