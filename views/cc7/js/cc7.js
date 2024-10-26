@@ -953,7 +953,7 @@ export class CC7 {
 
         const $this = this;
         worker.onmessage = function (event) {
-            console.log("Worker returned:", event.data);
+            // console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
                 if ($("#cc7PBFilter").data("select2")) {
                     $("#cc7PBFilter").select2("destroy");

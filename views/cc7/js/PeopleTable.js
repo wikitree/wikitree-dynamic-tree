@@ -324,8 +324,8 @@ export class PeopleTable {
 
             if ($("#cc7Container").length) {
                 degreeCell = "<td class='degree'>" + mPerson.Meta.Degrees + "°</td>";
-                relationCell = `<td class='relation' title="${mPerson?.Relationship?.full || ""}">${
-                    mPerson?.Relationship?.abbr || ""
+                relationCell = `<td class='relation' title="${mPerson.Relationship?.full || ""}">${
+                    mPerson.Relationship?.abbr || ""
                 }</td>`;
                 ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
                 drelation = `data-relation="${mPerson.Relationship?.abbr || ""}"`;
@@ -339,28 +339,41 @@ export class PeopleTable {
                     created = "<td class='created aDate'></td>";
                 }
 
-                let mAgeAtDeath = CC7Utils.ageAtDeath(mPerson);
-                let mAgeAtDeathNum = CC7Utils.ageAtDeath(mPerson, false);
+                let [ageAtDeath, annotation, annotatedAgeAtDeath] = CC7Utils.ageAtDeath(mPerson);
 
-                if (mAgeAtDeath === false && mAgeAtDeath !== "0") {
-                    mAgeAtDeath = "";
-                }
-                if (mAgeAtDeathNum < 0) {
-                    mAgeAtDeath = 0;
-                }
-                if (mAgeAtDeathNum < 5 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
-                    diedYoung = true;
-                    diedVeryYoung = true;
-                    diedYoungIcon = Settings.current["icons_options_veryYoung"];
-                    diedYoungTitle = "Died before age 5";
-                } else if (mAgeAtDeathNum < 16 && mAgeAtDeath != false) {
-                    diedYoung = true;
-                    diedYoungIcon = Settings.current["icons_options_young"];
-                    diedYoungTitle = "Died before age 16";
+                if (ageAtDeath === "") {
+                    ageAtDeath = -1;
+                } else {
+                    switch (annotation) {
+                        case "<":
+                            ageAtDeath -= 0.1;
+                            break;
+
+                        case "~":
+                            ageAtDeath += 0.1;
+                            break;
+
+                        case ">":
+                            ageAtDeath += 0.2;
+                            break;
+
+                        default:
+                            break;
+                    }
+                    if (ageAtDeath < 5) {
+                        diedYoung = true;
+                        diedVeryYoung = true;
+                        diedYoungIcon = Settings.current["icons_options_veryYoung"];
+                        diedYoungTitle = "Died before age 5";
+                    } else if (ageAtDeath < 16) {
+                        diedYoung = true;
+                        diedYoungIcon = Settings.current["icons_options_young"];
+                        diedYoungTitle = "Died before age 16";
+                    }
                 }
 
-                ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
-                dAgeAtDeath = "data-age-at-death='" + mAgeAtDeathNum + "'";
+                ageAtDeathCell = "<td class='age-at-death'>" + annotatedAgeAtDeath + "</td>";
+                dAgeAtDeath = "data-age-at-death='" + ageAtDeath + "'";
 
                 if (mPerson.Touched) {
                     touched =
