@@ -15,41 +15,16 @@ window.HeritageView = class HeritageView extends View {
         the selected generations of ancestors. Each slice of the chart corresponds to a country, sized by the cumulative
         "heritage value" from that country across all generations. This provides a high-level view of the person’s heritage.
     </p>
-    <p>
-        This list of birth countries and their associated percentages is caclulated as follows:
-        <ul>
-            <li>
-                Starting at the chosen profile. Check if the parents have WikiTree profiles.
-            </li>
-            <li>
-                 Each parent is then checked to see if they have a recorded birth location.
-            </li>
-            <li>
-                If the parent is has a profile and that profile has a birth location, the process repeats for that
-                profiles parents. The process stops when the desired number of generations is reached.
-            </li>
-            <li>
-                At this point, the birth country is recorded. A fractional "heritage value" for each generation is
-                applied as a smaller fraction for farther generations (e.g., 50% per parents, halved to 25% for each
-                grandparent, etc for subsequent generation).
-            </li>
-            <li>
-                Where a parent is missing or has no birth location, the child's birth country is recorded with the
-                parent's percentage.
-            </li>
-        </ul>
-    </p>
     <h3>Details Mode</h3>
     <p>
-        Table columns explained:
-        <ul>
-            <li>
-                <b>Total Profiles</b> shows how many profiles exist in this generation. For ancestors, the total number 
-                expected for that generation is given.
-            </li>
-        </ul>
+        In details mode, one pie is shown per generations. These can either be ancestors or descendants, depending on
+        the direction. At each generation, if the birth location value is not recorded, or unavailable due to privacy,
+        the country is shown as 'Unknown'.
     </p>
     <p>
+        For full instructions and details about the app, <a href="https://www.wikitree.com/wiki/Space:Tree_Apps_-_Heritage_Charts"
+        target="_blank">click here</a>
+        <br/>
         If you find problems with this app or have suggestions for improvements, please
         post a comment on <a href="https://www.wikitree.com/g2g/1808677" target="_blank">the G2G post</a>.
     </p>

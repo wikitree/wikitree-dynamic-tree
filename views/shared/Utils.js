@@ -87,7 +87,7 @@ export class Utils {
 
         if (formatString == "Country") {
             // Specifically ignore United Kingdom and return the constituent country
-            if (country == "United Kingdom") {
+            if (country == "United Kingdom" || country == "Great Britain") {
                 return region;
             }
             return country;
