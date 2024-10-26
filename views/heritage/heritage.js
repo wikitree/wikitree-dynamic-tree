@@ -40,7 +40,7 @@ window.HeritageView = class HeritageView extends View {
 
         let genNames = [];
         let GENERATIONS = 5; // default value
-        var familyMembers = {};
+        let familyMembers = {};
         let direction = "ancestor"; // default value
 
         document.querySelector(container_selector).innerHTML = `
@@ -96,8 +96,7 @@ window.HeritageView = class HeritageView extends View {
                             <th>Generation</th>
                             <th>Relation</th>
                             <th>Total Profiles</th>
-                            <th>Birth Heritage</th>
-                            <th>Chart</th>
+                            <th class="center">Birth Heritage</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -113,7 +112,7 @@ window.HeritageView = class HeritageView extends View {
         });
 
         // Add click action to help button
-        const helpButton = document.getElementById("help-button"); // TODO: Close help in pressing 'ESC'
+        const helpButton = document.getElementById("help-button");
         helpButton.addEventListener("click", function () {
             $("#help-text").slideToggle();
         });
@@ -237,8 +236,11 @@ window.HeritageView = class HeritageView extends View {
             }
 
             countries.sort(sortByPercentageDesc);
-            var chart = generateChart(countries);
+            let colorFunction = generateColorMapFunction(countries);
+            let chart = generateChart(countries, colorFunction);
+            let legend = getLengend(countries, colorFunction);
             let results = document.getElementById("results-container");
+            results.appendChild(legend);
             results.appendChild(chart);
 
             Utils.hideShakingTree();
@@ -347,6 +349,7 @@ window.HeritageView = class HeritageView extends View {
 
             // calculate country profile count for each generation
             const displayBirthCountries = [];
+            const colorFunctions = [];
             const chartSVGs = [];
             for (const generation in birthCountries) {
                 let countries = [];
@@ -390,7 +393,9 @@ window.HeritageView = class HeritageView extends View {
 
                 displayBirthCountries.push(countries);
 
-                var chart = generateChart(countries);
+                let colorFunction = generateColorMapFunction(countries);
+                colorFunctions.push(colorFunction);
+                let chart = generateChart(countries, colorFunction);
                 chartSVGs.push(chart);
             }
 
@@ -423,6 +428,7 @@ window.HeritageView = class HeritageView extends View {
                 profileCounts: profileCounts,
                 displayBirthCountries: displayBirthCountries,
                 displayDeathCountries: displayDeathCountries,
+                colorFunctions: colorFunctions,
                 chartSVGs: chartSVGs,
             });
         }
@@ -442,20 +448,17 @@ window.HeritageView = class HeritageView extends View {
                 } else {
                     row.insertCell(2).innerHTML = `${values.profileCounts[generation]}`;
                 }
+                let cell3 = row.insertCell(3);
+                cell3.setAttribute("rowspan", 2);
+                cell3.appendChild(values.chartSVGs[generation]);
 
-                let heritageHTML = "";
-                values.displayBirthCountries[generation].forEach((item) => {
-                    heritageHTML +=
-                        item.name +
-                        "&nbsp" +
-                        item.percentage.toLocaleString(undefined, {
-                            style: "percent",
-                            maximumSignificantDigits: 3,
-                        }) +
-                        "<br>";
-                });
-                row.insertCell(3).innerHTML = heritageHTML;
-                row.insertCell(4).appendChild(values.chartSVGs[generation]);
+                let legendRow = table.insertRow(-1);
+                legendRow.id = "legend-row" + generation;
+                let legendDiv = getLengend(values.displayBirthCountries[generation], values.colorFunctions[generation]);
+                let legendCell = legendRow.insertCell();
+                legendCell.setAttribute("colspan", 3);
+                legendCell.appendChild(legendDiv);
+
                 // row.insertCell(5).innerHTML = values.latestBirthCountries[generation];
                 // row.insertCell(6).innerHTML = values.avgBirthCountries[generation];
                 // row.insertCell(7).innerHTML = values.avgGenLengths[generation];
@@ -467,11 +470,32 @@ window.HeritageView = class HeritageView extends View {
             Utils.hideShakingTree();
         }
 
-        function generateChart(data) {
-            // Specify the chart’s dimensions.
-            const width = 928;
-            const height = Math.min(width, 500);
+        function getLengend(countries, colorFunction) {
+            let legendHTML = "";
+            countries.forEach((item) => {
+                legendHTML +=
+                    "<span class='legend-bullet' style='background-color:" +
+                    colorFunction(item.name) +
+                    "'></span>" +
+                    "&nbsp" +
+                    "<span class='legend-label'>" +
+                    item.name +
+                    "&nbsp" +
+                    item.percentage.toLocaleString(undefined, {
+                        style: "percent",
+                        maximumSignificantDigits: 2,
+                    }) +
+                    "</span>" +
+                    "<br>";
+            });
+            let div = document.createElement("div");
+            div.setAttribute("id", "legend");
+            div.innerHTML = legendHTML;
 
+            return div;
+        }
+
+        function generateColorMapFunction(data) {
             // Create the color scale.
             const color = d3
                 .scaleOrdinal()
@@ -484,6 +508,13 @@ window.HeritageView = class HeritageView extends View {
                         )
                         .reverse()
                 );
+            return color;
+        }
+
+        function generateChart(data, color) {
+            // Specify the chart’s dimensions.
+            const width = 600;
+            const height = Math.min(width, 600);
 
             // Create the pie layout and arc generator.
             const pie = d3
@@ -510,7 +541,7 @@ window.HeritageView = class HeritageView extends View {
                 .attr("width", width)
                 .attr("height", height)
                 .attr("viewBox", [-width / 2, -height / 2, width, height])
-                .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+                .attr("style", "max-width: 100%; height: auto;"); // font: 14px sans-serif;");
 
             // Add a sector path for each value.
             svg.append("g")
@@ -526,9 +557,10 @@ window.HeritageView = class HeritageView extends View {
                         d.data.name +
                         ": " +
                         // d.data.count.toLocaleString() +
-                        " (" +
+                        "(" +
                         d.data.percentage.toLocaleString(undefined, {
                             style: "percent",
+                            maximumSignificantDigits: 2,
                         }) +
                         ")"
                 );
@@ -543,27 +575,43 @@ window.HeritageView = class HeritageView extends View {
                 .attr("transform", (d) => `translate(${arcLabel.centroid(d)})`)
                 .call((text) =>
                     text
-                        .filter((d) => d.endAngle - d.startAngle > 0.1)
+                        .filter((d) => d.endAngle - d.startAngle > 0.1 && d.endAngle - d.startAngle <= 0.15)
+                        .append("tspan")
+                        .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
+                        .text((d) => d.data.name.substring(0, 3) + ".")
+                )
+                .call((text) =>
+                    text
+                        .filter((d) => d.endAngle - d.startAngle > 0.15 && d.endAngle - d.startAngle <= 0.2)
                         .append("tspan")
                         .attr("y", "-0.4em")
-                        .attr("font-weight", "bold")
                         .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
                         .text((d) => d.data.name)
                 )
                 .call((text) =>
                     text
-                        .filter((d) => d.endAngle - d.startAngle > 0.25)
+                        .filter((d) => d.endAngle - d.startAngle > 0.2)
+                        .append("tspan")
+                        .attr("y", "-0.4em")
+                        .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
+                        .text((d) => d.data.name)
+                )
+                .call((text) =>
+                    text
+                        .filter((d) => d.endAngle - d.startAngle > 0.2)
                         .append("tspan")
                         .attr("x", 0)
                         .attr("y", "0.7em")
                         .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
                         .attr("fill-opacity", 0.7)
+                        .attr("style", "font-size: 12px")
                         .text(
                             (d) =>
                                 // d.data.count.toLocaleString() +
-                                " (" +
+                                "(" +
                                 d.data.percentage.toLocaleString(undefined, {
                                     style: "percent",
+                                    maximumSignificantDigits: 2,
                                 }) +
                                 ")"
                         )
