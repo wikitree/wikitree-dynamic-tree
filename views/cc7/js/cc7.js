@@ -949,7 +949,7 @@ export class CC7 {
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
-        const worker = new Worker("views/cc7/js/relationshipWorker.js");
+        const worker = new Worker(new URL("relationshipWorker.js", import.meta.url));
 
         const $this = this;
         worker.onmessage = function (event) {
