@@ -165,6 +165,8 @@ window.HeritageView = class HeritageView extends View {
         async function gatherHeritage(id) {
             Utils.showShakingTree();
 
+            familyMembers = {};
+
             GENERATIONS = $("#generations").val();
             let outputMode = "overview"; // default value
             let missingAsUnknown = false;
@@ -205,6 +207,11 @@ window.HeritageView = class HeritageView extends View {
 
         async function getFamilyMembers(id) {
             // get ancestors / descendants of given ID with getPeople
+
+            let status,
+                resultByKey,
+                ancestor_json = {};
+
             const options = {};
             if (direction == "ancestor") {
                 options["ancestors"] = GENERATIONS;
@@ -212,14 +219,22 @@ window.HeritageView = class HeritageView extends View {
             if (direction == "descendant") {
                 options["descendants"] = GENERATIONS;
             }
-            const results = await WikiTreeAPI.getPeople(
-                "heritage",
-                id,
-                ["BirthLocation, BirthLocation, Name, Derived.BirthName, Father, Mother, Meta"],
-                options
-            );
-            // save the list of familyMembers
-            familyMembers = results[2];
+
+            let getMore = false;
+            do {
+                let startProfile = Object.keys(familyMembers).length;
+                options["start"] = startProfile;
+                [status, resultByKey, ancestor_json] = await WikiTreeAPI.getPeople(
+                    "heritage",
+                    id,
+                    ["BirthLocation, BirthLocation, Name, Derived.BirthName, Father, Mother, Meta"],
+                    options
+                );
+                // save the list of familyMembers
+                familyMembers = { ...familyMembers, ...ancestor_json };
+
+                getMore = status.startsWith("Maximum number of profiles");
+            } while (getMore);
         }
 
         function findOverallHeritage(id) {
