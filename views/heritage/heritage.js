@@ -243,8 +243,8 @@ window.HeritageView = class HeritageView extends View {
                 index++;
             }
 
-            countries.sort(sortByPercentageDesc);
             let colorFunction = generateColorMapFunction(countries);
+            countries.sort(sortByPercentageDesc);
             let chart = generateChart(countries, colorFunction);
             let legend = getLengend(countries, colorFunction);
             let results = document.getElementById("results-container");
@@ -275,9 +275,7 @@ window.HeritageView = class HeritageView extends View {
                     }
 
                     // check if country is already in the list
-                    let item = countries.find((element) => {
-                        return element.name == birthCountry;
-                    });
+                    let item = countries.find((element) => element.name == birthCountry);
                     if (item) {
                         // increase the percentage
                         item.percentage += heritageFraction;
@@ -363,9 +361,7 @@ window.HeritageView = class HeritageView extends View {
                 let countries = [];
                 birthCountries[generation].forEach((country) => {
                     // check if country is already in the list
-                    let item = countries.find((element) => {
-                        return element.name == country;
-                    });
+                    let item = countries.find((element) => element.name == country);
                     if (item) {
                         // increment the profile count
                         item.count++;
@@ -382,9 +378,7 @@ window.HeritageView = class HeritageView extends View {
                     // Find the unknown country entry and increase it if there are any missing profiles
                     let missingProfiles = totalForGeneration - profileCounts[generation];
                     if (missingProfiles > 0) {
-                        let item = countries.find((element) => {
-                            return element.name == "Unknown";
-                        });
+                        let item = countries.find((element) => element.name == "Unknown");
                         if (item) {
                             // increment the profile count
                             item.count += missingProfiles;
@@ -394,6 +388,9 @@ window.HeritageView = class HeritageView extends View {
                     }
                 }
 
+                let colorFunction = generateColorMapFunction(countries);
+                colorFunctions.push(colorFunction);
+
                 countries.sort(sortByCountDesc);
                 countries.forEach((entry) => {
                     entry.percentage = entry.count / totalForGeneration;
@@ -401,8 +398,6 @@ window.HeritageView = class HeritageView extends View {
 
                 displayBirthCountries.push(countries);
 
-                let colorFunction = generateColorMapFunction(countries);
-                colorFunctions.push(colorFunction);
                 let chart = generateChart(countries, colorFunction);
                 chartSVGs.push(chart);
             }
@@ -521,7 +516,7 @@ window.HeritageView = class HeritageView extends View {
 
         function generateChart(data, color) {
             // Specify the chart’s dimensions.
-            const width = 600;
+            const width = 750;
             const height = Math.min(width, 600);
 
             // Create the pie layout and arc generator.
@@ -529,17 +524,23 @@ window.HeritageView = class HeritageView extends View {
                 .pie()
                 .sort(null)
                 .value((d) => d.percentage);
-            // .value((d) => d.count);
 
             const arc = d3
                 .arc()
                 .innerRadius(0)
-                .outerRadius(Math.min(width, height) / 2 - 1);
+                .outerRadius(Math.min(width, height) / 2 - 1)
+                .startAngle((d) => d.startAngle + Math.PI / 2)
+                .endAngle((d) => d.endAngle + Math.PI / 2);
 
             const labelRadius = arc.outerRadius()() * 0.8;
 
             // A separate arc generator for labels.
-            const arcLabel = d3.arc().innerRadius(labelRadius).outerRadius(labelRadius);
+            const arcLabel = d3
+                .arc()
+                .innerRadius(labelRadius)
+                .outerRadius(labelRadius)
+                .startAngle((d) => d.startAngle + Math.PI / 2)
+                .endAngle((d) => d.endAngle + Math.PI / 2);
 
             const arcs = pie(data);
 
@@ -553,7 +554,7 @@ window.HeritageView = class HeritageView extends View {
 
             // Add a sector path for each value.
             svg.append("g")
-                .attr("stroke", "white")
+                .attr("stroke", "grey")
                 .selectAll()
                 .data(arcs)
                 .join("path")
@@ -563,9 +564,7 @@ window.HeritageView = class HeritageView extends View {
                 .text(
                     (d) =>
                         d.data.name +
-                        ": " +
-                        // d.data.count.toLocaleString() +
-                        "(" +
+                        ": (" +
                         d.data.percentage.toLocaleString(undefined, {
                             style: "percent",
                             maximumSignificantDigits: 2,
@@ -580,17 +579,25 @@ window.HeritageView = class HeritageView extends View {
                 .selectAll()
                 .data(arcs)
                 .join("text")
-                .attr("transform", (d) => `translate(${arcLabel.centroid(d)})`)
                 .call((text) =>
                     text
-                        .filter((d) => d.endAngle - d.startAngle > 0.1 && d.endAngle - d.startAngle <= 0.15)
+                        .filter((d) => d.endAngle - d.startAngle > 0.05 && d.endAngle - d.startAngle <= 0.2)
+                        .attr(
+                            "transform",
+                            (d) =>
+                                `translate(${arcLabel.centroid(d)}) rotate(${
+                                    ((d.startAngle + d.endAngle) / 2 / (2 * Math.PI)) * 360 - 360
+                                })`
+                        )
+                        .attr("text-anchor", "middle")
                         .append("tspan")
                         .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
-                        .text((d) => d.data.name.substring(0, 3) + ".")
+                        .text((d) => d.data.name)
                 )
                 .call((text) =>
                     text
-                        .filter((d) => d.endAngle - d.startAngle > 0.15 && d.endAngle - d.startAngle <= 0.2)
+                        .filter((d) => d.endAngle - d.startAngle > 0.2)
+                        .attr("transform", (d) => `translate(${arcLabel.centroid(d)})`)
                         .append("tspan")
                         .attr("y", "-0.4em")
                         .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
@@ -599,14 +606,7 @@ window.HeritageView = class HeritageView extends View {
                 .call((text) =>
                     text
                         .filter((d) => d.endAngle - d.startAngle > 0.2)
-                        .append("tspan")
-                        .attr("y", "-0.4em")
-                        .attr("fill", (d) => Utils.chooseForeground(color(d.data.name)))
-                        .text((d) => d.data.name)
-                )
-                .call((text) =>
-                    text
-                        .filter((d) => d.endAngle - d.startAngle > 0.2)
+                        .attr("transform", (d) => `translate(${arcLabel.centroid(d)})`)
                         .append("tspan")
                         .attr("x", 0)
                         .attr("y", "0.7em")
