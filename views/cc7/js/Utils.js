@@ -1,6 +1,6 @@
 export class CC7Utils {
     static CC7_CONTAINER_ID = "cc7Container";
-    
+
     static addMissingBits(aPerson) {
         aPerson.Missing = [];
         if (!aPerson.Father) {
@@ -10,34 +10,44 @@ export class CC7Utils {
             aPerson.Missing.push("Mother");
         }
 
+        const [age, ,] = CC7Utils.ageAtDeath(aPerson);
         if (
-            (CC7Utils.ageAtDeath(aPerson, false) > 15 ||
-                aPerson?.DeathDate == "0000-00-00" ||
-                aPerson?.BirthDate == "0000-00-00") &&
-            ((aPerson?.DataStatus.Spouse != "known" && aPerson?.DataStatus.Spouse != "blank") ||
+            (age === "" || age > 15) &&
+            ((aPerson.DataStatus?.Spouse != "known" && aPerson.DataStatus?.Spouse != "blank") ||
                 aPerson.NoChildren != "1")
         ) {
-            if (aPerson.Spouse.length == 0 && aPerson?.DataStatus?.Spouse != "blank") {
+            if (aPerson.Spouse?.length == 0 && aPerson.DataStatus?.Spouse != "blank") {
                 aPerson.Missing.push("Spouse");
             }
-            if (aPerson.Child.length == 0 && aPerson.NoChildren != "1") {
+            if (aPerson.Child?.length == 0 && aPerson.NoChildren != "1") {
                 aPerson.Missing.push("Children");
             }
         }
     }
 
-    static ageAtDeath(person, showStatus = true) {
+    /**
+     * Returns an array of 3 values associated with the given person's age at death.
+     * @param {*} person a person record retrieved from the API
+     * @param {*} showStatus if true, prepends ~, <, or > to the age at death depending on whether it is uncertain,
+     *            less than, or greater than the calculated age. No status is added if the age could not be calculated.
+     * @returns [age, annotation, annotatedAge] where:
+     *          age - "" if no age could be determined, otherwise the calculated age at death of the person. If it is
+     *                negative (due to bad dates or e.g. birth = 1871-07-03 and death = 1971), 0 is returned.
+     *          annotation - one of the symbols ~, <, >, or the empty string depending whether the age is uncertain (~),
+     *                or is at most the given number (<), or at least the given number (>) or is accurate (empty string).
+     *          annotatedAge - the concatenation of annotation and age.
+     */
+    static ageAtDeath(person) {
         // ages
         let about = "";
         let diedAged = "";
-        if (person?.BirthDate != undefined) {
+        if (person.BirthDate != undefined) {
             if (
                 person["BirthDate"].length == 10 &&
                 person["BirthDate"] != "0000-00-00" &&
                 person["DeathDate"].length == 10 &&
                 person["DeathDate"] != "0000-00-00"
             ) {
-                about = "";
                 const obDateBits = person["BirthDate"].split("-");
                 if (obDateBits[1] == "00") {
                     obDateBits[1] = "06";
@@ -58,25 +68,45 @@ export class CC7Utils {
                 }
 
                 diedAged = CC7Utils.getAge(
-                    new Date(obDateBits[0], obDateBits[1], obDateBits[2]),
-                    new Date(odDateBits[0], odDateBits[1], odDateBits[2])
+                    new Date(obDateBits[0], obDateBits[1] - 1, obDateBits[2]),
+                    new Date(odDateBits[0], odDateBits[1] - 1, odDateBits[2])
                 );
-            } else {
-                diedAged = "";
+                if (diedAged < 0) {
+                    // Make provision for e.g. birth = 1871-07-03 and death = 1971
+                    // (or just plain bad dates)
+                    diedAged = 0;
+                }
             }
         }
-        if (person?.DataStatus?.DeathDate) {
-            if (person.DataStatus.DeathDate == "after") {
+
+        const status = person?.DataStatus;
+        if (status && diedAged !== "") {
+            //    Status of
+            // birthDate \  deathDate
+            //            \  . | before | after
+            //             +---+--------+-------
+            //         .   | . |   <    |  >
+            //      before | > |   ~    |  >        <---- about symbol
+            //       after | < |   <    |  ~
+            if (
+                (status.BirthDate == "before" && status.DeathDate == "before") ||
+                (status.BirthDate == "after" && status.DeathDate == "after")
+            ) {
+                about = "~";
+            } else if (
+                (status.DeathDate == "before" && status.BirthDate !== "before") ||
+                (status.BirthDate == "after" && status.DeathDate !== "after")
+            ) {
+                about = "<";
+            } else if (
+                (status.DeathDate == "after" && status.BirthDate !== "after") ||
+                (status.BirthDate == "before" && status.DeathDate !== "before")
+            ) {
                 about = ">";
             }
         }
-        if (diedAged == "" && diedAged != "0") {
-            return false;
-        } else if (showStatus == false) {
-            return diedAged;
-        } else {
-            return about + diedAged;
-        }
+
+        return diedAged === "" ? ["", "", ""] : [diedAged, about, `${about}${diedAged}`];
     }
 
     static assignRelationshipsFor(person) {
