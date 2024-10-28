@@ -197,11 +197,16 @@ window.HeritageView = class HeritageView extends View {
 
             await getFamilyMembers(id);
 
-            if (outputMode == "overview") {
-                findOverallHeritage(id);
+            if (Object.keys(familyMembers).length == 1) {
+                alert("Only one result. Have you used a private or unlisted profile?");
+                Utils.hideShakingTree;
             } else {
-                fillGenNames();
-                findCountryCountByGeneration(missingAsUnknown);
+                if (outputMode == "overview") {
+                    findOverallHeritage(id);
+                } else {
+                    fillGenNames();
+                    findCountryCountByGeneration(missingAsUnknown);
+                }
             }
         }
 
