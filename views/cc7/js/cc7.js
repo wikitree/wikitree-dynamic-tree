@@ -64,12 +64,9 @@ export class CC7 {
         <h4>Sorting the Table</h4>
         <ul>
             <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
-            <li>
-                Sort by Created/Modified to see new additions.
-            </li>
-            <li>
-                The location column sort toggles between sorting Town &rarr; Country or Country &rarr; Town on each click
-                on location header.
+            <li>Sort by Created/Modified to see new additions.</li>
+            <li>The names in the location columns can be reversed (and subsequently re-sorted) by clicking the ↻ symbol
+                in the header.
             </li>
         </ul>
         <h4>Scrolling the Wide Table</h4>
@@ -952,11 +949,11 @@ export class CC7 {
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
-        const worker = new Worker("views/cc7/js/relationshipWorker.js");
+        const worker = new Worker(new URL("relationshipWorker.js", import.meta.url));
 
         const $this = this;
         worker.onmessage = function (event) {
-            console.log("Worker returned:", event.data);
+            // console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
                 if ($("#cc7PBFilter").data("select2")) {
                     $("#cc7PBFilter").select2("destroy");
@@ -1111,7 +1108,7 @@ export class CC7 {
             }
             const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
             if (row) {
-                row.setAttribute("data-relation", result.relationship.abbr);
+                row.setAttribute("data-relation", result?.relationship?.abbr || "");
                 const relationCell = row.querySelector("td.relation");
                 if (relationCell) {
                     relationCell.textContent = result.relationship.abbr;

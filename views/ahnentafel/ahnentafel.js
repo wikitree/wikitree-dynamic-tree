@@ -33,7 +33,7 @@ window.AhnentafelView = class AhnentafelView extends View {
     close() {
         $("#moreGenerationsButton").off("click").remove();
         $("header #ahnentafelHeaderBox").remove();
-        $("#view-container").css({ "min-height": "1000px", "overflow": "visible" });
+        $("#view-container").css({ "min-height": "", "overflow": "" });
         $("#view-container").removeClass("ahnentafelView");
         $(document).off("keydown.AhnentafelView");
         $("#view-container").off();

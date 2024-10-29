@@ -31,13 +31,16 @@ if (typeof View != "function") { function View() { } } // To allow debugging in 
 
 class SlippyTree extends View {
 
-    #PATHPREFIX = "/wikitree-dynamic-tree/";
+    #SCROLLSTEP_WHEEL = 0.0015;  // Was 0.01, then 0.005
+    #SCROLLSTEP_KEYS = 1.1;     // Was 1.2
+    #PATHPREFIX;
     static loadCount = 0;
     LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
     #VERSION = 0; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
     #APPID = "SlippyTree";
+    #HTML = "http://www.w3.org/1999/xhtml";
     #SVG = "http://www.w3.org/2000/svg";
     #MINSCALE = 0.2;
     #MAXSCALE = 3;
@@ -112,6 +115,7 @@ class SlippyTree extends View {
    <div data-action="ancestors">Load ancestors</div>
    <div data-action="descendants">Load descendants</div>
    <div data-action="prune">Prune to this branch</div>
+   <div data-action="remove">Remove</div>
    <a data-action="profile">View profile</a>
   </div>
 
@@ -225,7 +229,10 @@ class SlippyTree extends View {
      <img src="{PATHPREFIX}views/slippyTree/resources/trackpad.svg"/>
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
-    <p style="margin:0.5em 0 0 0">Or navigate with cursor keys and +/- to zoom</p>
+    <p style="margin:0.5em 0 0 0">
+    Or navigate with cursor keys and +/- to zoom.
+    <a href="" class="download-link">Download Current View</a>
+    </p>
    </div>
    <div class="icon-attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
   </div>
@@ -242,6 +249,11 @@ class SlippyTree extends View {
         this.state.refocusEnd = null;
 
         if (this.browser) {
+            if (window.location.host == "apps.wikitree.com") {
+                this.#PATHPREFIX = "";
+            } else {
+                this.#PATHPREFIX = "/wikitree-dynamic-tree/";
+            }
             this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
             this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).replace(/\{PATHPREFIX\}/g, this.#PATHPREFIX).trim();
 
@@ -268,6 +280,12 @@ class SlippyTree extends View {
             document.querySelector(".slippy-categories").addEventListener("click", (e) => {
                 e.stopPropagation();
             });
+            document.querySelector(".download-link").addEventListener("click", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                this.downloadTree();
+            });
+            document.querySelector(".download-link").style.color = getComputedStyle(document.querySelector(".download-link")).color;    // Deep magic. Remove the "visited" appearance from this link
             document.querySelector(".slippy-categories").addEventListener("change", (e) => {
                 let value = e.target.options[e.target.selectedIndex].fullValue;
                 this.setCategory(value);
@@ -373,15 +391,14 @@ class SlippyTree extends View {
                 e.preventDefault();
                 let view = { scale: this.state.view.scale, cx:this.state.view.cx, cy:this.state.view.cy };
                 if (e.ctrlKey) {
-                    view.scale -= e.deltaY * 0.01;
+                    view.scale -= e.deltaY * 0.01;      // Pinch-zoom with trackpad is different! 
                 } else if (this.settings.wheel == "scroll") {
                     view.cx += e.deltaX / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                     view.cy += e.deltaY / view.scale * (this.state.props.dragScrollReversed ? -1 : 1);
                 } else {
 //                    const mul = 0.01; // 0.01 is "2x cursor keys" - https://www.wikitree.com/g2g/1802306/announcing-a-new-tree-view-slippytree#1802760
 
-                    const mul = 0.005;
-                    view.scale -= e.deltaY * mul;
+                    view.scale -= e.deltaY * this.#SCROLLSTEP_WHEEL * view.scale;       // Weirdly non-linear without mul by view.scale!
                 }
                 this.reposition(view);
             });
@@ -404,9 +421,9 @@ class SlippyTree extends View {
                         } else if (e.key == "?") {
                             helpButton.click();
                         } else if (e.key == "+") {
-                            view.scale *= 1.2;
+                            view.scale *= this.#SCROLLSTEP_KEYS;
                         } else if (e.key == "-") {
-                            view.scale /= 1.2;
+                            view.scale /= this.#SCROLLSTEP_KEYS;
                         } else {
                             let score, best = null, max = 0x7FFFFFFF, threshold = 30;
                             for (const person of self.state.people) {
@@ -684,6 +701,83 @@ class SlippyTree extends View {
         window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
     }
 
+    downloadTree() {
+        let src = this.state.svg.outerHTML;
+        const doc = new DOMParser().parseFromString(src, "text/xml");
+        let stylesheeturl;
+        if (window.location.host == "apps.wikitree.com") {
+            stylesheeturl = "https://" + window.location.host + window.location.pathname + "views/slippyTree/style.css";
+        } else {
+            stylesheeturl = "https://" + window.location.host + "/wikitree-dynamic-tree/views/slippyTree/style.css";
+        }
+        fetch(stylesheeturl).then(response => response.text()).then(text => {
+            const anchor = doc.rootElement.firstChild;
+            doc.rootElement.style = null;
+
+            // Add metadata and stylesheet link
+            let link = doc.createElementNS(this.#HTML, "link");
+            link.setAttribute("rel", "canonical");
+            link.setAttribute("href", window.location);
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(link, anchor);
+            const nowText = new Date().toDateString();
+            const isonowText = new Date().toISOString();
+            const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" as of " + nowText;
+            let title = doc.createElementNS(this.#SVG, "title");
+            title.appendChild(doc.createTextNode(titleText));
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(title, anchor);
+            let meta = doc.createElementNS(this.#SVG, "metadata");
+            let rdf = "\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n    <rdf:Description about=\"\">\n     <dc:title>" + titleText + "</dc:title>\n     <dc:date>" + isonowText + "</dc:date>\n     <dc:publisher>https://www.wikitree.com</dc:publisher>\n     <dc:source>" + window.location.toString().replace(/&/g, "&amp;") + "</dc:source>\n    </rdf:Description>\n   </rdf:RDF>\n  ";
+            meta.innerHTML = rdf;
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(meta, anchor);
+
+            let style = doc.createElementNS(this.#SVG, "style");
+            style.innerHTML = "\n  /*\n  This stylesheet will make the size of the PDF the same as\n  the size of the SVG when printing to PDF in Firefox or Chrome.\n  Without it the SVG will print on regular Letter or A4\n  */\n  @page {\n      size: " + doc.rootElement.getAttribute("width") + "px " + doc.rootElement.getAttribute("height") + "px;\n      margin: 0;  \n  }\n  ";
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(style, anchor);
+
+            style = doc.createElementNS(this.#SVG, "style");
+            style.innerHTML = "\n/* Source: " + stylesheeturl + " */\n" + text + "\n  ";
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(style, anchor);
+
+            doc.rootElement.querySelectorAll(":is(.relations, .labels, .people) > *").forEach((e) => {
+                e.parentNode.insertBefore(doc.createTextNode("\n     "), e);
+            });
+            doc.rootElement.querySelectorAll(".people text").forEach((e) => {
+                const id = e.parentNode.id.replace(/person-/, "");
+                const person = this.find(id);
+                if (person) {
+                    let a = doc.createElementNS(this.#SVG, "a");
+                    a.setAttribute("href", "https://www.wikitree.com/wiki/" + person.data.Name);
+                    while (e.firstChild) {
+                        a.appendChild(e.firstChild);
+                    }
+                    e.appendChild(a);
+                }
+            });
+
+            src = new XMLSerializer().serializeToString(doc);
+            const blob = new Blob([src], { "type": "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.download = "slippy-tree.svg";
+            a.href = url;
+            setTimeout(() => {
+                a.click();
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    a.remove();
+                }, 0);
+            }, 0);
+        });
+        return false;
+    }
+
     /**
      * Serialize the current state of the view to a string, suitable for include in a URL parameter.
      * The reverse operion is "restoreState"
@@ -912,6 +1006,9 @@ class SlippyTree extends View {
         if (e) {
             document.querySelectorAll(".output-name").forEach((e) => {
                 e.innerHTML = person.data.Name;
+            });
+            document.querySelectorAll("[data-action=\"remove\"]").forEach((e) => {
+                e.classList.toggle("hidden", person == this.state.focus);
             });
             document.querySelectorAll("[data-action=\"profile\"]").forEach((e) => {
                 // Do this to avoid issues with popup blockers if target=_blank
@@ -2872,9 +2969,6 @@ class SlippyTreePerson {
         } else if (name == "prune") {
             // Mark as pruned any nodes not reachable as a parent,
             // descendant, or spouse of a descendant
-            for (const person of tree.state.people) {
-                person.pruned = false;
-            }
             const q = [];
             q.push(this);
             for (let i=0;i<q.length;i++) {
@@ -2904,9 +2998,38 @@ class SlippyTreePerson {
                 }
             }
             for (const person of tree.state.people) {
-                person.pruned = !q.includes(person);
+                person.pruned |= !q.includes(person);
             }
             tree.setFocus(this);
+        } else if (name == "remove") {
+            // Mark as pruned any nodes not reachable as a parent,
+            // descendant, or spouse of a descendant
+            const focus = tree.state.focus;
+            const q = [];
+            this.pruned = true;
+            q.push(focus);
+            for (let i=0;i<q.length;i++) {
+                const person = q[i];
+                for (const p of person.parents()) {
+                    if (!q.includes(p) && !p.isHidden()) {
+                        q.push(p);
+                    }
+                }
+                for (const p of person.children()) {
+                    if (!q.includes(p) && !p.isHidden()) {
+                        q.push(p);
+                    }
+                }
+                for (const p of person.spouses()) {
+                    if (!q.includes(p) && !p.isHidden()) {
+                        q.push(p);
+                    }
+                }
+            }
+            for (const person of tree.state.people) {
+                person.pruned |= !q.includes(person);
+            }
+            tree.setFocus(focus);
         }
     }
 

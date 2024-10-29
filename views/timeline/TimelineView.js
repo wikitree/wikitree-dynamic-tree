@@ -9,6 +9,12 @@ window.TimelineView = class TimelineView extends View {
         };
     }
 
+    close() {
+        const container = document.getElementById("view-container");
+        container.style.width = null;
+        container.style.position = null;
+    }
+
     init(selector, person_id) {
         WikiTreeAPI.postToAPI({
             appId: TimelineView.APP_ID,

@@ -20,7 +20,9 @@ window.CC7View = class CC7View extends View {
         // However, init() can be called multiple times while the view is active (i.e. everytime the GO button is clicked)
         // so we save the overflow value only if close() had been called since we last saved it
         if (!this.overflow) {
-            this.overflow = $("#view-container").css("overflow");
+            // Note this can't be done with the JQuery css() function as that returns evaluated style.
+            // We want only the value from the "style" attribute (which should be null)
+            this.overflow = document.querySelector("#view-container").style.overflow || "";   // not $("#view-container").css("overflow");
         }
         const cc7 = new CC7(container_selector, person_id);
     }
