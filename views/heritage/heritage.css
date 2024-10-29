@@ -1,8 +1,8 @@
-#statsContainer {
+#heritageContainer {
   padding: 0.3em;
 }
 
-#stats-table {
+#heritage-table {
   border-collapse: collapse;
   margin: 25px auto;
   border-radius: 5px 5px 0 0;
@@ -10,31 +10,34 @@
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
-#stats-table thead tr {
+#heritage-table thead tr {
   background-color: #25422d;
   color: white;
   text-align: left;
   font-weight: bold;
 }
 
-#stats-table th,
-#stats-table td {
+#heritage-table th,
+#heritage-table td {
   padding: 10px 12px;
 }
 
-#stats-table tbody {
+#heritage-table tbody {
   background-color: white;
 }
 
-#stats-table tbody tr:nth-of-type(even) {
+#heritage-table tbody tr:nth-of-type(4n + 1) {
+  background-color: #f7f6f0;
+}
+#heritage-table tbody tr:nth-of-type(4n + 2) {
   background-color: #f7f6f0;
 }
 
-#stats-table tbody tr:last-of-type {
+#heritage-table tbody tr:last-of-type {
   border-bottom: 2px solid #25422d;
 }
 
-#stats-Table #tree {
+#heritage-Table #tree {
   display: block;
   height: 5em;
   border-radius: 50%;
@@ -43,30 +46,46 @@
   margin: auto;
 }
 
-statsContainer #results-container {
+#heritageContainer #results-container {
   margin: 25px auto;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-statsContainer #results-container div {
-  margin: 10px auto;
+#heritageContainer #legend {
+  border: black solid 1px;
+  padding: 10px;
+  margin: 10px;
+  text-align: left;
+}
+#heritageContainer #legend .legend-bullet {
+  display: inline-block;
+  text-align: left;
+  height: 16px;
+  width: 16px;
+  border: 1px solid;
+}
+#heritageContainer #legend .legend-label {
+  vertical-align: text-bottom;
 }
 
-div.stats select {
+div.heritage select {
   padding: 0.3em;
   width: auto;
   background-size: 1em 2em;
   margin: 5px 5px 0px 0px;
 }
 
-#generation {
+#heritageContainer #generation {
   width: 3em;
   min-width: 3em;
   margin-right: 10px;
   margin-top: 0;
 }
 
-.stats fieldset {
+.heritage fieldset {
   display: block;
   margin-inline-start: 2px;
   margin-inline-end: 2px;
@@ -81,28 +100,20 @@ div.stats select {
   border-image: initial;
   margin-bottom: 10px;
 }
-.stats fieldset input {
+.heritage fieldset input {
   margin: 0;
 }
-.stats fieldset label {
+.heritage fieldset label {
   margin-right: 0;
 }
-.stats fieldset label.left {
+.heritage fieldset label.left {
   margin-left: 10px;
 }
-.stats fieldset label.right {
+.heritage fieldset label.right {
   margin-right: 10px;
 }
 
-#gender {
-  /* width: auto; */
-  min-width: auto;
-  margin-right: 10px;
-  margin-top: 0;
-  padding-right: 1.5em;
-}
-
-.stats #help-button {
+.heritage #help-button {
   background: darkgreen;
   color: #fff;
   font-size: 0.8em;
@@ -114,7 +125,7 @@ div.stats select {
   z-index: 11000;
 }
 
-.stats #help-text {
+.heritage #help-text {
   display: none;
   border: 3px solid forestgreen;
   border-radius: 1em;
@@ -130,7 +141,7 @@ div.stats select {
   cursor: default;
 }
 
-.stats xx {
+.heritage xx {
   position: absolute;
   top: 0.2em;
   right: 0.6em;
@@ -140,20 +151,36 @@ div.stats select {
   color: red;
 }
 
-.stats #help-text:hover {
+.heritage #help-text:hover {
   cursor: grab;
 }
-.stats #help-text:active {
+.heritage #help-text:active {
   cursor: grabbing;
 }
 
-#g2g {
+#heritageContainer #g2g {
   text-align: center;
   background: lightgoldenrodyellow;
 }
 
 @media print {
-  .stats-not-printable {
+  .heritage-not-printable {
     display: none;
   }
+}
+
+/* input#overview[type="radio"]:checked ~ #details_optons {
+  display: block;
+} */
+
+#heritageContainer #details_options {
+  display: none;
+}
+
+#heritageContainer #ancestors_options {
+  display: none;
+}
+
+.center {
+  text-align: center;
 }
