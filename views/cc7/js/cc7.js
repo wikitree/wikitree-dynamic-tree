@@ -1012,10 +1012,10 @@ export class CC7 {
             });
 
         let connectionEntries = dbEntries.map((entry) => ({
-            key: entry.key,
-            userId: entry.value.userId,
-            id: entry.value.id,
-            distance: entry.value.distance,
+            theKey: entry.theKey,
+            userId: entry.userId,
+            id: entry.id,
+            distance: entry.distance,
         }));
 
         this.openDatabase(CC7.CONNECTION_DB_NAME, CC7.CONNECTION_DB_VERSION, CC7.CONNECTION_STORE_NAME)
@@ -1036,8 +1036,12 @@ export class CC7 {
 
             request.onupgradeneeded = function (event) {
                 const db = event.target.result;
+                db.onversionchange = function () {
+                    db.close();
+                    alert(`The ${dbName} database is outdated and needs a version upgrade. Please reload this page.`);
+                };
                 if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { keyPath: "key" });
+                    db.createObjectStore(storeName, { keyPath: "theKey" });
                 }
             };
 
@@ -1045,6 +1049,17 @@ export class CC7 {
                 resolve(event.target.result);
             };
 
+            request.onblocked = function () {
+                // This event shouldn't trigger if onversionchange was handled correctly above. However, it can happen
+                // if the other tabs/pages are still running code that does not have the onversionchange code above.
+                // It means that there's another open connection to the same database
+                // and it wasn't closed after db.onversionchange triggered for it.
+                alert(
+                    "Access to the ${dbName} database is blocked because other open tabs/pages to WikiTree are not " +
+                        "successfully closing their database connections. Unfortunately the only way to correct this is " +
+                        "to restart your browser, or to close all those other tabs/pages and then to reload this page."
+                );
+            };
             request.onerror = function (event) {
                 reject(event.target.error);
             };
@@ -1057,7 +1072,7 @@ export class CC7 {
             const objectStore = transaction.objectStore(storeName);
 
             data.forEach((item) => {
-                const getRequest = objectStore.get(item.key);
+                const getRequest = objectStore.get(item.theKey);
                 getRequest.onsuccess = function (event) {
                     const existing = event.target.result;
 
@@ -1065,13 +1080,9 @@ export class CC7 {
                     const updatedItem = {
                         ...existing,
                         ...item,
-                        value: {
-                            ...existing?.value,
-                            ...item.value,
-                            relationship: checkRelationship
-                                ? item.value.relationship || existing?.value.relationship
-                                : item.value?.relationship || existing?.value?.relationship,
-                        },
+                        relationship: checkRelationship
+                            ? item.relationship || existing?.relationship
+                            : item?.relationship || existing?.relationship,
                     };
 
                     const request = objectStore.put(updatedItem);
