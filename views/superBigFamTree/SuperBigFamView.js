@@ -937,9 +937,17 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
              //     theCookieSettings["general_options_badgeLabels_otherValue"];
          };
 
+    SuperBigFamView.prototype.close = function () {
+        this.container.style.height = null;
+        let infoPanel = document.getElementById("info-panel");
+        infoPanel.parentNode.classList.remove("stickyDIV");
+        infoPanel.parentNode.style.padding = null;
+    };
+
     SuperBigFamView.prototype.init = function (selector, startId) {
         // condLog("SuperBigFamView.js - line:18", selector) ;
         var container = document.querySelector(selector);
+        this.container = container; // store this for teardown later
 
         container.style.height = "100vh";
 
