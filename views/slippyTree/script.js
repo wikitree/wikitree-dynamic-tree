@@ -31,7 +31,7 @@ if (typeof View != "function") { function View() { } } // To allow debugging in 
 
 class SlippyTree extends View {
 
-    #SCROLLSTEP_WHEEL = 0.002;  // Was 0.01, then 0.005
+    #SCROLLSTEP_WHEEL = 0.0015;  // Was 0.01, then 0.005
     #SCROLLSTEP_KEYS = 1.1;     // Was 1.2
     #PATHPREFIX;
     static loadCount = 0;
@@ -282,6 +282,7 @@ class SlippyTree extends View {
             });
             document.querySelector(".download-link").addEventListener("click", (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 this.downloadTree();
             });
             document.querySelector(".download-link").style.color = getComputedStyle(document.querySelector(".download-link")).color;    // Deep magic. Remove the "visited" appearance from this link
@@ -397,7 +398,7 @@ class SlippyTree extends View {
                 } else {
 //                    const mul = 0.01; // 0.01 is "2x cursor keys" - https://www.wikitree.com/g2g/1802306/announcing-a-new-tree-view-slippytree#1802760
 
-                    view.scale -= e.deltaY * this.#SCROLLSTEP_WHEEL;
+                    view.scale -= e.deltaY * this.#SCROLLSTEP_WHEEL * view.scale;       // Weirdly non-linear without mul by view.scale!
                 }
                 this.reposition(view);
             });
@@ -703,67 +704,78 @@ class SlippyTree extends View {
     downloadTree() {
         let src = this.state.svg.outerHTML;
         const doc = new DOMParser().parseFromString(src, "text/xml");
-        const anchor = doc.rootElement.firstChild;
-
-        doc.rootElement.style = null;
-        // Add metadata and stylesheet link
-        let link = doc.createElementNS(this.#HTML, "link");
-        link.setAttribute("rel", "stylesheet");
+        let stylesheeturl;
         if (window.location.host == "apps.wikitree.com") {
-            link.setAttribute("href", "https://" + window.location.host + window.location.pathname + "views/slippyTree/style.css");
+            stylesheeturl = "https://" + window.location.host + window.location.pathname + "views/slippyTree/style.css";
         } else {
-            link.setAttribute("href", "https://" + window.location.host + "/wikitree-dynamic-tree/views/slippyTree/style.css");
+            stylesheeturl = "https://" + window.location.host + "/wikitree-dynamic-tree/views/slippyTree/style.css";
         }
-        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
-        doc.rootElement.insertBefore(link, anchor);
-        link = doc.createElementNS(this.#HTML, "link");
-        link.setAttribute("rel", "canonical");
-        link.setAttribute("href", window.location);
-        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
-        doc.rootElement.insertBefore(link, anchor);
-        const nowText = new Date().toDateString();
-        const isonowText = new Date().toISOString();
-        const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" as of " + nowText;
-        let title = doc.createElementNS(this.#SVG, "title");
-        title.appendChild(doc.createTextNode(titleText));
-        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
-        doc.rootElement.insertBefore(title, anchor);
-        let meta = doc.createElementNS(this.#SVG, "metadata");
-        let rdf = "\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n    <rdf:Description about=\"\">\n     <dc:title>" + titleText + "</dc:title>\n     <dc:date>" + isonowText + "</dc:date>\n     <dc:publisher>https://www.wikitree.com</dc:publisher>\n     <dc:source>" + window.location.toString().replace(/&/g, "&amp;") + "</dc:source>\n    </rdf:Description>\n   </rdf:RDF>\n  ";
-        meta.innerHTML = rdf;
-        doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
-        doc.rootElement.insertBefore(meta, anchor);
-        doc.rootElement.querySelectorAll(":is(.relations, .labels, .people) > *").forEach((e) => {
-            e.parentNode.insertBefore(doc.createTextNode("\n     "), e);
-        });
-        doc.rootElement.querySelectorAll(".people text").forEach((e) => {
-            const id = e.parentNode.id.replace(/person-/, "");
-            const person = this.find(id);
-            if (person) {
-                let a = doc.createElementNS(this.#SVG, "a");
-                a.setAttribute("href", "https://www.wikitree.com/wiki/" + person.data.Name);
-                while (e.firstChild) {
-                    a.appendChild(e.firstChild);
-                }
-                e.appendChild(a);
-            }
-        });
+        fetch(stylesheeturl).then(response => response.text()).then(text => {
+            const anchor = doc.rootElement.firstChild;
+            doc.rootElement.style = null;
 
-        src = new XMLSerializer().serializeToString(doc);
-        const blob = new Blob([src], { "type": "application/octet-stream" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.download = "slippy-tree.svg";
-        a.href = url;
-        setTimeout(() => {
-            a.click();
+            // Add metadata and stylesheet link
+            let link = doc.createElementNS(this.#HTML, "link");
+            link.setAttribute("rel", "canonical");
+            link.setAttribute("href", window.location);
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(link, anchor);
+            const nowText = new Date().toDateString();
+            const isonowText = new Date().toISOString();
+            const titleText = "WikiTree Slippy Tree for \"" + this.state.focus.data.Name + "\" as of " + nowText;
+            let title = doc.createElementNS(this.#SVG, "title");
+            title.appendChild(doc.createTextNode(titleText));
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(title, anchor);
+            let meta = doc.createElementNS(this.#SVG, "metadata");
+            let rdf = "\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n    <rdf:Description about=\"\">\n     <dc:title>" + titleText + "</dc:title>\n     <dc:date>" + isonowText + "</dc:date>\n     <dc:publisher>https://www.wikitree.com</dc:publisher>\n     <dc:source>" + window.location.toString().replace(/&/g, "&amp;") + "</dc:source>\n    </rdf:Description>\n   </rdf:RDF>\n  ";
+            meta.innerHTML = rdf;
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(meta, anchor);
+
+            let style = doc.createElementNS(this.#SVG, "style");
+            style.innerHTML = "\n  /*\n  This stylesheet will make the size of the PDF the same as\n  the size of the SVG when printing to PDF in Firefox or Chrome.\n  Without it the SVG will print on regular Letter or A4\n  */\n  @page {\n      size: " + doc.rootElement.getAttribute("width") + "px " + doc.rootElement.getAttribute("height") + "px;\n      margin: 0;  \n  }\n  ";
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(style, anchor);
+
+            style = doc.createElementNS(this.#SVG, "style");
+            style.innerHTML = "\n/* Source: " + stylesheeturl + " */\n" + text + "\n  ";
+            doc.rootElement.insertBefore(doc.createTextNode("\n  "), anchor);
+            doc.rootElement.insertBefore(style, anchor);
+
+            doc.rootElement.querySelectorAll(":is(.relations, .labels, .people) > *").forEach((e) => {
+                e.parentNode.insertBefore(doc.createTextNode("\n     "), e);
+            });
+            doc.rootElement.querySelectorAll(".people text").forEach((e) => {
+                const id = e.parentNode.id.replace(/person-/, "");
+                const person = this.find(id);
+                if (person) {
+                    let a = doc.createElementNS(this.#SVG, "a");
+                    a.setAttribute("href", "https://www.wikitree.com/wiki/" + person.data.Name);
+                    while (e.firstChild) {
+                        a.appendChild(e.firstChild);
+                    }
+                    e.appendChild(a);
+                }
+            });
+
+            src = new XMLSerializer().serializeToString(doc);
+            const blob = new Blob([src], { "type": "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.download = "slippy-tree.svg";
+            a.href = url;
             setTimeout(() => {
-                URL.revokeObjectURL(url);
-                a.remove();
+                a.click();
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    a.remove();
+                }, 0);
             }, 0);
-        }, 0);
+        });
+        return false;
     }
 
     /**
