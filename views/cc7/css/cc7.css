@@ -694,6 +694,66 @@ table tr.cc7filter-row input[type="text"] {
 #cc7Container td.relation {
   width: 3em;
 }
+#cc7Container #statsView fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0.625em;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+#cc7Container #statsView #resultsContainer {
+  margin: 25px auto;
+  text-align: center;
+}
+
+#cc7Container #statsTable {
+  border-collapse: collapse;
+  margin: 5px auto 10px;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.cc7Table caption {
+  border-radius: 5px 5px 0 0;
+  border-top: 1px solid forestgreen;
+  border-left: 1px solid forestgreen;
+  border-right: 1px solid forestgreen;
+}
+
+#cc7Container #statsTable thead tr {
+  background-color: #25422d;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+}
+
+#cc7Container #statsTable th,
+#cc7Container #statsTable td {
+  padding: 10px 12px;
+}
+
+#cc7Container #statsTable tbody {
+  background-color: white;
+}
+
+#cc7Container #statsTable tbody tr:nth-of-type(even) {
+  background-color: #f7f6f0;
+}
+
+#cc7Container #statsTable tbody tr:last-of-type {
+  border-bottom: 2px solid #25422d;
+}
+
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/

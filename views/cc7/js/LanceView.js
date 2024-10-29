@@ -1,4 +1,4 @@
-import { CC7Utils } from "./Utils.js";
+import { CC7Utils } from "./CC7Utils.js";
 
 export class LanceView {
     static async build() {
@@ -14,7 +14,7 @@ export class LanceView {
         };
         const subset = $("#cc7Subset").val();
         const lanceTable = $(
-            `<table id='lanceTable' class="${subset}">` +
+            `<table id='lanceTable' class="subsetable ${subset}">` +
                 "<thead>" +
                 "<tr></tr>" +
                 "</thead>" +
@@ -36,27 +36,8 @@ export class LanceView {
         }
 
         for (let aPerson of window.people.values()) {
-            if (aPerson.Hide) continue;
-            switch (subset) {
-                case "above":
-                    if (!aPerson.isAbove) continue;
-                    break;
-
-                case "below":
-                    if (aPerson.isAbove) continue;
-                    break;
-
-                case "ancestors":
-                    if (aPerson.isAncestor) break;
-                    continue;
-
-                case "descendants":
-                    if (typeof aPerson.isAncestor != "undefined" && !aPerson.isAncestor) break;
-                    continue;
-
-                default:
-                    break;
-            }
+            // Ignore profiles not in the selected subset
+            if (!CC7Utils.profileIsInSubset(aPerson, subset)) continue;
             if (!aPerson.Missing) {
                 CC7Utils.addMissingBits(aPerson);
             }

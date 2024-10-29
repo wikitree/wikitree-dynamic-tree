@@ -11,7 +11,7 @@ import { BioCheckPerson } from "../../../lib/biocheck-api/src/BioCheckPerson.js"
 import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
 import { PeopleTable } from "./PeopleTable.js";
 import { Settings } from "./Settings.js";
-import { CC7Utils } from "./Utils.js";
+import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
 
 export class CC7 {
@@ -58,6 +58,10 @@ export class CC7 {
             </li>
             <li>The <b>Hierarchy View</b> shows the hierarchial relationships between the people in the list.</li>
             <li>The <b>List View</b> provides a way by which you can look at particular surnames amongst your relatives.</li>
+            <li>The <b>Stats View</b> provides generational statistics for the currently loaded data, similar to those of
+                the Generational Statistics App, but being applied to CC degrees. Note that some of the statistics are not
+                all that useful unless the Ancestors/Descendants only filters are applied.
+            </li>
         </ul>
         <p>Below are some tips related to each view.</p>
         <h3>Table View</h3>
@@ -437,9 +441,6 @@ export class CC7 {
     static handleDegreeChange(wantedDegree) {
         const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
         CC7.updateButtonLabels(newDegree);
-        // const getExtra = document.getElementById("getExtraDegrees").checked;
-        // $("#getPeopleButton").text(`Get CC${newDegree}${getExtra ? "+1" : ""}`);
-        // $("#getDegreeButton").text(`Get Degree ${newDegree}${getExtra ? "±1" : ""} Only`);
         if (newDegree > 3) {
             CC7.LONG_LOAD_WARNING =
                 "Loading larger degrees may take a while, especially with Bio Check enabled " +
@@ -545,7 +546,7 @@ export class CC7 {
                     )
                 );
                 CC7.buildDegreeTableData(degreeCounts, theDegree);
-                PeopleTable.addPeopleTable(PeopleTable.tableCaption());
+                PeopleTable.addPeopleTable(CC7Utils.tableCaption());
                 $("#cc7Subset").prop("disabled", true);
             }
             $("#getPeopleButton").prop("disabled", false);
@@ -904,7 +905,7 @@ export class CC7 {
             CC7.buildDegreeTableData(degreeCounts, 1);
             // console.log(window.people);
             this.addRelationships();
-            PeopleTable.addPeopleTable(PeopleTable.tableCaption());
+            PeopleTable.addPeopleTable(CC7Utils.tableCaption());
         }
 
         $("#getPeopleButton").prop("disabled", false);
@@ -1463,6 +1464,7 @@ export class CC7 {
                 "#hierarchyView",
                 "#lanceTable",
                 "#peopleTable",
+                "#statsView",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
@@ -1594,7 +1596,7 @@ export class CC7 {
             }
             Utils.hideShakingTree();
             CC7.addRelationships();
-            PeopleTable.addPeopleTable(PeopleTable.tableCaption());
+            PeopleTable.addPeopleTable(CC7Utils.tableCaption());
             $(`#${CC7Utils.CC7_CONTAINER_ID} #cc7Subset`).before(
                 $(
                     "<table id='degreesTable'>" +
