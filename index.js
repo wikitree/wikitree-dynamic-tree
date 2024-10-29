@@ -68,10 +68,10 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "familyGroupApp": new FamilyGroupAppView(),
         "superbig": new SuperBigFamView(),
         "slippyTree": new SlippyTree(),
-
         "stats": new StatsView(),
         "wtPlusMaps": new WtPlusMaps(),
         "oneNameTrees": new OneNameTrees(),
+        "ancestorsCemeteries": new AncestorsCemeteriesView(),
         "heritage": new HeritageView(),
     };
 
