@@ -73,15 +73,12 @@ function createDbEntries(relationships, rootPersonId, loggedInUser, loggedInUser
     return relationships.map((relationship) => {
         const person = familyMap.get(relationship.personId);
         return {
-            key: `${person.Name}:${loggedInUser}`,
-            value: {
-                theKey: `${person.Name}:${loggedInUser}`,
-                userId: loggedInUser,
-                id: person.Name,
-                distance: person?.Meta?.Degrees,
-                relationship: relationship.relationship.full,
-                commonAncestors: relationship.commonAncestors || [],
-            },
+            theKey: `${person.Name}:${loggedInUser}`,
+            userId: loggedInUser,
+            id: person.Name,
+            distance: person?.Meta?.Degrees,
+            relationship: relationship.relationship.full,
+            commonAncestors: relationship.commonAncestors || [],
         };
     });
 }
