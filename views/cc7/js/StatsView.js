@@ -355,17 +355,21 @@ export class StatsView {
             // show oldest family member
             let subsetName = getSubsetName();
             let oldestRelativeDiv = document.createElement("div");
-            oldestRelativeDiv.innerHTML = `Oldest${subsetName}: ${oldestPerson}, ${oldestAge} years old.`;
+            oldestRelativeDiv.innerHTML = `Oldest${subsetName}: ${oldestPerson}, ${Math.floor(oldestAge)} years old.`;
             results.appendChild(oldestRelativeDiv);
 
             if (!gender) {
                 subsetName = subsetName.replace(/^ person/, "");
                 let oldestMaleRelativeDiv = document.createElement("div");
-                oldestMaleRelativeDiv.innerHTML = `Oldest male${subsetName}: ${oldestMalePerson}, ${oldestMaleAge} years old.`;
+                oldestMaleRelativeDiv.innerHTML = `Oldest male${subsetName}: ${oldestMalePerson}, ${Math.floor(
+                    oldestMaleAge
+                )} years old.`;
                 results.appendChild(oldestMaleRelativeDiv);
 
                 let oldestFemaleRelativeDiv = document.createElement("div");
-                oldestFemaleRelativeDiv.innerHTML = `Oldest female${subsetName}: ${oldestFemalePerson}, ${oldestFemaleAge} years old.`;
+                oldestFemaleRelativeDiv.innerHTML = `Oldest female${subsetName}: ${oldestFemalePerson}, ${Math.floor(
+                    oldestFemaleAge
+                )} years old.`;
                 results.appendChild(oldestFemaleRelativeDiv);
             }
 
@@ -488,7 +492,7 @@ export class StatsView {
             }
 
             if (birthDate != "Invalid Date" && eventDate != "Invalid Date") {
-                let age = Math.floor((eventDate - birthDate) / 31536000000);
+                let age = (eventDate - birthDate) / 31536000000;
                 if (age > 0) {
                     return age;
                 } else {
