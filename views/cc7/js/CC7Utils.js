@@ -1,5 +1,115 @@
+import { Settings } from "./Settings.js";
 export class CC7Utils {
     static CC7_CONTAINER_ID = "cc7Container";
+
+    static subsetWord() {
+        switch ($("#cc7Subset").val()) {
+            case "ancestors":
+                return "Ancestors Only";
+            case "descendants":
+                return "Descendants Only";
+            case "above":
+                return '"Above" Only';
+            case "below":
+                return '"Below" Only';
+            case "missing-links":
+                return "Missing Family";
+            case "complete":
+                return "Complete";
+            default:
+                return "";
+        }
+    }
+
+    static tableCaption() {
+        const person = window.people.get(window.rootId);
+        let displName;
+        if (person) {
+            displName = new PersonName(person).withParts(CC7Utils.WANTED_NAME_PARTS);
+        } else {
+            displName = wtViewRegistry.getCurrentWtId();
+        }
+        let caption = "";
+        if ($("#cc7Container").hasClass("degreeView")) {
+            caption = `Degree ${window.cc7Degree} connected people for ${displName}`;
+        } else {
+            caption = `CC${window.cc7Degree} of ${displName}`;
+        }
+        return caption;
+    }
+
+    static tableCaptionWithSubset() {
+        const subsetWord = CC7Utils.subsetWord();
+        return CC7Utils.tableCaption() + (subsetWord == "" ? "" : ` (${subsetWord})`);
+    }
+
+    static profileIsInSubset(person, subset, gender = false) {
+        if (person.Hide) return false;
+        if (gender && person.Gender != gender) return false;
+
+        switch (subset) {
+            case "above":
+                return person.isAbove;
+
+            case "below":
+                return !person.isAbove;
+
+            case "ancestors":
+                return person.isAncestor;
+
+            case "descendants":
+                return typeof person.isAncestor != "undefined" && !person.isAncestor;
+
+            case "missing-links":
+                return CC7Utils.isMissingFamily(person);
+
+            case "complete":
+                return CC7Utils.isProfileComplete(person);
+
+            default:
+                return true;
+        }
+    }
+
+    static isProfileComplete(person) {
+        return (
+            !CC7Utils.isMissingFamily(person) &&
+            person.Father &&
+            person.Mother &&
+            person.DeathDate &&
+            person.DeathLocation &&
+            person.BirthDate &&
+            person.BirthLocation &&
+            person.NoChildren == 1 &&
+            person.DataStatus.Spouse == "blank"
+        );
+    }
+
+    static isMissingFamily(person) {
+        if (person.LastNameAtBirth == "Private") return false;
+        let val = false;
+        if (Settings.current["missingFamily_options_noNoChildren"]) {
+            // no more children flag is not set
+            val = person.NoChildren != 1;
+        }
+        if (!val && Settings.current["missingFamily_options_noNoSpouses"]) {
+            // no more spouses flag is not set
+            val = person.DataStatus.Spouse != "blank";
+        }
+        if (!val && Settings.current["missingFamily_options_noParents"]) {
+            // no father or mother
+            val = !person.Father && !person.Mother;
+        }
+        if (!val && Settings.current["missingFamily_options_noChildren"]) {
+            // no more children flag is not set and they don't have any children
+            val = person.NoChildren != 1 && (!person.Child || person.Child.length == 0);
+        }
+        if (!val && Settings.current["missingFamily_options_oneParent"]) {
+            // at least one parent missing
+            val = (person.Father && !person.Mother) || (!person.Father && person.Mother);
+        }
+        return val;
+    }
 
     static addMissingBits(aPerson) {
         aPerson.Missing = [];

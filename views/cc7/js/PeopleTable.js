@@ -1,7 +1,8 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
+import { StatsView } from "./StatsView.js";
 import { Settings } from "./Settings.js";
-import { CC7Utils } from "./Utils.js";
+import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
 import { CC7 } from "./cc7.js";
 
@@ -62,7 +63,7 @@ export class PeopleTable {
         const subset = $("#cc7Subset").val() || "all";
 
         const aTable = $(
-            `<table id='peopleTable' class='peopleTable ${subset}'>` +
+            `<table id='peopleTable' class='subsetable peopleTable ${subset}'>` +
                 aCaption +
                 `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
                     bioCheck ? "/B" : ""
@@ -123,74 +124,12 @@ export class PeopleTable {
             const mPerson = window.people.get(id);
             if (mPerson.Hide) continue;
 
-            const completeCondition =
-                !isMissingFamily(mPerson) &&
-                mPerson.Father &&
-                mPerson.Mother &&
-                mPerson.DeathDate &&
-                mPerson.DeathLocation &&
-                mPerson.BirthDate &&
-                mPerson.BirthLocation &&
-                mPerson.NoChildren == 1 &&
-                mPerson.DataStatus.Spouse == "blank";
+            const completeCondition = CC7Utils.isProfileComplete(mPerson);
             if (completeCondition) {
                 complete++;
             }
-            // Filter by the selected subset
-            switch (subset) {
-                case "above":
-                    if (!mPerson.isAbove) continue; // hide
-                    break;
-
-                case "below":
-                    if (mPerson.isAbove) continue; // hide
-                    break;
-
-                case "ancestors":
-                    if (mPerson.isAncestor) break; // show
-                    continue;
-
-                case "descendants":
-                    if (typeof mPerson.isAncestor != "undefined" && !mPerson.isAncestor) break; // show
-                    continue;
-
-                case "missing-links":
-                    if (isMissingFamily(mPerson)) break; // show
-                    continue; // else hide
-
-                case "complete":
-                    if (completeCondition) break; // show
-                    continue; // else hide
-
-                default:
-                    break;
-            }
-
-            function isMissingFamily(person) {
-                if (person.LastNameAtBirth == "Private") return false;
-                let val = false;
-                if (Settings.current["missingFamily_options_noNoChildren"]) {
-                    // no more children flag is not set
-                    val = person.NoChildren != 1;
-                }
-                if (!val && Settings.current["missingFamily_options_noNoSpouses"]) {
-                    // no more spouses flag is not set
-                    val = person.DataStatus.Spouse != "blank";
-                }
-                if (!val && Settings.current["missingFamily_options_noParents"]) {
-                    // no father or mother
-                    val = !person.Father && !person.Mother;
-                }
-                if (!val && Settings.current["missingFamily_options_noChildren"]) {
-                    // no more children flag is not set and they don't have any children
-                    val = person.NoChildren != 1 && (!person.Child || person.Child.length == 0);
-                }
-                if (!val && Settings.current["missingFamily_options_oneParent"]) {
-                    // at least one parent missing
-                    val = (person.Father && !person.Mother) || (!person.Father && person.Mother);
-                }
-                return val;
-            }
+            // Ignore profiles not in the selected subset
+            if (!CC7Utils.profileIsInSubset(mPerson, subset)) continue;
 
             let deathDate = CC7Utils.ymdFix(mPerson.DeathDate);
             if (deathDate == "") {
@@ -634,18 +573,21 @@ export class PeopleTable {
                         "</select>" +
                         "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='button small viewButton' id='listViewButton'>List</button>" +
-                        "<button class='button small viewButton active' id='tableViewButton'>Table</button>"
+                        "<button class='button small viewButton active' id='tableViewButton'>Table</button>" +
+                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>"
                 )
             );
         }
         $("#cc7Subset")
             .off("change")
             .on("change", function () {
-                const curTableId = $("table.active").attr("id");
+                const curTableId = $(".subsetable.active").attr("id");
                 if (curTableId == "lanceTable") {
                     LanceView.build();
                 } else if (curTableId == "peopleTable") {
                     drawPeopleTable();
+                } else if (curTableId == "statsView") {
+                    StatsView.build();
                 }
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
@@ -655,31 +597,7 @@ export class PeopleTable {
             });
 
         function drawPeopleTable() {
-            const subset = $("#cc7Subset").val();
-            let subsetWord = "";
-            switch (subset) {
-                case "ancestors":
-                    subsetWord = " (Ancestors Only)";
-                    break;
-                case "descendants":
-                    subsetWord = " (Descendants Only)";
-                    break;
-                case "above":
-                    subsetWord = ' ("Above" Only)';
-                    break;
-                case "below":
-                    subsetWord = ' ("Below" Only)';
-                    break;
-                case "missing-links":
-                    subsetWord = " (Missing Family)";
-                    break;
-                case "complete":
-                    subsetWord = " (Complete)";
-                    break;
-                default:
-                    break;
-            }
-            PeopleTable.addPeopleTable(PeopleTable.tableCaption() + subsetWord);
+            PeopleTable.addPeopleTable(CC7Utils.tableCaptionWithSubset());
         }
 
         $("#listViewButton")
@@ -687,13 +605,15 @@ export class PeopleTable {
             .on("click", function () {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable,#hierarchyView").hide();
+                $("#peopleTable, #hierarchyView, #statsView").hide();
                 if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
                     LanceView.build();
                 } else {
                     $("#lanceTable").show().addClass("active");
                     $("#wideTableButton").hide();
                 }
+                $("#cc7Subset option[value='missing-links']").prop("disabled", false);
+                $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
@@ -708,7 +628,7 @@ export class PeopleTable {
                 }
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable,#lanceTable").hide().removeClass("active");
+                $("#peopleTable, #lanceTable, #statsView").hide().removeClass("active");
                 if ($("#hierarchyView").length == 0) {
                     Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
@@ -727,7 +647,9 @@ export class PeopleTable {
             .on("click", function () {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #statsView").hide().removeClass("active");
+                $("#cc7Subset option[value='missing-links']").prop("disabled", false);
+                $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
                 if ($("#peopleTable").hasClass($("#cc7Subset").val())) {
                     // We don't have to re-draw the table
@@ -738,6 +660,21 @@ export class PeopleTable {
                 }
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
+                }
+            });
+        $("#statsViewButton")
+            .off("click")
+            .on("click", function () {
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable").hide().removeClass("active");
+                $("#cc7Subset").show();
+                if ($("#statsView").hasClass($("#cc7Subset").val())) {
+                    // We don't have to re-draw the table
+                    $("#statsView").show().addClass("active");
+                    $("#wideTableButton").show();
+                } else {
+                    StatsView.build();
                 }
             });
 
@@ -927,23 +864,6 @@ export class PeopleTable {
         return wtRef.startsWith("Private")
             ? text
             : `<a target='_blank' href='https://www.wikitree.com/index.php?title=Special:NetworkFeed&who=${wtRef}'>${text}</a>`;
-    }
-
-    static tableCaption() {
-        const person = window.people.get(window.rootId);
-        let displName;
-        if (person) {
-            displName = new PersonName(person).withParts(CC7Utils.WANTED_NAME_PARTS);
-        } else {
-            displName = wtViewRegistry.getCurrentWtId();
-        }
-        let caption = "";
-        if ($("#cc7Container").hasClass("degreeView")) {
-            caption = `Degree ${window.cc7Degree} connected people for ${displName}`;
-        } else {
-            caption = `CC${window.cc7Degree} for ${displName}`;
-        }
-        return caption;
     }
 
     static showMissingLinksCheckboxes() {
