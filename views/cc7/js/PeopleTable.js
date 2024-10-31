@@ -32,7 +32,7 @@ export class PeopleTable {
         $("#savePeople").show();
         // Set root person if it is not already set
         if (window.rootPerson) {
-            if (window.rootPerson?.Name != $("#wt-id-text").val()) {
+            if (window.rootPerson?.Name != Utils.getTreeAppWtId()) {
                 window.rootPerson = false;
             }
         }
