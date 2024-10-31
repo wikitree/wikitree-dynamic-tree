@@ -1,5 +1,6 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
+import { MissingLinksView } from "./MissingLinksView.js";
 import { StatsView } from "./StatsView.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./CC7Utils.js";
@@ -9,6 +10,8 @@ import { CC7 } from "./cc7.js";
 export class PeopleTable {
     static EXCEL = "xlsx";
     static CSV = "csv";
+    static PARAMS;
+    static ACTIVE_VIEW = "table";
 
     // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
     // Privacy_IsPrivate            True if Privacy = 20
@@ -557,6 +560,7 @@ export class PeopleTable {
             });
 
         PeopleTable.addWideTableButton();
+
         if ($("#hierarchyViewButton").length == 0) {
             $("#wideTableButton").before(
                 $(
@@ -574,7 +578,8 @@ export class PeopleTable {
                         "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='button small viewButton' id='listViewButton'>List</button>" +
                         "<button class='button small viewButton active' id='tableViewButton'>Table</button>" +
-                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>"
+                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='button small viewButton' id='missingLinksViewButton'>Missing Links</button>"
                 )
             );
         }
@@ -603,9 +608,11 @@ export class PeopleTable {
         $("#listViewButton")
             .off("click")
             .on("click", function () {
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = "list";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #hierarchyView, #statsView").hide();
+                $("#peopleTable, #hierarchyView, #statsView, #missingLinksTable").hide();
                 if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
                     LanceView.build();
                 } else {
@@ -626,9 +633,11 @@ export class PeopleTable {
                     // We don't have a root, so we can't do anything
                     return;
                 }
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = "hierarchy";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #lanceTable, #statsView").hide().removeClass("active");
+                $("#peopleTable, #lanceTable, #statsView, #missingLinksTable").hide().removeClass("active");
                 if ($("#hierarchyView").length == 0) {
                     Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
@@ -645,9 +654,11 @@ export class PeopleTable {
         $("#tableViewButton")
             .off("click")
             .on("click", function () {
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = "table";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #statsView").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #statsView, #missingLinksTable").hide().removeClass("active");
                 $("#cc7Subset option[value='missing-links']").prop("disabled", false);
                 $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
@@ -665,9 +676,11 @@ export class PeopleTable {
         $("#statsViewButton")
             .off("click")
             .on("click", function () {
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = "stats";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #missingLinksTable").hide().removeClass("active");
                 $("#cc7Subset").show();
                 if ($("#statsView").hasClass($("#cc7Subset").val())) {
                     // We don't have to re-draw the table
@@ -676,6 +689,40 @@ export class PeopleTable {
                 } else {
                     StatsView.build();
                 }
+            });
+
+        $("#missingLinksViewButton")
+            .off("click")
+            .on("click", function () {
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #statsView").hide().removeClass("active");
+                $("#cc7Subset").show();
+                //if ($("#missingLinksTable").hasClass($("#cc7Subset").val())) {
+                if ($("#missingLinksTable").length > 0) {
+                    // We don't have to re-draw the table
+                    $("#missingLinksTable").show().addClass("active");
+                } else {
+                    MissingLinksView.buildView();
+                }
+                // switch to missing links checkboxes
+                $("#cc7Subset").val("missing-links");
+                //PeopleTable.showMissingLinksCheckboxes();
+
+                PeopleTable.ACTIVE_VIEW = "ml";
+
+                // hide top menu stuff
+                $("#degreesTable").hide();
+                $("#wideTableButton").hide();
+                $("#savePeople").hide();
+                $("#loadButton").hide();
+                $("#cc7csv").hide();
+                $("#cc7excel").hide();
+                $("#getExtraDegrees").hide();
+                $("#getDegreeButton").hide();
+                $("#cc7Subset").hide();
+                $("#ancReport").hide();
+                $("label[for='getExtraDegrees']").hide();
             });
 
         if (!window.people.get(window.rootId)) {
@@ -713,6 +760,13 @@ export class PeopleTable {
         $("#lanceTable").removeClass("active");
         aTable.addClass("active");
         aTable.floatingScroll();
+
+        // check the parameters to see which view should be shown
+        $(document).ready(function () {
+            if (PeopleTable.ACTIVE_VIEW == "ml") {
+                $("#missingLinksViewButton").click();
+            }
+        });
     }
 
     static location2ways(locationText) {
@@ -2280,5 +2334,25 @@ export class PeopleTable {
     static makeSheetname() {
         const prefix = $("#cc7Container").hasClass("degreeView") ? "CC_Deg" : "CC";
         return `${prefix}${window.cc7Degree}_${wtViewRegistry.getCurrentWtId()}`;
+    }
+
+    static setParameters(params) {
+        PeopleTable.PARAMS = params;
+        PeopleTable.ACTIVE_VIEW = PeopleTable.PARAMS.cc7View;
+        console.log(PeopleTable.ACTIVE_VIEW);
+    }
+
+    static resetHeader() {
+        $("#degreesTable").show();
+        $("#wideTableButton").show();
+        $("#savePeople").show();
+        $("#loadButton").show();
+        $("#cc7csv").show();
+        $("#cc7excel").show();
+        $("#getExtraDegrees").show();
+        $("#getDegreeButton").show();
+        $("#cc7Subset").show();
+        $("#ancReport").show();
+        $("label[for='getExtraDegrees']").show();
     }
 }

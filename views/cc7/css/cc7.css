@@ -754,6 +754,36 @@ table tr.cc7filter-row input[type="text"] {
   border-bottom: 2px solid #25422d;
 }
 
+/* ---
+  Missing Links Styles
+---*/
+#missingLinksTable {
+  text-align: center;
+  margin: auto;
+}
+
+#missingLinksTable th {
+  text-align: center;
+  padding: 10px;
+}
+
+#missingLinksTable td {
+  padding: 10px;
+}
+
+#missingLinksTable td.is-lead {
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+#missingLinksTable td.possible-lead {
+  background-color: rgba(255, 255, 0, 0.1);
+}
+
+#ml-privacy-lock {
+  height: 25px;
+  width: 25px;
+}
+
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/

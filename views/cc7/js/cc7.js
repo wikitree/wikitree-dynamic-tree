@@ -247,9 +247,11 @@ export class CC7 {
     static RELATIONSHIP_DB_VERSION = 2;
     static RELATIONSHIP_STORE_NAME = "relationship2";
 
-    constructor(selector, startId) {
+    constructor(selector, startId, params) {
         this.startId = startId;
         this.selector = selector;
+        this.params = params;
+        PeopleTable.setParameters(params);
         Settings.restoreSettings();
         $(selector).html(
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
@@ -292,10 +294,19 @@ export class CC7 {
             </div>`
         );
 
-        const cc7Degree = Utils.getCookie("w_cc7Degree");
-        if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
-            CC7.handleDegreeChange(cc7Degree);
+        // handle "degrees" parameter
+        if (params["degrees"]) {
+            const cc7Degree = Number(params["degrees"]);
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree);
+            }
+        } else {
+            const cc7Degree = Utils.getCookie("w_cc7Degree");
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree);
+            }
         }
+
         $("#cc7Degree")
             .off("change")
             .on("change", function () {
@@ -1465,6 +1476,7 @@ export class CC7 {
                 "#lanceTable",
                 "#peopleTable",
                 "#statsView",
+                "#missingLinksTable",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
