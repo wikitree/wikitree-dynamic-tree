@@ -1,4 +1,15 @@
 export class Utils {
+    /**
+     * @returns The WikiTree ID of the profile entered in the field next to the Tree APP id.
+     *          Leading and trailing spaces are removed all remaining spaces are replaced
+     *          with underscores and the first letter capitalised to ensure that the result
+     *          will match the profile.Name field returned for that id by the APIs.
+     */
+    static getTreeAppWtId() {
+        const id = $(wtViewRegistry.WT_ID_TEXT).val().trim().replaceAll(" ", "_");
+        return id ? id.charAt(0).toUpperCase() + id.slice(1) : id;
+    }
+
     static getCookie(name) {
         return WikiTreeAPI.cookie(name) || null;
     }

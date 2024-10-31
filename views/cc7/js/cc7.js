@@ -917,7 +917,7 @@ export class CC7 {
     }
 
     static addRelationships() {
-        const rootName = $("#wt-id-text").val().trim();
+        const rootName = Utils.getTreeAppWtId();
         let rootId = null;
         const familyMapEntries = [];
         for (let [key, value] of window.people.entries()) {
@@ -1485,7 +1485,7 @@ export class CC7 {
                     [
                         window.rootId,
                         window.cc7Degree,
-                        $(wtViewRegistry.WT_ID_TEXT).val(),
+                        Utils.getTreeAppWtId(),
                         $(`#${CC7Utils.CC7_CONTAINER_ID}`).hasClass("degreeView"),
                     ],
                     ...window.people.entries(),
