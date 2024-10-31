@@ -514,16 +514,20 @@ window.StatsView = class StatsView extends View {
 
             // show oldest family member
             let oldestRelativeDiv = document.createElement("div");
-            oldestRelativeDiv.innerHTML = `Oldest ${mode}: ${oldestPerson}, ${oldestAge} years old.`;
+            oldestRelativeDiv.innerHTML = `Oldest ${mode}: ${oldestPerson}, ${Math.floor(oldestAge)} years old.`;
             results.appendChild(oldestRelativeDiv);
 
             if (!gender) {
                 let oldestMaleRelativeDiv = document.createElement("div");
-                oldestMaleRelativeDiv.innerHTML = `Oldest male ${mode}: ${oldestMalePerson}, ${oldestMaleAge} years old.`;
+                oldestMaleRelativeDiv.innerHTML = `Oldest male ${mode}: ${oldestMalePerson}, ${Math.floor(
+                    oldestMaleAge
+                )} years old.`;
                 results.appendChild(oldestMaleRelativeDiv);
 
                 let oldestFemaleRelativeDiv = document.createElement("div");
-                oldestFemaleRelativeDiv.innerHTML = `Oldest female ${mode}: ${oldestFemalePerson}, ${oldestFemaleAge} years old.`;
+                oldestFemaleRelativeDiv.innerHTML = `Oldest female ${mode}: ${oldestFemalePerson}, ${Math.floor(
+                    oldestFemaleAge
+                )} years old.`;
                 results.appendChild(oldestFemaleRelativeDiv);
             }
 
@@ -598,7 +602,7 @@ window.StatsView = class StatsView extends View {
             }
 
             if (birthDate != "Invalid Date" && eventDate != "Invalid Date") {
-                let age = Math.floor((eventDate - birthDate) / 31536000000);
+                let age = (eventDate - birthDate) / 31536000000;
                 if (age > 0) {
                     return age;
                 } else {
