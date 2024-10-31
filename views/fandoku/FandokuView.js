@@ -1182,7 +1182,7 @@ import { Utils } from "../shared/Utils.js";
                     FandokuView.theAncestors = result[2];
                     condLog("theAncestors:", FandokuView.theAncestors);
                     // condLog("person with which to drawTree:", person);
-                    for (index in FandokuView.theAncestors) {
+                    for (let index in FandokuView.theAncestors) {
                         thePeopleList.add(FandokuView.theAncestors[index]);
                     }
                     FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
@@ -1677,7 +1677,7 @@ import { Utils } from "../shared/Utils.js";
             condLog("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
             let thePeep = thePeopleList[FandokuView.myAhnentafel.list[ahnNum]];
             if (thePeep) {
-                theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
+                let theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
                 if (FandokuView.currentSettings["rules_options_showLifeSpan"] == true) {
                     theNameDIVhtml += "<br/>(" + getLifeSpan(thePeep) + ")";
                 }
@@ -1963,7 +1963,7 @@ import { Utils } from "../shared/Utils.js";
                 FandokuView.theAncestors = result[2];
                 condLog("theAncestors:", FandokuView.theAncestors);
                 condLog("person with which to drawTree:", person);
-                for (index in FandokuView.theAncestors) {
+                for (let index in FandokuView.theAncestors) {
                     const element = FandokuView.theAncestors[index];
                     thePeopleList.add(FandokuView.theAncestors[index]);
                 }
@@ -2778,7 +2778,7 @@ import { Utils } from "../shared/Utils.js";
                     return year;
                 }
                 if (month) {
-                    month2digits = month;
+                    let month2digits = month;
                     if (month < 10) {
                         month2digits = "0" + month;
                     }
@@ -3034,10 +3034,10 @@ import { Utils } from "../shared/Utils.js";
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
-        PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
-        RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
-        RedsArray = [
+        let PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+        let RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+        let GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        let RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
             "#FFC0C0",
@@ -3057,7 +3057,7 @@ import { Utils } from "../shared/Utils.js";
             "#FFE8E0",
             "#FFF8F0",
         ];
-        BluesArray = [
+        let BluesArray = [
             "#A0A0FF",
             "#B0B0FF",
             "#C0C0FF",
@@ -3077,7 +3077,7 @@ import { Utils } from "../shared/Utils.js";
             "#E0E8FF",
             "#F0F8FF",
         ];
-        GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+        let GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
 
         let AllColoursArrays = [
             ColourArray,
