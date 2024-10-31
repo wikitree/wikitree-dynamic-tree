@@ -556,7 +556,7 @@ export class CC7 {
                     )
                 );
                 CC7.buildDegreeTableData(degreeCounts, theDegree);
-                PeopleTable.addPeopleTable(CC7Utils.tableCaption());
+                PeopleTable.addPeopleTable(CC7Utils.tableCaption(), params);
                 $("#cc7Subset").prop("disabled", true);
             }
             $("#getPeopleButton").prop("disabled", false);
@@ -1475,6 +1475,7 @@ export class CC7 {
                 "#lanceTable",
                 "#peopleTable",
                 "#statsView",
+                "#missingLinksTable",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",

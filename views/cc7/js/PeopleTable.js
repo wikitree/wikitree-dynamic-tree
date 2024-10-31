@@ -1,5 +1,6 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
+import { MissingLinksView } from "./MissingLinksView.js";
 import { StatsView } from "./StatsView.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./CC7Utils.js";
@@ -29,6 +30,8 @@ export class PeopleTable {
     ]);
 
     static async addPeopleTable(caption) {
+        console.log(this.params);
+
         $("#savePeople").show();
         // Set root person if it is not already set
         if (window.rootPerson) {
@@ -574,7 +577,8 @@ export class PeopleTable {
                         "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='button small viewButton' id='listViewButton'>List</button>" +
                         "<button class='button small viewButton active' id='tableViewButton'>Table</button>" +
-                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>"
+                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='button small viewButton' id='missingLinksViewButton'>ML View</button>"
                 )
             );
         }
@@ -605,7 +609,7 @@ export class PeopleTable {
             .on("click", function () {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #hierarchyView, #statsView").hide();
+                $("#peopleTable, #hierarchyView, #statsView, #missingLinksTable").hide();
                 if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
                     LanceView.build();
                 } else {
@@ -628,7 +632,7 @@ export class PeopleTable {
                 }
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #lanceTable, #statsView").hide().removeClass("active");
+                $("#peopleTable, #lanceTable, #statsView, #missingLinksTable").hide().removeClass("active");
                 if ($("#hierarchyView").length == 0) {
                     Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
@@ -647,7 +651,7 @@ export class PeopleTable {
             .on("click", function () {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #statsView").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #statsView, #missingLinksTable").hide().removeClass("active");
                 $("#cc7Subset option[value='missing-links']").prop("disabled", false);
                 $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
@@ -667,7 +671,7 @@ export class PeopleTable {
             .on("click", function () {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #missingLinksTable").hide().removeClass("active");
                 $("#cc7Subset").show();
                 if ($("#statsView").hasClass($("#cc7Subset").val())) {
                     // We don't have to re-draw the table
@@ -676,6 +680,34 @@ export class PeopleTable {
                 } else {
                     StatsView.build();
                 }
+            });
+
+        $("#missingLinksViewButton")
+            .off("click")
+            .on("click", function () {
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #statsView").hide().removeClass("active");
+                $("#cc7Subset").show();
+                if ($("#missingLinksTable").hasClass($("#cc7Subset").val())) {
+                    // We don't have to re-draw the table
+                    $("#missingLinksTable").show().addClass("active");
+                    $("#wideTableButton").show();
+                } else {
+                    MissingLinksView.buildView();
+                    // switch to missing links checkboxes
+                    // TODO grey out all the other options
+                    $("#cc7Subset").val("missing-links");
+                    PeopleTable.showMissingLinksCheckboxes();
+                }
+                // if ($("#missingLinksTable").length == 0) {
+                //     MissingLinksView.buildView();
+                // } else {
+                //     $("#missingLinksTable").show();
+                // }
+                // if ($("#cc7Subset").val() == "missing-links") {
+                //     PeopleTable.showMissingLinksCheckboxes();
+                // }
             });
 
         if (!window.people.get(window.rootId)) {
