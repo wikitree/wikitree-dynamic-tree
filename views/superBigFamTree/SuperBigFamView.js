@@ -149,6 +149,7 @@
  */
 
 import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
+import { Utils } from "../shared/Utils.js";
 
 (function () {
     const APP_ID = "SuperBigTree";
@@ -175,14 +176,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const AboutAdditionalProgrammers = "Steve Adey";
     const AboutAssistants =
         "<br/>&nbsp;&nbsp;Murray Maloney, Rob Pavey, <A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>, Riel Smit & Ian Beacall";
-    const AboutLatestG2G = "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; // "https://www.wikitree.com/g2g/1706061/the-return-of-the-super-tree"; //  "https://www.wikitree.com/g2g/1669634/new-app-super-big-family-tree"; 
+    const AboutLatestG2G =
+        "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; // "https://www.wikitree.com/g2g/1706061/the-return-of-the-super-tree"; //  "https://www.wikitree.com/g2g/1669634/new-app-super-big-family-tree";
     const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Super_Big_Family_Tree_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
     const QualifiersArray = {
-        char: { before: "< ", after: "> ", guess: "~ ", certain:"" },
-        abbrev: { before: "bef. ", after: "aft. ", guess: "c. " , certain:""},
-        full: { before: "before ", after: "after ", guess: "circa " , certain:""},
+        char: { before: "< ", after: "> ", guess: "~ ", certain: "" },
+        abbrev: { before: "bef. ", after: "aft. ", guess: "c. ", certain: "" },
+        full: { before: "before ", after: "after ", guess: "circa ", certain: "" },
     };
 
     const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -260,7 +262,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     /** Static variable to hold unique ids for private persons **/
     SuperBigFamView.previousAnum = 0;
 
-
     SuperBigFamView.firstPrivateId = 50000000;
     SuperBigFamView.nextPrivateId = SuperBigFamView.firstPrivateId;
     SuperBigFamView.maxPrivateId = SuperBigFamView.firstPrivateId;
@@ -315,7 +316,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     SuperBigFamView.HlinesATC = []; // the Horizontal Lines (connectors) Air Traffic Controller
     SuperBigFamView.VlinesATC = []; // the Vertical Lines (drop lines) Air Traffic Controller
     SuperBigFamView.VlinesATCpeep = []; // the Vertical Lines (drop lines) Air Traffic Controller - PEEP array - for debugging purposes
-    
+
     SuperBigFamView.currentPopupID = -1; // place to hold the most recent person's ID that you used for a PopUp (so you can toggle it off and on if you click the same person twice in a row)
     SuperBigFamView.currentPopupCode = ""; // place to hold the most recent person's ID that you used for a PopUp (so you can toggle it off and on if you click the same person twice in a row)
     SuperBigFamView.chunksWithInLawsArray = []; // array to hold the list of all current CHUNKS that end with IL so that we can space out the Super Big Fam chart nicely - not too crowded, but not too spaced out
@@ -675,53 +676,55 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         ],
     ];
     var DarkColoursArray = [
-            [0,"Black","#000000"],  [0, "Blue", "#0000FF"],
-            [0, "BlueViolet", "#8A2BE2"],
-            [0, "Brown", "#A52A2A"],
-            [0, "Chocolate", "#D2691E"],
-            [0, "Crimson", "#DC143C"],
-            [0,"DarkBlue","#00008B"],  [0, "DarkGreen", "#006400"],
-            [0, "DarkMagenta", "#8B008B"],
-            [0, "DarkOliveGreen", "#556B2F"],
-            [0,"DarkOrchid","#9932CC"],
-            [0, "DarkRed", "#8B0000"],
-            [0, "DarkSlateBlue", "#483D8B"],
-            [0, "DarkSlateGray", "#2F4F4F"],
-            [0, "DarkViolet", "#9400D3"],
-            [0, "DimGray", "#696969"],
-            [0, "FireBrick", "#B22222"],
-            [0, "ForestGreen", "#228B22"],
-            [0, "Gray", "#808080"],
-            [0, "Grey", "#808080"],
-            [0, "Green", "#008000"],
-            [0, "IndianRed", "#CD5C5C"],
-            [0, "Indigo", "#4B0082"],
-            [0, "Maroon", "#800000"],
-            [0, "MediumBlue", "#0000CD"],
-            [0, "MediumOrchid", "#BA55D3"],
-            [0, "MediumPurple", "#9370DB"],
-            [0, "MediumSeaGreen", "#3CB371"],
-            [0, "MediumSlateBlue", "#7B68EE"],
-            [0, "MediumVioletRed", "#C71585"],
-            [0, "MidnightBlue", "#191970"],
-            [0, "Navy", "#000080"],
-            [0, "Olive", "#808000"],
-            [0, "OliveDrab", "#6B8E23"],
-            [0, "OrangeRed", "#FF4500"],
-            [0, "Peru", "#CD853F"],
-            [0, "Purple", "#800080"],
-            [0, "RebeccaPurple", "#663399"],
-            [0, "Red", "#FF0000"],
-            [0, "RoyalBlue", "#4169E1"],
-            [0, "SaddleBrown", "#8B4513"],
-            [0, "SeaGreen", "#2E8B57"],
-            [0, "Sienna", "#A0522D"],
-            [0, "SlateBlue", "#6A5ACD"],
-            [0, "SlateGray", "#708090"],
-            [0, "SlateGrey", "#708090"],
-            [0, "SteelBlue", "#4682B4"],
-            [0, "Teal", "#008080"],
-        ];
+        [0, "Black", "#000000"],
+        [0, "Blue", "#0000FF"],
+        [0, "BlueViolet", "#8A2BE2"],
+        [0, "Brown", "#A52A2A"],
+        [0, "Chocolate", "#D2691E"],
+        [0, "Crimson", "#DC143C"],
+        [0, "DarkBlue", "#00008B"],
+        [0, "DarkGreen", "#006400"],
+        [0, "DarkMagenta", "#8B008B"],
+        [0, "DarkOliveGreen", "#556B2F"],
+        [0, "DarkOrchid", "#9932CC"],
+        [0, "DarkRed", "#8B0000"],
+        [0, "DarkSlateBlue", "#483D8B"],
+        [0, "DarkSlateGray", "#2F4F4F"],
+        [0, "DarkViolet", "#9400D3"],
+        [0, "DimGray", "#696969"],
+        [0, "FireBrick", "#B22222"],
+        [0, "ForestGreen", "#228B22"],
+        [0, "Gray", "#808080"],
+        [0, "Grey", "#808080"],
+        [0, "Green", "#008000"],
+        [0, "IndianRed", "#CD5C5C"],
+        [0, "Indigo", "#4B0082"],
+        [0, "Maroon", "#800000"],
+        [0, "MediumBlue", "#0000CD"],
+        [0, "MediumOrchid", "#BA55D3"],
+        [0, "MediumPurple", "#9370DB"],
+        [0, "MediumSeaGreen", "#3CB371"],
+        [0, "MediumSlateBlue", "#7B68EE"],
+        [0, "MediumVioletRed", "#C71585"],
+        [0, "MidnightBlue", "#191970"],
+        [0, "Navy", "#000080"],
+        [0, "Olive", "#808000"],
+        [0, "OliveDrab", "#6B8E23"],
+        [0, "OrangeRed", "#FF4500"],
+        [0, "Peru", "#CD853F"],
+        [0, "Purple", "#800080"],
+        [0, "RebeccaPurple", "#663399"],
+        [0, "Red", "#FF0000"],
+        [0, "RoyalBlue", "#4169E1"],
+        [0, "SaddleBrown", "#8B4513"],
+        [0, "SeaGreen", "#2E8B57"],
+        [0, "Sienna", "#A0522D"],
+        [0, "SlateBlue", "#6A5ACD"],
+        [0, "SlateGray", "#708090"],
+        [0, "SlateGrey", "#708090"],
+        [0, "SteelBlue", "#4682B4"],
+        [0, "Teal", "#008080"],
+    ];
     var PastelsArray = []; // to be defined shortly
     var RainbowArray = []; // to be defined shortly
     var RainbowArrayLong = []; // to be defined shortly
@@ -758,8 +761,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     var AltRedsArray = []; // to be defined shortly
     var BluesArray = []; // to be defined shortly
 
-
-     
     SuperBigFamView.prototype.meta = function () {
         return {
             title: "Super Tree",
@@ -768,39 +769,39 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         };
     };
 
-      SuperBigFamView.resetSettingsDIVtoDefaults = function () {
-          // console.log("Here you are inside SuperBigFamView.resetSettingsDIVtoDefaults");
-          let theCookieString = JSON.stringify(SuperBigFamView.currentSettings);
-          // console.log({ theCookieString });
-          if (theCookieString) {
-              SuperBigFamView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
-              SuperBigFamView.tweakSettingsToHideShowElements();
-              SuperBigFamView.updateLegendTitle();
-              SuperBigFamView.updateHighlightDescriptor();
+    SuperBigFamView.resetSettingsDIVtoDefaults = function () {
+        // console.log("Here you are inside SuperBigFamView.resetSettingsDIVtoDefaults");
+        let theCookieString = JSON.stringify(SuperBigFamView.currentSettings);
+        // console.log({ theCookieString });
+        if (theCookieString) {
+            SuperBigFamView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            SuperBigFamView.tweakSettingsToHideShowElements();
+            SuperBigFamView.updateLegendTitle();
+            SuperBigFamView.updateHighlightDescriptor();
 
-              let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
-              if (!showBadges) {
-                  let stickerLegend = document.getElementById("stickerLegend");
-                  stickerLegend.style.display = "none";
-                  if (
-                      SuperBigFamView.currentSettings["highlight_options_showHighlights"] == false &&
-                      SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location" &&
-                      SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family"
-                  ) {
-                      let legendDIV = document.getElementById("legendDIV");
-                      legendDIV.style.display = "none";
-                  }
-              }
+            let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
+            if (!showBadges) {
+                let stickerLegend = document.getElementById("stickerLegend");
+                stickerLegend.style.display = "none";
+                if (
+                    SuperBigFamView.currentSettings["highlight_options_showHighlights"] == false &&
+                    SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location" &&
+                    SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family"
+                ) {
+                    let legendDIV = document.getElementById("legendDIV");
+                    legendDIV.style.display = "none";
+                }
+            }
 
-              WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
-                  expires: 365,
-              });
+            WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
+                expires: 365,
+            });
 
-              SuperBigFamView.redraw();
-          }
-      };
+            SuperBigFamView.redraw();
+        }
+    };
 
-      SuperBigFamView.tweakSettingsToHideShowElements = function () {
+    SuperBigFamView.tweakSettingsToHideShowElements = function () {
         // console.log("Call to SuperBigFamView.tweakSettingsToHideShowElements ");
         let specFamSelector = document.getElementById("colour_options_specifyByFamily");
         let specLocSelector = document.getElementById("colour_options_specifyByLocation");
@@ -809,21 +810,21 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
 
-         if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family") {
-             specFamSelector.style.display = "none";
-             specFamSelectorBR.style.display = "none";
-             specFamSelectorLabel.style.display = "none";
-         } else {
+        if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family") {
+            specFamSelector.style.display = "none";
+            specFamSelectorBR.style.display = "none";
+            specFamSelectorLabel.style.display = "none";
+        } else {
             specFamSelector.style.display = "inline-block";
             specFamSelectorBR.style.display = "inline-block";
             specFamSelectorLabel.style.display = "inline-block";
-         }
+        }
 
-         if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location") {
-             specLocSelector.style.display = "none";
-             specLocSelectorLabel.style.display = "none";
-             specLocSelectorBR.style.display = "none";
-         }
+        if (SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location") {
+            specLocSelector.style.display = "none";
+            specLocSelectorLabel.style.display = "none";
+            specLocSelectorBR.style.display = "none";
+        }
 
         let catNameSelector = document.getElementById("highlight_options_catName");
         let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
@@ -858,84 +859,82 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             bioTextSelector.style.display = "inline-block";
             bioTextSelectorLabel.style.display = "inline-block";
         }
+    };
 
+    SuperBigFamView.redrawAfterLoadSettings = function () {
+        // console.log("Here you are inside SuperBigFamView.redrawAfterLoadSettings");
 
-      }
+        SuperBigFamView.tweakSettingsToHideShowElements();
+        SuperBigFamView.updateLegendTitle();
+        SuperBigFamView.updateHighlightDescriptor();
 
-      SuperBigFamView.redrawAfterLoadSettings = function () {
-          // console.log("Here you are inside SuperBigFamView.redrawAfterLoadSettings");
+        let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
+        if (!showBadges) {
+            let stickerLegend = document.getElementById("stickerLegend");
+            stickerLegend.style.display = "none";
+            if (
+                SuperBigFamView.currentSettings["highlight_options_showHighlights"] == false &&
+                SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location" &&
+                SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family"
+            ) {
+                let legendDIV = document.getElementById("legendDIV");
+                legendDIV.style.display = "none";
+            }
+        }
 
-          SuperBigFamView.tweakSettingsToHideShowElements();
-          SuperBigFamView.updateLegendTitle();
-          SuperBigFamView.updateHighlightDescriptor();
+        WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
+            expires: 365,
+        });
 
-          let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
-          if (!showBadges) {
-              let stickerLegend = document.getElementById("stickerLegend");
-              stickerLegend.style.display = "none";
-              if (
-                  SuperBigFamView.currentSettings["highlight_options_showHighlights"] == false &&
-                  SuperBigFamView.currentSettings["colour_options_colourBy"] != "Location" &&
-                  SuperBigFamView.currentSettings["colour_options_colourBy"] != "Family"
-              ) {
-                  let legendDIV = document.getElementById("legendDIV");
-                  legendDIV.style.display = "none";
-              }
-          }
+        SuperBigFamView.redraw();
+    };
 
-          WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
-              expires: 365,
-          });
+    SuperBigFamView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+        // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+        // console.log(theCookieString);
+        const theCookieSettings = JSON.parse(theCookieString);
+        // console.log("JSON version of the settings are:", theCookieSettings);
+        for (const key in theCookieSettings) {
+            if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                const element = theCookieSettings[key];
+                let theType = "";
+                if (document.getElementById(key)) {
+                    theType = document.getElementById(key).type;
+                    if (theType == "checkbox") {
+                        document.getElementById(key).checked = element;
+                    } else if (theType == "number" || theType == "text") {
+                        document.getElementById(key).value = element;
+                    } else if (document.getElementById(key).classList.length > 0) {
+                        document.getElementById(key).value = element;
+                        theType = "optionSelect";
+                    } else {
+                        theType = document.getElementById(key);
+                    }
+                } else {
+                    theType = "NO HTML OBJECT";
+                    let theRadioButtons = document.getElementsByName(key + "_radio");
+                    if (theRadioButtons) {
+                        // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                        theType = "radio x " + theRadioButtons.length;
+                        for (let i = 0; i < theRadioButtons.length; i++) {
+                            const btn = theRadioButtons[i];
+                            if (btn.value == element) {
+                                btn.checked = true;
+                            }
+                        }
+                    }
+                }
+                // console.log(key, element, theType);
+                if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
+                    SuperBigFamView.currentSettings[key] = element;
+                }
+            }
+        }
 
-          SuperBigFamView.redraw();
-      };
-
-         SuperBigFamView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
-             // console.log("function: updateCurrentSettingsBasedOnCookieValues");
-             // console.log(theCookieString);
-             const theCookieSettings = JSON.parse(theCookieString);
-             // console.log("JSON version of the settings are:", theCookieSettings);
-             for (const key in theCookieSettings) {
-                 if (Object.hasOwnProperty.call(theCookieSettings, key)) {
-                     const element = theCookieSettings[key];
-                     let theType = "";
-                     if (document.getElementById(key)) {
-                         theType = document.getElementById(key).type;
-                         if (theType == "checkbox") {
-                             document.getElementById(key).checked = element;
-                         } else if (theType == "number" || theType == "text") {
-                             document.getElementById(key).value = element;
-                         } else if (document.getElementById(key).classList.length > 0) {
-                             document.getElementById(key).value = element;
-                             theType = "optionSelect";
-                         } else {
-                             theType = document.getElementById(key);
-                         }
-                     } else {
-                         theType = "NO HTML OBJECT";
-                         let theRadioButtons = document.getElementsByName(key + "_radio");
-                         if (theRadioButtons) {
-                             // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
-                             theType = "radio x " + theRadioButtons.length;
-                             for (let i = 0; i < theRadioButtons.length; i++) {
-                                 const btn = theRadioButtons[i];
-                                 if (btn.value == element) {
-                                     btn.checked = true;
-                                 }
-                             }
-                         }
-                     }
-                     // console.log(key, element, theType);
-                     if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
-                         SuperBigFamView.currentSettings[key] = element;
-                     }
-                 }
-             }
-
-             // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
-             // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
-             //     theCookieSettings["general_options_badgeLabels_otherValue"];
-         };
+        // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+        // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
+        //     theCookieSettings["general_options_badgeLabels_otherValue"];
+    };
 
     SuperBigFamView.prototype.close = function () {
         this.container.style.height = null;
@@ -1769,16 +1768,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         SuperBigFamView.copyDataText = function (widget) {
             navigator.clipboard.writeText(widget.getAttribute("data-copy-text"));
-            // console.log("copyDataText:", widget, widget.getAttribute("data-copy-text"));   
+            // console.log("copyDataText:", widget, widget.getAttribute("data-copy-text"));
         };
-        
 
         function settingsChanged(e) {
             if (SuperBigFamView.SBFtreeSettingsOptionsObject.hasSettingsChanged(SuperBigFamView.currentSettings)) {
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 WTapps_Utils.setCookie("wtapps_superbig", JSON.stringify(SuperBigFamView.currentSettings), {
                     expires: 365,
-                }); 
+                });
                 condLog("NEW settings are:", SuperBigFamView.currentSettings);
                 let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
                 let newBoxWidth = SuperBigFamView.currentSettings["general_options_boxWidth"];
@@ -1944,13 +1942,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     // redoPopup();
                     let thisPerson = thePeopleList[SuperBigFamView.currentPopupID];
                     SuperBigFamView.removePopup();
-                    SuperBigFamView.personPopup(
-                        thisPerson,
-                        1,
-                        SuperBigFamView.currentPopupCode
-                    );                    
+                    SuperBigFamView.personPopup(thisPerson, 1, SuperBigFamView.currentPopupCode);
                 }
-
             } else {
                 condLog("NOTHING happened according to SETTINGS OBJ");
             }
@@ -1992,7 +1985,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             } else if (colourBy == "DNAstatus") {
                 LegendTitle.textContent = "Parental status";
             }
-        }
+        };
 
         SuperBigFamView.updateHighlightDescriptor = function () {
             let legendToggle = document.getElementById("legendASCII");
@@ -2068,54 +2061,51 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             } else {
                 document.getElementById("highlightDescriptor").style.display = "none";
             }
-        }
+        };
 
+        // function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
+        //         const theCookieSettings = JSON.parse(theCookieString);
+        //         for (const key in theCookieSettings) {
+        //             if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+        //                 const element = theCookieSettings[key];
+        //                 let theType = "";
+        //                 if (document.getElementById(key)) {
+        //                     theType = document.getElementById(key).type;
+        //                     if (theType == "checkbox") {
+        //                         document.getElementById(key).checked = element;
+        //                     } else if (theType == "number" || theType == "text") {
+        //                         document.getElementById(key).value = element;
+        //                     } else if (document.getElementById(key).classList.length > 0) {
+        //                         document.getElementById(key).value = element;
+        //                         theType = "optionSelect";
+        //                     } else {
+        //                         theType = document.getElementById(key);
+        //                     }
+        //                 } else {
+        //                     theType = "NO HTML OBJECT";
+        //                     let theRadioButtons = document.getElementsByName(key + "_radio");
+        //                     if (theRadioButtons) {
+        //                         // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+        //                         theType = "radio x " + theRadioButtons.length;
+        //                         for (let i = 0; i < theRadioButtons.length; i++) {
+        //                             const btn = theRadioButtons[i];
+        //                             if (btn.value == element) {
+        //                                 btn.checked = true;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //                 // console.log(key, element, theType);
+        //                 if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
+        //                     SuperBigFamView.currentSettings[key] = element;
+        //                 }
+        //             }
+        //         }
 
-
-    // function updateCurrentSettingsBasedOnCookieValues(theCookieString) {
-    //         const theCookieSettings = JSON.parse(theCookieString);
-    //         for (const key in theCookieSettings) {
-    //             if (Object.hasOwnProperty.call(theCookieSettings, key)) {
-    //                 const element = theCookieSettings[key];
-    //                 let theType = "";
-    //                 if (document.getElementById(key)) {
-    //                     theType = document.getElementById(key).type;
-    //                     if (theType == "checkbox") {
-    //                         document.getElementById(key).checked = element;
-    //                     } else if (theType == "number" || theType == "text") {
-    //                         document.getElementById(key).value = element;
-    //                     } else if (document.getElementById(key).classList.length > 0) {
-    //                         document.getElementById(key).value = element;
-    //                         theType = "optionSelect";
-    //                     } else {
-    //                         theType = document.getElementById(key);
-    //                     }
-    //                 } else {
-    //                     theType = "NO HTML OBJECT";
-    //                     let theRadioButtons = document.getElementsByName(key + "_radio");
-    //                     if (theRadioButtons) {
-    //                         // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
-    //                         theType = "radio x " + theRadioButtons.length;
-    //                         for (let i = 0; i < theRadioButtons.length; i++) {
-    //                             const btn = theRadioButtons[i];
-    //                             if (btn.value == element) {
-    //                                 btn.checked = true;
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //                 // console.log(key, element, theType);
-    //                 if (Object.hasOwnProperty.call(SuperBigFamView.currentSettings, key)) {
-    //                     SuperBigFamView.currentSettings[key] = element;
-    //                 }
-    //             }
-    //         }
-
-    //         // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
-    //         // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
-    //         //     theCookieSettings["general_options_badgeLabels_otherValue"];
-    // }
-   
+        //         // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+        //         // SuperBigFamView.currentSettings["general_options_badgeLabels_otherValue"] =
+        //         //     theCookieSettings["general_options_badgeLabels_otherValue"];
+        // }
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3
@@ -2420,30 +2410,28 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         //     let possibleWTuserID = possibleWTuserIDdiv.innerText;
         //     let whereCOLON = possibleWTuserID.indexOf(":");
         //     let whereBracket = possibleWTuserID.indexOf("(");
-        //     let youID = possibleWTuserID.substring(whereCOLON + 1, whereBracket).trim(); 
+        //     let youID = possibleWTuserID.substring(whereCOLON + 1, whereBracket).trim();
         //     condLog("You are:", youID);
         //     if (youID == "Clarke-11007") {
         //         invokeCreatorCustomSettings();
         //     }
         // }
-        
+
         SuperBigFamView.Adimensions = [];
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         bkgdClrSelector.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-        
+
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let highlightSelector = document.getElementById("highlight_options_highlightBy");
         highlightSelector.setAttribute("onchange", "SuperBigFamView.optionElementJustChanged();");
-          
 
         SuperBigFamView.tweakSettingsToHideShowElements();
 
         SuperBigFamView.updateHighlightDescriptor();
         SuperBigFamView.updateLegendTitle();
 
-        
         let showBadges = SuperBigFamView.currentSettings["general_options_showBadges"];
         if (!showBadges) {
             let stickerLegend = document.getElementById("stickerLegend");
@@ -2577,7 +2565,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         if (SuperBigFamView.currentSettings["general_options_handleRepeats"] == "none") {
             halosDIV.innerHTML = "";
             return;
-        };
+        }
 
         let idArray4Leaves = {};
         for (var l in theLeaves) {
@@ -2585,9 +2573,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             if (!idArray4Leaves[leaf.Id]) {
                 idArray4Leaves[leaf.Id] = [leaf.Code];
             } else {
-                idArray4Leaves[leaf.Id].push( leaf.Code);
-            }     
-
+                idArray4Leaves[leaf.Id].push(leaf.Code);
+            }
         }
 
         for (var l in idArray4Leaves) {
@@ -2599,21 +2586,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         // console.log({idArray4Leaves});
 
-        
         let theSVGhtml = "";
-        let wid = 3/4 * SuperBigFamView.currentSettings["general_options_boxWidth"];
+        let wid = (3 / 4) * SuperBigFamView.currentSettings["general_options_boxWidth"];
         let ht = wid; // 400;
 
         let numRepeats = 0;
-     
+
         for (var l in idArray4Leaves) {
             let thisID = idArray4Leaves[l];
             if (thisID.length > 1) {
-                
                 let clr1 = "red"; // outermost, largest halo
                 let clr2 = "yellow"; // middle manager
                 let clr3 = "blue"; // inside job
-                
+
                 if (numRepeats < LightColoursArray.length) {
                     clr1 = LightColoursArray[numRepeats][2];
                     clr2 = "";
@@ -2637,7 +2622,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         clr3 = DarkColoursArray[Math.floor(Math.random() * DarkColoursArray.length)][2];
                     }
                 }
-                    
+
                 numRepeats++;
 
                 for (let leafNum = 0; leafNum < thisID.length; leafNum++) {
@@ -2676,7 +2661,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         " style='fill:" +
                         clr2 +
                         ";stroke:black;stroke-width:1;opacity:1' />";
-                    if (clr2 == "") {halo2 = "";}
+                    if (clr2 == "") {
+                        halo2 = "";
+                    }
 
                     let halo3 =
                         "<rect width=" +
@@ -2698,13 +2685,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         halo3 = "";
                     }
 
-                        theSVGhtml += halo1 + halo2 + halo3;
+                    theSVGhtml += halo1 + halo2 + halo3;
                 }
-
             }
-        } 
+        }
         halosDIV.innerHTML = theSVGhtml;
-    }
+    };
 
     SuperBigFamView.drawLines = function () {
         // condLog("DRAWING LINES stuff should go here");
@@ -2720,16 +2706,20 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         // ADDING the lineAtBottomOfSVG to force Safari to render (and re-render) the full SVG when being dragged
-        let numD = SuperBigFamView.numDescGens2Display; 
+        let numD = SuperBigFamView.numDescGens2Display;
         let bottomFeederY = 300 + numD * 500 * (SuperBigFamView.displayINLAWS > 0 ? 2 : 1);
         let lineAtBottomOfSVG =
-            '<polyline points="-100,' + (bottomFeederY) +' 100,' + (bottomFeederY) +'" fill="none" stroke="#EEE" stroke-width="10"></polyline>';
+            '<polyline points="-100,' +
+            bottomFeederY +
+            " 100," +
+            bottomFeederY +
+            '" fill="none" stroke="#EEE" stroke-width="10"></polyline>';
 
-        linesDIV.innerHTML = lineAtBottomOfSVG +
-                (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
-                    ? drawBoxesAround()
-                    : "")
-             +
+        linesDIV.innerHTML =
+            lineAtBottomOfSVG +
+            (SuperBigFamView.currentSettings["general_options_showBoxesAroundAncFamilies"] == true
+                ? drawBoxesAround()
+                : "") +
             drawLinesForFamilyOf("A0") +
             drawLinesForDirectAncestors() +
             drawLinesForDescendants("A0") +
@@ -2892,7 +2882,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 Chunk: newChunk,
                 CodesList: [theCode],
                 Settings: "",
-                YsList : []
+                YsList: [],
             };
         }
 
@@ -2904,11 +2894,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             thePeopleList[SuperBigFamView.theLeafCollection[theCode].Id]._data.Chunk = newChunk;
         }
 
-         condLog(
-             "END moveFromOneChunkToAnother : ",
-             theCode + " from " + oldChunk + " -> " + newChunk,
-             SuperBigFamView.theChunkCollection[newChunk].CodesList
-         );
+        condLog(
+            "END moveFromOneChunkToAnother : ",
+            theCode + " from " + oldChunk + " -> " + newChunk,
+            SuperBigFamView.theChunkCollection[newChunk].CodesList
+        );
     }
 
     function drawLinesForA0StepParents() {
@@ -2925,7 +2915,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             "navy",
             "firebrick",
             "darkgray",
-            "violet", "tan"
+            "violet",
+            "tan",
         ];
         let parentCodes = ["A0RM", "A0RF"];
 
@@ -2967,11 +2958,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
                 const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
                 let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
-                
-                
+
                 for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
                     // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
-                
+
                     let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
                     let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
@@ -2997,7 +2987,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
                 let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
                 condLog("spID = ", spID);
-                
+
                 // if (spID > 0) {
 
                 for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
@@ -3040,24 +3030,24 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                             // Step Parents on Father's Side, so maxX is may need to be shortened if # of currentSpNum > 3
                             maxX = Math.min(
                                 maxX,
-                                primaryLeaf.x - 3 * Math.ceil((totalNumExtraSpouses - 2 - currentSpNum) / 3) * boxWidth 
+                                primaryLeaf.x - 3 * Math.ceil((totalNumExtraSpouses - 2 - currentSpNum) / 3) * boxWidth
                             );
-                            if (theMod3 < 2 ){
+                            if (theMod3 < 2) {
                                 if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
                                     theTweak4Max = 0 - boxWidth;
                                 }
                             } else {
                                 if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
-                                    theTweak4Max = 0 - boxWidth/2;
+                                    theTweak4Max = 0 - boxWidth / 2;
                                 }
                                 // theTweak4MaxAngle = 30;
                             }
-
-
                         } else {
                             // Step Parents on Mother's Side, so minX is may need to be lengthened if # of currentSpNum > 3
                             minX = Math.max(minX, primaryLeaf.x + 3 * Math.ceil((currentSpNum - 3) / 3) * boxWidth);
-                            if (currentSpNum > 3){ theTweak4Min = boxWidth / 4;}
+                            if (currentSpNum > 3) {
+                                theTweak4Min = boxWidth / 4;
+                            }
                         }
                     }
                     const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
@@ -3137,7 +3127,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 drawColour +
                                 `" stroke-width="3" />`;
 
-                             if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                            if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
                                 // do nothing
                             } else {
                                 equalsLine +=
@@ -3157,7 +3147,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     drawColour +
                                     `" stroke-width="3" />`;
                             }
-                        } 
+                        }
                     } else if (pNum == 1) {
                         if (currentSpNum > 3) {
                             // Step Parents on Mother's Side, so minX may need to be lengthened if # of currentSpNum > 3
@@ -3184,12 +3174,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 drawColour +
                                 `" stroke-width="3" />`;
 
-                             if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                            if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
                                 // do nothing
                             } else {
                                 equalsLine +=
                                     `<polyline points="` +
-                                    (minX - (3 * boxWidth/2) - 20) +
+                                    (minX - (3 * boxWidth) / 2 - 20) +
                                     "," +
                                     (primaryLeaf.y + 120 - currentSpNum) +
                                     " " +
@@ -3242,9 +3232,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
                     let centreX = (minX + maxX) / 2;
                     let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
-                    if (/* sp > 0 &&  */primarySpouse.x > primaryLeaf.x) {
+                    if (/* sp > 0 &&  */ primarySpouse.x > primaryLeaf.x) {
                         centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
-                    } else if (/* sp > 0 &&  */primarySpouse.x < primaryLeaf.x) {
+                    } else if (/* sp > 0 &&  */ primarySpouse.x < primaryLeaf.x) {
                         centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
                     }
 
@@ -3254,10 +3244,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         if (allLinesPolySVG.indexOf("NaN") > -1) {
-            condLog(
-                " DANGER DANGER WILL ROBINSON - DRAW A0 STEP PARENTS LINES CONTAINS * NOT A NUMBER * !!!!",
-                code
-            );
+            condLog(" DANGER DANGER WILL ROBINSON - DRAW A0 STEP PARENTS LINES CONTAINS * NOT A NUMBER * !!!!", code);
             return "";
         }
         // condLog(allLinesPolySVG);
@@ -3283,11 +3270,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 const spouseRecord = sp1Data.Spouses[spNum];
                 if (spouseRecord.Id == sp2ID) {
                     foundSpouse = true;
-                    if (sp1Data.Spouses[spNum].NotMarried == "1" ) {
-                            return true;
+                    if (sp1Data.Spouses[spNum].NotMarried == "1") {
+                        return true;
                     } else if (
                         sp1Data.Spouses[spNum].NotMarried == "0" ||
-                        
                         sp1Data.Spouses[spNum].DoNotDisplay == "0" ||
                         !sp1Data.Spouses[spNum].do_not_display
                     ) {
@@ -3612,8 +3598,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         // SuperBigFamView.HlinesATC = [];
-        // SuperBigFamView.VlinesATC = [];        
-        // SuperBigFamView.VlinesATCpeep = [];        
+        // SuperBigFamView.VlinesATC = [];
+        // SuperBigFamView.VlinesATCpeep = [];
 
         let ancLinesSVG = drawLinesForFamilyOf("A0", "R", 0); // nuclear family around A0
         if (showSiblings == 0) {
@@ -3693,13 +3679,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         return cuzLinesSVG;
     }
 
-    
     function checkDropLineXwithATC(thisY, bigDropX, kidXsArray, thisLeaf) {
         let hasChanged = false;
         bigDropX = Math.round(bigDropX);
-        condLog("checkDropLineXwithATC",thisY, bigDropX, kidXsArray, thisLeaf.Who);
+        condLog("checkDropLineXwithATC", thisY, bigDropX, kidXsArray, thisLeaf.Who);
         if (thisY == 0) {
-            return {hasChanged:false};
+            return { hasChanged: false };
         }
         if (SuperBigFamView.VlinesATC[thisY]) {
             // NOT the first rodeo at this Y value (Y value of the parent, where the bigDrop originates from)
@@ -3719,7 +3704,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX - 6) == -1
             ) {
                 SuperBigFamView.VlinesATC[thisY].push(bigDropX);
-                SuperBigFamView.VlinesATCpeep[thisY].push({ x: bigDropX, y:thisY, leaf: thisLeaf.Who, code: thisLeaf.Code });
+                SuperBigFamView.VlinesATCpeep[thisY].push({
+                    x: bigDropX,
+                    y: thisY,
+                    leaf: thisLeaf.Who,
+                    code: thisLeaf.Code,
+                });
             } else {
                 condLog(
                     "WE HAVE A DROP LINE CONFLICT HERE !",
@@ -3744,7 +3734,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 4) == -1 &&
                     SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 5) == -1 &&
                     SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 6) == -1 &&
-                    SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 1) == -1 
+                    SuperBigFamView.VlinesATC[thisY].indexOf(bigDropX + 1) == -1
                 ) {
                     // CONFLICT is NOT to the RIGHT ... so, we can safely add 20 pixels to that side to avoid the run on
                     bigDropX += 20;
@@ -3760,19 +3750,16 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     leaf: thisLeaf.Who,
                     code: thisLeaf.Code,
                 });
-                
-            } 
-
+            }
         } else {
             // First entry at this generation
             SuperBigFamView.VlinesATC[thisY] = [bigDropX];
-            SuperBigFamView.VlinesATCpeep[thisY] = [{x:bigDropX, y:thisY, leaf:thisLeaf.Who, code:thisLeaf.Code}];
-            
+            SuperBigFamView.VlinesATCpeep[thisY] = [{ x: bigDropX, y: thisY, leaf: thisLeaf.Who, code: thisLeaf.Code }];
         }
 
         // CHECK THE KIDS X values now !
-        for (let k = 0; k  < kidXsArray.length; k++) {
-            let kidX = kidXsArray[k]   ;
+        for (let k = 0; k < kidXsArray.length; k++) {
+            let kidX = kidXsArray[k];
             if (
                 SuperBigFamView.VlinesATC[thisY].indexOf(kidX) == -1 &&
                 SuperBigFamView.VlinesATC[thisY].indexOf(kidX + 1) == -1 &&
@@ -3793,12 +3780,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 if (kidX == bigDropX) {
                     // condLog("NO PROBLEM - we have a KID and its PARENT drop line at the same X location - super coolio");
                 } else {
-                    condLog(
-                        "WE HAVE A DROP LINE CONFLICT HERE with a KID !",
-                        thisY,
-                        kidX,
-                        SuperBigFamView.VlinesATC
-                    );
+                    condLog("WE HAVE A DROP LINE CONFLICT HERE with a KID !", thisY, kidX, SuperBigFamView.VlinesATC);
 
                     if (
                         SuperBigFamView.VlinesATC[thisY].indexOf(kidX) == -1 &&
@@ -3811,7 +3793,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     ) {
                         // CONFLICT is NOT to the RIGHT ... so, we can safely add 20 pixels to that side to avoid the run on
                         kidX += 20;
-                        
                     } else {
                         // CONFLICT is ON THE RIGHT ... so, we should be able to safely subtract 20 pixels to that side to avoid the run on
                         kidX -= 20;
@@ -3827,15 +3808,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         code: thisLeaf.Code + "_K",
                     });
                 }
-            }         
-        }     
-        
+            }
+        }
+
         return { hasChanged: hasChanged, centre: bigDropX, kids: kidXsArray };
     }
 
-    
     function addCrossBarYtoChunkYsList(Chunk, crossBarY) {
-        if (SuperBigFamView.theChunkCollection[Chunk].YsList.indexOf(crossBarY) == -1){
+        if (SuperBigFamView.theChunkCollection[Chunk].YsList.indexOf(crossBarY) == -1) {
             SuperBigFamView.theChunkCollection[Chunk].YsList.push(crossBarY);
         }
     }
@@ -3853,9 +3833,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 theMin = Math.min(theMin, thisY);
                 theMax = Math.max(theMax, thisY);
             }
-            return (theMax - theMin);
+            return theMax - theMin;
         }
-        
     }
 
     function checkCrossBarYwithATC(theY, minX, maxX) {
@@ -3906,9 +3885,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         return thisY;
     }
 
-
     function drawLinesForFamilyOf(code, kidPrefix = "", levelNum = 0, clrNum = -1) {
-        condLog ("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
+        condLog("drawLinesForFamilyOf", code, "*" + kidPrefix + "*", levelNum, clrNum);
         let primaryLeaf = SuperBigFamView.theLeafCollection[code];
         if (!primaryLeaf) {
             return;
@@ -3981,7 +3959,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 } else if (numC > 0) {
                     childPrefix = code + "S";
                 }
-            } 
+            }
         }
 
         if (!primaryLeafPerson) {
@@ -4035,26 +4013,24 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         let doNotDisplaySpousesList = [];
         for (let k = 0; !foundChildWithNoCoParent && k < primaryLeafPerson._data.Children.length; k++) {
-            if (primaryLeafPerson._data.Children[k].coParent == 0 || (primaryLeafPerson._data.Children[k].status == "bio" && primaryLeafPerson._data.Children[k].coStatus == "non")  ) {
+            if (
+                primaryLeafPerson._data.Children[k].coParent == 0 ||
+                (primaryLeafPerson._data.Children[k].status == "bio" &&
+                    primaryLeafPerson._data.Children[k].coStatus == "non")
+            ) {
                 foundChildWithNoCoParent = true;
             }
         }
-        if (foundChildWithNoCoParent==true) {
-            if(primaryLeafPerson._data.Gender == "Male") {
+        if (foundChildWithNoCoParent == true) {
+            if (primaryLeafPerson._data.Gender == "Male") {
                 doNotDisplaySpousesList.push(-1);
-            } else  {
+            } else {
                 doNotDisplaySpousesList.push(-2);
             }
-
         }
 
         if (!primaryLeafPerson._data.SpousesOrdered) {
-               condLog(
-            "drawLines:" +
-                code +
-                "-" +
-                kidPrefix +
-                "- creating orderedPartners:");
+            condLog("drawLines:" + code + "-" + kidPrefix + "- creating orderedPartners:");
 
             let orderedPartners = [];
             for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
@@ -4085,7 +4061,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             for (let sp = 0; /* spID > 0 && */ sp < primaryLeafPerson._data.Spouses.length; sp++) {
                 // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
 
-                if (spID > 0){
+                if (spID > 0) {
                     let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
                     let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
@@ -4104,7 +4080,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
                     totalNumExtraSpouses++;
                 }
-            
+
                 if (
                     primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
                     primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
@@ -4115,7 +4091,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         primaryLeafPerson._data.Spouses[sp]
                     );
                 }
-
             }
         }
 
@@ -4133,355 +4108,218 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 doNotDisplaySpousesList.length +
                 "-total:" +
                 totalNumExtraSpouses +
-                ":3497 - " + primaryLeafPerson._data.BirthNamePrivate
+                ":3497 - " +
+                primaryLeafPerson._data.BirthNamePrivate
         );
 
         if (primaryLeafPerson._data.Children) {
-            condLog("Children:",primaryLeafPerson._data.Children);
+            condLog("Children:", primaryLeafPerson._data.Children);
         }
-            for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
-                const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
-                let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
-                condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + spouseOrdered + ":3516");
+        for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
+            const spouseOrdered = primaryLeafPerson._data.SpousesOrdered[ord];
+            let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
+            condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + spouseOrdered + ":3516");
 
-                for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
-                    // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
-                    condLog(
-                        "drawLines:" +
-                            code +
-                            "-" +
-                            kidPrefix +
-                            "-" +
-                            spID +
-                            "-" +
-                            sp +
-                            "-" +
-                            primaryLeafPerson._data.Spouses[sp].Id +
-                            ":3530"
-                    );
-                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+            for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
+                // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
+                condLog(
+                    "drawLines:" +
+                        code +
+                        "-" +
+                        kidPrefix +
+                        "-" +
+                        spID +
+                        "-" +
+                        sp +
+                        "-" +
+                        primaryLeafPerson._data.Spouses[sp].Id +
+                        ":3530"
+                );
+                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
+                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
 
-                    if (doingDirectAncestorCode > "") {
-                        primarySpouse = SuperBigFamView.theLeafCollection[doingDirectAncestorCode];
-                        thisSpouseDIV = document.getElementById("wedgeInfo-" + doingDirectAncestorCode);
-                        if (sp > 0) {
-                            break;
-                        }
+                if (doingDirectAncestorCode > "") {
+                    primarySpouse = SuperBigFamView.theLeafCollection[doingDirectAncestorCode];
+                    thisSpouseDIV = document.getElementById("wedgeInfo-" + doingDirectAncestorCode);
+                    if (sp > 0) {
+                        break;
                     }
-                    // condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3541");
-                    if (!primarySpouse) {
-                        condLog("NO Primary Spouse exists in theLeafCollection !");
-                        // if (
-                        //     primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
-                        //     primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
-                        // ) {
-                        //     doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
-                        //     condLog(
-                        //         "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
-                        //         primaryLeafPerson._data.Spouses[sp]
-                        //     );
-                        // }
-                        continue; /// go back to the next value of sp
+                }
+                // condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3541");
+                if (!primarySpouse) {
+                    condLog("NO Primary Spouse exists in theLeafCollection !");
+                    // if (
+                    //     primaryLeafPerson._data.Spouses[sp].DoNotDisplay &&
+                    //     primaryLeafPerson._data.Spouses[sp].DoNotDisplay == 1
+                    // ) {
+                    //     doNotDisplaySpousesList.push(primaryLeafPerson._data.Spouses[sp].Id);
+                    //     condLog(
+                    //         "NEED to add DRAW LINES for this SPECIAL CASE if there are children from: ",
+                    //         primaryLeafPerson._data.Spouses[sp]
+                    //     );
+                    // }
+                    continue; /// go back to the next value of sp
+                }
+                let primarySpouseID = primarySpouse.Id;
+                condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3476");
+                if (!thisSpouseDIV) {
+                    condLog("NO Primary Spouse exists in WedgeInfo- DIVs collection ! - OUTTA HERE");
+                    if (doNotDisplaySpousesList.indexOf(primarySpouseID) == -1) {
+                        doNotDisplaySpousesList.push(primarySpouseID);
                     }
-                    let primarySpouseID = primarySpouse.Id;
-                    condLog("drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3476");
-                    if (!thisSpouseDIV) {
-                        condLog("NO Primary Spouse exists in WedgeInfo- DIVs collection ! - OUTTA HERE");
-                        if (doNotDisplaySpousesList.indexOf(primarySpouseID) == -1) {
-                            doNotDisplaySpousesList.push(primarySpouseID);
-                        }
-                        continue;
-                    } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
-                        condLog("Primary Spouse exists in WedgeInfo- BUT IS HIDDEN ! - OUTTA HERE");
-                        if (doNotDisplaySpousesList.indexOf(primarySpouseID) == -1) {
-                            doNotDisplaySpousesList.push(primarySpouseID);
-                        }
-                        continue;
-                    } else if (primarySpouseID != spID) {
-                        condLog("Primary Spouse ID mismatch ! - OUTTA HERE", primarySpouseID ,spID);
-                        continue;
+                    continue;
+                } else if (thisSpouseDIV.parentNode.parentNode.style.display == "none") {
+                    condLog("Primary Spouse exists in WedgeInfo- BUT IS HIDDEN ! - OUTTA HERE");
+                    if (doNotDisplaySpousesList.indexOf(primarySpouseID) == -1) {
+                        doNotDisplaySpousesList.push(primarySpouseID);
                     }
+                    continue;
+                } else if (primarySpouseID != spID) {
+                    condLog("Primary Spouse ID mismatch ! - OUTTA HERE", primarySpouseID, spID);
+                    continue;
+                }
 
-                    currentSpNum++;
-                    condLog(
-                        "drawLines:" +
-                            code +
-                            "-" +
-                            kidPrefix +
-                            "-" +
-                            spID +
-                            "-" +
-                            sp +
-                            ":3487 ==> spouse # " +
-                            currentSpNum
-                    );
-                    condLog(
-                        "Let's display ",
-                        primaryLeafPerson._data.Spouses[sp].DoNotDisplay,
-                        primaryLeafPerson._data.BirthNamePrivate + " + ",
-                        primarySpouse
-                    );
-                    let minX = Math.min(primaryLeaf.x, primarySpouse.x);
-                    let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
-                    let minY = Math.min(primaryLeaf.y, primarySpouse.y);
+                currentSpNum++;
+                condLog(
+                    "drawLines:" + code + "-" + kidPrefix + "-" + spID + "-" + sp + ":3487 ==> spouse # " + currentSpNum
+                );
+                condLog(
+                    "Let's display ",
+                    primaryLeafPerson._data.Spouses[sp].DoNotDisplay,
+                    primaryLeafPerson._data.BirthNamePrivate + " + ",
+                    primarySpouse
+                );
+                let minX = Math.min(primaryLeaf.x, primarySpouse.x);
+                let maxX = Math.max(primaryLeaf.x, primarySpouse.x);
+                let minY = Math.min(primaryLeaf.y, primarySpouse.y);
 
-                    let theMod3 = (300 - currentSpNum) % 3;
+                let theMod3 = (300 - currentSpNum) % 3;
+                if (primaryLeaf.x > primarySpouse.x) {
+                    theMod3 = (301 + primaryLeafPerson._data.SpousesOrdered.length + currentSpNum) % 3;
+                }
+                let theTweak4Max = 0;
+                let theTweak4Min = 0;
+                let theTweak4MaxAngle = 0;
+                if (totalNumExtraSpouses > 3) {
                     if (primaryLeaf.x > primarySpouse.x) {
-                        theMod3 = (301 + primaryLeafPerson._data.SpousesOrdered.length + currentSpNum) % 3;
-                    }
-                    let theTweak4Max = 0;
-                    let theTweak4Min = 0;
-                    let theTweak4MaxAngle = 0;
-                    if (totalNumExtraSpouses > 3) {
-                        if (primaryLeaf.x > primarySpouse.x) {
-                            // Step Parents on Father's Side, so maxX is may need to be shortened if # of currentSpNum > 3
-                            maxX = Math.min(
-                                maxX,
-                                primaryLeaf.x - 3 * Math.ceil((totalNumExtraSpouses - 2 - currentSpNum) / 3) * boxWidth
-                            );
-                            if (theMod3 < 2) {
-                                if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
-                                    theTweak4Max = 0 - boxWidth;
-                                }
-                            } else {
-                                if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
-                                    theTweak4Max = 0 - boxWidth / 2;
-                                }
-                                // theTweak4MaxAngle = 30;
+                        // Step Parents on Father's Side, so maxX is may need to be shortened if # of currentSpNum > 3
+                        maxX = Math.min(
+                            maxX,
+                            primaryLeaf.x - 3 * Math.ceil((totalNumExtraSpouses - 2 - currentSpNum) / 3) * boxWidth
+                        );
+                        if (theMod3 < 2) {
+                            if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                                theTweak4Max = 0 - boxWidth;
                             }
                         } else {
-                            // Step Parents on Mother's Side, so minX is may need to be lengthened if # of currentSpNum > 3
-                            minX = Math.max(minX, primaryLeaf.x + 3 * Math.ceil((currentSpNum - 3) / 3) * boxWidth);
-                            if (currentSpNum > 3) {
-                                theTweak4Min = boxWidth / 4;
+                            if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                                theTweak4Max = 0 - boxWidth / 2;
                             }
+                            // theTweak4MaxAngle = 30;
                         }
-                    }
-                    const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
-                    const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
-
-                    let topEqualsY = minY - 120 + theMod3 * 60;
-
-                    if (thisLeafHt < 170 || otherLeafHt < 170) {
-                        minY =
-                            minY -
-                            85 +
-                            Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
-                            37;
-                    }
-                    // condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
-
-                    let drawColour = spouseColours[currentSpNum % spouseColours.length];
-                    if (doingDirectAncestorCode > "") {
-                        drawColour = "black";
                     } else {
-                        // drawColour = "yellow";
-                    }
-                    let childrenXs = []; // bio / bio
-                    let childrenAdoptedXs = []; // non / non
-                    let childrenPrimaryOnlyXs = []; // bio / non
-                    let childrenSpouseOnlyXs = []; // non / bio
-
-                    let childrenY = 0;
-                    let numOtherChildrenNoCategory = 0;
-                    let childrenMinX = 0;
-                    let childrenMaxX = 0;
-                    let childrenAdoptedMinX = 0;
-                    let childrenAdoptedMaxX = 0;
-                    let childrenSpouseOnlyMinX = 0;
-                    let childrenSpouseOnlyMaxX = 0;
-                    let childrenPrimaryOnlyMinX = 0;
-                    let childrenPrimaryOnlyMaxX = 0;
-                    let defaultChildX = primarySpouse.x - boxWidth / 2; // (primaryLeaf.x + primarySpouse.x) / 2;
-
-                    condLog(
-                        "PRIMARY CHILDREN : ",
-                        primaryLeafPerson._data.Name,
-                        numPrimaryChildren,
-                        primaryChildren,
-                        childPrefix + make2Digit(1)
-                    );
-                    // for (let ch = 0; ch < primaryChildren.length; ch++) {
-                    condLog("Parents : ", primaryLeaf.Code, primaryLeaf.Id, primarySpouseID);
-                    for (let ch = 0; ch < numPrimaryChildren; ch++) {
-                        let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + make2Digit(ch + 1)];
-                        if (kidLeaf) {
-                            if (kidLeaf.Id && thePeopleList[kidLeaf.Id]) {
-                                // thePeopleList[kidLeaf.Id]._data["IsPrivate"] =
-                                //     thePeopleList[kidLeaf.Id]._data.Privacy <= 20;
-                            }
-                            if (!kidLeaf["x"]) {
-                                continue;
-                                // kidLeaf['x'] = defaultChildX;
-                            }
-
-                            const kid = thePeopleList[kidLeaf.Id];
-                            condLog(
-                                "kid " + ch,
-                                kid._data.Father,
-                                kid._data.Mother,
-                                primarySpouseID,
-                                kid._data.Privacy,
-                                kid._data.Privacy <= 20,
-                                kid
-                            );
-                            let isPrivacyOKtoShow = true;
-
-                            if (kid && SuperBigFamView.displayPrivatize == 1 && kid._data.IsPrivate == true) {
-                                isPrivacyOKtoShow = false;
-                            } else if (kid && SuperBigFamView.displayPrivatize == 1 && kid._data.Privacy <= 20) {
-                                isPrivacyOKtoShow = false;
-                                kid._data["IsPrivate"] = true;
-                                thePeopleList[kidLeaf.Id]._data["IsPrivate"] = true;
-                            }
-                            if (
-                                kid &&
-                                isPrivacyOKtoShow &&
-                                ((kid._data.Father && kid._data.Father == primarySpouseID) ||
-                                    (kid._data.Mother && kid._data.Mother == primarySpouseID)) &&
-                                ((kid._data.Father && kid._data.Father == primaryLeaf.Id) ||
-                                    (kid._data.Mother && kid._data.Mother == primaryLeaf.Id))
-                            ) {
-                                // let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + (ch + 1)];
-                                // condLog("kidLeaf:", childPrefix + (ch + 1), kidLeaf, childrenMinX, kidLeaf.x, childrenMaxX);
-
-                                condLog(
-                                    "Kid ",
-                                    kid._data.Id,
-                                    kid._data.Name
-                                    // kid._data.DataStatus.Father ,kid._data.DataStatus.Mother
-                                );
-
-                                if (
-                                    kid._data.DataStatus &&
-                                    kid._data.DataStatus.Father != "5" &&
-                                    kid._data.DataStatus.Mother != "5"
-                                ) {
-                                    if (childrenXs.length == 0) {
-                                        childrenMinX = kidLeaf.x;
-                                        childrenMaxX = kidLeaf.x;
-                                    } else {
-                                        childrenMinX = Math.min(childrenMinX, kidLeaf.x);
-                                        childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
-                                    }
-                                    childrenY = kidLeaf.y;
-                                    childrenXs.push(kidLeaf.x);
-                                } else if (
-                                    kid._data.DataStatus &&
-                                    kid._data.DataStatus.Father == "5" &&
-                                    kid._data.DataStatus.Mother == "5"
-                                ) {
-                                    if (childrenAdoptedXs.length == 0) {
-                                        childrenAdoptedMinX = kidLeaf.x;
-                                        childrenAdoptedMaxX = kidLeaf.x;
-                                    } else {
-                                        childrenAdoptedMinX = Math.min(childrenAdoptedMinX, kidLeaf.x);
-                                        childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, kidLeaf.x);
-                                    }
-                                    childrenY = kidLeaf.y;
-                                    childrenAdoptedXs.push(kidLeaf.x);
-                                } else if (
-                                    (kid._data.Father &&
-                                        kid._data.Father == primarySpouseID &&
-                                        kid._data.DataStatus &&
-                                        kid._data.DataStatus.Father != "5" &&
-                                        kid._data.DataStatus.Mother == "5") ||
-                                    (kid._data.Mother &&
-                                        kid._data.Mother == primarySpouseID &&
-                                        kid._data.DataStatus &&
-                                        kid._data.DataStatus.Father == "5" &&
-                                        kid._data.DataStatus.Mother != "5")
-                                ) {
-                                    if (childrenSpouseOnlyXs.length == 0) {
-                                        childrenSpouseOnlyMinX = kidLeaf.x;
-                                        childrenSpouseOnlyMaxX = kidLeaf.x;
-                                    } else {
-                                        childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, kidLeaf.x);
-                                        childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, kidLeaf.x);
-                                    }
-                                    childrenY = kidLeaf.y;
-                                    childrenSpouseOnlyXs.push(kidLeaf.x);
-                                } else if (
-                                    (kid._data.Mother &&
-                                        kid._data.Father &&
-                                        kid._data.Mother == primarySpouseID &&
-                                        kid._data.DataStatus &&
-                                        kid._data.DataStatus.Father != "5" &&
-                                        kid._data.DataStatus.Mother == "5") ||
-                                    (kid._data.Father &&
-                                        kid._data.Mother &&
-                                        kid._data.Father == primarySpouseID &&
-                                        kid._data.DataStatus &&
-                                        kid._data.DataStatus.Father == "5" &&
-                                        kid._data.DataStatus.Mother != "5")
-                                ) {
-                                    if (childrenPrimaryOnlyXs.length == 0) {
-                                        childrenPrimaryOnlyMinX = kidLeaf.x;
-                                        childrenPrimaryOnlyMaxX = kidLeaf.x;
-                                    } else {
-                                        childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, kidLeaf.x);
-                                        childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, kidLeaf.x);
-                                    }
-                                    childrenY = kidLeaf.y;
-                                    childrenPrimaryOnlyXs.push(kidLeaf.x);
-                                } else {
-                                    condLog(
-                                        "Kid without DataStatus - presume Bio/Bio ? ",
-                                        kid._data.Id,
-                                        kid._data.Name,
-                                        "Parents:",
-                                        kid._data.Father,
-                                        kid._data.Mother,
-                                        "Status:"
-                                        //  kid._data.DataStatus.Father,
-                                        //  kid._data.DataStatus.Mother
-                                    );
-                                    numOtherChildrenNoCategory++;
-                                    if (childrenXs.length == 0) {
-                                        childrenMinX = kidLeaf.x;
-                                        childrenMaxX = kidLeaf.x;
-                                    } else {
-                                        childrenMinX = Math.min(childrenMinX, kidLeaf.x);
-                                        childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
-                                    }
-                                    childrenY = kidLeaf.y;
-                                    childrenXs.push(kidLeaf.x);
-                                }
-                            } else {
-                                condLog(
-                                    "Kid NOT matching ",
-                                    kid._data.Id,
-                                    kid._data.Name,
-                                    "Parents:",
-                                    kid._data.Father,
-                                    kid._data.Mother,
-                                    "Status:"
-                                    //  kid._data.DataStatus.Father,
-                                    //  kid._data.DataStatus.Mother
-                                );
-                            }
+                        // Step Parents on Mother's Side, so minX is may need to be lengthened if # of currentSpNum > 3
+                        minX = Math.max(minX, primaryLeaf.x + 3 * Math.ceil((currentSpNum - 3) / 3) * boxWidth);
+                        if (currentSpNum > 3) {
+                            theTweak4Min = boxWidth / 4;
                         }
                     }
+                }
+                const thisLeafHt = document.querySelector("#wedgeInfo-" + primaryLeaf.Code).clientHeight;
+                const otherLeafHt = document.querySelector("#wedgeInfo-" + primarySpouse.Code).clientHeight;
 
-                    
+                let topEqualsY = minY - 120 + theMod3 * 60;
 
-                    if (doingDirectAncestorCode > "") {
-                        let kidLeaf = SuperBigFamView.theLeafCollection[code];
-                        if (kidLeaf) {
-                            
-                            childrenY = kidLeaf.y;
-                            
-                            // if (childrenXs.length == 0) {
-                            //     childrenMinX = kidLeaf.x;
-                            //     childrenMaxX = kidLeaf.x;
-                            // } else {
-                            //     childrenMinX = Math.min(childrenMinX, kidLeaf.x);
-                            //     childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
-                            // }
-                            // childrenXs.push(kidLeaf.x);
+                if (thisLeafHt < 170 || otherLeafHt < 170) {
+                    minY =
+                        minY -
+                        85 +
+                        Math.min((thisLeafHt * 2) / 3, (otherLeafHt * 2) / 3, (thisLeafHt + otherLeafHt) / 2) -
+                        37;
+                }
+                // condLog("FAMILY HT : " + primaryLeaf.Code, "hts:",thisLeafHt, otherLeafHt,"orig minY:",Math.min(primaryLeaf.y, primarySpouse.y),   "new minY:", minY);
 
-                            const kid = thePeopleList[kidLeaf.Id];
+                let drawColour = spouseColours[currentSpNum % spouseColours.length];
+                if (doingDirectAncestorCode > "") {
+                    drawColour = "black";
+                } else {
+                    // drawColour = "yellow";
+                }
+                let childrenXs = []; // bio / bio
+                let childrenAdoptedXs = []; // non / non
+                let childrenPrimaryOnlyXs = []; // bio / non
+                let childrenSpouseOnlyXs = []; // non / bio
+
+                let childrenY = 0;
+                let numOtherChildrenNoCategory = 0;
+                let childrenMinX = 0;
+                let childrenMaxX = 0;
+                let childrenAdoptedMinX = 0;
+                let childrenAdoptedMaxX = 0;
+                let childrenSpouseOnlyMinX = 0;
+                let childrenSpouseOnlyMaxX = 0;
+                let childrenPrimaryOnlyMinX = 0;
+                let childrenPrimaryOnlyMaxX = 0;
+                let defaultChildX = primarySpouse.x - boxWidth / 2; // (primaryLeaf.x + primarySpouse.x) / 2;
+
+                condLog(
+                    "PRIMARY CHILDREN : ",
+                    primaryLeafPerson._data.Name,
+                    numPrimaryChildren,
+                    primaryChildren,
+                    childPrefix + make2Digit(1)
+                );
+                // for (let ch = 0; ch < primaryChildren.length; ch++) {
+                condLog("Parents : ", primaryLeaf.Code, primaryLeaf.Id, primarySpouseID);
+                for (let ch = 0; ch < numPrimaryChildren; ch++) {
+                    let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + make2Digit(ch + 1)];
+                    if (kidLeaf) {
+                        if (kidLeaf.Id && thePeopleList[kidLeaf.Id]) {
+                            // thePeopleList[kidLeaf.Id]._data["IsPrivate"] =
+                            //     thePeopleList[kidLeaf.Id]._data.Privacy <= 20;
+                        }
+                        if (!kidLeaf["x"]) {
+                            continue;
+                            // kidLeaf['x'] = defaultChildX;
+                        }
+
+                        const kid = thePeopleList[kidLeaf.Id];
+                        condLog(
+                            "kid " + ch,
+                            kid._data.Father,
+                            kid._data.Mother,
+                            primarySpouseID,
+                            kid._data.Privacy,
+                            kid._data.Privacy <= 20,
+                            kid
+                        );
+                        let isPrivacyOKtoShow = true;
+
+                        if (kid && SuperBigFamView.displayPrivatize == 1 && kid._data.IsPrivate == true) {
+                            isPrivacyOKtoShow = false;
+                        } else if (kid && SuperBigFamView.displayPrivatize == 1 && kid._data.Privacy <= 20) {
+                            isPrivacyOKtoShow = false;
+                            kid._data["IsPrivate"] = true;
+                            thePeopleList[kidLeaf.Id]._data["IsPrivate"] = true;
+                        }
+                        if (
+                            kid &&
+                            isPrivacyOKtoShow &&
+                            ((kid._data.Father && kid._data.Father == primarySpouseID) ||
+                                (kid._data.Mother && kid._data.Mother == primarySpouseID)) &&
+                            ((kid._data.Father && kid._data.Father == primaryLeaf.Id) ||
+                                (kid._data.Mother && kid._data.Mother == primaryLeaf.Id))
+                        ) {
+                            // let kidLeaf = SuperBigFamView.theLeafCollection[childPrefix + (ch + 1)];
+                            // condLog("kidLeaf:", childPrefix + (ch + 1), kidLeaf, childrenMinX, kidLeaf.x, childrenMaxX);
+
+                            condLog(
+                                "Kid ",
+                                kid._data.Id,
+                                kid._data.Name
+                                // kid._data.DataStatus.Father ,kid._data.DataStatus.Mother
+                            );
+
                             if (
                                 kid._data.DataStatus &&
                                 kid._data.DataStatus.Father != "5" &&
@@ -4494,7 +4332,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     childrenMinX = Math.min(childrenMinX, kidLeaf.x);
                                     childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
                                 }
-                                
+                                childrenY = kidLeaf.y;
                                 childrenXs.push(kidLeaf.x);
                             } else if (
                                 kid._data.DataStatus &&
@@ -4508,7 +4346,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     childrenAdoptedMinX = Math.min(childrenAdoptedMinX, kidLeaf.x);
                                     childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, kidLeaf.x);
                                 }
-                                
+                                childrenY = kidLeaf.y;
                                 childrenAdoptedXs.push(kidLeaf.x);
                             } else if (
                                 (kid._data.Father &&
@@ -4529,7 +4367,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, kidLeaf.x);
                                     childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, kidLeaf.x);
                                 }
-                                
+                                childrenY = kidLeaf.y;
                                 childrenSpouseOnlyXs.push(kidLeaf.x);
                             } else if (
                                 (kid._data.Mother &&
@@ -4552,9 +4390,20 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, kidLeaf.x);
                                     childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, kidLeaf.x);
                                 }
-                                
+                                childrenY = kidLeaf.y;
                                 childrenPrimaryOnlyXs.push(kidLeaf.x);
-                            } else {                               
+                            } else {
+                                condLog(
+                                    "Kid without DataStatus - presume Bio/Bio ? ",
+                                    kid._data.Id,
+                                    kid._data.Name,
+                                    "Parents:",
+                                    kid._data.Father,
+                                    kid._data.Mother,
+                                    "Status:"
+                                    //  kid._data.DataStatus.Father,
+                                    //  kid._data.DataStatus.Mother
+                                );
                                 numOtherChildrenNoCategory++;
                                 if (childrenXs.length == 0) {
                                     childrenMinX = kidLeaf.x;
@@ -4563,244 +4412,358 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     childrenMinX = Math.min(childrenMinX, kidLeaf.x);
                                     childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
                                 }
-                                
+                                childrenY = kidLeaf.y;
                                 childrenXs.push(kidLeaf.x);
                             }
-                            
+                        } else {
+                            condLog(
+                                "Kid NOT matching ",
+                                kid._data.Id,
+                                kid._data.Name,
+                                "Parents:",
+                                kid._data.Father,
+                                kid._data.Mother,
+                                "Status:"
+                                //  kid._data.DataStatus.Father,
+                                //  kid._data.DataStatus.Mother
+                            );
                         }
                     }
+                }
 
-                    condLog(
-                        "After loop to categorize kids - FOUND for ",
-                        code,
-                        childrenXs.length,
-                        "bio children to connect [",
-                        childrenMinX + " , " + childrenMaxX + "]",
-                        " BioBio:",
-                        childrenXs,
-                        "NonNon:",
-                        childrenAdoptedXs,
-                        "SpouseOnly:",
-                        childrenSpouseOnlyXs,
-                        "PrimaryOnly:",
-                        childrenPrimaryOnlyXs,
-                        "numOtherChildrenNoCategory: " + numOtherChildrenNoCategory
-                    );
+                if (doingDirectAncestorCode > "") {
+                    let kidLeaf = SuperBigFamView.theLeafCollection[code];
+                    if (kidLeaf) {
+                        childrenY = kidLeaf.y;
 
-                    // condLog(
-                    //     "FOUND actually ",
-                    //     childrenXs.length,
-                    //     "children to connect",
-                    //     childrenMinX,
-                    //     childrenMaxX,
-                    //     primaryLeaf.Code
-                    // );
-                    let equalsLine =
-                        `<polyline points="` +
-                        (minX + theTweak4Min) /*  + 20 */ +
-                        "," +
-                        (topEqualsY + 30) +
-                        " " +
-                        (maxX /* - 20 */ + theTweak4Max) +
-                        "," +
-                        (topEqualsY + 30) +
-                        `" fill="none" stroke="` +
-                        drawColour +
-                        `" stroke-width="3"/>`;
+                        // if (childrenXs.length == 0) {
+                        //     childrenMinX = kidLeaf.x;
+                        //     childrenMaxX = kidLeaf.x;
+                        // } else {
+                        //     childrenMinX = Math.min(childrenMinX, kidLeaf.x);
+                        //     childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
+                        // }
+                        // childrenXs.push(kidLeaf.x);
 
-                    if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
-                        equalsLine = "";
+                        const kid = thePeopleList[kidLeaf.Id];
+                        if (
+                            kid._data.DataStatus &&
+                            kid._data.DataStatus.Father != "5" &&
+                            kid._data.DataStatus.Mother != "5"
+                        ) {
+                            if (childrenXs.length == 0) {
+                                childrenMinX = kidLeaf.x;
+                                childrenMaxX = kidLeaf.x;
+                            } else {
+                                childrenMinX = Math.min(childrenMinX, kidLeaf.x);
+                                childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
+                            }
+
+                            childrenXs.push(kidLeaf.x);
+                        } else if (
+                            kid._data.DataStatus &&
+                            kid._data.DataStatus.Father == "5" &&
+                            kid._data.DataStatus.Mother == "5"
+                        ) {
+                            if (childrenAdoptedXs.length == 0) {
+                                childrenAdoptedMinX = kidLeaf.x;
+                                childrenAdoptedMaxX = kidLeaf.x;
+                            } else {
+                                childrenAdoptedMinX = Math.min(childrenAdoptedMinX, kidLeaf.x);
+                                childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, kidLeaf.x);
+                            }
+
+                            childrenAdoptedXs.push(kidLeaf.x);
+                        } else if (
+                            (kid._data.Father &&
+                                kid._data.Father == primarySpouseID &&
+                                kid._data.DataStatus &&
+                                kid._data.DataStatus.Father != "5" &&
+                                kid._data.DataStatus.Mother == "5") ||
+                            (kid._data.Mother &&
+                                kid._data.Mother == primarySpouseID &&
+                                kid._data.DataStatus &&
+                                kid._data.DataStatus.Father == "5" &&
+                                kid._data.DataStatus.Mother != "5")
+                        ) {
+                            if (childrenSpouseOnlyXs.length == 0) {
+                                childrenSpouseOnlyMinX = kidLeaf.x;
+                                childrenSpouseOnlyMaxX = kidLeaf.x;
+                            } else {
+                                childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, kidLeaf.x);
+                                childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, kidLeaf.x);
+                            }
+
+                            childrenSpouseOnlyXs.push(kidLeaf.x);
+                        } else if (
+                            (kid._data.Mother &&
+                                kid._data.Father &&
+                                kid._data.Mother == primarySpouseID &&
+                                kid._data.DataStatus &&
+                                kid._data.DataStatus.Father != "5" &&
+                                kid._data.DataStatus.Mother == "5") ||
+                            (kid._data.Father &&
+                                kid._data.Mother &&
+                                kid._data.Father == primarySpouseID &&
+                                kid._data.DataStatus &&
+                                kid._data.DataStatus.Father == "5" &&
+                                kid._data.DataStatus.Mother != "5")
+                        ) {
+                            if (childrenPrimaryOnlyXs.length == 0) {
+                                childrenPrimaryOnlyMinX = kidLeaf.x;
+                                childrenPrimaryOnlyMaxX = kidLeaf.x;
+                            } else {
+                                childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, kidLeaf.x);
+                                childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, kidLeaf.x);
+                            }
+
+                            childrenPrimaryOnlyXs.push(kidLeaf.x);
+                        } else {
+                            numOtherChildrenNoCategory++;
+                            if (childrenXs.length == 0) {
+                                childrenMinX = kidLeaf.x;
+                                childrenMaxX = kidLeaf.x;
+                            } else {
+                                childrenMinX = Math.min(childrenMinX, kidLeaf.x);
+                                childrenMaxX = Math.max(childrenMaxX, kidLeaf.x);
+                            }
+
+                            childrenXs.push(kidLeaf.x);
+                        }
                     }
-                    if (primaryLeaf.x > primarySpouse.x) {
-                        if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
-                            // Step Parents on Father's Side, so maxX  may need to be shortened if # of currentSpNum > 3
-                            // maxX = Math.min(maxX, primarySpouse.x + 3 * boxWidth);
-                            condLog(
-                                "StepA0 :",
-                                primaryLeaf.Code + " @ " + primaryLeaf.x,
-                                primarySpouse.Code + " @ " + primarySpouse.x,
-                                "eq: " + minX + " to " + maxX
-                            );
+                }
+
+                condLog(
+                    "After loop to categorize kids - FOUND for ",
+                    code,
+                    childrenXs.length,
+                    "bio children to connect [",
+                    childrenMinX + " , " + childrenMaxX + "]",
+                    " BioBio:",
+                    childrenXs,
+                    "NonNon:",
+                    childrenAdoptedXs,
+                    "SpouseOnly:",
+                    childrenSpouseOnlyXs,
+                    "PrimaryOnly:",
+                    childrenPrimaryOnlyXs,
+                    "numOtherChildrenNoCategory: " + numOtherChildrenNoCategory
+                );
+
+                // condLog(
+                //     "FOUND actually ",
+                //     childrenXs.length,
+                //     "children to connect",
+                //     childrenMinX,
+                //     childrenMaxX,
+                //     primaryLeaf.Code
+                // );
+                let equalsLine =
+                    `<polyline points="` +
+                    (minX + theTweak4Min) /*  + 20 */ +
+                    "," +
+                    (topEqualsY + 30) +
+                    " " +
+                    (maxX /* - 20 */ + theTweak4Max) +
+                    "," +
+                    (topEqualsY + 30) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3"/>`;
+
+                if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                    equalsLine = "";
+                }
+                if (primaryLeaf.x > primarySpouse.x) {
+                    if (totalNumExtraSpouses + 1 - currentSpNum > 3) {
+                        // Step Parents on Father's Side, so maxX  may need to be shortened if # of currentSpNum > 3
+                        // maxX = Math.min(maxX, primarySpouse.x + 3 * boxWidth);
+                        condLog(
+                            "StepA0 :",
+                            primaryLeaf.Code + " @ " + primaryLeaf.x,
+                            primarySpouse.Code + " @ " + primarySpouse.x,
+                            "eq: " + minX + " to " + maxX
+                        );
+                        equalsLine +=
+                            `<polyline points="` +
+                            primaryLeaf.x /* - 20 */ +
+                            "," +
+                            (primaryLeaf.y - 100) +
+                            " " +
+                            primaryLeaf.x /* - 20 */ +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (maxX + (3 * boxWidth) / 2 + 20) +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (maxX + boxWidth / 4 + theTweak4Max) +
+                            "," +
+                            (topEqualsY + 45 + (5 * theTweak4MaxAngle) / 6) +
+                            " " +
+                            (maxX /* - 20 */ + theTweak4Max) +
+                            "," +
+                            (topEqualsY + 45) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3" />`;
+
+                        if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                            // do nothing
+                        } else {
                             equalsLine +=
                                 `<polyline points="` +
-                                primaryLeaf.x /* - 20 */ +
-                                "," +
-                                (primaryLeaf.y - 100) +
-                                " " +
-                                primaryLeaf.x /* - 20 */ +
-                                "," +
-                                (primaryLeaf.y + 120 - currentSpNum) +
-                                " " +
                                 (maxX + (3 * boxWidth) / 2 + 20) +
                                 "," +
                                 (primaryLeaf.y + 120 - currentSpNum) +
                                 " " +
                                 (maxX + boxWidth / 4 + theTweak4Max) +
                                 "," +
-                                (topEqualsY + 45 + (5 * theTweak4MaxAngle) / 6) +
+                                (topEqualsY + 30 + theTweak4MaxAngle) +
                                 " " +
                                 (maxX /* - 20 */ + theTweak4Max) +
                                 "," +
-                                (topEqualsY + 45) +
+                                (topEqualsY + 30) +
                                 `" fill="none" stroke="` +
                                 drawColour +
                                 `" stroke-width="3" />`;
-
-                            if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
-                                // do nothing
-                            } else {
-                                equalsLine +=
-                                    `<polyline points="` +
-                                    (maxX + (3 * boxWidth) / 2 + 20) +
-                                    "," +
-                                    (primaryLeaf.y + 120 - currentSpNum) +
-                                    " " +
-                                    (maxX + boxWidth / 4 + theTweak4Max) +
-                                    "," +
-                                    (topEqualsY + 30 + theTweak4MaxAngle) +
-                                    " " +
-                                    (maxX /* - 20 */ + theTweak4Max) +
-                                    "," +
-                                    (topEqualsY + 30) +
-                                    `" fill="none" stroke="` +
-                                    drawColour +
-                                    `" stroke-width="3" />`;
-                            }
                         }
-                    } else {
-                        if (currentSpNum > 3) {
-                            // Step Parents on Mother's Side, so minX may need to be lengthened if # of currentSpNum > 3
-                            // minX = Math.max(minX, primaryLeaf.x + 3 * boxWidth);
+                    }
+                } else {
+                    if (currentSpNum > 3) {
+                        // Step Parents on Mother's Side, so minX may need to be lengthened if # of currentSpNum > 3
+                        // minX = Math.max(minX, primaryLeaf.x + 3 * boxWidth);
 
+                        equalsLine +=
+                            `<polyline points="` +
+                            primaryLeaf.x /* - 20 */ +
+                            "," +
+                            (primaryLeaf.y - 100) +
+                            " " +
+                            primaryLeaf.x +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (minX - (3 * boxWidth) / 2 - 20) +
+                            "," +
+                            (primaryLeaf.y + 120 - currentSpNum) +
+                            " " +
+                            (minX + boxWidth / 4) +
+                            "," +
+                            (topEqualsY + 45) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3" />`;
+
+                        if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
+                            // do nothing
+                        } else {
                             equalsLine +=
                                 `<polyline points="` +
-                                primaryLeaf.x /* - 20 */ +
-                                "," +
-                                (primaryLeaf.y - 100) +
-                                " " +
-                                primaryLeaf.x +
-                                "," +
-                                (primaryLeaf.y + 120 - currentSpNum) +
-                                " " +
                                 (minX - (3 * boxWidth) / 2 - 20) +
                                 "," +
                                 (primaryLeaf.y + 120 - currentSpNum) +
                                 " " +
                                 (minX + boxWidth / 4) +
                                 "," +
-                                (topEqualsY + 45) +
+                                (topEqualsY + 30) +
                                 `" fill="none" stroke="` +
                                 drawColour +
                                 `" stroke-width="3" />`;
-
-                            if (doNotDisplayMarriageEquals(primaryLeaf.Id, primarySpouseID)) {
-                                // do nothing
-                            } else {
-                                equalsLine +=
-                                    `<polyline points="` +
-                                    (minX - (3 * boxWidth) / 2 - 20) +
-                                    "," +
-                                    (primaryLeaf.y + 120 - currentSpNum) +
-                                    " " +
-                                    (minX + boxWidth / 4) +
-                                    "," +
-                                    (topEqualsY + 30) +
-                                    `" fill="none" stroke="` +
-                                    drawColour +
-                                    `" stroke-width="3" />`;
-                            }
                         }
                     }
+                }
 
-                    equalsLine +=
-                        `<polyline points="` +
-                        (minX + theTweak4Min) /* + 20 */ +
-                        "," +
-                        (topEqualsY + 45) +
-                        " " +
-                        (maxX /* - 20 */ + theTweak4Max) +
-                        "," +
-                        (topEqualsY + 45) +
-                        `" fill="none" stroke="` +
-                        drawColour +
-                        `" stroke-width="3" />`;
+                equalsLine +=
+                    `<polyline points="` +
+                    (minX + theTweak4Min) /* + 20 */ +
+                    "," +
+                    (topEqualsY + 45) +
+                    " " +
+                    (maxX /* - 20 */ + theTweak4Max) +
+                    "," +
+                    (topEqualsY + 45) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3" />`;
 
-                    equalsLine +=
-                        `<polyline points="` +
-                        primarySpouse.x +
-                        "," +
-                        (topEqualsY + 45) +
-                        " " +
-                        primarySpouse.x +
-                        "," +
-                        (primarySpouse.y - 100) +
-                        `" fill="none" stroke="` +
-                        drawColour +
-                        `" stroke-width="5" />`;
+                equalsLine +=
+                    `<polyline points="` +
+                    primarySpouse.x +
+                    "," +
+                    (topEqualsY + 45) +
+                    " " +
+                    primarySpouse.x +
+                    "," +
+                    (primarySpouse.y - 100) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="5" />`;
 
-                    equalsLine +=
-                        `<polyline points="` +
-                        primaryLeaf.x +
-                        "," +
-                        (topEqualsY + 45) +
-                        " " +
-                        primaryLeaf.x +
-                        "," +
-                        (primaryLeaf.y - 100) +
-                        `" fill="none" stroke="` +
-                        drawColour +
-                        `" stroke-width="5" />`;
+                equalsLine +=
+                    `<polyline points="` +
+                    primaryLeaf.x +
+                    "," +
+                    (topEqualsY + 45) +
+                    " " +
+                    primaryLeaf.x +
+                    "," +
+                    (primaryLeaf.y - 100) +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="5" />`;
 
-                    if (equalsLine.indexOf("NaN") > -1) {
-                        condLog(
-                            "DANGER DANGER:",
-                            equalsLine,
-                            primaryLeaf.x,
-                            primarySpouse.x,
-                            primaryLeaf.y,
-                            primarySpouse.y
-                        );
-                    }
-                    // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
-                    let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
-                    let centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50; // (minX + maxX) / 2;
-                    if ( primarySpouse.x > primaryLeaf.x) {
-                        centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
-                    } else if ( primarySpouse.x < primaryLeaf.x) {
-                        centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
-                    }
-
-                    let bothFullBioAndAdoptedKidsBuffer = 0;
-                    if (childrenXs.length > 0 && childrenAdoptedXs.length > 0) {
-                        bothFullBioAndAdoptedKidsBuffer = 10;
-                    }
-                    centreX += bothFullBioAndAdoptedKidsBuffer;
-                    childrenMinX = Math.min(childrenMinX, centreX);
-                    childrenMaxX = Math.max(childrenMaxX, centreX);
-
-                    let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
-                    if (checkResult.hasChanged) {
-                        // centreX = checkResult.centre;
-                        childrenXs = checkResult.kids;
-                        childrenMinX = centreX;
-                        childrenMaxX = centreX;
-                        for (let ch = 0; ch < childrenXs.length; ch++) {
-                            childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
-                            childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
-                        }
-                    }
-
-                    let crossBarY = checkCrossBarYwithATC(
-                        childrenY - 130 - (sp + levelNum) * 30,
-                        childrenMinX,
-                        childrenMaxX
+                if (equalsLine.indexOf("NaN") > -1) {
+                    condLog(
+                        "DANGER DANGER:",
+                        equalsLine,
+                        primaryLeaf.x,
+                        primarySpouse.x,
+                        primaryLeaf.y,
+                        primarySpouse.y
                     );
+                }
+                // REMEMBER:  The x,y coordinates of any Leaf is shifted 150, 100 from the top left corner, and each Leaf is 300 wide (by default - but if you use a different Width Setting from the Settings, then that will change!!!!)
+                let thisBoxWidth = 1.0 * SuperBigFamView.currentSettings["general_options_boxWidth"];
+                let centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50; // (minX + maxX) / 2;
+                if (primarySpouse.x > primaryLeaf.x) {
+                    centreX = primarySpouse.x - (thisBoxWidth - 100) / 2 - 50;
+                } else if (primarySpouse.x < primaryLeaf.x) {
+                    centreX = primarySpouse.x + (thisBoxWidth - 100) / 2 + 50;
+                }
 
-                    drawColour = "black";
-                    let backlitColour = getBackgroundColourForLeaf(primaryLeaf);
-                    let tBarVertLineBacklit = "";
-                    if (doingDirectAncestorCode > "") {
-                        tBarVertLineBacklit = 
+                let bothFullBioAndAdoptedKidsBuffer = 0;
+                if (childrenXs.length > 0 && childrenAdoptedXs.length > 0) {
+                    bothFullBioAndAdoptedKidsBuffer = 10;
+                }
+                centreX += bothFullBioAndAdoptedKidsBuffer;
+                childrenMinX = Math.min(childrenMinX, centreX);
+                childrenMaxX = Math.max(childrenMaxX, centreX);
+
+                let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenXs, primaryLeaf);
+                if (checkResult.hasChanged) {
+                    // centreX = checkResult.centre;
+                    childrenXs = checkResult.kids;
+                    childrenMinX = centreX;
+                    childrenMaxX = centreX;
+                    for (let ch = 0; ch < childrenXs.length; ch++) {
+                        childrenMinX = Math.min(childrenMinX, childrenXs[ch]);
+                        childrenMaxX = Math.max(childrenMaxX, childrenXs[ch]);
+                    }
+                }
+
+                let crossBarY = checkCrossBarYwithATC(
+                    childrenY - 130 - (sp + levelNum) * 30,
+                    childrenMinX,
+                    childrenMaxX
+                );
+
+                drawColour = "black";
+                let backlitColour = getBackgroundColourForLeaf(primaryLeaf);
+                let tBarVertLineBacklit = "";
+                if (doingDirectAncestorCode > "") {
+                    tBarVertLineBacklit =
                         `<polyline points="` +
                         centreX +
                         "," +
@@ -4824,10 +4787,198 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         `" fill="none" stroke="` +
                         backlitColour +
                         `" stroke-width="9"/>`;
+                }
+                condLog({ doingDirectAncestorCode });
+
+                let tBarVertLine =
+                    tBarVertLineBacklit +
+                    `<polyline points="` +
+                    centreX +
+                    "," +
+                    // (minY + 45 - sp * 60) +
+                    (topEqualsY + 45) +
+                    " " +
+                    centreX +
+                    "," +
+                    crossBarY +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3"/>` +
+                    `<polyline points="` +
+                    childrenMinX +
+                    "," +
+                    crossBarY +
+                    " " +
+                    childrenMaxX +
+                    "," +
+                    crossBarY +
+                    `" fill="none" stroke="` +
+                    drawColour +
+                    `" stroke-width="3"/>`;
+
+                // condLog(tBarVertLine);
+
+                let dropLines = "";
+                for (let ch = 0; ch < childrenXs.length; ch++) {
+                    let kidBacklit = "";
+                    if (doingDirectAncestorCode > "") {
+                        kidBacklit =
+                            `<polyline points="` +
+                            childrenXs[ch] +
+                            "," +
+                            crossBarY +
+                            " " +
+                            childrenXs[ch] +
+                            "," +
+                            (childrenY - 80) +
+                            `" fill="none" stroke="` +
+                            backlitColour +
+                            `" stroke-width="9"/>`;
                     }
-                    condLog({doingDirectAncestorCode}) ;
-                    
-                    let tBarVertLine = tBarVertLineBacklit +
+                    dropLines +=
+                        kidBacklit +
+                        `<polyline points="` +
+                        childrenXs[ch] +
+                        "," +
+                        crossBarY +
+                        " " +
+                        childrenXs[ch] +
+                        "," +
+                        (childrenY - 80) +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>`;
+                }
+                // condLog(dropLines);
+                if (childrenXs.length > 0) {
+                    allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+                    addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
+                } else {
+                    allLinesPolySVG += equalsLine;
+                }
+
+                if (childrenAdoptedXs.length > 0) {
+                    centreX -= 2 * bothFullBioAndAdoptedKidsBuffer; //primarySpouse.x;
+                    let drawColour = "darkgreen";
+
+                    childrenAdoptedMinX = Math.min(childrenAdoptedMinX, centreX);
+                    childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, centreX);
+
+                    let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenAdoptedXs, primaryLeaf);
+                    if (checkResult.hasChanged) {
+                        // centreX = checkResult.centre;
+                        childrenAdoptedXs = checkResult.kids;
+                        childrenAdoptedMinX = centreX;
+                        childrenAdoptedMaxX = centreX;
+                        for (let ch = 0; ch < childrenAdoptedXs.length; ch++) {
+                            childrenAdoptedMinX = Math.min(childrenAdoptedMinX, childrenAdoptedXs[ch]);
+                            childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, childrenAdoptedXs[ch]);
+                        }
+                    }
+
+                    let crossBarY = checkCrossBarYwithATC(
+                        childrenY - 130 - (sp + levelNum) * 30,
+                        childrenAdoptedMinX,
+                        childrenAdoptedMaxX
+                    );
+
+                    let tBarVertLine =
+                        `<polyline points="` +
+                        centreX +
+                        "," +
+                        (topEqualsY + 45) +
+                        " " +
+                        centreX +
+                        "," +
+                        crossBarY +
+                        " " +
+                        (centreX - 6) +
+                        "," +
+                        crossBarY +
+                        " " +
+                        (centreX - 6) +
+                        "," +
+                        (topEqualsY + 45) +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>` +
+                        `<polyline points="` +
+                        childrenAdoptedMinX +
+                        "," +
+                        crossBarY +
+                        " " +
+                        childrenAdoptedMaxX +
+                        "," +
+                        crossBarY +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>`;
+
+                    // condLog(tBarVertLine);
+
+                    let dropLines = "";
+                    for (let ch = 0; ch < childrenAdoptedXs.length; ch++) {
+                        dropLines +=
+                            `<polyline points="` +
+                            childrenAdoptedXs[ch] +
+                            "," +
+                            crossBarY +
+                            " " +
+                            childrenAdoptedXs[ch] +
+                            "," +
+                            (childrenY - 80) +
+                            " " +
+                            (childrenAdoptedXs[ch] - 6) +
+                            "," +
+                            (childrenY - 80) +
+                            " " +
+                            (childrenAdoptedXs[ch] - 6) +
+                            "," +
+                            crossBarY +
+                            " " +
+                            childrenAdoptedXs[ch] +
+                            "," +
+                            crossBarY +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3"/>`;
+                    }
+
+                    allLinesPolySVG += tBarVertLine + dropLines;
+                    addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
+                }
+
+                if (childrenSpouseOnlyXs.length > 0) {
+                    let centreX = primarySpouse.x;
+                    let drawColour = "lime";
+                    if (primaryLeafPerson._data.Gender == "Male") {
+                        drawColour = "red";
+                    } else if (primaryLeafPerson._data.Gender == "Female") {
+                        drawColour = "blue";
+                    }
+
+                    childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, centreX);
+                    childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, centreX);
+
+                    let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenSpouseOnlyXs, primaryLeaf);
+                    if (checkResult.hasChanged) {
+                        // centreX = checkResult.centre;
+                        childrenSpouseOnlyXs = checkResult.kids;
+                        childrenSpouseOnlyMinX = centreX;
+                        childrenSpouseOnlyMaxX = centreX;
+                        for (let ch = 0; ch < childrenSpouseOnlyXs.length; ch++) {
+                            childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, childrenSpouseOnlyXs[ch]);
+                            childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, childrenSpouseOnlyXs[ch]);
+                        }
+                    }
+
+                    let crossBarY = checkCrossBarYwithATC(
+                        childrenY - 130 - (sp + levelNum) * 30,
+                        childrenSpouseOnlyMinX,
+                        childrenSpouseOnlyMaxX
+                    );
+
+                    let tBarVertLine =
                         `<polyline points="` +
                         centreX +
                         "," +
@@ -4841,11 +4992,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         drawColour +
                         `" stroke-width="3"/>` +
                         `<polyline points="` +
-                        childrenMinX +
+                        childrenSpouseOnlyMinX +
                         "," +
                         crossBarY +
                         " " +
-                        childrenMaxX +
+                        childrenSpouseOnlyMaxX +
                         "," +
                         crossBarY +
                         `" fill="none" stroke="` +
@@ -4855,297 +5006,115 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     // condLog(tBarVertLine);
 
                     let dropLines = "";
-                    for (let ch = 0; ch < childrenXs.length; ch++) {
-                        let kidBacklit = "";
-                        if (doingDirectAncestorCode > "") {
-                            kidBacklit =
-                                `<polyline points="` +
-                                childrenXs[ch] +
-                                "," +
-                                crossBarY +
-                                " " +
-                                childrenXs[ch] +
-                                "," +
-                                (childrenY - 80) +
-                                `" fill="none" stroke="` +
-                                backlitColour +
-                                `" stroke-width="9"/>`;
-                        }
-                        dropLines += kidBacklit +
+                    for (let ch = 0; ch < childrenSpouseOnlyXs.length; ch++) {
+                        dropLines +=
                             `<polyline points="` +
-                            childrenXs[ch] +
+                            childrenSpouseOnlyXs[ch] +
                             "," +
                             crossBarY +
                             " " +
-                            childrenXs[ch] +
+                            childrenSpouseOnlyXs[ch] +
                             "," +
                             (childrenY - 80) +
                             `" fill="none" stroke="` +
                             drawColour +
                             `" stroke-width="3"/>`;
                     }
-                    // condLog(dropLines);
-                    if (childrenXs.length > 0) {
-                        allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
-                        addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
-                    } else {
-                        allLinesPolySVG += equalsLine;
+
+                    allLinesPolySVG += tBarVertLine + dropLines;
+                    addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
+                }
+
+                if (childrenPrimaryOnlyXs.length > 0) {
+                    let centreX = primaryLeaf.x;
+                    let drawColour = "chocolate";
+                    if (primaryLeafPerson._data.Gender == "Male") {
+                        drawColour = "blue";
+                    } else if (primaryLeafPerson._data.Gender == "Female") {
+                        drawColour = "red";
                     }
 
-                    if (childrenAdoptedXs.length > 0) {
-                        centreX -= 2 * bothFullBioAndAdoptedKidsBuffer; //primarySpouse.x;
-                        let drawColour = "darkgreen";
+                    childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, centreX);
+                    childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, centreX);
 
-                        childrenAdoptedMinX = Math.min(childrenAdoptedMinX, centreX);
-                        childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, centreX);
-
-                        let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenAdoptedXs, primaryLeaf);
-                        if (checkResult.hasChanged) {
-                            // centreX = checkResult.centre;
-                            childrenAdoptedXs = checkResult.kids;
-                            childrenAdoptedMinX = centreX;
-                            childrenAdoptedMaxX = centreX;
-                            for (let ch = 0; ch < childrenAdoptedXs.length; ch++) {
-                                childrenAdoptedMinX = Math.min(childrenAdoptedMinX, childrenAdoptedXs[ch]);
-                                childrenAdoptedMaxX = Math.max(childrenAdoptedMaxX, childrenAdoptedXs[ch]);
-                            }
-                        }
-
-                        let crossBarY = checkCrossBarYwithATC(
-                            childrenY - 130 - (sp + levelNum) * 30,
-                            childrenAdoptedMinX,
-                            childrenAdoptedMaxX
-                        );
-
-                        let tBarVertLine =
-                            `<polyline points="` +
-                            centreX +
-                            "," +
-                            (topEqualsY + 45) +
-                            " " +
-                            centreX +
-                            "," +
-                            crossBarY +
-                            " " +
-                            (centreX - 6) +
-                            "," +
-                            crossBarY +
-                            " " +
-                            (centreX - 6) +
-                            "," +
-                            (topEqualsY + 45) +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3"/>` +
-                            `<polyline points="` +
-                            childrenAdoptedMinX +
-                            "," +
-                            crossBarY +
-                            " " +
-                            childrenAdoptedMaxX +
-                            "," +
-                            crossBarY +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3"/>`;
-
-                        // condLog(tBarVertLine);
-
-                        let dropLines = "";
-                        for (let ch = 0; ch < childrenAdoptedXs.length; ch++) {
-                            dropLines +=
-                                `<polyline points="` +
-                                childrenAdoptedXs[ch] +
-                                "," +
-                                crossBarY +
-                                " " +
-                                childrenAdoptedXs[ch] +
-                                "," +
-                                (childrenY - 80) +
-                                " " +
-                                (childrenAdoptedXs[ch] - 6) +
-                                "," +
-                                (childrenY - 80) +
-                                " " +
-                                (childrenAdoptedXs[ch] - 6) +
-                                "," +
-                                crossBarY +
-                                " " +
-                                childrenAdoptedXs[ch] +
-                                "," +
-                                crossBarY +
-                                `" fill="none" stroke="` +
-                                drawColour +
-                                `" stroke-width="3"/>`;
-                        }
-
-                        allLinesPolySVG += tBarVertLine + dropLines;
-                        addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
-                    }
-
-                    if (childrenSpouseOnlyXs.length > 0) {
-                        let centreX = primarySpouse.x;
-                        let drawColour = "lime";
-                        if (primaryLeafPerson._data.Gender == "Male") {
-                            drawColour = "red";
-                        } else if (primaryLeafPerson._data.Gender == "Female") {
-                            drawColour = "blue";
-                        }
-
-                        childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, centreX);
-                        childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, centreX);
-
-                        let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenSpouseOnlyXs, primaryLeaf);
-                        if (checkResult.hasChanged) {
-                            // centreX = checkResult.centre;
-                            childrenSpouseOnlyXs = checkResult.kids;
-                            childrenSpouseOnlyMinX = centreX;
-                            childrenSpouseOnlyMaxX = centreX;
-                            for (let ch = 0; ch < childrenSpouseOnlyXs.length; ch++) {
-                                childrenSpouseOnlyMinX = Math.min(childrenSpouseOnlyMinX, childrenSpouseOnlyXs[ch]);
-                                childrenSpouseOnlyMaxX = Math.max(childrenSpouseOnlyMaxX, childrenSpouseOnlyXs[ch]);
-                            }
-                        }
-
-                        let crossBarY = checkCrossBarYwithATC(
-                            childrenY - 130 - (sp + levelNum) * 30,
-                            childrenSpouseOnlyMinX,
-                            childrenSpouseOnlyMaxX
-                        );
-
-                        let tBarVertLine =
-                            `<polyline points="` +
-                            centreX +
-                            "," +
-                            // (minY + 45 - sp * 60) +
-                            (topEqualsY + 45) +
-                            " " +
-                            centreX +
-                            "," +
-                            crossBarY +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3"/>` +
-                            `<polyline points="` +
-                            childrenSpouseOnlyMinX +
-                            "," +
-                            crossBarY +
-                            " " +
-                            childrenSpouseOnlyMaxX +
-                            "," +
-                            crossBarY +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3"/>`;
-
-                        // condLog(tBarVertLine);
-
-                        let dropLines = "";
-                        for (let ch = 0; ch < childrenSpouseOnlyXs.length; ch++) {
-                            dropLines +=
-                                `<polyline points="` +
-                                childrenSpouseOnlyXs[ch] +
-                                "," +
-                                crossBarY +
-                                " " +
-                                childrenSpouseOnlyXs[ch] +
-                                "," +
-                                (childrenY - 80) +
-                                `" fill="none" stroke="` +
-                                drawColour +
-                                `" stroke-width="3"/>`;
-                        }
-
-                        allLinesPolySVG += tBarVertLine + dropLines;
-                        addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
-                    }
-                
-
-                    if (childrenPrimaryOnlyXs.length > 0) {
-                        let centreX = primaryLeaf.x;
-                        let drawColour = "chocolate";
-                        if (primaryLeafPerson._data.Gender == "Male") {
-                            drawColour = "blue";
-                        } else if (primaryLeafPerson._data.Gender == "Female") {
-                            drawColour = "red";
-                        }
-
-                        childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, centreX);
-                        childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, centreX);
-
-                        let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenPrimaryOnlyXs, primaryLeaf);
-                        if (checkResult.hasChanged) {
-                            // centreX = checkResult.centre;
-                            childrenPrimaryOnlyXs = checkResult.kids;
-                            childrenPrimaryOnlyMinX = centreX;
-                            childrenPrimaryOnlyMaxX = centreX;
-                            for (let ch = 0; ch < childrenPrimaryOnlyXs.length; ch++) {
-                                childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, childrenPrimaryOnlyXs[ch]);
-                                childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, childrenPrimaryOnlyXs[ch]);
-                            }
-                        }
-
-                        let crossBarY = checkCrossBarYwithATC(
-                            childrenY - 130 - (sp + levelNum) * 30,
-                            childrenPrimaryOnlyMinX,
-                            childrenPrimaryOnlyMaxX
-                        );
-
-                        let tBarVertLine =
-                            `<polyline points="` +
-                            centreX +
-                            "," +
-                            // (minY + 45 - sp * 60) +
-                            (topEqualsY + 45) +
-                            " " +
-                            centreX +
-                            "," +
-                            crossBarY +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3"/>` +
-                            `<polyline points="` +
-                            childrenPrimaryOnlyMinX +
-                            "," +
-                            crossBarY +
-                            " " +
-                            childrenPrimaryOnlyMaxX +
-                            "," +
-                            crossBarY +
-                            `" fill="none" stroke="` +
-                            drawColour +
-                            `" stroke-width="3"/>`;
-
-                        // condLog(tBarVertLine);
-
-                        let dropLines = "";
+                    let checkResult = checkDropLineXwithATC(childrenY, centreX, childrenPrimaryOnlyXs, primaryLeaf);
+                    if (checkResult.hasChanged) {
+                        // centreX = checkResult.centre;
+                        childrenPrimaryOnlyXs = checkResult.kids;
+                        childrenPrimaryOnlyMinX = centreX;
+                        childrenPrimaryOnlyMaxX = centreX;
                         for (let ch = 0; ch < childrenPrimaryOnlyXs.length; ch++) {
-                            dropLines +=
-                                `<polyline points="` +
-                                childrenPrimaryOnlyXs[ch] +
-                                "," +
-                                crossBarY +
-                                " " +
-                                childrenPrimaryOnlyXs[ch] +
-                                "," +
-                                (childrenY - 80) +
-                                `" fill="none" stroke="` +
-                                drawColour +
-                                `" stroke-width="3"/>`;
+                            childrenPrimaryOnlyMinX = Math.min(childrenPrimaryOnlyMinX, childrenPrimaryOnlyXs[ch]);
+                            childrenPrimaryOnlyMaxX = Math.max(childrenPrimaryOnlyMaxX, childrenPrimaryOnlyXs[ch]);
                         }
-
-                        allLinesPolySVG += tBarVertLine + dropLines;
-                        addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
                     }
+
+                    let crossBarY = checkCrossBarYwithATC(
+                        childrenY - 130 - (sp + levelNum) * 30,
+                        childrenPrimaryOnlyMinX,
+                        childrenPrimaryOnlyMaxX
+                    );
+
+                    let tBarVertLine =
+                        `<polyline points="` +
+                        centreX +
+                        "," +
+                        // (minY + 45 - sp * 60) +
+                        (topEqualsY + 45) +
+                        " " +
+                        centreX +
+                        "," +
+                        crossBarY +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>` +
+                        `<polyline points="` +
+                        childrenPrimaryOnlyMinX +
+                        "," +
+                        crossBarY +
+                        " " +
+                        childrenPrimaryOnlyMaxX +
+                        "," +
+                        crossBarY +
+                        `" fill="none" stroke="` +
+                        drawColour +
+                        `" stroke-width="3"/>`;
+
+                    // condLog(tBarVertLine);
+
+                    let dropLines = "";
+                    for (let ch = 0; ch < childrenPrimaryOnlyXs.length; ch++) {
+                        dropLines +=
+                            `<polyline points="` +
+                            childrenPrimaryOnlyXs[ch] +
+                            "," +
+                            crossBarY +
+                            " " +
+                            childrenPrimaryOnlyXs[ch] +
+                            "," +
+                            (childrenY - 80) +
+                            `" fill="none" stroke="` +
+                            drawColour +
+                            `" stroke-width="3"/>`;
+                    }
+
+                    allLinesPolySVG += tBarVertLine + dropLines;
+                    addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
                 }
             }
+        }
 
         if (primaryLeafPerson._data.Spouses.length == 0) {
-            condLog("drawLinesForFamilyOf - SINGLE PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ", code, kidPrefix, (kidPrefix.substring(kidPrefix.length - 1) == "S") );
+            condLog(
+                "drawLinesForFamilyOf - SINGLE PARENT --> NEED TO ADD YOUR OWN FLAVOUR OF LINES : ",
+                code,
+                kidPrefix,
+                kidPrefix.substring(kidPrefix.length - 1) == "S"
+            );
             // CHECK FOR ORIIGNAL BEING A SIBLING CALL _ AND _ THAT THE PARENT WAS OR WAS NOT A SINGLE PARENT TO START WITH ANYWYAS !!!!
-            
+
             if (kidPrefix.substring(kidPrefix.length - 1) == "S") {
-                let tmpDirectAncSibling = kidPrefix.substring(0,kidPrefix.length - 1);
+                let tmpDirectAncSibling = kidPrefix.substring(0, kidPrefix.length - 1);
                 let theDirectAncSibling = thePeopleList[SuperBigFamView.theLeafCollection[tmpDirectAncSibling].Id];
                 condLog("drawLines :", { tmpDirectAncSibling }, theDirectAncSibling);
                 if (theDirectAncSibling._data.Mother <= 0 || theDirectAncSibling._data.Father <= 0) {
@@ -5157,7 +5126,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
 
             let drawColour = "magenta";
-         
+
             let childrenXs = [];
             let childrenY = 0;
             let childrenMinX = 0;
@@ -5209,7 +5178,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         childrenY = kidLeaf.y;
                         childrenXs.push(kidLeaf.x);
 
-                        condLog("Length of childrenXs in for loop: ch=" + ch, "displayPrivatize = " + SuperBigFamView.displayPrivatize == 1 , "kid._data.IsPrivate = " + kid._data.IsPrivate, kid);
+                        condLog(
+                            "Length of childrenXs in for loop: ch=" + ch,
+                            "displayPrivatize = " + SuperBigFamView.displayPrivatize == 1,
+                            "kid._data.IsPrivate = " + kid._data.IsPrivate,
+                            kid
+                        );
                     }
                 }
             }
@@ -5342,10 +5316,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
                 addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
             }
-        }  else if (doNotDisplaySpousesList.length > 0) {
-            condLog("INSERT DRAWING LINES TO KIDS ROUTINE HERE :")
+        } else if (doNotDisplaySpousesList.length > 0) {
+            condLog("INSERT DRAWING LINES TO KIDS ROUTINE HERE :");
 
-            if ( code == "A0" && numD == 0) {
+            if (code == "A0" && numD == 0) {
                 // nothing to see here ... move along ...
             } else {
                 for (let dnd = 0; dnd < doNotDisplaySpousesList.length; dnd++) {
@@ -5614,12 +5588,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // );
         }
 
-
         if (allLinesPolySVG.indexOf("NaN") > -1) {
             condLog(" DANGER DANGER WILL ROBINSON - DRAW FAMILY LINES CONTAINS * NOT A NUMBER * !!!!", code);
             return "";
         }
-        condLog("drawLinesForFamilyOf", code, "DONE", (code == "A0" || code == "A0RF" )? allLinesPolySVG : "!");
+        condLog("drawLinesForFamilyOf", code, "DONE", code == "A0" || code == "A0RF" ? allLinesPolySVG : "!");
         return allLinesPolySVG;
     }
 
@@ -5699,7 +5672,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             equalsLine = "";
         }
 
-        equalsLine += `<polyline points="` +
+        equalsLine +=
+            `<polyline points="` +
             (minX + 20) +
             "," +
             (minY + 45) +
@@ -5796,7 +5770,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         //        allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
         //    } else {
 
-    
         condLog("** drawLinesForPrimaryOnlyAndParents : END");
         return equalsLine + tBarVertLine;
         //    }
@@ -5979,7 +5952,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         if (SuperBigFamView.numCuzGens2Display < 0) {
             SuperBigFamView.numCuzGens2Display = 0;
             showTemporaryMessageBelowButtonBar("You can't display less than nothing.");
-        } else if (SuperBigFamView.numCuzGens2Display> SuperBigFamView.maxNumCuzGens) {
+        } else if (SuperBigFamView.numCuzGens2Display > SuperBigFamView.maxNumCuzGens) {
             SuperBigFamView.numCuzGens2Display = SuperBigFamView.maxNumCuzGens;
             condLog("Cousin Bump: ", SuperBigFamView.numCuzGens2Display, SuperBigFamView.maxNumCuzGens);
             // if (SuperBigFamView.workingMaxNumGens < SuperBigFamView.maxNumGens) {
@@ -5993,7 +5966,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // }
         }
 
-        condLog("Cousin Change?: ",OKtoAddCuzs, SuperBigFamView.numCuzGens2Display, SuperBigFamView.maxNumCuzGens);
+        condLog("Cousin Change?: ", OKtoAddCuzs, SuperBigFamView.numCuzGens2Display, SuperBigFamView.maxNumCuzGens);
         var numGensSpan = document.querySelector("#numCuzGensInBBar");
         let cuzQuips = ["none", "aunts/uncles", "1st cousins", "2nd cousins", "3rd cousins"];
         if (SuperBigFamView.numCuzGens2Display < cuzQuips.length) {
@@ -6057,19 +6030,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         // NOTE: As of 15 Feb 2024 - temporary fix for API wonkiness, when looking for descendants: in params, add nuclear:1 to paramters, to ensure both parents return valid +ve # IDs, when appropriate
         let getPeopleParametersArray = {
-            A1: { params: { descendants: numCousinDescendants , nuclear:1 }, aboveMsg: "descendants of top ancestors" },
+            A1: { params: { descendants: numCousinDescendants, nuclear: 1 }, aboveMsg: "descendants of top ancestors" },
             A2: { params: { ancestors: 1, siblings: 1 }, aboveMsg: "parents and siblings of top ancestors" },
             A3: { params: { ancestors: 1 }, aboveMsg: "descendants' spouses and in-laws" },
             A4: { params: { ancestors: 1 }, aboveMsg: "ancestors' spouses and in-laws" },
 
             D1: {
-                params: { descendants: newDescLevel,nuclear:1, minGeneration: newDescLevel },
+                params: { descendants: newDescLevel, nuclear: 1, minGeneration: newDescLevel },
                 aboveMsg: "descendants of primary and siblings",
             },
             D2: { params: { ancestors: 1 }, aboveMsg: "spouses and in-laws" },
 
             C1: {
-                params: { descendants: numCousinDescendants,nuclear:1, minGeneration: numCousinDescendants - 1 },
+                params: { descendants: numCousinDescendants, nuclear: 1, minGeneration: numCousinDescendants - 1 },
                 aboveMsg: "descendants of ancestors",
             },
             C2: { params: { ancestors: 1 }, aboveMsg: "spouses and in-laws" },
@@ -6093,14 +6066,16 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         loadingTD.innerHTML = "loading...";
 
-        let codesOKtoLoadExtraSpouses = ["A3","A4","D2","C2"];
-        if (codesOKtoLoadExtraSpouses.indexOf(getCode) > -1 && SuperBigFamView.listOfExtraSpousesToAddToList.length > 0) {
+        let codesOKtoLoadExtraSpouses = ["A3", "A4", "D2", "C2"];
+        if (
+            codesOKtoLoadExtraSpouses.indexOf(getCode) > -1 &&
+            SuperBigFamView.listOfExtraSpousesToAddToList.length > 0
+        ) {
             for (let ex = 0; ex < SuperBigFamView.listOfExtraSpousesToAddToList.length; ex++) {
-                KeysIDsArray.push( SuperBigFamView.listOfExtraSpousesToAddToList[ex]);
+                KeysIDsArray.push(SuperBigFamView.listOfExtraSpousesToAddToList[ex]);
             }
-             SuperBigFamView.listOfExtraSpousesToAddToList = [];
+            SuperBigFamView.listOfExtraSpousesToAddToList = [];
         }
-
 
         let thisKeysIDsArray = KeysIDsArray;
         if (KeysIDsArray.length > 100) {
@@ -6232,7 +6207,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     // if (thePerson.Father == 41) {
                     //     condLog("Father  = 41: " , "getPeopleCall", KeysIDsArray, {getCode}, startKeyAt, startResultAt, thePerson );
                     // }
-                    if (/* thePerson.Privacy > 10 &&  */thePerson.Id > 0) {
+                    if (/* thePerson.Privacy > 10 &&  */ thePerson.Id > 0) {
                         thePeopleList.addIfNeeded(thePerson);
                         SuperBigFamView.ListsOfIDs[getCode + "out"].push(index);
 
@@ -6245,13 +6220,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         }
                     }
                 }
-                console.log(
-                    "ADDED ",
-                    numNewPeeps,
-                    " new peeps!",                    
-                );
+                console.log("ADDED ", numNewPeeps, " new peeps!");
                 console.log(result[0]);
-
 
                 let needToReDoCall = false;
                 if (numNewPeeps >= 1000) {
@@ -6381,7 +6351,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             siftOutA0StepChunk();
         }
 
-        // prunePrivateLeaves(); 
+        // prunePrivateLeaves();
 
         // ====================
         // THE END
@@ -6440,7 +6410,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         getPeopleCall(theListOfIDs, "D1");
 
         return;
- 
     }
 
     /* 
@@ -6609,7 +6578,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         condLog("--> ENGAGE - Need to load really");
 
-        condLog("ANCESTORS: pre- getPeopleCall - newLevel:" + newLevel );
+        condLog("ANCESTORS: pre- getPeopleCall - newLevel:" + newLevel);
 
         let theListOfIDs = [];
         let theAncsOnlyIDs = [];
@@ -7053,15 +7022,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     thisMaxHeight = vBoxHeight;
                 }
                 thisMaxHeight += extraHeightForChunk("A" + a);
-                
-                if (SuperBigFamView.previousAnum == numA - 1 && a == numA && extraHeightForChunk("A" + a) == 0)  {
-                    thisMaxHeight += extraHeightForChunk("A" + (a - 1));                    
+
+                if (SuperBigFamView.previousAnum == numA - 1 && a == numA && extraHeightForChunk("A" + a) == 0) {
+                    thisMaxHeight += extraHeightForChunk("A" + (a - 1));
                 }
-                
+
                 if (a == numA) {
                     SuperBigFamView.previousAnum = numA;
                 }
-                
+
                 condLog("maxHeights for ", a, ": maxHeight = ", thisMaxHeight);
                 if (showInLaws) {
                     thisMaxHeight += maxInLawsArray[a] * AmaxHeights[a];
@@ -7281,7 +7250,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     }
 
     function repositionThisAncestorsCluster(ahnenNum, thisX, thisY) {
-        condLog("repositionThisAncestorsCluster",ahnenNum, thisX, thisY);
+        condLog("repositionThisAncestorsCluster", ahnenNum, thisX, thisY);
         // let align = ahNum % 2 == 0 ? "R" : "L";
         // let numA = SuperBigFamView.numAncGens2Display;
         // let numD = SuperBigFamView.numDescGens2Display;
@@ -7384,13 +7353,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
                 let orderedPartners = []; // concatenate their Marriage Date + tack on their ID at the end, not part of sort, but way to link back to original record afterwards
 
-                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 ) {
+                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0) {
                     let extraPartnerNum = 0;
                     for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                         let thisPartner = thisLeafPerson._data.Spouses[i];
                         orderedPartners.push(thisPartner.marriage_date + "|" + thisPartner.Id);
                     }
-
                 }
 
                 orderedPartners = orderedPartners.sort();
@@ -7405,7 +7373,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
 
                         if (thisLeafExtraPartner) {
-                            
                             let thisLeafExtraPartnerPerson = thePeopleList[thisLeafExtraPartner.Id];
                             if (
                                 thisLeafExtraPartnerPerson &&
@@ -7416,15 +7383,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
                                 // BUT ... assuming it's a go - then we can give them some (x,y) coords and move along
                                 totalNumExtraPartners++;
-                                
                             } else {
                                 // No children - then - no show (unless we're into Cousin mode of some flavour)
                                 if (numC > 0) {
                                     // YAY - cousin mode - show the extra spouses (even if no kids involved)
                                     totalNumExtraPartners++;
-                                    
                                 } else {
-                                    // NO cousin mode - no extra spouses without children                                   
+                                    // NO cousin mode - no extra spouses without children
                                 }
                             }
                         }
@@ -7432,23 +7397,23 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
 
                 condLog("Ordering Ancestor:", thisLeafPerson._data.Name);
-                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0 ) {
+                if (thisLeafPerson._data.Spouses && thisLeafPerson._data.Spouses.length > 0) {
                     let extraPartnerNum = 0;
                     for (let ord = 0; ord < thisLeafPerson._data.SpousesOrdered.length; ord++) {
                         let thisOrdered = thisLeafPerson._data.SpousesOrdered[ord];
                         let orderedSPid = thisOrdered.substr(thisOrdered.indexOf("|") + 1);
                         for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
                             let thisPartner = thisLeafPerson._data.Spouses[i];
-                              
-                            condLog("Ordering " , thisOrdered);
+
+                            condLog("Ordering ", thisOrdered);
 
                             let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
                             let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
-                           
+
                             if (thisLeafExtraPartner) {
-                                 if (thisLeafExtraPartner.Id != orderedSPid) {
+                                if (thisLeafExtraPartner.Id != orderedSPid) {
                                     continue;
-                                } 
+                                }
                                 let thisLeafExtraPartnerDIV = document.getElementById(
                                     "wedgeInfo-" + thisLeafExtraPartnerCode
                                 );
@@ -7464,12 +7429,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     // BUT ... assuming it's a go - then we can give them some (x,y) coords and move along
                                     extraPartnerNum++;
                                     if (ahnenNum % 2 == 1) {
-                                        thisLeafExtraPartner.x =
-                                            thisLeaf.x + extraPartnerNum * thisBoxWidth ;
-
+                                        thisLeafExtraPartner.x = thisLeaf.x + extraPartnerNum * thisBoxWidth;
                                     } else {
                                         thisLeafExtraPartner.x =
-                                            thisLeaf.x - (totalNumExtraPartners + 1 - extraPartnerNum) * thisBoxWidth ;
+                                            thisLeaf.x - (totalNumExtraPartners + 1 - extraPartnerNum) * thisBoxWidth;
                                     }
                                     thisLeafExtraPartner.y = thisLeaf.y;
                                     thisWidth += thisBoxWidth;
@@ -7493,11 +7456,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                         if (thisLeafExtraPartner.x == 0) {
                                             thisLeafExtraPartner.x = 1;
                                         }
-                                        condLog(
-                                            "x = ",
-                                            thisLeafExtraPartner.x,
-                                            thisLeafExtraPartnerPerson._data.Name
-                                        );
+                                        condLog("x = ", thisLeafExtraPartner.x, thisLeafExtraPartnerPerson._data.Name);
                                         thisLeafExtraPartner.y = thisLeaf.y;
                                         thisWidth += thisBoxWidth;
                                         repositionThisSpousesFamily(thisLeafExtraPartner, thisLeafExtraPartnerCode);
@@ -7521,8 +7480,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 //     const thisPartner = thePsByID[sp];
                 //     orderedPartners.push(thisPartner.mDate + "-" + thisPartner.bDate + "|" + thisPartner.Id);
                 // }
-                
-                
 
                 // OK .... so now let's add their Siblings
                 if (numC > 0) {
@@ -7555,7 +7512,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function repositionThisSpousesFamily(thisLeaf, thisCode) {
         condLog(
             "repositionThisSpousesFamily(thisLeaf, thisCode)",
-            thisLeaf, thisCode,
+            thisLeaf,
+            thisCode,
             SuperBigFamView.theLeafCollection[thisCode + "RM"],
             document.getElementById("wedgeInfo-" + thisCode + "RM")
         );
@@ -8073,7 +8031,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // (STEP 1) ORDER Spouses by marriage date, undated marriages go at the end - if multiple undated marriages, optionally order by birth order of children, and leave slot for no-spouse (to left)
 
         // FIND the full details on the PERSON here (thisLeaf) whose partners and kids we're about to explore
-        
+
         if (thisLeaf) {
             thisLeafPerson = thePeopleList[thisLeaf.Id];
             if (thisLeaf.Id == 39106303) {
@@ -8083,7 +8041,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     thisLeaf.Code,
                     thisLeaf.Chunk,
                     thisLeaf.Id,
-                    thisLeafPerson._data.SpousesOrdered, thisLeafPerson
+                    thisLeafPerson._data.SpousesOrdered,
+                    thisLeafPerson
                 );
             }
             if (thisLeafPerson._data.SpousesOrdered) {
@@ -8369,7 +8328,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         if (preExistingSpousesOrdered.length > 0) {
-
             // for (let pre = 0; pre < preExistingSpousesOrdered.length; pre++) {
             //     if (orderedPartners.indexOf(preExistingSpousesOrdered[pre]) == -1) {
             //         // missing this pre-existing spouse ... better add it
@@ -8378,7 +8336,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // }
 
             // orderedPartners = orderedPartners.sort();
-            thePeopleList[thisLeaf.Id]._data.SpousesOrdered = preExistingSpousesOrdered;// orderedPartners;
+            thePeopleList[thisLeaf.Id]._data.SpousesOrdered = preExistingSpousesOrdered; // orderedPartners;
         }
 
         return dims;
@@ -8507,27 +8465,27 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         condLog(
             "function SuperBigFamView.redraw",
             "PedigreeOnlyBtn checked:",
-            document.getElementById("PedigreeOnlyBtn").checked, SuperBigFamView.displayPedigreeOnly
+            document.getElementById("PedigreeOnlyBtn").checked,
+            SuperBigFamView.displayPedigreeOnly
         );
 
         if (document.getElementById("PedigreeOnlyBtn").checked) {
             SuperBigFamView.displayPedigreeOnly = 1;
         } else {
             SuperBigFamView.displayPedigreeOnly = 0;
-
-        } 
+        }
         if (document.getElementById("SiblingsBtnSVG").checked) {
             SuperBigFamView.displaySIBLINGS = 1;
         } else {
             SuperBigFamView.displaySIBLINGS = 0;
-        } 
+        }
         if (document.getElementById("InLawsBtnSVG").checked) {
             SuperBigFamView.displayINLAWS = 1;
         } else {
             SuperBigFamView.displayINLAWS = 0;
-        } 
+        }
 
-        if (SuperBigFamView.displayPrivatize == 1){
+        if (SuperBigFamView.displayPrivatize == 1) {
             SuperBigFamView.removePopup();
         }
 
@@ -8851,17 +8809,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     function initialLoadDirectAncestors7(self, id, person, startingNum) {
         condLog("(initialLoadDirectAncestors7:" + id + " ) GETPEOPLE", APP_ID, id, ["Id"], {
-            ancestors: 7, 
+            ancestors: 7,
             start: startingNum,
         });
 
-        flashWarningMessageBelowButtonBar("Please wait while initial Super Big Family Tree is loading .... direct ancestors ...");
+        flashWarningMessageBelowButtonBar(
+            "Please wait while initial Super Big Family Tree is loading .... direct ancestors ..."
+        );
         WikiTreeAPI.getPeople(
             // (appId, IDs, fields, options = {})
             APP_ID,
             id,
             SuperBigFamView.fieldNamesArray,
-            { ancestors: 7,  start: startingNum }
+            { ancestors: 7, start: startingNum }
         ).then(function (result) {
             condLog("(initialLoadDirectAncestors7): RESULTS", result);
             SuperBigFamView.theAncestors = result[2];
@@ -8891,7 +8851,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     thePerson["FirstName"] = "Private";
                     thePerson["LastNameAtBirth"] = "";
                     condLog("Private person:", thePerson);
-                    SuperBigFamView.listOfPrivateIDs.push({Id:thePerson.Id,Code:""});
+                    SuperBigFamView.listOfPrivateIDs.push({ Id: thePerson.Id, Code: "" });
                 }
                 if (thePerson.Mother < 0) {
                     thePerson.Mother = currentPrivateIDstarter - thePerson.Mother;
@@ -8901,8 +8861,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
                 // condLog("Privacy:", thePerson.Privacy);
                 // if (thePerson.Privacy > 10) {
-                    thePeopleList.add(thePerson);
-                    numPeeps++;
+                thePeopleList.add(thePerson);
+                numPeeps++;
                 // }
 
                 // if (thePerson.Father == 41) {
@@ -8987,7 +8947,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             } else if (result[0] > "" && result[0].indexOf("Maximum number of profiles") > -1) {
                 needToReDoCall = true;
             }
-            
+
             if (needToReDoCall) {
                 initialLoadDirectAncestors7(self, id, person, startingNum + 1000);
             } else {
@@ -8995,7 +8955,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         });
     }
-
 
     function initialLoad1000(self, id, person, startingNum) {
         // NOTE:  Changing NUCLEAR:3 to NUCLEAR:4 temporarily so that Suzanne Douglass-14532 comes through properly (for my kids)
@@ -9035,7 +8994,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     SuperBigFamView.nextPrivateId = Math.min(SuperBigFamView.nextPrivateId, thePerson.Id);
                     // use SuperBigFamView.nextPrivateId to track the lowest PrivateID used so far ... so that in future GETPEOPLE attempts, we can avoid re-using the same #s
 
-                    thePerson["Name"] = "Priv8-" + ( thePerson.Id);  // use Priv8 as the "Name" prefix to avoid any conflicts with Private which is used for a few WikiTreer last names
+                    thePerson["Name"] = "Priv8-" + thePerson.Id; // use Priv8 as the "Name" prefix to avoid any conflicts with Private which is used for a few WikiTreer last names
                     thePerson["FirstName"] = "Private";
                     thePerson["LastNameAtBirth"] = "";
                     condLog("Private person:", thePerson);
@@ -9131,7 +9090,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     }
 
     function initialLoadSiblings(self, id, person, startingNum) {
-        condLog("(initialLoadSiblings:" + id + " ) GETPEOPLE", APP_ID, id, ["Id"], { ancestors: 3, siblings: 1, minGeneration: 3, start: startingNum });
+        condLog("(initialLoadSiblings:" + id + " ) GETPEOPLE", APP_ID, id, ["Id"], {
+            ancestors: 3,
+            siblings: 1,
+            minGeneration: 3,
+            start: startingNum,
+        });
 
         // ===================
         // LOAD the SIBLINGS of the grandparents (2nd gen) ancestors for completeness
@@ -9162,14 +9126,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 //         "initialLoadSiblings",
                 //         { ancNum2 },
                 //         { id },
-                        
+
                 //         thePerson
                 //     );
                 // }
 
                 if (thePerson.Id < 0) {
                     // thePerson.Id = 100 - thePerson.Id; // DO NOT RE-WRITE history and assign a positive number - that could conflict with early WikiTree profiles, like Chris W's family, for example
-                    // thePerson.Id = basePrivateID - thePerson.Id; 
+                    // thePerson.Id = basePrivateID - thePerson.Id;
                     // SuperBigFamView.maxPrivateId = Math.max(SuperBigFamView.nextPrivateId, thePerson.Id) ;
                     // thePerson["Name"] = "Priv8-" +  thePerson.Id;
                     // thePerson["FirstName"] = "Private";
@@ -9181,8 +9145,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 // if (thePerson.Father < 0) {
                 //     thePerson.Father = basePrivateID - thePerson.Father;
                 // }
-                
-                if (/* thePerson.Privacy > 10 &&  */thePerson.Id > 0) {
+
+                if (/* thePerson.Privacy > 10 &&  */ thePerson.Id > 0) {
                     thePeopleList.addIfNeeded(thePerson);
                     numPeeps2++;
                 }
@@ -9314,7 +9278,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         addToLeafCollection(thisPersonsLeaf);
         siftOutA0StepChunk();
 
-        // prunePrivateLeaves(); 
+        // prunePrivateLeaves();
 
         if (niblingInLawParents.length > 0) {
             flashWarningMessageBelowButtonBar(
@@ -9349,7 +9313,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             let thisMom = null;
             // condLog("B4 : ", thisPeep._data["Siblings"]);
             if (!thisPeep) {
-                 continue; // skip this iteration of the IDsArray and go back to the for stmt and continue with the next vallue of nl
+                continue; // skip this iteration of the IDsArray and go back to the for stmt and continue with the next vallue of nl
             }
             if (thisPeep && !thisPeep._data.Siblings) {
                 thisPeep._data["Siblings"] = [];
@@ -9499,8 +9463,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         let doNotAddKids = false;
 
         if (!newLeaf.IsPrivate) {
-            if (newLeaf.Id && thePeopleList[newLeaf.Id] && thePeopleList[newLeaf.Id]._data && thePeopleList[newLeaf.Id]._data.Privacy) {
-                newLeaf["IsPrivate"] = (thePeopleList[newLeaf.Id]._data.Privacy <= 20);
+            if (
+                newLeaf.Id &&
+                thePeopleList[newLeaf.Id] &&
+                thePeopleList[newLeaf.Id]._data &&
+                thePeopleList[newLeaf.Id]._data.Privacy
+            ) {
+                newLeaf["IsPrivate"] = thePeopleList[newLeaf.Id]._data.Privacy <= 20;
             } else {
                 newLeaf["IsPrivate"] = false;
             }
@@ -9631,14 +9600,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             doNotAddPartners = true;
             doNotAddKids = true;
         }
-        condLog(
-            "FOR the leaf",
-            newLeaf.Code,
-            " it is a ",
-            currentCodeType,
-            "that came from a ",
-            currentCodeTypePrev
-        );
+        condLog("FOR the leaf", newLeaf.Code, " it is a ", currentCodeType, "that came from a ", currentCodeTypePrev);
         // condLog(
         //     "DO NOT permissions for Rent, Partner, Siblings, Kids : ",
         //     doNotAddRents,
@@ -9667,7 +9629,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         Chunk: newLeaf.Chunk,
                         CodesList: [newLeaf.Code],
                         Settings: "",
-                        YsList:[]
+                        YsList: [],
                     };
                 } else if (!SuperBigFamView.theChunkCollection[newLeaf.Chunk].CodesList) {
                     SuperBigFamView.theChunkCollection[newLeaf.Chunk].CodesList = [newLeaf.Code];
@@ -9720,7 +9682,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     Chunk: newLeaf.Chunk,
                     CodesList: [newLeaf.Code],
                     Settings: "",
-                    YsList:[]
+                    YsList: [],
                 };
             }
         }
@@ -9837,12 +9799,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             } else if (dontAddIDsList.length > 0 && doNOTaddThisObjectToThatLeafCollection(theObj.Id, dontAddIDsList)) {
                 // do nothing ... just ignore it
                 // condLog("Did NOT add partner", theObj, "from do not ADD list");
-
             } else if (theObj.DoNotDisplay && theObj.DoNotDisplay == 1) {
-                condLog("PERSONA NON MAPPA - will NOT display this spouse (ex?) from this 'marriage' relationship:", theObj);
+                condLog(
+                    "PERSONA NON MAPPA - will NOT display this spouse (ex?) from this 'marriage' relationship:",
+                    theObj
+                );
                 // do nothing ... just ignore it
                 // DO NOT DISPLAY FLAG has been set - so - as far as this app is considered ... Partner is persona non charta ...
-
             } else if (theObj.Id && isOKtoAddLeaf(theObj.Id, newLeaf)) {
                 theNum++;
                 // condLog("GOING to ADD Partner:", newLeaf.FullCode + "P" + theNum + ":" + theObj.Id + "-");
@@ -9927,11 +9890,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     [thisPeep._data.Children, newLeaf.Id, theObj.coParent]
                 );
             } else {
-                condLog(
-                    "Not sure what's happening to Child of " + thisPeep._data.BirthNamePrivate,
-                    "# " + num,
-                    theObj
-                );
+                condLog("Not sure what's happening to Child of " + thisPeep._data.BirthNamePrivate, "# " + num, theObj);
             }
         }
 
@@ -9967,11 +9926,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
     }
 
-   // This function will go through the Leaf Collection, and find all the Private ID Leaves ... 
-   // and THEN ... sort them by length of Code
-   // and ... PRUNE the ones that are descendants/spouses/parents (move them from the current Chunk to a new chunk "Verboten")
-   // thus ... every Private ID will be a dead-end on the SuperTree (as it should be)
-   function prunePrivateLeaves() {
+    // This function will go through the Leaf Collection, and find all the Private ID Leaves ...
+    // and THEN ... sort them by length of Code
+    // and ... PRUNE the ones that are descendants/spouses/parents (move them from the current Chunk to a new chunk "Verboten")
+    // thus ... every Private ID will be a dead-end on the SuperTree (as it should be)
+    function prunePrivateLeaves() {
         let privateLeavesList = [];
         for (const key in SuperBigFamView.theLeafCollection) {
             const leaf = SuperBigFamView.theLeafCollection[key];
@@ -9986,26 +9945,26 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             return aID - bID;
         });
 
-        condLog({privateLeavesList});
+        condLog({ privateLeavesList });
         for (let l = 0; l < privateLeavesList.length; l++) {
             const leafCode = privateLeavesList[l][1];
-            condLog({leafCode});
+            condLog({ leafCode });
         }
 
         for (let l = 0; l < privateLeavesList.length; l++) {
             const leafCode = privateLeavesList[l][1];
-            for (let l2 =  privateLeavesList.length - 1; l2 > l ; l2--) {
+            for (let l2 = privateLeavesList.length - 1; l2 > l; l2--) {
                 const innerLeaf = privateLeavesList[l2][2];
                 const leafCode2 = privateLeavesList[l2][1];
-                condLog("Loop ", l,"Inner Loop:",l2);
+                condLog("Loop ", l, "Inner Loop:", l2);
                 if (leafCode2.indexOf(leafCode) == 0) {
-                    condLog("FOUND ",leafCode2, " is an extension of ", leafCode);
+                    condLog("FOUND ", leafCode2, " is an extension of ", leafCode);
                     moveFromOneChunkToAnother(innerLeaf.Chunk, "VV", leafCode2);
 
                     innerLeaf.Chunk = "VV";
                     // innerLeaf.Code = "VV" + leafCode2.substring(2);
-                    innerLeaf['IsVerboten'] = true;
-                    privateLeavesList.splice(l2,1);
+                    innerLeaf["IsVerboten"] = true;
+                    privateLeavesList.splice(l2, 1);
                 }
             }
         }
@@ -10015,11 +9974,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             const leafCode = privateLeavesList[l][1];
             condLog({ leafCode });
         }
+    }
 
-        
-   }
-   
-   
     // This function will add the current Leaf Code to thePeopleList object  ( key: Id ) - so - we can use it in the PopUps - AND - display the direct line from the Primary Person - AND - identify those with multiple relationships
     function addLeafCodeToPeopleListObject(newLeaf) {
         if (thePeopleList[newLeaf.Id]) {
@@ -10122,19 +10078,34 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         if (parentType == "F") {
             thisRent._data.Gender = "Female";
-            if (thisPeep._data.DataStatus && thisPeep._data.DataStatus.Mother && thisPeep._data.DataStatus.Mother == "5") {
+            if (
+                thisPeep._data.DataStatus &&
+                thisPeep._data.DataStatus.Mother &&
+                thisPeep._data.DataStatus.Mother == "5"
+            ) {
                 childStatus = "non";
             }
-            if (thisPeep._data.DataStatus && thisPeep._data.DataStatus.Father && thisPeep._data.DataStatus.Father == "5") {
+            if (
+                thisPeep._data.DataStatus &&
+                thisPeep._data.DataStatus.Father &&
+                thisPeep._data.DataStatus.Father == "5"
+            ) {
                 coStatus = "non";
             }
-
         } else if (parentType == "M") {
             thisRent._data.Gender = "Male";
-            if (thisPeep._data.DataStatus && thisPeep._data.DataStatus.Father && thisPeep._data.DataStatus.Father == "5") {
+            if (
+                thisPeep._data.DataStatus &&
+                thisPeep._data.DataStatus.Father &&
+                thisPeep._data.DataStatus.Father == "5"
+            ) {
                 childStatus = "non";
             }
-            if (thisPeep._data.DataStatus && thisPeep._data.DataStatus.Mother && thisPeep._data.DataStatus.Mother == "5") {
+            if (
+                thisPeep._data.DataStatus &&
+                thisPeep._data.DataStatus.Mother &&
+                thisPeep._data.DataStatus.Mother == "5"
+            ) {
                 coStatus = "non";
             }
         } else {
@@ -10183,7 +10154,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     function checkForSpouseRecord(sp1ID, sp2ID) {
         // IF the PRIMARY parent does not exist ... doesn't really need to go any further - do we ?
-        if (!thePeopleList[sp1ID] ) {
+        if (!thePeopleList[sp1ID]) {
             return;
         }
         // BUT ... if Primay DOES exist ... but Spouse does NOT ... maybe we should look them up?
@@ -10216,8 +10187,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     function thisChildAlreadyInChildrenList(kidID, kidList) {
         if (thePeopleList[kidID]._data.Name.indexOf("Priv8") > -1) {
-
-            let appMode = SuperBigFamView.numAncGens2Display + "|" + SuperBigFamView.numDescGens2Display + "|" + SuperBigFamView.numCuzGens2Display;
+            let appMode =
+                SuperBigFamView.numAncGens2Display +
+                "|" +
+                SuperBigFamView.numDescGens2Display +
+                "|" +
+                SuperBigFamView.numCuzGens2Display;
             let parentComboKey = thePeopleList[kidID]._data.Father + "|" + thePeopleList[kidID]._data.Mother;
             // condLog(
             //     thePeopleList[kidID]._data.Name,
@@ -10226,13 +10201,16 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             //     appMode,
             //     parentComboKey
             // );
-            
-            if (SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] && SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] > "" && SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] != appMode) {
+
+            if (
+                SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] &&
+                SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] > "" &&
+                SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] != appMode
+            ) {
                 return true;
             } else {
                 SuperBigFamView.privateChildren2ParentsTracker[parentComboKey] = appMode;
             }
-
         }
 
         for (let C = 0; C < kidList.length; C++) {
@@ -10413,7 +10391,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // this.descendantTree.data(data);
         }
         this.ancestorTree.draw();
-        
+
         // this.descendantTree.draw();
     };
 
@@ -10543,8 +10521,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
                             ]
                         );
-                     
-
                     } else if (
                         SuperBigFamView.theLeafCollection[SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]]
                             .Who &&
@@ -10564,11 +10540,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         /// but wait .. maybe we should do a privacy check first ....
                         // condLog("Do we really want to add this node ? : ",  SuperBigFamView.theLeafCollection[ SuperBigFamView.theChunkCollection[chunkCode].CodesList[c] ] );
                         if (
-                            SuperBigFamView.displayPrivatize == 1 && 
+                            SuperBigFamView.displayPrivatize == 1 &&
                             SuperBigFamView.theLeafCollection[
-                                SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]  
+                                SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
                             ].IsPrivate == true
-                        )  {
+                        ) {
                             // do nothing - do NOT push this leaf into the Nodes
                         } else {
                             // YES - not a privacy issue here to worry about ... go right ahead - Node up !
@@ -10576,7 +10552,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 SuperBigFamView.theLeafCollection[
                                     SuperBigFamView.theChunkCollection[chunkCode].CodesList[c]
                                 ]
-                                );
+                            );
                         }
                     }
                 }
@@ -10738,15 +10714,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     extraInfoForThisAnc = "[ " + 0 + " ]";
                     extraBR = "<br/>";
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
-                    if (person && person._data && person._data.Name){
+                    if (person && person._data && person._data.Name) {
                         extraInfoForThisAnc = person._data.Name;
                         extraBR = "<br/>";
                     }
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
-                     if (person && person._data && person._data.Name){
+                    if (person && person._data && person._data.Name) {
                         extraInfoForThisAnc = person._data.Id;
                         extraBR = "<br/>";
-                     }
+                    }
                 } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
                     if (person && person._data) {
                         extraInfoForThisAnc = "[ " + 0 + " ] " + person._data.Id + "<br/>" + person._data.Name;
@@ -11043,8 +11019,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         if (SuperBigFamView.displayPrivatize == 0 && person._data.IsLiving == true) {
                             if (person && person._data.PhotoData) {
                                 // thisPhotoUrl = person._data.PhotoData.url;
-                                 document.getElementById("imgSRC-" + leafObject.Code).src =
-                                     "https://www.wikitree.com/" + person._data.PhotoData.url;
+                                document.getElementById("imgSRC-" + leafObject.Code).src =
+                                    "https://www.wikitree.com/" + person._data.PhotoData.url;
                             }
                         }
 
@@ -11056,19 +11032,17 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
                             // Use generic gender photos if there is not profile photo available
                             // if (!thisPhotoUrl) {
-                                if (person && person.getGender() === "Male") {
-                                    thisPhotoURL = "images/icons/male.gif";
-                                } else if (person && person.getGender() === "Female") {
-                                    thisPhotoURL = "images/icons/female.gif";
-                                } else {
-                                    thisPhotoURL = "images/icons/no-gender.gif";
-                                }
+                            if (person && person.getGender() === "Male") {
+                                thisPhotoURL = "images/icons/male.gif";
+                            } else if (person && person.getGender() === "Female") {
+                                thisPhotoURL = "images/icons/female.gif";
+                            } else {
+                                thisPhotoURL = "images/icons/no-gender.gif";
+                            }
                             // }
 
                             document.getElementById("imgSRC-" + leafObject.Code).src =
                                 "https://www.wikitree.com/" + thisPhotoURL;
-
-
                         } else if (SuperBigFamView.displayPrivatize == 1 && person._data.Privacy <= 20) {
                             thisDIVtoUpdate.style.display = "none";
                         } else if (!photoUrl && leafObject.Chunk.indexOf("IL") > -1) {
@@ -11217,13 +11191,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             let extraInfoForThisAnc = "";
             let extraBR = "";
             condLog("extraInfo setting:", SuperBigFamView.currentSettings["general_options_extraInfo"]);
-            if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "ahnNum") {                
+            if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "ahnNum") {
                 extraInfoForThisAnc = "[ " + leafObject.Code + " ]";
                 extraBR = "<br/>";
             } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
                 // if ( person._data.Privacy <= 20) {
                 //     // do not show WikiTreeID
-                // } else 
+                // } else
                 if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
                     // do not show WikiTreeID during PRIVATIZE option
                 } else {
@@ -11234,7 +11208,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
                 //  if ( person._data.Privacy <= 20) {
                 //     // do not show WikiTreeID
-                // } else 
+                // } else
                 if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
                     // do not show WikiTreeID during PRIVATIZE option
                 } else {
@@ -11244,15 +11218,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
                 // if ( person._data.Privacy <= 20) {
                 //     // do not show WikiTreeID
-                // } else 
+                // } else
                 if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
                     // do not show WikiTreeID during PRIVATIZE option
                 } else {
                     // GO FOR IT
-                    extraInfoForThisAnc =
-                    d._data.Name + "  //  " +
-                    d._data.Id +
-                    "<br/>" ;
+                    extraInfoForThisAnc = d._data.Name + "  //  " + d._data.Id + "<br/>";
                 }
                 extraInfoForThisAnc += "[ " + leafObject.Code + " ] " + "* " + leafObject.Chunk + " * ";
                 extraBR = "<br/>";
@@ -11316,7 +11287,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         let zoomFactor = Math.max(1, 1 / SuperBigFamView.currentScaleFactor);
         let thisPopup = document.getElementById("popupDIV");
         thisPopup.style.display = "block";
-       
+
         thisPopup.classList.add("popup");
 
         // .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")  scale(" + zoomFactor + ") ");
@@ -11329,7 +11300,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
-   
         // condLog("IN PERSON POPUP - popup::", thisPopup);
         const SVGbtnDESC = `<svg width="30" height="30" viewBox="0 0 30 30" stroke="#25422d" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M 4 5 L 10 5 L 10 9 L 24 9 M 16 9 L 16 13 L 24 13 M 10 9 L 10 19 L 24 19 M 16 19 L 16 23 L 24 23 M 16 23 L 16 27 L 24 27" fill="none" />
@@ -11337,45 +11307,45 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         let extrasAtBottom = "";
 
-        if (SuperBigFamView.currentSettings["general_options_extraInfo"] != "none") {            
+        if (SuperBigFamView.currentSettings["general_options_extraInfo"] != "none") {
             extrasAtBottom = `<div class="death vital"><hr/>`;
         }
-        if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "ahnNum") {            
-            extrasAtBottom += "Leaf Code: [ " + Code + " ]<br/><i>(used internally by app)</i>";            
+        if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "ahnNum") {
+            extrasAtBottom += "Leaf Code: [ " + Code + " ]<br/><i>(used internally by app)</i>";
         } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
             // if ( person._data.Privacy <= 20) {
             //     // do not show WikiTreeID
-            // } else 
-            if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
-                // do not show WikiTreeID during PRIVATIZE option
-            } else {
-                // GO FOR IT
-                extrasAtBottom += "WikiTree ID: " + person._data.Name + `&nbsp;&nbsp;<button aria-label="Copy ID" class="copyWidget x-widget" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` + person._data.Name + `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
-            }
-
-        } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
-            // if (person._data.Privacy <= 20) {
-            //     // do not show WikiTreeID
-            // } else 
-            if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
-                // do not show WikiTreeID during PRIVATIZE option
-            } else {
-                // GO FOR IT
-                extrasAtBottom += "WikiTree User ID #: " + person._data.Id;            
-            }
-
-        } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
-            // if (person._data.Privacy <= 20) {
-            //     // do not show WikiTreeID
-            // } else 
+            // } else
             if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
                 // do not show WikiTreeID during PRIVATIZE option
             } else {
                 // GO FOR IT
                 extrasAtBottom +=
-                    person._data.Name + "  //  " + person._data.Id +
-                    "<br/>";
-                
+                    "WikiTree ID: " +
+                    person._data.Name +
+                    `&nbsp;&nbsp;<button aria-label="Copy ID" class="copyWidget x-widget" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` +
+                    person._data.Name +
+                    `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
+            }
+        } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "WikiTreeNum") {
+            // if (person._data.Privacy <= 20) {
+            //     // do not show WikiTreeID
+            // } else
+            if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
+                // do not show WikiTreeID during PRIVATIZE option
+            } else {
+                // GO FOR IT
+                extrasAtBottom += "WikiTree User ID #: " + person._data.Id;
+            }
+        } else if (SuperBigFamView.currentSettings["general_options_extraInfo"] == "all") {
+            // if (person._data.Privacy <= 20) {
+            //     // do not show WikiTreeID
+            // } else
+            if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
+                // do not show WikiTreeID during PRIVATIZE option
+            } else {
+                // GO FOR IT
+                extrasAtBottom += person._data.Name + "  //  " + person._data.Id + "<br/>";
             }
 
             extrasAtBottom += "[ " + Code + " ] " + "* " + SuperBigFamView.theLeafCollection[Code].Chunk + " * ";
@@ -11387,23 +11357,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         if (SuperBigFamView.currentSettings["general_options_showExtraInfoOnPopup"] == "No") {
             extrasAtBottom = "";
         }
-        
-        
-        let marriageInfo = "";
 
+        let marriageInfo = "";
 
         if (person._data.Spouses.length == 1) {
             if (person._data.Spouses[0].NotMarried == 1) {
                 marriageInfo = "";
             } else {
-                 if (person._data.Spouses[0].DoNotDisplay == 1) {
+                if (person._data.Spouses[0].DoNotDisplay == 1) {
                     marriageInfo = "";
-                 } else {
-                     marriageInfo = "<br/><B>Spouse</B>";
-                 }
-
+                } else {
+                    marriageInfo = "<br/><B>Spouse</B>";
+                }
             }
-
         } else if (person._data.Spouses.length > 1) {
             let numShowableMarriages = 0;
             for (let sp in person._data.Spouses) {
@@ -11412,20 +11378,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
             }
 
-            marriageInfo = "<br/><B>Spouse"  + (numShowableMarriages > 1 ? "s":"") + "</B>";
+            marriageInfo = "<br/><B>Spouse" + (numShowableMarriages > 1 ? "s" : "") + "</B>";
         }
 
-        if  (!person._data.SpousesOrdered) {
+        if (!person._data.SpousesOrdered) {
             let orderedPartners = [];
             for (let sp in person._data.Spouses) {
                 const thisPartner = person._data.Spouses[sp];
-                orderedPartners.push(thisPartner.marriage_date +  "|" + thisPartner.Id);
+                orderedPartners.push(thisPartner.marriage_date + "|" + thisPartner.Id);
             }
             orderedPartners = orderedPartners.sort();
             thePeopleList[person._data.Id]._data.SpousesOrdered = orderedPartners;
             person._data.SpousesOrdered = orderedPartners;
             condLog("SPOUSES ORDERED  - HERE !");
-
         }
 
         let numSpousesListed = 0;
@@ -11434,7 +11399,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             let spID = spouseOrdered.substr(spouseOrdered.indexOf("|") + 1);
             let prepMarriageInfo = "";
             condLog("spID = ", spID);
-            
+
             if (spID > 0 && thePeopleList[spID]) {
                 if (
                     thePeopleList[spID]._data.FirstName == "Private" &&
@@ -11470,12 +11435,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 marriageDate,
                                 SuperBigFamView.currentSettings["date_options_dateFormat"]
                             );
-                            if (
-                                
-                                marriage.data_status &&
-                                marriage.data_status["marriage_date"] &&
-                                thisDate > ""
-                            ) {
+                            if (marriage.data_status && marriage.data_status["marriage_date"] && thisDate > "") {
                                 if (marriage.data_status["marriage_date"] > "") {
                                     let tmpUse =
                                         QualifiersArray[SuperBigFamView.currentSettings["date_options_qualifiers"]][
@@ -11494,10 +11454,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 // }
                             }
 
-
                             marriageDate = thisDate; //marriageDate.replace(/-00/g, "");
                         }
-                        
+
                         if (marriage.marriage_location > "0000-00-00") {
                             marriagePlace = marriage.marriage_location;
                         }
@@ -11515,30 +11474,29 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         }
 
                         // if (numSpousesListed > 0 && spID > 0) {
-                            marriageInfo += "<br/>m. ";
+                        marriageInfo += "<br/>m. ";
                         // }
                         marriageInfo += prepMarriageInfo;
                         numSpousesListed++;
                     }
                 }
-            }       
+            }
         }
 
         if (marriageInfo > "") {
             marriageInfo += "<br/>";
         }
 
-
         let bioCheckLink = `<A target=_blank href="https://apps.wikitree.com/apps/sands1865/biocheck/?action=checkProfile&numAncestorGen=0&numDescendantGen=0&checkStart=auto&profileId=${person.getName()}">Bio Check</A>`;
-        
+
         let displayName4Popup = person.getDisplayName();
         //  if (person._data.Privacy <= 20) {
         //      displayName4Popup =  "Private";
-        // } else 
+        // } else
         if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
-             displayName4Popup =  "Private";
-             // do not show WikiTreeID during PRIVATIZE option
-         }
+            displayName4Popup = "Private";
+            // do not show WikiTreeID during PRIVATIZE option
+        }
 
         let popupHTML =
             `
@@ -11568,8 +11526,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 				</div>
 			`;
         // condLog(popupHTML);
-
-        
 
         if (person._data.FirstName == "Private" && person._data.LastNameAtBirth == "") {
             condLog("PRIVATE PERSON HERE !!!");
@@ -11609,9 +11565,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
 				</div>
 			`;
-        } 
-
-        
+        }
 
         thisPopup.innerHTML = popupHTML;
 
@@ -11769,15 +11723,15 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function birthString(person) {
         var string = "",
             // date = humanDate(person.getBirthDate()),
-            date = settingsStyleDate( person.getBirthDate(), SuperBigFamView.currentSettings["date_options_dateFormat"] ),
-            dateDecade = person._data.BirthDateDecade, 
+            date = settingsStyleDate(person.getBirthDate(), SuperBigFamView.currentSettings["date_options_dateFormat"]),
+            dateDecade = person._data.BirthDateDecade,
             place = person.getBirthLocation();
 
         //  if (person._data.Privacy <= 20) {
         //     return "";
-        //  } else 
-         if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
-           return "";            
+        //  } else
+        if (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true) {
+            return "";
         }
 
         // else ... GO FOR IT
@@ -11787,11 +11741,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         if (date > "") {
-
             if (person._data.DataStatus.BirthDate > "") {
-             let tmpUse =    QualifiersArray[ SuperBigFamView.currentSettings["date_options_qualifiers"] ][ person._data.DataStatus.BirthDate ];
-             condLog("USE this Qualifier: ", tmpUse);
-             date = tmpUse + date;
+                let tmpUse =
+                    QualifiersArray[SuperBigFamView.currentSettings["date_options_qualifiers"]][
+                        person._data.DataStatus.BirthDate
+                    ];
+                condLog("USE this Qualifier: ", tmpUse);
+                date = tmpUse + date;
             }
 
             // SuperBigFamView.currentSettings["date_options_qualifiers"];
@@ -11804,10 +11760,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             //     date = "~ " + date;
             // }
         }
-            
-        return `b. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${
-            place ? `in ${place}` : ""
-        }.`;
+
+        return `b. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${place ? `in ${place}` : ""}.`;
     }
 
     /**
@@ -11816,7 +11770,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function deathString(person) {
         if (person._data.IsLiving == 1) {
             return "(Living)";
-        } else if (SuperBigFamView.displayPrivatize == 1  && person._data.Privacy <= 20) {
+        } else if (SuperBigFamView.displayPrivatize == 1 && person._data.Privacy <= 20) {
             return "";
         } else if (person._data.Privacy < 20) {
             return "";
@@ -11828,17 +11782,17 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             dateDecade = person._data.DeathDateDecade,
             place = person.getDeathLocation();
 
-         if (!date && dateDecade > "") {
+        if (!date && dateDecade > "") {
             date = dateDecade;
-         }
+        }
 
-         if (date > "") {
-
+        if (date > "") {
             if (
                 person &&
                 person._data &&
                 person._data.DataStatus &&
-                person._data.DataStatus.DeathDate && person._data.DataStatus.DeathDate > ""
+                person._data.DataStatus.DeathDate &&
+                person._data.DataStatus.DeathDate > ""
             ) {
                 let tmpUse =
                     QualifiersArray[SuperBigFamView.currentSettings["date_options_qualifiers"]][
@@ -11855,11 +11809,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             //  } else if (person._data.DataStatus.BirthDate == "guess") {
             //      date = "~ " + date;
             //  }
-         }
+        }
 
-        return `d. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${
-            place ? `in ${place}` : ""
-        }.`;
+        return `d. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${place ? `in ${place}` : ""}.`;
     }
 
     var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -12156,7 +12108,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         dateString = person._data.DeathDate;
         if (dateString == "0000-00-00") {
             // nothing to see here - person's still alive !  YAY!
-        } else  if (!person._data.DeathDate && person._data.DeathDateDecade) {
+        } else if (!person._data.DeathDate && person._data.DeathDateDecade) {
             if (person._data.IsLiving == 1) {
                 // mothing to see here ... person's still alive - and - private enough to have only Decade-like dates
             } else {
@@ -12175,66 +12127,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         return theLifeSpan;
-    }
-
-    /**
-     * Turn a wikitree Place into a location as per format string
-     */
-    function settingsStyleLocation(locString, formatString) {
-        // take the locString as input, and break it up into parts, separated by commas
-        // In an IDEAL world, the place name would be entered thusly:
-        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
-        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
-        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
-
-        if (!locString || locString == "") {
-            // if we get a dud location as input - return an emptry string
-            return "";
-        }
-        if (formatString == "Full") {
-            // there's no need for doing any parsing --> just return the whole kit and caboodle
-            return locString;
-        }
-
-        var parts = locString.split(",");
-        if (parts.length == 1) {
-            // there's no way to reformat/parse a single item location
-            return locString;
-        }
-
-        let town = parts[0];
-        let country = parts[parts.length - 1];
-        let region = "";
-        if (parts.length > 2) {
-            region = parts[parts.length - 2];
-        }
-
-        if (formatString == "Country") {
-            return country;
-        } else if (formatString == "Region") {
-            if (region > "") {
-                return region;
-            } else {
-                return country;
-            }
-        } else if (formatString == "Town") {
-            return town;
-        } else if (formatString == "TownCountry") {
-            return town + ", " + country;
-        } else if (formatString == "RegionCountry") {
-            if (region > "") {
-                return region + ", " + country;
-            } else {
-                return town + ", " + country;
-            }
-        } else if (formatString == "TownRegion") {
-            if (region > "") {
-                return town + ", " + region;
-            } else {
-                return town + ", " + country;
-            }
-        }
-        return "";
     }
 
     /**
@@ -12360,7 +12252,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 SuperBigFamView.currentSettings["place_options_showBirth"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     person.getBirthLocation(),
                     SuperBigFamView.currentSettings["place_options_locationFormatBD"]
                 );
@@ -12375,14 +12267,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             if (person._data.DeathDate == "0000-00-00") {
                 return "";
             }
-            
+
             if (SuperBigFamView.currentSettings["date_options_showDeath"] == true) {
                 if (!person._data.DeathDate && person._data.DeathDateDecade) {
                     if (person._data.IsLiving == 1) {
                         return "";
                     }
                     thisDate = person._data.DeathDateDecade;
-                } else{
+                } else {
                     thisDate = settingsStyleDate(
                         person._data.DeathDate,
                         SuperBigFamView.currentSettings["date_options_dateFormat"]
@@ -12404,7 +12296,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     // condLog("USE a Qualifier: ", tmpUse);
                 }
 
-
                 if (SuperBigFamView.currentSettings["date_options_dateTypes"] != "detailed") {
                     thisDate = "";
                 }
@@ -12413,7 +12304,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 SuperBigFamView.currentSettings["place_options_showDeath"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     person.getDeathLocation(),
                     SuperBigFamView.currentSettings["place_options_locationFormatBD"]
                 );
@@ -12425,36 +12316,32 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         } else if (dateType == "M") {
             let codeType = code.substr(-2, 1);
-            let spouseID = 0; 
+            let spouseID = 0;
             let thisMarriage = null;
-            
+
             if (codeType == "P") {
-                
                 let theFullCode = SuperBigFamView.theLeafCollection[code].FullCode;
                 let lastCodeType = theFullCode.lastIndexOf(codeType);
                 let lastColonBeforeCodeType = theFullCode.substring(0, lastCodeType - 2).lastIndexOf(":");
-                 spouseID = theFullCode.substring(lastColonBeforeCodeType + 1, lastCodeType - 1);
-                
+                spouseID = theFullCode.substring(lastColonBeforeCodeType + 1, lastCodeType - 1);
             } else if (codeType == "R") {
-                
                 let theFullCode = SuperBigFamView.theLeafCollection[code].FullCode;
                 let lastCodeType = code.lastIndexOf(codeType);
                 let newCode = "";
                 if (code.substr(-2) == "RF") {
-                    newCode = code.substring(0,lastCodeType) + "RM";
+                    newCode = code.substring(0, lastCodeType) + "RM";
                     if (!SuperBigFamView.theLeafCollection[newCode]) {
                         return "";
                     }
-                } else  {
+                } else {
                     return "";
                 }
 
                 spouseID = SuperBigFamView.theLeafCollection[newCode].Id;
                 // let lastColonBeforeCodeType = theFullCode.substring(0, lastCodeType - 2).lastIndexOf(":");
                 // let spouseID = theFullCode.substring(lastColonBeforeCodeType + 1, lastCodeType - 1);
-                
-            } 
-            
+            }
+
             if (codeType == "P" || codeType == "R") {
                 for (
                     let m = 0;
@@ -12462,14 +12349,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     m++
                 ) {
                     thisMarriage = thePeopleList[SuperBigFamView.theLeafCollection[code].Id]._data.Spouses[m];
-                    
+
                     if (thisMarriage.Id == spouseID) {
                         theMarriageDate = thisMarriage.marriage_date;
                         theMarriagePlace = thisMarriage.marriage_location;
                         break;
                     }
                 }
-                
             } else {
                 return "";
             }
@@ -12478,7 +12364,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 return "";
             }
             if (SuperBigFamView.currentSettings["date_options_showMarriage"] == true) {
-               
                 thisDate = settingsStyleDate(
                     theMarriageDate,
                     SuperBigFamView.currentSettings["date_options_dateFormat"]
@@ -12495,13 +12380,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 if (SuperBigFamView.currentSettings["date_options_dateTypes"] == "none") {
                     thisDate = "";
                 }
-                
             }
             if (
                 SuperBigFamView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 SuperBigFamView.currentSettings["place_options_showMarriage"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     theMarriagePlace,
                     SuperBigFamView.currentSettings["place_options_locationFormatBD"]
                 );
@@ -12513,9 +12397,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             if (thisDate > "" || thisPlace > "") {
                 datePlaceString += "m. ";
             }
-            // 
+            //
         }
-
 
         if (thisDate > "" || thisPlace > "") {
             if (thisDate > "") {
@@ -12677,7 +12560,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     SuperBigFamView.lastLegendColourHighlighted = "none";
     SuperBigFamView.toggleLegendOptionToHighlight = function (option = 0, legend = "?") {
-        console.log("Just clicked on LEGEND TOGGLE for ",{option}, {legend});
+        console.log("Just clicked on LEGEND TOGGLE for ", { option }, { legend });
         if (SuperBigFamView.currentSettings["highlight_options_showHighlights"] == true) {
             console.log("CANNOT show other highlights - must follow the Highlights By tab option");
         } else {
@@ -12693,12 +12576,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 SuperBigFamView.lastLegendColourHighlighted = option;
                 highlightDescriptorDIV.style.display = "block";
                 document.getElementById("highlightPeepsDescriptor").innerText = legend;
-                
             }
             SuperBigFamView.redraw();
-
         }
-    }
+    };
 
     var thisTextColourArray = {};
     function updateLegendIfNeeded() {
@@ -12726,7 +12607,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         thisTextColourArray = {};
         let thisColourArray = getColourArray();
 
-        if ( settingForColourBy == "RelationshipPlus") {
+        if (settingForColourBy == "RelationshipPlus") {
             // condLog("TextClrSetting = ", txtClrSetting);
 
             let innerCode = "";
@@ -12778,7 +12659,11 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             for (let R = 0; R < relationshipName.length; R++) {
                 // const element = relationshipName[R];
                 let thisClrSwatch =
-                    "<svg onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" + relationshipColour[R] + "','" + relationshipName[R]  + "');\" width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "<svg onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
+                    relationshipColour[R] +
+                    "','" +
+                    relationshipName[R] +
+                    "');\" width=20 height=20><rect width=20 height=20 style='fill:" +
                     relationshipColour[R] +
                     ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
                 innerCode += thisClrSwatch + "&nbsp;" + relationshipName[R] + "<br/>";
@@ -12787,12 +12672,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             innerCode += "<br/>Click on a colour swatch to highlight a specific relationship.<br/>";
             innerCode += "<br/><B>Grandchildren</B> <br/>";
             let legendLetters = ["G", "GG", "2xGG", "3xGG", "4xGG", "5xGG"];
-            let legendDesc = ["Grandchildren", "Great Grandchildren", "2x Great Grandchildren", "3x Great Grandchildren", "4x Great Grandchildren", "5x Great Grandchildren"];
+            let legendDesc = [
+                "Grandchildren",
+                "Great Grandchildren",
+                "2x Great Grandchildren",
+                "3x Great Grandchildren",
+                "4x Great Grandchildren",
+                "5x Great Grandchildren",
+            ];
             // let legendColours = ["yellow", "red", "pink", "lightgreen", "deepskyblue", "cyan", "orange", "#EAE5E2"];
 
             for (let R = 0; R < legendLetters.length; R++) {
                 // const element = relationshipName[R];
-                let thisClr = hslToRGBhex(200, 1 , 0.6 + R*0.05);
+                let thisClr = hslToRGBhex(200, 1, 0.6 + R * 0.05);
                 let thisClrSwatch =
                     "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
                     thisClr +
@@ -12823,7 +12715,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             for (let R = 0; R < legendLetters.length; R++) {
                 // const element = relationshipName[R];
                 let thisClr = hslToRGBhex(180, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
-                
+
                 let thisClrSwatch =
                     "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
                     thisClr +
@@ -12886,12 +12778,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // }
             // innerCode += "<br/>";
 
-            let which1st2nd3rd = ["1st","2nd","3rd"];
+            let which1st2nd3rd = ["1st", "2nd", "3rd"];
             let whichOnceTwice = ["", "once removed", "twice removed", "3x removed", "4x removed", "5x removed"];
             for (let R = 0; R < 3; R++) {
                 for (let L = 0; L < 6 - R; L++) {
                     // const element = relationshipName[R];
-                    let thisClr = hslToRGBhex(280 + R*22, 1 - 0*L * 0.12, 1 / 2 + L * 0.08);
+                    let thisClr = hslToRGBhex(280 + R * 22, 1 - 0 * L * 0.12, 1 / 2 + L * 0.08);
                     let thisLegendDesc = which1st2nd3rd[R] + " cousin " + whichOnceTwice[L];
                     let thisClrSwatch =
                         "<svg  onclick=\"SuperBigFamView.toggleLegendOptionToHighlight('" +
@@ -14740,17 +14632,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
     }
     function getBackgroundColourForLeaf(leafObject) {
-        let theClr = getBackgroundColourFor(
-            leafObject.degree,
-            leafObject.Chunk,
-            leafObject.Id,
-            leafObject.Code
-        );
+        let theClr = getBackgroundColourFor(leafObject.degree, leafObject.Chunk, leafObject.Id, leafObject.Code);
         return theClr;
     }
 
-    function returnAfterCheckForHighlightColour( returnColour ) {
-        if (SuperBigFamView.lastLegendColourHighlighted == returnColour ) {
+    function returnAfterCheckForHighlightColour(returnColour) {
+        if (SuperBigFamView.lastLegendColourHighlighted == returnColour) {
             return "yellow";
         } else {
             console.log(
@@ -14847,7 +14734,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
             }
             return thisColourArray[1 + (thisGen % thisColourArray.length)];
-
         } else if (settingForColourBy == "RelationshipPlus") {
             if (theCode.indexOf("IL") > -1 || theChunk.indexOf("IL") > -1) {
                 return returnAfterCheckForHighlightColour("#E5E4E2");
@@ -14875,9 +14761,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 } else {
                     let R = 1.0 * theChunk[3] - 2;
                     let thisClr = hslToRGBhex(200, 1, 0.6 + R * 0.05);
-                    return returnAfterCheckForHighlightColour(thisClr); 
+                    return returnAfterCheckForHighlightColour(thisClr);
                 }
-            } else if (theChunk.length == 4 && theChunk == "S0D1" ) {
+            } else if (theChunk.length == 4 && theChunk == "S0D1") {
                 if (theCode.indexOf("P") > -1) {
                     return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else {
@@ -14891,7 +14777,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     let thisClr = hslToRGBhex(180, 0.4 + R * 0.08, 1 / 2 + R * 0.05);
                     return returnAfterCheckForHighlightColour(thisClr);
                 }
-            } else if (theChunk.length == 4 && theChunk == "A1C0" ) {
+            } else if (theChunk.length == 4 && theChunk == "A1C0") {
                 if (theCode.indexOf("P") > -1) {
                     return returnAfterCheckForHighlightColour("#E5E4E2");
                 } else if (theCode.indexOf("S") > -1) {
@@ -14951,7 +14837,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
             }
             return returnAfterCheckForHighlightColour(thisColourArray[1 + (thisRel % thisColourArray.length)]);
-
         } else if (settingForColourBy == "Relationship") {
             if (theCode.indexOf("IL") > -1 || theChunk.indexOf("IL") > -1) {
                 return "#E5E4E2";
@@ -15097,9 +14982,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
                 if (
                     theCode == "A0" ||
-                    theCode.indexOf("A0P") > -1  ||
-                    theCode.indexOf("A0K") > -1  ||
-                    theCode.indexOf("A0S") > -1 
+                    theCode.indexOf("A0P") > -1 ||
+                    theCode.indexOf("A0K") > -1 ||
+                    theCode.indexOf("A0S") > -1
                 ) {
                     // condLog("Need colour for ", theCode, thisNum);
 
@@ -15107,15 +14992,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                         return thisColourArray[1];
                     } else {
                         // WE MUST be in the land of ANCESTORS & DESCENDANTS ... and specifically, in the DESCENDANTS BAILEYWICK
-                        if ( theCode == "A0" || theCode.indexOf("A0P") > -1  || theCode.indexOf("A0K") > -1 ) {
-                            let A0person = thePeopleList[ SuperBigFamView.theLeafCollection["A0"].Id];
+                        if (theCode == "A0" || theCode.indexOf("A0P") > -1 || theCode.indexOf("A0K") > -1) {
+                            let A0person = thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id];
                             let Knum0 = -1;
                             let Knum = -1;
-                            if (theCode.length >= 5 && theCode.substring(0,3) == "A0K" ) {
-                                Knum0 = theCode.substring(3,5);
+                            if (theCode.length >= 5 && theCode.substring(0, 3) == "A0K") {
+                                Knum0 = theCode.substring(3, 5);
                             }
-                            if (theCode.length >= 8 && theCode.substring(0,3) == "A0K" && theCode.substring(5,6) == "K") {
-                                Knum = theCode.substring(6,8);
+                            if (
+                                theCode.length >= 8 &&
+                                theCode.substring(0, 3) == "A0K" &&
+                                theCode.substring(5, 6) == "K"
+                            ) {
+                                Knum = theCode.substring(6, 8);
                             }
                             // condLog("Code:",theCode, theCode.substring(3,5), theCode.substr(3,2),  "Knum:",Knum );
 
@@ -15123,9 +15012,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 let Kperson =
                                     thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 8)].Id];
                                 if (Kperson._data.Gender == "Male") {
-                                    return thisColourArray[33 + (5.0 * Knum0 + Knum * 1.0) % 16 ];
+                                    return thisColourArray[33 + ((5.0 * Knum0 + Knum * 1.0) % 16)];
                                 } else if (Kperson._data.Gender == "Female") {
-                                    return thisColourArray[33 + (5.0 * Knum0 + Knum * 1.0) % 16  + 16];
+                                    return thisColourArray[33 + ((5.0 * Knum0 + Knum * 1.0) % 16) + 16];
                                 } else {
                                     return thisColourArray[1];
                                 }
@@ -15148,16 +15037,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     return thisColourArray[1];
                                 }
                             }
-                            
                         } else {
                             // must be a Sibling ...
-                            let S0person = thePeopleList[SuperBigFamView.theLeafCollection[ theCode.substring(0,5) ].Id];
+                            let S0person = thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 5)].Id];
                             let Snum = theCode.substring(3, 5);
-                         
+
                             let Knum0 = -1;
                             let Knum = -1;
-                            if (theCode.length >= 8 && theCode.substring(0,3) == "A0S" && theCode.substring(5,6) == "K") {
-                                Knum0 = theCode.substring(6,8);
+                            if (
+                                theCode.length >= 8 &&
+                                theCode.substring(0, 3) == "A0S" &&
+                                theCode.substring(5, 6) == "K"
+                            ) {
+                                Knum0 = theCode.substring(6, 8);
                             }
                             if (
                                 theCode.length >= 11 &&
@@ -15185,7 +15077,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 } else {
                                     return thisColourArray[1];
                                 }
-
                             } else if (Knum0 > -1 && SuperBigFamView.numDescGens2Display == 2) {
                                 let Kperson =
                                     thePeopleList[SuperBigFamView.theLeafCollection[theCode.substring(0, 5)].Id];
@@ -15196,7 +15087,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 } else {
                                     return thisColourArray[1];
                                 }
-
                             } else {
                                 if (S0person._data.Gender == "Male") {
                                     return thisColourArray[33 + 1.0 * Snum];
@@ -15206,12 +15096,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                     return thisColourArray[1];
                                 }
                             }
-
                         }
-
-
                     }
-                    
                 } else if (thisNum.substr(0, 1) >= "0" && thisNum.substr(0, 1) <= "9") {
                     let thisNum2 = getDecimalNumFromBinaryString(thisNum) + 2 ** thisNum.length;
                     condLog("Ancestor Colour : ", theCode, thisNum, thisNum2);
@@ -15335,13 +15221,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
 
                 return thisColourArray[1];
-           
-
             } else {
                 // Not quite sure ... using default colour
                 return thisColourArray[2];
             }
-
         } else if (settingForColourBy == "Grand") {
             return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGrand") {
