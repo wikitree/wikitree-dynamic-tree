@@ -251,6 +251,7 @@ export class CC7 {
         this.startId = startId;
         this.selector = selector;
         this.params = params;
+        PeopleTable.setParameters(params);
         Settings.restoreSettings();
         $(selector).html(
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
@@ -556,7 +557,7 @@ export class CC7 {
                     )
                 );
                 CC7.buildDegreeTableData(degreeCounts, theDegree);
-                PeopleTable.addPeopleTable(CC7Utils.tableCaption(), params);
+                PeopleTable.addPeopleTable(CC7Utils.tableCaption());
                 $("#cc7Subset").prop("disabled", true);
             }
             $("#getPeopleButton").prop("disabled", false);

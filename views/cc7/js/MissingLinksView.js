@@ -25,9 +25,13 @@ export class MissingLinksView {
         </table>`);
         missingLinksTable.insertBefore($("#peopleTable"));
 
-        console.log(window.people.values());
+        // sort the people by degree
+        // TODO also sort by birthdate
+        const mapArray = Array.from(window.people);
+        mapArray.sort((a, b) => a[1]["Meta"]["Degrees"] - b[1]["Meta"]["Degrees"]);
+        const sortedMap = new Map(mapArray);
 
-        for (let person of window.people.values()) {
+        for (let person of sortedMap.values()) {
             const privacy = person.Privacy;
             const degree = person.Meta.Degrees;
             const first = person.RealName;
@@ -38,13 +42,11 @@ export class MissingLinksView {
             const spouses = person.Spouses.length;
             const wikiTreeId = person.Name;
 
-            //console.log(isMissingFamily(person));
-
             if (isMissingFamily(person)) {
                 // create row
                 const newRow = $(`
                 <tr>
-                    <td><img src="${this.PRIVACY_LEVELS.get(privacy).img}" title="${
+                    <td><img id="ml-privacy-lock" src="${this.PRIVACY_LEVELS.get(privacy).img}" title="${
                     this.PRIVACY_LEVELS.get(privacy).title
                 }" /></td>
                     <td>${degree}</td>
@@ -118,4 +120,6 @@ export class MissingLinksView {
         [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
         ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
     ]);
+
+    static sortPeople() {}
 }
