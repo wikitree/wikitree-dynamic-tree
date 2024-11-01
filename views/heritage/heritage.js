@@ -163,6 +163,7 @@ window.HeritageView = class HeritageView extends View {
         gatherHeritage(person_id);
 
         async function gatherHeritage(id) {
+            $("#getHeritageButton").prop("disabled", true);
             Utils.showShakingTree();
 
             familyMembers = {};
@@ -272,6 +273,7 @@ window.HeritageView = class HeritageView extends View {
             results.appendChild(chart);
 
             Utils.hideShakingTree();
+            $("#getHeritageButton").prop("disabled", false);
 
             function checkParent(familyMember, parent, generation) {
                 let birthLocation = "";
@@ -491,6 +493,7 @@ window.HeritageView = class HeritageView extends View {
             }
 
             Utils.hideShakingTree();
+            $("#getHeritageButton").prop("disabled", false);
         }
 
         function getLengend(countries, colorFunction) {
