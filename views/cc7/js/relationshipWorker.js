@@ -345,7 +345,7 @@ function describeRelationshipFromGenerations(gen1, gen2, gender) {
     if (isOne) {
         if (removal === 1) {
             if (isRootCloser) {
-                return { full: gender === "Male" ? "nephew" : "niece", abbr: "Male" ? "Nephew" : "Niece" };
+                return { full: gender === "Male" ? "nephew" : "niece", abbr: gender == "Male" ? "Nephew" : "Niece" };
             } else {
                 return { full: gender === "Male" ? "uncle" : "aunt", abbr: gender === "Male" ? "Uncle" : "Aunt" };
             }
