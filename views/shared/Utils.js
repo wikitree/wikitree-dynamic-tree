@@ -308,7 +308,7 @@ export class Utils {
         const endDBits = endDateStr.split("-");
         let age = endDBits[0] - startDBits[0];
         let monthDiff = endDBits[1] - startDBits[1];
-        if (monthDiff < 0 || (monthDiff === 0 && endDBits[2] < endDBits[2])) {
+        if (monthDiff < 0 || (monthDiff === 0 && endDBits[2] < startDBits[2])) {
             --age;
         }
         return age;
