@@ -65,6 +65,22 @@ export class CC7 {
         </ul>
         <p>Below are some tips related to each view.</p>
         <h3>Table View</h3>
+        <h4>Ages</h4>
+        <p>
+            Ages like those in the Age column or in the timeline tables, where relative ages are also present, are annotated
+            as follows, depending on the certainty of the dates involved:
+        </p>
+        <ul>
+            <li>&lt; Less than, earlier, or younger, depending on the context,</li>
+            <li>~ About,</li>
+            <li>&gt; More than, after, older, depending on the context.</li>
+        </ul>
+        <p>
+            So, for example, &gt;~64 means <i>older than about 64</i>. This would be the case, for example, when the person's
+            date of death is given as, say, after May 1835, or after 5 May 1885 and the birth date is flagged as
+            uncertain. Similarly ~-7 means <i>about 7 years before the person's birth</i>, and &lt;~-28 means
+            <i>earlier that about 28 years before the person's birth</i>.
+         </p>
         <h4>Sorting the Table</h4>
         <ul>
             <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
@@ -694,6 +710,7 @@ export class CC7 {
                     window.cc7MinPrivateId = Math.min(id, window.cc7MinPrivateId);
                 }
                 // This is a new person, add them to the tree
+                Utils.setAdjustedDates(person);
                 person.Parents = [person.Father, person.Mother];
                 const personDegree = typeof person.Meta?.Degrees === "undefined" ? -1 : +person.Meta.Degrees;
                 person.Hide = personDegree < minDegree || personDegree > maxDegree;
@@ -813,6 +830,7 @@ export class CC7 {
                             MarriageEndDate: sp.MarriageEndDate,
                             MarriageLocation: sp.MarriageLocation,
                             DoNotDisplay: sp.DoNotDisplay,
+                            DataStatus: sp.DataStatus,
                         };
                         pers.Spouse.push(spouse);
                     }
@@ -1297,7 +1315,6 @@ export class CC7 {
         const ABOVE = true;
         const BELOW = false;
         const collator = new Intl.Collator();
-        CC7Utils.fixBirthDate(theRoot);
         theRoot.isAncestor = false;
         theRoot.isAbove = false;
         // Note: unlike the usual case, where the queue contains nodes still to be "visited" and processed,
@@ -1332,9 +1349,6 @@ export class CC7 {
                 const pId = belowQ.shift();
                 const person = window.people.get(pId);
                 if (person) {
-                    if (typeof person.fixedBirthDate === "undefined") {
-                        CC7Utils.fixBirthDate(person);
-                    }
                     // Add this person's relatives to the queue
                     const rels = firstIteration
                         ? CC7.getIdsOfRelatives(person, ["Sibling", "Spouse", "Child"])
@@ -1388,9 +1402,6 @@ export class CC7 {
                 const pId = aboveQ.shift();
                 const person = window.people.get(pId);
                 if (person) {
-                    if (typeof person.fixedBirthDate === "undefined") {
-                        CC7Utils.fixBirthDate(person);
-                    }
                     // Add this person's relatives to the queue
                     const rels = firstIteration
                         ? CC7.getIdsOfRelatives(person, ["Parent"])
@@ -1418,7 +1429,7 @@ export class CC7 {
                     // isAbove is not defined yet, or the person is above, but is the same age or younger
                     // than the root person
                     (typeof p.isAbove === "undefined" ||
-                        (p.isAbove && collator.compare(theRoot.fixedBirthDate, p.fixedBirthDate) <= 0))
+                        (p.isAbove && collator.compare(theRoot.adjustedBirth.date, p.adjustedBirth.date) <= 0))
                 ) {
                     p.isAbove = false;
                     return true;
@@ -1426,7 +1437,7 @@ export class CC7 {
                     where == ABOVE &&
                     // isAbove is not defined yet, or the person is below, but is older than the root person
                     (typeof p.isAbove === "undefined" ||
-                        (!p.isAbove && collator.compare(theRoot.fixedBirthDate, p.fixedBirthDate) > 0))
+                        (!p.isAbove && collator.compare(theRoot.adjustedBirth.date, p.adjustedBirth.date) > 0))
                 ) {
                     p.isAbove = true;
                     return true;
