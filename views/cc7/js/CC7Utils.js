@@ -1,4 +1,5 @@
 import { Settings } from "./Settings.js";
+import { Utils } from "../../shared/Utils.js";
 export class CC7Utils {
     static CC7_CONTAINER_ID = "cc7Container";
 

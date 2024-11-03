@@ -247,6 +247,7 @@ export class CC7 {
         "ShortName",
         "Spouses",
         "Suffix",
+        "Templates",
         "Touched",
     ].join(",");
 

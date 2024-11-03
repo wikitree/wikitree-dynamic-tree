@@ -1286,11 +1286,6 @@ export class PeopleTable {
                     if (!evPerson.FirstName) {
                         fName = evPerson.RealName;
                     }
-                    const bDate = evPerson.adjustedBirth;
-                    let mBio = evPerson.bio;
-                    if (!evPerson.bio) {
-                        mBio = "";
-                    }
                     if (evLocation == undefined) {
                         evLocation = "";
                     }
@@ -1300,110 +1295,99 @@ export class PeopleTable {
                         firstName: fName,
                         LastNameAtBirth: evPerson.LastNameAtBirth,
                         lastNameCurrent: evPerson.LastNameCurrent,
-                        birthDate: bDate,
+                        birthDate: evPerson.adjustedBirth,
                         relation: evPerson.Relation,
-                        bio: mBio,
                         evnt: ev,
                         wtId: evPerson.Name,
                     });
                 }
             });
-            const evPersonBDate = evPerson.adsjustedBirth;
-            // Look for military events in bios
-            // TODO: currently this code is effectively disabled because we delete the bio immediately (if it's been
-            // requested in the first place - only happens if bioCheck is on) after we've done the bioCheck (due to
-            // space concerns). So to do: include Templates in our field request and look through them and not the bio.
-            if (evPerson.bio) {
-                const tlTemplates = evPerson.bio.match(/\{\{[^]*?\}\}/gm);
-                if (tlTemplates != null) {
-                    const warTemplates = [
-                        "Creek War",
-                        "French and Indian War",
-                        "Iraq War",
-                        "Korean War",
-                        "Mexican-American War",
-                        "Spanish-American War",
-                        "The Great War",
-                        "US Civil War",
-                        "Vietnam War",
-                        "War in Afghanistan",
-                        "War of 1812",
-                        "World War II",
-                    ];
-                    tlTemplates.forEach(function (aTemp) {
-                        let evDate = "";
-                        let evLocation = "";
-                        let ev = "";
-                        let evDateStart = "";
-                        let evDateEnd = "";
-                        let evStart;
-                        let evEnd;
-                        aTemp = aTemp.replaceAll(/[{}]/g, "");
-                        const bits = aTemp.split("|");
-                        const templateTitle = bits[0].replaceAll(/\n/g, "").trim();
-                        bits.forEach(function (aBit) {
-                            const aBitBits = aBit.split("=");
-                            const aBitField = aBitBits[0].trim();
-                            if (aBitBits[1]) {
-                                const aBitFact = aBitBits[1].trim().replaceAll(/\n/g, "");
-                                // These dates are not necessarily in YYYY-MM-DD format so we need to convert them first
-                                if (warTemplates.includes(templateTitle) && CC7Utils.isOK(aBitFact)) {
-                                    if (aBitField == "startdate") {
-                                        evDateStart = PeopleTable.dateToYMD(aBitFact);
-                                        evStart = "joined " + templateTitle;
-                                    }
-                                    if (aBitField == "enddate") {
-                                        evDateEnd = PeopleTable.dateToYMD(aBitFact);
-                                        evEnd = "left " + templateTitle;
-                                    }
-                                    if (aBitField == "enlisted") {
-                                        evDateStart = PeopleTable.dateToYMD(aBitFact);
-                                        evStart = "enlisted for " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "discharged") {
-                                        evDateEnd = PeopleTable.dateToYMD(aBitFact);
-                                        evEnd = "discharged from " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "branch") {
-                                        evLocation = aBitFact;
-                                    }
+            // Look for military events in templates
+            const tlTemplates = evPerson.Templates;
+            if (tlTemplates && tlTemplates.length > 0) {
+                const warTemplates = [
+                    "Creek War",
+                    "French and Indian War",
+                    "Iraq War",
+                    "Korean War",
+                    "Mexican-American War",
+                    "Spanish-American War",
+                    "The Great War",
+                    "US Civil War",
+                    "Vietnam War",
+                    "War in Afghanistan",
+                    "War of 1812",
+                    "World War II",
+                ];
+                tlTemplates.forEach(function (aTemp) {
+                    let evDate = "";
+                    let evLocation = "";
+                    let ev = "";
+                    let evDateStart = "";
+                    let evDateEnd = "";
+                    let evStart;
+                    let evEnd;
+                    const templateTitle = aTemp["name"];
+                    if (templateTitle && !warTemplates.includes(templateTitle)) return;
+
+                    let the = "the ";
+                    const lowerTitle = templateTitle.toLowerCase();
+                    if (lowerTitle.startsWith("the") || lowerTitle.startsWith("world")) the = "";
+                    const params = aTemp["params"];
+                    if (params) {
+                        Object.entries(params).forEach(([param, value]) => {
+                            const paramValue = value?.trim()?.replaceAll(/\n/g, "");
+                            // These dates are not necessarily in YYYY-MM-DD format so we need to convert them first
+                            if (CC7Utils.isOK(paramValue)) {
+                                if (param == "startdate") {
+                                    evDateStart = PeopleTable.dateToYMD(paramValue);
+                                    evStart = `joined ${the}` + templateTitle;
+                                } else if (param == "enddate") {
+                                    evDateEnd = PeopleTable.dateToYMD(paramValue);
+                                    evEnd = `left ${the}` + templateTitle;
+                                } else if (param == "enlisted") {
+                                    evDateStart = PeopleTable.dateToYMD(paramValue);
+                                    evStart = `enlisted in ${the}` + templateTitle.replace("american", "American");
+                                } else if (param == "discharged") {
+                                    evDateEnd = PeopleTable.dateToYMD(paramValue);
+                                    evEnd = `discharged from ${the}` + templateTitle.replace("american", "American");
+                                } else if (param == "branch") {
+                                    evLocation = paramValue;
                                 }
                             }
                         });
-                        if (CC7Utils.isOK(evDateStart)) {
-                            evDate = { date: evDateStart, annotation: "" };
-                            ev = evStart;
-                            timeLineEvent.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: evPerson.FirstName,
-                                LastNameAtBirth: evPerson.LastNameAtBirth,
-                                lastNameCurrent: evPerson.LastNameCurrent,
-                                birthDate: evPersonBDate,
-                                relation: evPerson.Relation,
-                                bio: evPerson.bio,
-                                evnt: ev,
-                                wtId: evPerson.Name,
-                            });
-                        }
-                        if (CC7Utils.isOK(evDateEnd)) {
-                            evDate = { date: evDateEnd, annotation: "" };
-                            ev = evEnd;
-                            timeLineEvent.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: evPerson.FirstName,
-                                LastNameAtBirth: evPerson.LastNameAtBirth,
-                                lastNameCurrent: evPerson.LastNameCurrent,
-                                birthDate: evPersonBDate,
-                                relation: evPerson.Relation,
-                                bio: evPerson.bio,
-                                evnt: ev,
-                                wtId: evPerson.Name,
-                            });
-                        }
-                    });
-                }
+                    }
+                    if (CC7Utils.isOK(evDateStart)) {
+                        evDate = { date: evDateStart, annotation: "" };
+                        ev = evStart;
+                        timeLineEvent.push({
+                            eventDate: evDate,
+                            location: evLocation,
+                            firstName: evPerson.FirstName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.Relation,
+                            evnt: ev,
+                            wtId: evPerson.Name,
+                        });
+                    }
+                    if (CC7Utils.isOK(evDateEnd)) {
+                        evDate = { date: evDateEnd, annotation: "" };
+                        ev = evEnd;
+                        timeLineEvent.push({
+                            eventDate: evDate,
+                            location: evLocation,
+                            firstName: evPerson.FirstName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.Relation,
+                            evnt: ev,
+                            wtId: evPerson.Name,
+                        });
+                    }
+                });
             }
         });
         return timeLineEvent;
