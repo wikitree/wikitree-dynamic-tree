@@ -165,7 +165,9 @@ export class StatsView {
                         annotation: annotatedAgeAtDeath.annotation,
                         annotaionAge: annotatedAgeAtDeath.annotatedAge,
                     });
-                    const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
+                    const aName = new PersonName(familyMember);
+                    const displayName = CC7Utils.formDisplayName(familyMember, aName);
+                    const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${displayName}</a>`;
                     if (sortingAge > sortingOldestAge) {
                         sortingOldestAge = sortingAge;
                         oldestAnnotatedAge = annotatedAgeAtDeath;

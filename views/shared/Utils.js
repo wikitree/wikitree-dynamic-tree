@@ -133,7 +133,7 @@ export class Utils {
     static formAdjustedDate(date, decade, status) {
         let theDate = date || "0000-00-00";
         let annotation = "";
-        let display = "";
+        let display = theDate;
         if (theDate == "0000-00-00" || theDate.length != 10) {
             if (decade && decade != "unknown") {
                 theDate = decade.replace(/0s/, "5-01-01");
@@ -157,8 +157,6 @@ export class Utils {
                 theDate = `${dateBits[0]}-${dateBits[1]}-15`;
                 annotation = "~";
                 display = dateBits[0] + "-" + dateBits[1];
-            } else {
-                display = theDate;
             }
 
             // Adjust annotation based on the data status
