@@ -2083,7 +2083,7 @@ export class PeopleTable {
             .forEach((aCell) => {
                 const bCell = `B${aCell.substring(1)}`;
                 const wtId = ws[aCell].v;
-                if (wtId.match(/.+\-.+/)) {
+                if (wtId?.match(/.+\-.+/)) {
                     // Add a hyperlink to the WtId cell
                     ws[aCell].l = { Target: `https://www.wikitree.com/wiki/${wtId}` };
                 }

@@ -201,7 +201,18 @@ window.StatsView = class StatsView extends View {
             const results = await WikiTreeAPI.getPeople(
                 "stats",
                 id,
-                ["BirthDate, DeathDate, Name, Derived.BirthName, Gender, Spouses, Meta"],
+                [
+                    "BirthDate",
+                    "BirthDateDecade",
+                    "DeathDate",
+                    "DeathDateDecade",
+                    "Name",
+                    "Derived.BirthName",
+                    "Derived.BirthNamePrivate",
+                    "Gender",
+                    "Spouses",
+                    "Meta",
+                ],
                 options
             );
             // save the list of familyMembers
@@ -290,7 +301,8 @@ window.StatsView = class StatsView extends View {
                         annotation: annotatedAgeAtDeath.annotation,
                         annotaionAge: annotatedAgeAtDeath.annotatedAge,
                     });
-                    const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
+                    const displayName = familyMember.BirthName || familyMember.BirthNamePrivate || "Private";
+                    const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${displayName}</a>`;
                     if (sortingAge > sortingOldestAge) {
                         sortingOldestAge = sortingAge;
                         oldestAnnotatedAge = annotatedAgeAtDeath;
