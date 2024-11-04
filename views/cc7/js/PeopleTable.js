@@ -1486,7 +1486,7 @@ export class PeopleTable {
             const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
 
             let fNames = aFact.firstName || "(Private)";
-            if (aFact.evnt == "marriage") {
+            if (aFact.evnt == "Marriage") {
                 fNames = tPersonFirstName + " and " + fNames;
                 relation = "";
             }
