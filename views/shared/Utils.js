@@ -56,7 +56,7 @@ export class Utils {
      * returns {date:, annotation:, display:}.
      * It is assumed the date fields of the person profile are in the standard form returned by the WT API,
      * namely 'YYYY-MMM-DD' or YYY0s if a decade field is used.
-     * A YYYY-MMM-00 date is adjusted to YYYY-MM-15, a YYYY-00-00 date to YYYY-06-15 and YYY0s to YYY5-01-01,
+     * A YYYY-MMM-00 date is adjusted to YYYY-MM-15, a YYYY-00-00 date to YYYY-07-02 and YYY0s to YYY5-01-01,
      * i.e. more or less to the middle of each period.
      * @param {*} person a person record retrieved from the API
      * @param {*} whichDate One of "Birth", "Death", or "Marriage". Any other value will return a date of 0000-00-00.
@@ -70,7 +70,7 @@ export class Utils {
      *          For birth and death dates, if they are not available, but ...DateDecade is, the latter will be taken and
      *          converted to the middle of the decade. e.g. 1960s will be converted to 1965-01-01, but display will be 1960s.
      *
-     *          Similarly any partial date like 1961-00-00 or 1962-02-00 will be converted to 1961-06-15 and 1962-02-15
+     *          Similarly any partial date like 1961-00-00 or 1962-02-00 will be converted to 1961-07-02 and 1962-02-15
      *          respectively, with displays 1961 and 1962-02.
      */
     static getTheDate(person, whichDate) {
@@ -127,10 +127,10 @@ export class Utils {
      *          For birth and death dates, if they are not available, but ...DateDecade is, the latter will be taken and
      *          converted to the middle of the decade. e.g. 1960s will be converted to 1965-01-01, but display will be 1960s.
      *
-     *          Similarly any partial date like 1961-00-00 or 1962-02-00 will be converted to 1961-06-15 and 1962-02-15
+     *          Similarly any partial date like 1961-00-00 or 1962-02-00 will be converted to 1961-07-02 and 1962-02-15
      *          respectively, with displays 1961 and 1962-02.
      */
-    static formAdjustedDate(date, decade, status) {
+    static formAdjustedDate(date, decade = "", status = "") {
         let theDate = date || "0000-00-00";
         let annotation = "";
         let display = theDate;
@@ -150,7 +150,7 @@ export class Utils {
             // force annotation to ~, but keep the partial value for display
             const dateBits = theDate.split("-");
             if (dateBits[1] == "00") {
-                theDate = `${dateBits[0]}-06-15`;
+                theDate = `${dateBits[0]}-07-02`;
                 annotation = "~";
                 display = dateBits[0];
             } else if (dateBits[2] == "00") {

@@ -1320,9 +1320,7 @@ export class PeopleTable {
                     "World War II",
                 ];
                 tlTemplates.forEach(function (aTemp) {
-                    let evDate = "";
                     let evLocation = "";
-                    let ev = "";
                     let evDateStart = "";
                     let evDateEnd = "";
                     let evStart;
@@ -1340,16 +1338,16 @@ export class PeopleTable {
                             // These dates are not necessarily in YYYY-MM-DD format so we need to convert them first
                             if (CC7Utils.isOK(paramValue)) {
                                 if (param == "startdate") {
-                                    evDateStart = PeopleTable.dateToYMD(paramValue);
+                                    evDateStart = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
                                     evStart = `joined ${the}` + templateTitle;
                                 } else if (param == "enddate") {
-                                    evDateEnd = PeopleTable.dateToYMD(paramValue);
+                                    evDateEnd = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
                                     evEnd = `left ${the}` + templateTitle;
                                 } else if (param == "enlisted") {
-                                    evDateStart = PeopleTable.dateToYMD(paramValue);
+                                    evDateStart = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
                                     evStart = `enlisted in ${the}` + templateTitle.replace("american", "American");
                                 } else if (param == "discharged") {
-                                    evDateEnd = PeopleTable.dateToYMD(paramValue);
+                                    evDateEnd = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
                                     evEnd = `discharged from ${the}` + templateTitle.replace("american", "American");
                                 } else if (param == "branch") {
                                     evLocation = paramValue;
@@ -1357,33 +1355,29 @@ export class PeopleTable {
                             }
                         });
                     }
-                    if (CC7Utils.isOK(evDateStart)) {
-                        evDate = { date: evDateStart, annotation: "" };
-                        ev = evStart;
+                    if (evDateStart && CC7Utils.isOK(evDateStart.date)) {
                         timeLineEvent.push({
-                            eventDate: evDate,
+                            eventDate: evDateStart,
                             location: evLocation,
                             firstName: evPerson.FirstName,
                             LastNameAtBirth: evPerson.LastNameAtBirth,
                             lastNameCurrent: evPerson.LastNameCurrent,
                             birthDate: evPerson.adjustedBirth,
                             relation: evPerson.Relation,
-                            evnt: ev,
+                            evnt: evStart,
                             wtId: evPerson.Name,
                         });
                     }
-                    if (CC7Utils.isOK(evDateEnd)) {
-                        evDate = { date: evDateEnd, annotation: "" };
-                        ev = evEnd;
+                    if (evDateEnd && CC7Utils.isOK(evDateEnd.date)) {
                         timeLineEvent.push({
-                            eventDate: evDate,
+                            eventDate: evDateEnd,
                             location: evLocation,
                             firstName: evPerson.FirstName,
                             LastNameAtBirth: evPerson.LastNameAtBirth,
                             lastNameCurrent: evPerson.LastNameCurrent,
                             birthDate: evPerson.adjustedBirth,
                             relation: evPerson.Relation,
-                            evnt: ev,
+                            evnt: evEnd,
                             wtId: evPerson.Name,
                         });
                     }
@@ -1462,8 +1456,7 @@ export class PeopleTable {
         timelineEvents.forEach(function (aFact) {
             // Add events to the table
             const isEventForBioPerson = aFact.wtId == tPerson.Name;
-            const showDate = aFact.eventDate.date.replace("-00-00", "").replace("-00", "");
-            const tlDate = "<td class='tlDate'>" + showDate + "</td>";
+            const tlDate = "<td class='tlDate'>" + aFact.eventDate.display + "</td>";
             const tlPersonBirth = tPerson.adjustedBirth;
             const eventDate = aFact.eventDate;
             const evPersonBirth = aFact.birthDate;
