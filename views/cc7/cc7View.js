@@ -29,7 +29,7 @@ window.CC7View = class CC7View extends View {
     }
 
     close() {
-        // Another view is about to be activated, retore the original overflow value of view-container
+        // Another view is about to be activated, restore the original overflow value of view-container
         $("#view-container").css({
             overflow: this.overflow,
         });

@@ -723,7 +723,7 @@ table tr.cc7filter-row input[type="text"] {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
-.cc7Table caption {
+#cc7Container #statsTable caption {
   border-radius: 5px 5px 0 0;
   border-top: 1px solid forestgreen;
   border-left: 1px solid forestgreen;

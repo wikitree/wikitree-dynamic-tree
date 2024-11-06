@@ -1671,7 +1671,6 @@ export class PeopleTable {
         );
         kPeople.forEach(function (kPers) {
             let rClass = "";
-            let isDecades = false;
             kPers.RelationShow = kPers.Relation;
             if (kPers.Relation == undefined || kPers.Active) {
                 kPers.Relation = "Sibling";
