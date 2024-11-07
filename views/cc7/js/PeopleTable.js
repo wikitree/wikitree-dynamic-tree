@@ -1464,9 +1464,9 @@ export class PeopleTable {
             let renderedAgeAtEvent = "";
 
             if (tlpDead == true) {
-                const theDiff = parseInt(tlpAgeAtEvent.age - tlpDeadAge.age);
+                const theDiff = tlpAgeAtEvent.age - tlpDeadAge.age;
                 const diffAnnotation = Utils.statusOfDiff(tlpDeadAge.annotation, tlpAgeAtEvent.annotation);
-                renderedAgeAtEvent = `${RIBBON}+ ${diffAnnotation}${theDiff}`;
+                renderedAgeAtEvent = `${RIBBON}+ ${diffAnnotation}${Math.floor(theDiff)}`;
             } else if (isEventForBioPerson && aFact.evnt == "Birth") {
                 renderedAgeAtEvent = "";
             } else {

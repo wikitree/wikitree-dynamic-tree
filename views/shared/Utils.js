@@ -179,28 +179,30 @@ export class Utils {
      *            (as might be returned from the API) and annotation is one of ("", <, ~, >).
      * @param {*} event An annotated event date object similar to the above.
      * @returns {age: , annotation: , annotatedAge: } where:
-     *          age - "" if no age could be determined, otherwise the calculated age at death of the person, truncated
-     *                to whole years, is returned. e.g. if the calculated age is 13 years, 12 months and 30 days, 13 will
-     *                be returned.
+     *          age - "" if no age could be determined, otherwise the calculated decimal age at the event.
      *          annotation - one of the symbols \~, <, >, or the empty string depending on whether the age is uncertain (~),
      *                is at most the given number (<), at least the given number (>), or is accurate (empty string).
-     *          annotatedAge - the concatenation of annotation and age.
+     *          annotatedAge - the concatenation of annotation and age, but with the fraction truncated.
      */
     static ageAtEvent(birth, event) {
         let about = "";
         let age = "";
+        let wholeYearAge = "";
 
         if (birth.date != "0000-00-00" && event.date != "0000-00-00") {
-            age = Utils.getAgeInWholeYearsFromStrings(birth.date, event.date);
+            age = Utils.calculateDecimalAge(birth.date, event.date);
+            if (age < 0) {
+                wholeYearAge = -Math.floor(Math.abs(age));
+            } else {
+                wholeYearAge = Math.floor(age);
+            }
         }
 
         if (age !== "") {
             about = Utils.statusOfDiff(birth.annotation, event.annotation);
         }
 
-        return age === ""
-            ? { age: "", annotation: "", annotatedAge: "" }
-            : { age: age, annotation: about, annotatedAge: `${about}${age}` };
+        return { age: age, annotation: about, annotatedAge: `${about}${wholeYearAge}` };
     }
 
     static DIFF_ANNOTATION = [
@@ -259,37 +261,35 @@ export class Utils {
      * except that the returned age will never be negative.
      * @param {*} person a person record retrieved from the API
      * @returns {age: , annotation: , annotatedAge: } where:
-     *          age - "" if no age could be determined, otherwise the calculated age at death of the person, truncated
-     *                to whole years is returned. e.g. if the calculated age is 13 years, 12 months and 30 days, 13 will
-     *                be returned.
+     *          age - "" if no age could be determined, otherwise the calculated decimal age at at death.
      *                If the calculated age would be negative due to incomplete or bad dates, e.g. birth = 1871-07-03 and
      *                death = 1971, 0 is returned.
-     *          annotation - one of the symbols \~, <, >, or the empty string depending whether the age is uncertain (~),
+     *          annotation - one of the symbols \~, <, >, or the empty string depending on whether the age is uncertain (~),
      *                is at most the given number (<), at least the given number (>), or is accurate (empty string).
-     *          annotatedAge - the concatenation of annotation and age.
+     *          annotatedAge - the concatenation of annotation and age, but with the fraction truncated.
      */
     static ageAtDeath(person) {
         let diedAged = "";
         let about = "";
+        let wholeYearAge = "";
         const birth = person.hasOwnProperty("adjustedBirth") ? person.adjustedBirth : Utils.getTheDate(person, "Birth");
         const death = person.hasOwnProperty("adjustedDeath") ? person.adjustedDeath : Utils.getTheDate(person, "Death");
 
         if (birth.date != "0000-00-00" && death.date != "0000-00-00") {
-            diedAged = Utils.getAgeInWholeYearsFromStrings(birth.date, death.date);
+            diedAged = Utils.calculateDecimalAge(birth.date, death.date);
             if (diedAged < 0) {
                 // Make provision for e.g. birth = 1871-07-03 and death = 1971
                 // (or just plain bad dates)
                 diedAged = 0;
             }
+            wholeYearAge = Math.floor(diedAged);
         }
 
         if (diedAged !== "") {
             about = Utils.statusOfDiff(birth.annotation, death.annotation);
         }
 
-        return diedAged === ""
-            ? { age: "", annotation: "", annotatedAge: "" }
-            : { age: diedAged, annotation: about, annotatedAge: `${about}${diedAged}` };
+        return { age: diedAged, annotation: about, annotatedAge: `${about}${wholeYearAge}` };
     }
 
     /**
@@ -310,6 +310,55 @@ export class Utils {
             --age;
         }
         return age;
+    }
+
+    static borrowDays = [0, 31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30];
+    static calculateDecimalAge(fromDateString, toDateString) {
+        let from,
+            to,
+            isNegative = 0;
+        if (toDateString < fromDateString) {
+            from = toDateString.split("-");
+            to = fromDateString.split("-");
+            isNegative = 1;
+        } else {
+            from = fromDateString.split("-");
+            to = toDateString.split("-");
+        }
+        const fYear = +from[0];
+        const fMonth = +from[1];
+        const fDay = +from[2];
+        let tYear = +to[0];
+        let tMonth = +to[1];
+        let tDay = +to[2];
+        const toIsLeap = Utils.isLeapYear(tYear);
+
+        if (tDay < fDay) {
+            let borrow = Utils.borrowDays[tMonth];
+            if (toIsLeap && tMonth == 3) borrow = 29;
+            tDay += borrow;
+            tMonth -= 1;
+        }
+        if (tMonth < tYear) {
+            tMonth += 12;
+            tYear -= 1;
+        }
+
+        const years = tYear - fYear;
+        const months = tMonth - fMonth;
+        const days = tDay - fDay;
+
+        // Adjust the years with the fractional part for months
+        let age = years + months / 12 + days / (toIsLeap ? 366 : 365);
+        if (isNegative) age = -age;
+
+        return age;
+    }
+
+    static isLeapYear(year) {
+        // A year is a leap year if it is divisible by 4,
+        // except for years that are divisible by 100, unless they are also divisible by 400.
+        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     }
 
     /**

@@ -130,7 +130,7 @@ export class StatsView {
                 const generation = familyMember["Meta"]["Degrees"];
                 const gender = familyMember["Gender"];
                 const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
-                const annotatedAgeAtDeath = Utils.ageAtEvent(familyMember.adjustedBirth, familyMember.adjustedDeath);
+                const annotatedAgeAtDeath = Utils.ageAtDeath(familyMember);
                 const adjustedMarriage = Utils.getTheDate(familyMember, "Marriage");
                 const marriageYear = parseInt(adjustedMarriage.date.substring(0, 4));
 
@@ -146,25 +146,20 @@ export class StatsView {
                 // add the marriage age to the proper generation
                 let ageAtMarriage;
                 if (marriageYear && birthYear > 0) {
-                    ageAtMarriage = getAgeAtEvent(familyMember.adjustedBirth.date, adjustedMarriage.date);
+                    ageAtMarriage = Utils.ageAtEvent(familyMember.adjustedBirth, adjustedMarriage);
                     const marriageAgeGeneration = marriageAges[generation];
-                    marriageAgeGeneration.push(ageAtMarriage);
+                    marriageAgeGeneration.push(ageAtMarriage.age);
                 }
 
                 // add the death age to the proper generation and find the oldest people
                 if (birthYear > 0 && annotatedAgeAtDeath.age != "") {
                     // Calculte an age with decimal value
-                    const ageAtDeath = getAgeAtEvent(familyMember.adjustedBirth.date, familyMember.adjustedDeath.date);
                     const deathAgeGeneration = deathAges[generation];
-                    deathAgeGeneration.push(ageAtDeath);
+                    deathAgeGeneration.push(annotatedAgeAtDeath.age);
 
                     // Check if this family member is the oldest one so far. We compare ages with decimal values
                     // taking their certainty indicators into account
-                    const sortingAge = Utils.ageForSort({
-                        age: ageAtDeath,
-                        annotation: annotatedAgeAtDeath.annotation,
-                        annotaionAge: annotatedAgeAtDeath.annotatedAge,
-                    });
+                    const sortingAge = Utils.ageForSort(annotatedAgeAtDeath);
                     const aName = new PersonName(familyMember);
                     const displayName = CC7Utils.formDisplayName(familyMember, aName);
                     const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${displayName}</a>`;
@@ -462,22 +457,6 @@ export class StatsView {
                 let row = table.querySelector("#stats-row" + generation);
                 row.cells[10].innerHTML = stats.avgChildrenCounts[generation];
                 row.cells[11].innerHTML = stats.avgSiblingsCounts[generation];
-            }
-        }
-
-        function getAgeAtEvent(birth, event) {
-            let birthDate = new Date(birth);
-            let eventDate = new Date(event);
-
-            if (birthDate != "Invalid Date" && eventDate != "Invalid Date") {
-                let age = (eventDate - birthDate) / 31536000000;
-                if (age > 0) {
-                    return age;
-                } else {
-                    return null;
-                }
-            } else {
-                return null;
             }
         }
 
