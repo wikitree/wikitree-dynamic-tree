@@ -20,6 +20,7 @@ import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
 import { WTapps_Utils } from "./WTapps_Utils.js";
+import { Utils } from "../shared/Utils.js";
 
 (function () {
     const APP_ID = "FanChart";
@@ -33,7 +34,6 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
     let font4Info = "SansSerif";
 
     const numOfBadges = 5;
-    
 
     /**
      * Constructor
@@ -471,112 +471,112 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         };
     };
 
-  FanChartView.resetSettingsDIVtoDefaults = function () {
-      // console.log("Here you are inside FanChartView.resetSettingsDIVtoDefaults");
-      let theCookieString = JSON.stringify(FanChartView.currentSettings);
-      // console.log({ theCookieString });
-      if (theCookieString) {
-          FanChartView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
-          FanChartView.tweakSettingsToHideShowElements();
-          FanChartView.updateLegendTitle();
-          FanChartView.updateHighlightDescriptor();
+    FanChartView.resetSettingsDIVtoDefaults = function () {
+        // console.log("Here you are inside FanChartView.resetSettingsDIVtoDefaults");
+        let theCookieString = JSON.stringify(FanChartView.currentSettings);
+        // console.log({ theCookieString });
+        if (theCookieString) {
+            FanChartView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+            FanChartView.tweakSettingsToHideShowElements();
+            FanChartView.updateLegendTitle();
+            FanChartView.updateHighlightDescriptor();
 
-          let showBadges = FanChartView.currentSettings["general_options_showBadges"];
-          if (!showBadges) {
-              let stickerLegend = document.getElementById("stickerLegend");
-              stickerLegend.style.display = "none";
-              if (
-                  FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
-                  FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
-                  FanChartView.currentSettings["colour_options_colourBy"] != "Family"
-              ) {
-                  let legendDIV = document.getElementById("legendDIV");
-                  legendDIV.style.display = "none";
-              }
-          }
+            let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+            if (!showBadges) {
+                let stickerLegend = document.getElementById("stickerLegend");
+                stickerLegend.style.display = "none";
+                if (
+                    FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
+                    FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
+                    FanChartView.currentSettings["colour_options_colourBy"] != "Family"
+                ) {
+                    let legendDIV = document.getElementById("legendDIV");
+                    legendDIV.style.display = "none";
+                }
+            }
 
-          WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
-              expires: 365,
-          });
+            WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+                expires: 365,
+            });
 
-          FanChartView.redraw();
-      }
-  };
+            FanChartView.redraw();
+        }
+    };
 
-  FanChartView.redrawAfterLoadSettings = function () {
-      // console.log("Here you are inside FanChartView.redrawAfterLoadSettings");
+    FanChartView.redrawAfterLoadSettings = function () {
+        // console.log("Here you are inside FanChartView.redrawAfterLoadSettings");
 
-      FanChartView.tweakSettingsToHideShowElements();
-      FanChartView.updateLegendTitle();
-      FanChartView.updateHighlightDescriptor();
+        FanChartView.tweakSettingsToHideShowElements();
+        FanChartView.updateLegendTitle();
+        FanChartView.updateHighlightDescriptor();
 
-      let showBadges = FanChartView.currentSettings["general_options_showBadges"];
-      if (!showBadges) {
-          let stickerLegend = document.getElementById("stickerLegend");
-          stickerLegend.style.display = "none";
-          if (
-              FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
-              FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
-              FanChartView.currentSettings["colour_options_colourBy"] != "Family"
-          ) {
-              let legendDIV = document.getElementById("legendDIV");
-              legendDIV.style.display = "none";
-          }
-      }
+        let showBadges = FanChartView.currentSettings["general_options_showBadges"];
+        if (!showBadges) {
+            let stickerLegend = document.getElementById("stickerLegend");
+            stickerLegend.style.display = "none";
+            if (
+                FanChartView.currentSettings["highlight_options_showHighlights"] == false &&
+                FanChartView.currentSettings["colour_options_colourBy"] != "Location" &&
+                FanChartView.currentSettings["colour_options_colourBy"] != "Family"
+            ) {
+                let legendDIV = document.getElementById("legendDIV");
+                legendDIV.style.display = "none";
+            }
+        }
 
-      WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
-          expires: 365,
-      });
+        WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
+            expires: 365,
+        });
 
-      FanChartView.redraw();
-  };
+        FanChartView.redraw();
+    };
 
-     FanChartView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
-         // console.log("function: updateCurrentSettingsBasedOnCookieValues");
-         // console.log(theCookieString);
-         const theCookieSettings = JSON.parse(theCookieString);
-         // console.log("JSON version of the settings are:", theCookieSettings);
-         for (const key in theCookieSettings) {
-             if (Object.hasOwnProperty.call(theCookieSettings, key)) {
-                 const element = theCookieSettings[key];
-                 let theType = "";
-                 if (document.getElementById(key)) {
-                     theType = document.getElementById(key).type;
-                     if (theType == "checkbox") {
-                         document.getElementById(key).checked = element;
-                     } else if (theType == "number" || theType == "text") {
-                         document.getElementById(key).value = element;
-                     } else if (document.getElementById(key).classList.length > 0) {
-                         document.getElementById(key).value = element;
-                         theType = "optionSelect";
-                     } else {
-                         theType = document.getElementById(key);
-                     }
-                 } else {
-                     theType = "NO HTML OBJECT";
-                     let theRadioButtons = document.getElementsByName(key + "_radio");
-                     if (theRadioButtons) {
-                         // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
-                         theType = "radio x " + theRadioButtons.length;
-                         for (let i = 0; i < theRadioButtons.length; i++) {
-                             const btn = theRadioButtons[i];
-                             if (btn.value == element) {
-                                 btn.checked = true;
-                             }
-                         }
-                     }
-                 }
-                 // console.log(key, element, theType);
-                 if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
-                     FanChartView.currentSettings[key] = element;
-                 }
-             }
-         }
+    FanChartView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+        // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+        // console.log(theCookieString);
+        const theCookieSettings = JSON.parse(theCookieString);
+        // console.log("JSON version of the settings are:", theCookieSettings);
+        for (const key in theCookieSettings) {
+            if (Object.hasOwnProperty.call(theCookieSettings, key)) {
+                const element = theCookieSettings[key];
+                let theType = "";
+                if (document.getElementById(key)) {
+                    theType = document.getElementById(key).type;
+                    if (theType == "checkbox") {
+                        document.getElementById(key).checked = element;
+                    } else if (theType == "number" || theType == "text") {
+                        document.getElementById(key).value = element;
+                    } else if (document.getElementById(key).classList.length > 0) {
+                        document.getElementById(key).value = element;
+                        theType = "optionSelect";
+                    } else {
+                        theType = document.getElementById(key);
+                    }
+                } else {
+                    theType = "NO HTML OBJECT";
+                    let theRadioButtons = document.getElementsByName(key + "_radio");
+                    if (theRadioButtons) {
+                        // console.log("Looks like there might be some RADIO BUTTONS here !", theRadioButtons.length);
+                        theType = "radio x " + theRadioButtons.length;
+                        for (let i = 0; i < theRadioButtons.length; i++) {
+                            const btn = theRadioButtons[i];
+                            if (btn.value == element) {
+                                btn.checked = true;
+                            }
+                        }
+                    }
+                }
+                // console.log(key, element, theType);
+                if (Object.hasOwnProperty.call(FanChartView.currentSettings, key)) {
+                    FanChartView.currentSettings[key] = element;
+                }
+            }
+        }
 
-         // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
-         // FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
-         //     theCookieSettings["general_options_badgeLabels_otherValue"];
-     };
+        // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
+        // FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
+        //     theCookieSettings["general_options_badgeLabels_otherValue"];
+    };
 
     FanChartView.theSVG = null; // to be assigned shortly
 
@@ -1432,7 +1432,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 console.log("Settings Changed:", FanChartView.currentSettings);
                 WTapps_Utils.setCookie("wtapps_fanchart", JSON.stringify(FanChartView.currentSettings), {
                     expires: 365,
-                }); 
+                });
                 // condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
                 // condLog("NEW settings are:", FanChartView.currentSettings);
 
@@ -1523,7 +1523,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 }
 
                 FanChartView.updateHighlightDescriptor();
-               
+
                 FanChartView.myAncestorTree.draw();
             } else {
                 // condLog("NOTHING happened according to SETTINGS OBJ");
@@ -1537,7 +1537,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
 
             let legendDIV = document.getElementById("legendDIV");
             let LegendTitle = document.getElementById("LegendTitle");
-                
+
             if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
                 LegendTitle.textContent = "Age at death";
             } else if (colourBy == "Family" && colour_options_specifyByFamily == "numSpouses") {
@@ -1563,7 +1563,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             } else if (colourBy == "DNAstatus") {
                 LegendTitle.textContent = "Parental status";
             }
-        }
+        };
 
         FanChartView.updateHighlightDescriptor = function () {
             let legendToggle = document.getElementById("legendASCII");
@@ -1581,11 +1581,13 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                             "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
                     }
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
-                    document.getElementById("highlightPeepsDescriptor").textContent = "mitochondrial DNA (mtDNA) ancestors";
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "mitochondrial DNA (mtDNA) ancestors";
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
                     document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
-                    document.getElementById("highlightPeepsDescriptor").textContent = "X, Y, mitochondrial DNA ancestors";
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "X, Y, mitochondrial DNA ancestors";
                     if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
                         document.getElementById("highlightPeepsDescriptor").innerHTML =
                             "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
@@ -1620,7 +1622,12 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                             aliveYYYYSelector.value;
                     } else {
                         document.getElementById("highlightPeepsDescriptor").textContent =
-                            "Alive on " + aliveDDSelector.value + " " + monthNames[aliveMMMSelector.value - 1] + " " + 1950;
+                            "Alive on " +
+                            aliveDDSelector.value +
+                            " " +
+                            monthNames[aliveMMMSelector.value - 1] +
+                            " " +
+                            1950;
                     }
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioText") {
                     let bioTextSelector = document.getElementById("highlight_options_bioText");
@@ -1632,8 +1639,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             } else {
                 document.getElementById("highlightDescriptor").style.display = "none";
             }
-
-        }
+        };
 
         // function updateCurrentSettingsBasedOnCookieValues(theCookieString){
         //     const theCookieSettings = JSON.parse(theCookieString);
@@ -1664,7 +1670,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         //                         if(btn.value == element) {
         //                             btn.checked = true;
         //                         }
-                                
+
         //                     }
         //                 }
         //             }
@@ -1679,8 +1685,6 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         //     FanChartView.currentSettings["general_options_badgeLabels_otherValue"] =
         //         theCookieSettings["general_options_badgeLabels_otherValue"];
         // }
-        
-        
 
         // NEXT STEPS : Assign thisVal to actual currentSetting object
         // NEXT STEPS : Transfer this function to SettingsObject class
@@ -1754,28 +1758,28 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         // SETUP some ON CHANGE events so that changing options INSIDE the Settings Panel
         // will immediately HIDE / SHOW other elements, as necessary
 
-         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
-         let showMarriageSelector = document.getElementById("date_options_showMarriage");
+        let bkgdClrSelector = document.getElementById("colour_options_colourBy");
+        let showMarriageSelector = document.getElementById("date_options_showMarriage");
         bkgdClrSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
         showMarriageSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
 
-         let colourizeColoursTab = document.getElementById("colour_options_colourizeRepeats");
-         let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
-         let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
-         colourizeColoursTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('colour');");
-         colourizeGeneralTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('general');");
-         colourizeHighlightTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('highlight');");
+        let colourizeColoursTab = document.getElementById("colour_options_colourizeRepeats");
+        let colourizeGeneralTab = document.getElementById("general_options_colourizeRepeats");
+        let colourizeHighlightTab = document.getElementById("highlight_options_colourizeRepeats");
+        colourizeColoursTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('colour');");
+        colourizeGeneralTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('general');");
+        colourizeHighlightTab.setAttribute("onchange", "FanChartView.colourizeJustChanged('highlight');");
 
-         let highlightSelector = document.getElementById("highlight_options_highlightBy");
-         highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
-         
+        let highlightSelector = document.getElementById("highlight_options_highlightBy");
+        highlightSelector.setAttribute("onchange", "FanChartView.optionElementJustChanged();");
+
         // CALL this FUNCTION to do the necessary tweaking to HIDE or SHOW elements
         // from inside the Settings panel, based on options chosen
         FanChartView.tweakSettingsToHideShowElements();
-            
+
         FanChartView.updateHighlightDescriptor();
         FanChartView.updateLegendTitle();
-        
+
         let showBadges = FanChartView.currentSettings["general_options_showBadges"];
         let stickerLegend = document.getElementById("stickerLegend");
 
@@ -1807,7 +1811,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         // if (bkgdClrSelector.value == "Location") {
         //     console.log("BKGD CLR ",bkgdClrSelector);
         //     fillOutFamilyStatsLocsForAncestors();
-            // updateLegendIfNeeded();
+        // updateLegendIfNeeded();
         // }
 
         condLog("TWEAKED the Highlights tab - how many categories I wonder ...", categoryList);
@@ -1817,7 +1821,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
         for (let genIndex = FanChartView.maxNumGens - 1; genIndex >= 0; genIndex--) {
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let ahnNum = index + 2 ** genIndex;
-                
+
                 if (ahnNum % 2 == 0 && ahnNum < 32) {
                     //             // "Portrait-ish" if you're looking at it from the spokes from the centre perspective
                     g.append("g")
@@ -1923,7 +1927,6 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             specFamSelectorBR.style.display = "inline-block";
         }
 
-
         if (FanChartView.currentSettings["colour_options_colourBy"] != "Location") {
             specLocSelector.style.display = "none";
             specLocSelectorLabel.style.display = "none";
@@ -1974,7 +1977,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
             aliveYYYYSelector.parentNode.parentNode.style.display = "none";
             aliveMMMSelector.parentNode.style.display = "none";
             aliveDDSelector.parentNode.style.display = "none";
-        } else  {
+        } else {
             aliveYYYYSelector.parentNode.parentNode.style.display = "block";
             aliveMMMSelector.parentNode.style.display = "block";
             aliveDDSelector.parentNode.style.display = "block";
@@ -1982,14 +1985,12 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
 
         if (document.getElementById("date_options_showMarriage").checked == true) {
             document.getElementById("date_options_marriageBlend").parentNode.style.display = "inline-block";
-            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display =
-                "inline-block";
+            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display = "inline-block";
         } else {
             document.getElementById("date_options_marriageBlend").parentNode.style.display = "none";
-            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display =
-                "none";
+            document.getElementById("date_options_marriageAtTopEarlyGens").parentNode.style.display = "none";
         }
-    }
+    };
 
     // and here's that Function that does the minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
     FanChartView.optionElementJustChanged = function () {
@@ -1997,7 +1998,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
 
         // A SIMILAR FUNCTION to this one, but called initially when the app is loaded is this:
         //  tweakSettingsToHideShowElements();
-        
+
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
         let clrPaletteSelector = document.getElementById("colour_options_palette");
         let clrPaletteSelectorLabel = document.getElementById("colour_options_palette_label");
@@ -2666,7 +2667,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 // );
             }
         }
-    }
+    };
 
     function reverseCommaArray(arr, addSpace = false) {
         let newArr = [];
@@ -4906,64 +4907,6 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
     }
 
     /**
-     * Turn a wikitree Place into a location as per format string
-     */
-    function settingsStyleLocation(locString, formatString) {
-        // take the locString as input, and break it up into parts, separated by commas
-        // In an IDEAL world, the place name would be entered thusly:
-        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
-        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
-        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
-
-        if (formatString == "Full") {
-            // there's no need for doing any parsing --> just return the whole kit and caboodle
-            return locString;
-        }
-        if (!locString) {
-            return "";
-        }
-        var parts = locString.split(",");
-        if (parts.length == 1) {
-            // there's no way to reformat/parse a single item location
-            return locString;
-        }
-
-        let town = parts[0];
-        let country = parts[parts.length - 1];
-        let region = "";
-        if (parts.length > 2) {
-            region = parts[parts.length - 2];
-        }
-
-        if (formatString == "Country") {
-            return country;
-        } else if (formatString == "Region") {
-            if (region > "") {
-                return region;
-            } else {
-                return country;
-            }
-        } else if (formatString == "Town") {
-            return town;
-        } else if (formatString == "TownCountry") {
-            return town + ", " + country;
-        } else if (formatString == "RegionCountry") {
-            if (region > "") {
-                return region + ", " + country;
-            } else {
-                return town + ", " + country;
-            }
-        } else if (formatString == "TownRegion") {
-            if (region > "") {
-                return town + ", " + region;
-            } else {
-                return town + ", " + country;
-            }
-        }
-        return "";
-    }
-
-    /**
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
@@ -5097,7 +5040,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 FanChartView.currentSettings["place_options_showBirth"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     person.getBirthLocation(),
                     FanChartView.currentSettings["place_options_locationFormatBD"]
                 );
@@ -5121,7 +5064,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 FanChartView.currentSettings["place_options_showDeath"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     person.getDeathLocation(),
                     FanChartView.currentSettings["place_options_locationFormatBD"]
                 );
@@ -5175,7 +5118,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                     FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
                     FanChartView.currentSettings["place_options_showDeath"] == true
                 ) {
-                    thisPlace = settingsStyleLocation(
+                    thisPlace = Utils.settingsStyleLocation(
                         person.getDeathLocation(),
                         FanChartView.currentSettings["place_options_locationFormatBD"]
                     );
@@ -5215,7 +5158,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                         FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
                         FanChartView.currentSettings["place_options_showDeath"] == true
                     ) {
-                        thisPlace = settingsStyleLocation(
+                        thisPlace = Utils.settingsStyleLocation(
                             person.getDeathLocation(),
                             FanChartView.currentSettings["place_options_locationFormatBD"]
                         );
@@ -5388,7 +5331,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 FanChartView.currentSettings["place_options_showBirth"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     person.getBirthLocation(),
                     FanChartView.currentSettings["place_options_locationFormatBD"]
                 );
@@ -5423,7 +5366,7 @@ import { WTapps_Utils } from "./WTapps_Utils.js";
                 FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
                 FanChartView.currentSettings["place_options_showDeath"] == true
             ) {
-                thisPlace = settingsStyleLocation(
+                thisPlace = Utils.settingsStyleLocation(
                     person.getDeathLocation(),
                     FanChartView.currentSettings["place_options_locationFormatBD"]
                 );

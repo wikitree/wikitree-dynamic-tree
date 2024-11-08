@@ -13,6 +13,9 @@
  *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FandokuView, then calls a redraw
  */
+
+import { Utils } from "../shared/Utils.js";
+
 (function () {
     const APP_ID = "Fandoku";
     var originOffsetX = 500,
@@ -38,10 +41,10 @@
     const AboutUpdateDate = "30 July 2023";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
-    const AboutAdditionalProgrammers = "";// "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
+    const AboutAdditionalProgrammers = ""; // "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
     const AboutAssistants = "Rob Pavey";
     const AboutLatestG2G = "https://www.wikitree.com/g2g/1492414/play-the-new-fandoku-game";
-    const AboutHelpDoc =  "";//"https://www.wikitree.com/wiki/Space:Fan_Chart_app";
+    const AboutHelpDoc = ""; //"https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
     const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -660,39 +663,33 @@
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial FanDoku game is loading ...</DIV>' +
             '<DIV id=FeedbackArea style="text-align:center; background-color:papayawhip;">Feedback and Directions and Encouragement will go here</DIV>';
 
-            var aboutHTML =
-                '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
-                `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FandokuView.toggleAbout();">` +
-                SVGbtnCLOSE +
-                "</a></span>" +
-                "<H3>About the " +
-                FullAppName +
-                "</H3>" +
-                AboutPreamble +
-                "<br>" +
-                "<br>Last updated: " +
-                AboutUpdateDate +
-                "<br>App Icon: " +
-                AboutAppIcon +
-                "<br>Original Author: " +
-                AboutOriginalAuthor +
-                (AboutAdditionalProgrammers > ""
-                    ? "<br>Additional Programming by: " + AboutAdditionalProgrammers
-                    : "") +
-                "<br>Assistance and Code borrowed from: " +
-                AboutAssistants +
-                "<br/>" +
-                (AboutLatestG2G > ""
-                    ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>"
-                    : "") +
-                (AboutHelpDoc > ""
-                    ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>"
-                    : "") +
-                (AboutOtherApps > ""
-                    ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
-                    : "") +
-                "</div>";
-                        
+        var aboutHTML =
+            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FandokuView.toggleAbout();">` +
+            SVGbtnCLOSE +
+            "</a></span>" +
+            "<H3>About the " +
+            FullAppName +
+            "</H3>" +
+            AboutPreamble +
+            "<br>" +
+            "<br>Last updated: " +
+            AboutUpdateDate +
+            "<br>App Icon: " +
+            AboutAppIcon +
+            "<br>Original Author: " +
+            AboutOriginalAuthor +
+            (AboutAdditionalProgrammers > "" ? "<br>Additional Programming by: " + AboutAdditionalProgrammers : "") +
+            "<br>Assistance and Code borrowed from: " +
+            AboutAssistants +
+            "<br/>" +
+            (AboutLatestG2G > "" ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>" : "") +
+            (AboutHelpDoc > "" ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>" : "") +
+            (AboutOtherApps > ""
+                ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
+                : "") +
+            "</div>";
+
         var settingsHTML = "";
         // '<div id=settingsDIV style="display:inline-block; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">'+
         // '<span style="color:red; align:left"><A onclick="FandokuView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' ;
@@ -1180,12 +1177,12 @@
                 { ancestors: newLevel + 1, minGeneration: newLevel }
             ).then(function (result) {
                 if (result) {
-                    condLog("loadAncestorsAtLevel",newLevel, result);
+                    condLog("loadAncestorsAtLevel", newLevel, result);
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
                     FandokuView.theAncestors = result[2];
                     condLog("theAncestors:", FandokuView.theAncestors);
                     // condLog("person with which to drawTree:", person);
-                    for ( index in FandokuView.theAncestors) {
+                    for (let index in FandokuView.theAncestors) {
                         thePeopleList.add(FandokuView.theAncestors[index]);
                     }
                     FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
@@ -1680,7 +1677,7 @@
             condLog("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
             let thePeep = thePeopleList[FandokuView.myAhnentafel.list[ahnNum]];
             if (thePeep) {
-                theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
+                let theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
                 if (FandokuView.currentSettings["rules_options_showLifeSpan"] == true) {
                     theNameDIVhtml += "<br/>(" + getLifeSpan(thePeep) + ")";
                 }
@@ -1925,45 +1922,48 @@
             }
             // condLog(".load person:",person);
 
-             // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
+            // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
             WikiTreeAPI.getPeople(
-                // (appId, IDs, fields, options = {}) 
-                APP_ID , id,
-                ["Id",
-                "Derived.BirthName",
-                "Derived.BirthNamePrivate",
-                "FirstName",
-                "MiddleInitial",
-                "MiddleName",
-                "RealName",
-                "Nicknames",
-                "Prefix",
-                "Suffix",
-                "LastNameAtBirth",
-                "LastNameCurrent",
-                "BirthDate",
-                "BirthLocation",
-                "DeathDate",
-                "DeathLocation",
-                "Mother",
-                "Father",
-                "Children",
-                "Parents",
-                "Spouses",
-                "Siblings",
-                "Photo",
-                "Name",
-                "Gender",
-                "Privacy"],
+                // (appId, IDs, fields, options = {})
+                APP_ID,
+                id,
+                [
+                    "Id",
+                    "Derived.BirthName",
+                    "Derived.BirthNamePrivate",
+                    "FirstName",
+                    "MiddleInitial",
+                    "MiddleName",
+                    "RealName",
+                    "Nicknames",
+                    "Prefix",
+                    "Suffix",
+                    "LastNameAtBirth",
+                    "LastNameCurrent",
+                    "BirthDate",
+                    "BirthLocation",
+                    "DeathDate",
+                    "DeathLocation",
+                    "Mother",
+                    "Father",
+                    "Children",
+                    "Parents",
+                    "Spouses",
+                    "Siblings",
+                    "Photo",
+                    "Name",
+                    "Gender",
+                    "Privacy",
+                ],
                 {
-                    ancestors:5
+                    ancestors: 5,
                 }
             ).then(function (result) {
                 condLog("load", id, result);
                 FandokuView.theAncestors = result[2];
                 condLog("theAncestors:", FandokuView.theAncestors);
                 condLog("person with which to drawTree:", person);
-                for ( index in  FandokuView.theAncestors) {
+                for (let index in FandokuView.theAncestors) {
                     const element = FandokuView.theAncestors[index];
                     thePeopleList.add(FandokuView.theAncestors[index]);
                 }
@@ -2551,7 +2551,6 @@
         }
 
         let zoomFactor = Math.max(1, 1 / FandokuView.currentScaleFactor);
- 
 
         var popup = this.svg
             .append("g")
@@ -2765,62 +2764,6 @@
     }
 
     /**
-     * Turn a wikitree Place into a location as per format string
-     */
-    function settingsStyleLocation(locString, formatString) {
-        // take the locString as input, and break it up into parts, separated by commas
-        // In an IDEAL world, the place name would be entered thusly:
-        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
-        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
-        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
-
-        if (formatString == "Full") {
-            // there's no need for doing any parsing --> just return the whole kit and caboodle
-            return locString;
-        }
-
-        var parts = locString.split(",");
-        if (parts.length == 1) {
-            // there's no way to reformat/parse a single item location
-            return locString;
-        }
-
-        let town = parts[0];
-        let country = parts[parts.length - 1];
-        let region = "";
-        if (parts.length > 2) {
-            region = parts[parts.length - 2];
-        }
-
-        if (formatString == "Country") {
-            return country;
-        } else if (formatString == "Region") {
-            if (region > "") {
-                return region;
-            } else {
-                return country;
-            }
-        } else if (formatString == "Town") {
-            return town;
-        } else if (formatString == "TownCountry") {
-            return town + ", " + country;
-        } else if (formatString == "RegionCountry") {
-            if (region > "") {
-                return region + ", " + country;
-            } else {
-                return town + ", " + country;
-            }
-        } else if (formatString == "TownRegion") {
-            if (region > "") {
-                return town + ", " + region;
-            } else {
-                return town + ", " + country;
-            }
-        }
-        return "";
-    }
-
-    /**
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
@@ -2835,7 +2778,7 @@
                     return year;
                 }
                 if (month) {
-                    month2digits = month;
+                    let month2digits = month;
                     if (month < 10) {
                         month2digits = "0" + month;
                     }
@@ -2897,7 +2840,7 @@
             //     FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
             //     FandokuView.currentSettings["place_options_showBirth"] == true
             // ) {
-            thisPlace = settingsStyleLocation(
+            thisPlace = Utils.settingsStyleLocation(
                 person.getBirthLocation(),
                 "Full"
                 // FandokuView.currentSettings["place_options_locationFormatBD"]
@@ -2926,7 +2869,7 @@
             //     FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
             //     FandokuView.currentSettings["place_options_showDeath"] == true
             // ) {
-            thisPlace = settingsStyleLocation(
+            thisPlace = Utils.settingsStyleLocation(
                 person.getDeathLocation(),
                 "Full"
                 // FandokuView.currentSettings["place_options_locationFormatBD"]
@@ -3091,10 +3034,10 @@
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
-        PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
-        RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
-        RedsArray = [
+        let PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+        let RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+        let GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        let RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
             "#FFC0C0",
@@ -3114,7 +3057,7 @@
             "#FFE8E0",
             "#FFF8F0",
         ];
-        BluesArray = [
+        let BluesArray = [
             "#A0A0FF",
             "#B0B0FF",
             "#C0C0FF",
@@ -3134,7 +3077,7 @@
             "#E0E8FF",
             "#F0F8FF",
         ];
-        GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+        let GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
 
         let AllColoursArrays = [
             ColourArray,
