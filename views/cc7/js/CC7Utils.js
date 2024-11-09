@@ -1,4 +1,5 @@
 import { Settings } from "./Settings.js";
+import { Utils } from "../../shared/Utils.js";
 export class CC7Utils {
     static CC7_CONTAINER_ID = "cc7Container";
 
@@ -94,7 +95,7 @@ export class CC7Utils {
         }
         if (!val && Settings.current["missingFamily_options_noNoSpouses"]) {
             // no more spouses flag is not set
-            val = person.DataStatus.Spouse != "blank";
+            val = person.DataStatus?.Spouse != "blank";
         }
         if (!val && Settings.current["missingFamily_options_noParents"]) {
             // no father or mother
@@ -120,9 +121,9 @@ export class CC7Utils {
             aPerson.Missing.push("Mother");
         }
 
-        const [age, ,] = CC7Utils.ageAtDeath(aPerson);
+        const atDeath = Utils.ageAtDeath(aPerson);
         if (
-            (age === "" || age > 15) &&
+            (atDeath.age === "" || atDeath.age > 15) &&
             ((aPerson.DataStatus?.Spouse != "known" && aPerson.DataStatus?.Spouse != "blank") ||
                 aPerson.NoChildren != "1")
         ) {
@@ -133,90 +134,6 @@ export class CC7Utils {
                 aPerson.Missing.push("Children");
             }
         }
-    }
-
-    /**
-     * Returns an array of 3 values associated with the given person's age at death.
-     * @param {*} person a person record retrieved from the API
-     * @param {*} showStatus if true, prepends ~, <, or > to the age at death depending on whether it is uncertain,
-     *            less than, or greater than the calculated age. No status is added if the age could not be calculated.
-     * @returns [age, annotation, annotatedAge] where:
-     *          age - "" if no age could be determined, otherwise the calculated age at death of the person. If it is
-     *                negative (due to bad dates or e.g. birth = 1871-07-03 and death = 1971), 0 is returned.
-     *          annotation - one of the symbols ~, <, >, or the empty string depending whether the age is uncertain (~),
-     *                or is at most the given number (<), or at least the given number (>) or is accurate (empty string).
-     *          annotatedAge - the concatenation of annotation and age.
-     */
-    static ageAtDeath(person) {
-        // ages
-        let about = "";
-        let diedAged = "";
-        if (person.BirthDate != undefined) {
-            if (
-                person["BirthDate"].length == 10 &&
-                person["BirthDate"] != "0000-00-00" &&
-                person["DeathDate"].length == 10 &&
-                person["DeathDate"] != "0000-00-00"
-            ) {
-                const obDateBits = person["BirthDate"].split("-");
-                if (obDateBits[1] == "00") {
-                    obDateBits[1] = "06";
-                    obDateBits[2] = "15";
-                    about = "~";
-                } else if (obDateBits[2] == "00") {
-                    obDateBits[2] = "15";
-                    about = "~";
-                }
-                const odDateBits = person["DeathDate"].split("-");
-                if (odDateBits[1] == "00") {
-                    odDateBits[1] = "06";
-                    odDateBits[2] = "15";
-                    about = "~";
-                } else if (odDateBits[2] == "00") {
-                    odDateBits[2] = "15";
-                    about = "~";
-                }
-
-                diedAged = CC7Utils.getAge(
-                    new Date(obDateBits[0], obDateBits[1] - 1, obDateBits[2]),
-                    new Date(odDateBits[0], odDateBits[1] - 1, odDateBits[2])
-                );
-                if (diedAged < 0) {
-                    // Make provision for e.g. birth = 1871-07-03 and death = 1971
-                    // (or just plain bad dates)
-                    diedAged = 0;
-                }
-            }
-        }
-
-        const status = person?.DataStatus;
-        if (status && diedAged !== "") {
-            //    Status of
-            // birthDate \  deathDate
-            //            \  . | before | after
-            //             +---+--------+-------
-            //         .   | . |   <    |  >
-            //      before | > |   ~    |  >        <---- about symbol
-            //       after | < |   <    |  ~
-            if (
-                (status.BirthDate == "before" && status.DeathDate == "before") ||
-                (status.BirthDate == "after" && status.DeathDate == "after")
-            ) {
-                about = "~";
-            } else if (
-                (status.DeathDate == "before" && status.BirthDate !== "before") ||
-                (status.BirthDate == "after" && status.DeathDate !== "after")
-            ) {
-                about = "<";
-            } else if (
-                (status.DeathDate == "after" && status.BirthDate !== "after") ||
-                (status.BirthDate == "before" && status.DeathDate !== "before")
-            ) {
-                about = ">";
-            }
-        }
-
-        return diedAged === "" ? ["", "", ""] : [diedAged, about, `${about}${diedAged}`];
     }
 
     static assignRelationshipsFor(person) {
@@ -235,14 +152,6 @@ export class CC7Utils {
         return string.substring(0, 1).toUpperCase() + string.substring(1);
     }
 
-    static fixBirthDate(person) {
-        let birthDate = CC7Utils.ymdFix(person.BirthDate);
-        if (birthDate == "" && person.BirthDateDecade) {
-            birthDate = person.BirthDateDecade || "";
-        }
-        person.fixedBirthDate = birthDate;
-    }
-
     static WANTED_NAME_PARTS = [
         "Prefix",
         "FirstName",
@@ -259,16 +168,6 @@ export class CC7Utils {
         return aPerson.Name.startsWith("Private")
             ? aPerson.LastNameAtBirth || "Private"
             : aName.withParts(CC7Utils.WANTED_NAME_PARTS);
-    }
-
-    static getAge(birth, death) {
-        // must be date objects
-        let age = death.getFullYear() - birth.getFullYear();
-        let m = death.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
-            age--;
-        }
-        return age;
     }
 
     static htmlEntities(str) {

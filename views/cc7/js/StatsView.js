@@ -1,4 +1,5 @@
 import { CC7Utils } from "./CC7Utils.js";
+import { Utils } from "../../shared/Utils.js";
 
 export class StatsView {
     static async build(gender = "") {
@@ -81,6 +82,7 @@ export class StatsView {
                     theSubset.set(+aPerson.Id, aPerson);
                 }
             }
+            // Ensure the root person is included
             if (!["missing-links", "complete"].includes(subset)) {
                 const root = window.people.get(window.rootId);
                 if (root) theSubset.set(+root.Id, root);
@@ -93,13 +95,16 @@ export class StatsView {
         $("#statsView").addClass("active");
 
         function calculateStatistics(subset, gender) {
-            let oldestAge = 0;
+            let sortingOldestAge = -9999;
+            let oldestAnnotatedAge;
             let oldestPerson = "";
 
-            let oldestMaleAge = 0;
+            let sortingOldestMaleAge = -9999;
+            let oldestMaleAnnotatedAge = 0;
             let oldestMalePerson = "";
 
-            let oldestFemaleAge = 0;
+            let sortingOldestFemaleAge = -9999;
+            let oldestFemaleAnnotatedAge = 0;
             let oldestFemalePerson = "";
 
             // fill array with the birth and death years of all family members in each generation
@@ -122,77 +127,59 @@ export class StatsView {
 
             // for each family member
             for (const familyMember of familyMembers.values()) {
-                // const familyMember = familyMembers[person];
-
                 const generation = familyMember["Meta"]["Degrees"];
                 const gender = familyMember["Gender"];
-                let birthYear;
-                let marriageYear;
-                if (familyMember.hasOwnProperty("BirthDate")) {
-                    birthYear = parseInt(familyMember["BirthDate"].substring(0, 4));
-                }
-                if (familyMember.hasOwnProperty("Spouses")) {
-                    if (familyMember.Spouses.length > 1) {
-                        // Check for multiple marriages
-                        familyMember.Spouses = familyMember.Spouses.filter(function (value) {
-                            return value.MarriageDate != "0000-00-00"; // Remove marriages without a date
-                        });
-                        // Ensure the 1st marriage element is the earliest one
-                        familyMember.Spouses.sort(function (a, b) {
-                            return parseInt(a.MarriageDate.substring(0, 4)) - parseInt(b.MarriageDate.substring(0, 4));
-                        });
-                    }
-                    if (familyMember.Spouses[0]) {
-                        marriageYear = parseInt(familyMember.Spouses[0]["MarriageDate"].substring(0, 4));
-                    }
-                }
+                const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
+                const annotatedAgeAtDeath = Utils.ageAtDeath(familyMember);
+                const adjustedMarriage = Utils.getTheDate(familyMember, "Marriage");
+                const marriageYear = parseInt(adjustedMarriage.date.substring(0, 4));
 
                 // increase the profile count of the proper generation
                 profileCounts[generation]++;
 
                 // add the birth year to the proper generation
-                let birthGeneration = birthYears[generation];
                 if (birthYear > 0) {
+                    const birthGeneration = birthYears[generation];
                     birthGeneration.push(birthYear);
                 }
 
                 // add the marriage age to the proper generation
                 let ageAtMarriage;
                 if (marriageYear && birthYear > 0) {
-                    ageAtMarriage = getAgeAtEvent(familyMember["BirthDate"], familyMember.Spouses[0]["MarriageDate"]);
-                }
-                let marriageAgeGeneration = marriageAges[generation];
-                if (ageAtMarriage != null) {
-                    marriageAgeGeneration.push(ageAtMarriage);
+                    ageAtMarriage = Utils.ageAtEvent(familyMember.adjustedBirth, adjustedMarriage);
+                    const marriageAgeGeneration = marriageAges[generation];
+                    marriageAgeGeneration.push(ageAtMarriage.age);
                 }
 
-                // add the death age to the proper generation
-                let ageAtDeath;
-                if (familyMember.hasOwnProperty("BirthDate") && familyMember.hasOwnProperty("DeathDate")) {
-                    ageAtDeath = getAgeAtEvent(familyMember["BirthDate"], familyMember["DeathDate"]);
-                }
-                const deathAgeGeneration = deathAges[generation];
-                if (ageAtDeath != null) {
-                    deathAgeGeneration.push(ageAtDeath);
-                }
+                // add the death age to the proper generation and find the oldest people
+                if (birthYear > 0 && annotatedAgeAtDeath.age != "") {
+                    // Calculte an age with decimal value
+                    const deathAgeGeneration = deathAges[generation];
+                    deathAgeGeneration.push(annotatedAgeAtDeath.age);
 
-                // check if this family member is the oldest one so far
-                if (ageAtDeath > oldestAge) {
-                    oldestAge = ageAtDeath;
-                    oldestPerson = `
-                    <a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
-                }
+                    // Check if this family member is the oldest one so far. We compare ages with decimal values
+                    // taking their certainty indicators into account
+                    const sortingAge = Utils.ageForSort(annotatedAgeAtDeath);
+                    const aName = new PersonName(familyMember);
+                    const displayName = CC7Utils.formDisplayName(familyMember, aName);
+                    const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${displayName}</a>`;
+                    if (sortingAge > sortingOldestAge) {
+                        sortingOldestAge = sortingAge;
+                        oldestAnnotatedAge = annotatedAgeAtDeath;
+                        oldestPerson = personRef;
+                    }
 
-                if ((gender == "Male") & (ageAtDeath > oldestMaleAge)) {
-                    oldestMaleAge = ageAtDeath;
-                    oldestMalePerson = `
-                    <a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
-                }
+                    if ((gender == "Male") & (sortingAge > sortingOldestMaleAge)) {
+                        sortingOldestMaleAge = sortingAge;
+                        oldestMaleAnnotatedAge = annotatedAgeAtDeath;
+                        oldestMalePerson = personRef;
+                    }
 
-                if (gender == "Female" && ageAtDeath > oldestFemaleAge) {
-                    oldestFemaleAge = ageAtDeath;
-                    oldestFemalePerson = `
-                    <a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${familyMember["BirthName"]}</a>`;
+                    if (gender == "Female" && sortingAge > sortingOldestFemaleAge) {
+                        sortingOldestFemaleAge = sortingAge;
+                        oldestFemaleAnnotatedAge = annotatedAgeAtDeath;
+                        oldestFemalePerson = personRef;
+                    }
                 }
             }
 
@@ -324,7 +311,7 @@ export class StatsView {
             }
             overallAvgLifeSpan = Math.round(lifeSpanSum / totalLifeSpans);
             let avgLifeSpanDiv = document.createElement("div");
-            avgLifeSpanDiv.innerHTML = `Average lifespan: ${overallAvgLifeSpan}`;
+            avgLifeSpanDiv.innerHTML = `Average lifespan: ${isNaN(overallAvgLifeSpan) ? "-" : overallAvgLifeSpan}`;
             results.appendChild(avgLifeSpanDiv);
 
             function getSubsetName() {
@@ -355,21 +342,25 @@ export class StatsView {
             // show oldest family member
             let subsetName = getSubsetName();
             let oldestRelativeDiv = document.createElement("div");
-            oldestRelativeDiv.innerHTML = `Oldest${subsetName}: ${oldestPerson}, ${Math.floor(oldestAge)} years old.`;
+            oldestRelativeDiv.innerHTML =
+                `Oldest${subsetName}: ` +
+                (oldestPerson ? `${oldestPerson}, ${oldestAnnotatedAge.annotatedAge} years old.` : "-");
             results.appendChild(oldestRelativeDiv);
 
             if (!gender) {
                 subsetName = subsetName.replace(/^ person/, "");
                 let oldestMaleRelativeDiv = document.createElement("div");
-                oldestMaleRelativeDiv.innerHTML = `Oldest male${subsetName}: ${oldestMalePerson}, ${Math.floor(
-                    oldestMaleAge
-                )} years old.`;
+                oldestMaleRelativeDiv.innerHTML =
+                    `Oldest male${subsetName}: ` +
+                    (oldestMalePerson ? `${oldestMalePerson}, ${oldestMaleAnnotatedAge.annotatedAge} years old.` : "-");
                 results.appendChild(oldestMaleRelativeDiv);
 
                 let oldestFemaleRelativeDiv = document.createElement("div");
-                oldestFemaleRelativeDiv.innerHTML = `Oldest female${subsetName}: ${oldestFemalePerson}, ${Math.floor(
-                    oldestFemaleAge
-                )} years old.`;
+                oldestFemaleRelativeDiv.innerHTML =
+                    `Oldest female${subsetName}: ` +
+                    (oldestFemalePerson
+                        ? `${oldestFemalePerson}, ${oldestFemaleAnnotatedAge.annotatedAge} years old.`
+                        : "-");
                 results.appendChild(oldestFemaleRelativeDiv);
             }
 
@@ -388,8 +379,6 @@ export class StatsView {
             function calculateChildrenSiblings() {
                 for (const person of familyMembers.values()) {
                     const generation = person.Meta.Degrees;
-
-                    // const person = relatives[relative].person;
                     childrenCounts[generation].push(person.Child.length);
                     siblingsCounts[generation].push(person.Sibling.length);
                 }
@@ -469,50 +458,6 @@ export class StatsView {
                 row.cells[10].innerHTML = stats.avgChildrenCounts[generation];
                 row.cells[11].innerHTML = stats.avgSiblingsCounts[generation];
             }
-        }
-
-        function getAgeAtEvent(birth, event) {
-            let birthDate;
-            let eventDate;
-
-            if (getMonth(birth) != "00" && getDay(birth) != "00") {
-                birthDate = new Date(birth);
-            } else if (getYear(birth) == "0000") {
-                birthDate = new Date(birth);
-            } else {
-                birthDate = new Date(getYear(birth));
-            }
-
-            if (getMonth(event) != "00" && getDay(event) != "00") {
-                eventDate = new Date(event);
-            } else if (getYear(event) == "0000") {
-                eventDate = new Date(event);
-            } else {
-                eventDate = new Date(getYear(event));
-            }
-
-            if (birthDate != "Invalid Date" && eventDate != "Invalid Date") {
-                let age = (eventDate - birthDate) / 31536000000;
-                if (age > 0) {
-                    return age;
-                } else {
-                    return null;
-                }
-            } else {
-                return null;
-            }
-        }
-
-        function getYear(date) {
-            return date.substring(0, 4);
-        }
-
-        function getMonth(date) {
-            return date.substring(5, 7);
-        }
-
-        function getDay(date) {
-            return date.substring(8, 10);
         }
 
         function sortByYear(a, b) {

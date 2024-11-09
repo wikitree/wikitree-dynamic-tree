@@ -107,22 +107,21 @@ export class PeopleTable {
             return [...keys]
                 .map((k) => {
                     const mPerson = window.people.get(k);
-                    if (typeof mPerson.fixedBirthDate === "undefined") {
-                        CC7Utils.fixBirthDate(mPerson);
-                    }
                     const degree = +mPerson.Meta.Degrees;
-                    return [+k, degree < 0 ? 100 : degree, mPerson.fixedBirthDate];
+                    // if we got a profile without a degree (i.e. -1, we got that at some point with private profiles)
+                    // then sort them last
+                    return [+k, degree < 0 ? 100 : degree, mPerson.adjustedBirth];
                 })
                 .sort((a, b) => {
                     if (a[1] == b[1]) {
-                        return collator.compare(a[2], b[2]);
+                        return collator.compare(a[2].date, b[2].date);
                     } else {
                         return a[1] - b[1];
                     }
                 });
         }
 
-        for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+        for (let [id, , adjustedBirth] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
             totalPeople++;
             const mPerson = window.people.get(id);
             if (mPerson.Hide) continue;
@@ -134,12 +133,7 @@ export class PeopleTable {
             // Ignore profiles not in the selected subset
             if (!CC7Utils.profileIsInSubset(mPerson, subset)) continue;
 
-            let deathDate = CC7Utils.ymdFix(mPerson.DeathDate);
-            if (deathDate == "") {
-                if (mPerson.deathDateDecade) {
-                    deathDate = mPerson.DeathDateDecade;
-                }
-            }
+            const ajustedDeath = mPerson.adjustedDeath;
             let birthLocation = mPerson.BirthLocation;
             let birthLocationReversed = "";
             if (birthLocation == null || typeof birthLocation == "undefined") {
@@ -179,30 +173,8 @@ export class PeopleTable {
                 firstName = mPerson.RealName;
             }
 
-            if (birthDate == "unknown") {
-                birthDate = "";
-            }
-            if (deathDate == "unknown") {
-                deathDate = "";
-            }
-
-            let dBirthDate;
-            if (mPerson.BirthDate) {
-                dBirthDate = mPerson.BirthDate.replaceAll("-", "");
-            } else if (mPerson.BirthDateDecade && mPerson.BirthDateDecade != "unknown") {
-                dBirthDate = PeopleTable.getApproxDate2(mPerson.BirthDateDecade).Date.replace("-", "").padEnd(8, "0");
-            } else {
-                dBirthDate = "00000000";
-            }
-
-            let dDeathDate;
-            if (mPerson.DeathDate) {
-                dDeathDate = mPerson.DeathDate.replaceAll("-", "");
-            } else if (mPerson.DeathDateDecade && mPerson.DeathDateDecade != "unknown") {
-                dDeathDate = PeopleTable.getApproxDate2(mPerson.DeathDateDecade).Date.replace("-", "").padEnd(8, "0");
-            } else {
-                dDeathDate = "00000000";
-            }
+            const dBirthDate = adjustedBirth.date.replaceAll("-", "");
+            const dDeathDate = ajustedDeath.date.replaceAll("-", "");
 
             if (firstName == undefined) {
                 firstName = "Private";
@@ -281,41 +253,21 @@ export class PeopleTable {
                     created = "<td class='created aDate'></td>";
                 }
 
-                let [ageAtDeath, annotation, annotatedAgeAtDeath] = CC7Utils.ageAtDeath(mPerson);
-
-                if (ageAtDeath === "") {
-                    ageAtDeath = -1;
-                } else {
-                    switch (annotation) {
-                        case "<":
-                            ageAtDeath -= 0.1;
-                            break;
-
-                        case "~":
-                            ageAtDeath += 0.1;
-                            break;
-
-                        case ">":
-                            ageAtDeath += 0.2;
-                            break;
-
-                        default:
-                            break;
-                    }
-                    if (ageAtDeath < 5) {
+                const atDeath = Utils.ageAtDeath(mPerson);
+                if (atDeath.age != "") {
+                    if (atDeath.age < 5) {
                         diedYoung = true;
                         diedVeryYoung = true;
                         diedYoungIcon = Settings.current["icons_options_veryYoung"];
                         diedYoungTitle = "Died before age 5";
-                    } else if (ageAtDeath < 16) {
+                    } else if (atDeath.age < 16) {
                         diedYoung = true;
                         diedYoungIcon = Settings.current["icons_options_young"];
                         diedYoungTitle = "Died before age 16";
                     }
                 }
-
-                ageAtDeathCell = "<td class='age-at-death'>" + annotatedAgeAtDeath + "</td>";
-                dAgeAtDeath = "data-age-at-death='" + ageAtDeath + "'";
+                ageAtDeathCell = "<td class='age-at-death'>" + atDeath.annotatedAge + "</td>";
+                dAgeAtDeath = "data-age-at-death='" + Utils.ageForSort(atDeath) + "'";
 
                 if (mPerson.Touched) {
                     touched =
@@ -475,11 +427,11 @@ export class PeopleTable {
                     "'>" +
                     mPerson.LastNameCurrent +
                     "</a></td><td class='aDate birthdate'>" +
-                    birthDate +
+                    adjustedBirth.display +
                     "</td><td class='location birthlocation'>" +
                     CC7Utils.htmlEntities(birthLocation) +
                     "</td><td  class='aDate deathdate'>" +
-                    deathDate +
+                    ajustedDeath.display +
                     "</td><td class='location deathlocation'>" +
                     CC7Utils.htmlEntities(deathLocation) +
                     "</td>" +
@@ -1264,10 +1216,6 @@ export class PeopleTable {
     }
 
     static updateClearFiltersButtonVisibility() {
-        // let anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
-        //     (input) => input.value.trim() !== ""
-        // );
-        // if ($("#cc7PBFilter").select2("data")[0].id != "all") anyFilterHasText = true;
         const clearFiltersButton = document.querySelector("#clearTableFiltersButton");
         clearFiltersButton.style.display = PeopleTable.anyFilterActive() ? "inline-block" : "none";
     }
@@ -1283,101 +1231,60 @@ export class PeopleTable {
         PeopleTable.updateClearFiltersButtonVisibility();
     }
 
-    static getApproxDate(theDate) {
-        let approx = false;
-        let aDate;
-        if (theDate.match(/0s$/) != null) {
-            aDate = theDate.replace(/0s/, "5");
-            approx = true;
-        } else {
-            const bits = theDate.split("-");
-            if (theDate.match(/00\-00$/) != null) {
-                aDate = bits[0] + "-07-02";
-                approx = true;
-            } else if (theDate.match(/-00$/) != null) {
-                aDate = bits[0] + "-" + bits[1] + "-" + "16";
-                approx = true;
-            } else {
-                aDate = theDate;
-            }
-        }
-        return { Date: aDate, Approx: approx };
-    }
-
-    static getApproxDate2(theDate) {
-        let approx = false;
-        let aDate;
-        if (theDate.match(/0s$/) != null) {
-            aDate = theDate.replace(/0s/, "5");
-            approx = true;
-        } else {
-            const bits = theDate.split("-");
-            if (theDate.match(/00\-00$/) != null || !bits[1]) {
-                aDate = bits[0] + "-07-02";
-                approx = true;
-            } else if (theDate.match(/-00$/) != null) {
-                aDate = bits[0] + "-" + bits[1] + "-" + "16";
-                approx = true;
-            } else {
-                aDate = theDate;
-            }
-        }
-        return { Date: aDate, Approx: approx };
-    }
-
     static #BMD_EVENTS = ["Birth", "Death", "Marriage"];
 
     static getTimelineEvents(tPerson) {
         const family = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
         const timeLineEvent = [];
-        const startDate = PeopleTable.getTheYear(tPerson.BirthDate, "Birth", tPerson);
 
-        // Get all BMD events for each family member
-        family.forEach(function (aPerson) {
+        // Get birth, marriage, and death (BMD) events for each family member.
+        // Since this is a timeline we only add events that have known dates.
+        family.forEach(function (evPerson) {
             PeopleTable.#BMD_EVENTS.forEach(function (ev) {
-                let evDate = "";
+                let evDate = { date: "", annotation: "" };
                 let evLocation;
-                if (aPerson[ev + "Date"]) {
-                    evDate = aPerson[ev + "Date"];
-                    evLocation = aPerson[ev + "Location"];
-                } else if (aPerson[ev + "DateDecade"]) {
-                    evDate = aPerson[ev + "DateDecade"];
-                    evLocation = aPerson[ev + "Location"];
-                }
                 if (ev == "Marriage") {
-                    const marriageData = tPerson.Marriage[aPerson.Id];
-                    if (marriageData && marriageData[ev + "Date"]) {
-                        evDate = marriageData[ev + "Date"];
+                    // We already have the sorted marriages and we only collect marriages for which we have dates and have
+                    // loaded the profile (it won't be present if it is in the next, not retrieved CC)
+                    // TODO:
+                    //  . collect all the marriage events. Currently we do not collect marriages for people in the outer ring
+                    //    because their partners are typically in the next ring and therefore we do not know who they are.
+                    //    The Marriage field is only populated for known people, while 'Spouses' contain marriage dates and
+                    //    IDs, but in random order. so we could say "marriage to nth spouse" for example.
+                    //    Also, currently we do not collect any marriage dates of a spouse with possible other spouses,
+                    //    but we probably could and probably should.  The same goes for marriages of parents to other spouses.
+                    const marriageData = tPerson.Marriage[evPerson.Id];
+                    if (marriageData) {
+                        evDate = Utils.formAdjustedDate(
+                            marriageData.MarriageDate,
+                            "",
+                            marriageData.DataStatus?.MarriageDate
+                        );
                         evLocation = marriageData[ev + "Location"];
                     }
+                } else {
+                    evDate = evPerson[`adjusted${ev}`];
+                    evLocation = evPerson[ev + "Location"];
                 }
-                if (aPerson.Relation) {
-                    const theRelation = aPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
-                    const gender = aPerson.Gender;
-                    if (theRelation == "Child") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "son", "daughter", "child");
-                    } else if (theRelation == "Sibling") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "brother", "sister", "sibling");
-                    } else if (theRelation == "Parent") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "father", "mother", "parent");
-                    } else if (theRelation == "Spouse") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "husband", "wife", "spouse");
-                    } else {
-                        aPerson.Relation = theRelation;
+                if (evDate.date != "" && evDate.date != "0000-00-00" && CC7Utils.isOK(evDate.date)) {
+                    if (evPerson.Relation) {
+                        const theRelation = evPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
+                        const gender = evPerson.Gender;
+                        if (theRelation == "Child") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "son", "daughter", "child");
+                        } else if (theRelation == "Sibling") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "brother", "sister", "sibling");
+                        } else if (theRelation == "Parent") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "father", "mother", "parent");
+                        } else if (theRelation == "Spouse") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "husband", "wife", "spouse");
+                        } else {
+                            evPerson.Relation = theRelation;
+                        }
                     }
-                }
-                if (evDate != "" && evDate != "0000" && CC7Utils.isOK(evDate)) {
-                    let fName = aPerson.FirstName;
-                    if (!aPerson.FirstName) {
-                        fName = aPerson.RealName;
-                    }
-                    let bDate = aPerson.BirthDate;
-                    if (!aPerson.BirthDate) {
-                        bDate = aPerson.BirthDateDecade;
-                    }
-                    let mBio = aPerson.bio;
-                    if (!aPerson.bio) {
-                        mBio = "";
+                    let fName = evPerson.FirstName;
+                    if (!evPerson.FirstName) {
+                        fName = evPerson.RealName;
                     }
                     if (evLocation == undefined) {
                         evLocation = "";
@@ -1386,126 +1293,105 @@ export class PeopleTable {
                         eventDate: evDate,
                         location: evLocation,
                         firstName: fName,
-                        LastNameAtBirth: aPerson.LastNameAtBirth,
-                        lastNameCurrent: aPerson.LastNameCurrent,
-                        birthDate: bDate,
-                        relation: aPerson.Relation,
-                        bio: mBio,
+                        LastNameAtBirth: evPerson.LastNameAtBirth,
+                        lastNameCurrent: evPerson.LastNameCurrent,
+                        birthDate: evPerson.adjustedBirth,
+                        relation: evPerson.Relation,
                         evnt: ev,
-                        wtId: aPerson.Name,
+                        wtId: evPerson.Name,
                     });
                 }
             });
-            // Look for military events in bios
-            if (aPerson.bio) {
-                const tlTemplates = aPerson.bio.match(/\{\{[^]*?\}\}/gm);
-                if (tlTemplates != null) {
-                    const warTemplates = [
-                        "Creek War",
-                        "French and Indian War",
-                        "Iraq War",
-                        "Korean War",
-                        "Mexican-American War",
-                        "Spanish-American War",
-                        "The Great War",
-                        "US Civil War",
-                        "Vietnam War",
-                        "War in Afghanistan",
-                        "War of 1812",
-                        "World War II",
-                    ];
-                    tlTemplates.forEach(function (aTemp) {
-                        let evDate = "";
-                        let evLocation = "";
-                        let ev = "";
-                        let evDateStart = "";
-                        let evDateEnd = "";
-                        let evStart;
-                        let evEnd;
-                        aTemp = aTemp.replaceAll(/[{}]/g, "");
-                        const bits = aTemp.split("|");
-                        const templateTitle = bits[0].replaceAll(/\n/g, "").trim();
-                        bits.forEach(function (aBit) {
-                            const aBitBits = aBit.split("=");
-                            const aBitField = aBitBits[0].trim();
-                            if (aBitBits[1]) {
-                                const aBitFact = aBitBits[1].trim().replaceAll(/\n/g, "");
-                                if (warTemplates.includes(templateTitle) && CC7Utils.isOK(aBitFact)) {
-                                    if (aBitField == "startdate") {
-                                        evDateStart = PeopleTable.dateToYMD(aBitFact);
-                                        evStart = "joined " + templateTitle;
-                                    }
-                                    if (aBitField == "enddate") {
-                                        evDateEnd = PeopleTable.dateToYMD(aBitFact);
-                                        evEnd = "left " + templateTitle;
-                                    }
-                                    if (aBitField == "enlisted") {
-                                        evDateStart = PeopleTable.dateToYMD(aBitFact);
-                                        evStart = "enlisted for " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "discharged") {
-                                        evDateEnd = PeopleTable.dateToYMD(aBitFact);
-                                        evEnd = "discharged from " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "branch") {
-                                        evLocation = aBitFact;
-                                    }
+            // Look for military events in templates
+            const tlTemplates = evPerson.Templates;
+            if (tlTemplates && tlTemplates.length > 0) {
+                const warTemplates = [
+                    "Creek War",
+                    "French and Indian War",
+                    "Iraq War",
+                    "Korean War",
+                    "Mexican-American War",
+                    "Spanish-American War",
+                    "The Great War",
+                    "US Civil War",
+                    "Vietnam War",
+                    "War in Afghanistan",
+                    "War of 1812",
+                    "World War II",
+                ];
+                tlTemplates.forEach(function (aTemp) {
+                    let evLocation = "";
+                    let evDateStart = "";
+                    let evDateEnd = "";
+                    let evStart;
+                    let evEnd;
+                    const templateTitle = aTemp["name"];
+                    if (templateTitle && !warTemplates.includes(templateTitle)) return;
+
+                    let the = "the ";
+                    const lowerTitle = templateTitle.toLowerCase();
+                    if (lowerTitle.startsWith("the") || lowerTitle.startsWith("world")) the = "";
+                    const params = aTemp["params"];
+                    if (params) {
+                        Object.entries(params).forEach(([param, value]) => {
+                            const paramValue = value?.trim()?.replaceAll(/\n/g, "");
+                            // These dates are not necessarily in YYYY-MM-DD format so we need to convert them first
+                            if (CC7Utils.isOK(paramValue)) {
+                                if (param == "startdate") {
+                                    evDateStart = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evStart = `joined ${the}` + templateTitle;
+                                } else if (param == "enddate") {
+                                    evDateEnd = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evEnd = `left ${the}` + templateTitle;
+                                } else if (param == "enlisted") {
+                                    evDateStart = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evStart = `enlisted in ${the}` + templateTitle.replace("american", "American");
+                                } else if (param == "discharged") {
+                                    evDateEnd = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evEnd = `discharged from ${the}` + templateTitle.replace("american", "American");
+                                } else if (param == "branch") {
+                                    evLocation = paramValue;
                                 }
                             }
                         });
-                        if (CC7Utils.isOK(evDateStart)) {
-                            evDate = evDateStart;
-                            ev = evStart;
-                            timeLineEvent.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: aPerson.FirstName,
-                                LastNameAtBirth: aPerson.LastNameAtBirth,
-                                lastNameCurrent: aPerson.LastNameCurrent,
-                                birthDate: aPerson.BirthDate,
-                                relation: aPerson.Relation,
-                                bio: aPerson.bio,
-                                evnt: ev,
-                                wtId: aPerson.Name,
-                            });
-                        }
-                        if (CC7Utils.isOK(evDateEnd)) {
-                            evDate = evDateEnd;
-                            ev = evEnd;
-                            timeLineEvent.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: aPerson.FirstName,
-                                LastNameAtBirth: aPerson.LastNameAtBirth,
-                                lastNameCurrent: aPerson.LastNameCurrent,
-                                birthDate: aPerson.BirthDate,
-                                relation: aPerson.Relation,
-                                bio: aPerson.bio,
-                                evnt: ev,
-                                wtId: aPerson.Name,
-                            });
-                        }
-                    });
-                }
+                    }
+                    if (evDateStart && CC7Utils.isOK(evDateStart.date)) {
+                        timeLineEvent.push({
+                            eventDate: evDateStart,
+                            location: evLocation,
+                            firstName: evPerson.FirstName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.Relation,
+                            evnt: evStart,
+                            wtId: evPerson.Name,
+                        });
+                    }
+                    if (evDateEnd && CC7Utils.isOK(evDateEnd.date)) {
+                        timeLineEvent.push({
+                            eventDate: evDateEnd,
+                            location: evLocation,
+                            firstName: evPerson.FirstName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.Relation,
+                            evnt: evEnd,
+                            wtId: evPerson.Name,
+                        });
+                    }
+                });
             }
         });
         return timeLineEvent;
     }
 
-    static getTheYear(theDate, ev, person) {
-        if (!CC7Utils.isOK(theDate)) {
-            if (ev == "Birth" || ev == "Death") {
-                theDate = person[ev + "DateDecade"];
-            }
-        }
-        let theDateM = theDate?.match(/[0-9]{4}/);
-        if (CC7Utils.isOK(theDateM)) {
-            return parseInt(theDateM[0]);
-        } else {
-            return false;
-        }
-    }
-
+    /**
+     * Attempt to convert a user entered date to YYYY-MM-DD if necessary
+     * @param {*} enteredDate
+     * @returns
+     */
     static dateToYMD(enteredDate) {
         let enteredD;
         if (enteredDate.match(/[0-9]{3,4}\-[0-9]{2}\-[0-9]{2}/)) {
@@ -1526,38 +1412,27 @@ export class PeopleTable {
 
             if (enteredDate.match(/jan/i) != null) {
                 eDMonth = "01";
-            }
-            if (enteredDate.match(/feb/i) != null) {
+            } else if (enteredDate.match(/feb/i) != null) {
                 eDMonth = "02";
-            }
-            if (enteredDate.match(/mar/i) != null) {
+            } else if (enteredDate.match(/mar/i) != null) {
                 eDMonth = "03";
-            }
-            if (enteredDate.match(/apr/i) != null) {
+            } else if (enteredDate.match(/apr/i) != null) {
                 eDMonth = "04";
-            }
-            if (enteredDate.match(/may/i) != null) {
+            } else if (enteredDate.match(/may/i) != null) {
                 eDMonth = "05";
-            }
-            if (enteredDate.match(/jun/i) != null) {
+            } else if (enteredDate.match(/jun/i) != null) {
                 eDMonth = "06";
-            }
-            if (enteredDate.match(/jul/i) != null) {
+            } else if (enteredDate.match(/jul/i) != null) {
                 eDMonth = "07";
-            }
-            if (enteredDate.match(/aug/i) != null) {
+            } else if (enteredDate.match(/aug/i) != null) {
                 eDMonth = "08";
-            }
-            if (enteredDate.match(/sep/i) != null) {
+            } else if (enteredDate.match(/sep/i) != null) {
                 eDMonth = "09";
-            }
-            if (enteredDate.match(/oct/i) != null) {
+            } else if (enteredDate.match(/oct/i) != null) {
                 eDMonth = "10";
-            }
-            if (enteredDate.match(/nov/i) != null) {
+            } else if (enteredDate.match(/nov/i) != null) {
                 eDMonth = "11";
-            }
-            if (enteredDate.match(/dec/i) != null) {
+            } else if (enteredDate.match(/dec/i) != null) {
                 eDMonth = "12";
             }
             enteredD = eDYear + "-" + eDMonth + "-" + eDDate;
@@ -1566,6 +1441,8 @@ export class PeopleTable {
     }
 
     static buildTimeline(tPerson, timelineEvents) {
+        // tPerson is the person for which a timeline is being constructed
+        const RIBBON = "&#x1F397;";
         const tPersonFirstName = tPerson.FirstName || "(Private)";
         const timelineTable = $(
             `<div class='timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
@@ -1574,57 +1451,32 @@ export class PeopleTable {
                 "<th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>" +
                 `</thead><tbody></tbody></table></div>`
         );
-        let bpDead = false;
-        let bpDeadAge;
+        let tlpDead = false;
+        let tlpDeadAge;
         timelineEvents.forEach(function (aFact) {
             // Add events to the table
             const isEventForBioPerson = aFact.wtId == tPerson.Name;
-            const showDate = aFact.eventDate.replace("-00-00", "").replace("-00", "");
-            const tlDate = "<td class='tlDate'>" + showDate + "</td>";
-            let aboutAge = "";
-            let bpBdate = tPerson.BirthDate;
-            if (!tPerson.BirthDate) {
-                bpBdate = tPerson.BirthDateDecade.replace(/0s/, "5");
-            }
-            let hasBdate = true;
-            if (bpBdate == "0000-00-00") {
-                hasBdate = false;
-            }
-            const bpBD = PeopleTable.getApproxDate(bpBdate);
-            const evDate = PeopleTable.getApproxDate(aFact.eventDate);
-            const aPersonBD = PeopleTable.getApproxDate(aFact.birthDate);
-            if (bpBD.Approx == true) {
-                aboutAge = "~";
-            }
-            if (evDate.Approx == true) {
-                aboutAge = "~";
-            }
-            const bpAgeAtEvent = CC7Utils.getAge(new Date(bpBD.Date), new Date(evDate.Date));
-            let bpAge;
-            if (bpAgeAtEvent == 0) {
-                bpAge = "";
-            } else if (bpAgeAtEvent < 0) {
-                bpAge = `–${-bpAgeAtEvent}`;
+            const tlDate = "<td class='tlDate'>" + aFact.eventDate.display + "</td>";
+            const tlPersonBirth = tPerson.adjustedBirth;
+            const eventDate = aFact.eventDate;
+            const evPersonBirth = aFact.birthDate;
+            const tlpAgeAtEvent = Utils.ageAtEvent(tlPersonBirth, eventDate);
+            let renderedAgeAtEvent = "";
+
+            if (tlpDead == true) {
+                const theDiff = tlpAgeAtEvent.age - tlpDeadAge.age;
+                const diffAnnotation = Utils.statusOfDiff(tlpDeadAge.annotation, tlpAgeAtEvent.annotation);
+                renderedAgeAtEvent = `${RIBBON}+ ${diffAnnotation}${Math.floor(theDiff)}`;
+            } else if (isEventForBioPerson && aFact.evnt == "Birth") {
+                renderedAgeAtEvent = "";
             } else {
-                bpAge = `${bpAgeAtEvent}`;
+                renderedAgeAtEvent = tlpAgeAtEvent.annotatedAge;
             }
-            if (bpDead == true) {
-                const theDiff = parseInt(bpAgeAtEvent - bpDeadAge);
-                bpAge = "&#x1F397;+ " + theDiff;
-            }
-            let theBPAge;
-            if (aboutAge != "" && bpAge != "") {
-                theBPAge = "(" + bpAge + ")";
-            } else {
-                theBPAge = bpAge;
-            }
-            if (hasBdate == false) {
-                theBPAge = "";
-            }
+
             const tlBioAge =
                 "<td class='tlBioAge'>" +
-                (aFact.evnt == "Death" && aFact.wtId == tPerson.Name ? "&#x1F397; " : "") +
-                theBPAge +
+                (aFact.evnt == "Death" && aFact.wtId == tPerson.Name ? `${RIBBON} ` : "") +
+                renderedAgeAtEvent +
                 "</td>";
             if (aFact.relation == undefined || isEventForBioPerson) {
                 aFact.relation = "";
@@ -1634,26 +1486,17 @@ export class PeopleTable {
             const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
 
             let fNames = aFact.firstName || "(Private)";
-            if (aFact.evnt == "marriage") {
+            if (aFact.evnt == "Marriage") {
                 fNames = tPersonFirstName + " and " + fNames;
                 relation = "";
             }
             const tlFirstName = CC7Utils.profileLink(aFact.wtId, fNames);
             const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
 
-            if (aPersonBD.Approx == true) {
-                aboutAge = "~";
-            }
-            let aPersonAge = CC7Utils.getAge(new Date(aPersonBD.Date), new Date(evDate.Date));
-            if (aPersonAge == 0 || aPersonBD.Date.match(/0000/) != null) {
-                aPersonAge = "";
-                aboutAge = "";
-            }
-            let theAge;
-            if (aboutAge != "" && aPersonAge != "") {
-                theAge = "(" + aPersonAge + ")";
-            } else {
-                theAge = aPersonAge;
+            const evPersonAge = Utils.ageAtEvent(evPersonBirth, eventDate);
+            let renderedEvpAge = evPersonAge.annotatedAge;
+            if (evPersonAge.age == 0 || evPersonBirth.date.match(/0000/) != null) {
+                renderedEvpAge = "";
             }
 
             let descr;
@@ -1663,7 +1506,7 @@ export class PeopleTable {
                     " of " +
                     (relation == "" ? relation : relation + ", ") +
                     tlFirstName +
-                    (theAge == "" ? "" : ", " + theAge);
+                    (renderedEvpAge == "" ? "" : ", " + renderedEvpAge);
             } else {
                 const who =
                     relation == ""
@@ -1671,7 +1514,7 @@ export class PeopleTable {
                         : CC7Utils.capitalizeFirstLetter(relation) +
                           " " +
                           tlFirstName +
-                          (theAge == "" ? "" : ", " + theAge + ",");
+                          (renderedEvpAge == "" ? "" : ", " + renderedEvpAge + ",");
                 descr = who + " " + eventName;
             }
 
@@ -1687,8 +1530,8 @@ export class PeopleTable {
             );
             timelineTable.find("tbody").append(tlTR);
             if (aFact.evnt == "Death" && aFact.wtId == tPerson.Name) {
-                bpDead = true;
-                bpDeadAge = bpAgeAtEvent;
+                tlpDead = true;
+                tlpDeadAge = tlpAgeAtEvent;
             }
         });
         return timelineTable;
@@ -1712,7 +1555,7 @@ export class PeopleTable {
         const familyFacts = PeopleTable.getTimelineEvents(tPerson);
         // Sort the events
         familyFacts.sort((a, b) => {
-            return a.eventDate.localeCompare(b.eventDate);
+            return a.eventDate.date.localeCompare(b.eventDate.date);
         });
         if (!tPerson.FirstName) {
             tPerson.FirstName = tPerson.RealName;
@@ -1828,7 +1671,6 @@ export class PeopleTable {
         );
         kPeople.forEach(function (kPers) {
             let rClass = "";
-            let isDecades = false;
             kPers.RelationShow = kPers.Relation;
             if (kPers.Relation == undefined || kPers.Active) {
                 kPers.Relation = "Sibling";
@@ -1836,28 +1678,8 @@ export class PeopleTable {
                 rClass = "self";
             }
 
-            let bDate;
-            if (kPers.BirthDate) {
-                bDate = kPers.BirthDate;
-            } else if (kPers.BirthDateDecade) {
-                bDate = kPers.BirthDateDecade.slice(0, -1) + "-00-00";
-                isDecades = true;
-            } else {
-                bDate = "0000-00-00";
-            }
-
-            let dDate;
-            if (kPers.DeathDate) {
-                dDate = kPers.DeathDate;
-            } else if (kPers.DeathDateDecade) {
-                if (kPers.DeathDateDecade == "unknown") {
-                    dDate = "0000-00-00";
-                } else {
-                    dDate = kPers.DeathDateDecade.slice(0, -1) + "-00-00";
-                }
-            } else {
-                dDate = "0000-00-00";
-            }
+            const bDate = kPers.adjustedBirth;
+            const dDate = kPers.adjustedDeath;
 
             if (kPers.BirthLocation == null || kPers.BirthLocation == undefined) {
                 kPers.BirthLocation = "";
@@ -1879,20 +1701,12 @@ export class PeopleTable {
                 }
             }
             if (oName) {
-                let oBDate = CC7Utils.ymdFix(bDate);
-                let oDDate = CC7Utils.ymdFix(dDate);
-                if (isDecades == true) {
-                    oBDate = kPers.BirthDateDecade;
-                    if (oDDate != "") {
-                        oDDate = kPers.DeathDateDecade;
-                    }
-                }
                 const linkName = CC7Utils.htmlEntities(kPers.Name);
                 const aLine = $(
                     "<tr data-name='" +
                         kPers.Name +
                         "' data-birthdate='" +
-                        bDate.replaceAll(/\-/g, "") +
+                        bDate.date.replaceAll(/\-/g, "") +
                         "' data-relation='" +
                         kPers.Relation +
                         "' class='" +
@@ -1904,11 +1718,11 @@ export class PeopleTable {
                         "</td><td>" +
                         CC7Utils.profileLink(linkName, oName) +
                         "</td><td class='aDate'>" +
-                        oBDate +
+                        bDate.display +
                         "</td><td>" +
                         kPers.BirthLocation +
                         "</td><td class='aDate'>" +
-                        oDDate +
+                        dDate.display +
                         "</td><td>" +
                         kPers.DeathLocation +
                         "</td></tr>"
@@ -2245,7 +2059,7 @@ export class PeopleTable {
             .forEach((aCell) => {
                 const bCell = `B${aCell.substring(1)}`;
                 const wtId = ws[aCell].v;
-                if (wtId.match(/.+\-.+/)) {
+                if (wtId?.match(/.+\-.+/)) {
                     // Add a hyperlink to the WtId cell
                     ws[aCell].l = { Target: `https://www.wikitree.com/wiki/${wtId}` };
                 }
