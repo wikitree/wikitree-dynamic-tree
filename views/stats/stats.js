@@ -55,7 +55,7 @@ window.StatsView = class StatsView extends View {
     static cancelLoadController;
     close() {
         // Another view is about to be activated, make sure we abort any outstnding api calls
-        if (StatsView.cancelLoadController) cancelLoadController.abort();
+        if (StatsView.cancelLoadController) StatsView.cancelLoadController.abort();
     }
 
     init(container_selector, person_id) {
@@ -136,7 +136,7 @@ window.StatsView = class StatsView extends View {
             .off("click")
             .on("click", function () {
                 if (StatsView.cancelLoadController) {
-                    wtViewRegistry.showWarning("Cancelling profile retrieval...");
+                    wtViewRegistry.showWarning("Cancelling generational stats profile retrieval...");
                     // clearStats();
                     StatsView.cancelLoadController.abort();
                 }
@@ -285,7 +285,7 @@ window.StatsView = class StatsView extends View {
                 StatsView.REQUESTED_GENERATIONS - 1
             );
             if (status == "aborted") {
-                wtViewRegistry.showWarning("Profile retrieval cancelled.");
+                wtViewRegistry.showWarning("Generational stats profile retrieval cancelled.");
                 Utils.hideShakingTree();
             } else if (isPartial) {
                 wtViewRegistry.showWarning(
