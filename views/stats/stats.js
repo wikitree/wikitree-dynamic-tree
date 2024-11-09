@@ -3,7 +3,7 @@ import { Utils } from "../shared/Utils.js";
 window.StatsView = class StatsView extends View {
     static APP_ID = "stats";
     static REQUESTED_GENERATIONS = 5; // default value
-    static maxDegreeFetched = 0;
+    static maxDegreeFetched = -1;
 
     static #helpText = `
     <xx>[ x ]</xx>
@@ -239,7 +239,12 @@ window.StatsView = class StatsView extends View {
             disableCalls();
             StatsView.maxDegreeFetched = await getFamilyMembers(wtId);
             enableCalls();
-            if (StatsView.maxDegreeFetched) calculateAvgAgeEachGen(gender);
+            if (StatsView.maxDegreeFetched >= 0) {
+                calculateAvgAgeEachGen(gender);
+            } else {
+                wtViewRegistry.showWarning("No profiles were retrieved.");
+                Utils.hideShakingTree();
+            }
         }
 
         function clearStats() {
@@ -432,7 +437,7 @@ window.StatsView = class StatsView extends View {
 
                     familyMembers.set(id, person);
                     ++nrAdded;
-                    const degree = person.Meta?.Degrees || -1;
+                    const degree = typeof person.Meta?.Degrees == "undefined" ? -1 : person.Meta?.Degrees;
                     maxDegreeFound = Math.max(degree, maxDegreeFound);
                 } else {
                     console.log(`${person.Name} (${id}) not added since they are already present`);
