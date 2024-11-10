@@ -666,10 +666,10 @@ export class PeopleTable {
                 const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
                 if ($("#ml-count").length === 0) {
                     $("#tableButtons").before(
-                        `<p id="ml-count">Displaying ${missingLinksCount} people who are missing relationships.</p>`
+                        `<p id="ml-count">Displaying ${missingLinksCount} people who are possibly missing relationships.</p>`
                     );
                 } else {
-                    $("#ml-count").text(`Displaying ${missingLinksCount} people who are missing relationships.`);
+                    $("#ml-count").text(`Displaying ${missingLinksCount} people who are possibly missing relationships.`);
                 }
 
                 PeopleTable.ACTIVE_VIEW = "ml";
