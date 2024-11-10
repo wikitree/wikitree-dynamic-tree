@@ -12,6 +12,7 @@ export class PeopleTable {
     static CSV = "csv";
     static PARAMS;
     static ACTIVE_VIEW = "table";
+    static PREVIOUS_SUBSET = "all";
 
     // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
     // Privacy_IsPrivate            True if Privacy = 20
@@ -657,7 +658,7 @@ export class PeopleTable {
                     MissingLinksView.buildView();
                 }
                 // save the previous cc7Subset value
-
+                PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
                 // switch to missing links checkboxes
                 $("#cc7Subset").val("missing-links");
 
@@ -2175,6 +2176,7 @@ export class PeopleTable {
         $("#cc7excel").show();
         $("#getExtraDegrees").show();
         $("#getDegreeButton").show();
+        $("#cc7Subset").val(PeopleTable.PREVIOUS_SUBSET);
         $("#cc7Subset").show();
         $("#ancReport").show();
         $("label[for='getExtraDegrees']").show();
