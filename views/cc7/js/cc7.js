@@ -210,7 +210,7 @@ export class CC7 {
             <li>Cells are color-coded as follows:
                 <ul>
                     <li>Red: There is no family member recorded.</li>
-                    <li>Yellow: There are one or family members recorded, but the "no more" 
+                    <li>Yellow: There are one or more family members recorded, but the "no more" 
                     checkbox is not checked so there could be more.</li>
                     <li>White: All family members have been found.</li>
                 </ul>
