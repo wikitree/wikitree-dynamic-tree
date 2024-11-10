@@ -650,16 +650,26 @@ export class PeopleTable {
                 $(this).addClass("active");
                 $("#hierarchyView, #lanceTable, #peopleTable, #statsView").hide().removeClass("active");
                 $("#cc7Subset").show();
-                //if ($("#missingLinksTable").hasClass($("#cc7Subset").val())) {
                 if ($("#missingLinksTable").length > 0) {
                     // We don't have to re-draw the table
                     $("#missingLinksTable").show().addClass("active");
                 } else {
                     MissingLinksView.buildView();
                 }
+                // save the previous cc7Subset value
+
                 // switch to missing links checkboxes
                 $("#cc7Subset").val("missing-links");
-                //PeopleTable.showMissingLinksCheckboxes();
+
+                // determine how many people are missing relationships and show it on the page
+                const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
+                if ($("#ml-count").length === 0) {
+                    $("#tableButtons").before(
+                        `<p id="ml-count">Displaying ${missingLinksCount} people who are missing relationships.</p>`
+                    );
+                } else {
+                    $("#ml-count").text(`Displaying ${missingLinksCount} people who are missing relationships.`);
+                }
 
                 PeopleTable.ACTIVE_VIEW = "ml";
 
@@ -2168,5 +2178,6 @@ export class PeopleTable {
         $("#cc7Subset").show();
         $("#ancReport").show();
         $("label[for='getExtraDegrees']").show();
+        $("#ml-count").remove();
     }
 }

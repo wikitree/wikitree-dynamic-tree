@@ -784,6 +784,10 @@ table tr.cc7filter-row input[type="text"] {
   width: 25px;
 }
 
+#ml-count {
+  text-align: center;
+}
+
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/
