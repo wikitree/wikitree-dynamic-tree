@@ -12,6 +12,7 @@ export class PeopleTable {
     static CSV = "csv";
     static PARAMS;
     static ACTIVE_VIEW = "table";
+    static PREVIOUS_SUBSET = "all";
 
     // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
     // Privacy_IsPrivate            True if Privacy = 20
@@ -650,16 +651,26 @@ export class PeopleTable {
                 $(this).addClass("active");
                 $("#hierarchyView, #lanceTable, #peopleTable, #statsView").hide().removeClass("active");
                 $("#cc7Subset").show();
-                //if ($("#missingLinksTable").hasClass($("#cc7Subset").val())) {
                 if ($("#missingLinksTable").length > 0) {
                     // We don't have to re-draw the table
                     $("#missingLinksTable").show().addClass("active");
                 } else {
                     MissingLinksView.buildView();
                 }
+                // save the previous cc7Subset value
+                PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
                 // switch to missing links checkboxes
                 $("#cc7Subset").val("missing-links");
-                //PeopleTable.showMissingLinksCheckboxes();
+
+                // determine how many people are missing relationships and show it on the page
+                const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
+                if ($("#ml-count").length === 0) {
+                    $("#tableButtons").before(
+                        `<p id="ml-count">Displaying ${missingLinksCount} people who are possibly missing relationships.</p>`
+                    );
+                } else {
+                    $("#ml-count").text(`Displaying ${missingLinksCount} people who are possibly missing relationships.`);
+                }
 
                 PeopleTable.ACTIVE_VIEW = "ml";
 
@@ -2165,8 +2176,10 @@ export class PeopleTable {
         $("#cc7excel").show();
         $("#getExtraDegrees").show();
         $("#getDegreeButton").show();
+        $("#cc7Subset").val(PeopleTable.PREVIOUS_SUBSET);
         $("#cc7Subset").show();
         $("#ancReport").show();
         $("label[for='getExtraDegrees']").show();
+        $("#ml-count").remove();
     }
 }

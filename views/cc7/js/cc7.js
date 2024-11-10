@@ -62,6 +62,11 @@ export class CC7 {
                 the Generational Statistics App, but being applied to CC degrees. Note that some of the statistics are not
                 all that useful unless the Ancestors/Descendants only filters are applied.
             </li>
+            <li>
+                The <b>Missing Links View</b> shows people who might be missing parents, spouses, or children. 
+                Adding these missing family members will grow your CC7 and 
+                possibly find a new connection to the tree.
+            </li>
         </ul>
         <p>Below are some tips related to each view.</p>
         <h3>Table View</h3>
@@ -199,6 +204,17 @@ export class CC7 {
         <ul>
             <li>Click a surname to show only those people.</li>
             <li>Click again to show all.</li>
+        </ul>
+        <h3>Missing Links View</h3>
+        <ul>
+            <li>Cells are color-coded as follows:
+                <ul>
+                    <li>Red: There is no family member recorded.</li>
+                    <li>Yellow: There are one or more family members recorded, but the "no more" 
+                    checkbox is not checked so there could be more.</li>
+                    <li>White: All family members have been found.</li>
+                </ul>
+            </li>
         </ul>
         <h3>Other points</h3>
         <ul>
