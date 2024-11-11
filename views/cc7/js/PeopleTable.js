@@ -666,7 +666,12 @@ export class PeopleTable {
                 const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
                 if ($("#ml-count").length === 0) {
                     $("#tableButtons").before(
-                        `<p id="ml-count">Displaying ${missingLinksCount} people who are possibly missing relationships.</p>`
+                        `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
+                            window.cc7Degree
+                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
+                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
+                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                        children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
                     );
                 } else {
                     $("#ml-count").text(
