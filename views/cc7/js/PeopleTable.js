@@ -688,6 +688,7 @@ export class PeopleTable {
                 $("#cc7Subset").hide();
                 $("#ancReport").hide();
                 $("label[for='getExtraDegrees']").hide();
+                wtViewRegistry.hideInfoPanel();
             });
 
         if (!window.people.get(window.rootId)) {
@@ -2184,5 +2185,6 @@ export class PeopleTable {
         $("#ancReport").show();
         $("label[for='getExtraDegrees']").show();
         $("#ml-count").remove();
+        wtViewRegistry.showInfoPanel();
     }
 }
