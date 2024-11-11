@@ -669,7 +669,9 @@ export class PeopleTable {
                         `<p id="ml-count">Displaying ${missingLinksCount} people who are possibly missing relationships.</p>`
                     );
                 } else {
-                    $("#ml-count").text(`Displaying ${missingLinksCount} people who are possibly missing relationships.`);
+                    $("#ml-count").text(
+                        `Displaying ${missingLinksCount} people who are possibly missing relationships.`
+                    );
                 }
 
                 PeopleTable.ACTIVE_VIEW = "ml";
@@ -728,6 +730,8 @@ export class PeopleTable {
         $(document).ready(function () {
             if (PeopleTable.ACTIVE_VIEW == "ml") {
                 $("#missingLinksViewButton").click();
+            } else if (PeopleTable.ACTIVE_VIEW == "stats") {
+                $("#statsViewButton").click();
             }
         });
     }
@@ -2164,7 +2168,6 @@ export class PeopleTable {
     static setParameters(params) {
         PeopleTable.PARAMS = params;
         PeopleTable.ACTIVE_VIEW = PeopleTable.PARAMS.cc7View;
-        console.log(PeopleTable.ACTIVE_VIEW);
     }
 
     static resetHeader() {
