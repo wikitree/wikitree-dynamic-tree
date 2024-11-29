@@ -668,18 +668,18 @@ export class PeopleTable {
                     $("#tableButtons").before(
                         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
                             window.cc7Degree
-                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
-                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
-                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
+                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
+                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
                         children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
                     );
                 } else {
                     $("#ml-count").innerHTML(
                         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
                             window.cc7Degree
-                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
-                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
-                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
+                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
+                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
                         children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
                     );
                 }
@@ -1704,6 +1704,9 @@ export class PeopleTable {
                 rClass = "self";
             }
 
+            if (typeof kPers.adjustedBirth == "undefined") {
+                Utils.setAdjustedDates(kPers);
+            }
             const bDate = kPers.adjustedBirth;
             const dDate = kPers.adjustedDeath;
 
@@ -1801,8 +1804,21 @@ export class PeopleTable {
         return kTable;
     }
 
-    static doFamilySheet(fPerson, jqClicked) {
+    static buildAndShowFamilySheet(fPerson, jqClicked) {
+        CC7Utils.assignRelationshipsFor(fPerson);
+        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
+        const famSheet = PeopleTable.peopleToTable(thisFamily);
+
         const theClickedName = fPerson.Name;
+        const familyId = theClickedName.replace(" ", "_") + "_family";
+        famSheet.attr("id", familyId);
+        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
+    }
+
+    static showFamilySheet(jqClicked) {
+        const theClickedRow = jqClicked.closest("tr");
+        const theClickedName = theClickedRow.attr("data-name");
+
         const familyId = theClickedName.replace(" ", "_") + "_family";
         const $famSheet = $(`#${familyId}`);
         if ($famSheet.length) {
@@ -1812,73 +1828,62 @@ export class PeopleTable {
             return;
         }
 
-        CC7Utils.assignRelationshipsFor(fPerson);
-        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
-
-        const famSheet = PeopleTable.peopleToTable(thisFamily);
-        famSheet.attr("id", familyId);
-        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
-    }
-
-    static showFamilySheet(jqClicked) {
-        const theClickedRow = jqClicked.closest("tr");
-        const theClickedName = theClickedRow.attr("data-name");
         const theClickedId = +theClickedRow.attr("data-id");
-
         const aPeo = window.people.get(theClickedId);
-        if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
-            PeopleTable.doFamilySheet(aPeo, jqClicked);
+        if (aPeo?.Parent?.length && aPeo?.Child?.length) {
+            PeopleTable.buildAndShowFamilySheet(aPeo, jqClicked);
         } else if (!theClickedName.startsWith("Private") || theClickedId > 0) {
             const key = theClickedName.startsWith("Private") ? theClickedId : theClickedName;
-            console.log(`Calling getRelatives for ${key}`);
+            console.log(`Calling getPeople to obtain relatives for ${key}`);
             WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
-                action: "getRelatives",
-                getSpouses: "1",
-                getChildren: "1",
-                getParents: "1",
-                getSiblings: "1",
+                action: "getPeople",
                 keys: key,
-            }).then((data) => {
-                // Construct this person so it conforms to the profiles retrieved using getPeople
-                const mPerson = PeopleTable.convertToInternal(data[0].items[0]);
-                PeopleTable.doFamilySheet(mPerson, jqClicked);
+                nuclear: 1,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            }).then((result) => {
+                // Construct this person so it conforms to the profiles we retrieved previously
+                if (result[0]?.status == "") {
+                    const mPerson = PeopleTable.convertToInternal(key, result);
+                    PeopleTable.buildAndShowFamilySheet(mPerson, jqClicked);
+                } else {
+                    console.log(`Could not obtain relatives for ${key}: ${result[0]?.status}`);
+                }
             });
         }
     }
 
-    static convertToInternal(item) {
-        const pData = item.person;
-        if (!pData.Name && item.user_name) pData.Name = item.user_name;
-        if (!pData.Name) pData.Name = pData.Id;
-
-        const person = PeopleTable.addFamilyToPerson(pData);
-        if (person.Parents) person.Parents = Object.keys(person.Parents);
-        if (person.Siblings) person.Siblings = Object.keys(person.Siblings);
-        if (person.Children) person.Children = Object.keys(person.Children);
-        person.Marriage = {};
-        if (person.Spouses) {
-            for (const sp of Object.values(person.Spouses)) {
-                person.Marriage[sp.Id] = {
-                    MarriageDate: sp.marriage_date,
-                    MarriageEndDate: sp.marriage_end_date,
-                    MarriageLocation: sp.marriage_location,
-                    DoNotDisplay: sp.do_not_display,
-                };
+    static convertToInternal(key, result) {
+        const rootId = result[0].resultByKey[key]?.Id;
+        const profiles = result[0].people ? Object.values(result[0].people) : [];
+        const peopleMap = new Map();
+        // Collect all the family members in a map
+        for (const person of profiles) {
+            let id = +person.Id;
+            if (id < 0) {
+                person.Name = `Private${id}`;
+                person.DataStatus = { Spouse: "", Gender: "" };
+            } else if (!person.Name) {
+                // WT seems not to return Name for some private profiles, even though they do
+                // return a positive id for them, so we just set Name to Id since WT URLs work for both.
+                person.Name = `${id}`;
+            }
+            if (!peopleMap.has(id)) {
+                // This is a new person, add them to the tree
+                Utils.setAdjustedDates(person);
+                person.Parents = [person.Father, person.Mother];
+                person.Hide = person.Id != rootId;
+                // To be filled shortly via populateRelativeArrays()
+                person.Parent = [];
+                person.Spouse = [];
+                person.Sibling = [];
+                person.Child = [];
+                person.Marriage = {};
+                peopleMap.set(id, person);
             }
         }
-        const curPerson = window.people.get(+person.Id);
-        if (curPerson) {
-            // Copy fields not present in the new person from the old to the new
-            let x = Object.entries(curPerson);
-            for (const [key, value] of x) {
-                if (typeof person[key] == "undefined") {
-                    person[key] = value;
-                }
-            }
-        }
-        window.people.set(+person.Id, person);
-        return person;
+        CC7.populateRelativeArrays(peopleMap);
+        return peopleMap.get(rootId);
     }
 
     static addFamilyToPerson(person) {
