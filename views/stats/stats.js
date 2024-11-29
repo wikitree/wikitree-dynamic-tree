@@ -93,6 +93,12 @@ window.StatsView = class StatsView extends View {
                                     <input type="radio" id="descendant" name="mode" value="descendant">
                                     <label for="descendant" title="Descendant">Descendants</label>
                                 </td>
+                                <td>
+                                    <label for="inclSiblings" title="Include siblings in the statistics at each generation.">
+                                        <input type="checkbox" id="inclSiblings">
+                                        Include Siblings
+                                    </label>
+                                </td>
                             </tr><tr>
                                 <td>
                                     <label for="gender" title="The genders to search and report on">Genders to search</label>
@@ -156,16 +162,17 @@ window.StatsView = class StatsView extends View {
             });
 
         $('input[name="mode"]').on("change", function () {
+            showOrHideSiblingToggle();
             if (this.checked) {
                 clearAndGatherStats();
             }
         });
 
-        $("#gender")
+        $("#gender, #inclSiblings")
             .off("change")
             .on("change", function () {
                 clearStats();
-                calculateAvgAgeEachGen($(this).val(), false);
+                calculateAvgAgeEachGen();
             });
 
         // Add click action to help button
@@ -186,6 +193,14 @@ window.StatsView = class StatsView extends View {
         });
 
         gatherStats();
+
+        function showOrHideSiblingToggle() {
+            if ($("#ancestor").is(":checked")) {
+                $("label[for='inclSiblings']").show();
+            } else {
+                $("label[for='inclSiblings']").hide();
+            }
+        }
 
         function clearAndGatherStats() {
             wtViewRegistry.clearStatus();
@@ -225,7 +240,6 @@ window.StatsView = class StatsView extends View {
             if ($("#descendant").is(":checked")) {
                 mode = "descendant";
             }
-            const gender = $("#gender").val();
 
             clearStats();
 
@@ -240,7 +254,7 @@ window.StatsView = class StatsView extends View {
             StatsView.maxDegreeFetched = await getFamilyMembers(wtId);
             enableCalls();
             if (StatsView.maxDegreeFetched >= 0) {
-                calculateAvgAgeEachGen(gender);
+                calculateAvgAgeEachGen();
             } else {
                 wtViewRegistry.showWarning("No profiles were retrieved.");
                 Utils.hideShakingTree();
@@ -259,31 +273,30 @@ window.StatsView = class StatsView extends View {
         }
 
         function fillGenNames() {
+            const siblingWords = mode == "ancestor" && $("#inclSiblings").is(":checked") ? " + Siblings" : "";
             genNames[0] = "Self";
             let modifier = ""; // Either parents or children
             if (mode == "ancestor") {
-                genNames[1] = "Parents";
+                genNames[1] = "Parents" + siblingWords;
                 modifier = "parents";
             } else {
                 genNames[1] = "Children";
                 modifier = "children";
             }
-            genNames[2] = "Grand" + modifier;
-            genNames[3] = "Great-Grand" + modifier;
+            genNames[2] = "Grand" + modifier + siblingWords;
+            genNames[3] = "Great-Grand" + modifier + siblingWords;
             if (StatsView.REQUESTED_GENERATIONS > 3) {
                 for (let i = 4; i <= StatsView.REQUESTED_GENERATIONS; i++) {
                     let greats = i - 2;
-                    genNames[i] = greats + "x Great-Grand" + modifier;
+                    genNames[i] = greats + "x Great-Grand" + modifier + siblingWords;
                 }
             }
         }
 
         async function getFamilyMembers(wtId) {
             // get ancestors / descendants of given ID with getPeople
-            const [status, isPartial, maxDegree] = await getPeopleViaPagedCalls(
-                wtId,
-                StatsView.REQUESTED_GENERATIONS - 1
-            );
+            const reqDegree = StatsView.REQUESTED_GENERATIONS - 1;
+            const [status, isPartial, maxDegree] = await getPeopleViaPagedCalls(wtId, reqDegree);
             if (status == "aborted") {
                 wtViewRegistry.showWarning("Generational stats profile retrieval cancelled.");
                 Utils.hideShakingTree();
@@ -296,12 +309,9 @@ window.StatsView = class StatsView extends View {
                 console.log("Error reported", status);
                 return 0;
             }
-            // We only populateRelativeArrays if mode == descendant because for ancestors we do not
-            // have all people's children yet and have to fetch them and siblins via gtRelatives later.
-            // For descendants we have all the children, except for the highest requested degree people,
-            // (whose children will be fetched later via getRelatives), but in the mean time we create
-            // the Child and Sibling arrays for the rest here.
-            if (mode == "descendant") populateRelativeArrays(familyMembers);
+
+            if (mode == "ancestor") identifyDirectAncestors(reqDegree);
+            populateRelativeArrays(familyMembers);
             return maxDegree;
         }
 
@@ -309,7 +319,7 @@ window.StatsView = class StatsView extends View {
         //   familyMembers is a Map
         //   status is "" if success otherwise either "aborted", or an error object
         //   isPartial == true if the API did not return all (or any) results
-        async function getPeopleViaPagedCalls(reqId, degree) {
+        async function getPeopleViaPagedCalls(reqId, reqDegree) {
             let start = 0;
             let callNr = 0;
             const limit = 1000;
@@ -327,15 +337,15 @@ window.StatsView = class StatsView extends View {
                 callNr += 1;
                 if (callNr == 1) {
                     console.log(
-                        `Calling getPeople with key:${reqId}, ${mode}s=${degree}, start:${start}, limit:${limit}`
+                        `Calling getPeople with key:${reqId}, ${mode}s=${reqDegree}, start:${start}, limit:${limit}`
                     );
                 } else {
                     console.log(
-                        `Retrieving getPeople result page ${callNr}. key:${reqId}, ${mode}s=${degree}, start:${start}, limit:${limit}`
+                        `Retrieving getPeople result page ${callNr}. key:${reqId}, ${mode}s=${reqDegree}, start:${start}, limit:${limit}`
                     );
                 }
                 const starttime = performance.now();
-                const [status, keysResult, peopleData] = await getPeople(reqId, degree, start, limit);
+                const [status, keysResult, peopleData] = await getPeople(reqId, reqDegree, start, limit);
                 if (status == "aborted") {
                     return [status, true, 0];
                 }
@@ -354,7 +364,7 @@ window.StatsView = class StatsView extends View {
                     rootId = keysResult?.[reqId].Id;
                 }
 
-                const [nrAdded, largestDegree, nrPrivateProfiles] = addPeople(profiles, privateIdOffset);
+                const [nrAdded, largestDegree, nrPrivateProfiles] = addPeople(profiles, privateIdOffset, reqDegree);
                 maxDegree = Math.max(maxDegree, largestDegree);
                 privateIdOffset += nrPrivateProfiles;
                 totalAdded += nrAdded;
@@ -386,8 +396,9 @@ window.StatsView = class StatsView extends View {
                 };
                 if (mode == "ancestor") {
                     params["ancestors"] = degree;
+                    params["siblings"] = 1;
                 } else {
-                    params["descendants"] = degree;
+                    params["descendants"] = degree + 1;
                 }
                 const result = await WikiTreeAPI.postToAPI(params, StatsView.cancelLoadController.signal);
                 return [result[0]["status"], result[0]["resultByKey"], result[0]["people"]];
@@ -401,7 +412,7 @@ window.StatsView = class StatsView extends View {
             }
         }
 
-        function addPeople(profiles, privateIdOffset) {
+        function addPeople(profiles, privateIdOffset, reqDegree) {
             let nrAdded = 0;
             let maxDegreeFound = -1;
             let nrPrivateIds = 0;
@@ -438,7 +449,11 @@ window.StatsView = class StatsView extends View {
                     familyMembers.set(id, person);
                     ++nrAdded;
                     const degree = typeof person.Meta?.Degrees == "undefined" ? -1 : person.Meta?.Degrees;
-                    maxDegreeFound = Math.max(degree, maxDegreeFound);
+                    if (degree > reqDegree) {
+                        person.outOfBounds = true;
+                    } else {
+                        maxDegreeFound = Math.max(degree, maxDegreeFound);
+                    }
                 } else {
                     console.log(`${person.Name} (${id}) not added since they are already present`);
                 }
@@ -470,6 +485,7 @@ window.StatsView = class StatsView extends View {
             }
             // Now that all child arrays are complete, add Sibling arrays
             for (const pers of [...people.values(), ...offDegreeParents.values()]) {
+                if (pers.outOfBounds) continue;
                 if (pers.Child.size) {
                     // Add this person's children as siblings to each of his/her children
                     for (const chId of pers.Child) {
@@ -479,7 +495,7 @@ window.StatsView = class StatsView extends View {
                         siblings.delete(chId);
                         // Add each one unless it already is there (mothers and fathers may have
                         // same and different children)
-                        // We could use child.Sibling.union(siblings), but it is not yet universally
+                        // We could use child.Sibling.union(siblings), but .union is not yet universally
                         // available
                         for (const sibId of siblings) {
                             if (!child.Sibling.has(sibId)) {
@@ -491,43 +507,36 @@ window.StatsView = class StatsView extends View {
             }
         }
 
-        async function getRelatives(ids) {
-            try {
-                let params = {
-                    appId: StatsView.APP_ID,
-                    action: "getRelatives",
-                    keys: ids.join(","),
-                    fields: "Id",
-                    resolveRedirect: 1,
-                };
-                if (mode == "ancestor") {
-                    // for ancestors we have the correct children counts, but sibling counts of the outer ring are incomplete
-                    params["getSiblings"] = 1;
-                    params["getChildren"] = 1;
-                } else {
-                    // for descendant we have the correct sibling counts, but we don't have children counts for the outer ring
-                    params["getChildren"] = 1;
-                }
-                const result = await WikiTreeAPI.postToAPI(params, StatsView.cancelLoadController.signal);
+        function identifyDirectAncestors(reqDegree) {
+            rootPerson.isAncestor = true;
+            const ancestorQ = [[rootPerson.Id, 0]];
+            while (ancestorQ.length > 0) {
+                const [pId, degree] = ancestorQ.shift();
+                const person = familyMembers.get(+pId);
+                if (person) {
+                    const parentDegree = degree + 1;
+                    for (const rId of person.Parents) {
+                        if (!rId) continue;
+                        const relId = +rId;
 
-                return [result[0]["status"], result[0]["items"]];
-                // WikiTreeAPI.getRelatives("stats", chunk, ["Id"], options).then(updateChildrenSiblings);
-            } catch (error) {
-                if (error.name !== "AbortError") {
-                    console.warn(
-                        `Could not retrieve ${mode == "ancestor" ? "children and siblings" : "children"}` +
-                            ` for ${ids.length} ${mode}s : ${error}`,
-                        error
-                    );
-                } else {
-                    wtViewRegistry.showWarning("Profile retrieval cancelled.");
-                    Utils.hideShakingTree();
+                        // Set isAncestor. We have requestd maxRequestedDegree from WT, so to set isAncestor
+                        // we only check profiles up to and including that degree.
+                        if (parentDegree <= reqDegree) {
+                            const parent = familyMembers.get(relId);
+                            if (parent && !parent.isAncestor) {
+                                parent.isAncestor = true;
+                                ancestorQ.push([rId, parentDegree]);
+                            }
+                        }
+                    }
                 }
-                throw error;
             }
         }
 
-        async function calculateAvgAgeEachGen(requestedGender, getChildren = true) {
+        async function calculateAvgAgeEachGen() {
+            const requestedGender = $("#gender").val();
+            const inclSiblings = $("#inclSiblings").is(":checked");
+
             let sortingOldestAge = -9999;
             let oldestAnnotatedAge;
             let oldestPerson = "";
@@ -539,9 +548,8 @@ window.StatsView = class StatsView extends View {
             let sortingOldestFemaleAge = -9999;
             let oldestFemaleAnnotatedAge = 0;
             let oldestFemalePerson = "";
-            const findMissingRelatives = new Set();
 
-            // fill array with the birth and death years of all family members in each generation
+            // fill arrays with the birth and death years of all family members in each generation
 
             // setup birth and death year storage with an array for each generation
             const profileCounts = {};
@@ -562,6 +570,9 @@ window.StatsView = class StatsView extends View {
 
             // for each family member
             for (const familyMember of familyMembers.values()) {
+                if (familyMember.outOfBounds) continue;
+                if (mode == "ancestor" && !inclSiblings && !familyMember.isAncestor) continue;
+
                 const gender = familyMember["Gender"];
                 if (requestedGender && gender !== requestedGender && familyMember["Name"] != rootPerson?.Name) continue;
 
@@ -570,18 +581,6 @@ window.StatsView = class StatsView extends View {
                 const annotatedAgeAtDeath = Utils.ageAtDeath(familyMember);
                 const adjustedMarriage = Utils.getTheDate(familyMember, "Marriage");
                 const marriageYear = parseInt(adjustedMarriage.date.substring(0, 4));
-                if (getChildren) {
-                    // getChildren will be false if we've already collected children and siblings for the data set
-                    // and we're just re-calculating stats for a different gender
-                    if (mode == "ancestor") {
-                        // We need to collect children and siblings for all direct ancestors
-                        if (familyMember.Id > 0) findMissingRelatives.add(familyMember.Id);
-                    } else if (degree == StatsView.REQUESTED_GENERATIONS - 1 && familyMember.Id > 0) {
-                        // This is a non-private profile on the ""outer ring" od descendants, so we'll need to collect
-                        // children counts for them
-                        findMissingRelatives.add(familyMember.Id);
-                    }
-                }
 
                 // increase the profile count of the proper degree
                 ++profileCounts[degree];
@@ -631,120 +630,6 @@ window.StatsView = class StatsView extends View {
                 }
             }
 
-            //
-            // Look up the number of siblings / children of the people at the greatest degree that we requested
-            //
-            if (getChildren && findMissingRelatives.size > 0) {
-                const chunkSize = 500;
-                const idsToGet = [...findMissingRelatives];
-                const chunks = [];
-                for (let i = 0; i < idsToGet.length; i += chunkSize) {
-                    chunks.push(idsToGet.slice(i, i + chunkSize));
-                }
-                console.log(
-                    `Making ${chunks.length} async getRelatives call${chunks.length == 1 ? "" : "s"} to retrieve ${
-                        mode == "ancestor" ? "children and siblings" : "children"
-                    }` + ` of ${findMissingRelatives.size} ${mode}s`
-                );
-                // Asynchronously update either the Child or Sibling arrays of the outer ring
-                StatsView.cancelLoadController = new AbortController();
-                disableCalls();
-                const promises = chunks.map((chunk) => getRelatives(chunk).then(updateChildrenSiblings));
-
-                function updateChildrenSiblings(results) {
-                    const [status, items] = results;
-                    if (status !== 0) {
-                        return;
-                    }
-                    for (const idx in items) {
-                        const person = items[idx].person;
-                        const familyMember = familyMembers.get(+person.Id);
-                        if (familyMember) {
-                            if (mode == "ancestor") {
-                                if (person.Siblings) {
-                                    familyMember.Sibling = new Set(
-                                        Object.values(person.Siblings).map((sibling) => sibling.Id)
-                                    );
-                                }
-                                if (person.Children) {
-                                    familyMember.Child = new Set(
-                                        Object.values(person.Children).map((child) => child.Id)
-                                    );
-                                }
-                            } else {
-                                if (person.Children) {
-                                    familyMember.Child = new Set(
-                                        Object.values(person.Children).map((child) => child.Id)
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Once we have all the counts, calculate the average counts and update the stats table
-                Promise.all(promises).then(calculateAvgChildrenSiblings);
-            }
-
-            function calculateAvgChildrenSiblings() {
-                console.log("Calculating average number of children and siblings");
-                enableCalls();
-                for (const person of familyMembers.values()) {
-                    const gender = person["Gender"];
-                    if (requestedGender && gender !== requestedGender && person["Name"] != rootPerson?.Name) continue;
-
-                    const degree = person.Meta.Degrees;
-                    if (degree < 0) {
-                        console.log(`Could not determine degree`, person);
-                        continue;
-                    }
-                    const nrChildren = person.Child?.size || 0;
-                    const nrSiblings = person.Sibling?.size || 0;
-                    childrenCounts[degree].push(nrChildren);
-                    siblingsCounts[degree].push(nrSiblings);
-                }
-
-                // calculate the average number of children for each degree
-                const avgChildrenCounts = [];
-                for (const degree in childrenCounts) {
-                    let avgChildrenCount;
-                    let sumOfChildrenCounts = 0;
-                    let countOfChildrenCounts = childrenCounts[degree].length;
-                    for (const count in childrenCounts[degree]) {
-                        sumOfChildrenCounts += childrenCounts[degree][count];
-                    }
-                    avgChildrenCount = Math.round(sumOfChildrenCounts / countOfChildrenCounts);
-                    if (isNaN(avgChildrenCount)) {
-                        avgChildrenCount = "-";
-                    }
-                    avgChildrenCounts.push(avgChildrenCount);
-                }
-
-                // calculate the average number of siblings for each degree
-                const avgSiblingsCounts = [];
-                for (const degree in siblingsCounts) {
-                    let avgSiblingsCount;
-                    let sumOfSiblingsCounts = 0;
-                    let countOfSiblingsCounts = siblingsCounts[degree].length;
-                    for (const count in siblingsCounts[degree]) {
-                        sumOfSiblingsCounts += siblingsCounts[degree][count];
-                    }
-                    avgSiblingsCount = Math.round(sumOfSiblingsCounts / countOfSiblingsCounts);
-                    if (isNaN(avgSiblingsCount)) {
-                        avgSiblingsCount = "-";
-                    }
-                    avgSiblingsCounts.push(avgSiblingsCount);
-                }
-
-                updateTable({
-                    avgChildrenCounts: avgChildrenCounts,
-                    avgSiblingsCounts: avgSiblingsCounts,
-                });
-
-                Utils.hideShakingTree();
-            }
-
-            // While the above is happening...
             // sort birth years by earliest to latest
             for (const degree in birthYears) {
                 birthYears[degree].sort(sortByYear);
@@ -897,7 +782,7 @@ window.StatsView = class StatsView extends View {
                 results.appendChild(oldestFemaleRelativeDiv);
             }
 
-            fillTable(requestedGender, {
+            fillTable(requestedGender, inclSiblings, {
                 profileCounts: profileCounts,
                 birthYears: birthYears,
                 earliestBirthYears: earliestBirthYears,
@@ -908,12 +793,69 @@ window.StatsView = class StatsView extends View {
                 avgLifeSpans: avgLifeSpans,
             });
 
-            if (!getChildren || findMissingRelatives.size == 0) {
-                calculateAvgChildrenSiblings();
+            console.log("Calculating average number of children and siblings");
+            enableCalls();
+            for (const person of familyMembers.values()) {
+                if (person.outOfBounds) continue;
+                if (mode == "ancestor" && !inclSiblings && !person.isAncestor) continue;
+
+                const gender = person["Gender"];
+                if (requestedGender && gender !== requestedGender && person["Name"] != rootPerson?.Name) continue;
+
+                const degree = person.Meta.Degrees;
+                if (degree < 0) {
+                    console.log(`Could not determine degree`, person);
+                    continue;
+                }
+                const nrChildren = person.Child?.size || 0;
+                const nrSiblings = person.Sibling?.size || 0;
+                // For ancestors we only have children counts for direct ancestors, so we only calculate
+                // average child counts over direct ancestors
+                if (mode == "decendant" || person.isAncestor) childrenCounts[degree].push(nrChildren);
+                siblingsCounts[degree].push(nrSiblings);
             }
+
+            // calculate the average number of children for each degree
+            const avgChildrenCounts = [];
+            for (const degree in childrenCounts) {
+                let avgChildrenCount;
+                let sumOfChildrenCounts = 0;
+                let countOfChildrenCounts = childrenCounts[degree].length;
+                for (const count in childrenCounts[degree]) {
+                    sumOfChildrenCounts += childrenCounts[degree][count];
+                }
+                avgChildrenCount = Math.round(sumOfChildrenCounts / countOfChildrenCounts);
+                if (isNaN(avgChildrenCount)) {
+                    avgChildrenCount = "-";
+                }
+                avgChildrenCounts.push(avgChildrenCount);
+            }
+
+            // calculate the average number of siblings for each degree
+            const avgSiblingsCounts = [];
+            for (const degree in siblingsCounts) {
+                let avgSiblingsCount;
+                let sumOfSiblingsCounts = 0;
+                let countOfSiblingsCounts = siblingsCounts[degree].length;
+                for (const count in siblingsCounts[degree]) {
+                    sumOfSiblingsCounts += siblingsCounts[degree][count];
+                }
+                avgSiblingsCount = Math.round(sumOfSiblingsCounts / countOfSiblingsCounts);
+                if (isNaN(avgSiblingsCount)) {
+                    avgSiblingsCount = "-";
+                }
+                avgSiblingsCounts.push(avgSiblingsCount);
+            }
+
+            updateTable({
+                avgChildrenCounts: avgChildrenCounts,
+                avgSiblingsCounts: avgSiblingsCounts,
+            });
+
+            Utils.hideShakingTree();
         }
 
-        function fillTable(gender, stats) {
+        function fillTable(gender, withSiblings, stats) {
             const personName = rootPerson?.BirthName || rootPerson?.BirthNamePrivate || wtViewRegistry.getCurrentWtId();
             const genderWord = gender == "" ? "" : `${gender.toLowerCase()} `;
             $("#stats-table").prepend(`<caption>Statistics for ${personName} and ${genderWord}${mode}s`);
@@ -926,7 +868,7 @@ window.StatsView = class StatsView extends View {
                 row.id = "stats-row" + degree;
                 row.insertCell(0).innerHTML = degree + 1;
                 row.insertCell(1).innerHTML = genNames[degree];
-                if (mode == "ancestor") {
+                if (mode == "ancestor" && !withSiblings) {
                     row.insertCell(2).innerHTML = `${stats.profileCounts[degree]}/${maxAncestorsForGen}`;
                 } else {
                     row.insertCell(2).innerHTML = `${stats.profileCounts[degree]}`;
@@ -947,8 +889,13 @@ window.StatsView = class StatsView extends View {
             let table = document.querySelector("#stats-table > tbody");
             for (let degree = 0; degree <= StatsView.maxDegreeFetched; degree++) {
                 let row = table.querySelector("#stats-row" + degree);
-                row.cells[10].innerHTML = stats.avgChildrenCounts[degree];
-                row.cells[11].innerHTML = stats.avgSiblingsCounts[degree];
+                if (degree == 0) {
+                    row.cells[10].innerHTML = mode == "ancestor" ? "-" : stats.avgChildrenCounts[degree];
+                    row.cells[11].innerHTML = mode == "ancestor" ? stats.avgSiblingsCounts[degree] : "-";
+                } else {
+                    row.cells[10].innerHTML = stats.avgChildrenCounts[degree];
+                    row.cells[11].innerHTML = stats.avgSiblingsCounts[degree];
+                }
             }
         }
 
