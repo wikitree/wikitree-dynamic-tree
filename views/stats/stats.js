@@ -274,7 +274,7 @@ window.StatsView = class StatsView extends View {
 
         function fillGenNames() {
             const siblingWords = mode == "ancestor" && $("#inclSiblings").is(":checked") ? " + Siblings" : "";
-            genNames[0] = "Self";
+            genNames[0] = "Self" + siblingWords;
             let modifier = ""; // Either parents or children
             if (mode == "ancestor") {
                 genNames[1] = "Parents" + siblingWords;
@@ -566,6 +566,7 @@ window.StatsView = class StatsView extends View {
                 childrenCounts[i] = [];
                 siblingsCounts[i] = [];
             }
+            const siblingMode = mode == "ancestor" && inclSiblings;
             console.log("Calculating birth, marriage, and lifespan statistics");
 
             // for each family member
@@ -576,7 +577,10 @@ window.StatsView = class StatsView extends View {
                 const gender = familyMember["Gender"];
                 if (requestedGender && gender !== requestedGender && familyMember["Name"] != rootPerson?.Name) continue;
 
-                const degree = familyMember["Meta"]["Degrees"];
+                const degree =
+                    siblingMode && !familyMember.isAncestor
+                        ? familyMember["Meta"]["Degrees"] - 1
+                        : familyMember["Meta"]["Degrees"];
                 const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
                 const annotatedAgeAtDeath = Utils.ageAtDeath(familyMember);
                 const adjustedMarriage = Utils.getTheDate(familyMember, "Marriage");
