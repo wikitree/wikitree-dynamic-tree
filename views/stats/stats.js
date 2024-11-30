@@ -806,7 +806,8 @@ window.StatsView = class StatsView extends View {
                 const gender = person["Gender"];
                 if (requestedGender && gender !== requestedGender && person["Name"] != rootPerson?.Name) continue;
 
-                const degree = person.Meta.Degrees;
+                const degree =
+                    siblingMode && !person.isAncestor ? person["Meta"]["Degrees"] - 1 : person["Meta"]["Degrees"];
                 if (degree < 0) {
                     console.log(`Could not determine degree`, person);
                     continue;
