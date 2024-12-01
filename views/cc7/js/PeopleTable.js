@@ -1587,7 +1587,7 @@ export class PeopleTable {
             tPerson.FirstName = tPerson.RealName;
         }
         // Make a table
-        const timelineTable = PeopleTable.buildTimeline(tPerson, familyFacts, familyId);
+        const timelineTable = PeopleTable.buildTimeline(tPerson, familyFacts);
         timelineTable.attr("id", familyId);
         PeopleTable.showTable(jqClicked, timelineTable, 30, 30);
     }

@@ -4,12 +4,12 @@ window.StatsView = class StatsView extends View {
     static APP_ID = "stats";
     static REQUESTED_GENERATIONS = 5; // default value
     static maxDegreeFetched = -1;
-
+    static lastZLevel = 11000;
     static #helpText = `
     <xx>[ x ]</xx>
     <h2 style="text-align: center">About Generational Statistics</h2>
     <p>
-        The app show statistics about the ancestors or descendants of a profile. Each of the 10 generations are shown as
+        The app show statistics about the ancestors or descendants of a profile. Each of the generations are shown as
         a separate row with some overall stats shown below the table.
     </p>
     <p>
@@ -17,7 +17,7 @@ window.StatsView = class StatsView extends View {
         <ul>
             <li>
                 <b>Total Profiles</b> shows how many profiles exist in this generation. For ancestors, the total number
-                expected for that generation is given.
+                expected for that generation is also given.
             </li><li>
                 <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that
                 generation.
@@ -33,6 +33,9 @@ window.StatsView = class StatsView extends View {
                 <b>Average Siblings</b> shows the average number of siblings per person in this generation.
             </li>
         </ul>
+    </p>
+        You can click on the descriptions in the Relation column to see the profiles behind the data.
+    <p>
     </p>
     <p>
         If you find problems with this app or have suggestions for improvements, please
@@ -82,7 +85,7 @@ window.StatsView = class StatsView extends View {
                     <button id="getStatsButton" class="small button" title="Get generational stats">Get generational stats</button>
                     <button id="cancelLoad" class="small button" title="Cancel the current loading of profiles.">Cancel</button>
                     <span id="help-button" title="About this">?</span>
-                    <div id="help-text">${StatsView.#helpText}</div><br>
+                    <div id="help-text" class="pop-up">${StatsView.#helpText}</div><br>
                     <fieldset id="statsFieldset">
                         <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
                         <table id="optionsTbl">
@@ -181,16 +184,29 @@ window.StatsView = class StatsView extends View {
             $("#help-text").slideToggle();
         });
         $("#help-text").draggable();
-        $(document).off("keyup", closeHelp).on("keyup", closeHelp);
+        $(document).off("keyup", closePopup).on("keyup", closePopup);
 
-        // Add the help text as a pop-up
-        const help = document.getElementById("help-text");
-        help.addEventListener("dblclick", function () {
-            $(this).slideToggle();
-        });
-        document.querySelector("#help-text xx").addEventListener("click", function () {
-            $(this).parent().slideUp();
-        });
+        // Add the help text (and people group tables) as pop-ups
+        $("#statsContainer")
+            .off("dblclick", ".pop-up")
+            .on("dblclick", ".pop-up", function () {
+                $(this).slideToggle();
+            });
+        $("#statsContainer")
+            .off("click", ".pop-up")
+            .on("click", ".pop-up", function () {
+                const self = $(this);
+                const myId = self.attr("id");
+                const [lastPopup] = findTopPopup();
+                if (myId != lastPopup.attr("id")) {
+                    self.css("z-index", ++StatsView.lastZLevel);
+                }
+            });
+        $("#statsContainer")
+            .off("click", "xx")
+            .on("click", "xx", function () {
+                $(this).parent().slideUp();
+            });
 
         gatherStats();
 
@@ -223,11 +239,31 @@ window.StatsView = class StatsView extends View {
             $("#getStatsButton").prop("disabled", false);
         }
 
-        function closeHelp() {
-            const helpPopup = $("#help-text:visible");
-            if (helpPopup) {
-                helpPopup.slideUp("fast");
+        function closePopup(e) {
+            if (e.key === "Escape") {
+                // Find the popup with the highest z-index
+                const [lastPopup, highestZIndex] = findTopPopup();
+
+                // Close the popup with the highest z-index
+                if (lastPopup) {
+                    lastPopup.slideUp();
+                    StatsView.lastZLevel = highestZIndex;
+                }
             }
+        }
+
+        function findTopPopup() {
+            // Find the popup with the highest z-index
+            let highestZIndex = 0;
+            let lastPopup = null;
+            $(".pop-up:visible").each(function () {
+                const zIndex = parseInt($(this).css("z-index"), 10);
+                if (zIndex > highestZIndex) {
+                    highestZIndex = zIndex;
+                    lastPopup = $(this);
+                }
+            });
+            return [lastPopup, highestZIndex];
         }
 
         async function gatherStats() {
@@ -268,13 +304,14 @@ window.StatsView = class StatsView extends View {
             results.innerHTML = "";
             const table = document.querySelector("#stats-table > tbody");
             table.innerHTML = "";
+            $(".people-group").remove();
 
             fillGenNames();
         }
 
         function fillGenNames() {
-            const siblingWords = mode == "ancestor" && $("#inclSiblings").is(":checked") ? " + Siblings" : "";
-            genNames[0] = "Self" + siblingWords;
+            const siblingWords = mode == "ancestor" && $("#inclSiblings").is(":checked") ? " and their siblings" : "";
+            genNames[0] = "Self" + siblingWords.replace("their ", "");
             let modifier = ""; // Either parents or children
             if (mode == "ancestor") {
                 genNames[1] = "Parents" + siblingWords;
@@ -441,6 +478,10 @@ window.StatsView = class StatsView extends View {
                     }
                     // This is a new person, add them to the tree
                     Utils.setAdjustedDates(person);
+                    person.ageAtDeath = Utils.ageAtDeath(person);
+                    person.adjustedMarriage = Utils.getTheDate(person, "Marriage");
+                    person.ageAtMarriage = Utils.ageAtEvent(person.adjustedBirth, person.adjustedMarriage);
+
                     person.Parents = [person.Father, person.Mother];
                     // To be filled later
                     person.Sibling = new Set();
@@ -567,24 +608,19 @@ window.StatsView = class StatsView extends View {
                 siblingsCounts[i] = [];
             }
             const siblingMode = mode == "ancestor" && inclSiblings;
-            console.log("Calculating birth, marriage, and lifespan statistics");
+            console.log("Calculating statistics");
 
             // for each family member
             for (const familyMember of familyMembers.values()) {
-                if (familyMember.outOfBounds) continue;
-                if (mode == "ancestor" && !inclSiblings && !familyMember.isAncestor) continue;
-
-                const gender = familyMember["Gender"];
-                if (requestedGender && gender !== requestedGender && familyMember["Name"] != rootPerson?.Name) continue;
+                if (!isElligible(familyMember, requestedGender, inclSiblings)) continue;
 
                 const degree =
                     siblingMode && !familyMember.isAncestor
                         ? familyMember["Meta"]["Degrees"] - 1
                         : familyMember["Meta"]["Degrees"];
                 const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
-                const annotatedAgeAtDeath = Utils.ageAtDeath(familyMember);
-                const adjustedMarriage = Utils.getTheDate(familyMember, "Marriage");
-                const marriageYear = parseInt(adjustedMarriage.date.substring(0, 4));
+                const annotatedAgeAtDeath = familyMember.ageAtDeath;
+                const marriageYear = parseInt(familyMember.adjustedMarriage.date.substring(0, 4));
 
                 // increase the profile count of the proper degree
                 ++profileCounts[degree];
@@ -596,11 +632,9 @@ window.StatsView = class StatsView extends View {
                 }
 
                 // add the marriage age to the proper degree
-                let ageAtMarriage;
                 if (marriageYear && birthYear > 0) {
-                    ageAtMarriage = Utils.ageAtEvent(familyMember.adjustedBirth, adjustedMarriage);
                     const marriageAgeGeneration = marriageAges[degree];
-                    marriageAgeGeneration.push(ageAtMarriage.age);
+                    marriageAgeGeneration.push(familyMember.ageAtMarriage.age);
                 }
 
                 // add the death age to the proper degree and find the oldest people
@@ -620,6 +654,7 @@ window.StatsView = class StatsView extends View {
                         oldestPerson = personRef;
                     }
 
+                    const gender = familyMember["Gender"];
                     if ((gender == "Male") & (sortingAge > sortingOldestMaleAge)) {
                         sortingOldestMaleAge = sortingAge;
                         oldestMaleAnnotatedAge = annotatedAgeAtDeath;
@@ -797,14 +832,9 @@ window.StatsView = class StatsView extends View {
                 avgLifeSpans: avgLifeSpans,
             });
 
-            console.log("Calculating average number of children and siblings");
-            enableCalls();
+            // Calculate average number of children and siblings
             for (const person of familyMembers.values()) {
-                if (person.outOfBounds) continue;
-                if (mode == "ancestor" && !inclSiblings && !person.isAncestor) continue;
-
-                const gender = person["Gender"];
-                if (requestedGender && gender !== requestedGender && person["Name"] != rootPerson?.Name) continue;
+                if (!isElligible(person, requestedGender, inclSiblings)) continue;
 
                 const degree =
                     siblingMode && !person.isAncestor ? person["Meta"]["Degrees"] - 1 : person["Meta"]["Degrees"];
@@ -872,7 +902,9 @@ window.StatsView = class StatsView extends View {
                 const row = table.insertRow(-1);
                 row.id = "stats-row" + degree;
                 row.insertCell(0).innerHTML = degree + 1;
-                row.insertCell(1).innerHTML = genNames[degree];
+                row.insertCell(
+                    1
+                ).innerHTML = `<a href="#" class="relation-link" data-degree="${degree}">${genNames[degree]}</a>`;
                 if (mode == "ancestor" && !withSiblings) {
                     row.insertCell(2).innerHTML = `${stats.profileCounts[degree]}/${maxAncestorsForGen}`;
                 } else {
@@ -888,6 +920,12 @@ window.StatsView = class StatsView extends View {
                 row.insertCell(10).innerHTML = "<i>loading</i>";
                 row.insertCell(11).innerHTML = "<i>loading</i>";
             }
+            $("#stats-table")
+                .off("click", "a.relation-link")
+                .on("click", "a.relation-link", function (event) {
+                    event.preventDefault();
+                    showPeople($(this), personName);
+                });
         }
 
         function updateTable(stats) {
@@ -902,6 +940,113 @@ window.StatsView = class StatsView extends View {
                     row.cells[11].innerHTML = stats.avgSiblingsCounts[degree];
                 }
             }
+        }
+
+        function isElligible(person, requestedGender, inclSiblings) {
+            if (person.outOfBounds) return false;
+            if (mode == "ancestor" && !inclSiblings && !person.isAncestor) return false;
+            if (requestedGender && person.Gender !== requestedGender && person.Name != rootPerson?.Name) return false;
+            return true;
+        }
+
+        function showPeople(jqClicked, rootPersonName) {
+            const degree = jqClicked.data("degree");
+            const title = `${rootPersonName}'s ${jqClicked.text().replace("Self ", "")}`;
+            const groupId = `people-group-${degree}`;
+            const $groupTable = $(`#${groupId}`);
+            if ($groupTable.length) {
+                $groupTable.css("z-index", ++StatsView.lastZLevel).slideToggle(() => {
+                    setOffset(jqClicked, $groupTable, 30, 30);
+                });
+                return;
+            }
+            // Collect all the people to display
+            const requestedGender = $("#gender").val();
+            const inclSiblings = $("#inclSiblings").is(":checked");
+            const siblingMode = mode == "ancestor" && inclSiblings;
+            const group = [];
+            for (const person of familyMembers.values()) {
+                const pDegree =
+                    siblingMode && !person.isAncestor ? person["Meta"]["Degrees"] - 1 : person["Meta"]["Degrees"];
+                if (pDegree == degree && isElligible(person, requestedGender, inclSiblings)) group.push(person);
+            }
+
+            group.sort((a, b) => a.adjustedBirth.date.localeCompare(b.adjustedBirth.date));
+            const groupTable = buildGroupTable(title, group);
+            groupTable.attr("id", groupId);
+            showTable(jqClicked, groupTable, 30, 30);
+        }
+
+        // We make use of https://github.hubspot.com/sortable/, with thanks to Adam Schwartz,
+        function buildGroupTable(title, people) {
+            const groupTable = $(
+                "<div class='people-group pop-up sortable-theme-slick' data-sortable>" +
+                    "<xx>[ x ]</xx><table class='peopleGroupTable'>" +
+                    `<caption>${title}</caption>` +
+                    "<thead title='Click on a column heading to sort the table by that column. A second click will reverse the sort.'>" +
+                    "<th style='text-align: left;'><br>Name</th>" +
+                    "<th style='text-align: left;' data-sortable-type='alpha'><br>Birth</th>" +
+                    "<th>Age at<br>Marr.</th>" +
+                    "<th style='text-align: left;' data-sortable-type='alpha'><br>Marriage</th>" +
+                    "<th>Age at<br>Death</th>" +
+                    "<th style='text-align: left;' data-sortable-type='alpha'><br>Death</th>" +
+                    "<th>No. of<br>Children</th>" +
+                    "<th>No. of<br>Siblings</th>" +
+                    "</thead><tbody></tbody></table></div>"
+            );
+
+            for (const p of people) {
+                const pName = p?.BirthName || p?.BirthNamePrivate || p.Name;
+                const tdName = pName.toString().startsWith("Private")
+                    ? pName
+                    : `<a target='_blank' href="https://www.wikitree.com/wiki/${p.Name}">${pName}</a>`;
+                const mAge = p.ageAtMarriage;
+                const dAge = p.ageAtDeath;
+                const tr = $(
+                    "<tr>" +
+                        `<td>${tdName}</td>` +
+                        `<td class="pgDate">${p.adjustedBirth.display}</td>` +
+                        `<td class="pgAge" data-value="${Utils.ageForSort(mAge)}">${mAge.annotatedAge}</td>` +
+                        `<td class="pgDate">${p.adjustedMarriage.display}</td>` +
+                        `<td class="pgAge" data-value="${Utils.ageForSort(dAge)}">${dAge.annotatedAge}</td>` +
+                        `<td class="pgDate">${p.adjustedDeath.display}</td>` +
+                        `<td class="pgNum">${p.Child?.size || 0}</td>` +
+                        `<td class="pgNum">${p.Sibling?.size || 0}<td>` +
+                        "</tr>"
+                );
+                groupTable.find("tbody").append(tr);
+            }
+            Sortable.initTable(groupTable.find("table")[0]);
+            return groupTable;
+        }
+
+        function showTable(jqClicked, theTable, lOffset, tOffset) {
+            // Attach the table to the container div
+            theTable.prependTo($("#statsContainer"));
+            theTable.draggable();
+
+            setOffset(jqClicked, theTable, lOffset, tOffset);
+            $(window).resize(function () {
+                if (theTable.length) {
+                    setOffset(jqClicked, theTable, lOffset, tOffset);
+                }
+            });
+
+            theTable.css("z-index", `${++StatsView.lastZLevel}`);
+            theTable.slideDown("slow");
+        }
+
+        function getOffset(el) {
+            const rect = el.getBoundingClientRect();
+            return {
+                left: rect.left + window.scrollX,
+                top: rect.top + window.scrollY,
+            };
+        }
+
+        function setOffset(theClicked, elem, lOffset, tOffset) {
+            const theLeft = getOffset(theClicked[0]).left + lOffset;
+            elem.css({ top: getOffset(theClicked[0]).top + tOffset, left: theLeft });
         }
 
         function sortByYear(a, b) {
