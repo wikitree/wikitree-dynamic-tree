@@ -16,8 +16,13 @@ window.StatsView = class StatsView extends View {
         Table columns explained:
         <ul>
             <li>
-                <b>Total Profiles</b> shows how many profiles exist in this generation. For ancestors, the total number
-                expected for that generation is also given.
+                <b>Total Profiles</b> shows how many profiles exist in this generation. For direct ancestors, the number
+                is given as p (u) / e where
+                <ul>
+                    <li> p = the number of ancestors with profiles in this generation</li>
+                    <li> u = the number of unique profiles in this generation</li>
+                    <li> e = the total number of direct ancestors expected in this generation</li>
+                </ul>
             </li><li>
                 <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that
                 generation.
@@ -34,7 +39,10 @@ window.StatsView = class StatsView extends View {
             </li>
         </ul>
     </p>
-        You can click on the descriptions in the Relation column to see the profiles behind the data.
+        You can click on the descriptions in the Relation column to see the profiles that are the source for the
+        statistics at each generation. Direct ancestor profiles that occur more than once are marked with an asterisk(*).
+        If you want to explore these duplicates more, use the <a id="aleLink" href="#">Ancestor Lines Explorer</a>
+        tree app.
     <p>
     </p>
     <p>
@@ -187,6 +195,7 @@ window.StatsView = class StatsView extends View {
         $(document).off("keyup", closePopup).on("keyup", closePopup);
 
         // Add the help text (and people group tables) as pop-ups
+        setALELink();
         $("#statsContainer")
             .off("dblclick", ".pop-up")
             .on("dblclick", ".pop-up", function () {
@@ -266,6 +275,21 @@ window.StatsView = class StatsView extends View {
             return [lastPopup, highestZIndex];
         }
 
+        function setALELink() {
+            const currentUrl = new URL(window.location.href);
+
+            // Parse the hash part of the current URL
+            const hash = currentUrl.hash.slice(1); // Remove the leading '#'
+            const params = new URLSearchParams(hash);
+
+            // Update the 'view' parameter
+            params.set("view", "ale");
+
+            // Construct the new URL and update the link
+            const newUrl = `${currentUrl.pathname}#${params.toString()}`;
+            document.getElementById("aleLink").setAttribute("href", newUrl);
+        }
+
         async function gatherStats() {
             Utils.showShakingTree();
 
@@ -285,6 +309,7 @@ window.StatsView = class StatsView extends View {
             url.hash = url.hash.replace(/name=[^&]+/, `name=${wtId}`);
             // Rewrite the URL without reloading the page
             window.history.replaceState(null, "", url);
+            setALELink();
 
             disableCalls();
             StatsView.maxDegreeFetched = await getFamilyMembers(wtId);
@@ -473,10 +498,8 @@ window.StatsView = class StatsView extends View {
                     person.Name = `${id}`;
                 }
                 if (!familyMembers.has(id)) {
-                    if (id < 0) {
-                        window.genStatsMinPrivateId = Math.min(id, window.genStatsMinPrivateId);
-                    }
                     // This is a new person, add them to the tree
+                    addGeneration(person, person["Meta"]["Degrees"]);
                     Utils.setAdjustedDates(person);
                     person.ageAtDeath = Utils.ageAtDeath(person);
                     person.adjustedMarriage = Utils.getTheDate(person, "Marriage");
@@ -489,6 +512,10 @@ window.StatsView = class StatsView extends View {
 
                     familyMembers.set(id, person);
                     ++nrAdded;
+                    // We flag a person out of bounds if the lowest degree at which they appear is
+                    // higher than what was requested. This can happen because, for ancestors, we
+                    // request one more degree than what was actually asked for in order to get the
+                    // children and sibling counts of the outer ring correct.
                     const degree = typeof person.Meta?.Degrees == "undefined" ? -1 : person.Meta?.Degrees;
                     if (degree > reqDegree) {
                         person.outOfBounds = true;
@@ -549,9 +576,12 @@ window.StatsView = class StatsView extends View {
         }
 
         function identifyDirectAncestors(reqDegree) {
+            const directAncestors = new Set();
+            const duplicates = new Set();
             rootPerson.isAncestor = true;
             const ancestorQ = [[rootPerson.Id, 0]];
             while (ancestorQ.length > 0) {
+                // Process the ancestors of the person at the front of the queue
                 const [pId, degree] = ancestorQ.shift();
                 const person = familyMembers.get(+pId);
                 if (person) {
@@ -560,17 +590,41 @@ window.StatsView = class StatsView extends View {
                         if (!rId) continue;
                         const relId = +rId;
 
+                        // Keep track of duplicates
+                        if (directAncestors.has(relId)) {
+                            duplicates.add(relId);
+                        } else {
+                            directAncestors.add(relId);
+                        }
+
                         // Set isAncestor. We have requestd maxRequestedDegree from WT, so to set isAncestor
                         // we only check profiles up to and including that degree.
                         if (parentDegree <= reqDegree) {
                             const parent = familyMembers.get(relId);
-                            if (parent && !parent.isAncestor) {
+                            if (parent) {
+                                // We keep going even though this parent might already have been marked as an
+                                // ancestor because we want to find all the duplicates and set the generation values
                                 parent.isAncestor = true;
+                                // The ancestor's lowest degree was added when we retrieved the profile via the api, so
+                                // here we only add degrees if the ancestor appears somewhere else in the ancestor tree
+                                if (duplicates.has(relId)) addGeneration(parent, parentDegree);
                                 ancestorQ.push([rId, parentDegree]);
                             }
                         }
                     }
                 }
+            }
+        }
+
+        // Since a person can appear in more than one generation and more than once in a generation,
+        // their generation is a map of {generation => count}. We use this to manage pedigree collapse
+        function addGeneration(person, gen) {
+            if (typeof person.generations == "undefined") person.generations = new Map();
+            if (person.generations.has(gen)) {
+                const cnt = person.generations.get(gen);
+                person.generations.set(gen, cnt + 1);
+            } else {
+                person.generations.set(gen, 1);
             }
         }
 
@@ -593,13 +647,15 @@ window.StatsView = class StatsView extends View {
             // fill arrays with the birth and death years of all family members in each generation
 
             // setup birth and death year storage with an array for each generation
-            const profileCounts = {};
+            const uniqueProfileCounts = {};
+            const profileCounts = {}; // no. of profiles per generation, disregarding whether they are duplicates or not
             const birthYears = {};
             const deathAges = {};
             const marriageAges = {};
             const childrenCounts = {};
             const siblingsCounts = {};
             for (let i = 0; i <= StatsView.maxDegreeFetched; i++) {
+                uniqueProfileCounts[i] = 0;
                 profileCounts[i] = 0;
                 birthYears[i] = [];
                 deathAges[i] = [];
@@ -614,57 +670,60 @@ window.StatsView = class StatsView extends View {
             for (const familyMember of familyMembers.values()) {
                 if (!isElligible(familyMember, requestedGender, inclSiblings)) continue;
 
-                const degree =
-                    siblingMode && !familyMember.isAncestor
-                        ? familyMember["Meta"]["Degrees"] - 1
-                        : familyMember["Meta"]["Degrees"];
-                const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
-                const annotatedAgeAtDeath = familyMember.ageAtDeath;
-                const marriageYear = parseInt(familyMember.adjustedMarriage.date.substring(0, 4));
+                // Ensure we process this profile at each degree in which it appears
+                for (const deg of familyMember.generations.keys()) {
+                    const degree = siblingMode && !familyMember.isAncestor ? deg - 1 : deg;
 
-                // increase the profile count of the proper degree
-                ++profileCounts[degree];
+                    const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
+                    const annotatedAgeAtDeath = familyMember.ageAtDeath;
+                    const marriageYear = parseInt(familyMember.adjustedMarriage.date.substring(0, 4));
 
-                // add the birth year to the proper degree
-                if (birthYear > 0) {
-                    const birthGeneration = birthYears[degree];
-                    birthGeneration.push(birthYear);
-                }
+                    // increase the profile count of the proper degree
+                    ++uniqueProfileCounts[degree];
+                    const countAtDegree = familyMember.generations?.get(degree);
+                    if (countAtDegree) profileCounts[degree] += countAtDegree;
 
-                // add the marriage age to the proper degree
-                if (marriageYear && birthYear > 0) {
-                    const marriageAgeGeneration = marriageAges[degree];
-                    marriageAgeGeneration.push(familyMember.ageAtMarriage.age);
-                }
-
-                // add the death age to the proper degree and find the oldest people
-                if (birthYear > 0 && annotatedAgeAtDeath.age != "") {
-                    // Calculate an age with decimal value
-                    const deathAgeGeneration = deathAges[degree];
-                    deathAgeGeneration.push(annotatedAgeAtDeath.age);
-
-                    // Check if this family member is the oldest one so far. We compare ages with decimal values
-                    // taking their certainty indicators into account
-                    const sortingAge = Utils.ageForSort(annotatedAgeAtDeath);
-                    const displayName = familyMember.BirthName || familyMember.BirthNamePrivate || "Private";
-                    const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${displayName}</a>`;
-                    if (sortingAge > sortingOldestAge) {
-                        sortingOldestAge = sortingAge;
-                        oldestAnnotatedAge = annotatedAgeAtDeath;
-                        oldestPerson = personRef;
+                    // add the birth year to the proper degree
+                    if (birthYear > 0) {
+                        const birthGeneration = birthYears[degree];
+                        birthGeneration.push(birthYear);
                     }
 
-                    const gender = familyMember["Gender"];
-                    if ((gender == "Male") & (sortingAge > sortingOldestMaleAge)) {
-                        sortingOldestMaleAge = sortingAge;
-                        oldestMaleAnnotatedAge = annotatedAgeAtDeath;
-                        oldestMalePerson = personRef;
+                    // add the marriage age to the proper degree
+                    if (marriageYear && birthYear > 0) {
+                        const marriageAgeGeneration = marriageAges[degree];
+                        marriageAgeGeneration.push(familyMember.ageAtMarriage.age);
                     }
 
-                    if (gender == "Female" && sortingAge > sortingOldestFemaleAge) {
-                        sortingOldestFemaleAge = sortingAge;
-                        oldestFemaleAnnotatedAge = annotatedAgeAtDeath;
-                        oldestFemalePerson = personRef;
+                    // add the death age to the proper degree and find the oldest people
+                    if (birthYear > 0 && annotatedAgeAtDeath.age != "") {
+                        // Calculate an age with decimal value
+                        const deathAgeGeneration = deathAges[degree];
+                        deathAgeGeneration.push(annotatedAgeAtDeath.age);
+
+                        // Check if this family member is the oldest one so far. We compare ages with decimal values
+                        // taking their certainty indicators into account
+                        const sortingAge = Utils.ageForSort(annotatedAgeAtDeath);
+                        const displayName = familyMember.BirthName || familyMember.BirthNamePrivate || "Private";
+                        const personRef = `<a href="https://www.wikitree.com/wiki/${familyMember["Name"]}" target="_blank">${displayName}</a>`;
+                        if (sortingAge > sortingOldestAge) {
+                            sortingOldestAge = sortingAge;
+                            oldestAnnotatedAge = annotatedAgeAtDeath;
+                            oldestPerson = personRef;
+                        }
+
+                        const gender = familyMember["Gender"];
+                        if ((gender == "Male") & (sortingAge > sortingOldestMaleAge)) {
+                            sortingOldestMaleAge = sortingAge;
+                            oldestMaleAnnotatedAge = annotatedAgeAtDeath;
+                            oldestMalePerson = personRef;
+                        }
+
+                        if (gender == "Female" && sortingAge > sortingOldestFemaleAge) {
+                            sortingOldestFemaleAge = sortingAge;
+                            oldestFemaleAnnotatedAge = annotatedAgeAtDeath;
+                            oldestFemalePerson = personRef;
+                        }
                     }
                 }
             }
@@ -822,6 +881,7 @@ window.StatsView = class StatsView extends View {
             }
 
             fillTable(requestedGender, inclSiblings, {
+                uniqueCounts: uniqueProfileCounts,
                 profileCounts: profileCounts,
                 birthYears: birthYears,
                 earliestBirthYears: earliestBirthYears,
@@ -836,18 +896,19 @@ window.StatsView = class StatsView extends View {
             for (const person of familyMembers.values()) {
                 if (!isElligible(person, requestedGender, inclSiblings)) continue;
 
-                const degree =
-                    siblingMode && !person.isAncestor ? person["Meta"]["Degrees"] - 1 : person["Meta"]["Degrees"];
-                if (degree < 0) {
-                    console.log(`Could not determine degree`, person);
-                    continue;
+                for (const deg of person.generations.keys()) {
+                    const degree = siblingMode && !person.isAncestor ? deg - 1 : deg;
+                    if (degree < 0) {
+                        console.log(`Could not determine degree`, person);
+                        continue;
+                    }
+                    const nrChildren = person.Child?.size || 0;
+                    const nrSiblings = person.Sibling?.size || 0;
+                    // For ancestors we only have children counts for direct ancestors, so we only calculate
+                    // average child counts over direct ancestors
+                    if (mode == "decendant" || person.isAncestor) childrenCounts[degree].push(nrChildren);
+                    siblingsCounts[degree].push(nrSiblings);
                 }
-                const nrChildren = person.Child?.size || 0;
-                const nrSiblings = person.Sibling?.size || 0;
-                // For ancestors we only have children counts for direct ancestors, so we only calculate
-                // average child counts over direct ancestors
-                if (mode == "decendant" || person.isAncestor) childrenCounts[degree].push(nrChildren);
-                siblingsCounts[degree].push(nrSiblings);
             }
 
             // calculate the average number of children for each degree
@@ -906,11 +967,14 @@ window.StatsView = class StatsView extends View {
                     1
                 ).innerHTML = `<a href="#" class="relation-link" data-degree="${degree}">${genNames[degree]}</a>`;
                 if (mode == "ancestor" && !withSiblings) {
-                    row.insertCell(2).innerHTML = `${stats.profileCounts[degree]}/${maxAncestorsForGen}`;
+                    const cell = row.insertCell(2);
+                    cell.innerHTML = `${stats.profileCounts[degree]} (${stats.uniqueCounts[degree]}) / ${maxAncestorsForGen}`;
+                    cell.title =
+                        "Ancestors found with profiles (Unique profiles found) / Expected profiles at this generation";
                 } else {
-                    row.insertCell(2).innerHTML = `${stats.profileCounts[degree]}`;
+                    row.insertCell(2).innerHTML = `${stats.uniqueCounts[degree]}`;
                 }
-                row.insertCell(3).innerHTML = `${stats.birthYears[degree].length}/${stats.profileCounts[degree]}`;
+                row.insertCell(3).innerHTML = `${stats.birthYears[degree].length}/${stats.uniqueCounts[degree]}`;
                 row.insertCell(4).innerHTML = stats.earliestBirthYears[degree];
                 row.insertCell(5).innerHTML = stats.latestBirthYears[degree];
                 row.insertCell(6).innerHTML = stats.avgBirthYears[degree];
@@ -965,10 +1029,15 @@ window.StatsView = class StatsView extends View {
             const inclSiblings = $("#inclSiblings").is(":checked");
             const siblingMode = mode == "ancestor" && inclSiblings;
             const group = [];
+
             for (const person of familyMembers.values()) {
-                const pDegree =
-                    siblingMode && !person.isAncestor ? person["Meta"]["Degrees"] - 1 : person["Meta"]["Degrees"];
-                if (pDegree == degree && isElligible(person, requestedGender, inclSiblings)) group.push(person);
+                if (hasDegree(degree) && isElligible(person, requestedGender, inclSiblings)) group.push(person);
+
+                function hasDegree(n) {
+                    return siblingMode && !person.isAncestor
+                        ? person.generations.has(degree - 1)
+                        : person.generations.has(degree);
+                }
             }
 
             group.sort((a, b) => a.adjustedBirth.date.localeCompare(b.adjustedBirth.date));
@@ -999,7 +1068,9 @@ window.StatsView = class StatsView extends View {
                 const pName = p?.BirthName || p?.BirthNamePrivate || p.Name;
                 const tdName = pName.toString().startsWith("Private")
                     ? pName
-                    : `<a target='_blank' href="https://www.wikitree.com/wiki/${p.Name}">${pName}</a>`;
+                    : `${isDuplicate(p) ? "*" : ""}<a target='_blank' href="https://www.wikitree.com/wiki/${
+                          p.Name
+                      }">${pName}</a>`;
                 const mAge = p.ageAtMarriage;
                 const dAge = p.ageAtDeath;
                 const tr = $(
@@ -1018,6 +1089,10 @@ window.StatsView = class StatsView extends View {
             }
             Sortable.initTable(groupTable.find("table")[0]);
             return groupTable;
+        }
+
+        function isDuplicate(person) {
+            return person.generations?.size > 1 || person.generations?.values().next().value > 1;
         }
 
         function showTable(jqClicked, theTable, lOffset, tOffset) {
