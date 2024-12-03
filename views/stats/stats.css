@@ -72,7 +72,7 @@ div.stats select {
   margin: 5px 5px 0px 0px;
 }
 
-#generation {
+.stats #generations {
   width: 3em;
   min-width: 3em;
   margin-right: 10px;

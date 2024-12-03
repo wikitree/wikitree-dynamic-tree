@@ -2,6 +2,8 @@ import { Utils } from "../shared/Utils.js";
 
 window.StatsView = class StatsView extends View {
     static APP_ID = "stats";
+    static ANCESTOR_MODE = "ancestors";
+    static DESCENDANT_MODE = "descendants";
     static REQUESTED_GENERATIONS = 5; // default value
     static maxDegreeFetched = -1;
     static lastZLevel = 11000;
@@ -17,11 +19,11 @@ window.StatsView = class StatsView extends View {
         <ul>
             <li>
                 <b>Total Profiles</b> shows how many profiles exist in this generation. For direct ancestors, the number
-                is given as p (u) / e where
+                is given as P (U) / E where
                 <ul>
-                    <li> p = the number of ancestors with profiles in this generation</li>
-                    <li> u = the number of unique profiles in this generation</li>
-                    <li> e = the total number of direct ancestors expected in this generation</li>
+                    <li> P = the number of ancestors with profiles in this generation</li>
+                    <li> U = the number of unique profiles in this generation</li>
+                    <li> E = the total number of direct ancestors expected in this generation</li>
                 </ul>
             </li><li>
                 <b>Profiles w/ Birth Year</b> shows how many of the profiles have a valid birth year for that
@@ -60,6 +62,7 @@ window.StatsView = class StatsView extends View {
             description: "",
             // link pointing at some webpage with documentation
             docs: "",
+            params: ["maxgen", "mode", "gender", "sibs"],
         };
     }
 
@@ -69,55 +72,61 @@ window.StatsView = class StatsView extends View {
         if (StatsView.cancelLoadController) StatsView.cancelLoadController.abort();
     }
 
-    init(container_selector, person_id) {
+    init(container_selector, person_id, params) {
         const genNames = [];
         const familyMembers = new Map();
         let rootPerson = null;
-        let mode = "ancestor";
+        let mode = StatsView.ANCESTOR_MODE;
 
         document.querySelector(container_selector).innerHTML = `
             <div id="statsContainer" class="stats">
                 <div id="controlBlock" class="stats-not-printable">
-                    <label for="generations"  title="The number of generations to fetch from WikiTree">Max Generations:</label>
-                    <select id="generations" title="The number of generations to fetch from WikiTree">
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                    <button id="getStatsButton" class="small button" title="Get generational stats">Get generational stats</button>
+                    <label for="generations"  title="The number of generations to fetch from WikiTree">Max Generations:
+                        <select id="generations">
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </label>
+                    <button id="getStatsButton" class="small button" title="Get generational statistics up to the selected generations.">Get generational stats</button>
                     <button id="cancelLoad" class="small button" title="Cancel the current loading of profiles.">Cancel</button>
                     <span id="help-button" title="About this">?</span>
                     <div id="help-text" class="pop-up">${StatsView.#helpText}</div><br>
                     <fieldset id="statsFieldset">
-                        <legend id="aleOptions" title="Click to Close/Open the options">Options:</legend>
+                        <legend>Options:</legend>
                         <table id="optionsTbl">
                             <tr>
                                 <td>Mode:
-                                    <input type="radio" id="ancestor" name="mode" value="ancestor" checked="checked">
-                                    <label for="ancestor" title="Ancestor">Ancestors</label>
-                                    <input type="radio" id="descendant" name="mode" value="descendant">
-                                    <label for="descendant" title="Descendant">Descendants</label>
+                                    <input type="radio" id="ancestor" name="mode" value="${
+                                        StatsView.ANCESTOR_MODE
+                                    }" checked="checked">
+                                    <label for="ancestor" title="Show statistics for ancestors only.">Ancestors</label>
+                                    <input type="radio" id="descendant" name="mode" value="${
+                                        StatsView.DESCENDANT_MODE
+                                    }">
+                                    <label for="descendant" title="Show statistics for descendants only.">Descendants</label>
                                 </td>
                                 <td>
-                                    <label for="inclSiblings" title="Include siblings in the statistics at each generation.">
+                                    <label for="inclSiblings" title="Include the siblings of the people in each generation in the statistics.">
                                         <input type="checkbox" id="inclSiblings">
                                         Include Siblings
                                     </label>
                                 </td>
                             </tr><tr>
                                 <td>
-                                    <label for="gender" title="The genders to search and report on">Genders to search</label>
-                                    <select id="gender" title="The genders to search and report on">
-                                        <option value="" selected>all</option>
-                                        <option value="Male">males only</option>
-                                        <option value="Female">females only</option>
-                                    </select>
+                                    <label for="gender" title="The genders to search and report on">Genders to search
+                                        <select id="gender">
+                                            <option value="" selected>all</option>
+                                            <option value="Male">males only</option>
+                                            <option value="Female">females only</option>
+                                        </select>
+                                    </label>
                                 </td>
                             </tr>
                         </table>
@@ -183,16 +192,20 @@ window.StatsView = class StatsView extends View {
             .off("change")
             .on("change", function () {
                 clearStats();
+                updateURL();
                 calculateAvgAgeEachGen();
             });
 
         // Add click action to help button
-        const helpButton = document.getElementById("help-button");
-        helpButton.addEventListener("click", function () {
-            $("#help-text").slideToggle();
-        });
+        $("#help-button")
+            .off("click")
+            .on("click", function () {
+                $("#help-text").slideToggle();
+            });
         $("#help-text").draggable();
         $(document).off("keyup", closePopup).on("keyup", closePopup);
+
+        applyParameters(params);
 
         // Add the help text (and people group tables) as pop-ups
         setALELink();
@@ -224,6 +237,45 @@ window.StatsView = class StatsView extends View {
                 $("label[for='inclSiblings']").show();
             } else {
                 $("label[for='inclSiblings']").hide();
+            }
+        }
+
+        function applyParameters(params) {
+            const maxGen = Number(params["maxgen"] || 0);
+            if (maxGen) $("#generations").val(maxGen);
+
+            if (params.hasOwnProperty("mode")) {
+                const mode = params["mode"];
+                if (mode == StatsView.ANCESTOR_MODE || mode == StatsView.DESCENDANT_MODE) {
+                    $(`#${mode}`).prop("checked", true);
+                }
+            }
+            if (params.hasOwnProperty("sibs")) {
+                $("#inclSiblings").prop("checked", Number(params["sibs"]) != 0);
+            }
+            if (params.hasOwnProperty("gender")) {
+                const gender = params["gender"];
+                if (gender == "" || gender == "male" || gender == "female") {
+                    const theChoice = gender.length > 0 ? gender.charAt(0).toUpperCase() + gender.slice(1) : gender;
+                    $("#gender").val(theChoice);
+                }
+            }
+        }
+
+        function updateURL() {
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.hash.slice(1));
+            const oldHash = params.toString();
+
+            params.set("name", wtViewRegistry.getCurrentWtId());
+            params.set("maxgen", $("#generations").val());
+            params.set("mode", $('input[name="mode"]:checked').val());
+            params.set("sibs", $("#inclSiblings").prop("checked") ? 1 : 0);
+            params.set("gender", $("#gender").val());
+
+            const newHash = params.toString();
+            if (newHash != oldHash) {
+                window.history.pushState(null, null, "#" + newHash);
             }
         }
 
@@ -284,6 +336,10 @@ window.StatsView = class StatsView extends View {
 
             // Update the 'view' parameter
             params.set("view", "ale");
+            params.set("maxgen", $("#generations").val());
+            params.delete("mode");
+            params.delete("sibs");
+            params.delete("gender");
 
             // Construct the new URL and update the link
             const newUrl = `${currentUrl.pathname}#${params.toString()}`;
@@ -294,24 +350,14 @@ window.StatsView = class StatsView extends View {
             Utils.showShakingTree();
 
             StatsView.REQUESTED_GENERATIONS = $("#generations").val();
-            if ($("#ancestor").is(":checked")) {
-                mode = "ancestor";
-            }
-            if ($("#descendant").is(":checked")) {
-                mode = "descendant";
-            }
+            mode = $('input[name="mode"]:checked').val();
 
             clearStats();
+            updateURL();
+            setALELink();
+            disableCalls();
 
             const wtId = wtViewRegistry.getCurrentWtId();
-            // Update the 'name' parameter in the URL
-            const url = new URL(window.location.href);
-            url.hash = url.hash.replace(/name=[^&]+/, `name=${wtId}`);
-            // Rewrite the URL without reloading the page
-            window.history.replaceState(null, "", url);
-            setALELink();
-
-            disableCalls();
             StatsView.maxDegreeFetched = await getFamilyMembers(wtId);
             enableCalls();
             if (StatsView.maxDegreeFetched >= 0) {
@@ -335,10 +381,11 @@ window.StatsView = class StatsView extends View {
         }
 
         function fillGenNames() {
-            const siblingWords = mode == "ancestor" && $("#inclSiblings").is(":checked") ? " and their siblings" : "";
+            const siblingWords =
+                mode == StatsView.ANCESTOR_MODE && $("#inclSiblings").is(":checked") ? " and their siblings" : "";
             genNames[0] = "Self" + siblingWords.replace("their ", "");
             let modifier = ""; // Either parents or children
-            if (mode == "ancestor") {
+            if (mode == StatsView.ANCESTOR_MODE) {
                 genNames[1] = "Parents" + siblingWords;
                 modifier = "parents";
             } else {
@@ -372,7 +419,7 @@ window.StatsView = class StatsView extends View {
                 return 0;
             }
 
-            if (mode == "ancestor") identifyDirectAncestors(reqDegree);
+            if (mode == StatsView.ANCESTOR_MODE) identifyDirectAncestors(reqDegree);
             populateRelativeArrays(familyMembers);
             return maxDegree;
         }
@@ -456,7 +503,7 @@ window.StatsView = class StatsView extends View {
                         "BirthDate,BirthDateDecade,DeathDate,DeathDateDecade,Father,Mother,Name,Derived.BirthName," +
                         "Derived.BirthNamePrivate,Gender,Id,Spouses,Meta",
                 };
-                if (mode == "ancestor") {
+                if (mode == StatsView.ANCESTOR_MODE) {
                     params["ancestors"] = degree;
                     params["siblings"] = 1;
                 } else {
@@ -663,7 +710,7 @@ window.StatsView = class StatsView extends View {
                 childrenCounts[i] = [];
                 siblingsCounts[i] = [];
             }
-            const siblingMode = mode == "ancestor" && inclSiblings;
+            const siblingMode = mode == StatsView.ANCESTOR_MODE && inclSiblings;
             console.log("Calculating statistics");
 
             // for each family member
@@ -793,7 +840,7 @@ window.StatsView = class StatsView extends View {
             const avgGenLengths = [];
             for (const degree in birthYears) {
                 let genLength = 0;
-                if (mode == "ancestor") {
+                if (mode == StatsView.ANCESTOR_MODE) {
                     genLength = avgBirthYears[degree - 1] - avgBirthYears[degree];
                 } else {
                     genLength = avgBirthYears[degree] - avgBirthYears[degree - 1];
@@ -966,7 +1013,7 @@ window.StatsView = class StatsView extends View {
                 row.insertCell(
                     1
                 ).innerHTML = `<a href="#" class="relation-link" data-degree="${degree}">${genNames[degree]}</a>`;
-                if (mode == "ancestor" && !withSiblings) {
+                if (mode == StatsView.ANCESTOR_MODE && !withSiblings) {
                     const cell = row.insertCell(2);
                     cell.innerHTML = `${stats.profileCounts[degree]} (${stats.uniqueCounts[degree]}) / ${maxAncestorsForGen}`;
                     cell.title =
@@ -997,8 +1044,8 @@ window.StatsView = class StatsView extends View {
             for (let degree = 0; degree <= StatsView.maxDegreeFetched; degree++) {
                 let row = table.querySelector("#stats-row" + degree);
                 if (degree == 0) {
-                    row.cells[10].innerHTML = mode == "ancestor" ? "-" : stats.avgChildrenCounts[degree];
-                    row.cells[11].innerHTML = mode == "ancestor" ? stats.avgSiblingsCounts[degree] : "-";
+                    row.cells[10].innerHTML = mode == StatsView.ANCESTOR_MODE ? "-" : stats.avgChildrenCounts[degree];
+                    row.cells[11].innerHTML = mode == StatsView.ANCESTOR_MODE ? stats.avgSiblingsCounts[degree] : "-";
                 } else {
                     row.cells[10].innerHTML = stats.avgChildrenCounts[degree];
                     row.cells[11].innerHTML = stats.avgSiblingsCounts[degree];
@@ -1008,7 +1055,7 @@ window.StatsView = class StatsView extends View {
 
         function isElligible(person, requestedGender, inclSiblings) {
             if (person.outOfBounds) return false;
-            if (mode == "ancestor" && !inclSiblings && !person.isAncestor) return false;
+            if (mode == StatsView.ANCESTOR_MODE && !inclSiblings && !person.isAncestor) return false;
             if (requestedGender && person.Gender !== requestedGender && person.Name != rootPerson?.Name) return false;
             return true;
         }
@@ -1027,7 +1074,7 @@ window.StatsView = class StatsView extends View {
             // Collect all the people to display
             const requestedGender = $("#gender").val();
             const inclSiblings = $("#inclSiblings").is(":checked");
-            const siblingMode = mode == "ancestor" && inclSiblings;
+            const siblingMode = mode == StatsView.ANCESTOR_MODE && inclSiblings;
             const group = [];
 
             for (const person of familyMembers.values()) {
