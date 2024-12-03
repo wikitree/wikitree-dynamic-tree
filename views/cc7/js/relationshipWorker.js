@@ -26,7 +26,12 @@ self.addEventListener("message", function (e) {
                 e.data.loggedInUser,
                 e.data.loggedInUserId
             );
-            self.postMessage({ type: "completed", results: results.relationships, dbEntries: results.dbEntries });
+            self.postMessage({
+                type: "completed",
+                rootId: e.data.rootPersonId,
+                results: results.relationships,
+                dbEntries: results.dbEntries,
+            });
         } catch (error) {
             console.error("Error processing relationships:", error);
             self.postMessage({ type: "error", message: error.message });

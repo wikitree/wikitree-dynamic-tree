@@ -178,7 +178,7 @@ export class Utils {
      *            where date is a string in the form YYYY-MM-DD where any of the parts might be 0
      *            (as might be returned from the API) and annotation is one of ("", <, ~, >).
      * @param {*} event An annotated event date object similar to the above.
-     * @returns {age: , annotation: , annotatedAge: } where:
+     * @returns \{age: , annotation: , annotatedAge: } where:
      *          age - "" if no age could be determined, otherwise the calculated decimal age at the event.
      *          annotation - one of the symbols \~, <, >, or the empty string depending on whether the age is uncertain (~),
      *                is at most the given number (<), at least the given number (>), or is accurate (empty string).
@@ -260,7 +260,7 @@ export class Utils {
      *   {@link Utils.ageAtEvent(Utils.getTheDate(person, "Birth"), Utils.getTheDate(person, "Death"))}
      * except that the returned age will never be negative.
      * @param {*} person a person record retrieved from the API
-     * @returns {age: , annotation: , annotatedAge: } where:
+     * @returns \{age: , annotation: , annotatedAge: } where:
      *          age - "" if no age could be determined, otherwise the calculated decimal age at at death.
      *                If the calculated age would be negative due to incomplete or bad dates, e.g. birth = 1871-07-03 and
      *                death = 1971, 0 is returned.

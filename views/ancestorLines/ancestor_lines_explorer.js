@@ -119,7 +119,7 @@ export class AncestorLinesExplorer {
    `;
     static nextZLevel = 10000;
 
-    constructor(selector, startId) {
+    constructor(selector, startId, params) {
         this.selector = selector;
         $(selector).html(`<div id="aleContainer" class="ale">
             <div id="controlBlock" class="ale-not-printable">
@@ -268,7 +268,7 @@ export class AncestorLinesExplorer {
                       <input
                         id="aleBrickWallColour"
                         type="color"
-                        value="#000000"
+                        value="#FF0000"
                         title='Choose the colour for people chosen as a "brick wall".' />
                     </td>
                     <td>
@@ -410,7 +410,9 @@ export class AncestorLinesExplorer {
             </div>
         </div>`);
 
-        AncestorLinesExplorer.setGetPeopleButtonText($("#generation").val());
+        AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
+        AncestorLinesExplorer.retrieveOptionsFromCookie();
+        AncestorLinesExplorer.applyParameters(params);
 
         AncestorTree.init();
 
@@ -421,6 +423,8 @@ export class AncestorLinesExplorer {
                 AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
                 AncestorLinesExplorer.updateMaxLevelSelection(maxGen, $("#maxLevel").val());
             });
+        $("#generation").trigger("change");
+
         $("#getAncestorsButton").off("click").on("click", AncestorLinesExplorer.getAncestorsAndPaint);
         $("#drawTreeButton")
             .off("click")
@@ -428,6 +432,7 @@ export class AncestorLinesExplorer {
                 if (document.getElementById("bioCheck").checked && !window.aleBiosLoaded) {
                     AncestorLinesExplorer.getAncestorsAndPaint(e);
                 } else {
+                    AncestorLinesExplorer.updateURL();
                     AncestorLinesExplorer.findPathsAndDrawTree(e);
                 }
             });
@@ -467,8 +472,6 @@ export class AncestorLinesExplorer {
             .on("change", function () {
                 $("#drawTreeButton").click();
             });
-        AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
-        AncestorLinesExplorer.retrieveOptionsFromCookie();
 
         const container = $("#theSvg");
         container.floatingScroll();
@@ -529,6 +532,97 @@ export class AncestorLinesExplorer {
         $("#getAncestorsButton").click();
     }
 
+    static applyParameters(params) {
+        const maxGen = Number(params["maxgen"] || 0);
+        if (maxGen) $("#generation").val(maxGen);
+
+        const limitGen = Number(params["limitgen"] || maxGen);
+        if (limitGen) $("#maxLevel").val(limitGen);
+
+        if (params.hasOwnProperty("poi")) {
+            $("#otherWtIds").val(params["poi"]);
+        }
+        if (params.hasOwnProperty("efactor")) {
+            $("#edgeFactor").val(Number(params["efactor"]));
+        }
+        if (params.hasOwnProperty("hfactor")) {
+            $("#tHFactor").val(Number(params["hfactor"]));
+        }
+        if (params.hasOwnProperty("bwcolour")) {
+            $("#aleBrickWallColour").val(params["bwcolour"].trim().split(" ")[0]);
+        }
+
+        if (params.hasOwnProperty("exploi")) {
+            $("#expandPaths").prop("checked", Number(params["exploi"]) != 0);
+        }
+        if (params.hasOwnProperty("conn")) {
+            $("#connectors").prop("checked", Number(params["conn"]) != 0);
+        }
+        if (params.hasOwnProperty("onlyloi")) {
+            $("#onlyPaths").prop("checked", Number(params["onlyloi"]) != 0);
+        }
+        if (params.hasOwnProperty("lonly")) {
+            $("#labelsLeft").prop("checked", Number(params["lonly"]) != 0);
+        }
+        if (params.hasOwnProperty("posrel")) {
+            $("#birthScale").prop("checked", Number(params["posrel"]) != 0);
+        }
+        if (params.hasOwnProperty("priv")) {
+            $("#privatise").prop("checked", Number(params["priv"]) != 0);
+        }
+        if (params.hasOwnProperty("anon")) {
+            $("#anonLiving").prop("checked", Number(params["anon"]) != 0);
+        }
+        if (params.hasOwnProperty("bwnop")) {
+            $("#noParents").prop("checked", Number(params["bwnop"]) != 0);
+        }
+        if (params.hasOwnProperty("bw1p")) {
+            $("#oneParent").prop("checked", Number(params["bw1p"]) != 0);
+        }
+        if (params.hasOwnProperty("bwbio")) {
+            $("#bioCheck").prop("checked", Number(params["bwbio"]) != 0);
+        }
+        if (params.hasOwnProperty("bwnosp")) {
+            $("#noNoSpouses").prop("checked", Number(params["bwnosp"]) != 0);
+        }
+        if (params.hasOwnProperty("bwnoch")) {
+            $("#noNoChildren").prop("checked", Number(params["bwnoch"]) != 0);
+        }
+    }
+
+    static updateURL() {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.hash.slice(1));
+        const oldHash = params.toString();
+        const wtId = wtViewRegistry.getCurrentWtId();
+
+        params.set("name", wtId);
+        params.set("maxgen", $("#generation").val());
+        params.set("limitgen", $("#maxLevel").val());
+        params.set("poi", $("#otherWtIds").val());
+        params.set("efactor", $("#edgeFactor").val());
+        params.set("hfactor", $("#tHFactor").val());
+        params.set("bwcolour", $("#aleBrickWallColour").val());
+
+        params.set("exploi", $("#expandPaths").prop("checked") ? 1 : 0);
+        params.set("conn", $("#connectors").prop("checked") ? 1 : 0);
+        params.set("onlyloi", $("#onlyPaths").prop("checked") ? 1 : 0);
+        params.set("lonly", $("#labelsLeft").prop("checked") ? 1 : 0);
+        params.set("posrel", $("#birthScale").prop("checked") ? 1 : 0);
+        params.set("priv", $("#privatise").prop("checked") ? 1 : 0);
+        params.set("anon", $("#anonLiving").prop("checked") ? 1 : 0);
+        params.set("bwnop", $("#noParents").prop("checked") ? 1 : 0);
+        params.set("bw1p", $("#oneParent").prop("checked") ? 1 : 0);
+        params.set("bwbio", $("#bioCheck").prop("checked") ? 1 : 0);
+        params.set("bwnosp", $("#noNoSpouses").prop("checked") ? 1 : 0);
+        params.set("bwnoch", $("#noNoChildren").prop("checked") ? 1 : 0);
+
+        const newHash = params.toString();
+        if (newHash != oldHash) {
+            window.history.pushState(null, null, "#" + newHash);
+        }
+    }
+
     static updateMaxLevelSelection(maxLevel, selected) {
         const select = document.getElementById("maxLevel");
         select.options.length = 0;
@@ -575,6 +669,7 @@ export class AncestorLinesExplorer {
         if (!wtId.match(/.+\-.+/)) {
             return;
         }
+        AncestorLinesExplorer.updateURL();
 
         AncestorTree.clear();
         wtViewRegistry.clearStatus();
@@ -768,24 +863,24 @@ export class AncestorLinesExplorer {
         // console.log(`Retrieved options ${optionsJson}`);
         if (optionsJson) {
             const opt = JSON.parse(optionsJson);
-            $("#expandPaths").attr("checked", opt.expandPaths);
-            $("#onlyPaths").attr("checked", opt.onlyPaths);
-            $("#connectors").attr("checked", opt.connectors);
-            $("#labelsLeft").attr("checked", opt.labelsLeftOnly);
-            $("#hideTreeHeader").attr("checked", opt.hideTreeHeader);
+            $("#expandPaths").prop("checked", opt.expandPaths);
+            $("#onlyPaths").prop("checked", opt.onlyPaths);
+            $("#connectors").prop("checked", opt.connectors);
+            $("#labelsLeft").prop("checked", opt.labelsLeftOnly);
+            $("#hideTreeHeader").prop("checked", opt.hideTreeHeader);
             $("#aleBrickWallColour").val(opt.brickWallColour);
             $("#edgeFactor").val(opt.edgeFactor);
             $("#tHFactor").val(opt.heightFactor);
             $("#maxLevel").val(opt.maxLevel);
             $("#otherWtIds").val(opt.otherWtIds);
-            $("#noParents").attr("checked", opt.noParents);
-            $("#oneParent").attr("checked", opt.oneParent);
-            $("#noNoSpouses").attr("checked", opt.noNoSpouses);
-            $("#noNoChildren").attr("checked", opt.noNoChildren);
-            $("#bioCheck").attr("checked", opt.bioCheck);
-            $("#birthScale").attr("checked", opt.birthScale);
-            $("#privatise").attr("checked", opt.privatise);
-            $("#anonLiving").attr("checked", opt.anonLiving);
+            $("#noParents").prop("checked", opt.noParents);
+            $("#oneParent").prop("checked", opt.oneParent);
+            $("#noNoSpouses").prop("checked", opt.noNoSpouses);
+            $("#noNoChildren").prop("checked", opt.noNoChildren);
+            $("#bioCheck").prop("checked", opt.bioCheck);
+            $("#birthScale").prop("checked", opt.birthScale);
+            $("#privatise").prop("checked", opt.privatise);
+            $("#anonLiving").prop("checked", opt.anonLiving);
         }
     }
 

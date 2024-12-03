@@ -650,7 +650,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const d = d3.select(parentNode).datum();
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                // console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
+                console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
             const epIds = d.data[side]?.getExpandedParentIds();

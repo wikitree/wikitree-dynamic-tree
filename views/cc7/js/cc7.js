@@ -63,8 +63,8 @@ export class CC7 {
                 all that useful unless the Ancestors/Descendants only filters are applied.
             </li>
             <li>
-                The <b>Missing Links View</b> shows people who might be missing parents, spouses, or children. 
-                Adding these missing family members will grow your CC7 and 
+                The <b>Missing Links View</b> shows people who might be missing parents, spouses, or children.
+                Adding these missing family members will grow your CC7 and
                 possibly find a new connection to the tree.
             </li>
         </ul>
@@ -210,7 +210,7 @@ export class CC7 {
             <li>Cells are color-coded as follows:
                 <ul>
                     <li>Red: There is no family member recorded.</li>
-                    <li>Yellow: There are one or more family members recorded, but the "no more" 
+                    <li>Yellow: There are one or more family members recorded, but the "no more"
                     checkbox is not checked so there could be more.</li>
                     <li>White: All family members have been found.</li>
                 </ul>
@@ -577,7 +577,7 @@ export class CC7 {
                 }
                 window.rootId = +resultByKeyAtD[wtId].Id;
                 window.cc7Degree = theDegree;
-                CC7.populateRelativeArrays();
+                CC7.populateRelativeArrays(window.people);
                 Utils.hideShakingTree();
                 $("#degreesTable").remove();
                 $("#ancReport").remove();
@@ -812,14 +812,14 @@ export class CC7 {
         CC7.getConnections(theDegree);
     }
 
-    static populateRelativeArrays() {
+    static populateRelativeArrays(peopleMap) {
         const offDegreeParents = new Map();
 
-        for (const pers of window.people.values()) {
+        for (const pers of peopleMap.values()) {
             // Add Parent and Child arrays
             for (const pId of pers.Parents) {
                 if (pId) {
-                    let parent = window.people.get(+pId);
+                    let parent = peopleMap.get(+pId);
                     if (parent) {
                         pers.Parent.push(parent);
                         parent.Child.push(pers);
@@ -836,7 +836,7 @@ export class CC7 {
 
             // Add Spouse and coresponding Marriage arrays
             for (const sp of pers.Spouses) {
-                const spouse = window.people.get(+sp.Id);
+                const spouse = peopleMap.get(+sp.Id);
                 if (spouse) {
                     // Add to spouse array if it is not already there
                     // Note that this does not cater for someone married to the same person more than once,
@@ -855,7 +855,7 @@ export class CC7 {
             }
         }
         // Now that all child arrays are complete, add Sibling arrays
-        for (const pers of [...window.people.values(), ...offDegreeParents.values()]) {
+        for (const pers of [...peopleMap.values(), ...offDegreeParents.values()]) {
             if (pers.Child.length) {
                 // Add this person's children as siblings to each of his/her children
                 for (const child of pers.Child) {
@@ -901,7 +901,7 @@ export class CC7 {
             }
 
             window.rootId = +resultByKey[wtId]?.Id;
-            CC7.populateRelativeArrays();
+            CC7.populateRelativeArrays(window.people);
             const root = window.people.get(window.rootId);
             let haveRoot = typeof root != "undefined";
             if (!haveRoot) {
@@ -1002,27 +1002,33 @@ export class CC7 {
         worker.onmessage = function (event) {
             // console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
-                if ($("#cc7PBFilter").data("select2")) {
-                    $("#cc7PBFilter").select2("destroy");
-                }
-                const updatedTable = CC7.updateTableWithResults(
-                    document.querySelector("#peopleTable"),
-                    event.data.results
-                );
-                document
-                    .getElementById("cc7Container")
-                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
-                CC7.initializeSelect2();
+                if (event.data.rootId == rootPersonId) {
+                    if ($("#cc7PBFilter").data("select2")) {
+                        $("#cc7PBFilter").select2("destroy");
+                    }
+                    const updatedTable = CC7.updateTableWithResults(
+                        document.querySelector("#peopleTable"),
+                        event.data.results
+                    );
+                    document
+                        .getElementById("cc7Container")
+                        .replaceChild(updatedTable, document.querySelector("#peopleTable"));
+                    CC7.initializeSelect2();
 
-                if (loggedInUserId == rootPersonId) {
-                    $this.storeDataInIndexedDB(event.data.dbEntries);
+                    if (loggedInUserId == rootPersonId) {
+                        $this.storeDataInIndexedDB(event.data.dbEntries);
+                    }
+                } else {
+                    console.log(
+                        `Received unexpected relationship worker response for ${event.data.rootId} while expecting for ${rootPersonId}`
+                    );
                 }
-
                 worker.terminate();
             } else if (event.data.type === "log") {
                 console.log("Worker log:", event.data.message);
             } else if (event.data.type === "error") {
                 console.error("Worker returned an error:", event.data.message);
+                worker.terminate();
             }
         };
 
