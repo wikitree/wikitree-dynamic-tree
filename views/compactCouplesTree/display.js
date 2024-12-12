@@ -880,12 +880,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     }
 
     function showTable(jqClicked, theTable, lOffset, tOffset) {
+        theTable.addClass("pop-up");
         // Attach the table to the container div
         theTable.prependTo($("#cctContainer"));
         theTable.draggable();
-        theTable.off("dblclick").on("dblclick", function () {
-            $(this).slideUp("fast");
-        });
 
         setOffset(jqClicked, theTable, lOffset, tOffset);
         $(window).resize(function () {
