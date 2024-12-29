@@ -26,6 +26,10 @@ div.cc7Table table th.tlBioAge {
   text-align: center;
 }
 
+#missingLinksTable .Female,
+#missingLinksTable .Male {
+  background-color: white;
+}
 div.cc7Table .Female {
   background-color: #ffe6ea;
 }
@@ -61,6 +65,7 @@ div.cc7Table #tree {
   width: 5em;
   margin: auto;
 }
+.cc7Table .cc7notes,
 .cc7Table .bioReport,
 .cc7Table .familySheet,
 .cc7Table .timeline {
@@ -74,6 +79,57 @@ div.cc7Table #tree {
   padding: 1.5em 1em 1em;
   white-space: nowrap;
   z-index: 10000;
+}
+.cc7notes textarea {
+  width: 90%;
+  display: block;
+  margin: 1em auto;
+  height: 10em;
+}
+.cc7notes h2 {
+  font-size: 1.2em;
+}
+.cc7Table .degree.hasNote {
+  position: relative; /* Ensure the gradient respects the td's bounds */
+}
+.cc7Table tr.Male .degree.hasNote {
+  background: linear-gradient(to top right, #cceeff, #1daddd);
+}
+.cc7Table tr.Female .degree.hasNote {
+  background: linear-gradient(to top right, #ffe6ea, #e05c6a);
+}
+.cc7Table tr .degree.hasNote {
+  background: linear-gradient(to top right, #f5f5f5, #c3f6c7);
+}
+.cc7Table .degree.ToDo::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid red; /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
+}
+.cc7Table .degree.InProgress::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid rgb(255, 255, 0); /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
+}
+.cc7Table .degree.Done::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid rgb(0, 255, 0); /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
 }
 .cc7Table .bioReport {
   white-space: normal;
@@ -104,6 +160,7 @@ th.tlBioAge {
 .tlDate {
   white-space: nowrap;
 }
+.cc7notes x,
 .bioReport x,
 .timeline x,
 .familySheet x {
@@ -376,6 +433,15 @@ div.cc7Table input {
 #cc7PBFilter {
   min-width: 1em;
 }
+#cc7DegFilter {
+  min-width: 1em;
+}
+.cc7DegFilter-option svg {
+  width: 15px;
+  height: 15px;
+  vertical-align: middle;
+}
+
 div.cc7Table #settingsDIV input[type="radio"] {
   min-width: 40px;
 }
