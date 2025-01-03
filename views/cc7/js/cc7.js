@@ -97,7 +97,8 @@ class CC7 {
         </p><p>
             Notes are saved in the browser and while they persist over sessions, they are not shared between devices. It is
             highly recommended that you backup your notes regularly to a file. You can also use this file to transport
-            your notes to another device.
+            your notes to another device. There are Backup/Restore/Clear buttons for notes on a tab in the CC7 Views Settings
+            popup.
         </p>
         <h4>Sorting the Table</h4>
         <ul>
