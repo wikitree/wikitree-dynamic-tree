@@ -49,6 +49,7 @@ export class CC7Notes {
                     <option value="" selected>None</option>
                     <option value="ToDo">To Do</option>
                     <option value="InProgress">In Progress</option>
+                    <option value="Parked">Parked</option>
                     <option value="Done">Done</option>
                 </select>
                 </label>
@@ -98,7 +99,7 @@ export class CC7Notes {
             jqDiv.addClass("instore");
             let theClasses = "hasNote";
             if (status != "") theClasses += ` ${status}`;
-            $(`tr[data-id="${person.Id}"] td.degree`).removeClass("ToDo InProgress Done").addClass(theClasses);
+            $(`tr[data-id="${person.Id}"] td.degree`).removeClass("ToDo InProgress Parked Done").addClass(theClasses);
         }
 
         jqDiv.remove();
@@ -113,7 +114,7 @@ export class CC7Notes {
         const loggedInUserWtId = CC7Notes.getUserId();
         const dbh = await CC7Notes.initializeDatabase();
         dbh.deleteItem(CC7Notes.dbStore, `${person.Id}:${loggedInUserWtId}`);
-        $(`tr[data-id="${person.Id}"] td.degree`).removeClass("hasNote ToDo InProgress Done");
+        $(`tr[data-id="${person.Id}"] td.degree`).removeClass("hasNote ToDo InProgress Parked Done");
 
         noteDiv.remove();
     }
@@ -211,7 +212,7 @@ export class CC7Notes {
 
     static async repaintNotes() {
         // Clear all existing note tags from the page
-        $(`tr td.degree`).removeClass("hasNote ToDo InProgress Done");
+        $(`tr td.degree`).removeClass("hasNote ToDo InProgress Parked Done");
 
         // Retrieve notes from store
         const idsAndStatus = await CC7Notes.getIdsAndStatus();

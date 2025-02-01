@@ -121,6 +121,16 @@ div.cc7Table #tree {
   border-top: 10px solid rgb(255, 255, 0); /* Triangle color and height */
   border-left: 10px solid transparent; /* Transparent left edge */
 }
+.cc7Table .degree.Parked::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid rgb(0, 0, 255); /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
+}
 .cc7Table .degree.Done::before {
   content: "";
   position: absolute;
