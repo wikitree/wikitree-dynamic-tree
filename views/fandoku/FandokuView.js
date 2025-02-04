@@ -38,7 +38,7 @@ import { Utils } from "../shared/Utils.js";
     const FullAppName = "FanDoku Game";
     const AboutPreamble =
         "The FanDoku Game was originally created as a fusion of the popular Fan Chart app and the logic game of Sudoku.<br>It was created to live amongst the WikiTree family of Tree Apps during the HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 July 2023";
+    const AboutUpdateDate = "04 February 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = ""; // "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
@@ -188,6 +188,12 @@ import { Utils } from "../shared/Utils.js";
         );
     }
     fandokuCheer.loop = false;
+
+    var popupDIV =
+        '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the FanDoku game
 
@@ -719,7 +725,17 @@ import { Utils } from "../shared/Utils.js";
         // '</div>';
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
+        // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML + aboutHTML + settingsHTML + popupDIV;
+        container.innerHTML = "";
+
+        // container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -2535,7 +2551,13 @@ import { Utils } from "../shared/Utils.js";
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, xy) {
+    Tree.prototype.personPopup  = function (person) {
+        console.log(personPopup.popupHTML(person, AboutAppIcon, "fandoku"));
+        console.log("FanChartView.personPopup");
+    };
+    
+    
+    function placeHolder4PersonPopup (person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
