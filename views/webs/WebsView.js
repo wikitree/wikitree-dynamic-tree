@@ -82,7 +82,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const FullAppName = "Ancestor Webs tree app";
     const AboutPreamble =
         "The Spider Webs app, originally created as a standalone WikiTree app, is the basis for this app.<br>The current Tree App version was renamed and created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "12 March 2024";
+    const AboutUpdateDate = "04 February 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/ancWebs.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =""; //        "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
@@ -261,6 +261,12 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     var repeatAncestorTracker = new Object();
     var repeatAncestorLineTracker = [];
     var repeatAncestorCounter = [0];
+
+    var popupDIV =
+        '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Ancestor Webs
 
@@ -774,29 +780,33 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             AboutAppIcon +
             "<br>Original Author: " +
             AboutOriginalAuthor +
-            (AboutAdditionalProgrammers > ""
-                ? "<br>Additional Programming by: " + AboutAdditionalProgrammers
-                : "") +
+            (AboutAdditionalProgrammers > "" ? "<br>Additional Programming by: " + AboutAdditionalProgrammers : "") +
             "<br>Assistance and Code borrowed from: " +
             AboutAssistants +
             "<br/>" +
-            (AboutLatestG2G > ""
-                ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>"
-                : "") +
-            (AboutHelpDoc > ""
-                ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>"
-                : "") +
+            (AboutLatestG2G > "" ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>" : "") +
+            (AboutHelpDoc > "" ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>" : "") +
             (AboutOtherApps > ""
                 ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
                 : "") +
             "</div>";
-            
-            var settingsHTML = "";
+
+        var settingsHTML = "";
 
         settingsHTML += WebsView.websSettingsOptionsObject.createdSettingsDIV; // +
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
+        // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML  + aboutHTML + settingsHTML + popupDIV;
+        container.innerHTML = "";
+        
+        // container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -897,7 +907,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             let theDIV = document.getElementById("AddNewPersonDIV");
             let theX =
-                '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.cancelAddNewPopup();">' + SVGbtnCLOSE + '</a></span>';
+                '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.cancelAddNewPopup();">' +
+                SVGbtnCLOSE +
+                "</a></span>";
             let theHTML =
                 theX +
                 "<H3>Enter WikiTree ID for New Person</H3><input id=newWikiTreeID>&nbsp;&nbsp;&nbsp;&nbsp;<button class=small onclick='WebsView.reallyAddPerson();'>Add New Person</button><br>";
@@ -992,8 +1004,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         //     //   WebsView.currentSettings["general_options_badgeLabels_otherValue"] =
         //     //       theCookieSettings["general_options_badgeLabels_otherValue"];
         //   }
-        
-        
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
@@ -1079,14 +1089,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         // document.getElementById("line_options_thickness_radio1").setAttribute("onchange", "WebsView.optionElementJustChanged();");
         // document.getElementById("line_options_thickness_radio2").setAttribute("onchange", "WebsView.optionElementJustChanged();");
         // document.getElementById("line_options_thickness_radio3").setAttribute("onchange", "WebsView.optionElementJustChanged();");
-        
+
         // SVG4MRCAoption1.setAttribute("width", "50px");
         // SVG4MRCAoption1.setAttribute("height", "50px");
         // SVG4MRCAoption1.style.display = "inline-block";
         // SVG4MRCAoption2.setAttribute("width", "50px");
         // SVG4MRCAoption2.setAttribute("height", "50px");
         // SVG4MRCAoption2.style.display = "inline-block";
-        
+
         // SVG4MRCAoption1.innerHTML = "<rect width=20px height=20px rx=4px ry=4px x=10 y=10  />";
         // SVG4MRCAoption2.innerHTML =
         //     "<rect width=20 height=20  rx=4px ry=4px x=10 y=10 style='fill:pink;stroke:black;stroke-width:1;opacity:1' />";
@@ -5045,7 +5055,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, xy) {
+    Tree.prototype.personPopup  = function (person) {
+        console.log(personPopup.popupHTML(person, AboutAppIcon, "webs"));
+        console.log("FanChartView.personPopup");
+    };
+    
+    
+    function placeHolder4PersonPopup (person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),

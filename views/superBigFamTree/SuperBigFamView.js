@@ -170,7 +170,7 @@ import { Utils } from "../shared/Utils.js";
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "12 March 2024";
+    const AboutUpdateDate = "04 February 2025";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -11254,7 +11254,12 @@ import { Utils } from "../shared/Utils.js";
     /**
      * Show a popup for the person.
      */
-    SuperBigFamView.personPopup = Tree.prototype.personPopup = function (person, xy, Code) {
+    SuperBigFamView.personPopup = Tree.prototype.personPopup = function ( person ) {
+        console.log(personPopup.popupHTML(person));
+        console.log("SuperBigFamView.personPopup");
+    }
+    
+    function placeHolderFunction4Popup (person, xy, Code) {
         this.removePopups();
         condLog("PERSON POPUP : ", SuperBigFamView.currentPopupID, person, Code, xy);
         // let thisPeep = thePeopleList[person._data.Id];

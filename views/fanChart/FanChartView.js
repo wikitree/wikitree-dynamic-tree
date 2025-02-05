@@ -51,7 +51,7 @@ import { Utils } from "../shared/Utils.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "12 March 2024";
+    const AboutUpdateDate = "4 February 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -425,6 +425,12 @@ import { Utils } from "../shared/Utils.js";
     var stickerList = [];
     var currentBadges = [];
     var currentHighlightCategory = "";
+
+    var popupDIV =
+        '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
 
@@ -1320,7 +1326,14 @@ import { Utils } from "../shared/Utils.js";
             "</div>";
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML + popupDIV;
+        container.innerHTML = "";
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -4461,10 +4474,19 @@ import { Utils } from "../shared/Utils.js";
 
         return luminance;
     }
+
+    
+
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, xy) {
+    Tree.prototype.personPopup  = function (person) {
+        console.log(personPopup.popupHTML(person));
+        console.log("FanChartView.personPopup");
+    };
+    
+    
+    function placeHolder4PersonPopup (person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
