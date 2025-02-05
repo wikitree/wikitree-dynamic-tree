@@ -409,14 +409,14 @@ main {
   top: 1px;
 }
 
-ul.profile-tabs {
+ul.treeapp-tabs {
   margin-left: 0;
   margin-bottom: 10px;
   text-align: center;
   border-bottom: 2px solid #ffe270
 }
 
-ul.profile-tabs li {
+ul.treeapp-tabs li {
   list-style-type: none;
   display: inline;
   line-height: 34px;
@@ -424,32 +424,32 @@ ul.profile-tabs li {
   background: #e1f0b4
 }
 
-ul.profile-tabs li:hover {
+ul.treeapp-tabs li:hover {
   background: #ffe270
 }
 
-ul.profile-tabs li.current {
+ul.treeapp-tabs li.current {
   background: #ffe270
 }
 
-ul.profile-tabs li.locked {
+ul.treeapp-tabs li.locked {
   background-image: url(/images/icons/nav-locked.png.pagespeed.ce.Eu6d3dWI-Y.png);
   background-color: #e1f0b4;
   background-repeat: no-repeat;
   background-position: 95% center
 }
 
-ul.profile-tabs a:link {
+ul.treeapp-tabs a:link {
   text-decoration: none
 }
 
-ul.profile-tabs {
+ul.treeapp-tabs {
   margin-left: 0;
   text-align: center;
   border-bottom: 2px solid #ffe270
 }
 
-ul.profile-tabs li {
+ul.treeapp-tabs li {
   list-style-type: none;
   display: inline-block;
   padding: 3px 5px;
@@ -459,24 +459,24 @@ ul.profile-tabs li {
   margin-right: 1px
 }
 
-ul.profile-tabs li:hover {
+ul.treeapp-tabs li:hover {
   background: #ffe270;
   margin-left: 0;
   margin-right: 0
 }
 
-ul.profile-tabs li.current {
+ul.treeapp-tabs li.current {
   background: #ffe270
 }
 
-ul.profile-tabs li.locked {
+ul.treeapp-tabs li.locked {
   background-image: url(/images/icons/nav-locked.png.pagespeed.ce.Eu6d3dWI-Y.png);
   background-color: #e1f0b4;
   background-repeat: no-repeat;
   background-position: 95% center
 }
 
-ul.profile-tabs a:link {
+ul.treeapp-tabs a:link {
   text-decoration: none;
   margin-left: 0;
   margin-right: 0

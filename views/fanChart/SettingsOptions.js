@@ -374,7 +374,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // this function is used by the createSettingsDIV function, but could be used standalone if you wanted a different wrapper for your settings
     createULelements(data) {
         // condLog("createULelements : ", data.tabs);
-        let theUL = "<ul class='profile-tabs'>";
+        let theUL = "<ul class='treeapp-tabs'>";
         let theDIVs = "";
         for (let tab in data.tabs) {
             // condLog("createULelements - TAB:", tab, data.tabs[tab].name);
@@ -905,7 +905,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     condLog("TRYING to BUTTON", option);
                     optionElement = document.createElement("button");
                     optionElement.className = "btn btn-primary";
-                    
+
                     if (option.value) {
                         optionElement.setAttribute("value",option.value);
                     }
