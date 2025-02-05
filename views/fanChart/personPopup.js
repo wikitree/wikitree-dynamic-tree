@@ -51,7 +51,7 @@ personPopup.popupHTML = function (person, appIcon = "", appView = "") {
     let extrasAtBottom =
          "WikiTree ID: " +
          person._data.Name +
-         `&nbsp;&nbsp;<button aria-label="Copy ID" class="copyWidget x-widget" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` +
+         `&nbsp;&nbsp;<button aria-label="Copy ID" class="copyWidget x-widget borderless" onclick='SuperBigFamView.copyDataText(this);' data-copy-text="` +
          person._data.Name +
          `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
       
