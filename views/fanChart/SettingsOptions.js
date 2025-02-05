@@ -363,7 +363,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             SVGbtnCLOSE +
             "</A></span>" +
             this.createULelements(data) +
-            '<br />    <div align="center">     <button id="saveSettingsChanges" class="saveButton">Save changes (all tabs)</button>' +
+            '<br />    <div align="center">     <button id="saveSettingsChanges" class="saveButton btn btn-primary">Save changes (all tabs)</button>' +
             "</div></div>";
 
         return theDIVhtml;
@@ -904,6 +904,8 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 } else if (option.type == "button") {
                     condLog("TRYING to BUTTON", option);
                     optionElement = document.createElement("button");
+                    optionElement.className = "btn btn-primary";
+                    
                     if (option.value) {
                         optionElement.setAttribute("value",option.value);
                     }
