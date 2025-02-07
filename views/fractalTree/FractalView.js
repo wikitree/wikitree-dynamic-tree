@@ -456,6 +456,13 @@ import { Utils } from "../shared/Utils.js";
         '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
         SVGbtnCLOSE +
         "</A></span></div>";
+    var connectionPodDIV =
+        '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
 
     FractalView.prototype.meta = function () {
         return {
@@ -1261,6 +1268,9 @@ import { Utils } from "../shared/Utils.js";
         infoPanel.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML + popupDIV;
         container.innerHTML = "";
         
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+
         // container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
@@ -3496,8 +3506,19 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        console.log(personPopup.popupHTML(person, AboutAppIcon, "fractal"));
-        console.log("FanChartView.personPopup");
+        
+            personPopup.popupHTML(
+                person,
+                {
+                    type: "Ahn",
+                    ahNum: FractalView.myAhnentafel.listByPerson[person._data.Id],
+                    primaryPerson: thePeopleList[FractalView.myAhnentafel.list[1]],
+                    myAhnentafel: FractalView.myAhnentafel,
+                },
+                AboutAppIcon,
+                "fractal"
+            );
+        console.log("FractalView.personPopup");
     };
     
     
