@@ -371,7 +371,7 @@ export class CachedPerson {
         return this._data.Spouses && this._data.PreferredSpouseId;
     }
     hasNoSpouse() {
-        return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.length == 0;
+        return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.size == 0;
     }
     setPreferredSpouse(id) {
         if (this.hasSpouse(id)) {
@@ -379,7 +379,7 @@ export class CachedPerson {
             // also change the preferred spouse of the preferred spouse if possible
             const thisId = this.getId();
             const spouse = this.getSpouse();
-            if (spouse._data.preferredSpouse != thisId && spouse._data.Spouses && spouse._data.Spouses[thisId]) {
+            if (spouse._data.preferredSpouse != thisId && spouse._data.Spouses && spouse._data.Spouses.has(thisId)) {
                 spouse._data.preferredSpouse = thisId;
             }
             return true;
