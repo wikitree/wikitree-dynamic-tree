@@ -12,9 +12,11 @@
 // Put these functions into a "personPopup" namespace.
 window.personPopup = window.personPopup || {};
 
+let connectObject = {};
 // Returns an array [x , y] that corresponds to the endpoint of rθ from (centreX,centreY)
-personPopup.popupHTML = function (person, appIcon = "", appView = "") {
+personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appView = "") {
     console.log("Popup for ", person);
+    connectObject = connectionObj;
 
     let thisPopup = document.getElementById("popupDIV");
     thisPopup.style.display = "block";
@@ -198,7 +200,9 @@ personPopup.popupHTML = function (person, appIcon = "", appView = "") {
                 <span style="color:red; position:absolute; right:0.2em; top:0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePopup();">` +
         SVGbtnCLOSE +
         `</a></span>
-                    <div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
+                    <div class="image-box"><img src="https://www.wikitree.com/${photoUrl}">
+                    <br/><br/><A onclick=popupConnectionDIV()><img style="height:24px; cursor:pointer;" src="https://dev-2025.wikitree.com/images/icons/icon-connect.svg"></A>
+                    </div>
                     <div class="vital-info">
                         <div class="name">
                         <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${displayName4Popup}</a>
@@ -228,6 +232,395 @@ personPopup.popupHTML = function (person, appIcon = "", appView = "") {
     return "Pop!"; 
     // };
 };
+
+function breakDownCC7Code(longCode) {
+    let CCcodes = [[ "A0", "A0"]]; // build up an array of arrays - for each person in the chain, made up of:
+    let currIndiCode = "A0"; // individual code for next link in the chain (RM / RF / Sn / Pn / Kn)
+    let currBuiltCode = "A0"; // unique full code identifier for this person in the chain (from A0 up to currIndiCode)
+    // FIRST person will have currBuiltCode of A0 / LAST person (the one whose popup we're currently viewing) will have currBuiltCode == longCode
+    // Others will have something in between those extremes
+
+    let currPos = 0; // position in the longCode string
+
+    if (longCode == "A0" || longCode.length < 2 || longCode.substr(0,2) != "A0") {
+        return CCcodes;
+    }
+
+    // OK - so - it appears that we are dealing with a LEGIT longCode, we can move onto position 2 of the string (0 positioning remember, so 3rd character)
+    currPos = 2;
+    while (currPos < longCode.length) {
+        if (longCode[currPos] == "R" || longCode[currPos] == "P") {
+            // paRENTS and PARTNERS
+            currIndiCode = longCode.substr(currPos,2);
+            currBuiltCode += currIndiCode;
+            currPos += 2;
+        } else {
+            // SIBlings and KIDS
+            currIndiCode = longCode.substr(currPos, 3);
+            currBuiltCode += currIndiCode;
+            currPos += 3;
+        }   
+        CCcodes.push([currIndiCode, currBuiltCode]);
+    }
+
+    return CCcodes;
+}
+
+function popupConnectionDIV() {
+    console.log("POP UP - Connection SVG pod !");
+
+    let thisPopup = document.getElementById("connectionPodDIV");
+    thisPopup.style.display = "block";
+
+    thisPopup.classList.add("popup");
+    console.log("See anything??", connectObject);
+
+    let popupHTML =
+        `
+            <div class="popup-box" style="border-color: green">
+            
+                <div class="top-info">
+                <span style="color:red; position:absolute; right:0.2em; top:0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePodDIV();">` + SVGbtnCLOSE +  `</a></span>  `;
+
+    let connectionHTML = "";
+    if (connectObject.type == "Ahn") {
+        let ahnNumArray = connectObject.ahNum;
+        if (typeof connectObject.ahNum == "number") {
+            ahnNumArray = [connectObject.ahNum];
+        }
+
+        for (let aa = 0; aa < ahnNumArray.length; aa++) {
+            var ahnNum = ahnNumArray[aa];
+
+            let SVGhtml = "";
+            let ySVG = 10;
+            let bubbleWidth = 200;
+            let bubbleHeight = 44;
+
+            thisPopup.innerHTML =
+                "<svg id=tempSVG width=400 height=40><text id=testTextLength>" +
+                "Josh Azariah Ashley" +
+                "</text></svg>";
+            console.log("Width of ", "Josh Azariah Ashley", document.getElementById("testTextLength").clientWidth);
+            console.log({ ahnNum }, typeof connectObject.ahNum);
+
+            let maxWidth4NoSquishing = document.getElementById("testTextLength").clientWidth;
+
+            while (ahnNum >= 1) {
+                person = thePeopleList[connectObject.myAhnentafel.list[ahnNum]];
+                var photoUrl = person.getPhotoUrl(75);
+
+                // Use generic gender photos if there is not profile photo available
+                if (!photoUrl || person._data.IsLiving == true) {
+                    if (person.getGender() === "Male") {
+                        photoUrl = "images/icons/male.gif";
+                    } else if (person && person.getGender() === "Female") {
+                        photoUrl = "images/icons/female.gif";
+                    } else {
+                        photoUrl = "images/icons/no-gender.gif";
+                    }
+                }
+
+                // connectionHTML += `<img height=40px src="https://www.wikitree.com/${photoUrl}"> <BR>`;
+
+                if (ahnNum < ahnNumArray[aa]) {
+                    SVGhtml +=
+                        `<line style="stroke:rgb(255,0,0);stroke-width:2" x1="` +
+                        (10 + bubbleWidth / 2) +
+                        `" y1="` +
+                        (ySVG - 20) +
+                        `" x2="` +
+                        (10 + bubbleWidth / 2) +
+                        `" y2="` +
+                        ySVG +
+                        `"></line>`;
+                }
+                SVGhtml += `<rect x="10" y="${ySVG}" rx="10" ry="10" width="${bubbleWidth}" height="${bubbleHeight}" style="fill:white;stroke:black;stroke-width:1;opacity:1"></rect>`;
+                SVGhtml += `<image  height="40" href="https://www.wikitree.com/${photoUrl}" x=20 y=${ySVG + 2} />`;
+
+                thisPopup.innerHTML =
+                    "<svg id=tempSVG width=400 height=40><text id=testTextLength>" +
+                    person.getDisplayName() +
+                    "</text></svg>";
+                console.log(
+                    "Width of ",
+                    person.getDisplayName(),
+                    document.getElementById("testTextLength").clientWidth
+                );
+
+                let extraLengthStuff = "";
+                if (document.getElementById("testTextLength").clientWidth > maxWidth4NoSquishing) {
+                    extraLengthStuff = ` textLength="${bubbleWidth - 60}" lengthAdjust="spacingAndGlyphs"`;
+                }
+                SVGhtml +=
+                    `<text id="textAhn${ahnNum}" text-anchor="middle" x="` +
+                    (10 + 40 + 10 + (bubbleWidth - 60) / 2) +
+                    `" y="${ySVG + 18}"  ${extraLengthStuff}>` +
+                    person.getDisplayName() +
+                    `</text>`;
+
+                // SVGhtml +=
+                //     `<text id="zextAhn${ahnNum}" text-anchor="middle" x="` +
+                //     (10 + 40 + 10 + (bubbleWidth - 60) / 2) +
+                //     `" y="${ySVG + 38}"  >` +
+                //     // person.getDisplayName() +
+                //     "Josh Azariah Ashley" +
+                //     `</text>`;
+
+                SVGhtml +=
+                    `<text text-anchor="middle" x="` +
+                    (10 + 40 + 10 + (bubbleWidth - 60) / 2) +
+                    `" y="${ySVG + 38}">` +
+                    lifespan(person) +
+                    `</text>`;
+
+                ySVG += bubbleHeight + 20;
+
+                let peepNames = person.getDisplayName().split(" ");
+                for (let i = 0; i < peepNames.length; i++) {
+                    // connectionHTML += peepNames[i] + "<br/>";
+                }
+                // connectionHTML += "<br/>" + lifespan(person) + "<br/>";
+
+                ahnNum = Math.floor(ahnNum / 2);
+            }
+
+            if (aa > 0) {
+                popupHTML +=
+                    "<svg id=connectionsDiagram width=" +
+                    20 +
+                    " height=" +
+                    ySVG +
+                    ">" +
+                    `<line style="stroke:rgb(4, 53, 20);stroke-width:2" x1="` +
+                    10 +
+                    `" y1="` +
+                    0 +
+                    `" x2="` +
+                    10 +
+                    `" y2="` +
+                    ySVG +
+                    `"></line>` +
+                    "</svg>";
+            }
+            SVGhtml =
+                "<svg id=connectionsDiagram width=" + (20 + bubbleWidth) + " height=" + ySVG + ">" + SVGhtml + "</svg>";
+            popupHTML += SVGhtml;
+        }
+        popupHTML += connectionHTML;
+    } else if (connectObject.type == "CC") {
+        let codesList = connectObject.person._data.CodesList;
+        let minX = 10;
+        let minY = 10;
+        let maxX = 10;
+        let maxY = 10;
+
+        for (let aa = 0; aa < codesList.length; aa++) {
+            var thisCode = codesList[aa];
+
+            console.log("CODE # ",aa,  thisCode);
+            var breakDownList = breakDownCC7Code(thisCode);
+            
+            
+            let SVGhtml = "";
+            let xSVG = 10;
+            let ySVG = 10;
+            
+
+            let bubbleWidth = 200;
+            let bubbleHeight = 44;
+
+            thisPopup.innerHTML =
+                "<svg id=tempSVG width=400 height=40><text id=testTextLength>" +
+                "Josh Azariah Ashley" +
+                "</text></svg>";
+            console.log("Width of ", "Josh Azariah Ashley", document.getElementById("testTextLength").clientWidth);
+            console.log({ thisCode }, typeof connectObject.ahNum);
+
+            let maxWidth4NoSquishing = document.getElementById("testTextLength").clientWidth;
+
+            for (let cc = 0; cc < breakDownList.length; cc++) {
+                let thisPeepType = breakDownList[cc][0][0];
+                let thisPeepCode = breakDownList[cc][1];
+
+                person = thePeopleList[ connectObject.leafCollection[thisPeepCode].Id ];
+                var photoUrl = person.getPhotoUrl(75);
+
+                // Use generic gender photos if there is not profile photo available
+                if (!photoUrl || person._data.IsLiving == true) {
+                    if (person.getGender() === "Male") {
+                        photoUrl = "images/icons/male.gif";
+                    } else if (person && person.getGender() === "Female") {
+                        photoUrl = "images/icons/female.gif";
+                    } else {
+                        photoUrl = "images/icons/no-gender.gif";
+                    }
+                }
+
+                // connectionHTML += `<img height=40px src="https://www.wikitree.com/${photoUrl}"> <BR>`;
+
+                if (thisPeepCode != "A0") {
+                    if (thisPeepType == "K") {
+                        ySVG += bubbleHeight + 20;
+                        SVGhtml +=
+                            `<line style="stroke:rgb(10, 108, 24);stroke-width:2" x1="` +
+                            (xSVG + bubbleWidth / 2) +
+                            `" y1="` +
+                            (ySVG - 20) +
+                            `" x2="` +
+                            (xSVG + bubbleWidth / 2) +
+                            `" y2="` +
+                            ySVG +
+                            `"></line>`;
+                    } else if (thisPeepType == "R") {
+                        SVGhtml +=
+                            `<line style="stroke:rgb(10, 108, 24);stroke-width:2" x1="` +
+                            (xSVG + bubbleWidth / 2) +
+                            `" y1="` +
+                            (ySVG - 20) +
+                            `" x2="` +
+                            (xSVG + bubbleWidth / 2) +
+                            `" y2="` +
+                            ySVG +
+                            `"></line>`;
+                        ySVG -= bubbleHeight + 20;
+                    } else if (thisPeepType == "S") {
+                        SVGhtml +=
+                            `<line style="stroke:rgb(0, 0, 255);stroke-width:2" x1="` +
+                            (xSVG + bubbleWidth) +
+                            `" y1="` +
+                            (ySVG + bubbleHeight / 2) +
+                            `" x2="` +
+                            (xSVG + bubbleWidth + 20) +
+                            `" y2="` +
+                            (ySVG + bubbleHeight / 2) +
+                            `"></line>`;
+
+                        xSVG += bubbleWidth + 20;
+                    } else if (thisPeepType == "P") {
+                        SVGhtml +=
+                            `<line style="stroke:rgb(255,0,0);stroke-width:3" x1="` +
+                            (xSVG + bubbleWidth) +
+                            `" y1="` +
+                            (ySVG + bubbleHeight / 2 - 5) +
+                            `" x2="` +
+                            (xSVG + bubbleWidth + 20) +
+                            `" y2="` +
+                            (ySVG + bubbleHeight / 2 - 5) +
+                            `"></line>`;
+
+                        SVGhtml +=
+                            `<line style="stroke:rgb(255,0,0);stroke-width:3" x1="` +
+                            (xSVG + bubbleWidth) +
+                            `" y1="` +
+                            (ySVG + bubbleHeight / 2 + 5) +
+                            `" x2="` +
+                            (xSVG + bubbleWidth + 20) +
+                            `" y2="` +
+                            (ySVG + bubbleHeight / 2 + 5) +
+                            `"></line>`;
+
+                        xSVG += bubbleWidth + 20;
+                    }
+                }
+                SVGhtml += `<rect x="${xSVG}" y="${ySVG}" rx="10" ry="10" width="${bubbleWidth}" height="${bubbleHeight}" style="fill:white;stroke:black;stroke-width:1;opacity:1"></rect>`;
+                SVGhtml += `<image  height="40" href="https://www.wikitree.com/${photoUrl}" x=${xSVG + 10} y=${ySVG + 2} />`;
+
+                thisPopup.innerHTML =
+                    "<svg id=tempSVG width=400 height=40><text id=testTextLength>" +
+                    person.getDisplayName() +
+                    "</text></svg>";
+                console.log(
+                    "Width of ",
+                    person.getDisplayName(),
+                    document.getElementById("testTextLength").clientWidth
+                );
+
+                let extraLengthStuff = "";
+                if (document.getElementById("testTextLength").clientWidth > maxWidth4NoSquishing) {
+                    extraLengthStuff = ` textLength="${bubbleWidth - 60}" lengthAdjust="spacingAndGlyphs"`;
+                }
+                SVGhtml +=
+                    `<text id="text${thisPeepCode}" text-anchor="middle" x="` +
+                    (xSVG + 40 + 10 + (bubbleWidth - 60) / 2) +
+                    `" y="${ySVG + 18}"  ${extraLengthStuff}>` +
+                    person.getDisplayName() +
+                    `</text>`;
+
+                // SVGhtml +=
+                //     `<text id="zextAhn${ahnNum}" text-anchor="middle" x="` +
+                //     (10 + 40 + 10 + (bubbleWidth - 60) / 2) +
+                //     `" y="${ySVG + 38}"  >` +
+                //     // person.getDisplayName() +
+                //     "Josh Azariah Ashley" +
+                //     `</text>`;
+
+                SVGhtml +=
+                    `<text text-anchor="middle" x="` +
+                    (xSVG + 40 + 10 + (bubbleWidth - 60) / 2) +
+                    `" y="${ySVG + 38}">` +
+                    lifespan(person) +
+                    `</text>`;
+
+                
+
+                minX = Math.min(minX, xSVG);
+                maxX = Math.max(maxX, xSVG);
+                minY = Math.min(minY, ySVG);
+                maxY = Math.max(maxY, ySVG);
+                // let peepNames = person.getDisplayName().split(" ");
+                // for (let i = 0; i < peepNames.length; i++) {
+                //     // connectionHTML += peepNames[i] + "<br/>";
+                // }
+                // connectionHTML += "<br/>" + lifespan(person) + "<br/>";
+
+                // ahnNum = Math.floor(ahnNum / 2);
+            }
+
+            if (aa > 0) {
+                popupHTML +=
+                    "<svg id=connectionsDiagram width=" +
+                    20 +
+                    " height=" +
+                    ySVG +
+                    ">" +
+                    `<line style="stroke:rgb(4, 53, 20);stroke-width:2" x1="` +
+                    xSVG +
+                    `" y1="` +
+                    0 +
+                    `" x2="` +
+                    10 +
+                    `" y2="` +
+                    ySVG +
+                    `"></line>` +
+                    "</svg>";
+            }
+            // viewbox : minX , minY , width , height
+            SVGhtml =
+                "<svg id=connectionsDiagram width=" +
+                (20 + bubbleWidth + (maxX - minX)) +
+                " height=" +
+                (maxY - minY + bubbleHeight + 20) +
+                ` viewbox="` +
+                (minX - 10) +
+                " " +
+                (minY - 10) +
+                " " +
+                (20 + bubbleWidth + (maxX - minX)) +
+                "  " +
+                (maxY - minY + bubbleHeight + 20) +
+                `" >` +
+                SVGhtml +
+                "</svg>";
+            popupHTML += SVGhtml;
+        }
+        popupHTML += connectionHTML;
+    }                
+       
+
+    thisPopup.innerHTML = popupHTML;
+    
+}
 
  function lifespan(person) {
      var birth = "",
