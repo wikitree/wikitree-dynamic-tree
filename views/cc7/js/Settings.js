@@ -115,6 +115,13 @@ export class Settings {
                 subsections: [{ name: "mfOptions", label: "Missing Family Options" }],
                 // comment: "",
             },
+            {
+                name: "notes",
+                label: "Notes",
+                hideSelect: true,
+                subsections: [{ name: "notesss", label: "Backup/Resore Notes" }],
+                comment: "Create a backup file for your notes, restore them from a file, or delete them all.",
+            },
         ],
         optionsGroups: [
             {
@@ -513,7 +520,7 @@ export class Settings {
                         re: /^Sticker.+should be after/,
                     },
                     {
-                        optionName: "sumb4",
+                        optionName: "sucb4",
                         type: "checkbox",
                         label: "Succession Navigation Box before ...",
                         defaultValue: 0,
@@ -589,6 +596,35 @@ export class Settings {
                         type: "checkbox",
                         label: 'No children and the "No more children" box unchecked',
                         defaultValue: 1,
+                    },
+                ],
+            },
+            {
+                tab: "notes",
+                subsection: "notesss",
+                category: "notes",
+                subcategory: "functions",
+                options: [
+                    {
+                        optionName: "backupNotes",
+                        label: "Backup Notes",
+                        type: "button",
+                        // function: "CC7Notes.backupNotes",
+                        defaultValue: true,
+                    },
+                    {
+                        optionName: "restoreNotes",
+                        label: "Restore Notes",
+                        type: "button",
+                        // function: "CC7Notes.restoreNotes",
+                        defaultValue: true,
+                    },
+                    {
+                        optionName: "deleteNotes",
+                        label: "Delete All Notes",
+                        type: "button",
+                        // function: "CC7Notes.deleteAllNotes",
+                        defaultValue: true,
                     },
                 ],
             },

@@ -1,7 +1,9 @@
 import { Settings } from "./Settings.js";
+import { PRIVACY_LEVELS } from "./PeopleTable.js";
+import { CC7Notes } from "./CC7Notes.js";
 
 export class MissingLinksView {
-    static buildView() {
+    static async buildView() {
         const missingLinksTable = $(`
         <table id="missingLinksTable">
             <thead>
@@ -25,6 +27,10 @@ export class MissingLinksView {
         </table>`);
         missingLinksTable.insertBefore($("#peopleTable"));
 
+        let idsAndStatus = await CC7Notes.getIdsAndStatus();
+        const idsWithNotes = new Map(idsAndStatus);
+        idsAndStatus = null;
+
         // sort the people by degree
         // TODO also sort by birthdate
         const mapArray = Array.from(window.people);
@@ -44,12 +50,19 @@ export class MissingLinksView {
 
             if (isMissingFamily(person)) {
                 // create row
+                const hasNote = idsWithNotes.has(person.Id);
+                let status = hasNote ? idsWithNotes.get(person.Id) : "";
+                if (status != "") status = " " + status;
+                const degreeCell = `<td class="degree${
+                    hasNote ? " hasNote" : ""
+                }${status}" title="Degree. Click to add/edit Notes.">${degree}°</td>`;
+
                 const newRow = $(`
-                <tr>
-                    <td><img id="ml-privacy-lock" src="${this.PRIVACY_LEVELS.get(privacy).img}" title="${
-                    this.PRIVACY_LEVELS.get(privacy).title
+                <tr class="${person.Gender}" data-id="${person.Id}">
+                    <td><img id="ml-privacy-lock" src="${PRIVACY_LEVELS.get(privacy).img}" title="${
+                    PRIVACY_LEVELS.get(privacy).title
                 }" /></td>
-                    <td>${degree}</td>
+                    ${degreeCell}
                     <td>${first}</td>
                     <td><a href="https://www.wikitree.com/genealogy/${last}" target="_blank">${last}</a></td>
                     <td>${birthDate ? birthDate : ""}</td>
@@ -108,18 +121,6 @@ export class MissingLinksView {
             return val;
         }
     }
-
-    // this was copied from PeopleTable -- should probably make it a shared thing
-    static PRIVACY_LEVELS = new Map([
-        [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
-        [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
-        [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
-        [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
-        [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
-        [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
-        [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
-        ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
-    ]);
 
     static sortPeople() {}
 }
