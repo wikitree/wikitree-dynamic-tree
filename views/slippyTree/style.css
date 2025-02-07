@@ -24,7 +24,7 @@ body > #view-container:has(> .slippy-tree-container) {
  * fill it, and b) it will never be dependent on the size of its children.
  * With that done, the view-container can be sized any way we like.
  */
-* > .slippy-tree-container {
+:has(> .slippy-tree-container) {
     position: relative;
 }
 .slippy-tree-container {
