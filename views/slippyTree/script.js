@@ -2245,7 +2245,7 @@ class SlippyTree extends View {
             }
         };
 
-        if (WikiTreeAPI && WikiTreeAPI.postToAPI) {
+        if (typeof WikiTreeAPI != "undefined" && WikiTreeAPI.postToAPI) {
             // We need to send "token" and do a POST on the live site, apparently.
             // Tap into WikiTreeAPI for this to future-proof for any other requirements.
             if (this.debug) console.log("Load " + JSON.stringify(usedparams));
