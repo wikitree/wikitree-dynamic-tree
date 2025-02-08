@@ -1193,11 +1193,8 @@ class SlippyTree extends View {
             // Re-add edges, people, labels in priority order
             for (const person of ordered) {
                 if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
-                if (typeof person.x != "number") {
-                    person.x = person.tx;
-                }
-                if (typeof person.y != "number") {
-                    person.y = person.ty;
+                if (typeof person.x != "number" || typeof person.y != "number") {
+                    person.x = person.y = 0;        // INITIAL POSITION: from center
                 }
             }
             if (this.browser) {
@@ -1217,11 +1214,8 @@ class SlippyTree extends View {
                 let focusedges = [];
                 for (const person of ordered) {
                     if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
-                    if (typeof person.x != "number") {
-                        person.x = person.tx;
-                    }
-                    if (typeof person.y != "number") {
-                        person.y = person.ty;
+                    if (typeof person.x != "number" || typeof person.y != "number") {
+                        person.x = person.y = 0;        // INITIAL POSITION: from center
                     }
                     peoplepane.appendChild(person.svg);
                 }
