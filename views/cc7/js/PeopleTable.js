@@ -559,11 +559,11 @@ class PeopleTable {
                         'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
                         "Complete</option>" +
                         "</select>" +
-                        "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
-                        "<button class='button small viewButton' id='listViewButton'>List</button>" +
-                        "<button class='button small viewButton active' id='tableViewButton'>Table</button>" +
-                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>" +
-                        "<button class='button small viewButton' id='missingLinksViewButton'>Missing Links</button>"
+                        "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='missingLinksViewButton'>Missing Links</button>"
                 )
             );
         }
@@ -746,7 +746,7 @@ class PeopleTable {
 
         if ($("#cc7excel").length == 0) {
             $(
-                '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
+                '<button id="cc7excel" title="Export an Excel file." class="btn btn-secondary btn-sm" style="display: inline-block;">Excel</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7excel")
                 .off("click")
@@ -756,7 +756,7 @@ class PeopleTable {
         }
         if ($("#cc7csv").length == 0) {
             $(
-                '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
+                '<button id="cc7csv" title="Export a CSV file." class="btn btn-secondary btn-sm" style="display: inline-block;">CSV</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7csv")
                 .off("click")
@@ -864,7 +864,7 @@ class PeopleTable {
         if ($("#wideTableButton").length == 0) {
             const pTable = $(".peopleTable");
             const wideTableButton = $(
-                "<div id='tableButtons'><button class='button small' id='wideTableButton'>Wide Table</button></div>"
+                "<div id='tableButtons'><button class='btn btn-secondary btn-sm' id='wideTableButton'>Wide Table</button></div>"
             );
             wideTableButton.insertBefore(pTable);
 
