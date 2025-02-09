@@ -236,6 +236,7 @@ div.cc7Table .timelineTable td {
   background: white;
   border-top: 1px solid forestgreen;
   border-bottom: 1px solid forestgreen;
+  caption-side: top;
 }
 
 .cc7Table #degreesTable {
@@ -804,6 +805,7 @@ table tr.cc7filter-row input[type="text"] {
   border-top: 1px solid forestgreen;
   border-left: 1px solid forestgreen;
   border-right: 1px solid forestgreen;
+  caption-side: top;
 }
 
 #cc7Container #statsTable thead tr {
