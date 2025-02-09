@@ -432,6 +432,14 @@ import { Utils } from "../shared/Utils.js";
         SVGbtnCLOSE +
         "</A></span></div>";
 
+     var connectionPodDIV =
+         '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+         '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+         SVGbtnCLOSE +
+         "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
+        
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Fan Chart
 
     /** Static variable to hold unique ids for private persons **/
@@ -1337,6 +1345,9 @@ import { Utils } from "../shared/Utils.js";
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
+
+         $("#popupDIV").draggable();
+         $("#connectionPodDIV").draggable();
 
         FanChartView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
@@ -4481,7 +4492,13 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        console.log(personPopup.popupHTML(person));
+        console.log("POP UP : person = ",person);
+        personPopup.popupHTML(person, {
+            type: "Ahn",
+            ahNum: FanChartView.myAhnentafel.listByPerson[person._data.Id]  ,
+            primaryPerson: thePeopleList[FanChartView.myAhnentafel.list[1]],
+            myAhnentafel: FanChartView.myAhnentafel
+        });
         console.log("FanChartView.personPopup");
     };
     

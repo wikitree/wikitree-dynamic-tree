@@ -267,6 +267,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
         SVGbtnCLOSE +
         "</A></span></div>";
+    var connectionPodDIV =
+        '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the Ancestor Webs
 
@@ -806,6 +813,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         infoPanel.innerHTML = btnBarHTML  + aboutHTML + settingsHTML + popupDIV;
         container.innerHTML = "";
         
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+
         // container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
@@ -5056,8 +5066,20 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        console.log(personPopup.popupHTML(person, AboutAppIcon, "webs"));
-        console.log("FanChartView.personPopup");
+        
+            personPopup.popupHTML(
+                person,
+                {
+                    type: "Ahn",
+                    ahNum: WebsView.myAhnentafel.listByPerson[person._data.Id],
+                    primaryPerson: thePeopleList[WebsView.myAhnentafel.list[1]],
+                    myAhnentafel: WebsView.myAhnentafel,
+                },
+                AboutAppIcon,
+                "webs"           
+            );
+
+        console.log("WebsView.personPopup");
     };
     
     

@@ -1739,6 +1739,13 @@ import { Utils } from "../shared/Utils.js";
             '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
+        var connectionPodDIV =
+            '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+            '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+            SVGbtnCLOSE +
+            "</A></span></div>";
+
+        popupDIV += connectionPodDIV;
 
         // var popupDIV = "<DIV id=popupDIV width=200px height=500px style='float:top; background-color:blue;'></DIV>";
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
@@ -1749,6 +1756,10 @@ import { Utils } from "../shared/Utils.js";
         infoPanel.parentNode.classList.add("stickyDIV");
         infoPanel.parentNode.style.padding = "0px";
         condLog("STYLE:", infoPanel.parentNode.style.padding);
+
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -11255,7 +11266,12 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     SuperBigFamView.personPopup = Tree.prototype.personPopup = function ( person ) {
-        console.log(personPopup.popupHTML(person));
+        personPopup.popupHTML(person, {
+            type: "CC",
+            person: person ,
+            leafCollection: SuperBigFamView.theLeafCollection
+            
+            });
         console.log("SuperBigFamView.personPopup");
     }
     
@@ -11604,6 +11620,12 @@ import { Utils } from "../shared/Utils.js";
         document.getElementById("popupDIV").style.display = "none";
         // condLog("REMOVE POPUP");
     };
+
+     SuperBigFamView.removePodDIV = function () {
+        //  document.getElementById("connectionPodDIV").innerHTML = "";         
+         document.getElementById("connectionPodDIV").style.display = "none";
+         // condLog("REMOVE POPUP");
+     };
 
     /**
      * Manage the ancestors tree
