@@ -4,22 +4,22 @@
 * 04.16.2024
 */
 
-@import url("/css/wt-fonts.css");
-@import url("/css/wt-opensans.css");
-@import url("/css/wt-examples.css");
-@import url("/css/wt-forms.css");
-@import url("/css/wt-buttons.css");
-@import url("/css/wt-links.css");
-@import url("/css/wt-icons.css");
-@import url("/css/wt-navigation.css");
-@import url("/css/wt-header.css");
-@import url("/css/wt-footer.css");
-@import url("/css/wt-components.css");
-@import url("/css/wt-content.css");
-@import url("/css/wt-tree.css");
-@import url("/css/wt-avatars.css");
-@import url("/css/wt-privacy.css");
-@import url("/css/wt-comments.css");
+@import url("wt-fonts.css");
+@import url("wt-opensans.css");
+@import url("wt-examples.css");
+@import url("wt-forms.css");
+@import url("wt-buttons.css");
+@import url("wt-links.css");
+@import url("wt-icons.css");
+@import url("wt-navigation.css");
+@import url("wt-header.css");
+@import url("wt-footer.css");
+@import url("wt-components.css");
+@import url("wt-content.css");
+@import url("wt-tree.css");
+@import url("wt-avatars.css");
+@import url("wt-privacy.css");
+@import url("wt-comments.css");
 
 .container {
   padding-left: 20px;
@@ -680,8 +680,8 @@ table.table-unstyled td {
 }
 
 .table-hover > tbody > tr:hover > * {
-  --bs-table-color-state: #15141A;
-  --bs-table-bg-state: rgba(240,240,235,0.5);
+  --bs-table-color-state: #15141a;
+  --bs-table-bg-state: rgba(240, 240, 235, 0.5);
 }
 
 table.table--data {
@@ -703,7 +703,7 @@ table.table--data th span[class*="icon--"] {
 }
 
 table.table--data th {
-  background-color: rgba(240,240,235,0.35);
+  background-color: rgba(240, 240, 235, 0.35);
   border: none;
 }
 
@@ -727,15 +727,15 @@ table.table--data .genderbar {
 }
 
 table.table--data td.person--male .genderbar {
-  background-color: #F2F1FF;
+  background-color: #f2f1ff;
 }
 
 table.table--data td.person--female .genderbar {
-  background-color: #FFEEEE;
+  background-color: #ffeeee;
 }
 
 table.table--data td.person--no-gender .genderbar {
-  background-color: #EEFFEE;
+  background-color: #eeffee;
 }
 
 table.table--data td.person--male,
@@ -743,4 +743,4 @@ table.table--data td.person--female,
 table.table--data td.person--no-gender {
   padding-left: 1rem;
   position: relative;
-} 
+}
