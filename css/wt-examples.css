@@ -1,0 +1,47 @@
+/*
+2024 Grid Examples
+*/
+
+.container.example {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.container.example .row [class^="col"] {
+  background-color: #f0f0eb;
+  border: 1px solid #dedecb;
+  padding: 1rem;
+}
+
+  .container.example .row .row { margin-top: 1rem; }
+
+ul.colorblocks {
+  clear: both;
+  display: block;
+  list-style: none;
+  margin: 00;
+  padding: 0;
+}
+
+  ul.colorblocks li {
+    display: inline-block;
+    margin-bottom: 20px;
+    margin-right: 10px;
+  }
+
+  ul.colorblocks li:last-child { margin-right: 0; }
+
+  .colorblocks figure {
+    display: block;
+    height: 70px;
+    margin: 0;
+    width: 70px;
+  }
+
+  .colorblocks figcaption {
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+  }
