@@ -1,0 +1,225 @@
+/*
+* 2024 Forms
+*/
+
+form h2 {
+  margin-top: 2.5rem;
+}
+
+form label {
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+  form label.required {
+    font-weight: 700;
+  }
+
+form .form-control {
+  /* border-color: #25422D; */
+  padding: .5rem .75rem;
+  width: 100%;
+}
+
+form .form-control:focus,
+form .form-select:focus {
+  border-color: #fad158;
+  box-shadow: 0 0 0 .25rem rgba(252,181,21,.25);
+}
+
+.input-group-text {
+  background-color: #f0f0eb;
+  padding: .375rem;
+}
+
+  .input-group-text img,
+  .input-group img,
+  label img,
+  form h2 img,
+  .form-text img,
+  .form-check img,
+  form h3 img {
+    max-height: 22px;
+  }
+
+.form-select {
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.form-select-inline {
+  display: inline-block;
+  font-size: 0.875rem;
+  width: auto;
+}
+
+textarea {
+  width: 100%;
+}
+
+.form-text {
+  color: #393A3C;
+}
+
+.form-text code {
+  font-size: 0.875rem;
+}
+
+.form-control-plaintext {
+  background-color: rgba(240,240,235,0.35);
+  border-radius: 0.375rem;
+  padding: .5rem;
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+}
+
+  .form-control-plaintext + .input-group-text {
+    background-color: rgba(240,240,235,0.35);
+    border: none;
+  }
+
+/* inline form check */
+form .form-check {
+  margin: 0;
+  padding: 0.25rem 0 0;
+}
+
+form .form-check .form-check-label,
+form .form-check label {
+  font-size: 1rem;
+  font-weight: 400;
+  padding-right: 10px;
+}
+
+form .form-check input.form-check-input,
+form .form-check input[type="radio"],
+form input[type="radio"],
+form .form-check input[type="checkbox"],
+form input[type="checkbox"] {
+  border-color: #ccc;
+  border-width: 1px;
+  float: none;
+  font-size: 1rem;
+  margin: 6px 2px 0 0;
+}
+
+  form .form-check .form-check-input:focus,
+  form .form-check input[type="radio"]:focus,
+  form input[type="radio"]:focus,
+  form .form-check input[type="checkbox"]:focus,
+  form input[type="checkbox"]:focus {
+    border-color: #25422d;
+    box-shadow: 0 0 0 .25rem rgba(0,128,0,.25);
+  }
+
+  form .form-check .form-check-input:checked,
+  form .form-check input[type="radio"]:checked,
+  form input[type="radio"]:checked,
+  form input[type="checkbox"]:checked {
+    background-color: #25422d;
+    border-color: #25422d;
+  }
+
+  form .form-check .form-check-label .form-check-input {
+    margin-right: 6px;
+    margin-top: 0;
+  }
+
+  form .form-check-input:disabled,
+  form input[type="radio"]:disabled,
+  form input[type="checkbox"]:disabled {
+    display: none;
+  }
+
+  form label input,
+  form label.form-check-label input.form-check-input {
+    margin-top: 1px;
+  }
+
+/* edit page overwrites */
+.edit--sidebar a {
+  font-size: 1rem;
+}
+
+.edit--sidebar p a {
+  font-size: 1.125rem;
+}
+
+.page--content h2 a,
+.edit--sidebar h2 a {
+  position: relative;
+  top: -4px;
+}
+
+.edit--sidebar .form-check-label {
+  padding-right: 4px !important;
+}
+
+.edit--sidebar .form-check img,
+.edit--sidebar label img {
+  max-height: 20px;
+}
+
+.edit--sidebar ol {
+  margin-bottom: 0.5rem;
+}
+
+  .edit--sidebar ol li {
+    font-size: 1rem;
+  }
+
+.edit--sidebar .tree--person::after {
+  display: none;
+}
+
+.edit--sidebar .p-gender {
+  border-radius: 4px;
+  display: inline-block;
+  height: 16px;
+  position: relative;
+  top: 2px;
+  width: 16px;
+}
+
+.edit--sidebar .photo--wrapper {
+  position: sticky;
+  top: 1vh;
+}
+
+/* tree overwrites */
+form .tree--person {
+  padding: 8px 10px;
+}
+
+/* suggestions */
+.suggestion-item {
+  border-radius: 0.375rem;
+  color: #25422d;
+  padding: 15px;
+}
+
+  .suggestion-item .form-control {
+    border-color: #666;
+  }
+
+  .suggestion-item img {
+    max-height: 20px;
+  }
+
+  .suggestion-item.suggestion-Error {
+    background-color: #ffcccc;
+  }
+
+  .suggestion-item.suggestion-Warning {
+    background-color: #ffee99;
+  }
+
+  .suggestion-item.suggestion-Hint {
+    background-color: #e1f0b4;
+  }
