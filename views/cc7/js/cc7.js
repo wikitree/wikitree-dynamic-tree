@@ -307,7 +307,7 @@ class CC7 {
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
             <button
                 id="getPeopleButton"
-                class="small button"
+                class="btn btn-primary btn-sm"
                 title="Get a list of connected people up to this degree">
                 Get CC3</button
             ><select id="cc7Degree" title="Select the degree of connection">
@@ -318,13 +318,13 @@ class CC7 {
                 <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="7">7</option></select
-            ><button id="getDegreeButton" class="small button" title="Get only people connected at the indicated degree">
+            ><button id="getDegreeButton" class="btn btn-secondary btn-sm" title="Get only people connected at the indicated degree">
                 Get Degree 3 Only</button
-            ><button id="cancelLoad" title="Cancel the current loading of profiles." class="small button">
+            ><button id="cancelLoad" title="Cancel the current loading of profiles." class="btn btn-secondary btn-sm">
                 Cancel</button
-            ><button id="savePeople" title="Save this data to a file for faster loading next time." class="small button">
+            ><button id="savePeople" title="Save this data to a file for faster loading next time." class="btn btn-secondary btn-sm">
                 Save</button
-            ><button id="loadButton" class="small button" title="Load a previously saved data file.">Load A File</button
+            ><button id="loadButton" class="btn btn-secondary btn-sm" title="Load a previously saved data file.">Load A File</button
             ><input
               id="getExtraDegrees"
               type="checkbox"
