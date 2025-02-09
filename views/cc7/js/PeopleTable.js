@@ -1206,7 +1206,7 @@ class PeopleTable {
         $("#cc7DegFilter").select2({
             placeholder: "Type a number or select a symbol",
             tags: true, // Allow custom input
-            data: [...shapeOptions.entries().map((opt) => ({ id: opt[0], title: opt[1].title }))],
+            data: [...shapeOptions.entries()].map((opt) => ({ id: opt[0], title: opt[1].title })),
             templateResult: formatDegOption,
             templateSelection: formatDegOption,
             // dropdownParent: $("#cc7Container"),
