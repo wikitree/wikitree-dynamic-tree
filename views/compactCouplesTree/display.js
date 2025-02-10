@@ -1030,7 +1030,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             if (mayChangeSpouse && person.getId() != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
-                button.className = "select-spouse-button";
+                button.className = "select-spouse-button btn btn-sm";
                 button.textContent = RIGHT_ARROW;
                 button.setAttribute("couple-id", couple.getId());
                 button.setAttribute("person-id", currentSpouse.getId());
