@@ -94,8 +94,8 @@ window.StatsView = class StatsView extends View {
                             <option value="10">10</option>
                         </select>
                     </label>
-                    <button id="getStatsButton" class="small button" title="Get generational statistics up to the selected generations.">Get generational stats</button>
-                    <button id="cancelLoad" class="small button" title="Cancel the current loading of profiles.">Cancel</button>
+                    <button id="getStatsButton" class="btn btn-primary btn-sm" title="Get generational statistics up to the selected generations.">Get generational stats</button>
+                    <button id="cancelLoad" class="btn btn-primary btn-sm" title="Cancel the current loading of profiles.">Cancel</button>
                     <span id="help-button" title="About this">?</span>
                     <div id="help-text" class="pop-up">${StatsView.#helpText}</div><br>
                     <fieldset id="statsFieldset">

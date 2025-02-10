@@ -746,7 +746,7 @@ class PeopleTable {
 
         if ($("#cc7excel").length == 0) {
             $(
-                '<button id="cc7excel" title="Export an Excel file." class="btn btn-secondary btn-sm" style="display: inline-block;">Excel</button>'
+                '<button id="cc7excel" title="Export an Excel file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">Excel</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7excel")
                 .off("click")
@@ -756,7 +756,7 @@ class PeopleTable {
         }
         if ($("#cc7csv").length == 0) {
             $(
-                '<button id="cc7csv" title="Export a CSV file." class="btn btn-secondary btn-sm" style="display: inline-block;">CSV</button>'
+                '<button id="cc7csv" title="Export a CSV file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">CSV</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7csv")
                 .off("click")
@@ -1230,6 +1230,7 @@ class PeopleTable {
         // Add Clear Filters button
         $("#clearTableFiltersButton").remove();
         const clearFiltersButton = document.createElement("button");
+        clearFiltersButton.className = "btn btn-secondary btn-sm ms-1";
         clearFiltersButton.textContent = "X";
         clearFiltersButton.title = "Clear Filters";
         clearFiltersButton.id = "clearTableFiltersButton";

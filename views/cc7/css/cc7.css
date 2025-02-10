@@ -409,40 +409,18 @@ span.missingText {
 .cc7Table .relationCell {
   white-space: nowrap;
 }
-#getPeopleButton {
-  width: 7em;
-  text-align: center;
-  margin-left: 1em;
-  margin-right: 0.5em;
-  white-space: nowrap;
-  margin-bottom: 1em;
-}
 #cc7Degree {
-  width: 2.5em;
-  min-width: 2.5em;
-  margin-right: 0.5em;
+  width: 3em;
+  min-width: 3em;
 }
 #cc7Degree option {
   text-align: center;
 }
-#getDegreeButton {
-  margin-right: 20px;
-}
 
-div.cc7Table select,
-div.cc7Table input {
-  padding: 0.3em;
-  width: auto;
-  padding-right: 1em;
-  background-size: 1em 2em;
-}
 #cc7Subset {
   margin-left: 1em;
   min-width: 3em;
   padding-right: 1.5em;
-}
-#cc7PBFilter {
-  min-width: 1em;
 }
 #cc7DegFilter {
   min-width: 1em;

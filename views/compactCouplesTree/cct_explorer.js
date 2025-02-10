@@ -89,7 +89,7 @@ export class CCTE {
               <div id="help-text" class="pop-up">${CCTE.HELP_TEXT}</div>
               <fieldset id="cctFieldset">
                 <legend id="cctOptions" title="Click to Close/Open the options">Options - click here to open/close</legend>
-                <table id="optionsTbl">
+                <table id="optionsTbl" class="table-borderless">
                   <tr>
                     <td>
                       <input
@@ -129,15 +129,15 @@ export class CCTE {
                     <td>
                       <button
                         id="drawTreeButton"
-                        class="small button"
+                        class="btn btn-primary btn-sm"
                         title="Redraw the tree, expanding all collapsed branches">
                         Redraw Tree
                       </button>
                       <button
                         id="help-button"
-                        class="small button"
+                        class="btn btn-secondary btn-sm"
                         title="About this app">
-                        ?
+                        <b>?</b>
                       </button>
                       <!-- DEBUGGING - some help with debugging animation issues
                       <label
@@ -246,7 +246,7 @@ export class CCTE {
                     </td>
                     <td colspan=3 rowspan=2>
                     <fieldset><legend title='Set what constitutes a "brick wall."'>Add to Brick Wall: </legend>
-                    <table>
+                    <table class="table-borderless">
                       <tr>
                         <td>
                           <input
