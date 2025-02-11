@@ -393,7 +393,7 @@ class CC7 {
         $("#settingsButton").off("click").on("click", CC7.toggleSettings);
         $("#saveSettingsChanges")
             .html("Apply Changes")
-            .addClass("small button")
+            .addClass("btn-sm")
             .off("click")
             .on("click", CC7.settingsChanged);
         $("#settingsDIV").addClass("pop-up").css("width", "300");
@@ -420,24 +420,27 @@ class CC7 {
         Settings.renderSettings();
         CC7.setInfoPanelMessage();
 
-        // These 2 buttons are defined in Settings, but I could not get the setting's onClick function definition
+        // These 3 buttons are defined in Settings.js, but I could not get the setting's onClick function definition
         // to work so I am just forcing the issue here
         $("#notes_functions_backupNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 CC7Notes.backupNotes();
             });
         $("#notes_functions_deleteNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 CC7Notes.deleteAllNotes();
             });
         $("#notes_functions_restoreNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();

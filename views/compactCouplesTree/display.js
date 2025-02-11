@@ -223,7 +223,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const tbl = d3
                 .select("#theSvg")
                 .insert("table", ":first-child")
-                .attr("class", "treeHeader")
+                .attr("class", "treeHeader table-borderless")
                 .attr("width", edgeFactor * (currentMaxShowGen - 1))
                 .style("margin-left", `${margin.left}px`);
             const tr = tbl.append("tr");

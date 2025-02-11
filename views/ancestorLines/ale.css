@@ -32,6 +32,10 @@ div.ale input {
 
 #aleOptions {
   cursor: pointer;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
 }
 
 .ale fieldset {

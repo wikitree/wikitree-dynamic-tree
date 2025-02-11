@@ -92,11 +92,17 @@ class PeopleTable {
                 `<th data-order='' id='birthdate' ${sortTitle}>Birth Date</th>` +
                 `<th data-order='' id="birthlocation" data-flow="f2b" >` +
                 `<span class="sortColumn" ${sortTitle}>Birth Place</span>` +
-                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 `<th data-order='' id='deathdate' ${sortTitle}>Death Date</th>` +
                 `<th data-order='' id="deathlocation" data-flow="f2b" >` +
                 `<span class="sortColumn" ${sortTitle}>Death Place</span>` +
-                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 ageAtDeathCol +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +

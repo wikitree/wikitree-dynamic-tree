@@ -40,6 +40,10 @@ div.cct input {
 
 .cct #cctOptions {
   cursor: pointer;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
 }
 
 .cct fieldset {
