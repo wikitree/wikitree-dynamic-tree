@@ -7,6 +7,10 @@ body {
   font-family: sans-serif;
 }
 
+.hidden {
+  display: none;
+}
+
 header {
   background: #f7f6f0;
   height: auto;
@@ -374,6 +378,11 @@ main {
   background: none;
   width: 20px;
   height: 17px;
+  border: none;
+}
+
+.borderless {
+  border: none;
 }
 
 #btnBarDIV A {
@@ -398,6 +407,79 @@ main {
 .stickyDIV {
   position: sticky;
   top: 1px;
+}
+
+ul.treeapp-tabs {
+  margin-left: 0;
+  margin-bottom: 10px;
+  text-align: center;
+  border-bottom: 2px solid #ffe270
+}
+
+ul.treeapp-tabs li {
+  list-style-type: none;
+  display: inline;
+  line-height: 34px;
+  padding: 10px;
+  background: #e1f0b4
+}
+
+ul.treeapp-tabs li:hover {
+  background: #ffe270
+}
+
+ul.treeapp-tabs li.current {
+  background: #ffe270
+}
+
+ul.treeapp-tabs li.locked {
+  background-image: url(/images/icons/nav-locked.png.pagespeed.ce.Eu6d3dWI-Y.png);
+  background-color: #e1f0b4;
+  background-repeat: no-repeat;
+  background-position: 95% center
+}
+
+ul.treeapp-tabs a:link {
+  text-decoration: none
+}
+
+ul.treeapp-tabs {
+  margin-left: 0;
+  text-align: center;
+  border-bottom: 2px solid #ffe270
+}
+
+ul.treeapp-tabs li {
+  list-style-type: none;
+  display: inline-block;
+  padding: 3px 5px;
+  background: #e1f0b4;
+  line-height: inherit;
+  margin-left: 1px;
+  margin-right: 1px
+}
+
+ul.treeapp-tabs li:hover {
+  background: #ffe270;
+  margin-left: 0;
+  margin-right: 0
+}
+
+ul.treeapp-tabs li.current {
+  background: #ffe270
+}
+
+ul.treeapp-tabs li.locked {
+  background-image: url(/images/icons/nav-locked.png.pagespeed.ce.Eu6d3dWI-Y.png);
+  background-color: #e1f0b4;
+  background-repeat: no-repeat;
+  background-position: 95% center
+}
+
+ul.treeapp-tabs a:link {
+  text-decoration: none;
+  margin-left: 0;
+  margin-right: 0
 }
 
 /* Print styling should follow everything else to overwrite it */
@@ -446,6 +528,9 @@ main {
     /* ignore the pan/zoom from the screen view */
     transform: translate(0, 0) scale(1) !important;
   }
+
+  
+
 }
 
 /* This hides the unnecessary time column for the familyCalendar view's day/week displays. */
