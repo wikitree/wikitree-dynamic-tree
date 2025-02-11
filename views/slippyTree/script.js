@@ -492,6 +492,14 @@ class SlippyTree extends View {
                 this.reposition({});
             });
             this.state.resizeObserver.observe(this.state.container);
+            this.state.footerHoverListener = (e) => {
+                if (document.documentElement.classList.contains("compact-footer")) {
+                    e.target.classList.toggle("hover", e.type == "mouseenter");
+                }
+            };
+            document.querySelector("footer").addEventListener("mouseenter", this.state.footerHoverListener);
+            document.querySelector("footer").addEventListener("mouseleave", this.state.footerHoverListener);
+            document.documentElement.classList.add("compact-footer");
 
             // We maintain our state in the URL hash, alongside some other properties
             // that apply to all views. We need to then ignore this if the view is reloaded
@@ -543,6 +551,9 @@ class SlippyTree extends View {
         // Remember this object persists even when other views are selected.
         // Clear out all state - it's all under "this.state" now - and disconnect resize observer
         this.state.resizeObserver.disconnect();
+        document.querySelector("footer").removeEventListener("mouseenter", this.state.footerHoverListener);
+        document.querySelector("footer").removeEventListener("mouseleave", this.state.footerHoverListener);
+        document.documentElement.classList.remove("compact-footer");
         if (this.#VIEWPARAM) {
             let v = new URLSearchParams(window.location.hash.substring(1));
             v.delete(this.#VIEWPARAM);
