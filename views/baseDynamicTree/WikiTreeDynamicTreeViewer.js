@@ -237,6 +237,7 @@
             const links = rootHierarchy.links();
             this.drawLinks(links);
             this.drawNodes(nodes);
+            this.svg.node().querySelectorAll("foreignObject").forEach((e) => { e.setAttribute("height", Math.max(0.1, e.firstElementChild.clientHeight)); });   // https://github.com/wikitree/wikitree-dynamic-tree/issues/42his.drawNodes(nodes);
         } else {
             throw new Error("Missing root");
         }
