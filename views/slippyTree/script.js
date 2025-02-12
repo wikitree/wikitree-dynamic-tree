@@ -27,7 +27,7 @@
  * Origin branch for this is https://github.com/faceless2/wikitree-dynamic-tree/
  */
 
-if (typeof View != "function") { function View() { } } // To allow debugging in node.js
+if (typeof View == "undefined") { globalThis.View = ()=>{}; } // To allow debugging in node.js
 
 class SlippyTree extends View {
 
@@ -497,9 +497,11 @@ class SlippyTree extends View {
                     e.target.classList.toggle("hover", e.type == "mouseenter");
                 }
             };
-            document.querySelector("footer").addEventListener("mouseenter", this.state.footerHoverListener);
-            document.querySelector("footer").addEventListener("mouseleave", this.state.footerHoverListener);
-            document.documentElement.classList.add("compact-footer");
+            if (document.querySelector("footer") != null) {
+                document.querySelector("footer").addEventListener("mouseenter", this.state.footerHoverListener);
+                document.querySelector("footer").addEventListener("mouseleave", this.state.footerHoverListener);
+                document.documentElement.classList.add("compact-footer");
+            }
 
             // We maintain our state in the URL hash, alongside some other properties
             // that apply to all views. We need to then ignore this if the view is reloaded
