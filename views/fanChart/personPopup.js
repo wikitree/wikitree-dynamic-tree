@@ -931,11 +931,19 @@ function popupConnectionDIV() {
   */
  function birthString(person) {
      var string = "",
-         date = humanDate(person.getBirthDate()),
-         place = person.getBirthLocation();
-
+        date = humanDate(person.getBirthDate()),
+        place = person.getBirthLocation();
+     
+     if (person.IsLiving || (person._data && person._data.IsLiving)) {
+         if (person.BirthDateDecade) {
+             date = person.BirthDateDecade;
+         } else if (person._data.BirthDateDecade) {
+             date = person._data.BirthDateDecade;
+         }
+         place = " ";
+     }
      return `b. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${
-         place ? `in ${place}` : "[location unknown]"
+         place ? (place == " " ? `` : `in ${place}`) : "[location unknown]"
      }.`;
  }
 
@@ -943,9 +951,15 @@ function popupConnectionDIV() {
   * Generate text that display when and where the person died
   */
  function deathString(person) {
+    if (person.IsLiving || (person._data && person._data.IsLiving)) {
+        return "";
+    }
+
      var string = "",
          date = humanDate(person.getDeathDate()),
          place = person.getDeathLocation();
+
+    
 
      return `d. ${date ? `<strong>${date}</strong>` : "[date unknown]"} ${
          place ? `in ${place}` : "[location unknown]"
@@ -1052,7 +1066,7 @@ function popupConnectionDIV() {
      } else {
          theLifeSpan = "?";
      }
-
+     
      return theLifeSpan;
  }
 

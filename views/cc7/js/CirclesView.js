@@ -312,7 +312,7 @@ export class CirclesView {
 
         CirclesView.changeDisplayType();
 
-        // console.log({ sortedMap });
+        console.log({ sortedMap });
         function getLtrInitsName(person) {
             let theLIN = ".";
 
@@ -356,7 +356,7 @@ export class CirclesView {
     }
 
     static doCircle(person, thisDegree, newX, newY) {
-        // console.log(CirclesView.displayType);
+        console.log(CirclesView.displayType, person);
         const blobColours = [
             "green",
             "lawngreen",
@@ -482,11 +482,19 @@ export class CirclesView {
 
         let thisSVGtext = "";
         if (CirclesView.displayType == "ltr") {
+            let theLtr = "?";
+            if (person.RealName) {
+                theLtr = person.RealName[0];
+            } else if (person.FirstName) {
+                theLtr = person.FirstName[0];
+            } else {
+                console.log("Cannot find a first name for  ", person);
+            }
             thisSVGtext =
                 "<text text-anchor=middle x=10 y=15 style='font-size:14; fill:" +
                 textClr +
                 ";' >" +
-                person.RealName[0] +
+                theLtr +
                 "</text>";
         } else if (CirclesView.displayType == "inits") {
             let theInits = theInitialsFrom(person);
@@ -503,7 +511,15 @@ export class CirclesView {
                 theInits +
                 "</text>";
         } else if (CirclesView.displayType == "fName") {
-            let theFName = person.RealName;
+            
+             let theFName = "Private";
+             if (person.RealName) {
+                 theFName = person.RealName;
+             } else if (person.FirstName) {
+                 theFName = person.FirstName;
+             } else {
+                 console.log("Cannot find a first name for  ", person);
+             }
             let textLengthParam = "";
             if (theFName.length > 8) {
                 textLengthParam = " textLength=" + (2 * xDotRadius - 2) + " lengthAdjust=spacingAndGlyphs ";
@@ -517,7 +533,15 @@ export class CirclesView {
                 theFName +
                 "</text>";
         } else if (CirclesView.displayType == "all") {
-            let theName = person.RealName;
+            let theName = "Private";
+            if (person.RealName) {
+                 theName = person.RealName;
+            } else  if (person.FirstName) {
+                 theName = person.FirstName;
+            } else {
+                console.log("Cannot find a first name for  ",person);
+            }
+            
             let textLengthParam = "";
             if (theName.length > 7) {
                 textLengthParam = " textLength=50 lengthAdjust=spacingAndGlyphs ";
@@ -546,6 +570,18 @@ export class CirclesView {
 
             if (person.BirthDate && person.BirthDate.length >= 4) {
                 let bYear = person.BirthDate.substring(0, 4);
+                if (bYear != "0000") {
+                    thisSVGtext +=
+                        "<text text-anchor=middle x=32 y=48 style='font-size:12; fill:" +
+                        textClr +
+                        ";'" +
+                        " >" +
+                        "b. " +
+                        bYear +
+                        "</text>";
+                }
+            } else if (person.BirthDateDecade && person.BirthDateDecade.length >= 4) {
+                let bYear = person.BirthDateDecade;
                 if (bYear != "0000") {
                     thisSVGtext +=
                         "<text text-anchor=middle x=32 y=48 style='font-size:12; fill:" +
@@ -818,7 +854,13 @@ export class CirclesView {
 
                 condLog(window.people.get(1.0 * thisID));
                 person.getDisplayName = function () {
-                    return person.LongName;
+                    if (person.LongName) {
+                        return person.LongName;
+                    } else if (person.RealName) {
+                        return person.RealName + " " + person.LastNameAtBirth;
+                    } else {
+                        return "Private";
+                    }
                 };
                 person.getGender = function () {
                     return person.Gender;
@@ -844,11 +886,14 @@ export class CirclesView {
                     }
                 };
 
-                CirclesView.PersonCodesObject[person.Id].getPhotoUrl = function () {
-                    if (person.PhotoData && person.PhotoData["url"]) {
-                        return person.PhotoData["url"];
-                    }
-                };
+                // CirclesView.PersonCodesObject[person.Id].getPhotoUrl = function (person) {
+
+                //     if (person.PhotoData && person.PhotoData["url"]) {
+                //         return person.PhotoData["url"];
+                //     } else {
+                //         return "";
+                //     }
+                // };
 
                 window.personPopup.popupHTML(person, {
                     type: "CC",
