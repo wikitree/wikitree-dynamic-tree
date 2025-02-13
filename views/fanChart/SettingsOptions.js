@@ -81,14 +81,15 @@ function compareSettings(currentSettings) {
     settings_functions_compareB4resetDIVhtml +="</table>";
     settings_functions_compareB4resetDIVhtml +=
         "<br/>" +
-        "<button onclick='doResetSettings(" +
+        "<button class='btn btn-primary' onclick='doResetSettings(" +
         self.optionsRegistry.viewClassName +
         ".currentSettings," +
         self.optionsRegistry.viewClassName + ");'>CONFIRM Reset to Default Settings</button>";
     if (numChanges == 0) {
         settings_functions_compareB4resetDIVhtml = "<B>You are currently using the DEFAULT SETTINGS for this app.</B>";    
     }
-    settings_functions_compareB4resetDIVhtml += "<br/><br/><button onclick='self.activeTabChanged(\"general\");'>CANCEL</button>";
+    settings_functions_compareB4resetDIVhtml +=
+        "<br/><br/><button  class='btn btn-secondary' onclick='self.activeTabChanged(\"general\");'>CANCEL</button>";
     document.getElementById("settings_functions_compareB4resetDIV").innerHTML = settings_functions_compareB4resetDIVhtml;
     document.getElementById("settings_functions_reset2Default").style.display = "none";
     document.getElementById("settings_functions_saveSettings").style.display = "none";
@@ -363,7 +364,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             SVGbtnCLOSE +
             "</A></span>" +
             this.createULelements(data) +
-            '<br />    <div align="center">     <button id="saveSettingsChanges" class="saveButton btn btn-primary">Save changes (all tabs)</button>' +
+            '<br />    <div align="center">     <button  class="btn btn-primary" id="saveSettingsChanges" class="saveButton btn btn-primary">Save changes (all tabs)</button>' +
             "</div></div>";
 
         return theDIVhtml;
