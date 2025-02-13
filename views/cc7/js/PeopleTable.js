@@ -33,8 +33,7 @@ export class PeopleTable {
         ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
     ]);
 
-    static async addPeopleTable(caption) {
-        condLog("PEOPLE TABLE.js - ADD PEOPLE TABLE function");
+    static async addPeopleTable(caption = null) {
         $("#savePeople").show();
         // Set root person if it is not already set
         if (window.rootPerson) {
@@ -530,12 +529,12 @@ export class PeopleTable {
                         'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
                         "Complete</option>" +
                         "</select>" +
-                        "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
-                        "<button class='button small viewButton' id='listViewButton'>List</button>" +
-                        "<button class='button small viewButton active' id='tableViewButton'>Table</button>" +
-                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>" +
-                        "<button class='button small viewButton' id='missingLinksViewButton'>Missing Links</button>" +
-                        "<button class='button small viewButton' id='circlesViewButton'>Circles</button>"
+                        "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='missingLinksViewButton'>Missing Links</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='circlesViewButton'>Circles</button>"
                 )
             );
         }
