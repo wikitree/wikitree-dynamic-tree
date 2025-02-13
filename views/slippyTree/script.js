@@ -107,7 +107,6 @@ class SlippyTree extends View {
    </g>
   </svg>
 
-  <div class="relationshipName"></div>
   <div class="personMenu hidden">
    <div class="output-name text-selectable"></div>
    <div data-action="focus">Focus</div>
@@ -120,6 +119,8 @@ class SlippyTree extends View {
   </div>
 
  </div>
+
+ <div class="relationshipName"></div>
 
  <a class="slippy-help-button"></a>
  <div class="loader"></div>

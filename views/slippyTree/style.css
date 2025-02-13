@@ -1,41 +1,51 @@
 /**
- * First three rules force some changes to the tree nodes
+ * First set of rules force some changes to the tree nodes
  * outside the view-container - required because the
  * slippy-tree-container must fill the rest of the screen.
+ *
+ * These vary for FOUR environments, the latter three are provisional
+ *  -- treeapps in the original wikitree,
+ *  -- treeapps in the dev-2025 wikitree
+ *  -- NOT standalone main page (these are in views/slippytree/index.html)
+ *  -- NOT embedded into the profile page (these are in patch 010/style.css)
  */
+
+/* Rules for both the original and the dev-2025 TreeApps page */
 :root:has(.slippy-tree-container) {
+    --background-color: white;          /* the "default" background is white */
+}
+:root:has(body.tree-apps .slippy-tree-container) {
     height: 100%;
      --content-padding: 0;
+     --background-color: #f0f0ef;       /* background in the original site */
 }
-body:has(.slippy-tree-container) {
+body.tree-apps:has(.slippy-tree-container) {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
-body > #view-container:has(> .slippy-tree-container) {
+body.tree-apps #view-container:has(> .slippy-tree-container) {
     flex: 1;
     min-height: auto;
+    margin: 0;
 }
 
-/* For dev-2025 - basic rules to make layout palatable */
-#main:has(.slippy-tree-container) {
+/* Rules that only apply to dev-2025 TreeApps (which has an extra #main in the middle) */
+body.tree-apps #main:has(.slippy-tree-container) {
     padding-bottom: 0;
     flex: 1;
     display: flex;
+     --background-color: #f7f6f0;       /* background in the new site */
 }
-.row:has(.slippy-tree-container) {
+body.tree-apps #main .row:has(.slippy-tree-container) {
     --bs-gutter-x: 0px;
     --bs-gutter-y: 0px;
     flex: 1;
     margin-top: 0 !important; /* Bootstrap is awful */
 }
-.row:has(.slippy-tree-container) > * {
+body.tree-apps #main .row:has(.slippy-tree-container) > * {
     display: flex;
-}
-#view-container:has(.slippy-tree-container) {
-    flex: 1;
-    min-height: auto;
-    margin: 0;
+    flex-direction: column;
 }
 
 /* Now go wild. If the root element has "compact-footer" class, reduce size of footer */
@@ -121,11 +131,11 @@ body > #view-container:has(> .slippy-tree-container) {
 
 @media (min-width: 800px) {
     .slippy-tree-container .relationshipName {
-        position: fixed;
+        position: absolute;
         left: 16px;
         bottom: 28px;
         color: black;
-        -webkit-text-stroke: 6px #f0f0ef;
+        -webkit-text-stroke: 6px var(--background-color), 
         -webkit-text-fill: black;
         paint-order: stroke fill;
     }

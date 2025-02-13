@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+ <head>
+ <meta charset="utf-8">
+ <link rel="stylesheet" href="style.css">
+ <style>
+ :root, body {
+    margin: 0;
+    height: 100%;
+ }
+ </style>
+ <script>
+class View {
+    constructor() {
+        this.id = null;
+        Object.assign(this, this?.meta()); // this will spread object into object fields for easier access
+    }
+    meta() {
+        return {
+            title: "Template view",
+            description: "Showcase of the views and their registration.",
+            docs: "https://example.com",
+        };
+    }
+    init(container_selector, person_id) {
+        document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
+    }
+    close() { }
+}
+document.addEventListener("DOMContentLoaded", () => {
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("person");
+    let st = new SlippyTree();
+    st.init(document.body, id, {});
+});
+ </script>
+ <script src="script.js"></script>
+ </head>
+ <body>
+  <div id="viewcontainer"></div>
+ </body>
+</html>
