@@ -69,7 +69,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
 
     let marriageInfo = "";
 
-    if (personData.Spouses.length == 1) {
+    if (personData.Spouses && personData.Spouses.length == 1) {
         if (personData.Spouses[0].NotMarried == 1) {
             marriageInfo = "";
         } else {
@@ -79,7 +79,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
                 marriageInfo = "<br/><B>Spouse</B>";
             }
         }
-    } else if (personData.Spouses.length > 1) {
+    } else if (personData.Spouses && personData.Spouses.length > 1) {
         let numShowableMarriages = 0;
         for (let sp in personData.Spouses) {
             if (personData.Spouses[sp].DoNotDisplay == 0) {
@@ -239,7 +239,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
                         
                         ${marriageInfo}
 
-                        <hr/>
+                        <hr class="treeapp-personpopup"/>
                         ${extrasAtBottom}
                         <br/>${bioCheckLink}
                         ${appIcon4Bottom}
