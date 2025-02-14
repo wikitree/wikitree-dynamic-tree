@@ -1,0 +1,550 @@
+/*
+* 2024 Icons
+*/
+
+p span[class*="icon--"],
+ul:not(.profile--actions, .icons, .profile--parents) li span[class*="icon--"],
+ol:not(.profile--actions, .icons, .profile--parents) li span[class*="icon--"],
+table span[class*="icon--"],
+.icon--inline {
+  background-size: 20px 20px !important;
+  height: 20px !important;
+  position: relative !important;
+  top: 4px !important;
+  width: 20px !important;
+}
+
+@media (max-width: 980px) {
+  p span[class*="icon--"],
+  ul:not(.profile--actions, .icons, .profile--parents) li span[class*="icon--"],
+  ol:not(.profile--actions, .icons, .profile--parents) li span[class*="icon--"],
+  table span[class*="icon--"],
+  .icon--inline {
+    background-size: 17px 17px !important;
+    height: 17px !important;
+    width: 17px !important;
+  }
+}
+
+ul.icons li {
+  margin-bottom: 0.5rem;
+}
+
+ul.icons li code {
+  margin-left: 5px;
+}
+
+.icon--auDNA,
+.icon--mtDNA,
+.icon--yDNA {
+  background: transparent url("/images/icons/icon-dna-au-2.svg") 0 0 no-repeat;
+  background-size: 18px 20px;
+  display: inline-block;
+  height: 20px;
+  margin-left: 5px;
+  width: 18px;
+}
+
+.icon--mtDNA {
+  background-image: url("/images/icons/icon-dna-mt-2.svg");
+  margin-left: 2px;
+}
+
+.icon--yDNA {
+  background-image: url("/images/icons/icon-dna-y-block.svg");
+}
+
+.icon--DNA {
+  background: transparent url("/images/icons/icon-dna-y.svg") 0 0 no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+}
+
+.icon--dna-check {
+  background: transparent url("/images/icons/icon-dna-check.svg") 0 0 no-repeat;
+  background-size: 25px 20px;
+  display: inline-block;
+  height: 20px;
+  width: 25px;
+}
+
+.icon--dna-checked {
+  background: transparent url("/images/icons/icon-dna-checked.svg") 0 0
+    no-repeat;
+  background-size: 38px 16px;
+  display: inline-block;
+  height: 16px;
+  width: 38px;
+}
+
+.page--content .icon--dna-checked {
+  position: relative;
+  top: 2px;
+}
+
+.person--name span[class*="icon--"] {
+  position: relative;
+  top: 5px;
+}
+
+.icon--pedigree {
+  background: transparent url("/images/icons/icon-pedigree.svg") left no-repeat;
+  background-size: 14px auto;
+  display: inline-block;
+  height: 14px;
+  width: 14px;
+}
+
+.icon--family-group {
+  background: transparent url("/images/icons/icon-family-group.svg") left
+    no-repeat;
+  background-size: 10px auto;
+  display: inline-block;
+  height: 14px;
+  width: 10px;
+}
+
+.icon--descendants {
+  background: transparent url("/images/icons/icon-descendants.svg") left
+    no-repeat;
+  background-size: 10px auto;
+  display: inline-block;
+  height: 14px;
+  width: 10px;
+}
+
+.icon--help {
+  background: transparent url("/images/icons/icon-question.svg");
+  background-size: 26px 26px;
+  display: inline-block;
+  height: 26px;
+  width: 26px;
+}
+
+h4 .icon--help,
+h5 .icon--help,
+.icon--help_sm,
+p .icon--help {
+  background-size: 22px 22px;
+  height: 22px;
+  position: relative;
+  top: 1px;
+  width: 22px;
+}
+
+.icon--help_sm {
+  top: 4px !important;
+}
+
+.icon--edit {
+  background: transparent url("/images/icons/icon-edit.svg") left no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--edit-alt {
+  background: transparent url("/images/icons/icon-edit-alt.svg") left no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.genealogical--interests .icon--edit {
+  position: relative;
+  right: 10px;
+  top: 4px;
+}
+
+.icon--edit_sm {
+  background-size: 20px auto;
+  height: 20px;
+  position: relative;
+  top: 4px;
+  width: 20px;
+}
+
+.icon--email {
+  background: transparent url("/images/icons/icon-email.svg") left no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--map-pin {
+  background: transparent url("/images/icons/icon-map-pin.svg") left no-repeat;
+  background-size: 20px auto;
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+}
+
+.icon--privacy-closed {
+  background: transparent url("/images/icons/icon-privacy-closed-dark.svg") left
+    no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--privacy-open {
+  background: transparent url("/images/icons/icon-privacy-open.svg") left
+    no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--star {
+  background: transparent url("/images/icons/icon-star.svg") left no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--badge {
+  background: transparent url("/images/icons/icon-badge.svg") left no-repeat;
+  background-size: 24px auto;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--add {
+  background: transparent url("/images/icons/icon-add-light.svg") left no-repeat;
+  background-size: 16px 16px;
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+}
+
+.icon--plus {
+  background: transparent url("/images/icons/icon-plus.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--archived {
+  background: transparent url("/images/icons/icon-archive.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--merge {
+  background: transparent url("/images/icons/icon-merge.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--related {
+  background: transparent url("/images/icons/icon-related.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--relation {
+  background: transparent url("/images/icons/icon-relation.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--reply {
+  background: transparent url("/images/icons/icon-reply.svg") left no-repeat;
+  background-size: 26px 26px;
+  display: inline-block;
+  height: 26px;
+  width: 26px;
+}
+
+.icon--copy {
+  background: transparent url("/images/icons/icon-copy.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.icon--more-m,
+.icon--more-p {
+  background: transparent url("/images/icons/icon-tree-more-m.svg") left
+    no-repeat;
+  background-size: 14px 10px;
+  display: inline-block;
+  height: 10px;
+  width: 14px;
+}
+
+.icon--more-p {
+  background-image: url("/images/icons/icon-tree-more-p.svg");
+}
+
+.icon--grandchild,
+.icon--desc-orange,
+.icon--desc-blue {
+  background: transparent url("/images/icons/icon-desc-grandchild.svg") left
+    no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--desc-orange {
+  background-image: url("/images/icons/icon-desc-orange.svg");
+}
+
+.icon--desc-blue {
+  background-image: url("/images/icons/icon-desc-blue.svg");
+}
+
+.icon--apps {
+  background: transparent url("/images/icons/icon-apps-dk.svg") left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  margin-right: 3px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--apps_lt {
+  background: transparent url("/images/icons/icon-apps.svg") left no-repeat;
+  background-size: 16px 16px;
+  height: 16px;
+  margin-right: 6px;
+  top: 3px;
+  width: 16px;
+}
+
+.icon--jump-menu {
+  background: transparent url("/images/icons/icon-jump-menu.svg") left no-repeat;
+  background-size: 30px auto;
+  display: inline-block;
+  height: 24px;
+  left: -5px;
+  position: relative;
+  width: 24px;
+}
+
+.icon--upload {
+  background: transparent url("/images/icons/icon-upload.svg") left no-repeat;
+  background-size: 18px 18px;
+  display: inline-block;
+  height: 18px;
+  position: relative;
+  top: 3px;
+  width: 18px;
+}
+
+.icon--top,
+.icon--bottom {
+  background: transparent url("/images/icons/icon-arrow.svg") left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 7px;
+  width: 20px;
+}
+
+.icon--bottom {
+  transform: rotate(180deg);
+}
+
+.icon--history {
+  background: transparent url("/images/icons/icon-history.svg") left no-repeat;
+  background-size: 26px 26px;
+  display: inline-block;
+  height: 26px;
+  position: relative;
+  width: 26px;
+}
+
+.icon-profile-image {
+  max-width: 30px;
+  max-height: 40px;
+  margin-right: 0.5em;
+  vertical-align: middle;
+}
+
+.icon--ancestor {
+  background: transparent url("/images/icons/icon-ancestors.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  top: 6px;
+  width: 24px;
+}
+
+.icon--globe {
+  background: transparent url("/images/icons/icon-globe.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  top: 6px;
+  width: 24px;
+}
+
+.icon--verified {
+  background: transparent url("/images/icons/icon-verified.svg") left no-repeat;
+  background-size: 26px 26px;
+  display: inline-block;
+  height: 26px;
+  position: relative;
+  top: 6px;
+  width: 26px;
+}
+
+.icon--unconnected {
+  background: transparent url("/images/icons/icon-unconnected.svg") left
+    no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  top: 3px;
+  width: 24px;
+}
+
+.icon--connect,
+.icon--relationship {
+  background: transparent url("/images/icons/icon-connect.svg") left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--relationship {
+  background-image: url("/images/icons/icon-relationship.svg");
+  transform: rotate(-90deg);
+}
+
+.icon--table,
+.icon--table-compact {
+  background: transparent url("/images/icons/icon-table-alt.svg") left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--table-compact {
+  background-image: url("/images/icons/icon-table-compact-alt.svg");
+}
+
+.icon--photo {
+  background: transparent url("/images/icons/icon-photo.svg") left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--list {
+  background: transparent url("/images/icons/icon-list.svg") left no-repeat;
+  background-size: 24px 24px;
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  top: 3px;
+  width: 24px;
+}
+
+.icon--compare {
+  background: transparent url("/images/icons/icon-compare.svg") left no-repeat;
+  background-size: 22px 22px;
+  display: inline-block;
+  height: 22px;
+  position: relative;
+  top: 3px;
+  width: 22px;
+}
+
+.icon--up,
+.icon--upped,
+.icon--down,
+.icon--downed,
+.icon--save,
+.icon--saved,
+.icon--fave,
+.icon--faved {
+  background: transparent url("/images/icons/icon-up.svg") left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--upped {
+  background-image: url("/images/icons/icon-upped.svg");
+}
+
+.icon--down {
+  background-image: url("/images/icons/icon-down.svg");
+}
+
+.icon--downed {
+  background-image: url("/images/icons/icon-downed.svg");
+}
+
+.icon--save {
+  background-image: url("/images/icons/icon-save.svg");
+}
+
+.icon--saved {
+  background-image: url("/images/icons/icon-saved.svg");
+}
+
+.icon--fave {
+  background-image: url("/images/icons/icon-fave.svg");
+}
+
+.icon--faved {
+  background-image: url("/images/icons/icon-faved.svg");
+}
+
+.icon--sort {
+  background: transparent url('/images/icons/icon-sort-asc.svg') left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+
+.icon--sort_desc {
+  background-image: url('/images/icons/icon-sort-desc.svg');
+}

@@ -1,0 +1,206 @@
+/*
+  Privacy Icons
+*/
+
+p span[class*="privacy--"],
+ul:not(.profile--actions, .icons) li span[class*="privacy--"],
+ol:not(.profile--actions, .icons) li span[class*="privacy--"],
+table span[class*="privacy--"],
+.privacy--inline {
+  background-size: 15px 15px !important;
+
+  display: inline-block !important;
+
+  height: 15px !important;
+
+  position: relative !important;
+
+  top: 2px !important;
+
+  width: 15px !important;
+}
+
+.privacy {
+  background-position: 50% 50%;
+  background-size: 30px 30px;
+  background-repeat: no-repeat;
+  border-radius: 50%;
+  display: block;
+}
+
+.privacy--60 {
+  background-color: #fff;
+  border: 2px solid #25422d;
+}
+
+.privacy--50 {
+  background-color: #8fc641;
+}
+
+.privacy--40 {
+  background-color: #ffe270;
+}
+
+.privacy--35 {
+  background-color: #fad158;
+}
+
+.privacy--30 {
+  background-color: #fcb815;
+}
+
+.privacy--20 {
+  background-color: #cc0000;
+}
+
+.privacy--10 {
+  background-color: #25422d;
+}
+
+/* open */
+.privacy--60,
+.privacy--50 {
+  background-image: url("/images/icons/icon-privacy-open.svg");
+}
+
+/* private */
+.privacy--40,
+.privacy--35,
+.privacy--30 {
+  background-image: url("/images/icons/icon-privacy-closed-dark.svg");
+}
+
+/* closed */
+.privacy--20,
+.privacy--10 {
+  background-image: url("/images/icons/icon-privacy-closed-light.svg");
+}
+
+.privacy--sm {
+  background-image: none;
+  height: 15px !important;
+  width: 15px !important;
+}
+
+.privacy--sm.privacy--60 {
+  border-width: 1px;
+  height: 15px !important;
+  width: 15px !important;
+}
+
+/* .privacy--sm.privacy--60 {
+  display: none;
+} */
+
+.privacy--md {
+  background-size: 14px 14px;
+  height: 26px !important;
+  width: 26px !important;
+}
+
+.privacy--md.privacy--60 {
+  border-width: 1px;
+}
+
+.privacy--lg,
+p span.privacy--lg,
+ul li span.privacy--lg,
+ol li span.privacy--lg,
+table span.privacy--lg {
+  background-size: 30px 30px !important;
+  height: 50px !important;
+  margin-left: 5px;
+  width: 50px !important;
+}
+
+@media (max-width: 980px) {
+  .privacy--lg {
+    background-size: 16px 16px;
+    border-width: 1px;
+    height: 26px !important;
+    width: 26px !important;
+  }
+}
+
+ul li.BULLET10,
+ul li.BULLET20,
+ul li.BULLET30,
+ul li.BULLET35,
+ul li.BULLET40,
+ul li.BULLET50,
+ul li.BULLET60 {
+  list-style: none;
+  padding-left: 20px;
+  position: relative;
+}
+
+ul li.BULLET10::before,
+ul li.BULLET20::before,
+ul li.BULLET30::before,
+ul li.BULLET35::before,
+ul li.BULLET40::before,
+ul li.BULLET50::before,
+ul li.BULLET60::before {
+  background-color: transparent;
+  border-radius: 50%;
+  content: "";
+  display: block;
+  height: 12px;
+  left: 0;
+  position: absolute;
+  top: 8px;
+  width: 12px;
+}
+
+ul li.BULLET10::before {
+  background-color: #25422d;
+}
+ul li.BULLET20::before {
+  background-color: #cc0000;
+}
+ul li.BULLET30::before {
+  background-color: #fcb815;
+}
+ul li.BULLET35::before {
+  background-color: #fad158;
+}
+ul li.BULLET40::before {
+  background-color: #ffe270;
+}
+ul li.BULLET50::before {
+  background-color: #8fc641;
+}
+ul li.BULLET60::before {
+  background-color: #fff;
+  border: 1px solid #25422d;
+  height: 12px;
+  width: 12px;
+}
+
+form .privacy {
+  border-radius: 50%;
+  display: inline-block;
+  height: 12px;
+  margin-right: 3px;
+  position: relative;
+  top: -2px;
+  width: 12px;
+}
+
+form .footnote .privacy {
+  top: 0;
+  margin-left: 3px;
+}
+
+form .privacy.public,
+form .privacy.privacy-50 {
+  background-color: #8fc641;
+}
+form .privacy.semiprivate,
+form .privacy.privacy-40 {
+  background-color: #fad158;
+}
+form .privacy.private,
+form .privacy.privacy-20 {
+  background-color: #cc0000;
+}

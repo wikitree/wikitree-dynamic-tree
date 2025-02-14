@@ -1,0 +1,126 @@
+/*
+* Avatars
+*/
+
+/* default profile avatar, 48x48 */
+.person--avatar {
+  background-position: 50% 20%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border-radius: 50%;
+  display: inline-block;
+  height: 48px;
+  margin: 0 5px 0 0;
+  overflow: hidden;
+  padding: 0;
+  vertical-align: middle;
+  width: 48px;
+}
+
+.person--avatar a {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.person--avatar img {
+  min-height: 48px;
+  width: auto;
+}
+
+/* add borders for m/f */
+.tree--person_m .person--avatar,
+.person--avatar.person--m,
+.person--avatar.person--male {
+  border: 2px solid #afafcf;
+}
+
+.tree--person_f .person--avatar,
+.person--avatar.person--f,
+.person--avatar.person--femail {
+  border: 2px solid #cfafaf;
+}
+
+.person--avatar.person--u,
+.person--avatar.person--no-gender {
+  border: 2px solid #afdeaf;
+}
+
+/* large avatar, 75x75 */
+.avatar--75 {
+  height: 75px;
+  width: 75px;
+}
+
+.avatar--75 img {
+  min-height: 75px;
+}
+
+/* person preview, 53x53 */
+.avatar--53 {
+  height: 53px;
+  width: 53px;
+}
+
+.avatar--53 img {
+  min-height: 53px;
+}
+
+/* comment avatar, 40x40 */
+.avatar--40 {
+  height: 40px;
+  width: 40px;
+}
+
+.avatar--40 img {
+  min-height: 40px;
+}
+
+/* custom avatar, 32x32 */
+.avatar--32 {
+  height: 32px;
+  width: 32px;
+}
+
+.avatar--32 img {
+  min-height: 32px;
+}
+
+/* edit profile, 30x30 */
+.avatar--30 {
+  height: 30px;
+  width: 30px;
+}
+
+.avatar--30 img {
+  min-height: 30px;
+}
+
+.profile--actions .avatar--30 {
+  position: relative;
+  top: -3px;
+}
+
+/* surname avatar, 24x24*/
+.avatar--24 {
+  height: 24px;
+  width: 24px;
+}
+
+.avatar--24 img {
+  min-height: 24px;
+}
+
+.profiles .person--avatar {
+  margin-left: 10px;
+}
+
+.background--gender-male {
+  background-color: #f2f1ff;
+}
+.background--gender-female {
+  background-color: #ffeeee;
+}
+.background--gender-no-gender {
+  background-color: #eeffee;
+}

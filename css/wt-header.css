@@ -1,0 +1,53 @@
+/*
+** 2024 Header
+*/
+
+header {
+  background-color: #F0F0EB;
+  /* border-top: 5px solid #25422D; */
+  color: #25422D;
+  padding: 16px 0;
+  width: 100%;
+}
+
+  header img {
+    max-height: 40px;
+    max-width: 100%;
+  }
+
+header .btn-search img {
+  height: 30px;
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  transition: all 250ms ease-in-out;
+  width: 30px;
+}
+
+  header .btn-search:hover img {
+    opacity: 0.5;
+  }
+
+/* banner */
+#banner {
+  background-color: #25422D;
+  color: #fff;
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 0.875rem;
+  padding: 5px 0;
+  display:none;
+}
+
+/* mobile styles */
+@media (max-width: 980px) {
+  header {
+    padding-bottom: 16px;
+  }
+
+  header .search img {
+    top: 9px;
+  }
+
+}

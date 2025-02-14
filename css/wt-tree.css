@@ -1,0 +1,402 @@
+/*
+** 2024 Ancestors and Descendants
+*/
+
+.tree--header,
+.tabs--header {
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-pane.active {
+  background-color: #fff;
+}
+
+.tree-tabs,
+.nav-tabs {
+  border: none;
+}
+
+.tree-tabs .nav-link,
+.nav-tabs .nav-link {
+  background-color: #f0f0eb;
+  border-color: #ccc;
+  color: #393a3c;
+  font-size: 1rem;
+  margin-right: 5px;
+}
+
+.tree-tabs .nav-link.active,
+.nav-tabs .nav-link.active {
+  background-color: #fff;
+  border-color: #ccc #ccc #fff;
+  color: #393a3c;
+  font-weight: bold;
+}
+
+.tree-tabs .spacer,
+.nav-tabs .spacer {
+  display: inline-block;
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
+.nav-tabs .nav-link,
+.nav-tabs .nav-link:visited {
+  color: #393a3c !important;
+  text-decoration: none;
+}
+
+.page--content .VITALS {
+  display: none;
+}
+
+.ancestors--content {
+  margin-bottom: 3.5rem;
+  opacity: 0;
+  padding-bottom: 30px;
+  transition: opacity 250ms ease-in-out;
+}
+
+.ancestors--content.is--visible {
+  opacity: 1;
+}
+
+.ancestors--content h6.cat {
+  margin-top: 0;
+}
+
+.ancestors--content .col {
+  position: relative;
+}
+
+.ancestors--content .col-4 + .col-8 {
+  padding-left: 0;
+}
+
+.ancestors--content .tree--great_grandparents .col-8 {
+  width: 100%;
+}
+
+.tree--person {
+  border-radius: 6px;
+  font-size: 1rem;
+  padding: 15px;
+  position: relative;
+}
+
+.tree--person_m {
+  background-color: #f2f1ff;
+}
+
+.tree--person_f {
+  background-color: #ffeeee;
+}
+
+.tree--person_u {
+  background-color: #eeffee;
+}
+
+.tree--person .button.small {
+  display: none;
+}
+
+.tree--profile .tree--person {
+  min-height: 840px;
+}
+
+.tree--person .icon--add {
+  margin-right: 3px;
+  position: relative;
+  top: 3px;
+}
+
+.tree--person .icon--more-p,
+.tree--person .icon--more-m {
+  position: relative;
+  top: -2px;
+}
+
+.ancestors--content .tree--person {
+  align-items: center;
+  display: flex;
+}
+
+.tree--person + .tree--person {
+  margin-top: 12px;
+}
+
+/* sizing */
+.tree--profile .tree--person {
+  height: 100%;
+}
+
+.tree--parents .tree--person {
+  height: calc(50% - 6px);
+}
+
+.tree--grandparents .tree--person {
+  height: calc(25% - 9px);
+}
+
+.tree--great_grandparents .tree--person {
+  height: calc(12.5% - 10.5px);
+}
+
+.tree--great_great_grandparents .tree--person {
+  height: calc(6.25% - 11.25px);
+}
+
+.tree--person .profile--actions {
+  margin: 0;
+  padding: 0;
+}
+
+.tree--person .profile--actions li {
+  display: inline-block;
+  margin: 0;
+  padding-right: 5px;
+}
+
+.tree--person .profile--actions li a {
+  display: inline-block;
+  padding: 0;
+}
+
+.tree--person .icon--dna-checked {
+  position: relative;
+  top: 2px;
+}
+
+.tree--person .person--details {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.tree--great_grandparents .tree--person {
+  padding: 8px 2px 10px 10px;
+}
+
+.tree--great_grandparents .tree--person .person--details {
+  font-size: 0.75rem;
+}
+
+.tree--great_great_grandparents .tree--person {
+  font-size: 0.875rem;
+  min-height: 53px;
+  padding: 6px 2px 8px 10px;
+}
+
+.tree--great_great_grandparents .tree--person .person--details {
+  font-size: 0.75rem;
+}
+
+.tree--great_great_grandparents .tree--person .profile--actions li {
+  padding-right: 3px;
+}
+
+.tree--great_great_grandparents .icon--dna-checked {
+  background-size: 32px 12px;
+  height: 12px;
+  top: 0;
+  width: 32px;
+}
+
+.tree--placement {
+  width: 100%;
+}
+
+/* tree lines */
+.tree--person::after {
+  background-color: #cacab9;
+  content: "";
+  height: 1px;
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  width: 12px;
+}
+
+.tree--profile .tree--person::before,
+.tree--great_great_grandparents .tree--person::after {
+  display: none;
+}
+
+#treeSynopsis .tree--person::after {
+  display: none;
+}
+
+.tree--connector {
+  background-color: #cacab9;
+  height: 50%;
+  position: absolute;
+  right: -12px;
+  top: 25%;
+  width: 1px;
+}
+
+.tree--connector::before {
+  background-color: #cacab9;
+  content: "";
+  height: 1px;
+  position: absolute;
+  top: 0;
+  width: 13px;
+}
+
+.tree--connector::after {
+  background-color: #cacab9;
+  content: "";
+  height: 1px;
+  position: absolute;
+  bottom: 0;
+  width: 13px;
+}
+
+/* descendants */
+/* ol.descendant--list {
+  font-size: 1rem;
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
+}
+
+  ol.descendant--list li {
+    position: relative;
+  }
+
+  ol.descendant--list .icon--dna-checked {
+    position: relative;
+    top: 2px;
+  }
+
+  ol.descendant--list .descendant--child {
+    border-top: 1px solid #CACAB9;
+    margin: 0;
+    padding: 15px 15px 15px 30px;
+    position: relative;
+  }
+
+  ol.descendant--list .descendant--child .link--child {
+    font-size: 1.125rem;
+  }
+
+  ol.descendant--list .descendant--child .lifespan {
+    padding-left: 20px;
+  }
+
+  ol.descendant--list ol {
+    font-size: 1rem;
+    margin: 0;
+    padding: 0;
+  }
+
+    ol.descendant--list ol li {
+      padding: 5px 0;
+    }
+
+  ol.descendant--list .has--children {
+    background-color: rgba(240,240,235,0.45);
+    border-radius: 12px;
+    margin: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 250ms ease-in-out;
+    padding: 0 15px;
+  }
+
+  ol.descendant--list ol.descendants--great-grandchildren { margin-left: 20px; }
+  ol.descendant--list ol.descendants--great-great-grandchildren { margin-left: 40px; }
+  ol.descendant--list ol.descendants--great-great-great-grandchildren { margin-left: 60px; }
+
+  #descendantsContainer li.descendant--grandchild,
+  #descendantsContainer li.descendant--great-grandchild,
+  #descendantsContainer .descendants--great-great-grandchildren li {
+    padding-left: 15px;
+  }
+
+  #descendantsContainer li.descendant--grandchild::before,
+  #descendantsContainer li.descendant--great-grandchild::before,
+  #descendantsContainer .descendants--great-great-grandchildren li::before {
+    background-color: red;
+    border-radius: 50%;
+    content: '';
+    display: inline-block;
+    height: 10px;
+    position: absolute;
+      left: 0;
+      top: 12px;
+    width: 10px;
+  }
+
+  #descendantsContainer li.descendant--great-grandchild::before {
+    background-color: orange;
+  }
+
+  #descendantsContainer .descendants--great-great-grandchildren li::before {
+    background-color: blue;
+  }
+
+ol.descendant--list input.accordion--trigger {
+  appearance: none;
+  background: transparent url('/images/icons/icon-open.svg') 0 0 no-repeat;
+  background-size: 24px 24px;
+  cursor: pointer;
+  height: 24px;
+  position: absolute;
+    left: 0;
+    top: 15px;
+  transition: all 250ms ease-in-out;
+  width: 24px;
+}
+
+  ol.descendant--list input.accordion--trigger:checked{
+    transform: rotate(45deg);
+  }
+
+  ol.descendant--list input.accordion--trigger:checked ~ .has--children {
+    max-height: 1000rem;
+    margin: 15px 0 15px 0;
+    opacity: 1;
+    padding-bottom: 15px;
+    padding-top: 15px;
+  } */
+
+/* mobile tree styles */
+@media (max-width: 980px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+    width: auto !important;
+  }
+
+  .tree--ancestors.container {
+    margin-left: 0;
+    overflow-x: scroll;
+    -ms-overflow-style: none;
+    padding-left: 20px;
+    padding-right: 0;
+    position: relative;
+    scrollbar-color: #0f7339 #fdffda;
+    scrollbar-width: none;
+  }
+
+  .tree--ancestors::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tree--ancestors #treeView {
+    width: 1450px;
+  }
+
+  .tree--ancestors .col {
+    max-width: 280px;
+    width: 280px;
+  }
+
+  .tree--ancestors .col.tree--profile {
+    max-width: 320px;
+    width: 320px;
+  }
+}
