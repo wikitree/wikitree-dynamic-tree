@@ -692,7 +692,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 if (option.type == "checkbox") {
                     optionElement = document.createElement("input");
                     optionElement.type = "checkbox";
-                    optionElement.className = "optionCheckbox";
+                    optionElement.className = "treeapp-settings";
                     if (option.defaultValue == true) {
                         optionElement.checked = true;
                     }
@@ -700,6 +700,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let labelTextNode = document.createTextNode(" " + option.label);
 
                     let labelElement = document.createElement("label");
+                    labelElement.className = "treeapp-settings";
 
                     if (option.indent && option.indent > 0) {
                         let indentText = "";
@@ -744,7 +745,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                         } else {
                             let radioOptionElement = document.createElement("input");
                             radioOptionElement.value = value.value;
-                            // radioOptionElement.className = "optionCheckbox";
+                            radioOptionElement.className = "treeapp-settings";
                             radioOptionElement.type = "radio";
                             radioOptionElement.name = fullOptionName + "_radio";
                             radioNum++;
@@ -762,6 +763,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             } else if (value.text && value.text.indexOf("IMG:") == 0) {
                                 let subLabelElement = document.createElement("label");
                                 subLabelElement.setAttribute("For", radioOptionElement.id);
+                                subLabelElement.className = "treeapp-settings";
                                 let optionIMGNode = document.createElement("IMG");
                                 optionIMGNode.id = fullOptionName + "_IMG" + radioNum;
                                 
@@ -775,7 +777,8 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             } else {
                                 let subLabelElement = document.createElement("label");
                                 subLabelElement.setAttribute("For",radioOptionElement.id);
-                                let optionLabelTextNode = document.createTextNode(" " + value.text);  
+                                subLabelElement.className = "treeapp-settings";
+                                let optionLabelTextNode = document.createTextNode(" " + value.text + " ");  
                                 subLabelElement.appendChild(optionLabelTextNode);
                                 labelElement.appendChild(subLabelElement);
                             }

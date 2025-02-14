@@ -482,6 +482,16 @@ ul.treeapp-tabs a:link {
   margin-right: 0
 }
 
+label.treeapp-settings {
+  padding-left: 0.1em;
+  padding-right: 0.4em;
+  cursor: pointer;
+}
+
+input.treeapp-settings {
+  cursor: pointer;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
