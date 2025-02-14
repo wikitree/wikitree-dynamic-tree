@@ -358,7 +358,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><A onclick="' +
+            '<span style="color:red; position:absolute; top:-0.2em; right:-0.0em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
             '.cancelSettings();">' +
             SVGbtnCLOSE +

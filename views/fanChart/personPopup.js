@@ -221,7 +221,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
             <div class="popup-box" style="border-color: ${borderColor}">
             
                 <div class="top-info">
-                <span style="color:red; position:absolute; right:0.2em; top:0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePopup();">` +
+                <span style="color:red; position:absolute; right:-0.2em; top:-0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePopup();">` +
         SVGbtnCLOSE +
         `</a></span>
                     <div class="image-box"><img src="https://www.wikitree.com/${photoUrl}">
@@ -304,7 +304,7 @@ function popupConnectionDIV() {
             <div class="popup-box" style="border-color: green">
             
                 <div class="top-info">
-                <span style="color:red; position:absolute; right:0.2em; top:0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePodDIV();">` + SVGbtnCLOSE +  `</a></span>  `;
+                <span style="color:red; position:absolute; right:-0.2em; top:-0.2em; cursor:pointer;"><a onclick="SuperBigFamView.removePodDIV();">` + SVGbtnCLOSE +  `</a></span>  `;
 
     let connectionHTML = "";
     if (connectObject.type == "Ahn") {
@@ -441,7 +441,7 @@ function popupConnectionDIV() {
             if (!connectObject.person._data) {
                 console.log("NO DATA OBJECT !!!!");
                 popupHTML +=
-                    "Cannot draw this Connection Path at this time.<BR><BR>Possible reasons:<BR> * Private profile in between start and end of path<BR> * Not logged into the Apps Server";
+                    "Cannot draw this Connection Path at this time.<BR><BR>Possible reasons:<BR> * Private profile in between start and end of path<BR> * Not logged into the Apps Server<BR> * Displaying Degree Only";
                 thisPopup.innerHTML = popupHTML;
 
             } else if (!connectObject.person._data.CodesList) {
