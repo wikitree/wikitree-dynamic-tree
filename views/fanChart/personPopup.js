@@ -437,7 +437,19 @@ function popupConnectionDIV() {
         if (connectObject.appID == "SuperBigTree") {
             codesList = connectObject.person._data.CodesList;
         } else if (connectObject.appID == "cc7") {
-            codesList = connectObject.person._data.CodesList;
+            console.log(connectObject.person);
+            if (!connectObject.person._data) {
+                console.log("NO DATA OBJECT !!!!");
+                popupHTML +=
+                    "Cannot draw this Connection Path at this time.<BR><BR>Possible reasons:<BR> * Private profile in between start and end of path<BR> * Not logged into the Apps Server";
+                thisPopup.innerHTML = popupHTML;
+
+            } else if (!connectObject.person._data.CodesList) {
+                console.log("MISSING CODES LIST - ", connectObject.person);
+                codesList = ["A0"]
+            } else {
+                codesList = connectObject.person._data.CodesList;
+            }
         }
         
         
@@ -595,6 +607,8 @@ function popupConnectionDIV() {
                 if (!(personData.LongName)) {
                     if (person.getDisplayName) {
                         personData.LongName = person.getDisplayName();
+                    } else {
+                        personData.LongName = personData.RealName + " " + personData.LastNameAtBirth;
                     }
                 }
 
