@@ -242,7 +242,7 @@ export class CCTE {
                         id="cctBrickWallColour"
                         type="color"
                         value="#FF0000"
-                        title='Choose the colour for people chosen as a "brick wall".' />
+                        title='Choose the colour for people chosen as a "brick wall".' />&nbsp;
                     </td>
                     <td colspan=3 rowspan=2>
                     <fieldset><legend title='Set what constitutes a "brick wall."'>Add to Brick Wall: </legend>
@@ -327,7 +327,7 @@ export class CCTE {
                         id="cctLinkLineColour"
                         type="color"
                         value="#CCCCCC"
-                        title="Choose the colour for the lines connecting ancestors." />
+                        title="Choose the colour for the lines connecting ancestors." />&nbsp;
                     </td>
                   </tr>
                 </table>

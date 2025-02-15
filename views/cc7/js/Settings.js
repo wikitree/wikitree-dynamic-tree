@@ -120,7 +120,9 @@ export class Settings {
                 label: "Notes",
                 hideSelect: true,
                 subsections: [{ name: "notesss", label: "Backup/Resore Notes" }],
-                comment: "Create a backup file for your notes, restore them from a file, or delete them all.",
+                comment:
+                    "Create a backup file for your notes, restore them from a file, or delete them all. " +
+                    "Clicking 'Apply Changes' here is only necessary if you have also made other setting changes.",
             },
         ],
         optionsGroups: [

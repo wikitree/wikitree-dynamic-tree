@@ -94,7 +94,7 @@ export function showTree(
         const tbl = d3
             .select("#theSvg")
             .insert("table", ":first-child")
-            .attr("class", "treeHeader")
+            .attr("class", "treeHeader table-borderless")
             .attr("width", edgeFactor * (currentMaxShowDepth - 1))
             .style("margin-left", `${margin.left}px`);
         const tr = tbl.append("tr");
