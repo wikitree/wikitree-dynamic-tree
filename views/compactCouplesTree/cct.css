@@ -1,15 +1,3 @@
-/*
-#cctContainer {
-  --content-padding: 0;
-  position: relative;
-}
-#cctContainer:hover {
-  cursor: grab;
-}
-#cctContainer:active {
-  cursor: grabbing;
-}
-*/
 /* Normalise buttons */
 .cct button {
   font-weight: normal;
@@ -42,19 +30,27 @@
   overflow-x: auto;
   width: 100%;
 }
-div.cct select,
-div.cct input {
-  padding: 0.3em;
-  width: auto;
-  background-size: 1em 2em;
-  margin: 5px 5px 0px 0px;
+.cct table {
+  margin-bottom: 0;
+}
+.cct td {
+  padding: 0;
 }
 
 .cct #cctOptions {
   cursor: pointer;
 }
+.cct legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
+}
 
 .cct fieldset {
+  font-size: 90%;
+  /* line-height: 1; */
   display: block;
   margin-inline-start: 2px;
   margin-inline-end: 2px;
@@ -185,7 +181,6 @@ div.cct input {
   background: white;
   box-shadow: 1em 1em 1em grey;
   z-index: 11000;
-  cursor: default;
 }
 
 .cct xx {
@@ -207,10 +202,10 @@ div.cct input {
   color: red;
 }
 
-.cct #help-text:hover {
+.cct .pop-up:hover {
   cursor: grab;
 }
-.cct #help-text:active {
+.cct .pop-up:active {
   cursor: grabbing;
 }
 .cct #help-text h3 {
@@ -237,7 +232,6 @@ div.cct input {
   border-radius: 1em;
   border: 3px solid forestgreen;
   box-shadow: 0.5em 0.5em 0.5em 0.5em #ccc;
-  cursor: grab;
   display: none;
   position: absolute;
   padding: 1.5em 1em 1em;
@@ -289,7 +283,7 @@ div.cct input {
     border-radius: 50%;
     background-color: currentColor;
     position: relative;
-    transform: translate(-20%, -20%);
+    transform: translate(50%, 50%);
   }
 }
 

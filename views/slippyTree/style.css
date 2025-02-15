@@ -1,34 +1,128 @@
 /**
- * First three rules force some changes to the tree nodes
+ * First set of rules force some changes to the tree nodes
  * outside the view-container - required because the
  * slippy-tree-container must fill the rest of the screen.
+ *
+ * These vary for FOUR environments, the latter three are provisional
+ *  -- treeapps in the original wikitree,
+ *  -- treeapps in the dev-2025 wikitree
+ *  -- NOT standalone main page (these are in views/slippytree/index.html)
+ *  -- NOT embedded into the profile page (these are in patch 010/style.css)
  */
+
+/* Rules for both the original and the dev-2025 TreeApps page */
 :root:has(.slippy-tree-container) {
+    --background-color: white;          /* the "default" background is white */
+}
+:root:has(body.tree-apps .slippy-tree-container) {
     height: 100%;
      --content-padding: 0;
+     --background-color: #f0f0ef;       /* background in the original site */
 }
-body:has(.slippy-tree-container) {
+body.tree-apps:has(.slippy-tree-container) {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
-#view-container:has(.slippy-tree-container) {
+body.tree-apps #view-container:has(> .slippy-tree-container) {
     flex: 1;
     min-height: auto;
+    margin: 0;
+}
+
+/* Rules that only apply to dev-2025 TreeApps (which has an extra #main in the middle) */
+body.tree-apps #main:has(.slippy-tree-container) {
+    padding-bottom: 0;
+    flex: 1;
+    display: flex;
+     --background-color: #f7f6f0;       /* background in the new site */
+}
+body.tree-apps #main .row:has(.slippy-tree-container) {
+    --bs-gutter-x: 0px;
+    --bs-gutter-y: 0px;
+    flex: 1;
+    margin-top: 0 !important; /* Bootstrap is awful */
+}
+body.tree-apps #main .row:has(.slippy-tree-container) > * {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Now go wild. If the root element has "compact-footer" class, reduce size of footer */
+/* This rule can be used by any tree app. All it needs is a "hover" class too be toggled */
+/* on the footer */
+:root.compact-footer footer#footer {
+    transition-duration: 200ms;
+    transition-property: padding;
+    overflow: hidden;
+}
+:root.compact-footer footer#footer ul.nav .nav-item {
+    transition-duration: 200ms;
+    transition-property: margin;
+}
+:root.compact-footer footer#footer > * > :last-child {
+    transition-duration: 200ms;
+    transition-property: height, margin;
+}
+:root.compact-footer footer#footer > * > :last-child {
+    overflow: hidden;
+    transition-duration: 200ms;
+    transition-property: height, margin;
+}
+:root.compact-footer footer#footer:not(.hover) {
+    padding: 1em 0 0 0;
+}
+:root.compact-footer footer#footer:not(.hover) ul.nav .nav-item {
+    margin-bottom: 0;
+}
+:root.compact-footer footer#footer:not(.hover) > * > :last-child {
+    height: 0;
+    margin: 0 !important;
+}
+:root.compact-footer footer#footer:not(.hover) > * > :last-child > :first-child {
+    margin-top: 0;
+}
+:root.compact-footer #subfooter {
+    display: none;
+}
+@media (max-width:980px) {
+    :root.compact-footer footer#footer:not(.hover) img {
+        max-height: 40px;
+    }
+    :root.compact-footer footer#footer:not(.hover) figure {
+        display: flex;
+        justify-content: center;
+        margin: 0;
+    }
+    :root.compact-footer footer#footer:not(.hover) .mb-3 {
+        margin: 0 !important;      /* Bootstrap is a disaster */
+    }
+    :root.compact-footer footer#footer:not(.hover) :is(ul, p) {
+        display: none;
+    }
 }
 
 /**
- * Below here everything is prefixed with .slippy-tree-container
+ * Below here everything is prefixed with .slippy-tree-container.
+ * The next rule and the pos:absolute are to ensure that whatever the size
+ * of the thing that contains slippy-tree-container, a) the container will
+ * fill it, and b) it will never be dependent on the size of its children.
+ * With that done, the view-container can be sized any way we like.
  */
-.slippy-tree-container {
+:has(> .slippy-tree-container) {
     position: relative;
+}
+.slippy-tree-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
     font: 14px sans-serif;
     overflow: hidden;
-    height: 100%;
     --button-color: #639;
 }
 .slippy-tree-container * {
     touch-action: none !important;
+    box-sizing: initial;        /* Bootstrap is so toxic */
 }
 .slippy-tree-container h1 {
     font-size: 16px;
@@ -37,11 +131,11 @@ body:has(.slippy-tree-container) {
 
 @media (min-width: 800px) {
     .slippy-tree-container .relationshipName {
-        position: fixed;
+        position: absolute;
         left: 16px;
         bottom: 28px;
         color: black;
-        -webkit-text-stroke: 6px #f0f0ef;
+        -webkit-text-stroke: 6px var(--background-color), 
         -webkit-text-fill: black;
         paint-order: stroke fill;
     }
@@ -68,6 +162,7 @@ body:has(.slippy-tree-container) {
     align-items: center;
     z-index: 9999;
     left: 20px;
+    text-decoration: none;
 }
 .slippy-tree-container .slippy-help-button::before {
     content: "?";

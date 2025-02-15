@@ -223,7 +223,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const tbl = d3
                 .select("#theSvg")
                 .insert("table", ":first-child")
-                .attr("class", "treeHeader")
+                .attr("class", "treeHeader table-borderless")
                 .attr("width", edgeFactor * (currentMaxShowGen - 1))
                 .style("margin-left", `${margin.left}px`);
             const tr = tbl.append("tr");
@@ -650,7 +650,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const d = d3.select(parentNode).datum();
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                // console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
+                console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
             const epIds = d.data[side]?.getExpandedParentIds();
@@ -880,12 +880,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     }
 
     function showTable(jqClicked, theTable, lOffset, tOffset) {
+        theTable.addClass("pop-up");
         // Attach the table to the container div
         theTable.prependTo($("#cctContainer"));
         theTable.draggable();
-        theTable.off("dblclick").on("dblclick", function () {
-            $(this).slideUp("fast");
-        });
 
         setOffset(jqClicked, theTable, lOffset, tOffset);
         $(window).resize(function () {
@@ -1032,7 +1030,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             if (mayChangeSpouse && person.getId() != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
-                button.className = "select-spouse-button";
+                button.className = "select-spouse-button btn btn-sm";
                 button.textContent = RIGHT_ARROW;
                 button.setAttribute("couple-id", couple.getId());
                 button.setAttribute("person-id", currentSpouse.getId());

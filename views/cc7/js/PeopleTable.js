@@ -4,11 +4,14 @@ import { MissingLinksView } from "./MissingLinksView.js";
 import { CirclesView } from "./CirclesView.js";
 import { StatsView } from "./StatsView.js";
 import { Settings } from "./Settings.js";
+import { CC7Notes } from "./CC7Notes.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
 import { CC7 } from "./cc7.js";
 
-export class PeopleTable {
+export { PeopleTable, showTable, PRIVACY_LEVELS };
+
+class PeopleTable {
     static EXCEL = "xlsx";
     static CSV = "csv";
     static PARAMS;
@@ -51,8 +54,9 @@ export class PeopleTable {
             });
         }
         window.rootPerson = rootPerson;
-        // Get first name of root person
-        const rootFirstName = rootPerson?.FirstName || window.rootId;
+        if (!caption) caption = CC7Utils.tableCaption();
+
+        const rootFirstName = rootPerson?.FirstName || window.rootId; // Get first name of root person
         const sortTitle = "title='Click to sort'";
         const aCaption = `<caption>${caption}</caption>`;
         const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
@@ -66,6 +70,10 @@ export class PeopleTable {
         const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
         const bioCheck = Settings.current["biocheck_options_biocheckOn"];
         const subset = $("#cc7Subset").val() || "all";
+
+        let idsAndStatus = await CC7Notes.getIdsAndStatus();
+        const idsWithNotes = new Map(idsAndStatus);
+        idsAndStatus = null;
 
         const aTable = $(
             `<table id='peopleTable' class='subsetable peopleTable ${subset}'>` +
@@ -85,11 +93,17 @@ export class PeopleTable {
                 `<th data-order='' id='birthdate' ${sortTitle}>Birth Date</th>` +
                 `<th data-order='' id="birthlocation" data-flow="f2b" >` +
                 `<span class="sortColumn" ${sortTitle}>Birth Place</span>` +
-                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 `<th data-order='' id='deathdate' ${sortTitle}>Death Date</th>` +
                 `<th data-order='' id="deathlocation" data-flow="f2b" >` +
                 `<span class="sortColumn" ${sortTitle}>Death Place</span>` +
-                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 ageAtDeathCol +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
@@ -239,7 +253,12 @@ export class PeopleTable {
             };
 
             if ($("#cc7Container").length) {
-                degreeCell = "<td class='degree'>" + mPerson.Meta.Degrees + "°</td>";
+                const hasNote = idsWithNotes.has(mPerson.Id);
+                let status = hasNote ? idsWithNotes.get(mPerson.Id) : "";
+                if (status != "") status = " " + status;
+                degreeCell = `<td class="degree${
+                    hasNote ? " hasNote" : ""
+                }${status}" title="Degree. Click to add/edit Notes.">${mPerson.Meta.Degrees}°</td>`;
                 relationCell = `<td class='relation' title="${mPerson.Relationship?.full || ""}">${
                     mPerson.Relationship?.abbr || ""
                 }</td>`;
@@ -492,6 +511,24 @@ export class PeopleTable {
             });
 
         $("#cc7Container")
+            .off("click", "td.degree")
+            .on("click", "td.degree", function (event) {
+                CC7Notes.processNoteCellClick($(this));
+            });
+
+        $("#cc7Container")
+            .off("click", ".deleteNoteBtn")
+            .on("click", ".deleteNoteBtn", function (event) {
+                CC7Notes.deleteNote($(this));
+            });
+
+        $("#cc7Container")
+            .off("click", ".cancelNoteBtn")
+            .on("click", ".cancelNoteBtn", function (event) {
+                CC7Notes.cancelNote($(this));
+            });
+
+        $("#cc7Container")
             .off("click", "th[id]")
             .on("click", "th[id]", function () {
                 const el = $(this);
@@ -676,18 +713,18 @@ export class PeopleTable {
                     $("#tableButtons").before(
                         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
                             window.cc7Degree
-                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
-                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
-                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
+                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
+                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
                         children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
                     );
                 } else {
                     $("#ml-count").innerHTML(
                         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
                             window.cc7Degree
-                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
-                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
-                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
+                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
+                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
                         children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
                     );
                 }
@@ -794,7 +831,7 @@ export class PeopleTable {
 
         if ($("#cc7excel").length == 0) {
             $(
-                '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
+                '<button id="cc7excel" title="Export an Excel file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">Excel</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7excel")
                 .off("click")
@@ -804,7 +841,7 @@ export class PeopleTable {
         }
         if ($("#cc7csv").length == 0) {
             $(
-                '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
+                '<button id="cc7csv" title="Export a CSV file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">CSV</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7csv")
                 .off("click")
@@ -914,7 +951,7 @@ export class PeopleTable {
         if ($("#wideTableButton").length == 0) {
             const pTable = $(".peopleTable");
             const wideTableButton = $(
-                "<div id='tableButtons'><button class='button small' id='wideTableButton'>Wide Table</button></div>"
+                "<div id='tableButtons'><button class='btn btn-secondary btn-sm' id='wideTableButton'>Wide Table</button></div>"
             );
             wideTableButton.insertBefore(pTable);
 
@@ -1088,6 +1125,12 @@ export class PeopleTable {
                     "Show only rows with these column values. > and < may be used for numerical columns.";
                 filterRow.appendChild(filterCell);
                 return;
+            } else if (i == 2) {
+                return;
+            } else if (i == 3) {
+                $(filterCell).append($("<select id='cc7DegFilter' title=''></select>"));
+                $(filterRow).append(filterCell);
+                return;
             }
             const headerCellText = headerCell.textContent.trim();
             const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
@@ -1098,7 +1141,7 @@ export class PeopleTable {
                 filterInput.type = "text";
                 filterInput.classList.add("filter-input");
 
-                // Check the length of the text in the first 50 cells of the column
+                // Check the the text in the first 50 cells of the column to determine its type
                 const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
                 let isNumeric = 0;
                 let isDate = 0;
@@ -1149,7 +1192,7 @@ export class PeopleTable {
             headerRow.parentElement.insertBefore(filterRow, headerRow);
         }
 
-        function formatOptions(option) {
+        function formatPBOption(option) {
             // option:
             // {
             //     "id": "value attribute" || "option text",
@@ -1162,11 +1205,103 @@ export class PeopleTable {
             return $(`<img class="privacyImage" src="./${option.text}"/>`);
         }
         $("#cc7PBFilter").select2({
-            templateResult: formatOptions,
-            templateSelection: formatOptions,
+            templateResult: formatPBOption,
+            templateSelection: formatPBOption,
             dropdownParent: $("#cc7Container"),
             minimumResultsForSearch: Infinity,
-            width: "2em",
+            width: "100%",
+        });
+
+        const shapeOptions = new Map([
+            [
+                "none",
+                {
+                    title: "Clear filter",
+                    html: " ",
+                    // html: '<svg viewBox="0 0 100 100"><polygon points="10,10 90,90" style="fill:white;"/></svg>',
+                },
+            ],
+            [
+                "all",
+                {
+                    title: "All notes, regardless of status",
+                    html: `<svg viewBox="0 0 100 100">
+                        <defs>
+                        <linearGradient id="blue-pink-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#1daddd;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#e05c6a;stop-opacity:1" />
+                        </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="100" height="100" fill="url(#blue-pink-gradient)" />
+                        <polygon points="100,0 100,50 50,0" style="fill:white;" />
+                    </svg>`,
+                },
+            ],
+            [
+                "st-none",
+                {
+                    title: "Notes with no defined state",
+                    html: `<svg viewBox="0 0 100 100">
+                        <defs>
+                        <linearGradient id="blue-pink-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#1daddd;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#e05c6a;stop-opacity:1" />
+                        </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="100" height="100" fill="url(#blue-pink-gradient)" />
+                    </svg>`,
+                },
+            ],
+            [
+                "st-todo",
+                {
+                    title: "Notes with ToDo state",
+                    html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:red;"/></svg>',
+                },
+            ],
+            [
+                "st-busy",
+                {
+                    title: "Notes with In Progress state",
+                    html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:rgb(255, 255, 0);"/></svg>',
+                },
+            ],
+            [
+                "st-done",
+                {
+                    id: "st-done",
+                    title: "Notes with Done state",
+                    html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:rgb(0, 255, 0);"/></svg>',
+                },
+            ],
+        ]);
+
+        function formatDegOption(data) {
+            // data:
+            // {
+            //     "id": "value attribute" || "option text",
+            //     "text": "label attribute" || "option text",
+            //     "element": HTMLOptionElement
+            // }
+            const option = shapeOptions.get(data.id);
+            if (option) {
+                return $('<span class="cc7DegFilter-option">' + option.html + "</span>");
+            }
+            return data.text; // Default for free-typed numbers
+        }
+
+        $("#cc7DegFilter").select2({
+            placeholder: "Type a number or select a symbol",
+            tags: true, // Allow custom input
+            data: [...shapeOptions.entries()].map((opt) => ({ id: opt[0], title: opt[1].title })),
+            templateResult: formatDegOption,
+            templateSelection: formatDegOption,
+            // dropdownParent: $("#cc7Container"),
+            escapeMarkup: function (markup) {
+                return markup;
+            }, // Allow custom HTML
+            // multiple: true,
+            width: "3em",
         });
 
         document.getElementById("view-container").addEventListener("input", function (event) {
@@ -1177,10 +1312,12 @@ export class PeopleTable {
         });
 
         $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
+        $("#cc7DegFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
 
         // Add Clear Filters button
         $("#clearTableFiltersButton").remove();
         const clearFiltersButton = document.createElement("button");
+        clearFiltersButton.className = "btn btn-secondary btn-sm ms-1";
         clearFiltersButton.textContent = "X";
         clearFiltersButton.title = "Clear Filters";
         clearFiltersButton.id = "clearTableFiltersButton";
@@ -1199,6 +1336,7 @@ export class PeopleTable {
             input.value = "";
         });
         $("#cc7PBFilter").val("all").trigger("change");
+        $("#cc7DegFilter").val("none").trigger("change");
         PeopleTable.filterFunction();
         PeopleTable.updateClearFiltersButtonVisibility();
     }
@@ -1209,6 +1347,26 @@ export class PeopleTable {
         const hasThead = table.querySelector("thead") !== null;
         const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
         const filterInputs = table.querySelectorAll(".filter-input");
+
+        // Collect the active filter info, i.e. all the filter inputs that have values
+        // Note that these do not include the privacy nor the degree filter
+        const filters = [];
+        filterInputs.forEach((input, inputIndex) => {
+            const filterText = input.value.toLowerCase();
+            if (filterText.length == 0) {
+                return;
+            }
+            filters.push({
+                colIndex: Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 1,
+                text: filterText,
+                isDateCol: input.classList.contains("date-input"),
+                isNumericCol: input.classList.contains("numeric-input"),
+            });
+        });
+
+        // Get the filter values for the privacy and degree filters
+        const reqPrivacy = $("#cc7PBFilter").select2("data")[0].id;
+        const reqDegree = $("#cc7DegFilter").val();
 
         rows.forEach((row, rowIndex) => {
             // Skip first row only if there's no 'thead'
@@ -1221,84 +1379,19 @@ export class PeopleTable {
                 return;
             }
 
-            const filters = [];
-            filterInputs.forEach((input, inputIndex) => {
-                let filterText = input.value.toLowerCase();
-                if (filterText.length == 0) {
+            // Perform the filter action for each of the found filters
+            let displayRow = true;
+            // filters.forEach((filter, inputIndex) => {
+            for (const filter of filters) {
+                let cellText = row.children[filter.colIndex].textContent.toLowerCase();
+                if (!shouldKeepRow(cellText, filter.text, filter.isNumericCol, filter.isDateCol)) {
+                    // Once one filter says no, we can stop looking
+                    row.style.display = "none";
                     return;
                 }
-                const columnIndex =
-                    Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 1;
-                filters.push({
-                    input: input,
-                    cellText: row.children[columnIndex].textContent.toLowerCase(),
-                });
-            });
+            }
 
-            let displayRow = true;
-            filters.forEach((filter, inputIndex) => {
-                const input = filter.input;
-                let filterText = input.value.toLowerCase();
-                let cellText = filter.cellText;
-                const isDateColumn = input.classList.contains("date-input");
-                const isNumericColumn = input.classList.contains("numeric-input");
-                let operator;
-                if (["<", ">", "!", "?"].includes(filterText[0])) {
-                    operator = filterText[0];
-                    if (operator == "!") operator = "!=";
-                    filterText = filterText.slice(1);
-                    if (filterText.length == 0 && operator != "?") {
-                        return;
-                    }
-                }
-
-                // Perform the appropriate checks
-                // Note, since we want the && of all the filters, the code below should only set
-                // displayRow to false as and when necessary (and never set it to true).
-                if (operator == "?") {
-                    // Select rows with an empty cell in this column
-                    if (cellText != "") displayRow = false;
-                } else if (
-                    (isNumericColumn && filterText != "~") ||
-                    (isDateColumn && (operator == ">" || operator == "<"))
-                ) {
-                    // Use the operator to do an actual comparison
-                    if (filterText.length > 0) {
-                        if (operator) {
-                            filterText = parseFloat(filterText);
-                        } else if (!operator && isNumericColumn) {
-                            operator = "=="; // Default to equality if there's no operator
-                            filterText = parseFloat(filterText.replace(/[<>~]/g, ""));
-                        } else {
-                            filterText = `"${filterText}"`;
-                        }
-                        if (isDateColumn) {
-                            let year = cellText.slice(0, 4); // Get the year part of the date
-                            if (year.endsWith("s")) {
-                                year = year.slice(0, -1); // Remove the 's' for decade dates
-                            }
-                            cellText = parseFloat(year);
-                        } else if (isNumericColumn) {
-                            cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
-                        } else {
-                            cellText = `"${cellText}"`;
-                        }
-                        if (!eval(cellText + operator + filterText)) {
-                            displayRow = false;
-                        }
-                    }
-                } else {
-                    // Perform partial matching and lip the result for the not (!) operator
-                    let aMatch = cellText.includes(filterText);
-                    if (operator == "!=") {
-                        aMatch = !aMatch;
-                    }
-                    if (!aMatch) displayRow = false;
-                }
-            });
-            // Add the Privacy/BioCheck filter
-            const pbFilterSelected = $("#cc7PBFilter").select2("data")[0];
-            const reqPrivacy = pbFilterSelected.id;
+            // Check the Privacy/BioCheck filter
             if (reqPrivacy != "all") {
                 if (reqPrivacy == "bioOK") {
                     if (row.children[0].classList.contains("bioIssue")) displayRow = false;
@@ -1309,16 +1402,105 @@ export class PeopleTable {
                     if (rowPrivacy != reqPrivacy) displayRow = false;
                 }
             }
+            if (!displayRow) {
+                row.style.display = "none";
+                return;
+            }
+
+            // Check the degree filter
+            if (reqDegree != "none") {
+                const $cell = $(row.children[3]);
+                if (reqDegree == "all") {
+                    displayRow = $cell.hasClass("hasNote");
+                } else if (reqDegree == "st-none") {
+                    displayRow =
+                        $cell.hasClass("hasNote") &&
+                        !$cell.hasClass("ToDo") &&
+                        !$cell.hasClass("InProgress") &&
+                        !$cell.hasClass("Done");
+                } else if (reqDegree == "st-todo") {
+                    displayRow = $cell.hasClass("ToDo");
+                } else if (reqDegree == "st-busy") {
+                    displayRow = $cell.hasClass("InProgress");
+                } else if (reqDegree == "st-done") {
+                    displayRow = $cell.hasClass("Done");
+                } else {
+                    // Treat it as a numeric filter
+                    displayRow = shouldKeepRow($cell.text(), reqDegree, true, false);
+                }
+            }
 
             row.style.display = displayRow ? "" : "none";
         });
         $("#peopleTable").floatingScroll("update");
+
+        function shouldKeepRow(cellValue, filterValue, isNumericColumn, isDateColumn) {
+            let cellText = cellValue;
+            let filterText = filterValue;
+            let keepRow = true;
+            let operator;
+            if (["<", ">", "!", "?"].includes(filterText[0])) {
+                operator = filterText[0];
+                if (operator == "!") operator = "!=";
+                filterText = filterText.slice(1);
+                if (filterText.length == 0 && operator != "?") {
+                    // filtertext start with an operator, but is still incomplete, so ignore the filter
+                    return keepRow;
+                }
+            }
+
+            // Perform the appropriate checks
+            // Note, since we want the && of all the filters, the code below should only set
+            // displayRow to false as and when necessary (and never set it to true).
+            if (operator == "?") {
+                // Select rows with an empty cell in this column
+                if (cellText != "") keepRow = false;
+            } else if (
+                (isNumericColumn && filterText != "~") ||
+                (isDateColumn && (operator == ">" || operator == "<"))
+            ) {
+                // Use the operator to do an actual comparison
+                if (filterText.length > 0) {
+                    if (operator) {
+                        filterText = parseFloat(filterText);
+                    } else if (!operator && isNumericColumn) {
+                        operator = "=="; // Default to equality if there's no operator
+                        filterText = parseFloat(filterText.replace(/[<>~°]/g, ""));
+                    } else {
+                        filterText = `"${filterText}"`;
+                    }
+                    if (isDateColumn) {
+                        let year = cellText.slice(0, 4); // Get the year part of the date
+                        if (year.endsWith("s")) {
+                            year = year.slice(0, -1); // Remove the 's' for decade dates
+                        }
+                        cellText = parseFloat(year);
+                    } else if (isNumericColumn) {
+                        cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
+                    } else {
+                        cellText = `"${cellText}"`;
+                    }
+                    if (!eval(cellText + operator + filterText)) {
+                        keepRow = false;
+                    }
+                }
+            } else {
+                // Perform partial matching and flip the result for the not (!) operator
+                let aMatch = cellText.includes(filterText);
+                if (operator == "!=") {
+                    aMatch = !aMatch;
+                }
+                if (!aMatch) keepRow = false;
+            }
+            return keepRow;
+        }
     }
 
     static anyFilterActive() {
         return (
             Array.from(document.querySelectorAll(".filter-input")).some((input) => input.value.trim() !== "") ||
-            $("#cc7PBFilter").select2("data")[0].id != "all"
+            $("#cc7PBFilter").select2("data")[0].id != "all" ||
+            $("#cc7DegFilter").val() != "none"
         );
     }
 
@@ -1552,7 +1734,7 @@ export class PeopleTable {
         const RIBBON = "&#x1F397;";
         const tPersonFirstName = tPerson.FirstName || "(Private)";
         const timelineTable = $(
-            `<div class='timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
+            `<div class='timeline pop-up' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
                 `<caption>Events in the life of ${tPersonFirstName}'s family</caption>` +
                 "<thead><th class='tlDate'>Date</th><th class='tlBioAge'>Age</th>" +
                 "<th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>" +
@@ -1647,7 +1829,7 @@ export class PeopleTable {
     static showTimeline(jqClicked) {
         const theClickedRow = jqClicked.closest("tr");
         const id = +theClickedRow.attr("data-id");
-        let tPerson = window.people.get(id);
+        const tPerson = window.people.get(id);
         const theClickedName = tPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_timeLine";
         const $timelineTable = $(`#${familyId}`);
@@ -1668,7 +1850,7 @@ export class PeopleTable {
             tPerson.FirstName = tPerson.RealName;
         }
         // Make a table
-        const timelineTable = PeopleTable.buildTimeline(tPerson, familyFacts, familyId);
+        const timelineTable = PeopleTable.buildTimeline(tPerson, familyFacts);
         timelineTable.attr("id", familyId);
         PeopleTable.showTable(jqClicked, timelineTable, 30, 30);
     }
@@ -1677,9 +1859,6 @@ export class PeopleTable {
         // Attach the table to the container div
         theTable.prependTo($("#cc7Container"));
         theTable.draggable();
-        theTable.off("dblclick").on("dblclick", function () {
-            $(this).slideUp();
-        });
 
         PeopleTable.setOffset(jqClicked, theTable, lOffset, tOffset);
         $(window).resize(function () {
@@ -1690,12 +1869,6 @@ export class PeopleTable {
 
         theTable.css("z-index", `${Settings.getNextZLevel()}`);
         theTable.slideDown("slow");
-        theTable
-            .find("x")
-            .off("click")
-            .on("click", function () {
-                theTable.slideUp();
-            });
         theTable
             .find("w")
             .off("click")
@@ -1720,13 +1893,13 @@ export class PeopleTable {
     static showBioCheckReport(jqClicked) {
         const theClickedRow = jqClicked.closest("tr");
         const id = +theClickedRow.attr("data-id");
-        let person = window.people.get(id);
+        const person = window.people.get(id);
         if (typeof person.bioCheckReport == "undefined" || person.bioCheckReport.length == 0) {
             return;
         }
         const theClickedName = person.Name;
-        const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
-        const $bioReportTable = $(`#${familyId}`);
+        const bioReportId = theClickedName.replace(" ", "_") + "_bioCheck";
+        const $bioReportTable = $(`#${bioReportId}`);
         if ($bioReportTable.length) {
             $bioReportTable.css("z-index", `${Settings.getNextZLevel()}`).slideToggle(() => {
                 PeopleTable.setOffset(jqClicked, $bioReportTable, 30, 30);
@@ -1735,14 +1908,14 @@ export class PeopleTable {
         }
 
         const bioReportTable = PeopleTable.getBioCheckReportTable(person);
-        bioReportTable.attr("id", familyId);
+        bioReportTable.attr("id", bioReportId);
         PeopleTable.showTable(jqClicked, bioReportTable, 30, 30);
     }
 
     static getBioCheckReportTable(person) {
         const issueWord = person.bioCheckReport.length == 1 ? "issue" : "issues";
         const bioCheckTable = $(
-            `<div class='bioReport' data-wtid='${person.Name}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
+            `<div class='bioReport pop-up' data-wtid='${person.Name}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
                 `<caption>Bio Check found the following ${issueWord} with the biography of ${person.FirstName}</caption>` +
                 "<tbody><tr><td><ol></ol></td></tr></tbody></table></div>"
         );
@@ -1772,7 +1945,7 @@ export class PeopleTable {
         }
         const captionHTML = CC7Utils.profileLink(CC7Utils.htmlEntities(kPeople[0].Name), disName);
         const kTable = $(
-            `<div class='familySheet'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
+            `<div class='familySheet pop-up'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
                 "<thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead>" +
                 "<tbody></tbody></table></div>"
         );
@@ -1785,6 +1958,9 @@ export class PeopleTable {
                 rClass = "self";
             }
 
+            if (typeof kPers.adjustedBirth == "undefined") {
+                Utils.setAdjustedDates(kPers);
+            }
             const bDate = kPers.adjustedBirth;
             const dDate = kPers.adjustedDeath;
 
@@ -1882,8 +2058,21 @@ export class PeopleTable {
         return kTable;
     }
 
-    static doFamilySheet(fPerson, jqClicked) {
+    static buildAndShowFamilySheet(fPerson, jqClicked) {
+        CC7Utils.assignRelationshipsFor(fPerson);
+        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
+        const famSheet = PeopleTable.peopleToTable(thisFamily);
+
         const theClickedName = fPerson.Name;
+        const familyId = theClickedName.replace(" ", "_") + "_family";
+        famSheet.attr("id", familyId);
+        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
+    }
+
+    static showFamilySheet(jqClicked) {
+        const theClickedRow = jqClicked.closest("tr");
+        const theClickedName = theClickedRow.attr("data-name");
+
         const familyId = theClickedName.replace(" ", "_") + "_family";
         const $famSheet = $(`#${familyId}`);
         if ($famSheet.length) {
@@ -1893,73 +2082,62 @@ export class PeopleTable {
             return;
         }
 
-        CC7Utils.assignRelationshipsFor(fPerson);
-        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
-
-        const famSheet = PeopleTable.peopleToTable(thisFamily);
-        famSheet.attr("id", familyId);
-        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
-    }
-
-    static showFamilySheet(jqClicked) {
-        const theClickedRow = jqClicked.closest("tr");
-        const theClickedName = theClickedRow.attr("data-name");
         const theClickedId = +theClickedRow.attr("data-id");
-
-        const aPeo = window.people.get(theClickedId);
-        if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
-            PeopleTable.doFamilySheet(aPeo, jqClicked);
+        const clickedPerson = window.people.get(theClickedId);
+        if (clickedPerson?.Parent?.length && clickedPerson?.Child?.length) {
+            PeopleTable.buildAndShowFamilySheet(clickedPerson, jqClicked);
         } else if (!theClickedName.startsWith("Private") || theClickedId > 0) {
             const key = theClickedName.startsWith("Private") ? theClickedId : theClickedName;
-            console.log(`Calling getRelatives for ${key}`);
+            console.log(`Calling getPeople to obtain relatives for ${key}`);
             WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
-                action: "getRelatives",
-                getSpouses: "1",
-                getChildren: "1",
-                getParents: "1",
-                getSiblings: "1",
+                action: "getPeople",
                 keys: key,
-            }).then((data) => {
-                // Construct this person so it conforms to the profiles retrieved using getPeople
-                const mPerson = PeopleTable.convertToInternal(data[0].items[0]);
-                PeopleTable.doFamilySheet(mPerson, jqClicked);
+                nuclear: 1,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            }).then((result) => {
+                // Construct this person so it conforms to the profiles we retrieved previously
+                if (result[0]?.status == "") {
+                    const iPerson = PeopleTable.convertToInternal(key, result);
+                    PeopleTable.buildAndShowFamilySheet(iPerson, jqClicked);
+                } else {
+                    console.log(`Could not obtain relatives for ${key}: ${result[0]?.status}`);
+                }
             });
         }
     }
 
-    static convertToInternal(item) {
-        const pData = item.person;
-        if (!pData.Name && item.user_name) pData.Name = item.user_name;
-        if (!pData.Name) pData.Name = pData.Id;
-
-        const person = PeopleTable.addFamilyToPerson(pData);
-        if (person.Parents) person.Parents = Object.keys(person.Parents);
-        if (person.Siblings) person.Siblings = Object.keys(person.Siblings);
-        if (person.Children) person.Children = Object.keys(person.Children);
-        person.Marriage = {};
-        if (person.Spouses) {
-            for (const sp of Object.values(person.Spouses)) {
-                person.Marriage[sp.Id] = {
-                    MarriageDate: sp.marriage_date,
-                    MarriageEndDate: sp.marriage_end_date,
-                    MarriageLocation: sp.marriage_location,
-                    DoNotDisplay: sp.do_not_display,
-                };
+    static convertToInternal(key, result) {
+        const rootId = result[0].resultByKey[key]?.Id;
+        const profiles = result[0].people ? Object.values(result[0].people) : [];
+        const peopleMap = new Map();
+        // Collect all the family members in a map
+        for (const person of profiles) {
+            const id = +person.Id;
+            if (id < 0) {
+                person.Name = `Private${id}`;
+                person.DataStatus = { Spouse: "", Gender: "" };
+            } else if (!person.Name) {
+                // WT seems not to return Name for some private profiles, even though they do
+                // return a positive id for them, so we just set Name to Id since WT URLs work for both.
+                person.Name = `${id}`;
+            }
+            if (!peopleMap.has(id)) {
+                // This is a new person, add them to the tree
+                Utils.setAdjustedDates(person);
+                person.Parents = [person.Father, person.Mother];
+                person.Hide = person.Id != rootId;
+                // To be filled shortly via populateRelativeArrays()
+                person.Parent = [];
+                person.Spouse = [];
+                person.Sibling = [];
+                person.Child = [];
+                person.Marriage = {};
+                peopleMap.set(id, person);
             }
         }
-        const curPerson = window.people.get(+person.Id);
-        if (curPerson) {
-            // Copy fields not present in the new person from the old to the new
-            let x = Object.entries(curPerson);
-            for (const [key, value] of x) {
-                if (typeof person[key] == "undefined") {
-                    person[key] = value;
-                }
-            }
-        }
-        window.people.set(+person.Id, person);
-        return person;
+        CC7.populateRelativeArrays(peopleMap);
+        return peopleMap.get(rootId);
     }
 
     static addFamilyToPerson(person) {
@@ -2279,3 +2457,6 @@ export class PeopleTable {
         wtViewRegistry.showInfoPanel();
     }
 }
+
+const showTable = PeopleTable.showTable;
+const PRIVACY_LEVELS = PeopleTable.PRIVACY_LEVELS;
