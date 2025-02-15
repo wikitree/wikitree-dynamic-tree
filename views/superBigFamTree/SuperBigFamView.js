@@ -11268,10 +11268,10 @@ import { Utils } from "../shared/Utils.js";
     SuperBigFamView.personPopup = Tree.prototype.personPopup = function ( person ) {
         personPopup.popupHTML(person, {
             type: "CC",
-            person: person ,
-            leafCollection: SuperBigFamView.theLeafCollection
-            
-            });
+            person: person,
+            leafCollection: SuperBigFamView.theLeafCollection,
+            appID:APP_ID
+        });
         console.log("SuperBigFamView.personPopup");
     }
     

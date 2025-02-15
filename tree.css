@@ -205,6 +205,7 @@ main {
 
 .vital-info {
   padding: 0 0 10px 10px;
+  line-height: normal;
 }
 
 #tree-links a img,
@@ -480,6 +481,21 @@ ul.treeapp-tabs a:link {
   text-decoration: none;
   margin-left: 0;
   margin-right: 0
+}
+
+label.treeapp-settings {
+  padding-left: 0.1em;
+  padding-right: 0.4em;
+  cursor: pointer;
+}
+
+input.treeapp-settings {
+  cursor: pointer;
+}
+
+hr.treeapp-personpopup {
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
 }
 
 /* Print styling should follow everything else to overwrite it */

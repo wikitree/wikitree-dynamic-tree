@@ -81,14 +81,15 @@ function compareSettings(currentSettings) {
     settings_functions_compareB4resetDIVhtml +="</table>";
     settings_functions_compareB4resetDIVhtml +=
         "<br/>" +
-        "<button onclick='doResetSettings(" +
+        "<button class='btn btn-primary' onclick='doResetSettings(" +
         self.optionsRegistry.viewClassName +
         ".currentSettings," +
         self.optionsRegistry.viewClassName + ");'>CONFIRM Reset to Default Settings</button>";
     if (numChanges == 0) {
         settings_functions_compareB4resetDIVhtml = "<B>You are currently using the DEFAULT SETTINGS for this app.</B>";    
     }
-    settings_functions_compareB4resetDIVhtml += "<br/><br/><button onclick='self.activeTabChanged(\"general\");'>CANCEL</button>";
+    settings_functions_compareB4resetDIVhtml +=
+        "<br/><br/><button  class='btn btn-secondary' onclick='self.activeTabChanged(\"general\");'>CANCEL</button>";
     document.getElementById("settings_functions_compareB4resetDIV").innerHTML = settings_functions_compareB4resetDIVhtml;
     document.getElementById("settings_functions_reset2Default").style.display = "none";
     document.getElementById("settings_functions_saveSettings").style.display = "none";
@@ -357,13 +358,13 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
 
         let theDIVhtml =
             '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><A onclick="' +
+            '<span style="color:red; position:absolute; top:-0.2em; right:-0.0em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
             '.cancelSettings();">' +
             SVGbtnCLOSE +
             "</A></span>" +
             this.createULelements(data) +
-            '<br />    <div align="center">     <button id="saveSettingsChanges" class="saveButton btn btn-primary">Save changes (all tabs)</button>' +
+            '<br />    <div align="center">     <button  class="btn btn-primary" id="saveSettingsChanges" class="saveButton btn btn-primary">Save changes (all tabs)</button>' +
             "</div></div>";
 
         return theDIVhtml;
@@ -691,7 +692,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 if (option.type == "checkbox") {
                     optionElement = document.createElement("input");
                     optionElement.type = "checkbox";
-                    optionElement.className = "optionCheckbox";
+                    optionElement.className = "treeapp-settings";
                     if (option.defaultValue == true) {
                         optionElement.checked = true;
                     }
@@ -699,6 +700,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                     let labelTextNode = document.createTextNode(" " + option.label);
 
                     let labelElement = document.createElement("label");
+                    labelElement.className = "treeapp-settings";
 
                     if (option.indent && option.indent > 0) {
                         let indentText = "";
@@ -743,7 +745,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                         } else {
                             let radioOptionElement = document.createElement("input");
                             radioOptionElement.value = value.value;
-                            // radioOptionElement.className = "optionCheckbox";
+                            radioOptionElement.className = "treeapp-settings";
                             radioOptionElement.type = "radio";
                             radioOptionElement.name = fullOptionName + "_radio";
                             radioNum++;
@@ -761,6 +763,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             } else if (value.text && value.text.indexOf("IMG:") == 0) {
                                 let subLabelElement = document.createElement("label");
                                 subLabelElement.setAttribute("For", radioOptionElement.id);
+                                subLabelElement.className = "treeapp-settings";
                                 let optionIMGNode = document.createElement("IMG");
                                 optionIMGNode.id = fullOptionName + "_IMG" + radioNum;
                                 
@@ -774,7 +777,8 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                             } else {
                                 let subLabelElement = document.createElement("label");
                                 subLabelElement.setAttribute("For",radioOptionElement.id);
-                                let optionLabelTextNode = document.createTextNode(" " + value.text);  
+                                subLabelElement.className = "treeapp-settings";
+                                let optionLabelTextNode = document.createTextNode(" " + value.text + " ");  
                                 subLabelElement.appendChild(optionLabelTextNode);
                                 labelElement.appendChild(subLabelElement);
                             }
