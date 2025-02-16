@@ -10,11 +10,14 @@ import { theSourceRules } from "../../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../../lib/biocheck-api/src/Biography.js";
 import { PeopleTable } from "./PeopleTable.js";
+import { CC7Notes } from "./CC7Notes.js";
 import { Settings } from "./Settings.js";
-import { CC7Utils } from "./Utils.js";
+import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
 
-export class CC7 {
+export { CC7, downloadArray };
+
+class CC7 {
     static LONG_LOAD_WARNING =
         "Loading 7 degrees may take a while, especially with Bio Check enabled (it can be 3 minutes or more) " +
         "so the default is set to 3. Feel free to change it. ";
@@ -58,18 +61,51 @@ export class CC7 {
             </li>
             <li>The <b>Hierarchy View</b> shows the hierarchial relationships between the people in the list.</li>
             <li>The <b>List View</b> provides a way by which you can look at particular surnames amongst your relatives.</li>
+            <li>The <b>Stats View</b> provides generational statistics for the currently loaded data, similar to those of
+                the Generational Statistics App, but being applied to CC degrees. Note that some of the statistics are not
+                all that useful unless the Ancestors/Descendants only filters are applied.
+            </li>
+            <li>
+                The <b>Missing Links View</b> shows people who might be missing parents, spouses, or children.
+                Adding these missing family members will grow your CC7 and
+                possibly find a new connection to the tree.
+            </li>
         </ul>
         <p>Below are some tips related to each view.</p>
         <h3>Table View</h3>
+        <h4>Ages</h4>
+        <p>
+            Ages like those in the Age column or in the timeline tables, where relative ages are also present, are annotated
+            as follows, depending on the certainty of the dates involved:
+        </p>
+        <ul>
+            <li>&lt; Less than, earlier, or younger, depending on the context,</li>
+            <li>~ About,</li>
+            <li>&gt; More than, after, older, depending on the context.</li>
+        </ul>
+        <p>
+            So, for example, &gt;~64 means <i>older than about 64</i>. This would be the case, for example, when the person's
+            date of death is given as, say, after May 1835, or after 5 May 1885 and the birth date is flagged as
+            uncertain. Similarly ~-7 means <i>about 7 years before the person's birth</i>, and &lt;~-28 means
+            <i>earlier that about 28 years before the person's birth</i>.
+         </p>
+        <h4>Notes</h4>
+        <p>
+            You can associate notes with profiles by clicking in the Degree column and typing in a note. A note can have
+            a status associated with it, and does not have to have text. Profiles with notes are flagged with extra colour
+            in the degree column and the note status is indicated by a small coloured triangle in the same cell.
+        </p><p>
+            Notes are saved in the browser and while they persist over sessions, they are not shared between devices. It is
+            highly recommended that you backup your notes regularly to a file. You can also use this file to transport
+            your notes to another device. There are Backup/Restore/Clear buttons for notes on a tab in the CC7 Views Settings
+            popup.
+        </p>
         <h4>Sorting the Table</h4>
         <ul>
             <li>Sort any column by clicking the header. Click again to reverse the sorting.</li>
-            <li>
-                Sort by Created/Modified to see new additions.
-            </li>
-            <li>
-                The location column sort toggles between sorting Town &rarr; Country or Country &rarr; Town on each click
-                on location header.
+            <li>Sort by Created/Modified to see new additions.</li>
+            <li>The names in the location columns can be reversed (and subsequently re-sorted) by clicking the ↻ symbol
+                in the header.
             </li>
         </ul>
         <h4>Scrolling the Wide Table</h4>
@@ -133,6 +169,9 @@ export class CC7 {
                 For example, to see all people born after 1865, enter &gt;1865 in the birth year filter box.
             </li>
             <li>
+                For the Degree column filter you can enter a numeric value, or select one of the Note options.
+            </li>
+            <li>
                 Clear the filters by clicking on the CLEAR FILTERS button that appears as soon as you have an
                 active filter.
             </li>
@@ -183,6 +222,17 @@ export class CC7 {
             <li>Click a surname to show only those people.</li>
             <li>Click again to show all.</li>
         </ul>
+        <h3>Missing Links View</h3>
+        <ul>
+            <li>Cells are color-coded as follows:
+                <ul>
+                    <li>Red: There is no family member recorded.</li>
+                    <li>Yellow: There are one or more family members recorded, but the "no more"
+                    checkbox is not checked so there could be more.</li>
+                    <li>White: All family members have been found.</li>
+                </ul>
+            </li>
+        </ul>
         <h3>Other points</h3>
         <ul>
             <li>Double-clicking this 'About' box, or clicking the red X in its top right corner will close it.</li>
@@ -230,6 +280,7 @@ export class CC7 {
         "ShortName",
         "Spouses",
         "Suffix",
+        "Templates",
         "Touched",
     ].join(",");
 
@@ -246,9 +297,11 @@ export class CC7 {
     static RELATIONSHIP_DB_VERSION = 2;
     static RELATIONSHIP_STORE_NAME = "relationship2";
 
-    constructor(selector, startId) {
+    constructor(selector, startId, params) {
         this.startId = startId;
         this.selector = selector;
+        this.params = params;
+        PeopleTable.setParameters(params);
         Settings.restoreSettings();
         $(selector).html(
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
@@ -282,19 +335,29 @@ export class CC7 {
               class="right">
               Improve count accuracy</label
             ><input type="file" id="fileInput" style="display: none"/>
+            <input type="file" id="noteFileInput" style="display: none"/>
             <span id="adminButtons">
             <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
             <span id="help" title="About this">?</span>
             </span>
             ${Settings.getSettingsDiv()}
-            <div id="explanation">${CC7.#helpText}</div>
+            <div id="explanation" class="pop-up">${CC7.#helpText}</div>
             </div>`
         );
 
-        const cc7Degree = Utils.getCookie("w_cc7Degree");
-        if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
-            CC7.handleDegreeChange(cc7Degree);
+        // handle "degrees" parameter
+        if (params["degrees"]) {
+            const cc7Degree = Number(params["degrees"]);
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree);
+            }
+        } else {
+            const cc7Degree = Utils.getCookie("w_cc7Degree");
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree);
+            }
         }
+
         $("#cc7Degree")
             .off("change")
             .on("change", function () {
@@ -307,7 +370,6 @@ export class CC7 {
                 const theDegree = $("#cc7Degree").val();
                 CC7.updateButtonLabels(theDegree);
             });
-        $("#fileInput").off("change").on("change", CC7.handleFileUpload);
         $("#getPeopleButton").off("click").on("click", CC7.getConnectionsAction);
 
         $("#help")
@@ -315,15 +377,10 @@ export class CC7 {
             .on("click", function () {
                 $("#explanation").css("z-index", `${Settings.getNextZLevel()}`).slideToggle();
             });
-        $("#explanation")
-            .off("dblclick")
-            .on("dblclick", function () {
-                $(this).slideToggle();
-            });
-        $(`#${CC7Utils.CC7_CONTAINER_ID} #explanation x`)
-            .off("click")
-            .on("click", function () {
-                $(this).parent().slideUp();
+        $("#cc7Container")
+            .off("click", "x")
+            .on("click", "x", function () {
+                CC7.closePopup($(this).parent());
             });
         $("#explanation").draggable();
 
@@ -333,14 +390,59 @@ export class CC7 {
             .addClass("small button")
             .off("click")
             .on("click", CC7.settingsChanged);
-        $("#settingsDIV")
-            .css("width", "300")
-            .dblclick(function () {
-                CC7.toggleSettings();
+        $("#settingsDIV").addClass("pop-up").css("width", "300");
+
+        $("#cc7Container")
+            .off("dblclick", ".pop-up")
+            .on("dblclick", ".pop-up", function () {
+                CC7.closePopup($(this));
             });
+
+        $("#cc7Container")
+            .off("click", ".pop-up")
+            .on("click", ".pop-up", function () {
+                // Bring the clicked popup to the front
+                const self = $(this);
+                const myId = self.attr("id");
+                const [lastPopup] = CC7.findTopPopup();
+                if (self.is(":visible") && myId != lastPopup?.attr("id")) {
+                    self.css("z-index", ++StatsView.lastZLevel);
+                }
+            });
+
         $("#settingsDIV").draggable();
         Settings.renderSettings();
         CC7.setInfoPanelMessage();
+
+        // These 2 buttons are defined in Settings, but I could not get the setting's onClick function definition
+        // to work so I am just forcing the issue here
+        $("#notes_functions_backupNotes")
+            .addClass("small button")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                CC7Notes.backupNotes();
+            });
+        $("#notes_functions_deleteNotes")
+            .addClass("small button")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                CC7Notes.deleteAllNotes();
+            });
+        $("#notes_functions_restoreNotes")
+            .addClass("small button")
+            .off("click")
+            .on("click", function (e) {
+                e.preventDefault();
+                $("#noteFileInput").trigger("click");
+            });
+        $("#noteFileInput")
+            .off("change")
+            .on("change", function (e) {
+                CC7Notes.restoreNotes(e);
+                this.value = "";
+            });
 
         $("#cancelLoad").off("click").on("click", CC7.cancelLoad);
         $("#getDegreeButton").off("click").on("click", CC7.getOneDegreeOnly);
@@ -357,8 +459,22 @@ export class CC7 {
                 e.preventDefault();
                 $("#fileInput").trigger("click");
             });
+        $("#fileInput")
+            .off("change")
+            .on("change", function (e) {
+                CC7.handleFileUpload(e);
+                this.value = "";
+            });
         $("#getPeopleButton").trigger("click");
-        $(document).off("keyup", CC7.closePopUp).on("keyup", CC7.closePopUp);
+        $(document).off("keyup", CC7.closeTopPopup).on("keyup", CC7.closeTopPopup);
+    }
+
+    static closePopup(jqPopup) {
+        if (jqPopup.hasClass("cc7notes")) {
+            CC7Notes.saveNote(jqPopup);
+        } else {
+            jqPopup.slideUp("fast");
+        }
     }
 
     static setInfoPanelMessage() {
@@ -440,9 +556,6 @@ export class CC7 {
     static handleDegreeChange(wantedDegree) {
         const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
         CC7.updateButtonLabels(newDegree);
-        // const getExtra = document.getElementById("getExtraDegrees").checked;
-        // $("#getPeopleButton").text(`Get CC${newDegree}${getExtra ? "+1" : ""}`);
-        // $("#getDegreeButton").text(`Get Degree ${newDegree}${getExtra ? "±1" : ""} Only`);
         if (newDegree > 3) {
             CC7.LONG_LOAD_WARNING =
                 "Loading larger degrees may take a while, especially with Bio Check enabled " +
@@ -465,27 +578,31 @@ export class CC7 {
         }
     }
 
-    static closePopUp(e) {
+    static closeTopPopup(e) {
         if (e.key === "Escape") {
             // Find the popup with the highest z-index
-            let highestZIndex = 0;
-            let lastPopup = null;
-            $(
-                ".familySheet:visible, .timeline:visible, .bioReport:visible, #settingsDIV:visible, #explanation:visible"
-            ).each(function () {
-                const zIndex = parseInt($(this).css("z-index"), 10);
-                if (zIndex > highestZIndex) {
-                    highestZIndex = zIndex;
-                    lastPopup = $(this);
-                }
-            });
+            const [lastPopup, highestZIndex] = CC7.findTopPopup();
 
             // Close the popup with the highest z-index
             if (lastPopup) {
+                CC7.closePopup(lastPopup);
                 Settings.setNextZLevel(highestZIndex);
-                lastPopup.slideUp();
             }
         }
+    }
+
+    static findTopPopup() {
+        // Find the popup with the highest z-index
+        let highestZIndex = 0;
+        let lastPopup = null;
+        $(".pop-up:visible").each(function () {
+            const zIndex = parseInt($(this).css("z-index"), 10);
+            if (zIndex > highestZIndex) {
+                highestZIndex = zIndex;
+                lastPopup = $(this);
+            }
+        });
+        return [lastPopup, highestZIndex];
     }
 
     static async getOneDegreeOnly(event) {
@@ -535,7 +652,7 @@ export class CC7 {
                 }
                 window.rootId = +resultByKeyAtD[wtId].Id;
                 window.cc7Degree = theDegree;
-                CC7.populateRelativeArrays();
+                CC7.populateRelativeArrays(window.people);
                 Utils.hideShakingTree();
                 $("#degreesTable").remove();
                 $("#ancReport").remove();
@@ -548,7 +665,7 @@ export class CC7 {
                     )
                 );
                 CC7.buildDegreeTableData(degreeCounts, theDegree);
-                PeopleTable.addPeopleTable(PeopleTable.tableCaption());
+                PeopleTable.addPeopleTable();
                 $("#cc7Subset").prop("disabled", true);
             }
             $("#getPeopleButton").prop("disabled", false);
@@ -685,6 +802,7 @@ export class CC7 {
                     window.cc7MinPrivateId = Math.min(id, window.cc7MinPrivateId);
                 }
                 // This is a new person, add them to the tree
+                Utils.setAdjustedDates(person);
                 person.Parents = [person.Father, person.Mother];
                 const personDegree = typeof person.Meta?.Degrees === "undefined" ? -1 : +person.Meta.Degrees;
                 person.Hide = personDegree < minDegree || personDegree > maxDegree;
@@ -769,14 +887,14 @@ export class CC7 {
         CC7.getConnections(theDegree);
     }
 
-    static populateRelativeArrays() {
+    static populateRelativeArrays(peopleMap) {
         const offDegreeParents = new Map();
 
-        for (const pers of window.people.values()) {
+        for (const pers of peopleMap.values()) {
             // Add Parent and Child arrays
             for (const pId of pers.Parents) {
                 if (pId) {
-                    let parent = window.people.get(+pId);
+                    let parent = peopleMap.get(+pId);
                     if (parent) {
                         pers.Parent.push(parent);
                         parent.Child.push(pers);
@@ -793,7 +911,7 @@ export class CC7 {
 
             // Add Spouse and coresponding Marriage arrays
             for (const sp of pers.Spouses) {
-                const spouse = window.people.get(+sp.Id);
+                const spouse = peopleMap.get(+sp.Id);
                 if (spouse) {
                     // Add to spouse array if it is not already there
                     // Note that this does not cater for someone married to the same person more than once,
@@ -804,6 +922,7 @@ export class CC7 {
                             MarriageEndDate: sp.MarriageEndDate,
                             MarriageLocation: sp.MarriageLocation,
                             DoNotDisplay: sp.DoNotDisplay,
+                            DataStatus: sp.DataStatus,
                         };
                         pers.Spouse.push(spouse);
                     }
@@ -811,7 +930,7 @@ export class CC7 {
             }
         }
         // Now that all child arrays are complete, add Sibling arrays
-        for (const pers of [...window.people.values(), ...offDegreeParents.values()]) {
+        for (const pers of [...peopleMap.values(), ...offDegreeParents.values()]) {
             if (pers.Child.length) {
                 // Add this person's children as siblings to each of his/her children
                 for (const child of pers.Child) {
@@ -857,7 +976,7 @@ export class CC7 {
             }
 
             window.rootId = +resultByKey[wtId]?.Id;
-            CC7.populateRelativeArrays();
+            CC7.populateRelativeArrays(window.people);
             const root = window.people.get(window.rootId);
             let haveRoot = typeof root != "undefined";
             if (!haveRoot) {
@@ -905,9 +1024,9 @@ export class CC7 {
                 )
             );
             CC7.buildDegreeTableData(degreeCounts, 1);
-            console.log(window.people);
-            this.addRelationships();
-            PeopleTable.addPeopleTable(PeopleTable.tableCaption());
+            // console.log(window.people);
+            CC7.addRelationships();
+            PeopleTable.addPeopleTable();
         }
 
         $("#getPeopleButton").prop("disabled", false);
@@ -919,7 +1038,7 @@ export class CC7 {
     }
 
     static addRelationships() {
-        const rootName = $("#wt-id-text").val().trim();
+        const rootName = Utils.getTreeAppWtId();
         let rootId = null;
         const familyMapEntries = [];
         for (let [key, value] of window.people.entries()) {
@@ -952,33 +1071,28 @@ export class CC7 {
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
-        const worker = new Worker("views/cc7/js/relationshipWorker.js");
+        const worker = new Worker(new URL("relationshipWorker.js", import.meta.url));
 
         const $this = this;
         worker.onmessage = function (event) {
-            console.log("Worker returned:", event.data);
+            // console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
-                if ($("#cc7PBFilter").data("select2")) {
-                    $("#cc7PBFilter").select2("destroy");
+                if (event.data.rootId == rootPersonId) {
+                    const updatedTable = CC7.updateTableWithResults(event.data.results);
+                    if (loggedInUserId == rootPersonId) {
+                        $this.storeDataInIndexedDB(event.data.dbEntries);
+                    }
+                } else {
+                    console.log(
+                        `Received unexpected relationship worker response for ${event.data.rootId} while expecting for ${rootPersonId}`
+                    );
                 }
-                const updatedTable = CC7.updateTableWithResults(
-                    document.querySelector("#peopleTable"),
-                    event.data.results
-                );
-                document
-                    .getElementById("cc7Container")
-                    .replaceChild(updatedTable, document.querySelector("#peopleTable"));
-                CC7.initializeSelect2();
-
-                if (loggedInUserId == rootPersonId) {
-                    $this.storeDataInIndexedDB(event.data.dbEntries);
-                }
-
                 worker.terminate();
             } else if (event.data.type === "log") {
                 console.log("Worker log:", event.data.message);
             } else if (event.data.type === "error") {
                 console.error("Worker returned an error:", event.data.message);
+                worker.terminate();
             }
         };
 
@@ -1015,10 +1129,10 @@ export class CC7 {
             });
 
         let connectionEntries = dbEntries.map((entry) => ({
-            key: entry.key,
-            userId: entry.value.userId,
-            id: entry.value.id,
-            distance: entry.value.distance,
+            theKey: entry.theKey,
+            userId: entry.userId,
+            id: entry.id,
+            distance: entry.distance,
         }));
 
         this.openDatabase(CC7.CONNECTION_DB_NAME, CC7.CONNECTION_DB_VERSION, CC7.CONNECTION_STORE_NAME)
@@ -1040,14 +1154,30 @@ export class CC7 {
             request.onupgradeneeded = function (event) {
                 const db = event.target.result;
                 if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { keyPath: "key" });
+                    db.createObjectStore(storeName, { keyPath: "theKey" });
                 }
             };
 
             request.onsuccess = function (event) {
+                const db = event.target.result;
+                db.onversionchange = function () {
+                    db.close();
+                    alert(`The ${dbName} database is outdated and needs a version upgrade. Please reload this page.`);
+                };
                 resolve(event.target.result);
             };
 
+            request.onblocked = function () {
+                // This event shouldn't trigger if onversionchange was handled correctly above. However, it can happen
+                // if the other tabs/pages are still running code that does not have the onversionchange code above.
+                // It means that there's another open connection to the same database
+                // and it wasn't closed after db.onversionchange triggered for it.
+                alert(
+                    "Access to the ${dbName} database is blocked because other open tabs/pages to WikiTree are not " +
+                        "successfully closing their database connections. Unfortunately the only way to correct this is " +
+                        "to restart your browser, or to close all those other tabs/pages and then to reload this page."
+                );
+            };
             request.onerror = function (event) {
                 reject(event.target.error);
             };
@@ -1060,7 +1190,7 @@ export class CC7 {
             const objectStore = transaction.objectStore(storeName);
 
             data.forEach((item) => {
-                const getRequest = objectStore.get(item.key);
+                const getRequest = objectStore.get(item.theKey);
                 getRequest.onsuccess = function (event) {
                     const existing = event.target.result;
 
@@ -1068,13 +1198,9 @@ export class CC7 {
                     const updatedItem = {
                         ...existing,
                         ...item,
-                        value: {
-                            ...existing?.value,
-                            ...item.value,
-                            relationship: checkRelationship
-                                ? item.value.relationship || existing?.value.relationship
-                                : item.value?.relationship || existing?.value?.relationship,
-                        },
+                        relationship: checkRelationship
+                            ? item.relationship || existing?.relationship
+                            : item?.relationship || existing?.relationship,
                     };
 
                     const request = objectStore.put(updatedItem);
@@ -1100,8 +1226,26 @@ export class CC7 {
         });
     }
 
-    static updateTableWithResults(table, results) {
-        const clone = table.cloneNode(true); // Deep clone the table
+    static async updateTableWithResults(results) {
+        // Wait for the people table to be present
+        await new Promise((resolve) => {
+            if ($("#peopleTable").length) {
+                // Table already exists, resolve immediately
+                resolve();
+                return;
+            }
+
+            const observer = new MutationObserver(() => {
+                if ($("#peopleTable").length) {
+                    observer.disconnect(); // Stop observing further changes
+                    resolve();
+                }
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+
+        const pTable = document.querySelector("#peopleTable");
         results.forEach((result) => {
             // window.people is an array of objects with the personId as the key
             // Add the relationship to the person object
@@ -1109,9 +1253,10 @@ export class CC7 {
             if (person) {
                 person.Relationship = result.relationship;
             }
-            const row = clone.querySelector(`tr[data-id="${result.personId}"]`);
+            // Update the people table relarionship column in this person's row
+            const row = pTable.querySelector(`tr[data-id="${result.personId}"]`);
             if (row) {
-                row.setAttribute("data-relation", result.relationship.abbr);
+                row.setAttribute("data-relation", result?.relationship?.abbr || "");
                 const relationCell = row.querySelector("td.relation");
                 if (relationCell) {
                     relationCell.textContent = result.relationship.abbr;
@@ -1119,28 +1264,6 @@ export class CC7 {
                 }
             }
         });
-        return clone;
-    }
-
-    static initializeSelect2() {
-        // Check if select2 is already initialized and destroy it if so
-        if ($("#cc7PBFilter").data("select2")) {
-            $("#cc7PBFilter").select2("destroy");
-        }
-        function formatOptions(option) {
-            if (!option.id || option.id == "all") {
-                return option.text;
-            }
-            return $(`<img class="privacyImage" src="./${option.text}"/>`);
-        }
-        $("#cc7PBFilter").select2({
-            templateResult: formatOptions,
-            templateSelection: formatOptions,
-            dropdownParent: $("#cc7Container"),
-            minimumResultsForSearch: Infinity,
-            width: "100%",
-        });
-        $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
     }
 
     static getIdsOf(arrayOfPeople) {
@@ -1277,7 +1400,6 @@ export class CC7 {
         const ABOVE = true;
         const BELOW = false;
         const collator = new Intl.Collator();
-        CC7Utils.fixBirthDate(theRoot);
         theRoot.isAncestor = false;
         theRoot.isAbove = false;
         // Note: unlike the usual case, where the queue contains nodes still to be "visited" and processed,
@@ -1312,9 +1434,6 @@ export class CC7 {
                 const pId = belowQ.shift();
                 const person = window.people.get(pId);
                 if (person) {
-                    if (typeof person.fixedBirthDate === "undefined") {
-                        CC7Utils.fixBirthDate(person);
-                    }
                     // Add this person's relatives to the queue
                     const rels = firstIteration
                         ? CC7.getIdsOfRelatives(person, ["Sibling", "Spouse", "Child"])
@@ -1368,9 +1487,6 @@ export class CC7 {
                 const pId = aboveQ.shift();
                 const person = window.people.get(pId);
                 if (person) {
-                    if (typeof person.fixedBirthDate === "undefined") {
-                        CC7Utils.fixBirthDate(person);
-                    }
                     // Add this person's relatives to the queue
                     const rels = firstIteration
                         ? CC7.getIdsOfRelatives(person, ["Parent"])
@@ -1398,7 +1514,7 @@ export class CC7 {
                     // isAbove is not defined yet, or the person is above, but is the same age or younger
                     // than the root person
                     (typeof p.isAbove === "undefined" ||
-                        (p.isAbove && collator.compare(theRoot.fixedBirthDate, p.fixedBirthDate) <= 0))
+                        (p.isAbove && collator.compare(theRoot.adjustedBirth.date, p.adjustedBirth.date) <= 0))
                 ) {
                     p.isAbove = false;
                     return true;
@@ -1406,7 +1522,7 @@ export class CC7 {
                     where == ABOVE &&
                     // isAbove is not defined yet, or the person is below, but is older than the root person
                     (typeof p.isAbove === "undefined" ||
-                        (!p.isAbove && collator.compare(theRoot.fixedBirthDate, p.fixedBirthDate) > 0))
+                        (!p.isAbove && collator.compare(theRoot.adjustedBirth.date, p.adjustedBirth.date) > 0))
                 ) {
                     p.isAbove = true;
                     return true;
@@ -1447,6 +1563,7 @@ export class CC7 {
                 input.removeEventListener("click", PeopleTable.clearFilterClickListener);
             });
         $("#cc7PBFilter").off("select2:select");
+        $("#cc7DegFilter").off("select2:select");
 
         $(
             [
@@ -1455,6 +1572,8 @@ export class CC7 {
                 "#hierarchyView",
                 "#lanceTable",
                 "#peopleTable",
+                "#statsView",
+                "#missingLinksTable",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
@@ -1475,7 +1594,7 @@ export class CC7 {
                     [
                         window.rootId,
                         window.cc7Degree,
-                        $(wtViewRegistry.WT_ID_TEXT).val(),
+                        Utils.getTreeAppWtId(),
                         $(`#${CC7Utils.CC7_CONTAINER_ID}`).hasClass("degreeView"),
                     ],
                     ...window.people.entries(),
@@ -1586,8 +1705,8 @@ export class CC7 {
             }
             Utils.hideShakingTree();
             CC7.addRelationships();
-            PeopleTable.addPeopleTable(PeopleTable.tableCaption());
-            $(`#${CC7Utils.CC7_CONTAINER_ID} #cc7Subset`).before(
+            PeopleTable.addPeopleTable();
+            $(`#${CC7Utils.CC7_CONTAINER_ID}`).append(
                 $(
                     "<table id='degreesTable'>" +
                         "<tr id='trDeg'><th>Degrees</th></tr>" +
@@ -1627,3 +1746,4 @@ export class CC7 {
         }
     }
 }
+const downloadArray = CC7.downloadArray;

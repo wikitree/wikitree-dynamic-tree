@@ -1,5 +1,6 @@
 window.TimelineView = class TimelineView extends View {
     static APP_ID = "Timeline";
+    timeline;
     meta() {
         return {
             title: "Family Timeline",
@@ -9,7 +10,18 @@ window.TimelineView = class TimelineView extends View {
         };
     }
 
+    close() {
+        const container = document.getElementById("view-container");
+        container.style.width = null;
+        container.style.position = null;
+        if (this.timeline) {
+            this.timeline.destroy();
+            this.timeline = null;
+        }
+    }
+
     init(selector, person_id) {
+        const view = this;
         WikiTreeAPI.postToAPI({
             appId: TimelineView.APP_ID,
             action: "getPerson",
@@ -254,13 +266,15 @@ window.TimelineView = class TimelineView extends View {
                 zoomMin: 986399999,
                 stack: true,
             };
-            // Create the Timeline
-            var timeline = new vis.Timeline(container, items, groups, options);
+            // Create the Timeline. Store it on the "view" object because
+            // we need to destroy it when the view is closed, otherwise the
+            // timers keep running
+            view.timeline = new vis.Timeline(container, items, groups, options);
             // Once the timeline is drawn and items grouped, we can reshow our container
-            timeline.on("currentTimeTick", function () {
+            view.timeline.on("currentTimeTick", function () {
                 $("#view-container").css("width", "99.9%");
             });
-            timeline.on("select", function (properties) {
+            view.timeline.on("select", function (properties) {
                 if (properties.items[0] != undefined) {
                     $("#wt-id-text").val(properties.items[0]);
                     $("#show-btn").click();

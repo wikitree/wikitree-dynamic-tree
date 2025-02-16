@@ -7,12 +7,32 @@ window.ALEView = class ALEView extends View {
             title: "Ancestor Lines Explorer",
             description: ALEView.#DESCRIPTION,
             docs: "",
+            params: [
+                "maxgen",
+                "limitgen",
+                "poi",
+                "exploi",
+                "conn",
+                "efactor",
+                "hfactor",
+                "onlyloi",
+                "lonly",
+                "bwcolour",
+                "posrel",
+                "priv",
+                "anon",
+                "bwnop",
+                "bw1p",
+                "bwbio",
+                "bwnosp",
+                "bwnoch",
+            ],
         };
     }
 
-    init(container_selector, person_id) {
+    init(container_selector, person_id, params) {
         wtViewRegistry.setInfoPanel(ALEView.#DESCRIPTION);
         wtViewRegistry.showInfoPanel();
-        const ale = new AncestorLinesExplorer(container_selector, person_id);
+        const ale = new AncestorLinesExplorer(container_selector, person_id, params);
     }
 };

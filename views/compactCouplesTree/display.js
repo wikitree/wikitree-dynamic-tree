@@ -650,7 +650,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const d = d3.select(parentNode).datum();
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                // console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
+                console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
             const epIds = d.data[side]?.getExpandedParentIds();
@@ -880,12 +880,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     }
 
     function showTable(jqClicked, theTable, lOffset, tOffset) {
+        theTable.addClass("pop-up");
         // Attach the table to the container div
         theTable.prependTo($("#cctContainer"));
         theTable.draggable();
-        theTable.off("dblclick").on("dblclick", function () {
-            $(this).slideUp("fast");
-        });
 
         setOffset(jqClicked, theTable, lOffset, tOffset);
         $(window).resize(function () {
