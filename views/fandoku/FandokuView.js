@@ -638,11 +638,11 @@ import { Utils } from "../shared/Utils.js";
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%" style="padding-left:10px;">' +
-            "<button id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
+            "<button class='btn btn-primary' id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
             "<span id=preGameFans>" +
-            '<A onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
+            '<A onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
+            ' <A onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
+            ' <A onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
             "</span>" +
             "<span id=gameTimer style='display:none'>0:00</span>" +
             "</td>" +
@@ -661,8 +661,8 @@ import { Utils } from "../shared/Utils.js";
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
-            "<button id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
-            "<button id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
+            "<button  class='btn btn-primary' id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
+            "<button  class='btn btn-secondary' id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
             ' <A onclick="FandokuView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>&nbsp;&nbsp;" +
@@ -677,7 +677,7 @@ import { Utils } from "../shared/Utils.js";
             '<DIV id=FeedbackArea style="text-align:center; background-color:papayawhip;">Feedback and Directions and Encouragement will go here</DIV>';
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FandokuView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -754,9 +754,14 @@ import { Utils } from "../shared/Utils.js";
         FandokuView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -1909,10 +1914,15 @@ import { Utils } from "../shared/Utils.js";
         condLog(FandokuView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -2267,7 +2277,7 @@ import { Utils } from "../shared/Utils.js";
                     return `
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0; ">
+                    } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
                     ${photoDiv}
                     <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
                         person
@@ -2562,11 +2572,16 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         personPopup.popupHTML(person, {
             type: "Ahn",
             ahNum: FandokuView.myAhnentafel.listByPerson[person._data.Id]  ,
             primaryPerson: thePeopleList[FandokuView.myAhnentafel.list[1]],
-            myAhnentafel: FandokuView.myAhnentafel
+            myAhnentafel: FandokuView.myAhnentafel,
+            SettingsObj : Utils
             }, 
             AboutAppIcon, 
             "fandoku");

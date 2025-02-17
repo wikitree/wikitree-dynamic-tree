@@ -1674,7 +1674,7 @@ import { Utils } from "../shared/Utils.js";
             '<DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Super Big Family Tree is loading ...</DIV>';
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="SuperBigFamView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -1767,9 +1767,14 @@ import { Utils } from "../shared/Utils.js";
         SuperBigFamView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -8574,8 +8579,13 @@ import { Utils } from "../shared/Utils.js";
         condLog(SuperBigFamView.SBFtreeSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
+            theDIV.style.zIndex = Utils.getNextZLevel();
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
         } else {
@@ -8588,8 +8598,13 @@ import { Utils } from "../shared/Utils.js";
         // condLog(SuperBigFamView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("legendDIV");
         // condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -11266,11 +11281,17 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     SuperBigFamView.personPopup = Tree.prototype.personPopup = function ( person ) {
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
+
         personPopup.popupHTML(person, {
             type: "CC",
             person: person,
             leafCollection: SuperBigFamView.theLeafCollection,
-            appID:APP_ID
+            appID:APP_ID, 
+            SettingsObj: Utils
         });
         console.log("SuperBigFamView.personPopup");
     }

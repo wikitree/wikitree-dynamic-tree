@@ -45,12 +45,12 @@ export class CirclesView {
         console.log("CIRCLES VIEW - buildView");
 
         var popupDIV =
-            '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=popupDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
         var connectionPodDIV =
-            '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=connectionPodDIV class="pop-up" style="display:none; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
             '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
@@ -61,11 +61,11 @@ export class CirclesView {
         <div id="circlesDisplay">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
-                <label><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
+                <label><input type=radio   name=circlesDisplayType id=displayType_dot value=dot checked> <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
                 <label><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
                 <label><input type=radio   name=circlesDisplayType id=displayType_inits value=inits> ABC</label> &nbsp;&nbsp;
                 <label><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_all value=all checked> all  </label>
+                <label><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_filled" checked> Fill circles</label>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_BandW" > Black & White</label>
             </div>
@@ -661,7 +661,7 @@ export class CirclesView {
         // let displayType = "dot";
         console.log({ degreeCount });
         let circleTypeVariables = {
-            dot: { dotRadius: 4 },
+            dot: { dotRadius: 9 },
             ltr: { dotRadius: 9 },
             inits: { dotRadius: 18 },
             fName: { dotRadius: 18 },
@@ -817,7 +817,7 @@ export class CirclesView {
                 numInThisRing = 0;
                 desiredNumThisRing = numCirclesPerRing[currentRingNum];
                 if (desiredNumThisRing > 0){ 
-                    currentRadiusMultipler += radiusMultipler - CirclesView.dotRadius;
+                    currentRadiusMultipler += radiusMultipler - CirclesView.dotRadius + 3;
                     // thisRingNum--;
                 }
                 condLog("RING " + currentRingNum + " for CC" + degree, { currentRadiusMultipler }, {desiredNumThisRing});
@@ -901,6 +901,7 @@ export class CirclesView {
                     leafCollection: CirclesView.theLeafCollection,
                     peopleList : CirclesView.PersonCodesObject,
                     appID: "cc7",
+                    SettingsObj : Settings
                 });
 
                 console.log("CirclesView.personPopup");
