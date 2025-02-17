@@ -33,9 +33,11 @@ div.cc7Table button[disabled] {
 }
 
 img.familyHome,
-img.privacyImage,
 img.timelineButton {
   height: 15px;
+}
+img.privacyImage {
+  height: 18px;
 }
 .cc7Table .bioIssue,
 img.familyHome,
@@ -465,6 +467,14 @@ div.cc7Table #settingsDIV input[type="radio"] {
   height: 1.3em;
 }
 
+.cc7Table #mlButtons {
+  margin-top: 0.75em;
+  margin-left: 1em;
+}
+.cc7Table #mlButtons label {
+  margin-right: 0.5em;
+}
+
 td.degree {
   text-align: center;
   cursor: default;
@@ -586,7 +596,7 @@ div.cc7Table th[id] {
 }
 
 button.viewButton {
-  background: #25422d;
+  /* background: #25422d;
   border: 0;
   outline: none;
   cursor: pointer;
@@ -602,7 +612,8 @@ button.viewButton {
   font-weight: normal;
   text-decoration: none !important;
   cursor: pointer;
-  line-height: normal;
+  line-height: normal; */
+  margin-left: 1em;
   transition: all 0.1s ease-in-out;
   box-shadow: 0px 2px 4px 0px gray;
 }
@@ -612,7 +623,7 @@ button.viewButton.active {
   color: #25422d;
   font-weight: bold;
   transform: translateY(2px);
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
 }
 
 div.degreeView #hierarchyViewButton {
@@ -686,7 +697,10 @@ div.cc7Table #savePeople {
   font-size: 0.8em;
 }
 
-table tr.cc7filter-row input[type="text"] {
+div.cc7Table .cc7filter-row th {
+  padding: 0;
+}
+#cc7Container table tr.cc7filter-row input[type="text"] {
   width: 100%;
   box-sizing: border-box;
   padding: 0.1em;
@@ -724,12 +738,23 @@ table tr.cc7filter-row input[type="text"] {
   width: 100%;
 }
 
-#cc7Container li.select2-results__option {
-  height: 0.8em;
-  margin-bottom: 0;
+#cc7Container ul.select2-results__options {
+  margin: 0;
+  padding: 0 0 0 6px;
 }
-#cc7Container .select2-dropdown {
-  width: 40px !important;
+#cc7Container li.select2-results__option {
+  min-height: 18px;
+  padding: 0;
+  margin-bottom: 0 !important;
+}
+÷#cc7Container .select2-dropdown {
+  width: 45px !important;
+}
+#cc7Container.cc7Table span.select2-selection__rendered {
+  min-width: 2.5em;
+}
+#cc7Container.cc7Table span.select2-results ul {
+  margin-left: 0;
 }
 #cc7Container #relation,
 #cc7Container td.relation {
@@ -750,6 +775,13 @@ table tr.cc7filter-row input[type="text"] {
   border-image: initial;
   border-radius: 5px;
   margin-bottom: 10px;
+}
+#cc7Container legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
 }
 #cc7Container #statsView #resultsContainer {
   margin: 25px auto;
