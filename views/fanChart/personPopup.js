@@ -13,15 +13,42 @@
 window.personPopup = window.personPopup || {};
 
 let connectObject = {};
+let currentPersonPopupID = 0;
+let currentConnectionPopupID = 0;
+
 // Returns an array [x , y] that corresponds to the endpoint of rθ from (centreX,centreY)
 personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appView = "") {
     console.log("Popup for ", person, connectionObj);
     connectObject = connectionObj;
 
-    let thisPopup = document.getElementById("popupDIV");
-    thisPopup.style.display = "block";
+    let personData = person._data;
+    if (!personData) {
+        personData = person;
+        condLog(thePeopleList);
+    }
 
+    
+    let thisPopup = document.getElementById("popupDIV");
+    // IF we have just clicked the cell to "display" the current popup, and it's already open, then we should shut it down
+    if (thisPopup.style.display == "block" && currentPersonPopupID == personData.Id) {        
+        $("#popupDIV").slideUp("fast");
+        currentPersonPopupID = 0;
+        return;
+    }
+    // else ... make it visible by changing it to "block"
+    thisPopup.style.display = "block";
+    
+    currentPersonPopupID = personData.Id;
     thisPopup.classList.add("popup");
+    thisPopup.classList.add("pop-up");
+
+    thisPopup.style.zIndex = 9998; // give a default zIndex, in case there is no SettingsObj defined ...
+    if (connectObject.SettingsObj) {
+        // but, if there IS one, then use it to assign a new zIndex.
+        // console.log("FOUND Settings to get next z level", thisPopup.style.zIndex);
+        thisPopup.style.zIndex = connectObject.SettingsObj.getNextZLevel();
+        console.log("CHANGED next z level", thisPopup.style.zIndex);
+    }
 
     let displayName4Popup = person.getDisplayName();
     var photoUrl = person.getPhotoUrl(75),
@@ -51,11 +78,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
     }
 
 
-    let personData = person._data;
-    if (!personData) {
-        personData = person;
-        condLog(thePeopleList);
-    }
+   
 
 
     let extrasAtBottom =
@@ -225,14 +248,14 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
         SVGbtnCLOSE +
         `</a></span>
                     <div class="image-box"><img src="https://www.wikitree.com/${photoUrl}">
-                    <br/><br/><A onclick=popupConnectionDIV()><img style="height:24px; cursor:pointer;" src="https://dev-2025.wikitree.com/images/icons/icon-connect.svg"></A>
+                    <br/><br/><A onclick=popupConnectionDIV() title="View how this person is connected to the Primary Person in this Tree"><img style="height:24px; cursor:pointer;" src="https://dev-2025.wikitree.com/images/icons/icon-connect.svg"></A>
                     </div>
                     <div class="vital-info">
                         <div class="name">
                         <a href="https://www.wikitree.com/wiki/${person.getName()}" target="_blank">${displayName4Popup}</a>
-                        <span class="tree-links"><a href="#name=${person.getName()}&view=fanchart"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
-                        <span class="tree-links"><a href="#name=${person.getName()}&view=descendants">${SVGbtnDESC}</a></span>
-                        <span class="tree-links"><a href="#name=${person.getName()}&view=superbig"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" /></a></span>
+                        <span class="tree-links"><a href="#name=${person.getName()}&view=fanchart" title="View this person's Ancestors in a Fan Chart"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></a></span>
+                        <span class="tree-links"><a href="#name=${person.getName()}&view=descendants" title="View this person's Descendants list">${SVGbtnDESC}</a></span>
+                        <span class="tree-links"><a href="#name=${person.getName()}&view=superbig"  title="View this person's Super (big family) Tree"><img style="width:45px; height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" /></a></span>
                         </div>
                         <div class="birth vital">${birthString(person)}</div>
                         <div class="death vital">${deathString(person)}</div>						  
@@ -294,9 +317,28 @@ function popupConnectionDIV() {
     condLog("POP UP - Connection SVG pod !");
 
     let thisPopup = document.getElementById("connectionPodDIV");
+
+    if (currentConnectionPopupID == currentPersonPopupID) {
+        $("#connectionPodDIV").slideUp("fast");
+        currentConnectionPopupID = 0;
+        return;
+    }
+
+    currentConnectionPopupID = currentPersonPopupID;
+
     thisPopup.style.display = "block";
 
-    thisPopup.classList.add("popup");
+    // thisPopup.classList.add("popup");
+    thisPopup.classList.add("pop-up");
+    thisPopup.style.zIndex = 9999;
+
+    if (connectObject.SettingsObj) {
+        // console.log("CONNECTIONS POD: FOUND Settings to get next z level", thisPopup.style.zIndex);
+        thisPopup.style.zIndex = connectObject.SettingsObj.getNextZLevel();
+        // console.log("CONNECTIONS POD: CHANGED next z level", thisPopup.style.zIndex);
+    }
+
+    
     condLog("See anything??", connectObject);
 
     let popupHTML =
