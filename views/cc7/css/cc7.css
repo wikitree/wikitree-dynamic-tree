@@ -1,17 +1,3 @@
-/* Default link styling */
-a:link {
-  color: #0271fb;
-}
-a:visited {
-  color: #bd02fb;
-}
-a:hover,
-a:focus {
-  color: #000;
-}
-a:active {
-  color: #fb0e02;
-}
 div.cc7Table {
   --content-padding: 0;
 }
@@ -858,7 +844,7 @@ table tr.cc7filter-row input[type="text"] {
     background-color: #fff;
   }
   /* Hide navigation */
-  nav {
+  :root:has(#cc7Container) nav {
     display: none;
   }
 
