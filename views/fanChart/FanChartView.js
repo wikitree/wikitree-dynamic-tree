@@ -1363,16 +1363,16 @@ import { Utils } from "../shared/Utils.js";
         $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
 
         FanChartView.closeTopPopup = function (e) {
-            console.log("closeTopPopUp");
+            // console.log("closeTopPopUp");
                 if (e.key === "Escape") {
                     // Find the popup with the highest z-index
-                    console.log("ESCAPE KEY in FanChartView / document");
+                    // console.log("ESCAPE KEY in FanChartView / document");
                     const [lastPopup, highestZIndex] = FanChartView.findTopPopup();
         
                     // Close the popup with the highest z-index
                     if (lastPopup) {
                         // FanChartView.closePopup(lastPopup);
-                        console.log("GOING to SLIDE UP the Fan Chart lastPopup")
+                        // console.log("GOING to SLIDE UP the Fan Chart lastPopup")
                         lastPopup.slideUp("fast");
                         Utils.setNextZLevel(highestZIndex);
                     }
@@ -1380,7 +1380,7 @@ import { Utils } from "../shared/Utils.js";
             }
             
         FanChartView.findTopPopup = function () {
-            console.log("findTopPopup");
+            // console.log("findTopPopup");
             // Find the popup with the highest z-index
             let highestZIndex = 0;
             let lastPopup = null;
@@ -2456,7 +2456,7 @@ import { Utils } from "../shared/Utils.js";
     }
 
     FanChartView.updateLegendIfNeeded = function () {
-        console.log("DOING updateLegendIfNeeded - now", APP_ID);
+        // console.log("DOING updateLegendIfNeeded - now", APP_ID);
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -4561,7 +4561,7 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        console.log("POP UP : person = ",person);
+        // console.log("POP UP : person = ",person);
         // console.log({ firstFanChartPopUpPopped });
         // console.log("Utils.firstTreeAppPopUpPopped", Utils.firstTreeAppPopUpPopped);
         if (!Utils.firstTreeAppPopUpPopped) {
@@ -4575,7 +4575,7 @@ import { Utils } from "../shared/Utils.js";
             myAhnentafel: FanChartView.myAhnentafel,
             SettingsObj : Utils
         });
-        console.log("FanChartView.personPopup");
+        // console.log("FanChartView.personPopup");
     };
     
     

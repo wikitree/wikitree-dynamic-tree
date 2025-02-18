@@ -2586,7 +2586,7 @@ import { Utils } from "../shared/Utils.js";
             AboutAppIcon, 
             "fandoku");
             
-        console.log("FandokuView.personPopup");
+        // console.log("FandokuView.personPopup");
     };
     
     

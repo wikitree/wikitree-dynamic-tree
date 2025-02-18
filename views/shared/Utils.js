@@ -45,15 +45,15 @@ export class Utils {
     }
 
     static closeTopPopup(e) {
-            console.log("closeTopPopUp");
+            condLog("closeTopPopUp");
                 if (e.key === "Escape") {
                     // Find the popup with the highest z-index
-                    console.log("ESCAPE KEY in UTILS / document");
+                    condLog("ESCAPE KEY in UTILS / document");
                     const [lastPopup, highestZIndex] = Utils.findTopPopup();
         
                     // Close the popup with the highest z-index
                     if (lastPopup) {                        
-                        console.log("GOING to SLIDE UP the Fan Chart lastPopup")
+                        condLog("GOING to SLIDE UP the Fan Chart lastPopup")
                         lastPopup.slideUp("fast");
                         setNextZLevel(highestZIndex);
                     }
@@ -61,7 +61,7 @@ export class Utils {
             }
             
     static findTopPopup() {
-            console.log("findTopPopup");
+            condLog("findTopPopup");
             // Find the popup with the highest z-index
             let highestZIndex = 0;
             let lastPopup = null;

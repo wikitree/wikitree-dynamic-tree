@@ -6237,7 +6237,7 @@ import { Utils } from "../shared/Utils.js";
                     }
                 }
                 console.log("ADDED ", numNewPeeps, " new peeps!");
-                console.log(result[0]);
+                // console.log(result[0]);
 
                 let needToReDoCall = false;
                 if (numNewPeeps >= 1000) {
@@ -6388,7 +6388,7 @@ import { Utils } from "../shared/Utils.js";
      */
     function loadDescendantsAtLevel(newLevel) {
         let newDescLevel = SuperBigFamView.numDescGens2Display;
-        console.log("Need to load MORE DESCENDANT peeps from Generation ", newLevel, newDescLevel);
+        // console.log("Need to load MORE DESCENDANT peeps from Generation ", newLevel, newDescLevel);
         if (SuperBigFamView.loadedLevels.indexOf("D" + newLevel) > -1) {
             // already loaded this level ... so let's just return and forget about it - no need to repeat the past
             SuperBigFamView.refreshTheLegend();
@@ -6442,7 +6442,7 @@ import { Utils } from "../shared/Utils.js";
     function loadCousinsAtLevel(newLevel) {
         const d = new Date();
         let ms = d.getUTCMinutes() + " : " + d.getUTCSeconds() + " : " + d.getUTCMilliseconds();
-        console.log("== function loadCousinsAtLevel --> Need to load MORE COUSINS peeps at LEVEL ", newLevel, ms);
+        // console.log("== function loadCousinsAtLevel --> Need to load MORE COUSINS peeps at LEVEL ", newLevel, ms);
         condLog(
             "At beginning of function loadCousinsAtLevel - primary has ",
             thePeopleList[SuperBigFamView.theLeafCollection["A0"].Id]._data.Children.length,
@@ -11293,7 +11293,7 @@ import { Utils } from "../shared/Utils.js";
             appID:APP_ID, 
             SettingsObj: Utils
         });
-        console.log("SuperBigFamView.personPopup");
+        // console.log("SuperBigFamView.personPopup");
     }
     
     function placeHolderFunction4Popup (person, xy, Code) {
@@ -12608,19 +12608,19 @@ import { Utils } from "../shared/Utils.js";
 
     SuperBigFamView.lastLegendColourHighlighted = "none";
     SuperBigFamView.toggleLegendOptionToHighlight = function (option = 0, legend = "?") {
-        console.log("Just clicked on LEGEND TOGGLE for ", { option }, { legend });
+        // console.log("Just clicked on LEGEND TOGGLE for ", { option }, { legend });
         if (SuperBigFamView.currentSettings["highlight_options_showHighlights"] == true) {
-            console.log("CANNOT show other highlights - must follow the Highlights By tab option");
+            // console.log("CANNOT show other highlights - must follow the Highlights By tab option");
         } else {
-            console.log("CAN show highlights - bring it on !!!");
+            // console.log("CAN show highlights - bring it on !!!");
             let highlightDescriptorDIV = document.getElementById("highlightDescriptor");
             if (SuperBigFamView.lastLegendColourHighlighted == option) {
-                console.log("Click OFF - hide highlight");
+                // console.log("Click OFF - hide highlight");
                 SuperBigFamView.lastLegendColourHighlighted = "none";
                 highlightDescriptorDIV.style.display = "none";
                 document.getElementById("highlightPeepsDescriptor").innerText = "";
             } else {
-                console.log("CLICK ON - SHOW a NEW COLOUR to Highlight!");
+                // console.log("CLICK ON - SHOW a NEW COLOUR to Highlight!");
                 SuperBigFamView.lastLegendColourHighlighted = option;
                 highlightDescriptorDIV.style.display = "block";
                 document.getElementById("highlightPeepsDescriptor").innerText = legend;

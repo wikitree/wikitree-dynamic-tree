@@ -1476,7 +1476,7 @@ import { Utils } from "../shared/Utils.js";
             let innerLegend = document.getElementById("innerLegend");
             let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
 
-            console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+            // console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
             if (newBoxWidth && newBoxWidth > 0 && newBoxWidth != boxWidth) {
                 boxWidth = newBoxWidth;
                 nodeWidth = boxWidth * 1.5;
@@ -3537,7 +3537,7 @@ import { Utils } from "../shared/Utils.js";
                 AboutAppIcon,
                 "fractal"
             );
-        console.log("FractalView.personPopup");
+        // console.log("FractalView.personPopup");
     };
     
     
