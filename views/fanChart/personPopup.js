@@ -18,7 +18,7 @@ let currentConnectionPopupID = 0;
 
 // Returns an array [x , y] that corresponds to the endpoint of rθ from (centreX,centreY)
 personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appView = "") {
-    console.log("Popup for ", person, connectionObj);
+    // condLog("Popup for ", person, connectionObj);
     connectObject = connectionObj;
 
     let personData = person._data;
@@ -45,9 +45,9 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
     thisPopup.style.zIndex = 9998; // give a default zIndex, in case there is no SettingsObj defined ...
     if (connectObject.SettingsObj) {
         // but, if there IS one, then use it to assign a new zIndex.
-        // console.log("FOUND Settings to get next z level", thisPopup.style.zIndex);
+        // condLog("FOUND Settings to get next z level", thisPopup.style.zIndex);
         thisPopup.style.zIndex = connectObject.SettingsObj.getNextZLevel();
-        console.log("CHANGED next z level", thisPopup.style.zIndex);
+        // condLog("CHANGED next z level", thisPopup.style.zIndex);
     }
 
     let displayName4Popup = person.getDisplayName();
@@ -208,20 +208,21 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
                     if (marriageDate > "" || marriagePlace > "") {
                         // marriageInfo += "<br/>m. ";
                         if (marriageDate > "") {
-                            prepMarriageInfo += ", " + marriageDate;
-                        }
-                        // if (marriageDate > "" && marriagePlace > "") {
-                        //     prepMarriageInfo += ", ";
-                        // }
-                        if (marriagePlace > "") {
-                            prepMarriageInfo += ", " + marriagePlace;
+                            prepMarriageInfo +=
+                                ", <span class='marriage vital'>m. <strong>" + humanDate(marriageDate) + "</strong>";
+                            if (marriagePlace > "") {
+                                prepMarriageInfo += " in " + marriagePlace;
+                            }
+                            prepMarriageInfo += "</span>";
+                        } else if (marriagePlace > "") {
+                            prepMarriageInfo += ", <span class='marriage vital'>m. " + marriagePlace + "</span>";
                         }
                     }
 
                     // if (numSpousesListed > 0 && spID > 0) {
-                    marriageInfo += "<br/>m. ";
+                    // marriageInfo += "<br/>m. ";
                     // }
-                    marriageInfo += prepMarriageInfo;
+                    marriageInfo += "<br/>" + prepMarriageInfo;
                     numSpousesListed++;
                 }
             }
@@ -333,9 +334,9 @@ function popupConnectionDIV() {
     thisPopup.style.zIndex = 9999;
 
     if (connectObject.SettingsObj) {
-        // console.log("CONNECTIONS POD: FOUND Settings to get next z level", thisPopup.style.zIndex);
+        // condLog("CONNECTIONS POD: FOUND Settings to get next z level", thisPopup.style.zIndex);
         thisPopup.style.zIndex = connectObject.SettingsObj.getNextZLevel();
-        // console.log("CONNECTIONS POD: CHANGED next z level", thisPopup.style.zIndex);
+        // condLog("CONNECTIONS POD: CHANGED next z level", thisPopup.style.zIndex);
     }
 
     
@@ -479,15 +480,15 @@ function popupConnectionDIV() {
         if (connectObject.appID == "SuperBigTree") {
             codesList = connectObject.person._data.CodesList;
         } else if (connectObject.appID == "cc7") {
-            console.log(connectObject.person);
+            // condLog(connectObject.person);
             if (!connectObject.person._data) {
-                console.log("NO DATA OBJECT !!!!");
+                // condLog("NO DATA OBJECT !!!!");
                 popupHTML +=
                     "Cannot draw this Connection Path at this time.<BR><BR>Possible reasons:<BR> * Private profile in between start and end of path<BR> * Not logged into the Apps Server<BR> * Displaying Degree Only";
                 thisPopup.innerHTML = popupHTML;
 
             } else if (!connectObject.person._data.CodesList) {
-                console.log("MISSING CODES LIST - ", connectObject.person);
+                // condLog("MISSING CODES LIST - ", connectObject.person);
                 codesList = ["A0"]
             } else {
                 codesList = connectObject.person._data.CodesList;
@@ -1166,6 +1167,6 @@ function popupConnectionDIV() {
   */
 function copyDataText(widget) {
      navigator.clipboard.writeText(widget.getAttribute("data-copy-text"));
-     // console.log("copyDataText:", widget, widget.getAttribute("data-copy-text"));
+     // condLog("copyDataText:", widget, widget.getAttribute("data-copy-text"));
  };
 
