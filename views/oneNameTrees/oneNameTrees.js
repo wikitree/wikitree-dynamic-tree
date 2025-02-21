@@ -118,44 +118,45 @@ window.OneNameTrees = class OneNameTrees extends View {
         <div id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
             <input type="text" id="location" placeholder="Location (Optional)" />
-            <input type="text" id="centuries" placeholder="Centuries (Optional)" /> 
-            <input type="submit" id="submit" name="submit" value="GO" />
+            <input type="text" id="centuries" placeholder="Centuries (Optional)" />
+            <input type="submit" id="submit" class="btn btn-primary btn-sm" name="submit" value="GO" />
         </div>
-        
+
         <div id="otherControls" class="controlGroup">
-            <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
-            <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
-            <button
-            id="refreshData"
+            <button id="cancelFetch" class="btn btn-primary btn-sm"
+                title="Cancel the current fetching of profiles.">Cancel</button>
+            <button id="addNameVariants" class="btn btn-secondary btn-sm"
+                title="See and/or edit variants of names in One Name Studies">Variants</button>
+            <button id="refreshData" class="btn btn-secondary btn-sm"
             title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
             >
             Refresh
             </button>
-            <button id="downloadData">Save</button>
-            <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
+            <button id="downloadData" class="btn btn-secondary btn-sm">Save</button>
+            <button id="loadButton" class="custom-file-upload btn btn-secondary btn-sm"
+                title="Load a previously saved One Name Trees file">
             Load
             </button>
             <input type="file" id="fileInput" style="display: none" />
 
-            <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
-            <button id="sheetButton" title="Download a spreadsheet file">Sheet</button>
-            <button id="helpButton" title="About this">?</button>
+            <button id="toggleGeneralStats" class="btn btn-secondary btn-sm" title="Show/hide statistics">Statistics</button>
+            <button id="sheetButton" class="btn btn-secondary btn-sm" title="Download a spreadsheet file">Sheet</button>
+            <button id="helpButton" class="btn btn-secondary btn-sm" title="About this">?</button>
             <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
         </div>
 
         <div id="tableLabel" class="controlGroup">Table:
-            <button id="tableViewButton" title="View the data in a table">Table</button>
+            <button id="tableViewButton" class="btn btn-secondary btn-sm" title="View the data in a table">Table</button>
         </div>
         <div id="treesButtons" class="controlGroup">Trees:
         <div id="toggleButtons">
-            <button class="toggleAll" id="showAll" title="show all descendants">+</button>
-            <button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
+            <button class="toggleAll btn btn-secondary btn-sm" id="showAll" title="show all descendants">+</button>
+            <button class="toggleAll btn btn-secondary btn-sm" id="hideAll" title="hide all descendants">−</button>
         </div>
-        <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
-        <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
+        <button id="toggleDetails" class="off btn btn-secondary btn-sm" title="Show/hide birth and death details">Details</button>
+        <button id="toggleWTIDs" class="off btn btn-secondary btn-sm" title="Show/hide WikiTree IDs">WT IDs</button>
         </div>
-        
-        
+
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
         </div>
@@ -168,12 +169,12 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         this.bodyHTML = `
       <div id="help" class="modal">
-      <h2>About This</h2> 
+      <h2>About This</h2>
       <button id="closeHelp">×</button>
       <button id="print">⎙</button>
       <ol>
         <li>Put a surname in the box and hit 'Go'. If you're likely to get too many results, you can enter a location and/or
-         a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"), 
+         a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"),
          a list of numbers ("16,17" or "16 17"), a range of numbers ("16-19"), and a range of years (1500-1900).)</li>
         <li>
           The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
@@ -181,12 +182,12 @@ window.OneNameTrees = class OneNameTrees extends View {
           WikiTree+**. This list is stored for the next time you enter the same surname. To refresh this list (to get the
           most up-to-date list available on WikiTree+), hit the 'Refresh' button.<br>
           * Alternatively, you can enter a list of surnames separated by commas in the Name box. If you want one name without
-           the variants, just put the name and a comma in the box.<br> 
+           the variants, just put the name and a comma in the box.<br>
           ** Note that WikiTree+ is updated once a week, so new profiles may be missing from the results.
         </li>
         <li>
         As all of the IDs returned by WikiTree+ are for open public profiles, if you are logged into the apps server,
-        you may be able to retrieve the data of more profiles. The app gets your watchlist to find any people who are 
+        you may be able to retrieve the data of more profiles. The app gets your watchlist to find any people who are
         missing from the WikiTree+ results.
       </li>
         <li>
@@ -204,7 +205,7 @@ window.OneNameTrees = class OneNameTrees extends View {
           Offspring are added to offspring lists below their parents, creating many expandable/collapsible descendant
           trees. (The + and − at the top will expand and collapse all lists.)
         </li>
-        <li>When there is more than one spouse, coloured left borders will be added to the spouses and the children to 
+        <li>When there is more than one spouse, coloured left borders will be added to the spouses and the children to
         show which children belong to which spouse.</li>
         <li>
           As the data can take a long time to load, it's a good idea to hit the 'Save' button. This will save the
@@ -224,22 +225,22 @@ window.OneNameTrees = class OneNameTrees extends View {
         <li>Privacy icons are shown to the right of (semi-private) profiles.</li>
         <li>The numbers in green to the left of the person's name are
           the number of descendants that the person has in this dataset. Click the + button to see their children.</li>
-        <li> 
+        <li>
           Click the Statistics button to see statistics about the people in the dataset.
           <ul>
             <li>
               The general statistics:
               <ul id="generalStatsHelp">
-                <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
+                <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant)
                 as last name at birth. Click the button to see a graph.</li>
-                <li><label>Male/Female</label>: The gender distribution of the people in the dataset. If the numbers don't add up to the 
-                same number as the 'Total People' number, it will be due to some people being either missing a gender (in the database) 
+                <li><label>Male/Female</label>: The gender distribution of the people in the dataset. If the numbers don't add up to the
+                same number as the 'Total People' number, it will be due to some people being either missing a gender (in the database)
                 or being private.</li>
-                <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
+                <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset.
                 Click the button to see a graph.</li>
-                <li><label>Average Children per Male over 16</label>: This is per male over 16 
-                because the dataset will include their children but not those of many of the women, 
-                whose children would tend to take their father's surname 
+                <li><label>Average Children per Male over 16</label>: This is per male over 16
+                because the dataset will include their children but not those of many of the women,
+                whose children would tend to take their father's surname
                 (due to this being a name study, mostly based on last name at birth).</li>
                 <li><label>Average Children per Couple</label>: This is the average number of children per couple.</li>
                 <li><label>Migrants</label>: The number of profiles with a birth place that is not the same as the death place. Click the button for a graph of migrations.</li>
@@ -247,11 +248,11 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li><label>Unconnected</label>: The number of profiles not connected to the big trees. Click the button to see a list of the profiles.</li>
                 <li><label>No Connections</label>: The number of profiles with no relations/connections in the WikTree database. Click the button to see a list of the profiles.</li>
                 <li><label>Most Common Names</label>: This is the first names in the dataset by frequency. Click the triangle to see the whole list.</li>
-                <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.  
-                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation. 
+                <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.
+                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation.
                 On the visualisation, there are buttons to stop/start the automatic 'play'. There are also buttons to step from one period to the next.
                  You can move the location balls around by (clicking and dragging), zoom in and out, and drag the display to see more.</li>
-              </ul> 
+              </ul>
             </li>
             <li>
               The period statistics:
@@ -260,7 +261,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li>are shown in 50 year periods by default, but the period length can be changed in the settings.</li>
               </ul>
             </li>
-            <li>In the Table View, the period buttons will not only show the statistics of the period, but also add 
+            <li>In the Table View, the period buttons will not only show the statistics of the period, but also add
             the period as a table filter.</li>
             <li>
               The statistics can be dismissed by clicking the 'Statistics' button or double-clicking the statistics
@@ -297,13 +298,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                     <li><span class="symbol">&lt;</span> for before a certain year (e.g. &lt;1776).</li>
                     <li><span class="symbol">&gt;</span> for after a certain year. (e.g. &gt;1776).</li>
                   </ul>
-                </li> 
+                </li>
                 <li>can be cleared by pressing the Clear Filters button at the top.</li>
               </ul>
             </li>
             <li>can be filtered with the period buttons in the statistics section and the location count numbers.</li>
             <li>can be sorted by clicking on the column headers.</li>
-            <li>has a 'Reverse Locations' button to let you order sort people by the last part of their birth 
+            <li>has a 'Reverse Locations' button to let you order sort people by the last part of their birth
             place (usually the country).</li>
             <li>has a 'Wide' button to make the table wider (so that the text does not wrap and the table maybe be easier to scan).</li>
             <li>can be dismissed (to return to the Trees view) by clicking the 'Table' button.</li>
@@ -334,18 +335,19 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <label for="onlyLastNameAtBirth">Only Last Name at Birth:
                 <input type = "checkbox" id="onlyLastNameAtBirth" title="Show only profiles with the target surname(s) as Last Name at Birth" ${
                     this.settings.onlyLastNameAtBirth ? "checked" : ""
-                } /> 
+                } />
                 </label>
                 <label for="onlyMales">Only Males:
                 <input type = "checkbox" id="onlyMales" title="Load only males" ${
                     this.settings.onlyMales ? "checked" : ""
                 } />
                 </label>
-                <button id="clearCache" title="Clear the cache of stored data for this surname">Clear cached ${
-                    this.surname
-                } items</button>
-                <button id="clearCachedWatchlist" title="Clear the cache of stored data for the watchlist">Clear cached watchlist</button>
-                <button id="clearCacheAll" title="Clear the cache of all stored data">Clear all cached items</button>
+                <button id="clearCache" class="btn, btn-secondary btn-sm"
+                title="Clear the cache of stored data for this surname">Clear cached ${this.surname} items</button>
+                <button id="clearCachedWatchlist"  class="btn, btn-secondary btn-sm"
+                title="Clear the cache of stored data for the watchlist">Clear cached watchlist</button>
+                <button id="clearCacheAll"  class="btn, btn-secondary btn-sm"
+                title="Clear the cache of all stored data">Clear all cached items</button>
             </div>
         </div>`);
     }
@@ -830,7 +832,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                                     </style>
                                 </head>
                                 <body>
-                                    ${content} 
+                                    ${content}
                                 </body>
                             </html>`;
                 };
