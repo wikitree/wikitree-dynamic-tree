@@ -54,7 +54,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.watchlist = JSON.parse(localStorage.getItem(`${this.userId}_watchlist`)) || null;
         this.watchlistPromise = null;
         this.centuries = this.parseCenturies($("#centuries").val());
-        this.header = $("header");
+        this.header = null;
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
         this.combinedResults = {};
@@ -369,6 +369,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("body").addClass("oneNameTrees");
         if ($("#controlWrapper").length == 0) {
             $(this.headerHTML).insertBefore($("#view-loader"));
+            this.controls = $("#controlWrapper");
         }
         $("#cancelFetch").hide();
         //$("#helpButton").appendTo($("main")).css("float", "right").css("margin", "0.2em");
@@ -421,7 +422,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Enter key submits the form
-        this.header.on("keyup", "#surname,#location,#centuries", function (event) {
+        this.controls.on("keyup", "#surname,#location,#centuries", function (event) {
             const value = $("#surname").val().toLowerCase();
             const location = $("#location").val().toLowerCase();
             const centuries = $this.parseCenturies($("#centuries").val());
@@ -437,7 +438,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("keyup", "location", function (event) {
+        this.controls.on("keyup", "location", function (event) {
             if (event.keyCode === 13 && $("#surname").val()) {
                 $("#submit").click();
             }
@@ -447,7 +448,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.showMoreDetails($(this));
         });
 
-        this.header.on("click.oneNameTrees", "#addNameVariants", function (e) {
+        this.controls.on("click.oneNameTrees", "#addNameVariants", function (e) {
             e.preventDefault();
             window.open(
                 "https://docs.google.com/spreadsheets/d/1VwYnlDVIw8MH4mKDQeRfJAW_2u2kSHyiGcQUw5yBepw/edit#gid=0",
@@ -456,18 +457,18 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Event listener for the search button
-        this.header.on("click.oneNameTrees", "#searchButton", function () {
+        this.controls.on("click.oneNameTrees", "#searchButton", function () {
             $this.handleSearch();
         });
 
         // Also allow searching by pressing the enter key in the search input
-        this.header.on("keyup.oneNameTrees", "#searchInput", function (event) {
+        this.controls.on("keyup.oneNameTrees", "#searchInput", function (event) {
             if (event.keyCode === 13) {
                 $this.handleSearch();
             }
         });
 
-        this.header.on("click.oneNameTrees", "#refreshData", async function () {
+        this.controls.on("click.oneNameTrees", "#refreshData", async function () {
             const viewSelect = $(wtViewRegistry.VIEW_SELECT).val();
             if (viewSelect !== "oneNameTrees") return;
 
@@ -503,7 +504,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#ancestralLinePopup").remove();
         });
 
-        this.header.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
+        this.controls.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
             e.preventDefault();
             // e.stopPropagation();
             const location = $(this).data("location") || $(this).attr("data-location");
@@ -543,13 +544,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Delegate from .commonLocations for .locationPart click events
-        this.header.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
+        this.controls.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
             //event.stopPropagation(); // Prevent event bubbling
             const $subItem = $(this).closest("li").toggleClass("expanded");
             $subItem.children("ul").toggle(); // Toggle visibility of the nested list
         });
 
-        this.header.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
+        this.controls.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
             $("#toggleGeneralStats").trigger("click");
         });
 
@@ -580,7 +581,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("change.oneNameTrees", "#fileInput", function (event) {
+        this.controls.on("change.oneNameTrees", "#fileInput", function (event) {
             const file = event.target.files[0];
             if (file) {
                 $this.reset();
@@ -639,13 +640,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("click.oneNameTrees", "#loadButton", function () {
+        this.controls.on("click.oneNameTrees", "#loadButton", function () {
             $("#cancelFetch").trigger("click");
             wtViewRegistry.clearStatus();
             $("#fileInput").click(); // Triggers the hidden file input
         });
 
-        this.header.on("click.oneNameTrees", "#cancelFetch", function () {
+        this.controls.on("click.oneNameTrees", "#cancelFetch", function () {
             $this.cancelFetch();
         });
 
@@ -680,7 +681,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.handleSearch($(this).data("wtid"));
         });
 
-        this.header.on("click.oneNameTrees", "label", function () {
+        this.controls.on("click.oneNameTrees", "label", function () {
             // Determine which graph to toggle based on the clicked label's class
             let graphId;
 
@@ -793,7 +794,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.exportTableToExcel();
         });
 
-        this.header.on("click.oneNameTrees", "#setting-icon", function () {
+        this.controls.on("click.oneNameTrees", "#setting-icon", function () {
             if ($("#oneNameTreesSettings").length == 0) {
                 $this.settingsBox.appendTo($("body"));
             }
