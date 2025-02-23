@@ -44,6 +44,8 @@ import { Utils } from "../shared/Utils.js";
         // console.log(theCookie);
     });
 
+    var firstFanChartPopUpPopped = false ;
+
     const PRINTER_ICON = "&#x1F4BE;";
     const SETTINGS_GEAR = "&#x2699;";
     const LEGEND_CLIPBOARD = "&#x1F4CB;";
@@ -1297,8 +1299,8 @@ import { Utils } from "../shared/Utils.js";
             "<div id=highlightDescriptor><br/><span class='fontBold selectedMenuBarOption'>HIGHLIGHT people</span> = <span id=highlightPeepsDescriptor>Thirty-somethings...</span><br/><br/></div>";
 
         var legendHTML =
-            '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            `<span style="color:red; position:absolute; top:0.2em; left:0.6em; cursor:pointer;"><a onclick="FanChartView.hideLegend();">` +
+            '<div id=legendDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; z-index:9999}">' +
+            `<span style="color:red; position:absolute; top:-0.2em; left:0em; cursor:pointer;"><a onclick="FanChartView.hideLegend();">` +
             SVGbtnCLOSE +
             "</a></span>" +
             highlightHTML +
@@ -1307,7 +1309,7 @@ import { Utils } from "../shared/Utils.js";
             "</div>";
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FanChartView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -1346,15 +1348,64 @@ import { Utils } from "../shared/Utils.js";
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
 
-         $("#popupDIV").draggable();
-         $("#connectionPodDIV").draggable();
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+        $("#legendDIV").draggable();
+        document.getElementById("legendDIV").style.zIndex = Utils.getNextZLevel();
+
+        //   $("#popupDIV").keyup(function (e) {
+        //       if (e.keyCode == 13) {
+        //         console.log("POPUP DIV  / KEY CODE 13 !!!")
+        //         //   $("#drawTreeButton").click();
+        //       }
+        //   });
+
+        $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+
+        FanChartView.closeTopPopup = function (e) {
+            // console.log("closeTopPopUp");
+                if (e.key === "Escape") {
+                    // Find the popup with the highest z-index
+                    // console.log("ESCAPE KEY in FanChartView / document");
+                    const [lastPopup, highestZIndex] = FanChartView.findTopPopup();
+        
+                    // Close the popup with the highest z-index
+                    if (lastPopup) {
+                        // FanChartView.closePopup(lastPopup);
+                        // console.log("GOING to SLIDE UP the Fan Chart lastPopup")
+                        lastPopup.slideUp("fast");
+                        Utils.setNextZLevel(highestZIndex);
+                    }
+                }
+            }
+            
+        FanChartView.findTopPopup = function () {
+            // console.log("findTopPopup");
+            // Find the popup with the highest z-index
+            let highestZIndex = 0;
+            let lastPopup = null;
+            $(".pop-up:visible").each(function () {
+                const zIndex = parseInt($(this).css("z-index"), 10);
+                if (zIndex > highestZIndex) {
+                    highestZIndex = zIndex;
+                    lastPopup = $(this);
+                }
+            });
+            return [lastPopup, highestZIndex];
+        }
 
         FanChartView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            } 
+
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -2405,7 +2456,7 @@ import { Utils } from "../shared/Utils.js";
     }
 
     FanChartView.updateLegendIfNeeded = function () {
-        // console.log("DOING updateLegendIfNeeded");
+        // console.log("DOING updateLegendIfNeeded - now", APP_ID);
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         let settingForSpecifyByFamily = FanChartView.currentSettings["colour_options_specifyByFamily"];
         let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -2691,6 +2742,13 @@ import { Utils } from "../shared/Utils.js";
                 // );
             }
         }
+        if (document.getElementById("legendDIV").style.display == "block") {
+            document.getElementById("legendASCII").style.display = "inline-block";
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            } 
+        }    
     };
 
     function reverseCommaArray(arr, addSpace = false) {
@@ -2922,10 +2980,16 @@ import { Utils } from "../shared/Utils.js";
         // condLog(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        } 
+
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -2935,8 +2999,13 @@ import { Utils } from "../shared/Utils.js";
         // condLog(FanChartView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("legendDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -3552,9 +3621,9 @@ import { Utils } from "../shared/Utils.js";
         nodeEnter
             .append("foreignObject")
             .attrs({
-                id: "foreignObj4",
+                // id: "foreignObj" + ancestorObject.ahnNum,
                 width: boxWidth,
-                height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
+                height: boxHeight, // the foreignObject won't display in Firefox if it is 0 height
                 x: -boxWidth / 2,
                 y: -boxHeight / 2,
             })
@@ -3621,7 +3690,7 @@ import { Utils } from "../shared/Utils.js";
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
-                        } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
+                        } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
                         <div class="name fontBold font${font4Name}"    id=nameDivFor${
                         ancestorObject.ahnNum
                     } style="font-size: 10px;" >${getShortName(person)}</div>
@@ -3631,7 +3700,7 @@ import { Utils } from "../shared/Utils.js";
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
-                        } class="box" style="background-color: ${theClr} ; border:0; padding: 0px;">
+                        } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
                         <div class="name fontBold font${font4Name}"   id=nameDivFor${
                         ancestorObject.ahnNum
                     }  style="font-size: 14px;" >${getShortName(person)}</div>
@@ -3642,7 +3711,7 @@ import { Utils } from "../shared/Utils.js";
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
-                        } class="box" style="background-color: ${theClr} ; border:0; padding: 3px;">
+                        } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 3px;">
                         <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="name fontBold font${font4Name}"  id=nameDivFor${
                         ancestorObject.ahnNum
@@ -3764,7 +3833,7 @@ import { Utils } from "../shared/Utils.js";
                     return `
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0; ">
+                    } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
                     <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                     ${photoDiv}
                     <div class="name centered fontBold font${font4Name}" id=nameDivFor${
@@ -3802,7 +3871,7 @@ import { Utils } from "../shared/Utils.js";
                     if (theClr == "none") {
                         theClr = "#00000000";
                     }
-                    return `<div class="box centered" id=wedgeInfoFor${
+                    return `<div class="box staticPosition centered" id=wedgeInfoFor${
                         ancestorObject.ahnNum
                     } style="background-color: ${theClr} ; border:0; ">
                      <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
@@ -4492,14 +4561,21 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        console.log("POP UP : person = ",person);
+        // console.log("POP UP : person = ",person);
+        // console.log({ firstFanChartPopUpPopped });
+        // console.log("Utils.firstTreeAppPopUpPopped", Utils.firstTreeAppPopUpPopped);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        } 
         personPopup.popupHTML(person, {
             type: "Ahn",
             ahNum: FanChartView.myAhnentafel.listByPerson[person._data.Id]  ,
             primaryPerson: thePeopleList[FanChartView.myAhnentafel.list[1]],
-            myAhnentafel: FanChartView.myAhnentafel
+            myAhnentafel: FanChartView.myAhnentafel,
+            SettingsObj : Utils
         });
-        console.log("FanChartView.personPopup");
+        // console.log("FanChartView.personPopup");
     };
     
     
@@ -8156,4 +8232,7 @@ import { Utils } from "../shared/Utils.js";
     //     // condLog("FanChartView.removeBadges function : ", badgeType);
     //     d3.selectAll(".badge" + badgeType).remove();
     // };
+
+    $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
 })();
+

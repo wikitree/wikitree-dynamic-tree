@@ -56,6 +56,17 @@ window.SettingsOptions = window.SettingsOptions || {};
         
 
 */
+
+ nextZLevel = 10000;
+
+    function getNextZLevel() {
+        return ++nextZLevel;
+    }
+
+    function setNextZLevel(n) {
+        nextZLevel = n;
+    }
+
 function compareSettings(currentSettings) {
     // console.log("Compare as you dare:");
     // console.log(currentSettings);
@@ -357,7 +368,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
         // ORIGINAL FILL COLOUR AT END OF PATH:  #292D32
 
         let theDIVhtml =
-            '<div id=settingsDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=settingsDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; zIndex:9999;}">' +
             '<span style="color:red; position:absolute; top:-0.2em; right:-0.0em; cursor:pointer;"><A onclick="' +
             data.viewClassName +
             '.cancelSettings();">' +

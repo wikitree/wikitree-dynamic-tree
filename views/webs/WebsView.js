@@ -53,6 +53,7 @@
  */
 
 import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
+import { Utils } from "../shared/Utils.js";
 
 (function () {
     const APP_ID = "AncestorWebs";
@@ -772,7 +773,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             '<DIV id=SummaryMessageArea style="text-align:center;"></DIV>';
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="WebsView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -824,9 +825,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         WebsView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -962,8 +968,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             condLog(WebsView.websSettingsOptionsObject.getDefaultOptions());
             let theDIV = document.getElementById("settingsDIV");
             condLog("SETTINGS ARE:", theDIV.style.display);
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (theDIV.style.display == "none") {
                 theDIV.style.display = "block";
+                theDIV.style.zIndex = Utils.getNextZLevel();
                 let aboutDIV = document.getElementById("aboutDIV");
                 aboutDIV.style.display = "none";
             } else {
@@ -5066,7 +5077,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
             personPopup.popupHTML(
                 person,
                 {
@@ -5074,12 +5088,13 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     ahNum: WebsView.myAhnentafel.listByPerson[person._data.Id],
                     primaryPerson: thePeopleList[WebsView.myAhnentafel.list[1]],
                     myAhnentafel: WebsView.myAhnentafel,
+                    SettingsObj: Utils
                 },
                 AboutAppIcon,
                 "webs"           
             );
 
-        console.log("WebsView.personPopup");
+        // console.log("WebsView.personPopup");
     };
     
     
