@@ -15,13 +15,20 @@ window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "ONS";
     static VERBOSE = false;
     static PRIVACY_LEVELS = new Map([
-        [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
-        [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
-        [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
-        [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
-        [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
-        [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
-        [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
+        [60, "Privacy: Open"],
+        [50, "Public"],
+        [40, "Private with Public Bio and Tree"],
+        [35, "Private with Public Tree"],
+        [30, "Public Bio"],
+        [20, "Private"],
+        [10, "Unlisted"],
+        // [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
+        // [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
+        // [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
+        // [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
+        // [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
+        // [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
+        // [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
     ]);
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
@@ -47,7 +54,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.watchlist = JSON.parse(localStorage.getItem(`${this.userId}_watchlist`)) || null;
         this.watchlistPromise = null;
         this.centuries = this.parseCenturies($("#centuries").val());
-        this.header = $("header");
+        this.header = null;
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
         this.combinedResults = {};
@@ -114,6 +121,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         ];
 
         this.headerHTML = `
+      <div id="controlWrapper">
       <div id="controls">
         <div id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
@@ -165,7 +173,8 @@ window.OneNameTrees = class OneNameTrees extends View {
           <div id="periodStatisticsContainer" style="display: none"></div>
         </div>
       </div>
-      <button id="toggleOptions" title="Show/Hide options">-----</button>`;
+      <button id="toggleOptions" class="btn btn-secondary btn-sm" title="Show/Hide options">----</button>
+      </div>`;
 
         this.bodyHTML = `
       <div id="help" class="modal">
@@ -356,10 +365,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         view.start();
     }
     start() {
-        $("#wt-id-text,#show-btn").prop("disabled", true).css("background-color", "lightgrey");
+        $("#wt-id-text,#show-btn").prop("disabled", true); //.css("background-color", "lightgrey");
         $("body").addClass("oneNameTrees");
-        if ($("#controls").length == 0) {
-            $(this.headerHTML).appendTo($("header"));
+        if ($("#controlWrapper").length == 0) {
+            $(this.headerHTML).insertBefore($("#view-loader"));
+            this.controls = $("#controlWrapper");
         }
         $("#cancelFetch").hide();
         //$("#helpButton").appendTo($("main")).css("float", "right").css("margin", "0.2em");
@@ -384,13 +394,13 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     close() {
         this.reset();
-        $("#wt-id-text,#show-btn").prop("disabled", false).css("background-color", "white");
-        $("#show-btn").css("background-color", "#25422d");
+        $("#wt-id-text,#show-btn").prop("disabled", false); //.css("background-color", "white");
+        // $("#show-btn").css("background-color", "#25422d");
         $("#view-select").off("change.oneNameTrees");
         $("body").removeClass("oneNameTrees");
         $(document).off("keyup.oneNameTrees");
         $(document).off("click.oneNameTrees");
-        $("#controls,#dancingTree,#toggleOptions,#help").remove();
+        $("#controlWrapper,#dancingTree,#toggleOptions,#help").remove();
         $(
             "#lifespanGraph,#peopleCountGraph,#namesTable,#unsourcedProfiles,#unconnectedProfiles,#noRelationsProfiles,#locationsVisualisation,#migrationSankey,#periodMigrants"
         ).remove();
@@ -412,7 +422,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Enter key submits the form
-        this.header.on("keyup", "#surname,#location,#centuries", function (event) {
+        this.controls.on("keyup", "#surname,#location,#centuries", function (event) {
             const value = $("#surname").val().toLowerCase();
             const location = $("#location").val().toLowerCase();
             const centuries = $this.parseCenturies($("#centuries").val());
@@ -428,7 +438,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("keyup", "location", function (event) {
+        this.controls.on("keyup", "location", function (event) {
             if (event.keyCode === 13 && $("#surname").val()) {
                 $("#submit").click();
             }
@@ -438,7 +448,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.showMoreDetails($(this));
         });
 
-        this.header.on("click.oneNameTrees", "#addNameVariants", function (e) {
+        this.controls.on("click.oneNameTrees", "#addNameVariants", function (e) {
             e.preventDefault();
             window.open(
                 "https://docs.google.com/spreadsheets/d/1VwYnlDVIw8MH4mKDQeRfJAW_2u2kSHyiGcQUw5yBepw/edit#gid=0",
@@ -447,18 +457,21 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Event listener for the search button
-        this.header.on("click.oneNameTrees", "#searchButton", function () {
+        this.controls.on("click.oneNameTrees", "#searchButton", function () {
             $this.handleSearch();
         });
 
         // Also allow searching by pressing the enter key in the search input
-        this.header.on("keyup.oneNameTrees", "#searchInput", function (event) {
+        this.controls.on("keyup.oneNameTrees", "#searchInput", function (event) {
             if (event.keyCode === 13) {
                 $this.handleSearch();
             }
         });
 
-        this.header.on("click.oneNameTrees", "#refreshData", async function () {
+        this.controls.on("click.oneNameTrees", "#refreshData", async function () {
+            const viewSelect = $(wtViewRegistry.VIEW_SELECT).val();
+            if (viewSelect !== "oneNameTrees") return;
+
             const surname = $("#surname").val();
             const location = $("#location").val();
             const centuries = $this.parseCenturies($("#centuries").val());
@@ -491,7 +504,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#ancestralLinePopup").remove();
         });
 
-        this.header.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
+        this.controls.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
             e.preventDefault();
             // e.stopPropagation();
             const location = $(this).data("location") || $(this).attr("data-location");
@@ -531,13 +544,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Delegate from .commonLocations for .locationPart click events
-        this.header.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
+        this.controls.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
             //event.stopPropagation(); // Prevent event bubbling
             const $subItem = $(this).closest("li").toggleClass("expanded");
             $subItem.children("ul").toggle(); // Toggle visibility of the nested list
         });
 
-        this.header.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
+        this.controls.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
             $("#toggleGeneralStats").trigger("click");
         });
 
@@ -568,7 +581,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("change.oneNameTrees", "#fileInput", function (event) {
+        this.controls.on("change.oneNameTrees", "#fileInput", function (event) {
             const file = event.target.files[0];
             if (file) {
                 $this.reset();
@@ -627,13 +640,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("click.oneNameTrees", "#loadButton", function () {
+        this.controls.on("click.oneNameTrees", "#loadButton", function () {
             $("#cancelFetch").trigger("click");
             wtViewRegistry.clearStatus();
             $("#fileInput").click(); // Triggers the hidden file input
         });
 
-        this.header.on("click.oneNameTrees", "#cancelFetch", function () {
+        this.controls.on("click.oneNameTrees", "#cancelFetch", function () {
             $this.cancelFetch();
         });
 
@@ -655,10 +668,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#view-select").on("change.oneNameTrees", function () {
             const view = $(this).val();
             if (view !== "oneNameTrees") {
-                $("#wt-id-text,#show-btn").prop("disabled", false).css("background-color", "white");
-                $("#show-btn").css("background-color", "#25422d");
+                $("#wt-id-text,#show-btn").prop("disabled", false); //.css("background-color", "white");
+                // $("#show-btn").css("background-color", "#25422d");
+                $("#show-btn").off("click.oneNameTrees");
             } else {
-                $("#wt-id-text,#show-btn").prop("disabled", true).css("background-color", "lightgrey");
+                $("#wt-id-text,#show-btn").prop("disabled", true); //.css("background-color", "lightgrey");
             }
         });
 
@@ -667,7 +681,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.handleSearch($(this).data("wtid"));
         });
 
-        this.header.on("click.oneNameTrees", "label", function () {
+        this.controls.on("click.oneNameTrees", "label", function () {
             // Determine which graph to toggle based on the clicked label's class
             let graphId;
 
@@ -780,7 +794,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.exportTableToExcel();
         });
 
-        this.header.on("click.oneNameTrees", "#setting-icon", function () {
+        this.controls.on("click.oneNameTrees", "#setting-icon", function () {
             if ($("#oneNameTreesSettings").length == 0) {
                 $this.settingsBox.appendTo($("body"));
             }
@@ -2229,10 +2243,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
-        let privacySticker = this.getPrivacySticker(person);
-        if (person.Privacy == 60) {
-            privacySticker = "";
-        }
+        const privacySticker = person.Privacy == 60 ? "" : this.getPrivacySticker(person);
 
         let html = `<li class='level_${level} person ${duplicateClass}' data-id='${personIdStr}' data-name='${
             person.Name
@@ -2759,7 +2770,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     createNameSelectBoxes() {
-        const switchButton = $(`<button id="nameSelectsSwitchButton"
+        const switchButton = $(`<button id="nameSelectsSwitchButton" class="btn btn-secondary btn-sm"
         title="Switch between WT ID search and name search">⇆</button>`);
         const nameSelects = $("<div id='nameSelects'></div>").append(switchButton);
         nameSelects.insertBefore($("#toggleDetails"));
@@ -4029,6 +4040,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Create the switch button for toggling the sort order.
         const $switchButton = $("<button>", {
             id: "locationSelectsSwitchButton",
+            class: "btn btn-secondary btn-sm",
             text: "⇆",
             title: "Switch between sort orders (count and alphabetical).",
         }).on("click.oneNameTrees", function () {
@@ -4176,10 +4188,14 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     getPrivacySticker(person) {
-        const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
-        const privacyImg = privacyLevel ? privacyLevel.img : "";
-        const privacyTitle = privacyLevel ? privacyLevel.title : "";
-        const privacy = privacyImg ? `<img src="${privacyImg}" class="privacySticker" title="${privacyTitle}" />` : "";
+        // const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
+        // const privacyImg = privacyLevel ? privacyLevel.img : "";
+        // const privacyTitle = privacyLevel ? privacyLevel.title : "";
+        // const privacy = privacyImg ? `<img src="${privacyImg}" class="privacySticker" title="${privacyTitle}" />` : "";
+        const privacyTitle = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
+        const privacy = privacyTitle
+            ? `<span data-bs-toggle="tooltip" data-bs-title="${privacyTitle}" class="privacy privacy--lg privacy--${person.Privacy}"></span>`
+            : "";
         return privacy;
     }
 
@@ -4468,13 +4484,18 @@ window.OneNameTrees = class OneNameTrees extends View {
             return isValid; // Only include rows where isValid remains true
         });
 
-        const wideTableButton = $("<button>", { id: "wideTableButton" }).text("Wide");
+        const wideTableButton = $("<button>", { id: "wideTableButton", class: "btn btn-secondary btn-sm" }).text(
+            "Wide"
+        );
         $("#tableView_wrapper #tableView_length").after(wideTableButton);
         wideTableButton.on("click.oneNameTrees", function () {
             $("section#table").toggleClass("wide");
             $(this).toggleClass("on");
         });
-        const checkLocationsButton = $("<button>", { id: "checkLocationsButton" }).text("Check Locations");
+        const checkLocationsButton = $("<button>", {
+            id: "checkLocationsButton",
+            class: "btn btn-secondary btn-sm",
+        }).text("Check Locations");
         checkLocationsButton.attr("title", "Highlight locations with possible errors");
         wideTableButton.after(checkLocationsButton);
         checkLocationsButton.on("click.oneNameTrees", function () {
@@ -4540,7 +4561,10 @@ window.OneNameTrees = class OneNameTrees extends View {
             table.draw(false); // Redraw the table without resetting the paging
         }
 
-        const flipLocationsButton = $("<button>", { id: "flipLocationsButton" }).text("Reverse locations");
+        const flipLocationsButton = $("<button>", {
+            id: "flipLocationsButton",
+            class: "btn btn-secondary btn-sm",
+        }).text("Reverse locations");
         $("#tableView_wrapper #tableView_length").after(flipLocationsButton);
         flipLocationsButton.on("click.oneNameTrees", function () {
             flipLocationOrder();
@@ -4623,7 +4647,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         if ($("#clearFilters").length) {
             return;
         }
-        const $clearButton = $("<button>", { id: "clearFilters" }).text("Clear Filters");
+        const $clearButton = $("<button>", { id: "clearFilters", class: "btn btn-secondary btn-sm" }).text(
+            "Clear Filters"
+        );
         if ($("#tableViewButton").hasClass("on")) {
             $("#tableView_filter").before($clearButton);
             //           $("#controls").append($clearButton);
