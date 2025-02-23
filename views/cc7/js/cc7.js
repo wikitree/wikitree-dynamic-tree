@@ -397,7 +397,7 @@ class CC7 {
             .addClass("btn-sm")
             .off("click")
             .on("click", CC7.settingsChanged);
-        $("#settingsDIV").addClass("pop-up").css("width", "300");
+        $("#settingsDIV").addClass("pop-up").css("width", "400");
 
         $("#cc7Container")
             .off("dblclick", ".pop-up")
