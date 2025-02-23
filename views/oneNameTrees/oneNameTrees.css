@@ -21,7 +21,7 @@ input[type="submit"],
   font-size: 14px !important;
   min-width: auto !important;
   padding: 0.5em !important;
-  padding-right: 4em !important;
+  /* padding-right: 4em !important; */
   margin-bottom: 0 !important;
   margin-left: 0.5em;
   margin-right: 0.5em;
@@ -1295,7 +1295,7 @@ input[type="submit"],
   font-weight: bold;
 }
 
-.oneNameTrees td.privacy {
+/* .oneNameTrees td.privacy {
   text-align: center;
 }
 .oneNameTrees li.person img.privacySticker {
@@ -1303,15 +1303,18 @@ input[type="submit"],
 }
 .oneNameTrees img.privacySticker {
   width: 1.5em;
-}
+} */
 
 .oneNameTrees #wt-status.green {
   border-radius: 1em;
   background-image: none;
 }
 
+.oneNameTrees #controlWrapper {
+  position: relative
+}
 .oneNameTrees #toggleOptions {
-  height: 0.2em;
+  height: 0.7em;
   position: absolute;
   bottom: 0;
   right: 0;
