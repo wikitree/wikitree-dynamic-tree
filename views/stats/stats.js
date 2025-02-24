@@ -1001,7 +1001,7 @@ window.StatsView = class StatsView extends View {
         function fillTable(gender, withSiblings, stats) {
             const personName = rootPerson?.BirthName || rootPerson?.BirthNamePrivate || wtViewRegistry.getCurrentWtId();
             const genderWord = gender == "" ? "" : `${gender.toLowerCase()} `;
-            $("#stats-table").prepend(`<caption>Statistics for ${personName} and ${genderWord}${mode}s`);
+            $("#stats-table").prepend(`<caption>Statistics for ${personName} and ${genderWord}${mode}`);
             const table = document.querySelector("#stats-table > tbody");
 
             for (let degree = 0; degree <= StatsView.maxDegreeFetched; degree++) {
