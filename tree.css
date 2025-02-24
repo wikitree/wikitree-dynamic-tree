@@ -498,6 +498,10 @@ hr.treeapp-personpopup {
   margin-top: 1.5rem;
 }
 
+.staticPosition {
+  position: static;
+}
+
 /* Print styling should follow everything else to overwrite it */
 
 @media print {
