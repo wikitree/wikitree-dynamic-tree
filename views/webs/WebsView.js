@@ -996,7 +996,7 @@ import { Utils } from "../shared/Utils.js";
         };
 
         WebsView.reallyRemovePerson = function (num) {
-            condLog("REALLY removing PERSON # num ");
+            console.log("REALLY removing PERSON # num ");
             WebsView.cancelAddNewPopup();
 
             if (WebsView.viewMode == "Common" || WebsView.viewMode == "Singles") {
@@ -1008,9 +1008,10 @@ import { Utils } from "../shared/Utils.js";
 
             WebsView.listOfPrimePersons.splice(num, 1);
             WebsView.listOfAhnentafels.splice(num, 1);
+            WebsView.multiViewPrimaries = "01";
 
-            // PROBABLY ALSO NEED TO REMOVE ANY LINES DRAWN FOR PERSON TWO !!!
-            const pp = num;
+            // PROBABLY ALSO NEED TO REMOVE ANY LINES DRAWN FOR LAST PERSON  !!!
+            const pp = WebsView.listOfPrimePersons.length;
             condLog("SHOULD HIDE PRIME PERSON # ", pp, " and ALL THEIR LINES");
             for (let index = 0; index < 2 ** (WebsView.numGens2Display - 1); index++) {
                 const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
@@ -1023,7 +1024,7 @@ import { Utils } from "../shared/Utils.js";
                 }
             }
 
-            WebsView.changePrimePerson(0);
+            // WebsView.changePrimePerson(0);
             WebsView.redraw();
         };
 
@@ -3073,64 +3074,39 @@ import { Utils } from "../shared/Utils.js";
         let suffix = "";
         let gens = [];
         let kidID = -1;
-        let addSTARS = false;
+        let addSTAR = "";
 
         let thisAhnentafel = WebsView.myAhnentafel;
-        // if (ahnNums2.length > 0) {
-        //     thisAhnentafel = WebsView.listOfAhnentafels[0];
-        // }
         if (ahnNums && ahnNums.length > 0) {
             let thisSuffix = "";
-            for (let index = 0; index < ahnNums.length && addSTARS == false; index++) {
+            for (let index = 0; index < ahnNums.length ; index++) {
                 const thisGen = Math.floor(Math.log2(ahnNums[index]));
-                if (thisSuffix > "") {
-                    thisSuffix += ",";
-                }
-                thisSuffix += "" + thisGen;
-                // const thisChildAhnNum = Math.floor(ahnNums[index] / 2);
-                // // if (gens.length == 0 || (gens.length > 0 && gens.indexOf(thisGen) == -1)) {
-                // //     gens.push(thisGen);
-                // // }
-                // if (kidID == -1) {
-                //     kidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
-                // } else if (thisAhnentafel.list[thisChildAhnNum] && thePeopleList[thisAhnentafel.list[thisChildAhnNum]]) {
-                //     let newKidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
-                //     if (newKidID != kidID) {
-                //         addSTARS = true;
-                //     }
-                // }
-            }
-            // suffix += thisGen + (addSTARS == true ?"*":"");
+                if (thisGen >= WebsView.numGens2Display) {
+                    addSTAR = "*";
+                } else {
+                    if (thisSuffix > "") {
+                        thisSuffix += ",";
+                    }
+                    thisSuffix += "" + thisGen;
+                }                
+            }            
             suffix = "" + thisSuffix;
         }
 
         if (ahnNums2 && ahnNums2.length > 0) {
             thisAhnentafel = WebsView.listOfAhnentafels[1];
             let thisSuffix = "";
-            // kidID = -1;
-            // addSTARS = false;
-
-            for (let index = 0; index < ahnNums2.length && addSTARS == false; index++) {
+            
+            for (let index = 0; index < ahnNums2.length ; index++) {
                 const thisGen = Math.floor(Math.log2(ahnNums2[index]));
-                if (thisSuffix > "") {
-                    thisSuffix += ",";
-                }
-                thisSuffix += "" + thisGen;
-                // const thisChildAhnNum = Math.floor(ahnNums2[index] / 2);
-                // // if (gens.length == 0 || (gens.length > 0 && gens.indexOf(thisGen) == -1)) {
-                // //     gens.push(thisGen);
-                // // }
-                // if (kidID == -1) {
-                //     kidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
-                // } else if (
-                //     thisAhnentafel.list[thisChildAhnNum] &&
-                //     thePeopleList[thisAhnentafel.list[thisChildAhnNum]]
-                // ) {
-                //     let newKidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
-                //     if (newKidID != kidID) {
-                //         addSTARS = true;
-                //     }
-                // }
+                if (thisGen >= WebsView.numGens2Display) {
+                    addSTAR = "*";
+                } else {
+                    if (thisSuffix > "") {
+                        thisSuffix += ",";
+                    }
+                    thisSuffix += "" + thisGen;
+                }                
             }
             if (suffix > "") {
                 suffix += " / ";
@@ -3141,72 +3117,25 @@ import { Utils } from "../shared/Utils.js";
         if (ahnNums3 && ahnNums3.length > 0) {
             thisAhnentafel = WebsView.listOfAhnentafels[1];
             let thisSuffix = "";
-            // kidID = -1;
-            // addSTARS = false;
 
-            for (let index = 0; index < ahnNums3.length && addSTARS == false; index++) {
+            for (let index = 0; index < ahnNums3.length ; index++) {
                 const thisGen = Math.floor(Math.log2(ahnNums3[index]));
-                if (thisSuffix > "") {
-                    thisSuffix += ",";
+                if (thisGen >= WebsView.numGens2Display) {
+                    addSTAR = "*";
+                } else {
+                    if (thisSuffix > "") {
+                        thisSuffix += ",";
+                    }
+                    thisSuffix += "" + thisGen;
                 }
-                thisSuffix += "" + thisGen;
-                // const thisChildAhnNum = Math.floor(ahnNums3[index] / 2);
-                // // if (gens.length == 0 || (gens.length > 0 && gens.indexOf(thisGen) == -1)) {
-                // //     gens.push(thisGen);
-                // // }
-                // if (kidID == -1) {
-                //     kidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
-                // } else if (
-                //     thisAhnentafel.list[thisChildAhnNum] &&
-                //     thePeopleList[thisAhnentafel.list[thisChildAhnNum]]
-                // ) {
-                //     let newKidID = thePeopleList[thisAhnentafel.list[thisChildAhnNum]]._data.Id;
-                //     if (newKidID != kidID) {
-                //         addSTARS = true;
-                //     }
-                // }
             }
             if (suffix > "") {
                 suffix += " / ";
             }
             suffix += thisSuffix;
         }
-
-        // for (let index = 0; index < ahnNums2.length; index++) {
-        //     const thisGen = Math.floor(Math.log2(ahnNums2[index]));
-        //     const thisChildAhnNum = Math.floor((ahnNums2[index])/2);
-        //     if (gens.length == 0 || (gens.length > 0 && gens.indexOf(thisGen) == -1)) {
-        //         gens.push(thisGen);
-        //     }
-        //     if (kidID == -1) {
-        //         kidID = thePeopleList[ WebsView.myAhnentafel.list[thisChildAhnNum]]._data.Id;
-        //     } else {
-        //         let newKidID = thePeopleList[WebsView.myAhnentafel.list[thisChildAhnNum]]._data.Id;
-        //         if (newKidID != kidID) {
-        //             addSTARS = true;
-        //         }
-        //     }
-        // }
-
-        // if (ahnNums2.length == 0) {
-        //     gens.sort();
-        // }
-
-        // for (let index = 0; index < gens.length; index++) {
-        //     if (suffix == "") {
-        //         suffix = "(";
-        //     } else {
-        //         suffix += ", ";
-        //     }
-        //     suffix += gens[index];
-        // }
-        // suffix += ")";
-
-        // if (addSTARS == true) {
-        //     suffix += " **";
-        // }
-
-        return "(" + suffix + ")";
+        
+        return "(" + suffix + ")" + addSTAR;
     }
 
     /**
@@ -3439,6 +3368,11 @@ import { Utils } from "../shared/Utils.js";
                 if (WebsView.viewMode == "Singles") {
                     startingRepeaterIndex = WebsView.commonAncestorNum - 1;
                     endingRepeaterIndex = WebsView.commonAncestorNum - 1;
+                }
+
+                if (WebsView.listOfLegitCommonAncestors.length == 0) {
+                    console.log("NO COMMON ANNCESTORS for the SINGLES !!!!");
+                    return;
                 }
 
                 for (let repeaterIndex = startingRepeaterIndex; repeaterIndex <= endingRepeaterIndex; repeaterIndex++) {
@@ -5259,6 +5193,12 @@ import { Utils } from "../shared/Utils.js";
             let maxNumsPerGen = 0;
             let maxGenNum = 0;
 
+            if (WebsView.listOfLegitCommonAncestors.length == 0) {
+                // NO COMMON ANCESTORS ... need to give that message loud and clear !
+
+                console.log("NO COMMON ANCESTORS AT THIS LEVEL !!!!");
+                return;
+            }
             let theAncestorAtTop = WebsView.listOfLegitCommonAncestors[WebsView.commonAncestorNum - 1];
             theAncestorAtTop.id = theAncestorAtTop.Id;
             condLog("Ancestor AT TOP: ", getNameAsPerSettings(thePeopleList[theAncestorAtTop.Id]));
@@ -6146,11 +6086,14 @@ import { Utils } from "../shared/Utils.js";
 
                         if (WebsView.listOfAhnentafels.length == 3) {
                             WebsView.multiViewPrimaries = "012";
+                        } else if (WebsView.listOfAhnentafels.length == 2) {
+                            WebsView.multiViewPrimaries = "01";
                         } 
 
                         recalculateCommonNames();
                         redoRootSelector();
                         loadingTD.innerHTML = "&nbsp;";
+                        WebsView.redraw();
                     }
                     // }
                     condLog("thePeopleList:", thePeopleList);
