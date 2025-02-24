@@ -1619,55 +1619,58 @@ import { Utils } from "../shared/Utils.js";
         var btnBarHTML =
             '<div id="btnBarDIV"><DIV border=0 style="background-color: #f8a51d80; display:flex; justify-content:space-between;" width="100%">' +
             "<div class=btnBarItem>" +
-            '<span class="fontDarkGreen fontBold">&nbsp;ANCESTORS:</span> <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
+            '<span class="fontDarkGreen fontBold">&nbsp;ANCESTORS:</span> <button title="Decrease # of Ancestor generations displayed"  class="btnSVG" onclick="SuperBigFamView.numAncGens2Display -=1; SuperBigFamView.redrawAncs();">' +
             SVGbtnDOWN +
             "</button> " +
             "[ <span id=numAncGensInBBar>2 generations</span> ]" +
-            ' <button class="btnSVG" onclick="SuperBigFamView.numAncGens2Display +=1; SuperBigFamView.redrawAncs();">' +
+            ' <button class="btnSVG" title="Increase # of Ancestor generations displayed" onclick="SuperBigFamView.numAncGens2Display +=1; SuperBigFamView.redrawAncs();">' +
             SVGbtnUP +
             "</button> " +
-            '<span id=CousinUpDownSpan>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">BRANCHES:</span> <button id=CousinsBtnSVGdown class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
+            '<span id=CousinUpDownSpan>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">BRANCHES:</span> <button title="Decrease # of Aunt/Uncle/Cousin generations displayed"  id=CousinsBtnSVGdown class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
             SVGbtnDOWN +
             "</button> " +
-            "[ <span id=numCuzGensInBBar>none</span> ]" +
-            ' <button id=CousinsBtnSVGup class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
+            "[ <span id=numCuzGensInBBar>none</span> ]" + ' <button id=CousinsBtnSVGup class="btnSVG" title="Increase # of Aunt/Uncle/Cousin generations displayed" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
             SVGbtnUP +
             "</button></span> " +
             //
             "<br/>" +
-            '<span class="fontDarkGreen fontBold">&nbsp;DESCENDANTS:</span> <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display -=1; SuperBigFamView.redrawDescs();">' +
+            '<span class="fontDarkGreen fontBold">&nbsp;DESCENDANTS:</span> <button title="Decrease # of Descendant generations displayed"  class="btnSVG" onclick="SuperBigFamView.numDescGens2Display -=1; SuperBigFamView.redrawDescs();">' +
             SVGbtnDOWN +
             "</button> " +
             "[ <span id=numDescGensInBBar>1 generation</span> ]" +
-            ' <button class="btnSVG" onclick="SuperBigFamView.numDescGens2Display +=1; SuperBigFamView.redrawDescs();">' +
+            ' <button class="btnSVG" title="Increase # of Descendant generations displayed" onclick="SuperBigFamView.numDescGens2Display +=1; SuperBigFamView.redrawDescs();">' +
             SVGbtnUP +
             "</button> " +
             "<span id=SiblingsInLawsSpan>" +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">SIBLINGS:</span> <input id=SiblingsBtnSVG class="btnSVG" checked type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displaySIBLINGS = 1 - SuperBigFamView.displaySIBLINGS; SuperBigFamView.redraw();">  ' +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">IN-LAWS:</span> <input id=InLawsBtnSVG class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();">  ' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<label title="Show/Hide Siblings to Primary person"><span class="fontDarkGreen fontBold">SIBLINGS:</span> <input id=SiblingsBtnSVG class="btnSVG" checked type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displaySIBLINGS = 1 - SuperBigFamView.displaySIBLINGS; SuperBigFamView.redraw();"></label>  ' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<label title="Show In-Laws when checked"><span class="fontDarkGreen fontBold">IN-LAWS:</span> <input id=InLawsBtnSVG class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayINLAWS = 1 - SuperBigFamView.displayINLAWS; SuperBigFamView.redraw();"></label>  ' +
             "</span>" +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">Pedigree Only:</span> <input  id=PedigreeOnlyBtn class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPedigreeOnly = 1 - SuperBigFamView.displayPedigreeOnly; SuperBigFamView.redraw();">  ' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<label title="Show only Direct Ancestors when checked"><span class="fontDarkGreen fontBold">Pedigree Only:</span> <input  id=PedigreeOnlyBtn class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPedigreeOnly = 1 - SuperBigFamView.displayPedigreeOnly; SuperBigFamView.redraw();"></label>  ' +
             "</div><div class=btnBarItem>" +
             '&nbsp;&nbsp;&nbsp;<span width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</span>' +
             "&nbsp;&nbsp;&nbsp;" +
             "</div><div class=btnBarItem>" +
             // '<div style="display: inline-block; float: right; position: absolute; top: 0.5em; right: 0.5em;">' +
-            '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
+            '<span id=legendASCII style="display:none;"><A style="cursor:pointer;" title="Hide/Show Legend" onclick="SuperBigFamView.toggleLegend();"><font size=+2>&nbsp;&nbsp;&nbsp;&nbsp;' +
             LEGEND_CLIPBOARD +
             "</font></A></span> &nbsp;&nbsp;&nbsp;&nbsp;" +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen btnSVG fontBold">Privatize:</span> <input   class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();">&nbsp;&nbsp;&nbsp;&nbsp;  ' +
-            '<A onclick="SuperBigFamView.reZoom();">' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;<label title="Anonymize or Hide Living People when checked"><span class="fontDarkGreen btnSVG fontBold">Privatize:</span> <input   class="btnSVG" type=checkbox style="cursor:pointer;" onclick="SuperBigFamView.displayPrivatize = 1 - SuperBigFamView.displayPrivatize; SuperBigFamView.redraw();"></label>&nbsp;&nbsp;&nbsp;&nbsp;  ' +
+            '<A title="Change Zoom level - 3 settings" onclick="SuperBigFamView.reZoom();">' +
             SVGbtnRESIZE2 +
             "</A>&nbsp;&nbsp;&nbsp;&nbsp;" +
-            ' <A style="cursor:pointer;" onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
+            ' <A style="cursor:pointer;" title="Adjust Settings"  onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>" +
             "&nbsp;&nbsp;" +
-            "<A onclick=SuperBigFamView.toggleAbout();>" +
+            "<A title='About this app' onclick=SuperBigFamView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
-                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                ? "&nbsp;&nbsp;<A target=helpPage title='Open up Help (free space page) for this app' href='" +
+                  AboutHelpDoc +
+                  "'>" +
+                  SVGbtnHELP +
+                  "</A>"
                 : "") +
             "&nbsp;&nbsp;</div>" +
             "</DIV></div>" +
@@ -1724,7 +1727,7 @@ import { Utils } from "../shared/Utils.js";
 
         // Setup the LegendHTML for when we need the Legend (for multiple locations colouring legend, for example)
         var legendHTML =
-            '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=legendDIV class="pop-up popup" style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; z-index:9999">' +
             '<span style="color:red; align:left"><A style="cursor:pointer;" onclick="SuperBigFamView.hideLegend();">' +
             SVGbtnCLOSE +
             "</A></span>" +
@@ -1759,7 +1762,9 @@ import { Utils } from "../shared/Utils.js";
 
         $("#popupDIV").draggable();
         $("#connectionPodDIV").draggable();
-
+        $("#legendDIV").draggable();
+        document.getElementById("legendDIV").style.zIndex = Utils.getNextZLevel();
+        document.getElementById("legendDIV").className += " pop-up";
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -11285,13 +11290,31 @@ import { Utils } from "../shared/Utils.js";
             $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
             Utils.firstTreeAppPopUpPopped = true;
         }
+        console.log(person._data.CodesList);
+        let howManyDegrees = 999;
+        if (person._data.CodesList) {
+            for (let c = 0; c < person._data.CodesList.length; c++) {
+                const code = person._data.CodesList[c];
+                if (code && SuperBigFamView.theLeafCollection[code] && SuperBigFamView.theLeafCollection[code].degree) {
+                    howManyDegrees = Math.min(howManyDegrees, SuperBigFamView.theLeafCollection[code].degree);
+                }                
+            }
+        };
+
+        let degreeText = "";
+        if (howManyDegrees > 1 && howManyDegrees < 999) {
+            degreeText = howManyDegrees + " degrees";
+        } else if (howManyDegrees == 1) {
+            degreeText = "1 degree";
+        }
 
         personPopup.popupHTML(person, {
             type: "CC",
             person: person,
             leafCollection: SuperBigFamView.theLeafCollection,
             appID:APP_ID, 
-            SettingsObj: Utils
+            SettingsObj: Utils,
+            extra:{degree:degreeText, hideConnectionIcon:false}
         });
         // console.log("SuperBigFamView.personPopup");
     }
