@@ -18,7 +18,7 @@ let currentConnectionPopupID = 0;
 
 // Returns an array [x , y] that corresponds to the endpoint of rθ from (centreX,centreY)
 personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appView = "") {
-    // condLog("Popup for ", person, connectionObj);
+    console.log("Popup for ", person, connectionObj);
     connectObject = connectionObj;
 
     let personData = person._data;
@@ -87,7 +87,8 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
          `&nbsp;&nbsp;<button aria-label="Copy ID" class="copyWidget x-widget borderless" onclick='copyDataText(this);' data-copy-text="` +
          personData.Name +
          `" style="color:#8fc641; background:white; padding:2px; font-size:16px;" accesskey="i"><img src="https://wikitree.com/images/icons/scissors.png">ID</button>`;
-      
+
+    
     let bioCheckLink = `<A target=_blank href="https://apps.wikitree.com/apps/sands1865/biocheck/?action=checkProfile&numAncestorGen=0&numDescendantGen=0&checkStart=auto&profileId=${person.getName()}">Bio Check</A>`;
 
     let marriageInfo = "";
@@ -240,6 +241,18 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
             "<BR/><BR/>" +
             `<span ><a href="#name=${person.getName()}&view=${appView}">${appIcon}</a></span>`;
     }
+    let connectionIcon = `<br/><br/><A onclick=popupConnectionDIV() title="View how this person is connected to the Primary Person in this Tree"><img style="height:24px; cursor:pointer;" src="https://dev-2025.wikitree.com/images/icons/icon-connect.svg"></A>`;
+    if (connectObject && connectObject.extra && connectObject.extra.hideConnectionIcon == true){
+        connectionIcon = "";
+    }
+    if (connectObject && connectObject.extra && connectObject.extra.degree > "") {
+        connectionIcon += "<br/><span class='vital'>" + connectObject.extra.degree + "</span><br/>";
+    }
+
+    if (connectObject.extra && connectObject.extra.hideSpouse == true) {
+        marriageInfo = "";
+    }
+    
     let popupHTML =
         `
             <div class="popup-box" style="border-color: ${borderColor}">
@@ -249,7 +262,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
         SVGbtnCLOSE +
         `</a></span>
                     <div class="image-box"><img src="https://www.wikitree.com/${photoUrl}">
-                    <br/><br/><A onclick=popupConnectionDIV() title="View how this person is connected to the Primary Person in this Tree"><img style="height:24px; cursor:pointer;" src="https://dev-2025.wikitree.com/images/icons/icon-connect.svg"></A>
+                    ${connectionIcon}
                     </div>
                     <div class="vital-info">
                         <div class="name">
@@ -351,13 +364,65 @@ function popupConnectionDIV() {
 
     let connectionHTML = "";
     if (connectObject.type == "Ahn") {
+        // IF there are MULTIPLE paths to connect the popup person to the primary person, then we need an ARRAY for all the Ahnentafel Numbers
         let ahnNumArray = connectObject.ahNum;
+        // IF there are MULTIPLE primary persons (like with the Ancestor Webs app), then we need an ARRAY for all the Ahnentafels - a LIST of them, so to speak
+        let listArray = [];
+
         if (typeof connectObject.ahNum == "number") {
             ahnNumArray = [connectObject.ahNum];
         }
+        
+        let thisListNum = 0; // assuming only one list, default for all apps, and the initial part of Ancestor Webs as well in fact
+        if (connectObject.whichList && connectObject.listOfAhnentafels && connectObject.whichList > 0) {
+            // IF the person is from an Added person (in Ancestor Webs) and not the default list, find out its list number (whichList parameter)
+            thisListNum = connectObject.whichList;
+        }
+        
+        for (let aa = 0; aa < ahnNumArray.length; aa++) {
+            // By default, we will only have the set of Ahnentafel numbers from one List, which might be the only list in most cases
+            // So ... we need to assign that list number to all of them, by default
+            listArray[aa] = thisListNum;
+        }
+        
+        // IF there are multiple lists, then we need to check to see if this person shows up in multiple lists
+        if (connectObject.listOfAhnentafels && connectObject.listOfAhnentafels.length > 1) {
+            // Let's REBUILD the ahnNumArray and listArray from scratch, to be sure we've got every connection possible
+            ahnNumArray = [];
+            listArray = [];
+            for (let l = 0; l < connectObject.listOfAhnentafels.length; l++) {
+                // FIND the person in this new list
+                if (
+                    connectObject.listOfAhnentafels[l].listByPerson[currentConnectionPopupID] &&
+                    connectObject.listOfAhnentafels[l].listByPerson[currentConnectionPopupID].length > 0){
+                        // IF found, then find out the array of ahnen numbers (in case that person is a repeat ancestor)
+                        let nextListAhnArray =
+                            connectObject.listOfAhnentafels[l].listByPerson[currentConnectionPopupID];
+                        console.log(
+                            "FOUND a SET !",
+                            { l },
+                            nextListAhnArray
+                        );
+                        // AND for each of those... add that Ahnen number AND the List number to the arrays we use in the loop below
+                        for (let ll = 0; ll < nextListAhnArray.length; ll++) {
+                            const listNahnum = nextListAhnArray[ll];
+                            ahnNumArray.push(listNahnum);
+                            listArray.push(l);
+                        }
+                    // By default, we will only have the set of Ahnentafel numbers from one List, which might be the only list in most cases
+                    // So ... we need to assign that list number to all of them, by default
+                 
+                }
+            }
+        }
+
+        console.log("Connect a thon:");
+        console.log( {ahnNumArray});
+        console.log(  {listArray});
 
         for (let aa = 0; aa < ahnNumArray.length; aa++) {
             var ahnNum = ahnNumArray[aa];
+            let listNum = listArray[aa];
 
             let SVGhtml = "";
             let ySVG = 10;
@@ -374,7 +439,12 @@ function popupConnectionDIV() {
             let maxWidth4NoSquishing = document.getElementById("testTextLength").clientWidth;
 
             while (ahnNum >= 1) {
-                person = thePeopleList[connectObject.myAhnentafel.list[ahnNum]];
+                if (connectObject.listOfAhnentafels && connectObject.listOfAhnentafels.length > 1) {
+                    person = thePeopleList[connectObject.listOfAhnentafels[listNum].list[ahnNum]];
+                } else {                
+                     person = thePeopleList[connectObject.myAhnentafel.list[ahnNum]];
+                }
+                
                 var photoUrl = person.getPhotoUrl(75);
 
                 // Use generic gender photos if there is not profile photo available
@@ -405,13 +475,18 @@ function popupConnectionDIV() {
                 SVGhtml += `<rect x="10" y="${ySVG}" rx="10" ry="10" width="${bubbleWidth}" height="${bubbleHeight}" style="fill:white;stroke:black;stroke-width:1;opacity:1"></rect>`;
                 SVGhtml += `<image  height="40" href="https://www.wikitree.com/${photoUrl}" x=20 y=${ySVG + 2} />`;
 
+                let thisDisplayName = person.getDisplayName();
+                // console.log({thisDisplayName});
+                if (thisDisplayName == undefined || thisDisplayName == "undefined") {
+                    thisDisplayName = "Private";
+                }
                 thisPopup.innerHTML =
                     "<svg id=tempSVG width=400 height=40><text id=testTextLength>" +
-                    person.getDisplayName() +
+                    thisDisplayName +
                     "</text></svg>";
                 condLog(
                     "Width of ",
-                    person.getDisplayName(),
+                    thisDisplayName,
                     document.getElementById("testTextLength").clientWidth
                 );
 
@@ -423,7 +498,7 @@ function popupConnectionDIV() {
                     `<text id="textAhn${ahnNum}" text-anchor="middle" x="` +
                     (10 + 40 + 10 + (bubbleWidth - 60) / 2) +
                     `" y="${ySVG + 18}"  ${extraLengthStuff}>` +
-                    person.getDisplayName() +
+                    thisDisplayName +
                     `</text>`;
 
                 // SVGhtml +=
@@ -443,10 +518,10 @@ function popupConnectionDIV() {
 
                 ySVG += bubbleHeight + 20;
 
-                let peepNames = person.getDisplayName().split(" ");
-                for (let i = 0; i < peepNames.length; i++) {
-                    // connectionHTML += peepNames[i] + "<br/>";
-                }
+                // let peepNames = person.getDisplayName().split(" ");
+                // for (let i = 0; i < peepNames.length; i++) {
+                //     // connectionHTML += peepNames[i] + "<br/>";
+                // }
                 // connectionHTML += "<br/>" + lifespan(person) + "<br/>";
 
                 ahnNum = Math.floor(ahnNum / 2);
