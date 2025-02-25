@@ -2506,6 +2506,11 @@ import { Utils } from "../shared/Utils.js";
 
     /** FUNCTION used to force a redraw of the Ancestor Webs, used when called from Button Bar after a parameter has been changed */
 
+    WebsView.clearAll = function () {
+        WebsView.myAncestorTree.drawNodes([]);
+        WebsView.drawLines([]);
+    }
+
     WebsView.redraw = function () {
         console.log("WebsView.multiViewPrimaries = ", WebsView.multiViewPrimaries);
         condLog("WebsView.redraw");
@@ -3371,7 +3376,9 @@ import { Utils } from "../shared/Utils.js";
                 }
 
                 if (WebsView.listOfLegitCommonAncestors.length == 0) {
-                    console.log("NO COMMON ANNCESTORS for the SINGLES !!!!");
+                    console.log("NO COMMON ANNCESTORS for the COMMON / SINGLES !!!!");
+                    document.getElementById("SummaryMessageArea").innerText = "At " + WebsView.numGens2Display + " generations, there are 0 common ancestors.";
+                    WebsView.clearAll();
                     return;
                 }
 
@@ -5014,6 +5021,11 @@ import { Utils } from "../shared/Utils.js";
             let IndexPerGen = [];
             let maxNumsPerGen = 0;
 
+            if (WebsView.listOfRepeatAncestors.length == 0) {
+                WebsView.clearAll();
+                showSummaryMessage("At " + WebsView.numGens2Display + " generations, there are 0 repeat ancestors.");
+                return;
+            }
             let theAncestorAtTop = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
             condLog("Ancestor AT TOP: ", getNameAsPerSettings(thePeopleList[theAncestorAtTop.id]));
             condLog("ahn #s", uniqueListById[theAncestorAtTop.id].ahnNums);
