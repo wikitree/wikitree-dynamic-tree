@@ -46,12 +46,12 @@ export class CirclesView {
 
         var popupDIV =
             '<div id=popupDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePopup();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
         var connectionPodDIV =
             '<div id=connectionPodDIV class="pop-up" style="display:none; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePodDIV();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
 
@@ -93,16 +93,17 @@ export class CirclesView {
         <div id="circlesDisplay">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
-                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
-                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
-                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_inits value=inits checked> ABC</label> &nbsp;&nbsp;
-                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
-                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  style='cursor:pointer;' id=fillCirclesLabel><input type=checkbox id="displayType_filled" checked> Fill circles</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  style='cursor:pointer;' id=fillCirclesLabel><input type=checkbox id="displayType_BandW" > Black & White</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  style='cursor:pointer;' id=fillCirclesLabel><input type=checkbox id="displayType_GrayAncs"  > Grayify Ancestors</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <button onclick='` +
-                toggleLegendFunctionCode + `' class='btn btn-primary btn-sm'>Legend</button>
+                <label title='Display coloured dot for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
+                <label title='Display first initial for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
+                <label title='Display all initials for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_inits value=inits checked> ABC</label> &nbsp;&nbsp;
+                <label title='Display first name of each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
+                <label title='Display full name & lifespan of each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  title='Toggle between solid and hollow circles' style='cursor:pointer;' ><input type=checkbox id="displayType_filled" checked> Fill circles</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  title='Toggle between colour and B&W' style='cursor:pointer;' ><input type=checkbox id="displayType_BandW" > Black & White</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  title='For Direct Ancestors, toggle between CC colour or Gray' style='cursor:pointer;' ><input type=checkbox id="displayType_GrayAncs"  > Grayify Ancestors</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <button title='Hide / Show Legend' onclick='` +
+                toggleLegendFunctionCode +
+                `' class='btn btn-primary btn-sm'>Legend</button>
             </div>
                 
             <div id=circlesDIV4SVG><svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg></div>
