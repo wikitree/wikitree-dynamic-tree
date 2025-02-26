@@ -14,41 +14,43 @@ form label {
   line-height: 1;
 }
 
-  form label.required {
-    font-weight: 700;
-  }
+form label.required {
+  font-weight: 700;
+}
 
 form .form-control {
   /* border-color: #25422D; */
-  padding: .5rem .75rem;
+  padding: 0.5rem 0.75rem;
   width: 100%;
 }
 
 form .form-control:focus,
 form .form-select:focus {
   border-color: #fad158;
-  box-shadow: 0 0 0 .25rem rgba(252,181,21,.25);
+  box-shadow: 0 0 0 0.25rem rgba(252, 181, 21, 0.25);
 }
 
 .input-group-text {
   background-color: #f0f0eb;
-  padding: .375rem;
+  padding: 0.375rem;
 }
 
-  .input-group-text img,
-  .input-group img,
-  label img,
-  form h2 img,
-  .form-text img,
-  .form-check img,
-  form h3 img {
-    max-height: 22px;
-  }
+.input-group-text img,
+.input-group img,
+label img,
+form h2 img,
+.form-text img,
+.form-check img,
+form h3 img {
+  max-height: 22px;
+}
 
 .form-select {
   font-family: "Roboto", sans-serif;
   font-weight: 400;
   font-style: normal;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .form-select-inline {
@@ -62,7 +64,7 @@ textarea {
 }
 
 .form-text {
-  color: #393A3C;
+  color: #393a3c;
 }
 
 .form-text code {
@@ -70,19 +72,19 @@ textarea {
 }
 
 .form-control-plaintext {
-  background-color: rgba(240,240,235,0.35);
+  background-color: rgba(240, 240, 235, 0.35);
   border-radius: 0.375rem;
-  padding: .5rem;
+  padding: 0.5rem;
   position: relative;
   flex: 1 1 auto;
   width: 1%;
   min-width: 0;
 }
 
-  .form-control-plaintext + .input-group-text {
-    background-color: rgba(240,240,235,0.35);
-    border: none;
-  }
+.form-control-plaintext + .input-group-text {
+  background-color: rgba(240, 240, 235, 0.35);
+  border: none;
+}
 
 /* inline form check */
 form .form-check {
@@ -95,6 +97,11 @@ form .form-check label {
   font-size: 1rem;
   font-weight: 400;
   padding-right: 10px;
+}
+form .form-check .form-check-label-sm, form .form-check-label-sm {
+  font-weight: 400;
+  padding-right: 10px;
+  font-size: 0.875rem;
 }
 
 form .form-check input.form-check-input,
@@ -109,38 +116,49 @@ form input[type="checkbox"] {
   margin: 6px 2px 0 0;
 }
 
-  form .form-check .form-check-input:focus,
-  form .form-check input[type="radio"]:focus,
-  form input[type="radio"]:focus,
-  form .form-check input[type="checkbox"]:focus,
-  form input[type="checkbox"]:focus {
-    border-color: #25422d;
-    box-shadow: 0 0 0 .25rem rgba(0,128,0,.25);
-  }
+form .form-check-sm input.form-check-input-sm,
+form .form-check-sm 
+form .form-check-sm {
+  border-color: #ccc;
+  border-width: 1px;
+  float: none;
+  font-size: 0.875rem;
+  margin: 6px 2px 0 0;
+}
 
-  form .form-check .form-check-input:checked,
-  form .form-check input[type="radio"]:checked,
-  form input[type="radio"]:checked,
-  form input[type="checkbox"]:checked {
-    background-color: #25422d;
-    border-color: #25422d;
-  }
 
-  form .form-check .form-check-label .form-check-input {
-    margin-right: 6px;
-    margin-top: 0;
-  }
+form .form-check .form-check-input:focus,
+form .form-check input[type="radio"]:focus,
+form input[type="radio"]:focus,
+form .form-check input[type="checkbox"]:focus,
+form input[type="checkbox"]:focus {
+  border-color: #25422d;
+  box-shadow: 0 0 0 0.25rem rgba(0, 128, 0, 0.25);
+}
 
-  form .form-check-input:disabled,
-  form input[type="radio"]:disabled,
-  form input[type="checkbox"]:disabled {
-    display: none;
-  }
+form .form-check .form-check-input:checked,
+form .form-check input[type="radio"]:checked,
+form input[type="radio"]:checked,
+form input[type="checkbox"]:checked {
+  background-color: #25422d;
+  border-color: #25422d;
+}
 
-  form label input,
-  form label.form-check-label input.form-check-input {
-    margin-top: 1px;
-  }
+form .form-check .form-check-label .form-check-input {
+  margin-right: 6px;
+  margin-top: 0;
+}
+
+form .form-check-input:disabled,
+form input[type="radio"]:disabled,
+form input[type="checkbox"]:disabled {
+  display: none;
+}
+
+form label input,
+form label.form-check-label input.form-check-input {
+  margin-top: 1px;
+}
 
 /* edit page overwrites */
 .edit--sidebar a {
@@ -170,9 +188,9 @@ form input[type="checkbox"] {
   margin-bottom: 0.5rem;
 }
 
-  .edit--sidebar ol li {
-    font-size: 1rem;
-  }
+.edit--sidebar ol li {
+  font-size: 1rem;
+}
 
 .edit--sidebar .tree--person::after {
   display: none;
@@ -204,22 +222,22 @@ form .tree--person {
   padding: 15px;
 }
 
-  .suggestion-item .form-control {
-    border-color: #666;
-  }
+.suggestion-item .form-control {
+  border-color: #666;
+}
 
-  .suggestion-item img {
-    max-height: 20px;
-  }
+.suggestion-item img {
+  max-height: 20px;
+}
 
-  .suggestion-item.suggestion-Error {
-    background-color: #ffcccc;
-  }
+.suggestion-item.suggestion-Error {
+  background-color: #ffcccc;
+}
 
-  .suggestion-item.suggestion-Warning {
-    background-color: #ffee99;
-  }
+.suggestion-item.suggestion-Warning {
+  background-color: #ffee99;
+}
 
-  .suggestion-item.suggestion-Hint {
-    background-color: #e1f0b4;
-  }
+.suggestion-item.suggestion-Hint {
+  background-color: #e1f0b4;
+}
