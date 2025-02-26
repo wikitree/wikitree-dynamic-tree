@@ -17,34 +17,34 @@
   width: 48px;
 }
 
-.person--avatar a {
-  display: block;
-  height: 100%;
-  width: 100%;
-}
+  .person--avatar a {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
 
-.person--avatar img {
-  min-height: 48px;
-  width: auto;
-}
+  .person--avatar img {
+    min-height: 48px;
+    width: auto;
+  }
 
-/* add borders for m/f */
-.tree--person_m .person--avatar,
-.person--avatar.person--m,
-.person--avatar.person--male {
-  border: 2px solid #afafcf;
-}
+  /* add borders for m/f */
+  .tree--person_m .person--avatar,
+  .person--avatar.person--m,
+  .person--avatar.person--male {
+    border: 2px solid #AFAFCF;
+  }
 
-.tree--person_f .person--avatar,
-.person--avatar.person--f,
-.person--avatar.person--femail {
-  border: 2px solid #cfafaf;
-}
+  .tree--person_f .person--avatar,
+  .person--avatar.person--f,
+  .person--avatar.person--femail {
+    border: 2px solid #CFAFAF;
+  }
 
-.person--avatar.person--u,
-.person--avatar.person--no-gender {
-  border: 2px solid #afdeaf;
-}
+  .person--avatar.person--u,
+  .person--avatar.person--no-gender {
+    border: 2px solid #AFDEAF;
+  }
 
 /* large avatar, 75x75 */
 .avatar--75 {
@@ -52,9 +52,9 @@
   width: 75px;
 }
 
-.avatar--75 img {
-  min-height: 75px;
-}
+  .avatar--75 img {
+    min-height: 75px;
+  }
 
 /* person preview, 53x53 */
 .avatar--53 {
@@ -62,9 +62,9 @@
   width: 53px;
 }
 
-.avatar--53 img {
-  min-height: 53px;
-}
+  .avatar--53 img {
+    min-height: 53px;
+  }
 
 /* comment avatar, 40x40 */
 .avatar--40 {
@@ -72,9 +72,9 @@
   width: 40px;
 }
 
-.avatar--40 img {
-  min-height: 40px;
-}
+  .avatar--40 img {
+    min-height: 40px;
+  }
 
 /* custom avatar, 32x32 */
 .avatar--32 {
@@ -82,9 +82,9 @@
   width: 32px;
 }
 
-.avatar--32 img {
-  min-height: 32px;
-}
+  .avatar--32 img {
+    min-height: 32px;
+  }
 
 /* edit profile, 30x30 */
 .avatar--30 {
@@ -92,14 +92,14 @@
   width: 30px;
 }
 
-.avatar--30 img {
-  min-height: 30px;
-}
+  .avatar--30 img {
+    min-height: 30px;
+  }
 
-.profile--actions .avatar--30 {
-  position: relative;
-  top: -3px;
-}
+  .profile--actions .avatar--30 {
+    position: relative;
+    top: -3px;
+  }
 
 /* surname avatar, 24x24*/
 .avatar--24 {
@@ -107,20 +107,17 @@
   width: 24px;
 }
 
-.avatar--24 img {
-  min-height: 24px;
-}
+  .avatar--24 img {
+    min-height: 24px;
+  }
 
-.profiles .person--avatar {
-  margin-left: 10px;
-}
+  .profiles .person--avatar {
+    margin-left: 10px;
+  }
 
-.background--gender-male {
-  background-color: #f2f1ff;
-}
-.background--gender-female {
-  background-color: #ffeeee;
-}
-.background--gender-no-gender {
-  background-color: #eeffee;
-}
+
+.background--gender-male { background-color: #F2F1FF; }
+.background--gender-female { background-color: #FFEEEE; }
+.background--gender-no-gender { background-color: #EEFFEE; }
+
+

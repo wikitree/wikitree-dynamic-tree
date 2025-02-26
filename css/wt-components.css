@@ -172,7 +172,7 @@
   border: none;
   display: inline;
   float: none;
-  margin: 0 25px 0 0;
+  margin: 0 12px 0 0;
   padding: 0;
 }
 
@@ -246,7 +246,7 @@
 @media (max-width: 1180px) {
   .tabs--wrapper .profile-tabs li,
   .jump--wrapper .jump--nav li {
-    margin: 0 20px 0 0;
+    margin: 0 12px 0 0;
   }
 }
 
@@ -1024,10 +1024,6 @@ dl.profiles dd.P-U {
   margin-bottom: 1rem !important;
 }
 
-.slideshow.slick-initialized {
-  margin-bottom: 60px !important;
-}
-
 .slick-prev,
 .slick-next {
   top: 150px !important;
@@ -1224,7 +1220,6 @@ dl.profiles dd.P-U {
   padding: 0.5rem 0 0;
 }
 
-
 .feed-date + div {
   padding-left: 1rem;
 }
@@ -1251,9 +1246,8 @@ dl.profiles dd.P-U {
   margin: 10px 0px 10px 0px;
 }
 
-
 .footnote .feed-date {
-  font-size: 1rem;
+  font-size: 0.875rem;
   margin: 0.75rem 0 0.5rem;
   border: 0;
   font-weight: normal;
@@ -1269,3 +1263,17 @@ dl.profiles dd.P-U {
   display: inline;
 }
 
+.density-on {
+  opacity: 1;
+}
+.density-off {
+  opacity: 0.2;
+}
+
+.mergetools {
+	display: none;
+	z-index:1000;
+	background-color:#fff;
+	position: fixed;
+	right: 20px;
+}

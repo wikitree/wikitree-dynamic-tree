@@ -181,9 +181,12 @@ hr {
 /* edit links */
 .editsection {
   color: #fff;
-  position: absolute;
+  /*
+  position: absolute
   right: 0;
   top: 4px;
+  float: right;
+  */
 }
 
 .EDIT {
@@ -356,7 +359,7 @@ ul.profile--facts img,
   }
 
   /* fix inline table styles :/ */
-  .page--content table {
+  /* .page--content table {
     float: none !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
@@ -372,7 +375,7 @@ ul.profile--facts img,
   .page--content table td {
     font-size: 100% !important;
     text-align: left !important;
-  }
+  } */
 
   .bg--tan,
   .bg--white {

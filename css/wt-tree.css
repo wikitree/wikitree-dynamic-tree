@@ -53,7 +53,7 @@
 
 .ancestors--content {
   margin-bottom: 3.5rem;
-  opacity: 0;
+  /* opacity: 0; */
   padding-bottom: 30px;
   transition: opacity 250ms ease-in-out;
 }
@@ -215,6 +215,10 @@
   right: -12px;
   top: 50%;
   width: 12px;
+}
+
+#familyVitals .tree--person::after {
+  display: none;
 }
 
 .tree--profile .tree--person::before,
@@ -399,4 +403,18 @@ ol.descendant--list input.accordion--trigger {
     max-width: 320px;
     width: 320px;
   }
+}
+
+.tree--great_great_grandparents .tree--placement .col {
+  padding-right: 32px;
+}
+.tree--great_great_grandparents .profile--actions > li:has(span.icon--more-p) {
+  position: absolute;
+  right: 16px;
+  top: 0;
+}
+.tree--great_great_grandparents .profile--actions > li:has(span.icon--more-m) {
+  position: absolute;
+  right: 16px;
+  bottom: -4px;
 }
