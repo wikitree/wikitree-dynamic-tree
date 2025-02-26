@@ -510,7 +510,7 @@ function popupConnectionDIV() {
                 //     `</text>`;
 
                 SVGhtml +=
-                    `<text text-anchor="middle" x="` +
+                    `<text text-anchor="middle" style="font-size:1rem;" x="` +
                     (10 + 40 + 10 + (bubbleWidth - 60) / 2) +
                     `" y="${ySVG + 38}">` +
                     lifespan(person) +
@@ -759,13 +759,13 @@ function popupConnectionDIV() {
                 //     "Josh Azariah Ashley" +
                 //     `</text>`;
 
-             /*    SVGhtml +=
-                    `<text text-anchor="middle" x="` +
+                SVGhtml +=
+                    `<text text-anchor="middle" style="font-size:1rem;" x="` +
                     (xSVG + 40 + 10 + (bubbleWidth - 60) / 2) +
                     `" y="${ySVG + 38}">` +
                     lifespan(person) +
                     `</text>`;
- */
+
                 
 
                 minX = Math.min(minX, xSVG);
@@ -970,9 +970,9 @@ function popupConnectionDIV() {
                 //     `</text>`;
 
                 SVGhtml +=
-                    `<text text-anchor="middle" x="` +
+                    `<text text-anchor="middle" style="font-size:1rem;" x="` +
                     (xSVG + 40 + 10 + (bubbleWidth - 60) / 2) +
-                    `" y="${ySVG + 38}">` +
+                    `" y="${ySVG + 38}">* ` +
                     lifespan(person) +
                     `</text>`;
 
@@ -1037,13 +1037,28 @@ function popupConnectionDIV() {
 }
 
  function lifespan(person) {
+    // console.log(person);
      var birth = "",
-         death = "";
-     if (person.getBirthDate()) {
-         birth = person.getBirthDate().substr(0, 4);
+         death = "", longBirthDate = "", longDeathDate = "";
+        
+         
+     if (person.getBirthDate && person.getBirthDate()) {
+         longBirthDate = person.getBirthDate();
+     } else if (person._data && person._data.BirthDate) {
+         longBirthDate = person._data.BirthDate;        
      }
-     if (person.getDeathDate()) {
-         death = person.getDeathDate().substr(0, 4);
+     
+     if (person.getDeathDate && person.getDeathDate()) {
+         longDeathDate = person.getDeathDate();
+     } else if (person._data && person._data.DeathDate) {
+         longDeathDate = person._data.DeathDate;        
+     }
+
+     if (longBirthDate) {
+         birth = longBirthDate.substring(0, 4);
+     }
+     if (longDeathDate) {
+         death = longDeathDate.substring(0, 4);
      }
 
      var lifespan = "";
