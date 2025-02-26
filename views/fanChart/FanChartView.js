@@ -1240,36 +1240,40 @@ import { Utils } from "../shared/Utils.js";
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
-            '<td width="30%" style="padding-left:10px;"><A onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
-            ' <A onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
-            ' <A onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
+            '<td width="30%" style="padding-left:10px;"><A title="Display Circle Chart (360º)" onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
+            ' <A title="Display Traditional Fan Chart (240º)" onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
+            ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
             '<td width="5%">&nbsp;' +
-            '<span id=legendASCII style="display:none;"><A onclick="FanChartView.toggleLegend();"><font size=+2>' +
+            '<span id=legendASCII style="display:none;"><A title="Hide/Show Legend" onclick="FanChartView.toggleLegend();"><font size=+2>' +
             LEGEND_CLIPBOARD +
             "</font></A></span>" +
             "</td>" +
             '<td width="30%" align="center">' +
-            ' <A onclick="FanChartView.numGens2Display -=1; FanChartView.redraw();">' +
+            ' <A title="Decrease # of generations displayed" onclick="FanChartView.numGens2Display -=1; FanChartView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
             "[ <span id=numGensInBBar>5</span> generations ]" +
-            ' <A onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();">' +
+            ' <A title="Increase # of generations displayed" onclick="FanChartView.numGens2Display +=1; FanChartView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
-            '<A onclick="FanChartView.reZoom();">' +
+            '<A title="Change Zoom level - 3 settings" onclick="FanChartView.reZoom();">' +
             SVGbtnRESIZE2 +
             "</A>&nbsp;&nbsp;" +
-            ' <A onclick="FanChartView.toggleSettings();"><font size=+2>' +
+            ' <A title="Adjust Settings"  onclick="FanChartView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>&nbsp;&nbsp;" +
-            "<A onclick=FanChartView.toggleAbout();>" +
+            "<A title='About this app' onclick=FanChartView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
-                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                ? "&nbsp;&nbsp;<A target=helpPage title='Open up Help (free space page) for this app' href='" +
+                  AboutHelpDoc +
+                  "'>" +
+                  SVGbtnHELP +
+                  "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fan Chart is loading ...</DIV>';
@@ -1299,7 +1303,7 @@ import { Utils } from "../shared/Utils.js";
             "<div id=highlightDescriptor><br/><span class='fontBold selectedMenuBarOption'>HIGHLIGHT people</span> = <span id=highlightPeepsDescriptor>Thirty-somethings...</span><br/><br/></div>";
 
         var legendHTML =
-            '<div id=legendDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; z-index:9999}">' +
+            '<div id=legendDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; z-index:9999">' +
             `<span style="color:red; position:absolute; top:-0.2em; left:0em; cursor:pointer;"><a onclick="FanChartView.hideLegend();">` +
             SVGbtnCLOSE +
             "</a></span>" +

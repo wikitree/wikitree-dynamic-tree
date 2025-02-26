@@ -333,9 +333,6 @@ ul.views li.current {
   padding: 15px;
   position: relative;
 }
-.staticPosition {
-  position: static;
-}
 
 .box p {
   margin-bottom: 0;
