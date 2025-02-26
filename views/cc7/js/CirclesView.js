@@ -55,29 +55,65 @@ export class CirclesView {
             SVGbtnCLOSE +
             "</A></span></div>";
 
-        popupDIV += connectionPodDIV;
+            
 
-        const circlesDisplay = $(`
+        var innerLegendBits =
+            `<P>Legend: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="orange"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC2</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="cyan"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC3</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="magenta"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC4</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="aquamarine"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC5</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="gold"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC6</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="deepskyblue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC7</text></svg>` + 
+            `<BR/>CC1: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="green "></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Primary</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="gray"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Parent</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="blue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Sibling</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="red"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Spouse</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="lime"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">Child</text></svg>` ;
+;
+        var legendDIV =
+            '<div id=legendDIV class="pop-up" style="display:block; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+            '<span style="color:red; align:left"><A onclick="document.getElementById(\'legendDIV\').style.display = \'none\'">' +
+            SVGbtnCLOSE +
+            "</A></span>" +
+            innerLegendBits +
+            "</div>";
+
+        popupDIV += connectionPodDIV + legendDIV;
+
+        let toggleLegendFunctionCode = 
+            `if (document.getElementById("legendDIV").style.display == "none") {
+                document.getElementById("legendDIV").style.display = "block";
+            } else {
+                document.getElementById("legendDIV").style.display = "none";
+            }`; 
+            
+
+        const circlesDisplay = $(
+            `
         <div id="circlesDisplay">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
-                <label><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_inits value=inits checked> ABC</label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_filled" checked> Fill circles</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_BandW" > Black & White</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_GrayAncs"  > Grayify Ancestors</label>
+                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
+                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
+                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_inits value=inits checked> ABC</label> &nbsp;&nbsp;
+                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
+                <label style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  style='cursor:pointer;' id=fillCirclesLabel><input type=checkbox id="displayType_filled" checked> Fill circles</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  style='cursor:pointer;' id=fillCirclesLabel><input type=checkbox id="displayType_BandW" > Black & White</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  style='cursor:pointer;' id=fillCirclesLabel><input type=checkbox id="displayType_GrayAncs"  > Grayify Ancestors</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <button onclick='` +
+                toggleLegendFunctionCode + `' class='btn btn-primary btn-sm'>Legend</button>
             </div>
                 
             <div id=circlesDIV4SVG><svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg></div>
             ${popupDIV}
-        </div>`);
+        </div>`
+        );
         circlesDisplay.insertBefore($("#peopleTable"));
 
         $("#popupDIV").draggable();
         $("#connectionPodDIV").draggable();
+        $("#legendDIV").draggable();
 
         this.updateView();
 
@@ -95,7 +131,7 @@ export class CirclesView {
         });
     }
     static connectAllToPrimaryPerson(currentRootID) {
-        console.log({ currentRootID });
+        condLog({ currentRootID });
         let rootPeep = window.people.get(currentRootID);
         if (rootPeep) {
             CirclesView.updateFieldsInPersonCodesObject(currentRootID,"A0","A0-" + currentRootID);
@@ -313,7 +349,7 @@ export class CirclesView {
 
         CirclesView.changeDisplayType();
 
-        console.log({ sortedMap });
+        condLog({ sortedMap });
         function getLtrInitsName(person) {
             let theLIN = ".";
 
@@ -357,7 +393,7 @@ export class CirclesView {
     }
 
     static doCircle(person, thisDegree, newX, newY) {
-        console.log(CirclesView.displayType, person);
+        condLog(CirclesView.displayType, person);
         const blobColours = [
             "green",
             "lawngreen",
@@ -671,7 +707,7 @@ export class CirclesView {
             "<svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg>";
         let degreeCount = CirclesView.degreeCount;
         // let displayType = "dot";
-        console.log({ degreeCount });
+        condLog({ degreeCount });
         let circleTypeVariables = {
             dot: { dotRadius: 9 },
             ltr: { dotRadius: 9 },
@@ -696,7 +732,7 @@ export class CirclesView {
         // }
         for (let d = 1; d < 8; d++) {
             if (degreeCount[d] == 0) {
-                console.log("At CC" + d + " there are " + degreeCount[d] + " people - NO POLYGON");
+                condLog("At CC" + d + " there are " + degreeCount[d] + " people - NO POLYGON");
             } else {
                 // FORMULA for the Radius of a Regular n-sided Polygon with sidelength s (from centre of polygon to a vertex)
                 //      Radius = s / (2 * sin(180º / n))
@@ -928,7 +964,7 @@ export class CirclesView {
                     extra: { degree: numDegreesForPopup },
                 });
 
-                console.log("CirclesView.personPopup");
+                condLog("CirclesView.personPopup");
             });
         });
     }
