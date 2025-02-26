@@ -864,7 +864,7 @@ import { Utils } from "../shared/Utils.js";
         };
 
         WebsView.reZoom = function () {
-            console.log("TIME to RE ZOOM now !", WebsView.currentScaleFactor);
+            condLog("TIME to RE ZOOM now !", WebsView.currentScaleFactor);
             let newScaleFactor = 0.8;
 
             let svg = document.getElementById("websViewSVG");
@@ -955,7 +955,7 @@ import { Utils } from "../shared/Utils.js";
         function settingsChanged(e) {
             if (WebsView.websSettingsOptionsObject.hasSettingsChanged(WebsView.currentSettings)) {
                 condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-                console.log("NEW settings are:", WebsView.currentSettings);
+                condLog("NEW settings are:", WebsView.currentSettings);
                 WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), {
                     expires: 365,
                 });
@@ -996,7 +996,7 @@ import { Utils } from "../shared/Utils.js";
         };
 
         WebsView.reallyRemovePerson = function (num) {
-            console.log("REALLY removing PERSON # num ");
+            condLog("REALLY removing PERSON # num ");
             WebsView.cancelAddNewPopup();
 
             if (WebsView.viewMode == "Common" || WebsView.viewMode == "Singles") {
@@ -1161,7 +1161,8 @@ import { Utils } from "../shared/Utils.js";
             .attr("width", width)
             .attr("height", height)
             .attr("id", "websViewSVG");
-        const g = svg.append("g");
+        const g = svg.append("g").attrs({ id: "svgG" });
+        // const linesDIV = g.append("span").attrs({id : "linesDIV"});
 
         // Setup zoom and pan
         const zoom = d3
@@ -1204,24 +1205,24 @@ import { Utils } from "../shared/Utils.js";
 
         */
 
-        for (let pp = 0; pp < WebsView.maxNumPrimes; pp++) {
-            for (let index = 0; index < 2 ** WebsView.maxNumGens; index++) {
-                // Create  Empty Lines, hidden, to be used later
-                // One to the person's Pa (Father) and the other to their Ma (Mother)
-                g.append("polyline").attrs({
-                    id: "lineForPerson" + index + "p" + pp + "Pa",
-                    display: "none",
-                    points: "0,0 0,0",
-                    style: "fill:none; stroke: black; stroke-width: 1;",
-                });
-                g.append("polyline").attrs({
-                    id: "lineForPerson" + index + "p" + pp + "Ma",
-                    display: "none",
-                    points: "0,0 0,0",
-                    style: "fill:none; stroke: black; stroke-width: 1;",
-                });
-            }
-        }
+        // for (let pp = 0; pp < WebsView.maxNumPrimes; pp++) {
+        //     for (let index = 0; index < 2 ** WebsView.maxNumGens; index++) {
+        //         // Create  Empty Lines, hidden, to be used later
+        //         // One to the person's Pa (Father) and the other to their Ma (Mother)
+        //         g.append("polyline").attrs({
+        //             id: "lineForPerson" + index + "p" + pp + "Pa",
+        //             display: "none",
+        //             points: "0,0 0,0",
+        //             style: "fill:none; stroke: black; stroke-width: 1;",
+        //         });
+        //         g.append("polyline").attrs({
+        //             id: "lineForPerson" + index + "p" + pp + "Ma",
+        //             display: "none",
+        //             points: "0,0 0,0",
+        //             style: "fill:none; stroke: black; stroke-width: 1;",
+        //         });
+        //     }
+        // }
 
         self.load(startId);
 
@@ -1321,9 +1322,24 @@ import { Utils } from "../shared/Utils.js";
         return false; // ELSE - if we've made it all the way through the for loop without triggering the IF condition, then it's the same person as the only child, possibly showing up multiple times in the family tree.
     }
 
+    WebsView.logLines = function (theNodes) {
+        condLog("FUNCTION: logLines() : LOG LINES:");
+        for (let i = 0; i < 32; i++) {
+            let p = 0;
+            let elementPa = document.getElementById("lineForPerson" + i + "p" + p + "Pa");
+            if (elementPa){
+                condLog(elementPa.getAttribute("id"), elementPa.getAttribute("points"));
+            } else {
+                condLog("NO : lineForPerson" + i + "p" + p + "Pa");
+            }
+
+        }
+    }
+
+
     WebsView.drawLines = function (theNodes) {
-        console.log("DRAWING LINES stuff should go here", WebsView.listOfPrimePersons);
-        console.log({ theNodes });
+        condLog("FUNCTION: drawLines() : DRAWING LINES stuff should go here", WebsView.listOfPrimePersons);
+        condLog({ theNodes });
         let numSpotsMaxGen = 2 ** (WebsView.numGens2Display - 1);
         let processThisPrime = true;
         let alreadyConnected = [];
@@ -1357,6 +1373,10 @@ import { Utils } from "../shared/Utils.js";
         if (WebsView.viewMode == "Indi" || WebsView.viewMode == "Singles") {
             theXmultiplier = 1;
         }
+ 
+        const theSVGg = document.getElementById("svgG");
+        theSVGg.innerHTML = "";
+                    
 
         // FOR ALL VIEW MODES !!!!
         for (let pp = 0; pp < WebsView.listOfPrimePersons.length; pp++) {
@@ -1403,8 +1423,7 @@ import { Utils } from "../shared/Utils.js";
                     let genNumForDisplayPa = nextGenNum;
                     // condLog("WE HAVE A PRIMARY PERSON: ", index)
                     if (
-                        // WebsView.viewMode == "Singles" ||
-                        // WebsView.viewMode == "Unique" ||
+                        
                         WebsView.viewMode == "Repeats" ||
                         WebsView.viewMode == "Common"
                     ) {
@@ -1466,7 +1485,41 @@ import { Utils } from "../shared/Utils.js";
                         genNumForDisplay = theNode["newY"];
                     }
 
-                    const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
+                    var elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
+                    var elementMa = document.getElementById("lineForPerson" + index + "p" + pp + "Ma");
+                    var tempSVGhtml = document.getElementById("svgG").innerHTML;
+                    let needToUpdateSVGhtml = false;
+                    if (!elementPa) {
+                        condLog("RESET : lineForPerson" + index + "p" + pp + "Pa");
+                        // WebsView.logLines();
+                        tempSVGhtml +=
+                            `<polyline id="` +
+                            "lineForPerson" +
+                            index +
+                            "p" +
+                            pp +
+                            "Pa" + `" display="block" points="0,0 200.00000000000003,-60" style="fill:none;stroke-width: 2px; stroke:Blue" />`;
+                        needToUpdateSVGhtml = true;                     
+                    }
+                    if (!elementMa) {
+                        tempSVGhtml +=
+                        `<polyline id="` +
+                        "lineForPerson" +
+                        index +
+                        "p" +
+                        pp +
+                        "Ma" +
+                        `" display="block" points="0,0 200.00000000000003,-60" style="fill:none;stroke-width: 2px; stroke:HotPink" />`;
+                        needToUpdateSVGhtml = true;                     
+                    }
+                    if (needToUpdateSVGhtml == true) {
+                        document.getElementById("svgG").innerHTML = tempSVGhtml;
+                    }
+                    
+                    elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");                            
+                    elementMa = document.getElementById("lineForPerson" + index + "p" + pp + "Ma");
+                    
+
                     let useSteps = defaultUseStepsValue; // flag to determine whether to use STEPS to get from child to Pa  (or Ma) - versus a straight (diagonal) line to connect them
                     let useSteps4Pa = false;
                     let useSteps4Ma = false;
@@ -1559,8 +1612,13 @@ import { Utils } from "../shared/Utils.js";
                             elementPa.setAttribute("display", "none");
                         }
                     }
+                    // console.log(
+                    //     "After SET Attributes for " + elementPa.getAttribute("id"),
+                    //     elementPa.getAttribute("points")
+                    // );
+                    
+                    
 
-                    const elementMa = document.getElementById("lineForPerson" + index + "p" + pp + "Ma");
                     if (elementMa) {
                         theNodeMa = findMatchingNodeByAhnNum(2 * index + 1, theNodes, pp);
                         if (
@@ -1760,6 +1818,7 @@ import { Utils } from "../shared/Utils.js";
                             theXmultiplier * X + "," + Y + " " + theXmultiplier * Xpa + "," + Ypa
                         );
                     }
+                    // console.log( elementPa.getAttribute("id"), elementPa.getAttribute("points"));
 
                     if ((useSteps == true || useSteps4Pa == true) && elementPa.getAttribute("display") == "block") {
                         // NOTE:  Can't get closer than Ypa + 25
@@ -1789,6 +1848,7 @@ import { Utils } from "../shared/Utils.js";
                         if (theLineClr == undefined) {
                             theLineClr = LineColourArray[thisNodesID % LineColourArray.length];
                         }
+                        condLog(elementPa.getAttribute("id"), elementPa.getAttribute("points"));
                         if (isAlreadyConnected) {
                             // do NOTHING
                             elementPa.setAttribute(
@@ -1895,6 +1955,8 @@ import { Utils } from "../shared/Utils.js";
                     // elementPa.setAttribute("y1", Y);
                     // elementPa.setAttribute("x2", Xpa);
                     // elementPa.setAttribute("y2", Ypa);
+                    // console.log(elementPa.getAttribute("id"), elementPa.getAttribute("points"));
+
                     if (elementMa) {
                         elementMa.setAttribute(
                             "points",
@@ -1955,14 +2017,18 @@ import { Utils } from "../shared/Utils.js";
                     // elementMa.setAttribute("y1", Y);
                     // elementMa.setAttribute("x2", Xma);
                     // elementMa.setAttribute("y2", Yma);
+                    // console.log(elementPa.getAttribute("id"), elementPa.getAttribute("points"));
                 }
             }
         }
 
+        condLog("in the middle of DRAWING LINES");
+        WebsView.logLines();
+
         // NOW ... LET's SEE IF THERE ARE SOME CONNECTORS that WE NEED TO RE-DO
 
         if (connectorsArray.length > 0) {
-            console.log("LUCY - WE HAVE SOME CONNECTING TO DO !!!!");
+            condLog("LUCY - WE HAVE SOME CONNECTING TO DO !!!!");
             connectorsArray.sort(function (c1, c2) {
                 if (c1.genNum != c2.genNum) {
                     return c1.genNum - c2.genNum;
@@ -1972,7 +2038,7 @@ import { Utils } from "../shared/Utils.js";
                     return c1.y1 - c2.y1;
                 }
             });
-            condLog(connectorsArray);
+            condLog({connectorsArray});
 
             let yAvailableSlots = [];
             let yParentGenSlotsUsed = [];
@@ -2078,7 +2144,8 @@ import { Utils } from "../shared/Utils.js";
             }
         }
 
-        console.log("done DRAWING LINES");
+        condLog("done DRAWING LINES");
+        WebsView.logLines();
     };
 
     WebsView.comingSoon = function (num) {
@@ -2461,7 +2528,7 @@ import { Utils } from "../shared/Utils.js";
                 "Only ancestors who appear in the family trees of all starting individuals will be shown, connected by multiple lines to the web.";
 
             if (WebsView.yDir == 1) {
-                console.log("ADDING CommonAncNum yDIR == 1");
+                condLog("ADDING CommonAncNum yDIR == 1");
                 document.getElementById("ModeTitleArea").innerHTML =
                     "<H3 class='marginBottomZero'>Ancestor-in-Common Web<br/>to <div style='display:inline-block' id=IndiSingleName>" +
                     allNamesSelector +
@@ -2470,7 +2537,7 @@ import { Utils } from "../shared/Utils.js";
                     " [ <span id=CommonAncNum>1 of 6</span> ] " +
                     "<A style='cursor:pointer;' onclick='WebsView.commonAncestorNum++; WebsView.redraw();'><font size=+2>&rarr;</font></A>";
             } else {
-                console.log("ADDING CommonAncNum yDIR != 1");
+                condLog("ADDING CommonAncNum yDIR != 1");
                 document.getElementById("ModeTitleArea").innerHTML =
                     "<H3 class='marginBottomZero'>Ancestor-in-Common Web " +
                     "<br/>from <div style='display:inline-block' id=CommonAncName>No One</div>" +
@@ -2507,12 +2574,15 @@ import { Utils } from "../shared/Utils.js";
     /** FUNCTION used to force a redraw of the Ancestor Webs, used when called from Button Bar after a parameter has been changed */
 
     WebsView.clearAll = function () {
+        condLog("FUNCTION: clearAll()");
         WebsView.myAncestorTree.drawNodes([]);
+        condLog("calling drawLines from clearAll() ");
         WebsView.drawLines([]);
+        WebsView.logLines();
     }
 
     WebsView.redraw = function () {
-        console.log("WebsView.multiViewPrimaries = ", WebsView.multiViewPrimaries);
+        condLog("WebsView.multiViewPrimaries = ", WebsView.multiViewPrimaries);
         condLog("WebsView.redraw");
         // condLog("Now theAncestors = ", WebsView.theAncestors);
         // thePeopleList.listAll();
@@ -2708,7 +2778,7 @@ import { Utils } from "../shared/Utils.js";
                 "Only ancestors who appear in the family trees of all starting individuals will be shown, connected by multiple lines to the web.";
 
             if (WebsView.yDir == 1) {
-                console.log("ADDING CommonAncNum yDIR == 1");
+                condLog("ADDING CommonAncNum yDIR == 1");
                 document.getElementById("ModeTitleArea").innerHTML =
                     "<H3 class='marginBottomZero'>Ancestor-in-Common Web<br/>to <div style='display:inline-block' id=IndiSingleName>" +
                     allNamesSelector +
@@ -2717,7 +2787,7 @@ import { Utils } from "../shared/Utils.js";
                     " [ <span id=CommonAncNum>1 of 6</span> ] " +
                     "<A style='cursor:pointer;' onclick='WebsView.commonAncestorNum++; WebsView.redraw();'><font size=+2>&rarr;</font></A>";
             } else {
-                console.log("ADDING CommonAncNum yDIR != 1");
+                condLog("ADDING CommonAncNum yDIR != 1");
                 document.getElementById("ModeTitleArea").innerHTML =
                     "<H3 class='marginBottomZero'>Ancestor-in-Common Web " +
                     "<br/>from <div style='display:inline-block' id=CommonAncName>No One</div>" + 
@@ -3017,7 +3087,7 @@ import { Utils } from "../shared/Utils.js";
     };
 
     WebsView.switchCommonAnc = function (whichType = 1) {
-        console.log("WebsView.switchCommonAnc", WebsView.listOfPrimePersons.length);
+        condLog("WebsView.switchCommonAnc", WebsView.listOfPrimePersons.length);
         // commonAncestorNum;
         // numOfLegitCommonAncs;
 
@@ -3042,7 +3112,7 @@ import { Utils } from "../shared/Utils.js";
     };
 
     WebsView.switchCommonsFor = function (whichType = 1) {
-        console.log("WebsView.switchCommonsFor", WebsView.listOfPrimePersons.length);
+        condLog("WebsView.switchCommonsFor", WebsView.listOfPrimePersons.length);
         // commonAncestorNum;
         // numOfLegitCommonAncs;
 
@@ -3147,7 +3217,7 @@ import { Utils } from "../shared/Utils.js";
      * Draw/redraw the tree
      */
     Tree.prototype.draw = function () {
-        condLog("Tree.prototype.draw");
+        condLog("FUNCTION : Tree.prototype.draw");
         if (this.root) {
             // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
             condLog(
@@ -3188,7 +3258,7 @@ import { Utils } from "../shared/Utils.js";
             }
 
             condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
-            console.log(" NODES in Tree.prototype.draw function = ", nodes);
+            condLog(" NODES in Tree.prototype.draw function = ", nodes);
 
             WebsView.listOfRepeatAncestors = WebsView.myAhnentafel.listOfRepeatAncestors(WebsView.numGens2Display);
             condLog("REPEAT ANCESTORS:", WebsView.listOfRepeatAncestors);
@@ -3281,7 +3351,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
                 // SET UP the special sub-heading for Individual Ancestor web
-                console.log("WebsView.listOfCommonAncestors:", WebsView.listOfCommonAncestors);
+                condLog("WebsView.listOfCommonAncestors:", WebsView.listOfCommonAncestors);
                 let numOfLegitCommonAncs = 0;
                 WebsView.listOfLegitCommonAncestors = [];
                 WebsView.listOfLegitCommonIDs = [];
@@ -3359,7 +3429,7 @@ import { Utils } from "../shared/Utils.js";
                     const element = nodes[index];
                     element["useThis"] = false;
                 }
-                console.log(
+                condLog(
                     "WebsView.listOfCommonAncestors",
                     WebsView.listOfCommonAncestors,
                     "WebsView.listOfLegitCommonAncestors",
@@ -3376,14 +3446,14 @@ import { Utils } from "../shared/Utils.js";
                 }
 
                 if (WebsView.listOfLegitCommonAncestors.length == 0) {
-                    console.log("NO COMMON ANNCESTORS for the COMMON / SINGLES !!!!");
+                    condLog("NO COMMON ANNCESTORS for the COMMON / SINGLES !!!!");
                     document.getElementById("SummaryMessageArea").innerText = "At " + WebsView.numGens2Display + " generations, there are 0 common ancestors.";
                     WebsView.clearAll();
                     return;
                 }
 
                 for (let repeaterIndex = startingRepeaterIndex; repeaterIndex <= endingRepeaterIndex; repeaterIndex++) {
-                    console.log(
+                    condLog(
                         "Need to find Peeps belonging to Common Ancestor # ",
                         { repeaterIndex },
                         WebsView.listOfLegitCommonAncestors[repeaterIndex],
@@ -3419,7 +3489,7 @@ import { Utils } from "../shared/Utils.js";
                                 index++
                             ) {
                                 const thisAhnNum = WebsView.listOfLegitCommonAncestors[repeaterIndex].Ahns2[index];
-                                console.log("Need to find the peeps in between AhnNum 1 and COMMON#3 AhnNum ", thisAhnNum);
+                                condLog("Need to find the peeps in between AhnNum 1 and COMMON#3 AhnNum ", thisAhnNum);
                                 setUseThisForNode(thisAhnNum, nodes, index3);
                             }
                         }
@@ -3447,14 +3517,18 @@ import { Utils } from "../shared/Utils.js";
             calculateNodePositions(nodes);
 
             // Draw the lines connecting the new NODEs
+            condLog("calling drawLines from prototype.draw() ");
             WebsView.drawLines(nodes);
+            WebsView.logLines;
 
             // Finally - draw the Nodes themselves!
+            condLog("calling drawNodes from prototype.draw() ");
             this.drawNodes(nodes);
+            WebsView.logLines;
 
             // Update the Summary Message based on how many repeat ancestors there are, etc..
             if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
-                console.log("Summary Msg Area Calc: ", WebsView.listOfLegitCommonAncestors);
+                condLog("Summary Msg Area Calc: ", WebsView.listOfLegitCommonAncestors);
                 const setLegitIDs = new Set (WebsView.listOfLegitCommonIDs);
                 const numLegitCommonAncestors = setLegitIDs.size;
                 showSummaryMessage(
@@ -3512,6 +3586,7 @@ import { Utils } from "../shared/Utils.js";
         // condLog("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
 
+        WebsView.logLines();
         // condLog("this.selector = ", this.selector);
 
         // Get a list of existing nodes
@@ -4080,6 +4155,8 @@ import { Utils } from "../shared/Utils.js";
             // and if needed a rotation based on the nameAngle
             // return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
+
+        WebsView.logLines();
     };
 
     function findPercentileForAhnNum(anAhnNum, orderedNodes, primeNum = 0) {
@@ -4166,14 +4243,14 @@ import { Utils } from "../shared/Utils.js";
             const element = nodes[index];
             if (element && element.ahnNum) {
                 if (element.ahnNum == thisAhnNum) {
-                    console.log("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
+                    condLog("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
                     if (whichPrime >= 0 && element.p != whichPrime) {
                         // do nothing
                         // condLog("do NOthing ", whichPrime, element.p, element.ahnNum);
                     } else {
                         // condLog("do SOMEthing ", whichPrime, element.p, element.ahnNum);
                         element["useThis"] = true;
-                        if (element.p == 2) { console.log("SET element p2:", element);}
+                        // if (element.p == 2) { console.log("SET element p2:", element);}
                         // condLog("USE THIS:", element);
                         if (thisAhnNum > 1) {
                             let newAhnNum = Math.floor(thisAhnNum / 2);
@@ -4334,11 +4411,11 @@ import { Utils } from "../shared/Utils.js";
     }
 
     function calculateNodePositions(nodes) {
-        console.log("BIG CALCULATIONS SHOULD GO HERE to do NODE POSITIONING PROPER", {nodes});
+        condLog("BIG CALCULATIONS SHOULD GO HERE to do NODE POSITIONING PROPER", {nodes});
         for (let index = 0; index < nodes.length; index++) {
             const element = nodes[index];
             if (element.ahnNum == 1) {
-                console.log("Node for p ", element.p, " @ " , element.newX);
+                condLog("Node for p ", element.p, " @ " , element.newX);
             }
         }
         let orderedNodes = [];
@@ -4493,8 +4570,8 @@ import { Utils } from "../shared/Utils.js";
         }
         // At this point, every ancestor has either a BLUE or RED theClr assigned to them
 
-        console.log(WebsView.listOfRepeatAncestors);
-        console.log("UNIQUE LIST BY ID:", uniqueListById);
+        condLog(WebsView.listOfRepeatAncestors);
+        condLog("UNIQUE LIST BY ID:", uniqueListById);
         condLog("UNIQUE Parents BY ID:", uniqueParentsByID);
 
         for (const Ps in uniqueParentsByID) {
@@ -5208,7 +5285,7 @@ import { Utils } from "../shared/Utils.js";
             if (WebsView.listOfLegitCommonAncestors.length == 0) {
                 // NO COMMON ANCESTORS ... need to give that message loud and clear !
 
-                console.log("NO COMMON ANCESTORS AT THIS LEVEL !!!!");
+                condLog("NO COMMON ANCESTORS AT THIS LEVEL !!!!");
                 return;
             }
             let theAncestorAtTop = WebsView.listOfLegitCommonAncestors[WebsView.commonAncestorNum - 1];
@@ -5236,8 +5313,8 @@ import { Utils } from "../shared/Utils.js";
                     getNameAsPerSettings(thePeopleList[WebsView.listOfPrimePersons[WebsView.currentPrimeNum]]).length
                 );
         
-            console.log({maxWidth});
-            console.log({newOrder});
+            condLog({maxWidth});
+            condLog({newOrder});
 
             for (let index = 0; index < newOrder.length; index++) {
                 const newElement = newOrder[index][4];
@@ -5277,13 +5354,13 @@ import { Utils } from "../shared/Utils.js";
                 maxNumsPerGen = Math.max(maxNumsPerGen, numsPerGen[thisEsGen]);
             }
 
-            console.log("Number per Generations is :", numsPerGen);
-            console.log("Number of Xs per Generations is :", XsPerGen);
-            console.log("Number of Ahns per Generations is :", AhnsPerGen);
+            condLog("Number per Generations is :", numsPerGen);
+            condLog("Number of Xs per Generations is :", XsPerGen);
+            condLog("Number of Ahns per Generations is :", AhnsPerGen);
             if (maxNumsPerGen > 2) {
                 maxWidth = (maxWidth * maxNumsPerGen) / 2;
             }
-            console.log("ACTUAL MaxWidth used: ", maxWidth, "based on " + maxNumsPerGen + " peeps at busiest generation");
+            condLog("ACTUAL MaxWidth used: ", maxWidth, "based on " + maxNumsPerGen + " peeps at busiest generation");
             for (const key in numsPerGen) {
                 if (Object.hasOwnProperty.call(numsPerGen, key)) {
                     const numThisGen = numsPerGen[key];
@@ -5455,7 +5532,7 @@ import { Utils } from "../shared/Utils.js";
         for (let index = 0; index < nodes.length; index++) {
             const element = nodes[index];
             if (element.ahnNum == 1) {
-                console.log("Finally, Node for p ", element.p, " @ ", element.newX);
+                condLog("Finally, Node for p ", element.p, " @ ", element.newX);
             }
         }
     }
@@ -5478,7 +5555,7 @@ import { Utils } from "../shared/Utils.js";
             }
             listOfAhnsToUse = WebsView.listOfAhnentafels;
         }
-        console.log("WebsView.viewMode:", WebsView.viewMode, WebsView.viewMode.indexOf("Multi"));
+        condLog("WebsView.viewMode:", WebsView.viewMode, WebsView.viewMode.indexOf("Multi"));
         if (WebsView.viewMode == "Common" || WebsView.viewMode == "Singles") {
             listOfAhnsToUse = WebsView.listOfAhnentafels;
         }
@@ -6157,7 +6234,7 @@ import { Utils } from "../shared/Utils.js";
     }
 
     function recalculateCommonNames() {
-        console.log("RECALCULATING COMMMON PEEPS NOW", WebsView.multiViewPrimaries);
+        condLog("RECALCULATING COMMMON PEEPS NOW", WebsView.multiViewPrimaries);
         WebsView.listOfCommonAncestors = [];
 
         // IF there are ancestors in common - we only have to start with Ahnentafel 0 because they HAVE to be in that one at the very least to be in common with all
@@ -6176,7 +6253,7 @@ import { Utils } from "../shared/Utils.js";
         let index2 = WebsView.multiViewPrimaries[1];
         let index3 = "";
         if (!index2 || !WebsView.listOfAhnentafels[index2] || !WebsView.listOfAhnentafels[index2].list) {
-            console.log("It's TOO SOON .... there isn't a fully formed WebsView.listOfAhnentafels[index2].list YET !");
+            condLog("It's TOO SOON .... there isn't a fully formed WebsView.listOfAhnentafels[index2].list YET !");
             return;
         }
         let commonElements = findCommonElements(WebsView.listOfAhnentafels[index1].list, WebsView.listOfAhnentafels[index2].list);
@@ -6187,7 +6264,7 @@ import { Utils } from "../shared/Utils.js";
                 WebsView.listOfAhnentafels[index3].list
             );
         }
-        console.log({ commonElements }, index1, index2, WebsView.multiViewPrimaries, WebsView.listOfAhnentafels);
+        condLog({ commonElements }, index1, index2, WebsView.multiViewPrimaries, WebsView.listOfAhnentafels);
 
         // for (const p in WebsView.listOfAhnentafels[0].listByPerson) {
         for (const pp in commonElements) {
@@ -6195,7 +6272,7 @@ import { Utils } from "../shared/Utils.js";
             if (p == 0 ) {
                 continue;
             }
-            console.log("for p = ", p, index1, index2, index3);
+            condLog("for p = ", p, index1, index2, index3);
             const element1 = WebsView.listOfAhnentafels[index1].listByPerson[p];
             const element2 = WebsView.listOfAhnentafels[index2].listByPerson[p];
             let element3 = null;
@@ -6250,7 +6327,7 @@ import { Utils } from "../shared/Utils.js";
                     }
                 }
 
-                console.log(
+                condLog(
                     "Common ?? ",
                     p,
                     element1,
@@ -6275,7 +6352,7 @@ import { Utils } from "../shared/Utils.js";
             }
         }
 
-        console.log("AFTER that ... WebsView.listOfCommonAncestors = ", WebsView.listOfCommonAncestors);
+        condLog("AFTER that ... WebsView.listOfCommonAncestors = ", WebsView.listOfCommonAncestors);
         // for (const p in WebsView.listOfAhnentafels[0].listByPerson) {
 
         // }
