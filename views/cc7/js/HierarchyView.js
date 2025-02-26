@@ -5,9 +5,9 @@ export class HierarchyView {
     static buildView() {
         window.visibleDegrees = 0;
         const hierarchySection = $(
-            "<section id='hierarchyView'><menu><button class='button small' id='showAllDegrees'>Expand All</button>" +
-                "<button id='showOneMoreDegree' class='button small'>+</button>" +
-                "<button id='showOneFewerDegree' class='button small'>−</button>" +
+            "<section id='hierarchyView'><menu><button class='btn btn-secondary btn-sm' id='showAllDegrees'>Expand All</button>" +
+                "<button id='showOneMoreDegree' class='btn btn-secondary btn-sm'>+</button>" +
+                "<button id='showOneFewerDegree' class='btn btn-secondary btn-sm'>−</button>" +
                 "</menu><ul></ul></section>"
         );
         hierarchySection.insertBefore($("#peopleTable"));

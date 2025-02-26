@@ -54,8 +54,8 @@ export class CC7Notes {
                 </select>
                 </label>
                 <textarea id="noteBox${person.Id}"></textarea>
-                <button class="deleteNoteBtn small button" title="Delete the note.">Delete</button>
-                <button class="cancelNoteBtn small button" title="Close and discard any changes.">Cancel</button>
+                <button class="deleteNoteBtn btn btn-secondary btn-sm" title="Delete the note.">Delete</button>
+                <button class="cancelNoteBtn btn btn-secondary btn-sm" title="Close and discard any changes.">Cancel</button>
                 <span> Changes are saved automatically</span
             </div>`
         );

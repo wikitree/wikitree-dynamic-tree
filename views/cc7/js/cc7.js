@@ -274,6 +274,7 @@ class CC7 {
         "Name",
         "Nicknames",
         "NoChildren",
+        "PhotoData",
         "Prefix",
         "Privacy",
         "RealName",
@@ -305,9 +306,10 @@ class CC7 {
         Settings.restoreSettings();
         $(selector).html(
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
+            <div class="mt-1">
             <button
                 id="getPeopleButton"
-                class="btn btn-primary btn-sm"
+                class="btn btn-primary btn-sm ms-1 me-1"
                 title="Get a list of connected people up to this degree">
                 Get CC3</button
             ><select id="cc7Degree" title="Select the degree of connection">
@@ -318,30 +320,35 @@ class CC7 {
                 <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="7">7</option></select
-            ><button id="getDegreeButton" class="btn btn-secondary btn-sm" title="Get only people connected at the indicated degree">
+            ><button id="getDegreeButton" class="btn btn-secondary btn-sm ms-1 me-3"
+                title="Get only people connected at the indicated degree">
                 Get Degree 3 Only</button
-            ><button id="cancelLoad" title="Cancel the current loading of profiles." class="btn btn-secondary btn-sm">
+            ><button id="cancelLoad" class="btn btn-primary btn-sm"
+                title="Cancel the current loading of profiles.">
                 Cancel</button
-            ><button id="savePeople" title="Save this data to a file for faster loading next time." class="btn btn-secondary btn-sm">
+            ><button id="savePeople" class="btn btn-secondary btn-sm ms-1"
+                title="Save this data to a file for faster loading next time.">
                 Save</button
-            ><button id="loadButton" class="btn btn-secondary btn-sm" title="Load a previously saved data file.">Load A File</button
-            ><input
+            ><button id="loadButton" class="btn btn-secondary btn-sm ms-1"
+                title="Load a previously saved data file.">
+                Load A File</button
+            ><input class="form-check-input ms-2"
               id="getExtraDegrees"
               type="checkbox"
               title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate." />
-            <label
+            <label class="form-check-label"
               for="getExtraDegrees"
-              title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate."
-              class="right">
+              title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate.">
               Improve count accuracy</label
             ><input type="file" id="fileInput" style="display: none"/>
             <input type="file" id="noteFileInput" style="display: none"/>
             <span id="adminButtons">
-            <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
-            <span id="help" title="About this">?</span>
+              <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
+              <span id="help" title="About this">?</span>
             </span>
             ${Settings.getSettingsDiv()}
             <div id="explanation" class="pop-up">${CC7.#helpText}</div>
+            </div>
             </div>`
         );
 
@@ -387,10 +394,10 @@ class CC7 {
         $("#settingsButton").off("click").on("click", CC7.toggleSettings);
         $("#saveSettingsChanges")
             .html("Apply Changes")
-            .addClass("small button")
+            .addClass("btn-sm")
             .off("click")
             .on("click", CC7.settingsChanged);
-        $("#settingsDIV").addClass("pop-up").css("width", "300");
+        $("#settingsDIV").addClass("pop-up").css("width", "400");
 
         $("#cc7Container")
             .off("dblclick", ".pop-up")
@@ -414,24 +421,27 @@ class CC7 {
         Settings.renderSettings();
         CC7.setInfoPanelMessage();
 
-        // These 2 buttons are defined in Settings, but I could not get the setting's onClick function definition
+        // These 3 buttons are defined in Settings.js, but I could not get the setting's onClick function definition
         // to work so I am just forcing the issue here
         $("#notes_functions_backupNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 CC7Notes.backupNotes();
             });
         $("#notes_functions_deleteNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 CC7Notes.deleteAllNotes();
             });
         $("#notes_functions_restoreNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
@@ -1574,6 +1584,7 @@ class CC7 {
                 "#peopleTable",
                 "#statsView",
                 "#missingLinksTable",
+                "#circlesDisplay",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",

@@ -27,7 +27,7 @@
  * Origin branch for this is https://github.com/faceless2/wikitree-dynamic-tree/
  */
 
-if (typeof View != "function") { function View() { } } // To allow debugging in node.js
+if (typeof View == "undefined") { globalThis.View = ()=>{}; } // To allow debugging in node.js
 
 class SlippyTree extends View {
 
@@ -107,7 +107,6 @@ class SlippyTree extends View {
    </g>
   </svg>
 
-  <div class="relationshipName"></div>
   <div class="personMenu hidden">
    <div class="output-name text-selectable"></div>
    <div data-action="focus">Focus</div>
@@ -120,6 +119,8 @@ class SlippyTree extends View {
   </div>
 
  </div>
+
+ <div class="relationshipName"></div>
 
  <a class="slippy-help-button"></a>
  <div class="loader"></div>
@@ -492,6 +493,16 @@ class SlippyTree extends View {
                 this.reposition({});
             });
             this.state.resizeObserver.observe(this.state.container);
+            this.state.footerHoverListener = (e) => {
+                if (document.documentElement.classList.contains("compact-footer")) {
+                    e.target.classList.toggle("hover", e.type == "mouseenter");
+                }
+            };
+            if (document.querySelector("footer") != null) {
+                document.querySelector("footer").addEventListener("mouseenter", this.state.footerHoverListener);
+                document.querySelector("footer").addEventListener("mouseleave", this.state.footerHoverListener);
+                document.documentElement.classList.add("compact-footer");
+            }
 
             // We maintain our state in the URL hash, alongside some other properties
             // that apply to all views. We need to then ignore this if the view is reloaded
@@ -543,6 +554,9 @@ class SlippyTree extends View {
         // Remember this object persists even when other views are selected.
         // Clear out all state - it's all under "this.state" now - and disconnect resize observer
         this.state.resizeObserver.disconnect();
+        document.querySelector("footer").removeEventListener("mouseenter", this.state.footerHoverListener);
+        document.querySelector("footer").removeEventListener("mouseleave", this.state.footerHoverListener);
+        document.documentElement.classList.remove("compact-footer");
         if (this.#VIEWPARAM) {
             let v = new URLSearchParams(window.location.hash.substring(1));
             v.delete(this.#VIEWPARAM);
@@ -1193,11 +1207,8 @@ class SlippyTree extends View {
             // Re-add edges, people, labels in priority order
             for (const person of ordered) {
                 if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
-                if (typeof person.x != "number") {
-                    person.x = person.tx;
-                }
-                if (typeof person.y != "number") {
-                    person.y = person.ty;
+                if (typeof person.x != "number" || typeof person.y != "number") {
+                    person.x = person.y = 0;        // INITIAL POSITION: from center
                 }
             }
             if (this.browser) {
@@ -1217,11 +1228,8 @@ class SlippyTree extends View {
                 let focusedges = [];
                 for (const person of ordered) {
                     if (isNaN(person.tx) || isNaN(person.ty)) throw new Error("Person="+person+" g="+person.generation+" tx="+person.tx+" ty="+person.ty);
-                    if (typeof person.x != "number") {
-                        person.x = person.tx;
-                    }
-                    if (typeof person.y != "number") {
-                        person.y = person.ty;
+                    if (typeof person.x != "number" || typeof person.y != "number") {
+                        person.x = person.y = 0;        // INITIAL POSITION: from center
                     }
                     peoplepane.appendChild(person.svg);
                 }
@@ -2251,7 +2259,7 @@ class SlippyTree extends View {
             }
         };
 
-        if (WikiTreeAPI && WikiTreeAPI.postToAPI) {
+        if (typeof WikiTreeAPI != "undefined" && WikiTreeAPI.postToAPI) {
             // We need to send "token" and do a POST on the live site, apparently.
             // Tap into WikiTreeAPI for this to future-proof for any other requirements.
             if (this.debug) console.log("Load " + JSON.stringify(usedparams));

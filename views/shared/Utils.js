@@ -23,6 +23,59 @@ export class Utils {
     }
 
     /**
+     * Variables and Functions to deal with PopUps and rolling them up via ESCAPE key
+     * 
+     * based on logic from CC7Views, implemented to work in other Tree Apps
+     * 
+     * variable: #nextZLevel keeps track of the Z level of the most recent (highest) popup
+     * using getNextZlevel and setNextZLevel functions
+     * 
+     * 
+     * 
+     */
+    static #nextZLevel = 99999;
+    static firstTreeAppPopUpPopped = false ;
+
+    static getNextZLevel() {
+        return ++Utils.#nextZLevel;
+    }
+
+    static setNextZLevel(n) {
+        Utils.#nextZLevel = n;
+    }
+
+    static closeTopPopup(e) {
+            condLog("closeTopPopUp");
+                if (e.key === "Escape") {
+                    // Find the popup with the highest z-index
+                    condLog("ESCAPE KEY in UTILS / document");
+                    const [lastPopup, highestZIndex] = Utils.findTopPopup();
+        
+                    // Close the popup with the highest z-index
+                    if (lastPopup) {                        
+                        condLog("GOING to SLIDE UP the Fan Chart lastPopup")
+                        lastPopup.slideUp("fast");
+                        setNextZLevel(highestZIndex);
+                    }
+                }
+            }
+            
+    static findTopPopup() {
+            condLog("findTopPopup");
+            // Find the popup with the highest z-index
+            let highestZIndex = 0;
+            let lastPopup = null;
+            $(".pop-up:visible").each(function () {
+                const zIndex = parseInt($(this).css("z-index"), 10);
+                if (zIndex > highestZIndex) {
+                    highestZIndex = zIndex;
+                    lastPopup = $(this);
+                }
+            });
+            return [lastPopup, highestZIndex];
+        }
+
+    /**
      * Append a gif of a shaking tree as an image with id 'tree' to the HTML element with the id given in containerId
      * if 'tree' element does not exist. Otherwise, show the image using the jQuery slieDown() method.
      * @param {*} containerId (Optional, default="view-container") The element to which the image should
