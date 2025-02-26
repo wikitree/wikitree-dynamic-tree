@@ -61,13 +61,14 @@ export class CirclesView {
         <div id="circlesDisplay">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
-                <label><input type=radio   name=circlesDisplayType id=displayType_dot value=dot checked> <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
+                <label><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
                 <label><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_inits value=inits> ABC</label> &nbsp;&nbsp;
+                <label><input type=radio   name=circlesDisplayType id=displayType_inits value=inits checked> ABC</label> &nbsp;&nbsp;
                 <label><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
                 <label><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_filled" checked> Fill circles</label>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_BandW" > Black & White</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_GrayAncs"  > Grayify Ancestors</label>
             </div>
                 
             <div id=circlesDIV4SVG><svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg></div>
@@ -404,9 +405,20 @@ export class CirclesView {
         } else if (
             person.Relationship &&
             person.Relationship.full &&
+            (person.Relationship.full == "father"  ||
+                person.Relationship.full == "mother"  ||
+                person.Relationship.full == "parent" )
+        ) {
+            thisClr = "gray";
+            textClr = "white";
+        } else if (
+            person.Relationship &&
+            person.Relationship.full &&
+            CirclesView.circlesGrayAncs == true && 
             (person.Relationship.full.indexOf("father") > -1 ||
-                person.Relationship.full.indexOf("mother") > -1 ||
-                person.Relationship.full.indexOf("parent") > -1)
+                    person.Relationship.full.indexOf("mother") > -1 ||
+                    person.Relationship.full.indexOf("parent") > -1
+            )
         ) {
             thisClr = "gray";
             textClr = "white";
@@ -671,6 +683,7 @@ export class CirclesView {
         CirclesView.dotRadius = circleTypeVariables[CirclesView.displayType].dotRadius;
         CirclesView.circleFilled = document.getElementById("displayType_filled").checked;
         CirclesView.circlesBandW = document.getElementById("displayType_BandW").checked;
+        CirclesView.circlesGrayAncs = document.getElementById("displayType_GrayAncs").checked;
 
         condLog("filled:", CirclesView.circleFilled);
 
@@ -895,13 +908,24 @@ export class CirclesView {
                 //     }
                 // };
 
+                let numDegreesForPopup = person.Meta.Degrees + " " + "degrees";
+                if (person.Meta.Degrees == 1) {
+                    numDegreesForPopup = "1 degree";
+                }
+                if (person.Meta.Degrees == 0) {
+                    numDegreesForPopup = "Primary";
+                }
+                // console.log("Does this person have META degrees ??", person);
+                // CirclesView.PersonCodesObject[person.Id]._data.CodesLongList[0].CirclesView.PersonCodesObject[person.Id];
+
                 window.personPopup.popupHTML(person, {
                     type: "CC",
-                    person: {_data:CirclesView.PersonCodesObject[person.Id]},
+                    person: { _data: CirclesView.PersonCodesObject[person.Id] },
                     leafCollection: CirclesView.theLeafCollection,
-                    peopleList : CirclesView.PersonCodesObject,
+                    peopleList: CirclesView.PersonCodesObject,
                     appID: "cc7",
-                    SettingsObj : Settings
+                    SettingsObj: Settings,
+                    extra: { degree: numDegreesForPopup },
                 });
 
                 console.log("CirclesView.personPopup");
