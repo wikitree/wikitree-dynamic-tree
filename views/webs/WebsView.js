@@ -1609,7 +1609,8 @@ import { Utils } from "../shared/Utils.js";
                                 }
                             }
                         } else {
-                            elementPa.setAttribute("display", "none");
+                            // elementPa.setAttribute("display", "none");
+                            elementPa.remove();
                         }
                     }
                     // console.log(
@@ -1671,7 +1672,8 @@ import { Utils } from "../shared/Utils.js";
                                 }
                             }
                         } else {
-                            elementMa.setAttribute("display", "none");
+                            // elementMa.setAttribute("display", "none");
+                            elementMa.remove();
                         }
                     }
 
@@ -2135,11 +2137,13 @@ import { Utils } from "../shared/Utils.js";
             for (let index = 2 ** (WebsView.numGens2Display - 1); index < 2 ** (WebsView.maxNumGens - 1); index++) {
                 const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
                 if (elementPa) {
-                    elementPa.setAttribute("display", "none");
+                    // elementPa.setAttribute("display", "none");
+                    elementPa.remove();
                 }
                 const elementMa = document.getElementById("lineForPerson" + index + "p" + pp + "Ma");
                 if (elementMa) {
-                    elementMa.setAttribute("display", "none");
+                    // elementMa.setAttribute("display", "none");
+                    elementMa.remove();
                 }
             }
         }

@@ -46,37 +46,75 @@ export class CirclesView {
 
         var popupDIV =
             '<div id=popupDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePopup();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
         var connectionPodDIV =
             '<div id=connectionPodDIV class="pop-up" style="display:none; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePodDIV();">' +
             SVGbtnCLOSE +
             "</A></span></div>";
 
-        popupDIV += connectionPodDIV;
+            
 
-        const circlesDisplay = $(`
+        var innerLegendBits =
+            `<P>Legend: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="orange"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC2</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="cyan"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC3</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="magenta"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC4</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="aquamarine"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC5</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="gold"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC6</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="deepskyblue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC7</text></svg>` + 
+            `<BR/>CC1: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="green "></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Primary</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="gray"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Parent</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="blue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Sibling</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="red"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Spouse</text></svg>` +
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="lime"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">Child</text></svg>` ;
+;
+        var legendDIV =
+            '<div id=legendDIV class="pop-up" style="display:block; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+            '<span style="color:red; align:left"><A onclick="document.getElementById(\'legendDIV\').style.display = \'none\'">' +
+            SVGbtnCLOSE +
+            "</A></span>" +
+            innerLegendBits +
+            "</div>";
+
+        popupDIV += connectionPodDIV + legendDIV;
+
+        let toggleLegendFunctionCode = 
+            `if (document.getElementById("legendDIV").style.display == "none") {
+                document.getElementById("legendDIV").style.display = "block";
+            } else {
+                document.getElementById("legendDIV").style.display = "none";
+            }`; 
+            
+
+        const circlesDisplay = $(
+            `
         <div id="circlesDisplay">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
-                <label><input type=radio   name=circlesDisplayType id=displayType_dot value=dot checked> <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_inits value=inits> ABC</label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
-                <label><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_filled" checked> Fill circles</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label id=fillCirclesLabel><input type=checkbox id="displayType_BandW" > Black & White</label>
+                <label title='Display coloured dot for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
+                <label title='Display first initial for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_ltr value=ltr> A</label> &nbsp;&nbsp;
+                <label title='Display all initials for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_inits value=inits checked> ABC</label> &nbsp;&nbsp;
+                <label title='Display first name of each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_fName value=fName > FName </label> &nbsp;&nbsp;
+                <label title='Display full name & lifespan of each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_all value=all > all  </label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  title='Toggle between solid and hollow circles' style='cursor:pointer;' ><input type=checkbox id="displayType_filled" checked> Fill circles</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  title='Toggle between colour and B&W' style='cursor:pointer;' ><input type=checkbox id="displayType_BandW" > Black & White</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <label  title='For Direct Ancestors, toggle between CC colour or Gray' style='cursor:pointer;' ><input type=checkbox id="displayType_GrayAncs"  > Grayify Ancestors</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <button title='Hide / Show Legend' onclick='` +
+                toggleLegendFunctionCode +
+                `' class='btn btn-primary btn-sm'>Legend</button>
             </div>
                 
             <div id=circlesDIV4SVG><svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg></div>
             ${popupDIV}
-        </div>`);
+        </div>`
+        );
         circlesDisplay.insertBefore($("#peopleTable"));
 
         $("#popupDIV").draggable();
         $("#connectionPodDIV").draggable();
+        $("#legendDIV").draggable();
 
         this.updateView();
 
@@ -94,7 +132,7 @@ export class CirclesView {
         });
     }
     static connectAllToPrimaryPerson(currentRootID) {
-        console.log({ currentRootID });
+        condLog({ currentRootID });
         let rootPeep = window.people.get(currentRootID);
         if (rootPeep) {
             CirclesView.updateFieldsInPersonCodesObject(currentRootID,"A0","A0-" + currentRootID);
@@ -312,7 +350,7 @@ export class CirclesView {
 
         CirclesView.changeDisplayType();
 
-        console.log({ sortedMap });
+        condLog({ sortedMap });
         function getLtrInitsName(person) {
             let theLIN = ".";
 
@@ -356,7 +394,7 @@ export class CirclesView {
     }
 
     static doCircle(person, thisDegree, newX, newY) {
-        console.log(CirclesView.displayType, person);
+        condLog(CirclesView.displayType, person);
         const blobColours = [
             "green",
             "lawngreen",
@@ -404,9 +442,20 @@ export class CirclesView {
         } else if (
             person.Relationship &&
             person.Relationship.full &&
+            (person.Relationship.full == "father"  ||
+                person.Relationship.full == "mother"  ||
+                person.Relationship.full == "parent" )
+        ) {
+            thisClr = "gray";
+            textClr = "white";
+        } else if (
+            person.Relationship &&
+            person.Relationship.full &&
+            CirclesView.circlesGrayAncs == true && 
             (person.Relationship.full.indexOf("father") > -1 ||
-                person.Relationship.full.indexOf("mother") > -1 ||
-                person.Relationship.full.indexOf("parent") > -1)
+                    person.Relationship.full.indexOf("mother") > -1 ||
+                    person.Relationship.full.indexOf("parent") > -1
+            )
         ) {
             thisClr = "gray";
             textClr = "white";
@@ -659,7 +708,7 @@ export class CirclesView {
             "<svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg>";
         let degreeCount = CirclesView.degreeCount;
         // let displayType = "dot";
-        console.log({ degreeCount });
+        condLog({ degreeCount });
         let circleTypeVariables = {
             dot: { dotRadius: 9 },
             ltr: { dotRadius: 9 },
@@ -671,6 +720,7 @@ export class CirclesView {
         CirclesView.dotRadius = circleTypeVariables[CirclesView.displayType].dotRadius;
         CirclesView.circleFilled = document.getElementById("displayType_filled").checked;
         CirclesView.circlesBandW = document.getElementById("displayType_BandW").checked;
+        CirclesView.circlesGrayAncs = document.getElementById("displayType_GrayAncs").checked;
 
         condLog("filled:", CirclesView.circleFilled);
 
@@ -683,7 +733,7 @@ export class CirclesView {
         // }
         for (let d = 1; d < 8; d++) {
             if (degreeCount[d] == 0) {
-                console.log("At CC" + d + " there are " + degreeCount[d] + " people - NO POLYGON");
+                condLog("At CC" + d + " there are " + degreeCount[d] + " people - NO POLYGON");
             } else {
                 // FORMULA for the Radius of a Regular n-sided Polygon with sidelength s (from centre of polygon to a vertex)
                 //      Radius = s / (2 * sin(180º / n))
@@ -895,16 +945,27 @@ export class CirclesView {
                 //     }
                 // };
 
+                let numDegreesForPopup = person.Meta.Degrees + " " + "degrees";
+                if (person.Meta.Degrees == 1) {
+                    numDegreesForPopup = "1 degree";
+                }
+                if (person.Meta.Degrees == 0) {
+                    numDegreesForPopup = "Primary";
+                }
+                // console.log("Does this person have META degrees ??", person);
+                // CirclesView.PersonCodesObject[person.Id]._data.CodesLongList[0].CirclesView.PersonCodesObject[person.Id];
+
                 window.personPopup.popupHTML(person, {
                     type: "CC",
-                    person: {_data:CirclesView.PersonCodesObject[person.Id]},
+                    person: { _data: CirclesView.PersonCodesObject[person.Id] },
                     leafCollection: CirclesView.theLeafCollection,
-                    peopleList : CirclesView.PersonCodesObject,
+                    peopleList: CirclesView.PersonCodesObject,
                     appID: "cc7",
-                    SettingsObj : Settings
+                    SettingsObj: Settings,
+                    extra: { degree: numDegreesForPopup },
                 });
 
-                console.log("CirclesView.personPopup");
+                condLog("CirclesView.personPopup");
             });
         });
     }

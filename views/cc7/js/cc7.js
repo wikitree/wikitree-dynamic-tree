@@ -52,7 +52,7 @@ class CC7 {
         </ul>
         <h3>Views</h3>
         <p>
-            Three different views of the data are available:
+            Six different views of the data are available:
         </p>
         <ul>
             <li>
@@ -69,6 +69,11 @@ class CC7 {
                 The <b>Missing Links View</b> shows people who might be missing parents, spouses, or children.
                 Adding these missing family members will grow your CC7 and
                 possibly find a new connection to the tree.
+            </li>
+            <li>
+                The <b>Circles View</b> shows a visual of people in the CC7 in concentric rings radiating from the primary person. 
+                Each person is represented by a circle that can be customized.  
+                Clicking on a circle will show the person's popup with more information, and a link to a connection popup, showing the connection(s) to the primary person.                
             </li>
         </ul>
         <p>Below are some tips related to each view.</p>
@@ -233,6 +238,13 @@ class CC7 {
                 </ul>
             </li>
         </ul>
+        <h3>Circles View</h3>
+        <ul>
+            <li>Use the controls in the button bar to customize the circles.</li>
+            <li>The Legend, Person Popup and Connection Pod are all draggable, as is the Circle View itself.</li>
+            <li>Click a circle to show the person's popup with more information.</li>   
+            <li>Click the link in the popup to show the connection(s) to the primary person.</li>             
+        </ul>
         <h3>Other points</h3>
         <ul>
             <li>Double-clicking this 'About' box, or clicking the red X in its top right corner will close it.</li>
@@ -240,7 +252,7 @@ class CC7 {
                 If you find problems with this page or have suggestions for improvements, let
                 <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641">Riël</a> or
                 <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Beacall-6">Ian</a>
-                know about it.
+                know about it.  Issues with the Circles View specifically can be addressed to <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Clarke-11007">Greg</a>.
             </li>
         </ul>`;
 
