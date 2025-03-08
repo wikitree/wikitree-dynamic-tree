@@ -339,6 +339,8 @@ main {
   border-top: 2px red solid;
   border-bottom: 3px red solid;
   width: 55px;
+  /* font-size: small; */
+  line-height: normal;
 }
 
 .mDateBox2 {
