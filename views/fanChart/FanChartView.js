@@ -14,6 +14,7 @@
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FanChartView, then calls a redraw
  *
  * Some SVG button icons from SVG Repo - open-licencesed SVG Vector and Icons website:  https://www.svgrepo.com/
+ * 
  */
 
 import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
@@ -2514,6 +2515,7 @@ import { Utils } from "../shared/Utils.js";
                 } else {
                     maxCross = Math.max(maxCross, height);
                     maxRad = Math.max(maxRad, width);
+                   
                 }
 
                 const person = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]];
@@ -2529,6 +2531,14 @@ import { Utils } from "../shared/Utils.js";
             console.log("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.ceil(maxRad) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
+
+            if ( (gen > 5 || (gen == 5 && FanChartView.maxAngle < 360)) &&
+                FanChartView.currentSettings["photo_options_showAllPics"] == true &&
+                FanChartView.currentSettings["photo_options_showPicsToN"] == true &&
+                gen < FanChartView.currentSettings["photo_options_showPicsToValue"]
+            ) {
+                newRadius4ThisGen += 50;
+            }
 
             if (newRadius4ThisGen > fanGenRadii[gen] || Math.abs(newRadius4ThisGen - fanGenRadii[gen]) > 20) {
                 updateNeeded = true;
@@ -4092,7 +4102,12 @@ import { Utils } from "../shared/Utils.js";
                     }
                     let photoDiv = "";
                     if (photoUrl) {
-                        photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                        let floatDirection = "left";
+                        if (thisPosNum >= numSpotsThisGen / 2) {
+                            floatDirection = "right";
+                        }
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection};" />`;
+                        // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
                     let containerClass = "staticPosition photoInfoContainer";
@@ -4144,7 +4159,13 @@ import { Utils } from "../shared/Utils.js";
                     }
                     let photoDiv = "";
                     if (photoUrl) {
-                        photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                        let floatDirection = "left";
+                        if (thisPosNum >= numSpotsThisGen / 2) {
+                            floatDirection = "right";
+                        }
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection};" />`;
+                            
+                        // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
                     let containerClass = "staticPosition photoInfoContainer";
@@ -4155,8 +4176,8 @@ import { Utils } from "../shared/Utils.js";
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="item">${photoDiv}</div>
+                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -4329,6 +4350,7 @@ import { Utils } from "../shared/Utils.js";
                 let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
                 let theWedgeInfoForBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
 
+                // marriage date calc
                 if (thisPosNum % 2 == 0) {
                     let mdateIDstarter = "mDateFor-" + ancestorObject.ahnNum ;
                     let mdateID = mdateIDstarter + "-date";
@@ -4346,39 +4368,28 @@ import { Utils } from "../shared/Utils.js";
                             // theMDateDIV = document.getElementById(mdateID);
                             // console.log(theG);
                         }
-                        // if (theG){ 
-                        //     theG.append("g").attrs({
-                        //          id: "mDateFor-" + ancestorObject.ahnNum,
-                        //          class: "floatAbove",
-                        //      })
-                        //      .append("foreignObject")
-                        //      .attrs({
-                        //          id: "mDateFor-" + ancestorObject.ahnNum + "inner",
-                        //          class: "centered mDateBox",
-                        //          width: "20px",
-                        //          height: "20px", // the foreignObject won't display in Firefox if it is 0 height
-                        //          // x: 25 * index,
-                        //          // y: 30 * genIndex + 5 * 300,
-                        //          //
-                        //          style: "display:none;", //  // CHANGED FOR BADGE TESTING
-                        //      })
-
-                        //      .style("overflow", "visible") // so the name will wrap
-                        //      .append("xhtml:div")
-                        //      .attrs({
-                        //          id: "mDateFor-" + ancestorObject.ahnNum + "-date",
-                        //          class: "centered mDateBox",
-                        //      })
-                        //      .html("m.<br/>28 Aug<br/>1987");
-                        // }
-
-                        // let newMDateDIV ='<div class="centered mDateBox" id="' + mdateID + '">m.<br/>28 Aug<br/>1987</div>';
+                        
                         
                     }
                 }
                 if (thisPersonsWedge) {
                     thisPersonsWedge.style.fill = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                     thisBkgdClr = thisPersonsWedge.style.fill;
+                    // console.log({thisBkgdClr});
+                    // if (thisGenNum % 2 == 0) {
+                    //     if (thisPosNum % 2 == 0) {
+                    //         thisBkgdClr = "orange";
+                    //     } else {
+                    //         thisBkgdClr = "lime";
+                    //     }
+                    // } else {
+                    //        if (thisPosNum % 2 == 0) {
+                    //            thisBkgdClr = "magenta";
+                    //        } else {
+                    //            thisBkgdClr = "cyan";
+                    //        }
+                    // }
+                    // thisPersonsWedge.style.fill = thisBkgdClr;
                 } else {
                     condLog("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
                 }
@@ -4495,6 +4506,22 @@ import { Utils } from "../shared/Utils.js";
             let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
             let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
 
+            let doDebug = false;
+            if (ancestorObject.ahnNum == 40){
+                doDebug = true;
+            }
+            if (doDebug) {
+                console.log(
+                    "POSITION node ",
+                    ancestorObject.ahnNum,
+                    {thisGenNum},
+                    {thisRadius},
+                    {prevCumulativeRadius},
+                    {thisCumulativeRadius},
+                    {fanGenRadii},
+                    {cumulativeGenRadii}
+                );
+            }
             let fontList = [
                 "fontBlack",
                 "fontDarkGreen",
@@ -4608,9 +4635,9 @@ import { Utils } from "../shared/Utils.js";
                 if (thisGenNum > 0) {
                     maxBoxWidthForThisGen =
                         ((FanChartView.maxAngle / 360) * 2 * Math.PI * prevCumulativeRadius) / numSpotsThisGen;
-                    if (thisGenNum > 5) {
-                        maxBoxWidthForThisGen = thisRadius;
-                        crossSpanToUse = thisCrossSpan;
+                    if (thisGenNum > 5 || (thisGenNum == 5 && FanChartView.maxAngle < 360)) {
+                        maxBoxWidthForThisGen = thisRadius - 10;
+                        crossSpanToUse = thisRadius - 10; //thisCrossSpan;
                     } else {
                         crossSpanToUse = maxBoxWidthForThisGen;
                     }
@@ -4618,6 +4645,16 @@ import { Utils } from "../shared/Utils.js";
 
                 theInfoBox.parentNode.parentNode.setAttribute("x", 0 - crossSpanToUse / 2);
                 theInfoBox.parentNode.parentNode.setAttribute("width", maxBoxWidthForThisGen);
+
+                if (doDebug) {
+                    console.log(
+                        "ADJUST node ",
+
+                        { maxBoxWidthForThisGen },
+                        { crossSpanToUse },
+                        
+                    );
+                }
 
                 // theInfoBox.parentNode.parentNode.setAttribute("width", 266);
                 // theInfoBox.parentNode.parentNode.setAttribute("x", -133);
@@ -4672,8 +4709,12 @@ import { Utils } from "../shared/Utils.js";
                     } */
                 } else {
                     // ORIENTATION for this rim is still "sideways" - vertical-ish, so width of box == radius
-                    theInfoBox.parentNode.parentNode.setAttribute("x", 0 - fanGenCrossSpan[thisGenNum] / 2);
-                    theInfoBox.parentNode.parentNode.setAttribute("width", fanGenCrossSpan[thisGenNum] - 6);
+                    theInfoBox.parentNode.parentNode.setAttribute("y", 0 - theInfoBox.clientHeight / 2); // - 100);
+                    // theInfoBox.parentNode.parentNode.setAttribute("x", 0 - fanGenCrossSpan[thisGenNum] / 2);
+                    // theInfoBox.parentNode.parentNode.setAttribute("width", fanGenCrossSpan[thisGenNum] - 6);
+                    if (theInfoBox.clientHeight > fanGenCrossSpan[thisGenNum]) {
+                        theInfoBox.style.backgroundColor = "yellow";
+                    }
                 }
             }
 
@@ -4827,7 +4868,7 @@ import { Utils } from "../shared/Utils.js";
             }
 
             // for AZURE ... tweak to slide up because of Extra ... maybe should have done this anyways ???
-            theInfoBox.parentNode.parentNode.setAttribute("y", theInfoBox.parentNode.parentNode.getAttribute("y") - 10);
+            // theInfoBox.parentNode.parentNode.setAttribute("y", theInfoBox.parentNode.parentNode.getAttribute("y") - 10);
 
             // AND ... FINALLY, LET'S TALK DATES & PLACES:
             // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
