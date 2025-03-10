@@ -223,7 +223,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             const tbl = d3
                 .select("#theSvg")
                 .insert("table", ":first-child")
-                .attr("class", "treeHeader")
+                .attr("class", "treeHeader table-borderless")
                 .attr("width", edgeFactor * (currentMaxShowGen - 1))
                 .style("margin-left", `${margin.left}px`);
             const tr = tbl.append("tr");
@@ -1030,7 +1030,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             if (mayChangeSpouse && person.getId() != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
-                button.className = "select-spouse-button";
+                button.className = "select-spouse-button btn btn-sm";
                 button.textContent = RIGHT_ARROW;
                 button.setAttribute("couple-id", couple.getId());
                 button.setAttribute("person-id", currentSpouse.getId());

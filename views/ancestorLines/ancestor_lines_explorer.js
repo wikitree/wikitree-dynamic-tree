@@ -123,45 +123,47 @@ export class AncestorLinesExplorer {
         this.selector = selector;
         $(selector).html(`<div id="aleContainer" class="ale">
             <div id="controlBlock" class="ale-not-printable">
-              <label for="generation"  title="The number of generations to fetch from WikiTree">Max Generations:</label
-              ><select id="generation" title="The number of generations to fetch from WikiTree">
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5" selected>5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-                <option value="11">11</option>
-                <option value="12">12</option>
-                <option value="13">13</option>
-                <option value="14">14</option>
-                <option value="15">15</option>
-                <option value="16">16</option>
-                <option value="17">17</option>
-                <option value="18">18</option>
-                <option value="19">19</option>
-                <option value="20">20</option>
-              </select>
-              <button id="getAncestorsButton" class="small button" title="Get ancestor data up to this generation from WikiTree">
-                Get 11 Generations and Draw Tree</button
-              ><button
-                id="savePeople"
-                title="Save the currently loaded data to a file for faster loading in future."
-                class="small button">
-                Save</button
-              ><button id="loadButton" class="small button" title="Load a previously saved data file and draw its tree.">
-                Load a File</button
-              ><button id="help-button" class="small button" title="About this application.">
-                ?</button
-              ><input id="fileInput" type="file" style="display: none" />
+              <div class="mb-1">
+                <label for="generation"  title="The number of generations to fetch from WikiTree">Max Generations:</label
+                ><select id="generation" title="The number of generations to fetch from WikiTree">
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5" selected>5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+                  <option value="16">16</option>
+                  <option value="17">17</option>
+                  <option value="18">18</option>
+                  <option value="19">19</option>
+                  <option value="20">20</option>
+                </select>
+                <button id="getAncestorsButton" class="btn btn-primary btn-sm" title="Get ancestor data up to this generation from WikiTree">
+                  Get 11 Generations and Draw Tree</button
+                ><button
+                  id="savePeople"
+                  title="Save the currently loaded data to a file for faster loading in future."
+                  class="btn btn-secondary btn-sm">
+                  Save</button
+                ><button id="loadButton" class="btn btn-secondary btn-sm"
+                  title="Load a previously saved data file and draw its tree.">
+                  Load a File</button
+                ><button id="help-button" class="btn btn-secondary btn-sm" title="About this application.">
+                  <b>?</b></button
+                ><input id="fileInput" type="file" style="display: none" />
+              </div>
               <div id="help-text">${AncestorLinesExplorer.#helpText}</div>
-              <br />
               <fieldset id="aleFieldset">
                 <legend id="aleOptions" title="Click to Close/Open the options">Options - click here to close/open</legend>
-                <table id="optionsTbl">
+                <table id="optionsTbl" class="table-borderless">
                   <tr>
                     <td colspan="5">
                       <label for="otherWtIds" title="Identify people of interest that need to be highlighted in the tree.">
@@ -226,7 +228,7 @@ export class AncestorLinesExplorer {
                     <td align="right">
                       <button
                         id="drawTreeButton"
-                        class="small button"
+                        class="btn btn-primary btn-sm"
                         title="Draw the tree, highlighting paths to the people of interest">
                         (Re-)Draw Tree
                       </button>
@@ -303,7 +305,7 @@ export class AncestorLinesExplorer {
                     </td>
                     <td colspan=4 rowspan=2>
                     <fieldset><legend title='Set what constitutes a "brick wall."'>Add to Brick Wall:</legend>
-                    <table>
+                    <table class="table-borderless">
                       <tr>
                         <td>
                           <input
@@ -396,7 +398,6 @@ export class AncestorLinesExplorer {
                         ${spell("Anonymize")} the living</label
                       >
                     </td>
-                    <td></td>
                   </tr>
                 </table>
               </fieldset>

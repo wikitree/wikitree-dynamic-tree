@@ -38,7 +38,7 @@ import { Utils } from "../shared/Utils.js";
     const FullAppName = "FanDoku Game";
     const AboutPreamble =
         "The FanDoku Game was originally created as a fusion of the popular Fan Chart app and the logic game of Sudoku.<br>It was created to live amongst the WikiTree family of Tree Apps during the HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 July 2023";
+    const AboutUpdateDate = "04 February 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = ""; // "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
@@ -188,6 +188,19 @@ import { Utils } from "../shared/Utils.js";
         );
     }
     fandokuCheer.loop = false;
+
+    var popupDIV =
+        '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+    var connectionPodDIV =
+        '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the FanDoku game
 
@@ -625,22 +638,22 @@ import { Utils } from "../shared/Utils.js";
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%" style="padding-left:10px;">' +
-            "<button id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
+            "<button class='btn btn-primary' title='Start the Fandoku Game now!' id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
             "<span id=preGameFans>" +
-            '<A onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
+            '<A title="Display Circle Chart (360º)" onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
+            ' <A title="Display Traditional Fan Chart (240º)" onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
+            ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
             "</span>" +
             "<span id=gameTimer style='display:none'>0:00</span>" +
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="center">' +
             "<span id=preGameGens>" +
-            ' <A onclick="FandokuView.numGens2Display -=1; FandokuView.redraw();">' +
+            ' <A title="Decrease # of generations displayed" onclick="FandokuView.numGens2Display -=1; FandokuView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
             "[ <span id=numGensInBBar>4</span> generations ]" +
-            ' <A onclick="FandokuView.numGens2Display +=1; FandokuView.redraw();">' +
+            ' <A title="Increase # of generations displayed" onclick="FandokuView.numGens2Display +=1; FandokuView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</span>" +
@@ -648,23 +661,27 @@ import { Utils } from "../shared/Utils.js";
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
-            "<button id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
-            "<button id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
-            ' <A onclick="FandokuView.toggleSettings();"><font size=+2>' +
+            "<button  title='Play another round of Fandoku!' class='btn btn-primary' id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
+            "<button  title='End the Game now' class='btn btn-secondary' id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
+            ' <A title="Adjust Settings"  onclick="FandokuView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>&nbsp;&nbsp;" +
-            "<A onclick=FandokuView.toggleAbout();>" +
+            "<A title='About this app' onclick=FandokuView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
-                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                ? "&nbsp;&nbsp;<A target=helpPage title='Open up Help (free space page) for this app' href='" +
+                  AboutHelpDoc +
+                  "'>" +
+                  SVGbtnHELP +
+                  "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial FanDoku game is loading ...</DIV>' +
             '<DIV id=FeedbackArea style="text-align:center; background-color:papayawhip;">Feedback and Directions and Encouragement will go here</DIV>';
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FandokuView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -719,7 +736,20 @@ import { Utils } from "../shared/Utils.js";
         // '</div>';
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
+        // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML + aboutHTML + settingsHTML + popupDIV;
+        container.innerHTML = "";
+
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+
+        // container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -728,9 +758,14 @@ import { Utils } from "../shared/Utils.js";
         FandokuView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -1883,10 +1918,15 @@ import { Utils } from "../shared/Utils.js";
         condLog(FandokuView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -2241,7 +2281,7 @@ import { Utils } from "../shared/Utils.js";
                     return `
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0; ">
+                    } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
                     ${photoDiv}
                     <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
                         person
@@ -2535,7 +2575,30 @@ import { Utils } from "../shared/Utils.js";
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, xy) {
+    Tree.prototype.personPopup  = function (person) {
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
+        personPopup.popupHTML(
+            person,
+            {
+                type: "Ahn",
+                ahNum: FandokuView.myAhnentafel.listByPerson[person._data.Id],
+                primaryPerson: thePeopleList[FandokuView.myAhnentafel.list[1]],
+                myAhnentafel: FandokuView.myAhnentafel,
+                SettingsObj: Utils,
+                extra: { hideConnectionIcon: true , hideSpouse: true},
+            },
+            AboutAppIcon,
+            "fandoku"
+        );
+            
+        // console.log("FandokuView.personPopup");
+    };
+    
+    
+    function placeHolder4PersonPopup (person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),

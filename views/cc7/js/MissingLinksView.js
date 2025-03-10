@@ -5,7 +5,7 @@ import { CC7Notes } from "./CC7Notes.js";
 export class MissingLinksView {
     static async buildView() {
         const missingLinksTable = $(`
-        <table id="missingLinksTable">
+        <table id="missingLinksTable" class="table">
             <thead>
                 <tr>
                     <th scope="column">Privacy</th>

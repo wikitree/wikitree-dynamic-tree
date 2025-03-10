@@ -1,0 +1,157 @@
+/*
+* 2024 Navs
+*/
+
+.btn-link {
+  color: #25422d !important;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 1.125rem;
+}
+
+.dropdown-toggle:hover {
+  color: #008000;
+}
+
+.dropdown-menu {
+  z-index: 9999;
+}
+
+.dropdown-menu.show {
+  border-color: #666;
+}
+
+.dropdown-menu li {
+  margin-bottom: 0.125rem;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: rgba(255,238,153,0.3);
+}
+
+/* jump links */
+ul.jump--links li {
+  display: inline;
+  margin-right: 15px;
+}
+
+  ul.jump--links li:last-child { margin-right: 0; }
+
+/* nav links */
+ul.nav a.nav-link {
+  color: #25422D;
+  font-size: 1.125rem;
+  text-decoration: none;
+}
+
+  ul.nav a.nav-link:hover {
+    color: #008000; 
+  }
+
+  ul.nav a.nav-link.active {
+    background-color: transparent;
+    color: #25422D;
+  }
+
+/* nav pills */
+.nav.nav-pills {
+  margin-left: 0 !important;
+}
+
+.nav.nav-pills .nav-link {
+  background-color: #F0F0EB;
+  color: #008000 !important;
+  font-size: 1rem;
+}
+
+  .nav.nav-pills .nav-link.active {
+    background-color: #008000;
+    color: #fff !important;
+  }
+
+.nav.nav-pills .nav-item {
+  margin-right: 0.5rem;
+}
+
+  .nav.nav-pills .nav-item:last-child {
+    margin-right: 0;
+  }
+
+/* vertical nav */
+
+ul.nav.flex-column .nav-item {
+  padding-left: 1rem;
+  margin-bottom: 1rem;
+}
+
+ul.nav.flex-column .nav-link {
+  color: #008000;
+  padding: 0;
+}
+
+ul.nav.flex-column .nav-link.active {
+  font-weight: bold;
+}
+
+/* category nav */
+#main .category--links,
+#content + .category--links {
+  background-color: transparent;
+  border-bottom: 2px solid #F0F0EB;
+  border-top: 2px solid #F0F0EB;
+  font-size: 1rem;
+}
+
+/* mobile styles */
+@media (max-width: 980px) {
+
+  .btn-search {
+    padding-right: 0;
+  }
+
+  .btn-close {
+    background-image: url('/images/icons/icon-plus.svg');
+    background-size: 40px 40px;
+    opacity: 1;
+    transform: rotate(45deg);
+  }
+
+  .offcanvas-body {
+    padding: 0;
+  }
+  
+  .btn-group {
+    border-bottom: 1px solid #F0F0EB;
+    border-radius: 0;
+    display: block;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    position: relative;
+    width: 100%;
+  }
+
+  .btn-logout {
+    border-bottom: none;
+  }
+
+  .btn-group .btn {
+    text-align: left;
+    width: 100%;
+  }
+
+  .dropdown-toggle { position: relative; }
+
+  .dropdown-toggle::after {
+    position: absolute;
+    top: 16px;
+    right: 15px;
+  }
+
+  ul.dropdown-menu {
+    border: none;
+    width: 100%;
+  }
+
+}

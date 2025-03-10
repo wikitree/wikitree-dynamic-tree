@@ -1,6 +1,7 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
 import { MissingLinksView } from "./MissingLinksView.js";
+import { CirclesView } from "./CirclesView.js";
 import { StatsView } from "./StatsView.js";
 import { Settings } from "./Settings.js";
 import { CC7Notes } from "./CC7Notes.js";
@@ -92,11 +93,17 @@ class PeopleTable {
                 `<th data-order='' id='birthdate' ${sortTitle}>Birth Date</th>` +
                 `<th data-order='' id="birthlocation" data-flow="f2b" >` +
                 `<span class="sortColumn" ${sortTitle}>Birth Place</span>` +
-                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 `<th data-order='' id='deathdate' ${sortTitle}>Death Date</th>` +
                 `<th data-order='' id="deathlocation" data-flow="f2b" >` +
                 `<span class="sortColumn" ${sortTitle}>Death Place</span>` +
-                `<span class="reverseWords" style="cursor: pointer; transform: scale(1.5); display: inline-block; margin-left: 10px;" title="Click to reverse the location names"> ↻</span></th>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 ageAtDeathCol +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
@@ -559,11 +566,12 @@ class PeopleTable {
                         'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
                         "Complete</option>" +
                         "</select>" +
-                        "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
-                        "<button class='button small viewButton' id='listViewButton'>List</button>" +
-                        "<button class='button small viewButton active' id='tableViewButton'>Table</button>" +
-                        "<button class='button small viewButton' id='statsViewButton'>Stats</button>" +
-                        "<button class='button small viewButton' id='missingLinksViewButton'>Missing Links</button>"
+                        "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='missingLinksViewButton'>Missing Links</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='circlesViewButton'>Circles</button>"
                 )
             );
         }
@@ -577,6 +585,8 @@ class PeopleTable {
                     drawPeopleTable();
                 } else if (curTableId == "statsView") {
                     StatsView.build();
+                } else if (curTableId == "circlesView") {
+                    CirclesView.buildView();
                 }
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
@@ -596,7 +606,7 @@ class PeopleTable {
                 PeopleTable.ACTIVE_VIEW = "list";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #hierarchyView, #statsView, #missingLinksTable").hide();
+                $("#peopleTable, #hierarchyView, #statsView, #missingLinksTable, #circlesDisplay").hide();
                 if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
                     LanceView.build();
                 } else {
@@ -621,7 +631,9 @@ class PeopleTable {
                 PeopleTable.ACTIVE_VIEW = "hierarchy";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #lanceTable, #statsView, #missingLinksTable").hide().removeClass("active");
+                $("#peopleTable, #lanceTable, #statsView, #missingLinksTable, #circlesDisplay")
+                    .hide()
+                    .removeClass("active");
                 if ($("#hierarchyView").length == 0) {
                     Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
@@ -642,7 +654,9 @@ class PeopleTable {
                 PeopleTable.ACTIVE_VIEW = "table";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #statsView, #missingLinksTable").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #statsView, #missingLinksTable, #circlesDisplay")
+                    .hide()
+                    .removeClass("active");
                 $("#cc7Subset option[value='missing-links']").prop("disabled", false);
                 $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
@@ -664,7 +678,7 @@ class PeopleTable {
                 PeopleTable.ACTIVE_VIEW = "stats";
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable, #missingLinksTable").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #missingLinksTable, #circlesDisplay").hide().removeClass("active");
                 $("#cc7Subset").show();
                 if ($("#statsView").hasClass($("#cc7Subset").val())) {
                     // We don't have to re-draw the table
@@ -680,7 +694,7 @@ class PeopleTable {
             .on("click", function () {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable, #statsView").hide().removeClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #statsView, #circlesDisplay").hide().removeClass("active");
                 $("#cc7Subset").show();
                 if ($("#missingLinksTable").length > 0) {
                     // We don't have to re-draw the table
@@ -731,6 +745,77 @@ class PeopleTable {
                 $("label[for='getExtraDegrees']").hide();
                 wtViewRegistry.hideInfoPanel();
             });
+        $("#circlesViewButton")
+            .off("click", function () {
+                // console.log("CLICK OFF - Circles View btn");
+            })
+            .on("click", function () {
+                // console.log("CLICK ON the CIRCLES VIEW BUTTON !!!!");
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+                $("#hierarchyView, #lanceTable, #peopleTable, #statsView, #missingLinksTable").hide().removeClass("active");
+                $("#cc7Subset").show();
+                $("#ml-links").hide();
+                $("#ml-count").hide();
+                $("#ancReport").hide();
+                $("#savePeople").show();
+                $("#loadButton").show();
+                $("#cc7csv").show();
+                $("#cc7excel").show();
+                $("#getDegreeButton").show();
+                $("#degreesTable").show();
+                
+                if ($("#circlesDisplay").length > 0) {
+                    // We don't have to re-draw the table
+                    $("#circlesDisplay").show().addClass("active");
+                    CirclesView.updateView();
+                } else {
+                    CirclesView.buildView();
+                }
+                
+                // save the previous cc7Subset value
+                PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
+                // switch to missing links checkboxes
+                $("#cc7Subset").val("circles");
+
+                // // determine how many people are missing relationships and show it on the page
+                // const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
+                // if ($("#ml-count").length === 0) {
+                //     $("#tableButtons").before(
+                //         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
+                //             window.cc7Degree
+                //         } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
+                // <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
+                // <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                // children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
+                //     );
+                // } else {
+                //     $("#ml-count").innerHTML(
+                //         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
+                //             window.cc7Degree
+                //         } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
+                // <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
+                // <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
+                // children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
+                //     );
+                // }
+
+                PeopleTable.ACTIVE_VIEW = "circles";
+
+                // hide top menu stuff
+                // $("#degreesTable").hide();
+                // $("#wideTableButton").hide();
+                // $("#savePeople").hide();
+                // $("#loadButton").hide();
+                // $("#cc7csv").hide();
+                // $("#cc7excel").hide();
+                // $("#getExtraDegrees").hide();
+                // $("#getDegreeButton").hide();
+                // $("#cc7Subset").hide();
+                // $("#ancReport").hide();
+                // $("label[for='getExtraDegrees']").hide();
+                // wtViewRegistry.hideInfoPanel();
+            });
 
         if (!window.people.get(window.rootId)) {
             // We don't have a root, so disable the hierarchy view
@@ -746,7 +831,7 @@ class PeopleTable {
 
         if ($("#cc7excel").length == 0) {
             $(
-                '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
+                '<button id="cc7excel" title="Export an Excel file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">Excel</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7excel")
                 .off("click")
@@ -756,7 +841,7 @@ class PeopleTable {
         }
         if ($("#cc7csv").length == 0) {
             $(
-                '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
+                '<button id="cc7csv" title="Export a CSV file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">CSV</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7csv")
                 .off("click")
@@ -774,6 +859,8 @@ class PeopleTable {
                 $("#missingLinksViewButton").click();
             } else if (PeopleTable.ACTIVE_VIEW == "stats") {
                 $("#statsViewButton").click();
+            } else if (PeopleTable.ACTIVE_VIEW == "circles") {                
+                $("#circlesViewButton").click();
             }
         });
     }
@@ -864,7 +951,7 @@ class PeopleTable {
         if ($("#wideTableButton").length == 0) {
             const pTable = $(".peopleTable");
             const wideTableButton = $(
-                "<div id='tableButtons'><button class='button small' id='wideTableButton'>Wide Table</button></div>"
+                "<div id='tableButtons'><button class='btn btn-secondary btn-sm' id='wideTableButton'>Wide Table</button></div>"
             );
             wideTableButton.insertBefore(pTable);
 
@@ -1230,6 +1317,7 @@ class PeopleTable {
         // Add Clear Filters button
         $("#clearTableFiltersButton").remove();
         const clearFiltersButton = document.createElement("button");
+        clearFiltersButton.className = "btn btn-secondary btn-sm ms-1";
         clearFiltersButton.textContent = "X";
         clearFiltersButton.title = "Clear Filters";
         clearFiltersButton.id = "clearTableFiltersButton";

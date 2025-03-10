@@ -1,0 +1,755 @@
+/*
+* 2024 Stylesheet Updates
+* Penso Co., penso.co
+* 04.16.2024
+*/
+
+@import url("wt-fonts.css");
+@import url("wt-opensans.css");
+@import url("wt-examples.css");
+@import url("wt-forms.css");
+@import url("wt-buttons.css");
+@import url("wt-links.css");
+@import url("wt-icons.css");
+@import url("wt-navigation.css");
+@import url("wt-header.css");
+@import url("wt-footer.css");
+@import url("wt-components.css");
+@import url("wt-content.css");
+@import url("wt-tree.css");
+@import url("wt-avatars.css");
+@import url("wt-privacy.css");
+@import url("wt-comments.css");
+
+.container {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.container.full-width {
+  margin: auto !important;
+  max-width: 100% !important;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.container .container {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body {
+  background: #fff;
+  color: #393a3c;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-size: 1.125rem; /* 18px eqiv */
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* font sizes from settings */
+body.xs-font {
+  font-size: 0.875rem;
+}
+body.sm-font {
+  font-size: 1rem;
+}
+body.lg-font {
+  font-size: 1.25rem;
+}
+body.xl-font {
+  font-size: 1.375rem;
+}
+
+@media (max-width: 980px) {
+  body {
+    font-size: 1rem;
+    height: 100vh;
+  }
+}
+
+::-moz-selection {
+  background: #ffee99;
+}
+
+::selection {
+  background: #ffee99;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  margin-bottom: 1rem;
+}
+
+h1 em,
+h1 i,
+h2 em,
+h2 i,
+h3 em,
+h3 i,
+h4 em,
+h4 i,
+h5 em,
+h5 i,
+h6 em,
+h6 i {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+.lead--in h1 {
+  font-size: 3rem;
+} /* larger on homepage */
+h2 {
+  font-size: 1.75rem;
+}
+.lead--in h2 {
+  font-size: 2rem;
+}
+h3 {
+  font-size: 1.5rem;
+}
+h4 {
+  font-size: 1.25rem;
+}
+h5 {
+  font-size: 1.1rem;
+}
+h6 {
+  font-size: 1rem;
+}
+
+@media (max-width: 980px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+  .lead--in h1 {
+    font-size: 1.75rem;
+  } /* larger on homepage */
+  .page--title h1 {
+    font-size: 1.5rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  .lead--in h2 {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1.25rem;
+  }
+  h4 {
+    font-size: 1rem;
+  }
+  h5 {
+    font-size: 0.875rem;
+  }
+  h6 {
+    font-size: 0.75rem;
+  }
+}
+
+h6.name {
+  font-weight: 400;
+  margin-bottom: 5px;
+}
+
+h6.cat {
+  border-bottom: 1px solid #ccc;
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 0.875rem;
+  margin-bottom: 30px;
+  margin-top: 40px;
+  padding-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.page--content h2,
+.page--content h3,
+.page--content h4,
+.page--content h5,
+.page--content h6 {
+  margin-top: 2.5rem;
+  position: relative;
+}
+
+.page--content h2,
+.page--content h3 {
+  padding-right: 40px;
+}
+
+.badge {
+  background-color: #ffe270;
+  border-radius: 4px;
+  color: #25422d;
+  font-family: "Roboto Mono", monospace;
+  font-size: 0.75rem;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+  padding: 4px 6px;
+  text-transform: uppercase;
+  width: auto;
+}
+
+.badge.text-bg-primary {
+  background-color: #ffee99 !important;
+  color: #25422d !important;
+}
+
+.badge.new {
+  background-color: #fcb815;
+}
+
+.badge.green {
+  background-color: #e1f0b4;
+}
+
+.badge.green.new {
+  background-color: #8fc641;
+}
+
+.badge.red {
+  background-color: #ffcccc;
+}
+
+.badge.red.new {
+  background-color: #cc0000;
+  color: #fff;
+}
+
+.lead,
+.large {
+  font-size: 1.3rem;
+}
+
+.SMALL,
+.small,
+small {
+  font-size: 0.875rem;
+}
+
+code {
+  background-color: #f0f0eb;
+  border-radius: 2px;
+  color: #25422d;
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-size: 1rem;
+  font-weight: 700;
+  font-style: normal;
+  padding: 0 4px;
+  text-transform: none;
+}
+
+.EXAMPLE {
+  background-color: #f0f0eb;
+  border-radius: 0.375rem;
+  color: #25422d;
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: normal;
+  margin-bottom: 1.5rem;
+  padding: 10px;
+  text-transform: none;
+}
+
+img {
+  height: auto;
+  max-width: 100%;
+}
+
+img.img-fluid {
+  width: 100%;
+}
+
+a.unvisited {
+  color: #008000 !important;
+}
+a.visited {
+  color: #800080 !important;
+}
+
+a,
+a:link {
+  color: #008000;
+  text-decoration: underline;
+}
+
+a:hover {
+  color: #008000;
+  text-decoration: none;
+}
+
+a:visited,
+a:visited:hover {
+  color: #800080 !important;
+}
+
+a.icon-more {
+  background-image: url("../images/icons/icon-read-more.svg");
+  background-repeat: no-repeat;
+  background-position: -6px -6px;
+  background-size: 40px 40px;
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  top: 3px;
+  width: 24px;
+}
+
+strong,
+b {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+strong.error,
+b.error {
+  color: #ff0f0f;
+}
+
+strong.warning,
+b.warning {
+  color: #ff5f15;
+}
+
+em,
+i {
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+mark {
+  background-color: #ffee99;
+  padding: 0.1em;
+}
+
+strong i,
+strong em,
+b i,
+b em i strong,
+em strong,
+i b,
+em b {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+dl {
+  margin-bottom: 1.5rem;
+}
+
+dl dt,
+dl dd {
+  margin-bottom: 0.5rem;
+}
+
+dl dd {
+  margin-left: 0.5rem;
+}
+
+dl dl {
+  margin-left: 30px;
+  margin-top: 1.5rem;
+}
+
+ul,
+ol {
+  padding-left: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+ul li,
+ol li {
+  margin-bottom: 0.5rem;
+}
+
+ul ul,
+ol ol,
+ul ol,
+ol ul {
+  margin-top: 0.5rem;
+}
+
+ul.STYLED,
+ol.STYLED {
+  list-style: none;
+  padding-left: 0;
+}
+
+.page--content ul:not(.profile-tabs),
+.page--content ol {
+  margin-left: 1rem;
+}
+
+.page--content ul ul,
+.page--content ol ol,
+.page--content ul ol,
+.page--content ol ul {
+  margin-left: 0;
+}
+
+.box ul,
+.box ol {
+  margin-left: 0;
+}
+
+ul.numbered,
+ol.numbered,
+ul.numbered ul,
+ol.numbered ul,
+ul.numbered ol,
+ol.numbered ol {
+  counter-reset: item;
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+ul.numbered ul,
+ol.numbered ul,
+ul.numbered ol,
+ol.numbered ol {
+  list-style: disc;
+}
+
+ul.numbered ul li::before,
+ol.numbered ul li::before,
+ul.numbered ol li::before,
+ol.numbered ol li::before {
+  display: none;
+
+  padding-left: 0;
+}
+
+ul.numbered li,
+ol.numbered li {
+  counter-increment: item;
+
+  padding-left: 40px;
+
+  position: relative;
+}
+
+ul.numbered li li,
+ol.numbered li li {
+  padding-left: 0;
+}
+
+ul.numbered li::before,
+ol.numbered li::before {
+  background-color: #fad158;
+
+  border-radius: 0.375rem;
+
+  color: #25422d;
+
+  content: counter(item);
+
+  display: inline-block;
+
+  font-weight: bold;
+
+  left: 0;
+
+  position: absolute;
+
+  text-align: center;
+
+  width: 27px;
+}
+
+ul li.NUMBER1::before,
+ul li.NUMBER2::before,
+ul li.NUMBER3::before,
+ul li.NUMBER4::before,
+ul li.NUMBER5::before,
+ul li.NUMBER6::before,
+ul li.NUMBER7::before,
+ul li.NUMBER8::before,
+ul li.NUMBER9::before,
+ul li.NUMBER10::before {
+  background-color: #fad158;
+  border-radius: 5px;
+  color: #25422d;
+  content: "1";
+  display: inline-block;
+  font-weight: bold;
+  margin-right: 10px;
+  text-align: center;
+  width: 27px;
+}
+
+ul li.NUMBER2::before {
+  content: "2";
+}
+ul li.NUMBER3::before {
+  content: "3";
+}
+ul li.NUMBER4::before {
+  content: "4";
+}
+ul li.NUMBER5::before {
+  content: "5";
+}
+ul li.NUMBER6::before {
+  content: "6";
+}
+ul li.NUMBER7::before {
+  content: "7";
+}
+ul li.NUMBER8::before {
+  content: "8";
+}
+ul li.NUMBER9::before {
+  content: "9";
+}
+ul li.NUMBER10::before {
+  content: "10";
+}
+
+.number--block {
+  background-color: #fad158;
+  border-radius: 5px;
+  color: #25422d;
+  display: inline-block;
+  font-size: 80%;
+  line-height: 1;
+  padding: 5px 10px;
+  position: relative;
+  top: -1px;
+}
+
+ul.star,
+ol.star {
+  list-style: none;
+  margin-left: 1rem;
+}
+
+ul.star li,
+ol.star li {
+  position: relative;
+}
+
+ul.star li::before,
+ol.star li::before {
+  border: 3px solid #fad158;
+  border-radius: 30%;
+  content: "";
+  display: block;
+  height: 13px;
+  left: -20px;
+  position: absolute;
+  top: 7px;
+  width: 13px;
+}
+
+ul.star.green li::before,
+ol.star.green li::before {
+  border-color: #8fc641;
+}
+
+ul.star small,
+ol.star small,
+ul.star .SMALL,
+ol.star .SMALL {
+  display: block;
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  padding-top: 5px;
+}
+
+ul.no-indent,
+ol.no-indent {
+  margin-left: 0;
+}
+
+ul.unstyled,
+ol.unstyled {
+  list-style: none;
+  margin-left: 0;
+  padding: 0 !important;
+}
+
+ul.inline li,
+ol.inline li {
+  display: inline-block;
+  margin: 0 0.5rem 0.5rem 0;
+}
+
+ul.inline.link--list li,
+ol.inline.link--list li {
+  margin-right: 0;
+}
+
+ul.inline.link--list li::after,
+ol.inline.link--list li::after {
+  content: ", ";
+  display: inline;
+}
+
+ul.inline.link--list li:last-child::after,
+ol.inline.link--list li:last-child::after {
+  content: "";
+  display: none;
+}
+
+ul.dna li {
+  background-position: 0 3px;
+  background-repeat: no-repeat;
+  background-size: 22px auto;
+  padding-left: 30px;
+}
+
+ul.dna.dna-y li {
+  background-image: url("/images/icons/icon-dna-y-block.svg");
+}
+
+ul.dna.dna-mt li {
+  background-image: url("/images/icons/icon-dna-mt.svg");
+}
+
+ul.dna.dna-au li {
+  background-image: url("/images/icons/icon-dna-au.svg");
+}
+
+/* tables */
+/* table {
+  margin-bottom: 1.5rem;
+}
+
+table th,
+table td {
+  padding: 0.5rem;
+} */
+
+table.full-width {
+  width: 100%;
+}
+
+table.table-borderless,
+table.table-borderless th,
+table.table-borderless td {
+  border: none;
+}
+
+caption {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+table.table-unstyled {
+  border: none;
+  margin-bottom: 0;
+  padding: 0;
+}
+
+table.table-unstyled th,
+table.table-unstyled td {
+  border: none;
+  padding: 0;
+}
+
+.table-hover > tbody > tr:hover > * {
+  --bs-table-color-state: #15141a;
+  --bs-table-bg-state: rgba(240, 240, 235, 0.5);
+}
+
+table.table--data {
+  border-left: none;
+  border-right: none;
+  /* font-size: 1rem; this breaks the density controls on tables */
+}
+
+.small p span[class*="icon--"],
+table.table--data span[class*="icon--"] {
+  background-size: 16px 16px !important;
+  height: 16px !important;
+  top: 3px !important;
+  width: 16px !important;
+}
+
+table.table--data th span[class*="icon--"] {
+  top: 2px !important;
+}
+
+table.table--data th {
+  background-color: rgba(240, 240, 235, 0.35);
+  border: none;
+}
+
+table.table--data td {
+  border-left: none;
+  border-right: none;
+}
+
+table.table--data th a,
+table.table--data th a:hover {
+  color: #25422d !important;
+  text-decoration: none;
+}
+
+table.table--data .genderbar {
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 8px;
+}
+
+table.table--data td.person--male .genderbar {
+  background-color: #f2f1ff;
+}
+
+table.table--data td.person--female .genderbar {
+  background-color: #ffeeee;
+}
+
+table.table--data td.person--no-gender .genderbar {
+  background-color: #eeffee;
+}
+
+table.table--data td.person--male,
+table.table--data td.person--female,
+table.table--data td.person--no-gender {
+  padding-left: 1rem;
+  position: relative;
+}
+
+h2,
+div,
+label {
+  scroll-margin-top: 75px;
+}
+
+.text-no-break {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}

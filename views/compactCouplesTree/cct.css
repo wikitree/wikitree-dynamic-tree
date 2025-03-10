@@ -30,19 +30,27 @@
   overflow-x: auto;
   width: 100%;
 }
-div.cct select,
-div.cct input {
-  padding: 0.3em;
-  width: auto;
-  background-size: 1em 2em;
-  margin: 5px 5px 0px 0px;
+.cct table {
+  margin-bottom: 0;
+}
+.cct td {
+  padding: 0;
 }
 
 .cct #cctOptions {
   cursor: pointer;
 }
+.cct legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
+}
 
 .cct fieldset {
+  font-size: 90%;
+  /* line-height: 1; */
   display: block;
   margin-inline-start: 2px;
   margin-inline-end: 2px;
@@ -275,7 +283,7 @@ div.cct input {
     border-radius: 50%;
     background-color: currentColor;
     position: relative;
-    transform: translate(-20%, -20%);
+    transform: translate(50%, 50%);
   }
 }
 
