@@ -887,7 +887,7 @@ import { Utils } from "../shared/Utils.js";
                             optionName: "marriageAtTopEarlyGens",
                             label: "Slide Marriage Date box to top (for first 5 generations)",
                             type: "checkbox",
-                            defaultValue: false,
+                            defaultValue: true,
                             indent: 3,
                         },
                         // {
