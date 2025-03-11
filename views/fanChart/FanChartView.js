@@ -33,6 +33,7 @@ import { Utils } from "../shared/Utils.js";
         nodeHeight = boxHeight * 2;
     let font4Name = "SansSerif";
     let font4Info = "SansSerif";
+    let font4Extras = "Mono";
 
     const numOfBadges = 5;
 
@@ -50,6 +51,8 @@ import { Utils } from "../shared/Utils.js";
     const PRINTER_ICON = "&#x1F4BE;";
     const SETTINGS_GEAR = "&#x2699;";
     const LEGEND_CLIPBOARD = "&#x1F4CB;";
+
+    const minimumRingRadius = 140;
 
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
@@ -728,6 +731,20 @@ import { Utils } from "../shared/Utils.js";
                             ],
                             defaultValue: "WikiTreeID", // GPC - Changed for AZURE  / "none"
                         },
+                        {
+                            optionName: "font4Extras",
+                            type: "radio",
+                            label: "Font for Extras",
+                            values: [
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Mono",
+                        },
+
                         // {
                         //     optionName: "showWikiID",
                         //     label: "Show WikiTree ID for each person",
@@ -1938,7 +1955,7 @@ import { Utils } from "../shared/Utils.js";
                         .append("foreignObject")
                         .attrs({
                             id: "mDateFor-" + ahnNum + "inner",
-                            class: "centered mDateBox2",
+                            class: "centered",
                             width: "20px",
                             height: "20px", // the foreignObject won't display in Firefox if it is 0 height
                             // x: 25 * index,
@@ -2340,6 +2357,9 @@ import { Utils } from "../shared/Utils.js";
     function updateCumulativeWidths() {
         let currCumulativeRadius = 0;
         for (let g = 0; g < fanGenRadii.length; g++) {
+            if (fanGenRadii[g] < minimumRingRadius) {
+                fanGenRadii[g] = minimumRingRadius;
+            }
             if (g <= 4 || (g == 5 && FanChartView.maxAngle == 360)) {
                 condLog("CUMUL CALC:", g, currCumulativeRadius, "+ radius", fanGenRadii[g]);
                 currCumulativeRadius += fanGenRadii[g];
@@ -2350,7 +2370,7 @@ import { Utils } from "../shared/Utils.js";
             }
             cumulativeGenRadii[g] = currCumulativeRadius;
         }
-         console.log("FINAL CUMUL CALC:",  currCumulativeRadius);
+         console.log("FINAL CUMUL CALC:", currCumulativeRadius, "based on", fanGenRadii);
     }
 
     function getTextWidth(text, font = "16px Arial") {
@@ -2427,7 +2447,7 @@ import { Utils } from "../shared/Utils.js";
             // maxCross /= FanChartView.currentScaleFactor;
             // maxRad /= FanChartView.currentScaleFactor;
             console.log("Max Dimensions (NOT adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
-            let newRadius4ThisGen = Math.ceil(maxRad) + 20;
+            let newRadius4ThisGen = Math.max(Math.ceil(maxRad), 140) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
 
             // if (newRadius4ThisGen > fanGenRadii[gen] || Math.abs(newRadius4ThisGen - fanGenRadii[gen]) > 20) {
@@ -3182,7 +3202,8 @@ import { Utils } from "../shared/Utils.js";
     function updateFontsIfNeeded() {
         if (
             FanChartView.currentSettings["general_options_font4Names"] == font4Name &&
-            FanChartView.currentSettings["general_options_font4Info"] == font4Info
+            FanChartView.currentSettings["general_options_font4Info"] == font4Info &&
+            FanChartView.currentSettings["general_options_font4Extras"] == font4Extras
         ) {
             condLog("NOTHING to see HERE in UPDATE FONT land");
         } else {
@@ -3197,6 +3218,7 @@ import { Utils } from "../shared/Utils.js";
 
             font4Name = FanChartView.currentSettings["general_options_font4Names"];
             font4Info = FanChartView.currentSettings["general_options_font4Info"];
+            font4Extras = FanChartView.currentSettings["general_options_font4Extras"];
 
             let nameElements = document.getElementsByClassName("name");
             for (let e = 0; e < nameElements.length; e++) {
@@ -3217,6 +3239,38 @@ import { Utils } from "../shared/Utils.js";
                 element.classList.remove("fontFantasy");
                 element.classList.remove("fontScript");
                 element.classList.add("font" + font4Info);
+            }
+            let mDateElements = document.getElementsByClassName("mDateBox");
+            for (let e = 0; e < mDateElements.length; e++) {
+                const element = mDateElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Info);
+            }
+
+            let mDate2Elements = document.getElementsByClassName("mDateBox2");
+            for (let e = 0; e < mDate2Elements.length; e++) {
+                const element = mDate2Elements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Info);
+            }
+
+            let extraElements = document.getElementsByClassName("extraInfoBox");
+            for (let e = 0; e < extraElements.length; e++) {
+                const element = extraElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Extras);
             }
         }
     }
@@ -4072,7 +4126,7 @@ import { Utils } from "../shared/Utils.js";
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 3px;">
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                         <div class="name fontBold font${font4Name}"  id=nameDivFor${
                         ancestorObject.ahnNum
                     }>${getSettingsName(person)}</div>
@@ -4118,7 +4172,7 @@ import { Utils } from "../shared/Utils.js";
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
@@ -4177,7 +4231,7 @@ import { Utils } from "../shared/Utils.js";
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
                         <div class="item">${photoDiv}</div>
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -4220,7 +4274,7 @@ import { Utils } from "../shared/Utils.js";
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
                     } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
-                    <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                    <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                     ${photoDiv}
                     <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -4260,7 +4314,7 @@ import { Utils } from "../shared/Utils.js";
                     return `<div class="box staticPosition centered" id=wedgeInfoFor${
                         ancestorObject.ahnNum
                     } style="background-color: ${theClr} ; border:0; ">
-                     <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                     <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                      <div class="vital-info">
 						${photoDiv}
 						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
@@ -4684,7 +4738,7 @@ import { Utils } from "../shared/Utils.js";
                         mDateDIVdate.classList.remove("mDateBox");
                         mDateDIVdate.classList.add("mDateBox2");
                         mDateDIVinner.classList.remove("mDateBox");
-                        mDateDIVinner.classList.add("mDateBox2");
+                        // mDateDIVinner.classList.add("mDateBox2"); // don't want to really add mDateBox2 to foreignObject (mDateDIVinner) - because it leaves a double line
                     }
                     // console.log("Added ?", {thisGenNum}, ancestorObject.ahnNum, FanChartView.maxAngle , theInfoBox.classList.value);                  
                 }
@@ -4867,9 +4921,7 @@ import { Utils } from "../shared/Utils.js";
                 // theInfoBox.parentNode.parentNode.setAttribute("y", -60);
             }
 
-            // for AZURE ... tweak to slide up because of Extra ... maybe should have done this anyways ???
-            // theInfoBox.parentNode.parentNode.setAttribute("y", theInfoBox.parentNode.parentNode.getAttribute("y") - 10);
-
+           
             // AND ... FINALLY, LET'S TALK DATES & PLACES:
             // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
             let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
@@ -4908,6 +4960,7 @@ import { Utils } from "../shared/Utils.js";
             }
             if (theExtraDIV) {
                 theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
+                theExtraDIV.className = "extraInfoBox font" + font4Extras;
             }
             if (theMDateDIV) {
                 // condLog("Marriage", d._data.Spouses);
@@ -4932,23 +4985,28 @@ import { Utils } from "../shared/Utils.js";
                     Math.sin(((mDateAngle - tweakAngle - 90) * Math.PI) / 180);
                 if (ancestorObject.ahnNum >= 64 || (ancestorObject.ahnNum >= 32 && FanChartView.maxAngle < 360)) {
                     tweakAngle = (Math.atan(10 / (thisGenNum * thisRadius)) * 180) / Math.PI;
+                    let mDateRadius = (thisCumulativeRadius + prevCumulativeRadius) / 2 + 70;
                     if (thisPosNum < numSpotsThisGen / 2) {
                         mDateX =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius + 60) *
+                            // (thisGenNum * thisRadius + 60) *
+                            mDateRadius * 
                             Math.cos(((mDateAngle - 180 + tweakAngle) * Math.PI) / 180);
                         mDateY =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius + 60) *
+                            // (thisGenNum * thisRadius + 60) *
+                            mDateRadius * 
                             Math.sin(((mDateAngle - 180 + tweakAngle) * Math.PI) / 180);
                     } else {
                         mDateX =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius - 60) *
+                            (mDateRadius - 140) *
+                            // (thisGenNum * thisRadius - 60) *
                             Math.cos(((mDateAngle - tweakAngle - 0) * Math.PI) / 180);
                         mDateY =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius - 60) *
+                            (mDateRadius - 140) *
+                            // (thisGenNum * thisRadius - 60) *
                             Math.sin(((mDateAngle - tweakAngle - 0) * Math.PI) / 180);
                     }
                 } else {
