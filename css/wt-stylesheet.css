@@ -638,17 +638,14 @@ ul.dna.dna-au li {
 }
 
 /* tables */
-table {
-  border: 1px solid #ccc;
-  border-collapse: collapse;
+/* table {
   margin-bottom: 1.5rem;
 }
 
 table th,
 table td {
-  border: 1px solid #ccc;
   padding: 0.5rem;
-}
+} */
 
 table.full-width {
   width: 100%;
@@ -687,7 +684,7 @@ table.table-unstyled td {
 table.table--data {
   border-left: none;
   border-right: none;
-  font-size: 1rem;
+  /* font-size: 1rem; this breaks the density controls on tables */
 }
 
 .small p span[class*="icon--"],
@@ -743,4 +740,16 @@ table.table--data td.person--female,
 table.table--data td.person--no-gender {
   padding-left: 1rem;
   position: relative;
+}
+
+h2,
+div,
+label {
+  scroll-margin-top: 75px;
+}
+
+.text-no-break {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
 }

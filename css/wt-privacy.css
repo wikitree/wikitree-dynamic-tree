@@ -60,20 +60,20 @@ table span[class*="privacy--"],
 /* open */
 .privacy--60,
 .privacy--50 {
-  background-image: url("/images/icons/icon-privacy-open.svg");
+  background-image: url("/icons/icon-privacy-open.svg");
 }
 
 /* private */
 .privacy--40,
 .privacy--35,
 .privacy--30 {
-  background-image: url("/images/icons/icon-privacy-closed-dark.svg");
+  background-image: url("/icons/icon-privacy-closed-dark.svg");
 }
 
 /* closed */
 .privacy--20,
 .privacy--10 {
-  background-image: url("/images/icons/icon-privacy-closed-light.svg");
+  background-image: url("/icons/icon-privacy-closed-light.svg");
 }
 
 .privacy--sm {
@@ -115,7 +115,7 @@ table span.privacy--lg {
 
 @media (max-width: 980px) {
   .privacy--lg {
-    background-size: 16px 16px;
+    background-size: 16px 16px !important;
     border-width: 1px;
     height: 26px !important;
     width: 26px !important;
