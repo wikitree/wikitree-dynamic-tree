@@ -1663,11 +1663,11 @@ import { Utils } from "../shared/Utils.js";
                     redoWedgesForFanChart(true);
                     FanChartView.myAncestorTree.draw();
                     // let's check one more time ...
-                    if (recalculateMaxWidthsForCells() == true) {
-                        condLog("DOING REDRAW again!");
-                        redoWedgesForFanChart(true);
-                        FanChartView.myAncestorTree.draw();
-                    }
+                    // if (recalculateMaxWidthsForCells() == true) {
+                    //     condLog("DOING REDRAW again!");
+                    //     redoWedgesForFanChart(true);
+                    //     FanChartView.myAncestorTree.draw();
+                    // }
                 }
             } else {
                 // condLog("NOTHING happened according to SETTINGS OBJ");
@@ -3466,11 +3466,11 @@ import { Utils } from "../shared/Utils.js";
             redoWedgesForFanChart(true);
             FanChartView.myAncestorTree.draw();
             // let's check one more time
-            if (recalculateMaxWidthsForCells() == true) {
-                condLog("DOING REDRAW again!");
-                redoWedgesForFanChart(true);
-                FanChartView.myAncestorTree.draw();
-            }
+            // if (recalculateMaxWidthsForCells() == true) {
+            //     condLog("DOING REDRAW again!");
+            //     redoWedgesForFanChart(true);
+            //     FanChartView.myAncestorTree.draw();
+            // }
         }
     };
     
@@ -4220,7 +4220,7 @@ import { Utils } from "../shared/Utils.js";
                     if (thisPosNum >= numSpotsThisGen / 2) {
                         floatDirection = "right";
                     }
-                    
+
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
@@ -6150,26 +6150,54 @@ import { Utils } from "../shared/Utils.js";
             return datePlaceString;
             
         } else if (numLinesMax == 5) {
-            // 2 Dates + 2 Simple Locs, or 1 Date + 1 Multi Loc
+            // 2 Dates + 2 Locations
             datePlaceString = "";
             if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
                 if (dateType == "B" && thisLifespan > "") {
                     datePlaceString = thisLifespan + "<br/>";
                 }
-                if (!hasBirthDate && !hasDeathDate) {
-                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                } else if (thisPlaceSimple > "") {
-                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
-                }
+               if (thisPlace > "") {
+                   if (
+                       (FanChartView.currentSettings["place_options_showBirth"] && dateType == "B") ||
+                       (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D")
+                   ) {
+                       if (thisPlace > "" && simplifyOuterPlaces == false) {
+                           datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                       } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                           datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                       }
+                   }
+               }
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed") {
                 if (thisDate > "") {
-                    datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceSimple;
-                } else if (thisPlaceSimple > "") {
-                    datePlaceString = dateType.toLowerCase() + ". " + thisPlaceSimple;
+                    datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>";
+                    if (thisPlace > "" && simplifyOuterPlaces == false) {
+                        datePlaceString += thisPlace;
+                    } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                        datePlaceString += thisPlaceSimple;
+                    }
+                } else if (thisPlace > "") {
+                    if (
+                        (FanChartView.currentSettings["place_options_showBirth"] && dateType == "B") ||
+                        (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D")
+                    ) {
+                        if (thisPlace > "" && simplifyOuterPlaces == false) {
+                            datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                        } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                            datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                        }
+                    }
                 }
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
-                if (thisPlaceMulti > "") {
-                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                if (
+                    (FanChartView.currentSettings["place_options_showBirth"] && dateType == "B") ||
+                    (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D")
+                ) {
+                    if (thisPlace > "" && simplifyOuterPlaces == false) {
+                        datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                    } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                        datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                    }
                 }
             }
             return datePlaceString;
