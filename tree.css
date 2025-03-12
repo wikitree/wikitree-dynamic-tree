@@ -503,6 +503,7 @@ hr.treeapp-personpopup {
 
 .staticPosition {
   position: static;
+  line-height: normal;
 }
 
 /* Print styling should follow everything else to overwrite it */
