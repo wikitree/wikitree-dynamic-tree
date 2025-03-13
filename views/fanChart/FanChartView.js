@@ -6778,59 +6778,77 @@ import { Utils } from "../shared/Utils.js";
         let SVGgraphicsDIV = document.getElementById("SVGgraphics");
         let showBadgesSetting = FanChartView.currentSettings["general_options_showBadges"];
 
-        let dCompensation = 0;
-        if (1 == 1) {
-            if (nameAngle > 550) {
-                dCompensation = -36;
-            } else if (nameAngle > 540) {
-                dCompensation = -36;
-            } else if (nameAngle > 530) {
-                dCompensation = -36;
-            } else if (nameAngle > 520) {
-                dCompensation = -36;
-            } else if (nameAngle > 510) {
-                dCompensation = -36;
-            } else if (nameAngle > 500) {
-                dCompensation = -36;
-            } else if (nameAngle > 490) {
-                dCompensation = -36;
-            } else if (nameAngle > 480) {
-                dCompensation = -34;
-            } else if (nameAngle > 470) {
-                dCompensation = -34;
-            } else if (nameAngle > 450) {
-                dCompensation = -32;
-            } else if (nameAngle > 435) {
-                dCompensation = -26;
-            } else if (nameAngle > 420) {
-                dCompensation = -24;
-            } else if (nameAngle > 400) {
-                dCompensation = -14;
-            } else if (nameAngle > 380) {
-                dCompensation = -10;
-            } else if (nameAngle > 360) {
-                dCompensation = -6;
-            } else if (nameAngle > 320) {
-                dCompensation = 0;
-            } else if (nameAngle > 270) {
-                dCompensation = -6;
-            } else if (nameAngle > 240) {
-                dCompensation = -18;
-            } else if (nameAngle > 220) {
-                dCompensation = -24;
-            } else if (nameAngle > 200) {
-                dCompensation = -32;
-            } else if (nameAngle > 190) {
-                dCompensation = -36;
-            } else if (nameAngle > 170) {
-                dCompensation = -36;
-            }
-        }
+        // let dCompensation = 0;
+        // if (1 == 1) {
+        //     if (nameAngle > 550) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 540) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 530) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 520) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 510) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 500) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 490) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 480) {
+        //         dCompensation = -34;
+        //     } else if (nameAngle > 470) {
+        //         dCompensation = -34;
+        //     } else if (nameAngle > 450) {
+        //         dCompensation = -32;
+        //     } else if (nameAngle > 435) {
+        //         dCompensation = -26;
+        //     } else if (nameAngle > 420) {
+        //         dCompensation = -24;
+        //     } else if (nameAngle > 400) {
+        //         dCompensation = -14;
+        //     } else if (nameAngle > 380) {
+        //         dCompensation = -10;
+        //     } else if (nameAngle > 360) {
+        //         dCompensation = -6;
+        //     } else if (nameAngle > 320) {
+        //         dCompensation = 0;
+        //     } else if (nameAngle > 270) {
+        //         dCompensation = -6;
+        //     } else if (nameAngle > 240) {
+        //         dCompensation = -18;
+        //     } else if (nameAngle > 220) {
+        //         dCompensation = -24;
+        //     } else if (nameAngle > 200) {
+        //         dCompensation = -32;
+        //     } else if (nameAngle > 190) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 170) {
+        //         dCompensation = -36;
+        //     }
+        // }
 
-        let dFraction =
-            ((thisGenNum + 1 / 2) * thisRadius - 2 * 0 - 0 * (thisGenNum < 5 ? 100 : 80) + dCompensation) /
-            (Math.max(1, thisGenNum) * thisRadius);
-        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        // let dFraction =
+        //     ((thisGenNum + 1 / 2) * thisRadius - 2 * 0 - 0 * (thisGenNum < 5 ? 100 : 80) + dCompensation) /
+        //     (Math.max(1, thisGenNum) * thisRadius);
+
+         let dCompensation = -5;
+         if (thisGenNum == 1) {
+            //  dCompensation = 0;
+         } else if (thisGenNum > 5 || (thisGenNum == 5 && FanChartView.maxAngle < 360)) {
+             if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                 dCompensation = -5;
+             } else {
+                 dCompensation = -30;
+             }
+         }
+        //  dCompensation = -5;
+         let dFraction =
+             (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+
+        // dFraction = 1.25;
+        console.log("dFraction = ", dFraction, cumulativeGenRadii[thisGenNum + 1], cumulativeGenRadii[thisGenNum], {thisRadius}, {thisGenNum}, {newX}, {newY}, {dCompensation}, {nameAngle});
+
+        let dOrtho = 35 / (cumulativeGenRadii[thisGenNum + 1] + dCompensation);
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
 
@@ -6968,8 +6986,19 @@ import { Utils } from "../shared/Utils.js";
             showAs = false,
             showDs = false;
 
+        let dCompensation = 35;
+        if (thisGenNum==1) {
+            // dCompensation = -45;  
+        } else if (thisGenNum  > 5 || (thisGenNum == 5 && FanChartView.maxAngle < 360)) {
+            if (thisPosNum < 2**(thisGenNum-1)) {
+                dCompensation = 35;
+            } else {    
+                dCompensation = 5;
+            }
+        } 
         let dFraction =
-            (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
+            (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+            // (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
         let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
@@ -7070,6 +7099,7 @@ import { Utils } from "../shared/Utils.js";
         let imgY = 0;
         let imgAngle = 0;
 
+        
         // EACH area used to be started with a complex IF statement -- leaving the structure because it chunks the code nicely visually, and for no other good reason
 
         // SHOW THE X DNA BADGE (gray with X)
@@ -7094,7 +7124,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showX) {
                 // condLog("SHOW THE [ X ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, "");
+                FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, "", ahnNum);
             }
         }
 
@@ -7148,7 +7178,7 @@ import { Utils } from "../shared/Utils.js";
 
         if (showY) {
             // condLog("SHOW THE [ Y ] image for DNA highlights");
-            FanChartView.addNewDNAbadge(imgX, imgY, "Y", imgAngle, "");
+            FanChartView.addNewDNAbadge(imgX, imgY, "Y", imgAngle, "", ahnNum);
         }
 
         // SHOW THE mt DNA BADGE (pink with red mt)
@@ -7173,7 +7203,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showMT) {
                 // condLog("SHOW THE [ MT ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "MT", imgAngle, "");
+                FanChartView.addNewDNAbadge(imgX, imgY, "MT", imgAngle, "", ahnNum);
             }
         }
 
@@ -7214,7 +7244,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showDs) {
                 // condLog("SHOW THE [ Ds ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "Ds", imgAngle, theLink);
+                FanChartView.addNewDNAbadge(imgX, imgY, "Ds", imgAngle, theLink, ahnNum);
             }
         }
 
@@ -7254,7 +7284,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showAs) {
                 // condLog("SHOW THE [ As ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "As", imgAngle, theLink);
+                FanChartView.addNewDNAbadge(imgX, imgY, "As", imgAngle, theLink, ahnNum);
             }
         }
 
@@ -7284,7 +7314,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showDNAconf) {
                 // condLog("SHOW THE [ DNAconf ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "DNAconf", imgAngle, theLink);
+                FanChartView.addNewDNAbadge(imgX, imgY, "DNAconf", imgAngle, theLink, ahnNum);
             }
         }
     }
@@ -8976,7 +9006,7 @@ import { Utils } from "../shared/Utils.js";
         d3.selectAll(".badge" + badgeNum).remove();
     };
 
-    FanChartView.addNewDNAbadge = function (newX, newY, badgeType, nameAngle, link) {
+    FanChartView.addNewDNAbadge = function (newX, newY, badgeType, nameAngle, link, ahnNum) {
         let theSVG = FanChartView.theSVG;
         let theSVG2 = theSVG.nodes()[0].firstChild;
         let DNAbadgeClr = { X: "green", Y: "blue", MT: "red", As: "white", Ds: "white", DNAconf: "orange" };
@@ -8998,6 +9028,14 @@ import { Utils } from "../shared/Utils.js";
         };
         let DNAbadgeStrokeWidth = { X: 5, Y: 5, MT: 3, As: 2, Ds: 2, DNAconf: 4 };
 
+        let thisBadgeID = "badgeDNA-" + badgeType + "-" + ahnNum;
+
+        if (document.getElementById(thisBadgeID)) {
+            console.log("Already have this badge:", thisBadgeID);
+            document.getElementById(thisBadgeID).setAttribute("transform", "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")");
+            return;
+        }
+
         let DNAbadgeSVG = {
             X: "M 8 5 L 22 25 M 22 5 L 8 25",
             Y: "M 8 5 L 15 15 L 15 25 M 15 15 L 22 5",
@@ -9012,6 +9050,7 @@ import { Utils } from "../shared/Utils.js";
 
         var thisBadge = appendSVGChild("g", theSVG2, {
             class: "badgeDNA badgeDNA-" + badgeType,
+            id: thisBadgeID,
             transform: "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")",
         });
         let thisRect = appendSVGChild("rect", thisBadge, {
