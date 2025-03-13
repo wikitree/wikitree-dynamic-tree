@@ -155,6 +155,8 @@ import { Utils } from "../shared/Utils.js";
     var fanGenRadii = [220,275,300,325, 350, 375, 400, 320, 320, 320, 320, 320, 320, 320, 320, 320];
     var fanGenCrossSpan = [220, 275, 300, 325, 350, 375, 400, 320, 320, 320, 320, 320, 320, 320, 320, 320];
     var cumulativeGenRadii = [135,270,270,270, 270, 270, 270, 270, 270, 270, 270, 270, 270, 270, 270, 270];
+    var extraRoomNeededForBadges = false;
+
     // calculateFontMetrics();
     updateCumulativeWidths();
     condLog({cumulativeGenRadii})
@@ -2541,6 +2543,20 @@ import { Utils } from "../shared/Utils.js";
             console.log("Max Dimensions (NOT adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.max(Math.ceil(maxRad), 140) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
+            extraRoomNeededForBadges = false;
+            if (FanChartView.currentSettings) {
+                if (
+                    FanChartView.currentSettings["general_options_showBadges"] == true ||
+                    (FanChartView.currentSettings["highlight_options_showHighlights"] == true &&
+                        (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" ||
+                            FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Highlights") && 
+                    FanChartView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") > -1 )
+                ) {
+                    extraRoomNeededForBadges = true;
+                    newRadius4ThisGen += 70;
+                    maxRad += 35;
+                }
+            }
 
             // if (newRadius4ThisGen > fanGenRadii[gen] || Math.abs(newRadius4ThisGen - fanGenRadii[gen]) > 20) {
             //     updateNeeded = true;
@@ -2659,6 +2675,33 @@ import { Utils } from "../shared/Utils.js";
                 gen < FanChartView.currentSettings["photo_options_showPicsToValue"]
             ) {
                 newRadius4ThisGen += 50;
+            }
+
+            // if (FanChartView.currentSettings) {
+            //     if (
+            //         FanChartView.currentSettings["general_options_showBadges"] == true ||
+            //         (FanChartView.currentSettings["general_options_showBadges"] == true &&
+            //             (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" ||
+            //                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Highlights"))
+            //     ) {
+            //         newRadius4ThisGen += 70;
+            //         maxRad += 35;
+            //     }
+            // }
+
+            extraRoomNeededForBadges = false;
+            if (FanChartView.currentSettings) {
+                if (
+                    FanChartView.currentSettings["general_options_showBadges"] == true ||
+                    (FanChartView.currentSettings["highlight_options_showHighlights"] == true &&
+                        (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" ||
+                            FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Highlights") &&
+                        FanChartView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") > -1)
+                ) {
+                    extraRoomNeededForBadges = true;
+                    newRadius4ThisGen += 70;
+                    maxRad += 35;
+                }
             }
 
             if (newRadius4ThisGen > fanGenRadii[gen] || Math.abs(newRadius4ThisGen - fanGenRadii[gen]) > 20) {
@@ -5077,8 +5120,10 @@ import { Utils } from "../shared/Utils.js";
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
-            let newX = (thisCumulativeRadius + prevCumulativeRadius)/2 * Math.cos((placementAngle * Math.PI) / 180);
-            let newY = (thisCumulativeRadius + prevCumulativeRadius)/2 * Math.sin((placementAngle * Math.PI) / 180);
+            let newX = ((thisCumulativeRadius + prevCumulativeRadius)/2 - ( extraRoomNeededForBadges ? 35 : 0) ) * Math.cos((placementAngle * Math.PI) / 180);
+            let newY =
+                ((thisCumulativeRadius + prevCumulativeRadius) / 2 - (extraRoomNeededForBadges ? 35 : 0)) *
+                Math.sin((placementAngle * Math.PI) / 180);
 
             // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
             showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle);
@@ -5233,6 +5278,10 @@ import { Utils } from "../shared/Utils.js";
             return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
     };
+
+    FanChartView.extraRoomNeededForBadgesDisplay = function () {
+        console.log({extraRoomNeededForBadges});
+    }
 
     function clrComponentValue(rgbValue) {
         let sRGB = rgbValue / 255;
@@ -6842,11 +6891,14 @@ import { Utils } from "../shared/Utils.js";
              }
          }
         //  dCompensation = -5;
+
+         dCompensation += 35.0;
+
          let dFraction =
              (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
 
         // dFraction = 1.25;
-        console.log("dFraction = ", dFraction, cumulativeGenRadii[thisGenNum + 1], cumulativeGenRadii[thisGenNum], {thisRadius}, {thisGenNum}, {newX}, {newY}, {dCompensation}, {nameAngle});
+        // console.log("dFraction = ", dFraction, cumulativeGenRadii[thisGenNum + 1], cumulativeGenRadii[thisGenNum], {thisRadius}, {thisGenNum}, {newX}, {newY}, {dCompensation}, {nameAngle});
 
         let dOrtho = 35 / (cumulativeGenRadii[thisGenNum + 1] + dCompensation);
         let dOrtho2 = dOrtho;
@@ -6996,6 +7048,9 @@ import { Utils } from "../shared/Utils.js";
                 dCompensation = 5;
             }
         } 
+
+        dCompensation += 35;
+        
         let dFraction =
             (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
             // (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
@@ -7649,7 +7704,7 @@ import { Utils } from "../shared/Utils.js";
                 let doIt = doHighlightFor(FanChartView.numGens2Display, pos, ahnNum);
                 if (doIt == true) {
                     let theInfoBox = document.getElementById("wedgeBoxFor" + ahnNum);
-                    theInfoBox.setAttribute("style", "background-color: " + "yellow");
+                    if (theInfoBox) {theInfoBox.setAttribute("style", "background-color: " + "yellow");}
                 }
             }
         }
