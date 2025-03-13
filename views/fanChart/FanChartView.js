@@ -5213,7 +5213,7 @@ import { Utils } from "../shared/Utils.js";
                                 : "");
                         // .replace(/\-/g, " "); // On second thought - leave the dashes in, if that's the format chosen
 
-                        theMDateDIV.parentNode.style.transform =
+                        theMDateDIV.parentNode.parentNode.style.transform =
                             "translate(" + mDateX + "px," + mDateY + "px)" + " " + "rotate(" + mDateAngle + "deg)";
                         if (FanChartView.currentSettings["date_options_marriageBlend"] == true) {
                             theMDateDIV.style.backgroundColor = thisBkgdClr;
