@@ -1722,7 +1722,11 @@ import { Utils } from "../shared/Utils.js";
                 document.getElementById("highlightDescriptor").style.display = "block";
                 if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
                     document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
-                    if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+                    ) {
                         document.getElementById("highlightPeepsDescriptor").innerHTML =
                             "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
                     }
@@ -1734,7 +1738,11 @@ import { Utils } from "../shared/Utils.js";
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
                     document.getElementById("highlightPeepsDescriptor").textContent =
                         "X, Y, mitochondrial DNA ancestors";
-                    if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+                    ) {
                         document.getElementById("highlightPeepsDescriptor").innerHTML =
                             "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
                     }
@@ -7050,7 +7058,7 @@ import { Utils } from "../shared/Utils.js";
         } 
 
         dCompensation += 35;
-        
+
         let dFraction =
             (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
             // (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
@@ -7074,7 +7082,7 @@ import { Utils } from "../shared/Utils.js";
                         showY = true;
                         showDs = true;
                         showAs = true;
-                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]] && thePeopleList[FanChartView.myAhnentafel.list[1]]._data && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         showY = true;
                         showDs = true;
                         showAs = true;
@@ -7120,7 +7128,12 @@ import { Utils } from "../shared/Utils.js";
                     // AND/OR by Y-DNA inheritance
                     if (ahnNum > 1) {
                         showY = true;
-                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    } else if (
+                        ahnNum == 1 &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                    ) {
                         showY = true;
                     }
                 }
@@ -7214,7 +7227,11 @@ import { Utils } from "../shared/Utils.js";
             showY = true;
         }
 
-        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+        if (
+            thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+            thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+            thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+        ) {
             showY = false;
             if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
                 showDs = false;
@@ -7289,6 +7306,8 @@ import { Utils } from "../shared/Utils.js";
 
                 if (
                     FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
                     thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" &&
                     thisGenNum == 0
                 ) {
@@ -7329,6 +7348,8 @@ import { Utils } from "../shared/Utils.js";
                 showAs = true;
                 if (
                     FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
                     thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" &&
                     thisGenNum == 0
                 ) {
@@ -7376,13 +7397,22 @@ import { Utils } from "../shared/Utils.js";
 
     function doHighlightFor(gen, pos, ahnNum) {
         if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
-            if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+            ) {
                 return false;
             }
             if (pos == 0) {
                 if (ahnNum > 1) {
                     return true;
-                } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                } else if (
+                    ahnNum == 1 &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                ) {
                     return true;
                 }
             }
@@ -7403,12 +7433,21 @@ import { Utils } from "../shared/Utils.js";
                 return true;
             } else if (pos == 0) {
                 // OR by Y-DNA inheritance
-                if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                if (
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+                ) {
                     return false;
                 }
                 if (ahnNum > 1) {
                     return true;
-                } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                } else if (
+                    ahnNum == 1 &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                ) {
                     return true;
                 }
             }
@@ -7566,7 +7605,11 @@ import { Utils } from "../shared/Utils.js";
     function populateXAncestorList(ahnNum) {
         if (ahnNum == 1) {
             FanChartView.XAncestorList = [1];
-            if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+            ) {
                 populateXAncestorList(2); // a woman inherits an X-chromosome from her father
                 populateXAncestorList(3); // and her mother
             } else {
