@@ -2411,7 +2411,7 @@ import { Utils } from "../shared/Utils.js";
             let prevCumulativeRadius = cumulativeGenRadii[r - 1];
             let maxBoxWidthForThisGen =
                 ((FanChartView.maxAngle / 360) * 2 * Math.PI * prevCumulativeRadius) / numSpotsThisGen;
-            console.log("MAX BOX WIDTH FOR GEN", r, "is", maxBoxWidthForThisGen);
+            // console.log("MAX BOX WIDTH FOR GEN", r, "is", maxBoxWidthForThisGen);
             for (let l = 6; l >= 0; l--) {
                 if (numLinesHeights[l] < maxBoxWidthForThisGen) {
                     numLinesInRings[r] = l;
@@ -2673,7 +2673,7 @@ import { Utils } from "../shared/Utils.js";
             }
             // maxCross /= FanChartView.currentScaleFactor;
             // maxRad /= FanChartView.currentScaleFactor;
-            console.log("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
+            condLog("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.ceil(maxRad) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
 
@@ -2773,7 +2773,7 @@ import { Utils } from "../shared/Utils.js";
                 pa.setAttribute("transform", oldTrans);
             }
 
-            console.log("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
+            condLog("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.ceil(maxRad) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
 
@@ -2787,7 +2787,7 @@ import { Utils } from "../shared/Utils.js";
             fanGenCrossSpan[gen] = newCrossSpan4ThisGen;
         }
         updateCumulativeWidths();
-        console.log("NEW suggested Radii: ", { fanGenRadii });
+        condLog("NEW suggested Radii: ", { fanGenRadii });
         return updateNeeded;
     }
 
@@ -2847,7 +2847,7 @@ import { Utils } from "../shared/Utils.js";
                     // 3rd parameter is radius of Sector (pointy triangle with curved side opposite centre of circle)
                     // To make Cells more fluid to adjust to size of content, replace calculation of 270 * genIndex with some other calculation
 
-                    if (index==0){console.log("Gen:", genIndex, "SECTOR (pointy triangle)", index, "R:", cumulativeGenRadii[genIndex]);}
+                    // if (index==0){console.log("Gen:", genIndex, "SECTOR (pointy triangle)", index, "R:", cumulativeGenRadii[genIndex]);}
                     SVGcode = SVGfunctions.getSVGforSector(
                         0,
                         0,
@@ -7579,26 +7579,45 @@ import { Utils } from "../shared/Utils.js";
 
             let inputDate = 1950 + "-" + aliveMMMSelector.value + "-" + aliveDDSelector;
             if (aliveYYYYSelector.value > 1) {
-                inputDate = aliveYYYYSelector.value + "-" + aliveMMMSelector.value + "-" + aliveDDSelector;
+                inputDate = aliveYYYYSelector.value + "-" + aliveMMMSelector.value + "-" + aliveDDSelector.value;
             }
+
+            if ( ahnNum > 64 && 
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]) {condLog(
+                    "Looking for alive by ",
+                    inputDate,
+                    { ahnNum },
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate,
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate,
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]
+                );
+            }   
 
             if (
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == false &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > inputDate
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data &&
+                !thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving
             ) {
-                return true;
-            } else if (
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == true
-            ) {
-                return true;
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving = !
+                    (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > "0000");
             }
+                if (
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == false &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > inputDate
+                ) {
+                    return true;
+                } else if (
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == true
+                ) {
+                    return true;
+                }
         }
 
         return false;
