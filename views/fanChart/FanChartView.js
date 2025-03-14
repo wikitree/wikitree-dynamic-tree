@@ -1708,6 +1708,8 @@ import { Utils } from "../shared/Utils.js";
                 LegendTitle.textContent = "Bio Check status";
             } else if (colourBy == "DNAstatus") {
                 LegendTitle.textContent = "Parental status";
+            } else {
+                LegendTitle.textContent = "";
             }
         };
 
@@ -3233,6 +3235,12 @@ import { Utils } from "../shared/Utils.js";
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else {
+            // console.log("NO INNER CODE NEEDED ????");
+            innerLegendDIV.innerHTML = "";
+            LegendTitle.textContent = "";
+            
+
+            
             for (let index = 0; index < thisColourArray.length; index++) {
                 let theTextFontClr = "Black";
                 let luminance = calcLuminance(thisColourArray[index]);
