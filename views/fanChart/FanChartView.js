@@ -4903,6 +4903,7 @@ import { Utils } from "../shared/Utils.js";
                         mDateDIVdate.classList.add("mDateBox");
                         mDateDIVinner.classList.remove("mDateBox2");
                         mDateDIVinner.classList.add("mDateBox");
+                        mDateDIVdate.style.width = "55px";
                     }
                     // console.log("Removed ?", {thisGenNum}, ancestorObject.ahnNum,FanChartView.maxAngle ,  theInfoBox.classList.value);
                 } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
