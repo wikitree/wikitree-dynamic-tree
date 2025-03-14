@@ -1287,7 +1287,7 @@ import { Utils } from "../shared/Utils.js";
             ' <A title="Display Traditional Fan Chart (240º)" onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
             ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
             '<td width="5%">&nbsp;' +
-            '<span id=legendASCII style="display:none;"><A title="Hide/Show Legend" onclick="FanChartView.toggleLegend();"><font size=+2>' +
+            '<span id=legendASCII style="display:inline-block;"><A title="Hide/Show Legend" onclick="FanChartView.toggleLegend();"><font size=+2>' +
             LEGEND_CLIPBOARD +
             "</font></A></span>" +
             "</td>" +
@@ -3932,6 +3932,7 @@ import { Utils } from "../shared/Utils.js";
 
                             self.drawTree(person);
                             clearMessageBelowButtonBar();
+                            FanChartView.refreshTheLegend();
                             populateXAncestorList(1);
                             fillOutFamilyStatsLocsForAncestors();
 
@@ -6913,11 +6914,35 @@ import { Utils } from "../shared/Utils.js";
 
          let dFraction =
              (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+         let dFraction2 =
+             (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation - 35) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
 
-        // dFraction = 1.25;
-        // console.log("dFraction = ", dFraction, cumulativeGenRadii[thisGenNum + 1], cumulativeGenRadii[thisGenNum], {thisRadius}, {thisGenNum}, {newX}, {newY}, {dCompensation}, {nameAngle});
+         let dFraction3 =
+             (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation - 70) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
 
-        let dOrtho = 35 / (cumulativeGenRadii[thisGenNum + 1] + dCompensation);
+
+         let tooNarrowFor5inRow = false;
+         let tooNarrowFor3and2Row = false;
+         let minWidthNeeded =
+             (2 * Math.PI * (FanChartView.maxAngle / 360) * (cumulativeGenRadii[thisGenNum ] + dCompensation)) / (2 ** thisGenNum);
+         if (minWidthNeeded < 160) {
+             tooNarrowFor5inRow = true;
+        }
+            
+         if (minWidthNeeded < 105) {
+             tooNarrowFor5inRow = true;
+             tooNarrowFor3and2Row = true;
+         }
+
+        //  console.log("minWidthNeeded = ", minWidthNeeded, { tooNarrowFor5inRow }, {tooNarrowFor3and2Row});
+
+        
+         
+         
+         // console.log("dFraction = ", dFraction, cumulativeGenRadii[thisGenNum + 1], cumulativeGenRadii[thisGenNum], {thisRadius}, {thisGenNum}, {newX}, {newY}, {dCompensation}, {nameAngle});
+         
+        let dOrthoNudge = 30 / (cumulativeGenRadii[thisGenNum ] + dCompensation);
+        let dOrtho = 30 / (cumulativeGenRadii[thisGenNum] + dCompensation);
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
 
@@ -6930,7 +6955,7 @@ import { Utils } from "../shared/Utils.js";
             // dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
             // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
 
-            let halfNumBadgesCenteringOffset = 1.5 * 0.5 + numOfBadges / 2;
+            let halfNumBadgesCenteringOffset = 3.5;// i - 3; // = 1.5 * 0.5 + numOfBadges / 2;
             let theBadgeX = 0;
             let theBadgeY = 0;
 
@@ -6942,8 +6967,87 @@ import { Utils } from "../shared/Utils.js";
                 theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
                 theBadgeY = newY * dFraction - dOrtho * newX;
             } else {
-                theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
-                theBadgeY = newY * dFraction - (halfNumBadgesCenteringOffset - i) * dOrtho * newX;
+                let nudgeMultiplier = 1;
+                if (thisGenNum < 5 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
+                    nudgeMultiplier = 0;
+                } else if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                     nudgeMultiplier = -1;
+                 } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
+                      nudgeMultiplier = 0;
+                 }
+
+                theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY + nudgeMultiplier * dOrthoNudge * newY;
+                theBadgeY = newY * dFraction - (halfNumBadgesCenteringOffset - i) * dOrtho * newX - nudgeMultiplier * dOrthoNudge * newX;
+                
+                if (tooNarrowFor5inRow) {
+                     if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                         nudgeMultiplier = -1;
+                     } else {
+                        nudgeMultiplier = 0;
+                     }
+                    if (i % 2 == 1) {
+                        // ODD Badges go at edge
+                        theBadgeX =
+                            newX * dFraction +
+                            (halfNumBadgesCenteringOffset - (3 + (i-3)/2)) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction -
+                            (halfNumBadgesCenteringOffset - (3 + (i-3)/2)) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    } else {
+                        // EVEN Badges go inside
+                        theBadgeX =
+                            newX * dFraction2 +
+                            (halfNumBadgesCenteringOffset - i + (i-3)/2) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction2 -
+                            (halfNumBadgesCenteringOffset - i + (i-3)/2) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                        
+
+                    }
+                }
+                if (tooNarrowFor3and2Row) {
+                    if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                        nudgeMultiplier = -1;
+                    } else {
+                        nudgeMultiplier = 0;
+                    }
+
+                    if (i==1 || i==5) {
+                        // A/ E Badges go at edge
+                        theBadgeX =
+                            newX * dFraction +
+                            (halfNumBadgesCenteringOffset - (3 + (i - 3) / 4)) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction -
+                            (halfNumBadgesCenteringOffset - (3 + (i - 3) / 4)) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    } else if (i % 2 == 0) {
+                        // B / D Badges go at edge
+                        theBadgeX =
+                            newX * dFraction2 +
+                            (halfNumBadgesCenteringOffset - i + (i - 3) / 2) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction2 -
+                            (halfNumBadgesCenteringOffset - i + (i - 3) / 2) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    } else {
+                        // C Badge goes deep inside
+                        theBadgeX =
+                            newX * dFraction3 +
+                            (halfNumBadgesCenteringOffset - i ) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction3 -
+                            (halfNumBadgesCenteringOffset - i ) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    }
+                }
             }
 
             // stickerDIV.style.rotate = nameAngle + "deg";
@@ -7068,10 +7172,20 @@ import { Utils } from "../shared/Utils.js";
 
         dCompensation += 35;
 
+        let tooNarrowForAsandDs = false;
+        let minWidthNeeded =
+            2 * Math.PI * (FanChartView.maxAngle / 360) * (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (2 ** thisGenNum);
+        if (minWidthNeeded < 105 ) {
+            tooNarrowForAsandDs = true;
+        }
+        // console.log("minWidthNeeded = ", minWidthNeeded, {tooNarrowForAsandDs});
+
         let dFraction =
             (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
             // (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
-        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        // let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho = 35 / (cumulativeGenRadii[thisGenNum - 1] + dCompensation);
+        let dOrthoNudge = 15 / (cumulativeGenRadii[thisGenNum - 1] + dCompensation);
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
 
@@ -7089,12 +7203,12 @@ import { Utils } from "../shared/Utils.js";
                 if (pos == 0) {
                     if (ahnNum > 1) {
                         showY = true;
-                        showDs = true;
-                        showAs = true;
+                        showDs = true && !tooNarrowForAsandDs;
+                        showAs = true && !tooNarrowForAsandDs;
                     } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]] && thePeopleList[FanChartView.myAhnentafel.list[1]]._data && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         showY = true;
-                        showDs = true;
-                        showAs = true;
+                        showDs = true && !tooNarrowForAsandDs;
+                        showAs = true && !tooNarrowForAsandDs;
                     }
                 }
                 if (pos % 2 == 0) {
@@ -7106,8 +7220,8 @@ import { Utils } from "../shared/Utils.js";
                 dOrtho = 0;
                 if (pos == 2 ** gen - 1) {
                     showMT = true;
-                    showDs = true;
-                    showAs = true;
+                    showDs = true && !tooNarrowForAsandDs;
+                    showAs = true && !tooNarrowForAsandDs;
                 }
                 showAllAs = true;
                 if (pos % 2 == 1) {
@@ -7118,8 +7232,8 @@ import { Utils } from "../shared/Utils.js";
                 dOrtho = 0;
                 if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
                     showX = true;
-                    showDs = true;
-                    showAs = true;
+                    showDs = true && !tooNarrowForAsandDs;
+                    showAs = true && !tooNarrowForAsandDs;
                 }
 
                 showAllAs = true;
@@ -7182,8 +7296,8 @@ import { Utils } from "../shared/Utils.js";
         // SHOW THE X DNA BADGE (gray with X)
         // ---- --- - --- -----  ---- ---- -
         if (1 == 1) {
-            imgX = newX * dFraction;
-            imgY = newY * dFraction;
+            imgX = newX * dFraction + (dOrthoNudge) * newY;
+            imgY = newY * dFraction - (dOrthoNudge) * newX;
             imgAngle = nameAngle;
 
             if (thisGenNum == 0) {
@@ -7208,8 +7322,8 @@ import { Utils } from "../shared/Utils.js";
         // SHOW THE Y DNA BADGE (blue with Y)
         // ---- --- - --- -----  ---- ---- -
         if (1 == 1) {
-            imgX = newX * dFraction + dOrtho * newY;
-            imgY = newY * dFraction - dOrtho * newX;
+            imgX = newX * dFraction + dOrtho * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction - dOrtho * newX - dOrthoNudge * newX;
             imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -7265,8 +7379,8 @@ import { Utils } from "../shared/Utils.js";
         // SHOW THE mt DNA BADGE (pink with red mt)
         // ---- --- -- --- -----  ---- ---- --- --
         if (1 == 1) {
-            imgX = newX * dFraction - dOrtho * newY;
-            imgY = newY * dFraction + dOrtho * newX;
+            imgX = newX * dFraction - dOrtho * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction + dOrtho * newX - dOrthoNudge * newX;
             imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -7297,8 +7411,8 @@ import { Utils } from "../shared/Utils.js";
                 "/890#" +
                 ext;
             // condLog(theLink);
-            imgX = newX * dFraction - dOrtho2 * newY;
-            imgY = newY * dFraction + dOrtho2 * newX;
+            imgX = newX * dFraction - dOrtho2 * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction + dOrtho2 * newX - dOrthoNudge * newX;
             imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -7311,7 +7425,7 @@ import { Utils } from "../shared/Utils.js";
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllDs == true
             ) {
-                showDs = true;
+                showDs = !tooNarrowForAsandDs;
 
                 if (
                     FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
@@ -7339,8 +7453,8 @@ import { Utils } from "../shared/Utils.js";
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
                 "/89#" +
                 ext;
-            imgX = newX * dFraction + dOrtho2 * newY;
-            imgY = newY * dFraction - dOrtho2 * newX;
+            imgX = newX * dFraction + dOrtho2 * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction - dOrtho2 * newX - dOrthoNudge * newX;
             imgAngle = nameAngle; //- 90;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -7354,7 +7468,7 @@ import { Utils } from "../shared/Utils.js";
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllAs == true
             ) {
-                showAs = true;
+                showAs = !tooNarrowForAsandDs;
                 if (
                     FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
                     thePeopleList[FanChartView.myAhnentafel.list[1]] &&
@@ -9075,7 +9189,7 @@ import { Utils } from "../shared/Utils.js";
     }
 
     function appendSVGChild(elementType, target, attributes = {}, text = "") {
-        // condLog("appending SVG Child");
+        // console.log("appending SVG Child", attributes);
         const element = document.createElementNS("http://www.w3.org/2000/svg", elementType);
         Object.entries(attributes).map((a) => element.setAttribute(a[0], a[1]));
         if (text) {
@@ -9089,7 +9203,12 @@ import { Utils } from "../shared/Utils.js";
 
     FanChartView.addNewBadge = function (newX, newY, badgeNum, nameAngle) {
         let theSVG = FanChartView.theSVG;
-
+        if (isNaN(newX)) {
+            newX = 0;
+        }
+        if (isNaN(newY)) {
+            newY = 0;
+        }
         // condLog(theSVG, newX, newY);
         // for (key in theSVG) {
         //     // condLog(": ", key, theSVG[key]);
@@ -9135,6 +9254,12 @@ import { Utils } from "../shared/Utils.js";
     FanChartView.addNewDNAbadge = function (newX, newY, badgeType, nameAngle, link, ahnNum) {
         let theSVG = FanChartView.theSVG;
         let theSVG2 = theSVG.nodes()[0].firstChild;
+        if (isNaN(newX)) {
+            newX = 0;
+        }
+        if (isNaN(newY)) {
+            newY = 0;
+        }
         let DNAbadgeClr = { X: "green", Y: "blue", MT: "red", As: "white", Ds: "white", DNAconf: "orange" };
         let DNAbadgeFill = {
             X: "lightgray",
