@@ -2729,10 +2729,10 @@ import { Utils } from "../shared/Utils.js";
     function recalculateMaxWidthsForCells_AI() {
         // Need to run this AFTER the wedges have been drawn, so that the widths of the cells are accurate
         //condLog(
-            "Time to recalculate the max widths for the cells in the Fan Chart",
-            "FanChartView.currentScaleFactor;:",
-            FanChartView.currentScaleFactor
-        );
+        //     "Time to recalculate the max widths for the cells in the Fan Chart",
+        //     "FanChartView.currentScaleFactor;:",
+        //     FanChartView.currentScaleFactor
+        // );
 
         let updateNeeded = false;
         let svg = document.getElementById("fanChartSVG");
