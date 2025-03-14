@@ -4278,7 +4278,7 @@ import { Utils } from "../shared/Utils.js";
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
                         <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
                         ancestorObject.ahnNum
-                    }  style="text-align:${floatDirection};">${extraInfoForThisAnc}</div>
+                    }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}</div>
                         <div class="name fontBold font${font4Name}"   id=nameDivFor${
                         ancestorObject.ahnNum
                     }  style="font-size: 14px;" >${getSettingsName(person)}</div>
@@ -4297,7 +4297,7 @@ import { Utils } from "../shared/Utils.js";
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 3px;">
                         <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
                         ancestorObject.ahnNum
-                    }  style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
+                    }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="name fontBold font${font4Name}"  id=nameDivFor${
                         ancestorObject.ahnNum
                     }>${getSettingsName(person)}</div>
@@ -4331,7 +4331,7 @@ import { Utils } from "../shared/Utils.js";
                         floatDirection = "right";
                     }
                     if (photoUrl) {
-                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection};" />`;
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
                         // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
@@ -4388,7 +4388,7 @@ import { Utils } from "../shared/Utils.js";
                     }
                     let photoDiv = "";
                     if (photoUrl) {
-                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection};" />`;
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
                             
                         // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
