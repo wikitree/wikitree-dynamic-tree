@@ -33,6 +33,18 @@ import { Utils } from "../shared/Utils.js";
         nodeHeight = boxHeight * 2;
     let font4Name = "SansSerif";
     let font4Info = "SansSerif";
+    let font4Extras = "Mono";
+
+    var fontMetrics = {
+        "SansSerif": { mDateWidth: 140, height: 25 },
+        "Mono": { mDateWidth: 140, height: 25 },
+        "Serif": { mDateWidth: 140, height: 25 },
+        "Fantasy": { mDateWidth: 140, height: 25 },
+        "Script": { mDateWidth: 140, height: 25 },
+    };
+
+    var numLinesHeights = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180];
+    var numLinesInRings = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6];
 
     const numOfBadges = 5;
 
@@ -50,6 +62,8 @@ import { Utils } from "../shared/Utils.js";
     const PRINTER_ICON = "&#x1F4BE;";
     const SETTINGS_GEAR = "&#x2699;";
     const LEGEND_CLIPBOARD = "&#x1F4CB;";
+
+    var minimumRingRadius = 140;
 
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
@@ -141,6 +155,9 @@ import { Utils } from "../shared/Utils.js";
     var fanGenRadii = [220,275,300,325, 350, 375, 400, 320, 320, 320, 320, 320, 320, 320, 320, 320];
     var fanGenCrossSpan = [220, 275, 300, 325, 350, 375, 400, 320, 320, 320, 320, 320, 320, 320, 320, 320];
     var cumulativeGenRadii = [135,270,270,270, 270, 270, 270, 270, 270, 270, 270, 270, 270, 270, 270, 270];
+    var extraRoomNeededForBadges = false;
+
+    // calculateFontMetrics();
     updateCumulativeWidths();
     condLog({cumulativeGenRadii})
     var PastelsArray = []; // to be defined shortly
@@ -728,6 +745,20 @@ import { Utils } from "../shared/Utils.js";
                             ],
                             defaultValue: "WikiTreeID", // GPC - Changed for AZURE  / "none"
                         },
+                        {
+                            optionName: "font4Extras",
+                            type: "radio",
+                            label: "Font for Extras",
+                            values: [
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Mono",
+                        },
+
                         // {
                         //     optionName: "showWikiID",
                         //     label: "Show WikiTree ID for each person",
@@ -870,7 +901,7 @@ import { Utils } from "../shared/Utils.js";
                             optionName: "marriageAtTopEarlyGens",
                             label: "Slide Marriage Date box to top (for first 5 generations)",
                             type: "checkbox",
-                            defaultValue: false,
+                            defaultValue: true,
                             indent: 3,
                         },
                         // {
@@ -934,7 +965,13 @@ import { Utils } from "../shared/Utils.js";
                             ],
                             defaultValue: "Region", // GPC - Changed for AZURE  / "Full"
                         },
-                        // { optionName: "break1", type: "br" },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "simplifyOuter",
+                            label: "Simplify or Hide Places in Outer Rings (to save space):",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
                         // { optionName: "showMarriage", label: "Show Marriage Locations", type: "checkbox", defaultValue: 0 },
                         // { optionName: "break2", comment: "Marriage Location Format:", type: "br" },
                         // {
@@ -1250,7 +1287,7 @@ import { Utils } from "../shared/Utils.js";
             ' <A title="Display Traditional Fan Chart (240º)" onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
             ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
             '<td width="5%">&nbsp;' +
-            '<span id=legendASCII style="display:none;"><A title="Hide/Show Legend" onclick="FanChartView.toggleLegend();"><font size=+2>' +
+            '<span id=legendASCII style="display:inline-block;"><A title="Hide/Show Legend" onclick="FanChartView.toggleLegend();"><font size=+2>' +
             LEGEND_CLIPBOARD +
             "</font></A></span>" +
             "</td>" +
@@ -1628,11 +1665,11 @@ import { Utils } from "../shared/Utils.js";
                     redoWedgesForFanChart(true);
                     FanChartView.myAncestorTree.draw();
                     // let's check one more time ...
-                    if (recalculateMaxWidthsForCells() == true) {
-                        condLog("DOING REDRAW again!");
-                        redoWedgesForFanChart(true);
-                        FanChartView.myAncestorTree.draw();
-                    }
+                    // if (recalculateMaxWidthsForCells() == true) {
+                    //     condLog("DOING REDRAW again!");
+                    //     redoWedgesForFanChart(true);
+                    //     FanChartView.myAncestorTree.draw();
+                    // }
                 }
             } else {
                 // condLog("NOTHING happened according to SETTINGS OBJ");
@@ -1671,6 +1708,8 @@ import { Utils } from "../shared/Utils.js";
                 LegendTitle.textContent = "Bio Check status";
             } else if (colourBy == "DNAstatus") {
                 LegendTitle.textContent = "Parental status";
+            } else {
+                LegendTitle.textContent = "";
             }
         };
 
@@ -1685,7 +1724,11 @@ import { Utils } from "../shared/Utils.js";
                 document.getElementById("highlightDescriptor").style.display = "block";
                 if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
                     document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
-                    if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+                    ) {
                         document.getElementById("highlightPeepsDescriptor").innerHTML =
                             "Y DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
                     }
@@ -1697,7 +1740,11 @@ import { Utils } from "../shared/Utils.js";
                 } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
                     document.getElementById("highlightPeepsDescriptor").textContent =
                         "X, Y, mitochondrial DNA ancestors";
-                    if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                    if (
+                        thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+                    ) {
                         document.getElementById("highlightPeepsDescriptor").innerHTML =
                             "X, Y, mitochondrial DNA ancestors<br><i>Y DNA inherited and passed on by male ancestors only</i>";
                     }
@@ -1938,7 +1985,7 @@ import { Utils } from "../shared/Utils.js";
                         .append("foreignObject")
                         .attrs({
                             id: "mDateFor-" + ahnNum + "inner",
-                            class: "centered mDateBox2",
+                            class: "centered",
                             width: "20px",
                             height: "20px", // the foreignObject won't display in Firefox if it is 0 height
                             // x: 25 * index,
@@ -2340,6 +2387,9 @@ import { Utils } from "../shared/Utils.js";
     function updateCumulativeWidths() {
         let currCumulativeRadius = 0;
         for (let g = 0; g < fanGenRadii.length; g++) {
+            if (fanGenRadii[g] < minimumRingRadius) {
+                fanGenRadii[g] = minimumRingRadius;
+            }
             if (g <= 4 || (g == 5 && FanChartView.maxAngle == 360)) {
                 condLog("CUMUL CALC:", g, currCumulativeRadius, "+ radius", fanGenRadii[g]);
                 currCumulativeRadius += fanGenRadii[g];
@@ -2350,8 +2400,82 @@ import { Utils } from "../shared/Utils.js";
             }
             cumulativeGenRadii[g] = currCumulativeRadius;
         }
-         console.log("FINAL CUMUL CALC:",  currCumulativeRadius);
+        console.log("FINAL CUMUL CALC:", currCumulativeRadius, "based on", fanGenRadii);
+
+        if (FanChartView.currentSettings) {updateOuterRimNeeds();}
     }
+    
+    
+
+    function updateNumLinesInRings() {
+        for (let r = 1; r <= 10; r++) {
+            let numSpotsThisGen = 2 ** r;
+            let prevCumulativeRadius = cumulativeGenRadii[r - 1];
+            let maxBoxWidthForThisGen =
+                ((FanChartView.maxAngle / 360) * 2 * Math.PI * prevCumulativeRadius) / numSpotsThisGen;
+            // console.log("MAX BOX WIDTH FOR GEN", r, "is", maxBoxWidthForThisGen);
+            for (let l = 6; l >= 0; l--) {
+                if (numLinesHeights[l] < maxBoxWidthForThisGen) {
+                    numLinesInRings[r] = l;
+                    break;  
+                }
+            }
+        }
+        console.log({numLinesInRings});
+
+    }
+
+    function updateOuterRimNeeds() {
+        let font4Names = FanChartView.currentSettings["general_options_font4Names"];
+        let font4Info = FanChartView.currentSettings["general_options_font4Info"];
+        let font4Extras = FanChartView.currentSettings["general_options_font4Extras"];
+        let maxLineHeight = Math.max( fontMetrics[font4Names]["height"], fontMetrics[font4Info]["height"], fontMetrics[font4Extras]["height"]);
+        let extraBufferForMarriageText = 0;
+        if (FanChartView.currentSettings["date_options_showMarriage"]) {
+            extraBufferForMarriageText = fontMetrics[font4Info]["height"]/2;
+        }
+        numLinesHeights[0] = 0;
+        numLinesHeights[1] = maxLineHeight + extraBufferForMarriageText;
+        numLinesHeights[2] = numLinesHeights[1] + maxLineHeight;
+        for (let l = 3; l <= 6; l++) {
+            numLinesHeights[l] = numLinesHeights[l - 1] + fontMetrics[font4Info]["height"];            
+        }
+
+        console.log({numLinesHeights});
+        updateNumLinesInRings();
+    }
+
+    FanChartView.updateOuterRimNeeds = updateOuterRimNeeds;
+
+    function calculateFontMetrics() {
+        // Create a canvas element
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        var fontNames = {"SansSerif":"Arial", "Mono":"Courier New", "Serif":"Times New Roman", "Fantasy":"fantasy", "Script":"cursive"};
+        const nameDIV = document.getElementById("nameDivFor1");
+        let prevFont = FanChartView.currentSettings["general_options_font4Names"];
+        const origFont = prevFont;
+        for (let font in fontNames) {
+            context.font = "18px " + fontNames[font];
+            // Measure the text width
+            let metrics = context.measureText("m. 28 Aug 1987");
+            fontMetrics[font]["mDateWidth"] = Math.ceil(metrics.width);
+            if (nameDIV){
+                nameDIV.classList = nameDIV.classList.value.replace(prevFont,  font);            
+                fontMetrics[font]["height"] = nameDIV.clientHeight; //context.measureText("M").actualBoundingBoxAscent;            
+            }
+            //condLog(font, metrics.width, metrics.actualBoundingBoxAscent);
+            prevFont = font;
+        }
+        if (nameDIV){
+            nameDIV.classList = nameDIV.classList.value.replace(prevFont, origFont);            
+        }
+        // Set the font to the context
+        console.log({fontMetrics}, {context});
+        //condLog("Does NAME DIV 1 exist yet?", nameDIV);
+    }
+
+    FanChartView.calculateFontMetrics = calculateFontMetrics;
 
     function getTextWidth(text, font = "16px Arial") {
         // Create a canvas element
@@ -2426,9 +2550,23 @@ import { Utils } from "../shared/Utils.js";
             }
             // maxCross /= FanChartView.currentScaleFactor;
             // maxRad /= FanChartView.currentScaleFactor;
-            console.log("Max Dimensions (NOT adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
-            let newRadius4ThisGen = Math.ceil(maxRad) + 20;
+            //condLog("Max Dimensions (NOT adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
+            let newRadius4ThisGen = Math.max(Math.ceil(maxRad), 140) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
+            extraRoomNeededForBadges = false;
+            if (FanChartView.currentSettings) {
+                if (
+                    FanChartView.currentSettings["general_options_showBadges"] == true ||
+                    (FanChartView.currentSettings["highlight_options_showHighlights"] == true &&
+                        (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" ||
+                            FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Highlights") && 
+                    FanChartView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") > -1 )
+                ) {
+                    extraRoomNeededForBadges = true;
+                    newRadius4ThisGen += 70;
+                    maxRad += 35;
+                }
+            }
 
             // if (newRadius4ThisGen > fanGenRadii[gen] || Math.abs(newRadius4ThisGen - fanGenRadii[gen]) > 20) {
             //     updateNeeded = true;
@@ -2453,6 +2591,15 @@ import { Utils } from "../shared/Utils.js";
             "Time to recalculate the max widths for the cells in the Fan Chart",
             "FanChartView.currentScaleFactor;:", FanChartView.currentScaleFactor
         );
+        var fontNames = {
+            SansSerif: "Arial",
+            Mono: "Courier New",
+            Serif: "Times New Roman",
+            Fantasy: "fantasy",
+            Script: "cursive",
+        };
+        let font4Names = fontNames[FanChartView.currentSettings["general_options_font4Names"]];
+        let font4Info = fontNames[FanChartView.currentSettings["general_options_font4Info"]];
 
         let updateNeeded = false;
         // let svg = document.getElementById("fanChartSVG");
@@ -2489,19 +2636,19 @@ import { Utils } from "../shared/Utils.js";
                 if (thisNameDiv) {
                     width = FanChartView.getTextWidth(
                         thisNameDiv.innerText,
-                        "1.125rem Arial"
+                        "19px " + font4Names
                     );
 
                     if (thisBDiv) {
                         width = Math.max(width, FanChartView.getTextWidth(
                             thisBDiv.innerText,
-                            "1.125rem Arial"
+                            "18px " + font4Info
                         ));
                     }
                     if (thisDDiv) {
                         width = Math.max(width, FanChartView.getTextWidth(
                             thisDDiv.innerText,
-                            "1.125rem Arial"
+                            "18px " + font4Info
                         ));
                     }
                 }
@@ -2528,7 +2675,7 @@ import { Utils } from "../shared/Utils.js";
             }
             // maxCross /= FanChartView.currentScaleFactor;
             // maxRad /= FanChartView.currentScaleFactor;
-            console.log("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
+            condLog("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.ceil(maxRad) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
 
@@ -2538,6 +2685,33 @@ import { Utils } from "../shared/Utils.js";
                 gen < FanChartView.currentSettings["photo_options_showPicsToValue"]
             ) {
                 newRadius4ThisGen += 50;
+            }
+
+            // if (FanChartView.currentSettings) {
+            //     if (
+            //         FanChartView.currentSettings["general_options_showBadges"] == true ||
+            //         (FanChartView.currentSettings["general_options_showBadges"] == true &&
+            //             (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" ||
+            //                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Highlights"))
+            //     ) {
+            //         newRadius4ThisGen += 70;
+            //         maxRad += 35;
+            //     }
+            // }
+
+            extraRoomNeededForBadges = false;
+            if (FanChartView.currentSettings) {
+                if (
+                    FanChartView.currentSettings["general_options_showBadges"] == true ||
+                    (FanChartView.currentSettings["highlight_options_showHighlights"] == true &&
+                        (FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" ||
+                            FanChartView.currentSettings["highlight_options_howDNAlinks"] == "Highlights") &&
+                        FanChartView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") > -1)
+                ) {
+                    extraRoomNeededForBadges = true;
+                    newRadius4ThisGen += 70;
+                    maxRad += 35;
+                }
             }
 
             if (newRadius4ThisGen > fanGenRadii[gen] || Math.abs(newRadius4ThisGen - fanGenRadii[gen]) > 20) {
@@ -2556,11 +2730,11 @@ import { Utils } from "../shared/Utils.js";
 
     function recalculateMaxWidthsForCells_AI() {
         // Need to run this AFTER the wedges have been drawn, so that the widths of the cells are accurate
-        console.log(
-            "Time to recalculate the max widths for the cells in the Fan Chart",
-            "FanChartView.currentScaleFactor;:",
-            FanChartView.currentScaleFactor
-        );
+        //condLog(
+        //     "Time to recalculate the max widths for the cells in the Fan Chart",
+        //     "FanChartView.currentScaleFactor;:",
+        //     FanChartView.currentScaleFactor
+        // );
 
         let updateNeeded = false;
         let svg = document.getElementById("fanChartSVG");
@@ -2601,7 +2775,7 @@ import { Utils } from "../shared/Utils.js";
                 pa.setAttribute("transform", oldTrans);
             }
 
-            console.log("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
+            condLog("Max Dimensions (adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.ceil(maxRad) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
 
@@ -2615,7 +2789,7 @@ import { Utils } from "../shared/Utils.js";
             fanGenCrossSpan[gen] = newCrossSpan4ThisGen;
         }
         updateCumulativeWidths();
-        console.log("NEW suggested Radii: ", { fanGenRadii });
+        condLog("NEW suggested Radii: ", { fanGenRadii });
         return updateNeeded;
     }
 
@@ -2631,8 +2805,11 @@ import { Utils } from "../shared/Utils.js";
     // Redraw the Wedges if needed for the Fan Chart
     function redoWedgesForFanChart(forceReDoWedges = false) {
         console.log("TIme to RE-WEDGIFY !", FanChartView.currentSettings);
-        updateCumulativeWidths();
+        
+        minimumRingRadius = fontMetrics[FanChartView.currentSettings["general_options_font4Info"]]["mDateWidth"] + 10;
+        //condLog("Minimum Ring Radius:", minimumRingRadius);    
 
+        updateCumulativeWidths();
         document.getElementById("ctrCirc").setAttribute("r", fanGenRadii[0]);
 
         // IF we're using adjustable wedges for each ring of the Fan Chart, then we will want to add a condition about
@@ -2672,7 +2849,7 @@ import { Utils } from "../shared/Utils.js";
                     // 3rd parameter is radius of Sector (pointy triangle with curved side opposite centre of circle)
                     // To make Cells more fluid to adjust to size of content, replace calculation of 270 * genIndex with some other calculation
 
-                    if (index==0){console.log("Gen:", genIndex, "SECTOR (pointy triangle)", index, "R:", cumulativeGenRadii[genIndex]);}
+                    // if (index==0){console.log("Gen:", genIndex, "SECTOR (pointy triangle)", index, "R:", cumulativeGenRadii[genIndex]);}
                     SVGcode = SVGfunctions.getSVGforSector(
                         0,
                         0,
@@ -3058,6 +3235,12 @@ import { Utils } from "../shared/Utils.js";
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
         } else {
+            // console.log("NO INNER CODE NEEDED ????");
+            innerLegendDIV.innerHTML = "";
+            LegendTitle.textContent = "";
+            
+
+            
             for (let index = 0; index < thisColourArray.length; index++) {
                 let theTextFontClr = "Black";
                 let luminance = calcLuminance(thisColourArray[index]);
@@ -3182,7 +3365,8 @@ import { Utils } from "../shared/Utils.js";
     function updateFontsIfNeeded() {
         if (
             FanChartView.currentSettings["general_options_font4Names"] == font4Name &&
-            FanChartView.currentSettings["general_options_font4Info"] == font4Info
+            FanChartView.currentSettings["general_options_font4Info"] == font4Info &&
+            FanChartView.currentSettings["general_options_font4Extras"] == font4Extras
         ) {
             condLog("NOTHING to see HERE in UPDATE FONT land");
         } else {
@@ -3197,6 +3381,7 @@ import { Utils } from "../shared/Utils.js";
 
             font4Name = FanChartView.currentSettings["general_options_font4Names"];
             font4Info = FanChartView.currentSettings["general_options_font4Info"];
+            font4Extras = FanChartView.currentSettings["general_options_font4Extras"];
 
             let nameElements = document.getElementsByClassName("name");
             for (let e = 0; e < nameElements.length; e++) {
@@ -3217,6 +3402,38 @@ import { Utils } from "../shared/Utils.js";
                 element.classList.remove("fontFantasy");
                 element.classList.remove("fontScript");
                 element.classList.add("font" + font4Info);
+            }
+            let mDateElements = document.getElementsByClassName("mDateBox");
+            for (let e = 0; e < mDateElements.length; e++) {
+                const element = mDateElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Info);
+            }
+
+            let mDate2Elements = document.getElementsByClassName("mDateBox2");
+            for (let e = 0; e < mDate2Elements.length; e++) {
+                const element = mDate2Elements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Info);
+            }
+
+            let extraElements = document.getElementsByClassName("extraInfoBox");
+            for (let e = 0; e < extraElements.length; e++) {
+                const element = extraElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Extras);
             }
         }
     }
@@ -3308,11 +3525,11 @@ import { Utils } from "../shared/Utils.js";
             redoWedgesForFanChart(true);
             FanChartView.myAncestorTree.draw();
             // let's check one more time
-            if (recalculateMaxWidthsForCells() == true) {
-                condLog("DOING REDRAW again!");
-                redoWedgesForFanChart(true);
-                FanChartView.myAncestorTree.draw();
-            }
+            // if (recalculateMaxWidthsForCells() == true) {
+            //     condLog("DOING REDRAW again!");
+            //     redoWedgesForFanChart(true);
+            //     FanChartView.myAncestorTree.draw();
+            // }
         }
     };
     
@@ -3600,6 +3817,7 @@ import { Utils } from "../shared/Utils.js";
 
                 updateMyAhentafelMarriages();
                 self.drawTree(person);
+                calculateFontMetrics();
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
                 fillOutFamilyStatsLocsForAncestors();
@@ -3714,6 +3932,7 @@ import { Utils } from "../shared/Utils.js";
 
                             self.drawTree(person);
                             clearMessageBelowButtonBar();
+                            FanChartView.refreshTheLegend();
                             populateXAncestorList(1);
                             fillOutFamilyStatsLocsForAncestors();
 
@@ -4053,26 +4272,41 @@ import { Utils } from "../shared/Utils.js";
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
                         <div class="name fontBold font${font4Name}"    id=nameDivFor${
                         ancestorObject.ahnNum
-                    } style="font-size: 10px;" >${getShortName(person)}</div>
+                    } style="font-size: 10px;" >${getSettingsName(person)}</div>
                         </div>
                     `;
                 } else if (thisGenNum == 8) {
+                    let floatDirection = "left";
+                    if (thisPosNum >= numSpotsThisGen / 2) {
+                        floatDirection = "right";
+                    }
+
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
+                        ancestorObject.ahnNum
+                    }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}</div>
                         <div class="name fontBold font${font4Name}"   id=nameDivFor${
                         ancestorObject.ahnNum
-                    }  style="font-size: 14px;" >${getShortName(person)}</div>
+                    }  style="font-size: 14px;" >${getSettingsName(person)}</div>
                     <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}></div>
                         </div>
                     `;
                 } else if (thisGenNum == 7) {
+                    let floatDirection = "left";
+                    if (thisPosNum >= numSpotsThisGen / 2) {
+                        floatDirection = "right";
+                    }
+
                     return `
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 3px;">
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
+                        ancestorObject.ahnNum
+                    }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="name fontBold font${font4Name}"  id=nameDivFor${
                         ancestorObject.ahnNum
                     }>${getSettingsName(person)}</div>
@@ -4101,12 +4335,12 @@ import { Utils } from "../shared/Utils.js";
                         }
                     }
                     let photoDiv = "";
+                    let floatDirection = "left";
+                    if (thisPosNum >= numSpotsThisGen / 2) {
+                        floatDirection = "right";
+                    }
                     if (photoUrl) {
-                        let floatDirection = "left";
-                        if (thisPosNum >= numSpotsThisGen / 2) {
-                            floatDirection = "right";
-                        }
-                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection};" />`;
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
                         // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
@@ -4118,7 +4352,7 @@ import { Utils } from "../shared/Utils.js";
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum} style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
@@ -4157,13 +4391,13 @@ import { Utils } from "../shared/Utils.js";
                             photoUrl = "images/icons/female.gif";
                         }
                     }
+                    let floatDirection = "left";
+                    if (thisPosNum >= numSpotsThisGen / 2) {
+                        floatDirection = "right";
+                    }
                     let photoDiv = "";
                     if (photoUrl) {
-                        let floatDirection = "left";
-                        if (thisPosNum >= numSpotsThisGen / 2) {
-                            floatDirection = "right";
-                        }
-                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection};" />`;
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
                             
                         // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
@@ -4176,8 +4410,8 @@ import { Utils } from "../shared/Utils.js";
                         <div  id=wedgeBoxFor${
                             ancestorObject.ahnNum
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
+                        <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}  style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="item">${photoDiv}</div>
-                        <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -4220,7 +4454,7 @@ import { Utils } from "../shared/Utils.js";
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
                     } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
-                    <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                    <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                     ${photoDiv}
                     <div class="name centered fontBold font${font4Name}" id=nameDivFor${
                         ancestorObject.ahnNum
@@ -4260,7 +4494,7 @@ import { Utils } from "../shared/Utils.js";
                     return `<div class="box staticPosition centered" id=wedgeInfoFor${
                         ancestorObject.ahnNum
                     } style="background-color: ${theClr} ; border:0; ">
-                     <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                     <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</div>
                      <div class="vital-info">
 						${photoDiv}
 						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
@@ -4389,6 +4623,7 @@ import { Utils } from "../shared/Utils.js";
                     //            thisBkgdClr = "cyan";
                     //        }
                     // }
+                    // // thisBkgdClr = "#FFFFFF00";
                     // thisPersonsWedge.style.fill = thisBkgdClr;
                 } else {
                     condLog("Can't find: ", "wedge" + 2 ** thisGenNum + "n" + thisPosNum);
@@ -4578,6 +4813,7 @@ import { Utils } from "../shared/Utils.js";
                 thisBkgdClr
             );
             switchFontColour(theNameDIV, theTextFontClr);
+            
 
             if (theInfoBox) {
                 // let theBounds = theInfoBox; //.getBBox();
@@ -4626,7 +4862,7 @@ import { Utils } from "../shared/Utils.js";
                 } */
                 //  theInfoBox.style.backgroundColor = "orange";
             } else {
-                theNameDIV.innerHTML = getShortName(d);
+                theNameDIV.innerHTML = getSettingsName(d); //getShortName(d);
                 theInfoBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
 
                 let maxBoxWidthForThisGen = 250;
@@ -4662,7 +4898,7 @@ import { Utils } from "../shared/Utils.js";
                 let mDateDIVdate = null;// document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
                 let mDateDIVinner = null;// document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
 
-                if (thisGenNum == 5 && ancestorObject.ahnNum % 2 == 0) {
+                if (thisGenNum >= 5 && ancestorObject.ahnNum % 2 == 0) {
                     // condLog("mDateDIVdate:", mDateDIVdate);
                     mDateDIVdate = document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
                     mDateDIVinner = document.getElementById("mDateFor-" + ancestorObject.ahnNum + "inner");
@@ -4676,17 +4912,26 @@ import { Utils } from "../shared/Utils.js";
                         mDateDIVdate.classList.add("mDateBox");
                         mDateDIVinner.classList.remove("mDateBox2");
                         mDateDIVinner.classList.add("mDateBox");
+                        mDateDIVdate.style.width = "55px";
                     }
                     // console.log("Removed ?", {thisGenNum}, ancestorObject.ahnNum,FanChartView.maxAngle ,  theInfoBox.classList.value);
                 } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
+                    theInfoBox.style.backgroundColor = "#FFFFFF00";
                     theInfoBox.classList.add("photoInfoContainer");  
                     if (mDateDIVdate) {
                         mDateDIVdate.classList.remove("mDateBox");
                         mDateDIVdate.classList.add("mDateBox2");
                         mDateDIVinner.classList.remove("mDateBox");
-                        mDateDIVinner.classList.add("mDateBox2");
+                        mDateDIVdate.style.width = (minimumRingRadius - 5) + "px";
+                        // mDateDIVinner.classList.add("mDateBox2"); // don't want to really add mDateBox2 to foreignObject (mDateDIVinner) - because it leaves a double line
                     }
                     // console.log("Added ?", {thisGenNum}, ancestorObject.ahnNum, FanChartView.maxAngle , theInfoBox.classList.value);                  
+                } else if (thisGenNum > 5  ) {
+                    theInfoBox.style.backgroundColor = "#FFFFFF00";
+                    if (mDateDIVdate) {
+                        mDateDIVdate.style.width = (minimumRingRadius - 5) + "px";
+                    }
+                    
                 }
 
                 theInfoBox.classList.remove("photoInfoContainer");
@@ -4742,19 +4987,20 @@ import { Utils } from "../shared/Utils.js";
 
                 // IF we are in the outer rims, then we need to adjust / tweak the angle since it uses the baseline of the text as its frame of reference
                 if (thisGenNum >= 6) {
-                    let fontRadii = { 6: 25, 7: 9, 8: 14, 9: 17 };
-                    let fontRadius = fontRadii[thisGenNum];
-                    if (thisGenNum == 6 && FanChartView.maxAngle == 360) {
-                        fontRadius = 0;
-                    } else if (thisGenNum == 7 && FanChartView.maxAngle == 240) {
-                        fontRadius = 0;
-                    } else if (thisGenNum == 7 && FanChartView.maxAngle == 360) {
-                        fontRadius = -10;
-                    } else if (thisGenNum == 8 && FanChartView.maxAngle == 360) {
-                        fontRadius = 0;
-                    }
+                    // let fontRadii = { 6: 25, 7: 9, 8: 14, 9: 17 };
+                    // let fontRadius = fontRadii[thisGenNum];
+                    // if (thisGenNum == 6 && FanChartView.maxAngle == 360) {
+                    //     fontRadius = 0;
+                    // } else if (thisGenNum == 7 && FanChartView.maxAngle == 240) {
+                    //     fontRadius = 0;
+                    // } else if (thisGenNum == 7 && FanChartView.maxAngle == 360) {
+                    //     fontRadius = -10;
+                    // } else if (thisGenNum == 8 && FanChartView.maxAngle == 360) {
+                    //     fontRadius = 0;
+                    // }
+                    let fontRadius = 0*1.5 * fontMetrics[FanChartView.currentSettings["general_options_font4Extras"]]["height"];
                     let tweakAngle = (Math.atan(fontRadius / thisCumulativeRadius) * 180) / Math.PI;
-                    // condLog("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
+                    //condLog("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
                         placementAngle += tweakAngle;
                     } else {
@@ -4840,6 +5086,16 @@ import { Utils } from "../shared/Utils.js";
                 } else if (thisGenNum == 2) {
                     thePhotoDIV.style.height = "95px";
                 }
+
+                if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
+                    thePhotoDIV.style.float = "";
+                } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
+                    if (thisPosNum < numSpotsThisGen/2 ) {
+                        thePhotoDIV.style.float = "left";
+                    } else {
+                        thePhotoDIV.style.float = "right";
+                    }
+                }
             }
 
             if (ancestorObject.ahnNum == 1) {
@@ -4867,9 +5123,7 @@ import { Utils } from "../shared/Utils.js";
                 // theInfoBox.parentNode.parentNode.setAttribute("y", -60);
             }
 
-            // for AZURE ... tweak to slide up because of Extra ... maybe should have done this anyways ???
-            // theInfoBox.parentNode.parentNode.setAttribute("y", theInfoBox.parentNode.parentNode.getAttribute("y") - 10);
-
+           
             // AND ... FINALLY, LET'S TALK DATES & PLACES:
             // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
             let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
@@ -4884,8 +5138,10 @@ import { Utils } from "../shared/Utils.js";
             }
 
             // HERE we get to use some COOL TRIGONOMETRY to place the X,Y position of the name card using basically ( rCOS(ø), rSIN(ø) )  --> see that grade 11 trig math class paid off after all!!!
-            let newX = (thisCumulativeRadius + prevCumulativeRadius)/2 * Math.cos((placementAngle * Math.PI) / 180);
-            let newY = (thisCumulativeRadius + prevCumulativeRadius)/2 * Math.sin((placementAngle * Math.PI) / 180);
+            let newX = ((thisCumulativeRadius + prevCumulativeRadius)/2 - ( extraRoomNeededForBadges ? 35 : 0) ) * Math.cos((placementAngle * Math.PI) / 180);
+            let newY =
+                ((thisCumulativeRadius + prevCumulativeRadius) / 2 - (extraRoomNeededForBadges ? 35 : 0)) *
+                Math.sin((placementAngle * Math.PI) / 180);
 
             // OK - now that we know where the centre of the universe is ... let's throw those DNA symbols into play !
             showDNAiconsIfNeeded(newX, newY, thisGenNum, thisPosNum, thisRadius, nameAngle);
@@ -4908,7 +5164,20 @@ import { Utils } from "../shared/Utils.js";
             }
             if (theExtraDIV) {
                 theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
+                theExtraDIV.className = "extraInfoBox font" + font4Extras;
             }
+
+            if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
+                theExtraDIV.style.textAlign = "center";
+            } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
+                if (thisPosNum < numSpotsThisGen / 2) {
+                    theExtraDIV.style.textAlign = "left";
+                } else {
+                    theExtraDIV.style.textAlign = "right";
+                }
+            }
+
+            
             if (theMDateDIV) {
                 // condLog("Marriage", d._data.Spouses);
                 let mDateAngle = nameAngle + FanChartView.maxAngle / 2 / numSpotsThisGen;
@@ -4932,23 +5201,28 @@ import { Utils } from "../shared/Utils.js";
                     Math.sin(((mDateAngle - tweakAngle - 90) * Math.PI) / 180);
                 if (ancestorObject.ahnNum >= 64 || (ancestorObject.ahnNum >= 32 && FanChartView.maxAngle < 360)) {
                     tweakAngle = (Math.atan(10 / (thisGenNum * thisRadius)) * 180) / Math.PI;
+                    let mDateRadius = (thisCumulativeRadius + prevCumulativeRadius) / 2 + 70;
                     if (thisPosNum < numSpotsThisGen / 2) {
                         mDateX =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius + 60) *
+                            // (thisGenNum * thisRadius + 60) *
+                            mDateRadius * 
                             Math.cos(((mDateAngle - 180 + tweakAngle) * Math.PI) / 180);
                         mDateY =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius + 60) *
+                            // (thisGenNum * thisRadius + 60) *
+                            mDateRadius * 
                             Math.sin(((mDateAngle - 180 + tweakAngle) * Math.PI) / 180);
                     } else {
                         mDateX =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius - 60) *
+                            (mDateRadius - 140) *
+                            // (thisGenNum * thisRadius - 60) *
                             Math.cos(((mDateAngle - tweakAngle - 0) * Math.PI) / 180);
                         mDateY =
                             dateScaleFactor *
-                            (thisGenNum * thisRadius - 60) *
+                            (mDateRadius - 140) *
+                            // (thisGenNum * thisRadius - 60) *
                             Math.sin(((mDateAngle - tweakAngle - 0) * Math.PI) / 180);
                     }
                 } else {
@@ -5002,7 +5276,7 @@ import { Utils } from "../shared/Utils.js";
                                 : "");
                         // .replace(/\-/g, " "); // On second thought - leave the dashes in, if that's the format chosen
 
-                        theMDateDIV.parentNode.style.transform =
+                        theMDateDIV.parentNode.parentNode.style.transform =
                             "translate(" + mDateX + "px," + mDateY + "px)" + " " + "rotate(" + mDateAngle + "deg)";
                         if (FanChartView.currentSettings["date_options_marriageBlend"] == true) {
                             theMDateDIV.style.backgroundColor = thisBkgdClr;
@@ -5022,6 +5296,10 @@ import { Utils } from "../shared/Utils.js";
             return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
     };
+
+    FanChartView.extraRoomNeededForBadgesDisplay = function () {
+        console.log({extraRoomNeededForBadges});
+    }
 
     function clrComponentValue(rgbValue) {
         let sRGB = rgbValue / 255;
@@ -5619,12 +5897,21 @@ import { Utils } from "../shared/Utils.js";
         let thisLifespan = "";
         let thisPlace = "";
 
+        let simplifyOuterPlaces = false;
+        if (FanChartView.currentSettings["place_options_simplifyOuter"] == true) {
+            simplifyOuterPlaces = true;
+        }
+
         let numLinesArrayObj = {
-            180: [6, 6, 6, 6, 6, 2, 2, 1, 1, 1],
-            240: [6, 6, 6, 6, 6, 5, 3, 3, 1, 1, 1],
-            360: [6, 6, 6, 6, 6, 6, 5, 3, 3, 1, 1, 1],
+            180: [6, 6, 6, 6, 6, 3, 3, 2, 1, 1],
+            240: [6, 6, 6, 6, 6, 5, 3, 3, 2, 1, 1],
+            360: [6, 6, 6, 6, 6, 6, 5, 3, 3, 2, 1, 1],
         };
         let numLinesMax = numLinesArrayObj[FanChartView.maxAngle][genNum];
+
+        // let the max # of rings be based on the function already in place, calculateNumLinesInRings();  
+        numLinesMax = numLinesInRings[genNum];
+
         // console.log(genNum, FanChartView.maxAngle, numLinesMax );
         // numLinesMax = 6; // changed to this to force all lines to be shown, now that we have the space to do so with rings being allowed to expand.
 
@@ -5729,7 +6016,7 @@ import { Utils } from "../shared/Utils.js";
             thisPlaceMulti = thisPlace;
 
             if (thisPlace.indexOf(",") > -1) {
-                // we're looking at a compound location, and an actual date, so let's break it up and put the location on its own line.
+                // we're looking at a compound location, so the simple location is the first part (before the first comma)
                 thisPlaceSimple = thisPlace.substring(0, thisPlace.indexOf(","));
             } else {
                 thisPlaceSimple = thisPlace;
@@ -5743,7 +6030,7 @@ import { Utils } from "../shared/Utils.js";
             // if (thisDate > "" && thisPlace > "") {
             //     datePlaceString += ", ";  // now handled inside ifs above
             // }
-            if (thisPlace > "" && genNum < 5) {
+            if (thisPlace > "" && (genNum < 5 || simplifyOuterPlaces == false) ) {
                 datePlaceString += thisPlace;
             } else if (thisPlace > "" && genNum == 5) {
                 if (FanChartView.maxAngle == 180) {
@@ -5790,8 +6077,10 @@ import { Utils } from "../shared/Utils.js";
 
             if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
                 numLocSpotsAvailable = 2;
-                if (thisPlaceSimple > "") {
+                if (simplifyOuterPlaces && thisPlaceSimple > "") {
                     return dateType.toLowerCase() + ". " + thisPlaceSimple;
+                } else if (simplifyOuterPlaces ==  false && thisPlace > "") {
+                    return dateType.toLowerCase() + ". " + thisPlace;
                 } else {
                     return "";
                 }
@@ -5803,8 +6092,10 @@ import { Utils } from "../shared/Utils.js";
                     datePlaceString = "";
                 }
 
-                if (thisPlaceSimple > "") {
+                if (simplifyOuterPlaces && thisPlaceSimple > "") {
                     datePlaceString += "b. " + thisPlaceSimple;
+                } else if (simplifyOuterPlaces == false && thisPlace > "") {
+                    datePlaceString += "b. " + thisPlace;
                 } else if (hasDeathPlace == true) {
                     if (
                         FanChartView.currentSettings["place_options_locationTypes"] == "detailed" &&
@@ -5845,18 +6136,24 @@ import { Utils } from "../shared/Utils.js";
                     hasDeathPlace == true
                 ) {
                     return "";
-                } else if (thisDate > "" && hasDeathDate) {
+                } else if (thisDate > "" && hasDeathDate && simplifyOuterPlaces) {
                     return "b. " + thisDate;
-                } else if (thisDate > "" && hasDeathDate == false) {
+                } else if (thisDate > "" && hasDeathDate && simplifyOuterPlaces == false) {
+                    return "b. " + thisDate + ", " + thisPlace;
+                } else if (thisDate > "" && hasDeathDate == false && simplifyOuterPlaces) {
                     return "b. " + thisDate + "<br/>" + thisPlaceSimple;
+                } else if (thisDate > "" && hasDeathDate == false && simplifyOuterPlaces == false) {
+                    return "b. " + thisDate + "<br/>" + thisPlace;
                 } else if (
                     thisDate > "" &&
                     (FanChartView.currentSettings["place_options_locationTypes"] == "none" ||
                         FanChartView.currentSettings["place_options_showDeath"] == false)
                 ) {
                     return "b. " + thisDate + "<br/>" + thisPlaceSimple;
-                } else if (thisDate == "" && thisPlaceSimple > "") {
+                } else if (thisDate == "" && thisPlaceSimple > "" && simplifyOuterPlaces) {
                     return "b. " + thisPlaceSimple;
+                } else if (thisDate == "" && thisPlace > "" && simplifyOuterPlaces == false) {
+                    return "b. " + thisPlace;
                 } else {
                     return "";
                 }
@@ -5868,40 +6165,106 @@ import { Utils } from "../shared/Utils.js";
                 if (FanChartView.currentSettings["date_options_showDeath"] == false) {
                     return "";
                 } else if (thisDate > "" && FanChartView.currentSettings["date_options_showBirth"] == false) {
-                    return "d. " + thisDate + "<br/>" + thisPlaceSimple;
+                    if (simplifyOuterPlaces) {
+                        return "d. " + thisDate + "<br/>" + thisPlaceSimple;
+                    }  else {
+                        return "d. " + thisDate + "<br/>" + thisPlace;
+                    }
                 } else if (thisDate > "" && hasBirthDate) {
-                    return "d. " + thisDate;
+                    
+                    if (simplifyOuterPlaces || thisPlace == "") {
+                        return "d. " + thisDate ;
+                    } else {
+                        return "d. " + thisDate + ", " + thisPlace;
+                    }
                 } else if (thisDate > "" && hasBirthDate == false && hasBirthPlace == false) {
-                    return "d. " + thisDate + "<br/>" + thisPlaceSimple;
+                    if (simplifyOuterPlaces) {
+                        return "d. " + thisDate + "<br/>" + thisPlaceSimple;
+                    } else {
+                        return "d. " + thisDate + "<br/>" + thisPlace;
+                    }
                 } else if (thisDate > "") {
-                    return "d. " + thisDate;
-                } else if (thisDate == "" && thisPlaceSimple > "") {
+                    if (simplifyOuterPlaces || thisPlace == "") {
+                        return "d. " + thisDate;
+                    } else {
+                        return "d. " + thisDate + ", " + thisPlace;
+                    }
+                } else if (thisDate == "" && thisPlaceSimple > "" && simplifyOuterPlaces) {
                     return "d. " + thisPlaceSimple;
+                } else if (thisDate == "" && thisPlace > "" && simplifyOuterPlaces == false) {
+                    return "d. " + thisPlace;
                 } else {
                     return "";
                 }
             }
+        } else if (numLinesMax == 4) {
+            // 1 LifeSpan + 2 Locations
+
+            datePlaceString = "";
+            if (FanChartView.currentSettings["date_options_dateTypes"] != "none" && dateType == "B" && thisLifespan > "") {
+                datePlaceString = thisLifespan ;
+            }
+            
+            if (thisPlace > ""){
+                if ((FanChartView.currentSettings["place_options_showBirth"] && dateType == "B" ) || (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D" )) {
+                    if (thisPlace > "" && simplifyOuterPlaces == false) {
+                        datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                    } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                        datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                    }
+                }
+            }
+            return datePlaceString;
+            
         } else if (numLinesMax == 5) {
-            // 2 Dates + 2 Simple Locs, or 1 Date + 1 Multi Loc
+            // 2 Dates + 2 Locations
             datePlaceString = "";
             if (FanChartView.currentSettings["date_options_dateTypes"] == "lifespan") {
                 if (dateType == "B" && thisLifespan > "") {
                     datePlaceString = thisLifespan + "<br/>";
                 }
-                if (!hasBirthDate && !hasDeathDate) {
-                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
-                } else if (thisPlaceSimple > "") {
-                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
-                }
+               if (thisPlace > "") {
+                   if (
+                       (FanChartView.currentSettings["place_options_showBirth"] && dateType == "B") ||
+                       (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D")
+                   ) {
+                       if (thisPlace > "" && simplifyOuterPlaces == false) {
+                           datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                       } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                           datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                       }
+                   }
+               }
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "detailed") {
                 if (thisDate > "") {
-                    datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>" + thisPlaceSimple;
-                } else if (thisPlaceSimple > "") {
-                    datePlaceString = dateType.toLowerCase() + ". " + thisPlaceSimple;
+                    datePlaceString = dateType.toLowerCase() + ". " + thisDate + "<br/>";
+                    if (thisPlace > "" && simplifyOuterPlaces == false) {
+                        datePlaceString += thisPlace;
+                    } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                        datePlaceString += thisPlaceSimple;
+                    }
+                } else if (thisPlace > "") {
+                    if (
+                        (FanChartView.currentSettings["place_options_showBirth"] && dateType == "B") ||
+                        (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D")
+                    ) {
+                        if (thisPlace > "" && simplifyOuterPlaces == false) {
+                            datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                        } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                            datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                        }
+                    }
                 }
             } else if (FanChartView.currentSettings["date_options_dateTypes"] == "none") {
-                if (thisPlaceMulti > "") {
-                    datePlaceString += dateType.toLowerCase() + ". " + thisPlaceMulti;
+                if (
+                    (FanChartView.currentSettings["place_options_showBirth"] && dateType == "B") ||
+                    (FanChartView.currentSettings["place_options_showDeath"] && dateType == "D")
+                ) {
+                    if (thisPlace > "" && simplifyOuterPlaces == false) {
+                        datePlaceString += dateType.toLowerCase() + ". " + thisPlace;
+                    } else if (thisPlaceSimple > "" && simplifyOuterPlaces == true) {
+                        datePlaceString += dateType.toLowerCase() + ". " + thisPlaceSimple;
+                    }
                 }
             }
             return datePlaceString;
@@ -6482,59 +6845,104 @@ import { Utils } from "../shared/Utils.js";
         let SVGgraphicsDIV = document.getElementById("SVGgraphics");
         let showBadgesSetting = FanChartView.currentSettings["general_options_showBadges"];
 
-        let dCompensation = 0;
-        if (1 == 1) {
-            if (nameAngle > 550) {
-                dCompensation = -36;
-            } else if (nameAngle > 540) {
-                dCompensation = -36;
-            } else if (nameAngle > 530) {
-                dCompensation = -36;
-            } else if (nameAngle > 520) {
-                dCompensation = -36;
-            } else if (nameAngle > 510) {
-                dCompensation = -36;
-            } else if (nameAngle > 500) {
-                dCompensation = -36;
-            } else if (nameAngle > 490) {
-                dCompensation = -36;
-            } else if (nameAngle > 480) {
-                dCompensation = -34;
-            } else if (nameAngle > 470) {
-                dCompensation = -34;
-            } else if (nameAngle > 450) {
-                dCompensation = -32;
-            } else if (nameAngle > 435) {
-                dCompensation = -26;
-            } else if (nameAngle > 420) {
-                dCompensation = -24;
-            } else if (nameAngle > 400) {
-                dCompensation = -14;
-            } else if (nameAngle > 380) {
-                dCompensation = -10;
-            } else if (nameAngle > 360) {
-                dCompensation = -6;
-            } else if (nameAngle > 320) {
-                dCompensation = 0;
-            } else if (nameAngle > 270) {
-                dCompensation = -6;
-            } else if (nameAngle > 240) {
-                dCompensation = -18;
-            } else if (nameAngle > 220) {
-                dCompensation = -24;
-            } else if (nameAngle > 200) {
-                dCompensation = -32;
-            } else if (nameAngle > 190) {
-                dCompensation = -36;
-            } else if (nameAngle > 170) {
-                dCompensation = -36;
-            }
-        }
+        // let dCompensation = 0;
+        // if (1 == 1) {
+        //     if (nameAngle > 550) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 540) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 530) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 520) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 510) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 500) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 490) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 480) {
+        //         dCompensation = -34;
+        //     } else if (nameAngle > 470) {
+        //         dCompensation = -34;
+        //     } else if (nameAngle > 450) {
+        //         dCompensation = -32;
+        //     } else if (nameAngle > 435) {
+        //         dCompensation = -26;
+        //     } else if (nameAngle > 420) {
+        //         dCompensation = -24;
+        //     } else if (nameAngle > 400) {
+        //         dCompensation = -14;
+        //     } else if (nameAngle > 380) {
+        //         dCompensation = -10;
+        //     } else if (nameAngle > 360) {
+        //         dCompensation = -6;
+        //     } else if (nameAngle > 320) {
+        //         dCompensation = 0;
+        //     } else if (nameAngle > 270) {
+        //         dCompensation = -6;
+        //     } else if (nameAngle > 240) {
+        //         dCompensation = -18;
+        //     } else if (nameAngle > 220) {
+        //         dCompensation = -24;
+        //     } else if (nameAngle > 200) {
+        //         dCompensation = -32;
+        //     } else if (nameAngle > 190) {
+        //         dCompensation = -36;
+        //     } else if (nameAngle > 170) {
+        //         dCompensation = -36;
+        //     }
+        // }
 
-        let dFraction =
-            ((thisGenNum + 1 / 2) * thisRadius - 2 * 0 - 0 * (thisGenNum < 5 ? 100 : 80) + dCompensation) /
-            (Math.max(1, thisGenNum) * thisRadius);
-        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        // let dFraction =
+        //     ((thisGenNum + 1 / 2) * thisRadius - 2 * 0 - 0 * (thisGenNum < 5 ? 100 : 80) + dCompensation) /
+        //     (Math.max(1, thisGenNum) * thisRadius);
+
+         let dCompensation = -5;
+         if (thisGenNum == 1) {
+            //  dCompensation = 0;
+         } else if (thisGenNum > 5 || (thisGenNum == 5 && FanChartView.maxAngle < 360)) {
+             if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                 dCompensation = -5;
+             } else {
+                 dCompensation = -30;
+             }
+         }
+        //  dCompensation = -5;
+
+         dCompensation += 35.0;
+
+         let dFraction =
+             (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+         let dFraction2 =
+             (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation - 35) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+
+         let dFraction3 =
+             (cumulativeGenRadii[thisGenNum] + 1.0 * dCompensation - 70) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+
+
+         let tooNarrowFor5inRow = false;
+         let tooNarrowFor3and2Row = false;
+         let minWidthNeeded =
+             (2 * Math.PI * (FanChartView.maxAngle / 360) * (cumulativeGenRadii[thisGenNum ] + dCompensation)) / (2 ** thisGenNum);
+         if (minWidthNeeded < 160) {
+             tooNarrowFor5inRow = true;
+        }
+            
+         if (minWidthNeeded < 105) {
+             tooNarrowFor5inRow = true;
+             tooNarrowFor3and2Row = true;
+         }
+
+        //  console.log("minWidthNeeded = ", minWidthNeeded, { tooNarrowFor5inRow }, {tooNarrowFor3and2Row});
+
+        
+         
+         
+         // console.log("dFraction = ", dFraction, cumulativeGenRadii[thisGenNum + 1], cumulativeGenRadii[thisGenNum], {thisRadius}, {thisGenNum}, {newX}, {newY}, {dCompensation}, {nameAngle});
+         
+        let dOrthoNudge = 30 / (cumulativeGenRadii[thisGenNum ] + dCompensation);
+        let dOrtho = 30 / (cumulativeGenRadii[thisGenNum] + dCompensation);
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
 
@@ -6547,7 +6955,7 @@ import { Utils } from "../shared/Utils.js";
             // dnaImgY.setAttribute("x", newX * dFraction + dOrtho * newY);
             // dnaImgY.setAttribute("y", newY * dFraction - dOrtho * newX);
 
-            let halfNumBadgesCenteringOffset = 1.5 * 0.5 + numOfBadges / 2;
+            let halfNumBadgesCenteringOffset = 3.5;// i - 3; // = 1.5 * 0.5 + numOfBadges / 2;
             let theBadgeX = 0;
             let theBadgeY = 0;
 
@@ -6559,8 +6967,87 @@ import { Utils } from "../shared/Utils.js";
                 theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
                 theBadgeY = newY * dFraction - dOrtho * newX;
             } else {
-                theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY;
-                theBadgeY = newY * dFraction - (halfNumBadgesCenteringOffset - i) * dOrtho * newX;
+                let nudgeMultiplier = 1;
+                if (thisGenNum < 5 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
+                    nudgeMultiplier = 0;
+                } else if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                     nudgeMultiplier = -1;
+                 } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
+                      nudgeMultiplier = 0;
+                 }
+
+                theBadgeX = newX * dFraction + (halfNumBadgesCenteringOffset - i) * dOrtho * newY + nudgeMultiplier * dOrthoNudge * newY;
+                theBadgeY = newY * dFraction - (halfNumBadgesCenteringOffset - i) * dOrtho * newX - nudgeMultiplier * dOrthoNudge * newX;
+                
+                if (tooNarrowFor5inRow) {
+                     if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                         nudgeMultiplier = -1;
+                     } else {
+                        nudgeMultiplier = 0;
+                     }
+                    if (i % 2 == 1) {
+                        // ODD Badges go at edge
+                        theBadgeX =
+                            newX * dFraction +
+                            (halfNumBadgesCenteringOffset - (3 + (i-3)/2)) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction -
+                            (halfNumBadgesCenteringOffset - (3 + (i-3)/2)) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    } else {
+                        // EVEN Badges go inside
+                        theBadgeX =
+                            newX * dFraction2 +
+                            (halfNumBadgesCenteringOffset - i + (i-3)/2) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction2 -
+                            (halfNumBadgesCenteringOffset - i + (i-3)/2) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                        
+
+                    }
+                }
+                if (tooNarrowFor3and2Row) {
+                    if (thisPosNum < 2 ** (thisGenNum - 1)) {
+                        nudgeMultiplier = -1;
+                    } else {
+                        nudgeMultiplier = 0;
+                    }
+
+                    if (i==1 || i==5) {
+                        // A/ E Badges go at edge
+                        theBadgeX =
+                            newX * dFraction +
+                            (halfNumBadgesCenteringOffset - (3 + (i - 3) / 4)) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction -
+                            (halfNumBadgesCenteringOffset - (3 + (i - 3) / 4)) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    } else if (i % 2 == 0) {
+                        // B / D Badges go at edge
+                        theBadgeX =
+                            newX * dFraction2 +
+                            (halfNumBadgesCenteringOffset - i + (i - 3) / 2) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction2 -
+                            (halfNumBadgesCenteringOffset - i + (i - 3) / 2) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    } else {
+                        // C Badge goes deep inside
+                        theBadgeX =
+                            newX * dFraction3 +
+                            (halfNumBadgesCenteringOffset - i ) * dOrtho * newY +
+                            nudgeMultiplier * dOrthoNudge * newY;
+                        theBadgeY =
+                            newY * dFraction3 -
+                            (halfNumBadgesCenteringOffset - i ) * dOrtho * newX -
+                            nudgeMultiplier * dOrthoNudge * newX;
+                    }
+                }
             }
 
             // stickerDIV.style.rotate = nameAngle + "deg";
@@ -6672,9 +7159,33 @@ import { Utils } from "../shared/Utils.js";
             showAs = false,
             showDs = false;
 
+        let dCompensation = 35;
+        if (thisGenNum==1) {
+            // dCompensation = -45;  
+        } else if (thisGenNum  > 5 || (thisGenNum == 5 && FanChartView.maxAngle < 360)) {
+            if (thisPosNum < 2**(thisGenNum-1)) {
+                dCompensation = 35;
+            } else {    
+                dCompensation = 5;
+            }
+        } 
+
+        dCompensation += 35;
+
+        let tooNarrowForAsandDs = false;
+        let minWidthNeeded =
+            2 * Math.PI * (FanChartView.maxAngle / 360) * (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (2 ** thisGenNum);
+        if (minWidthNeeded < 105 ) {
+            tooNarrowForAsandDs = true;
+        }
+        // console.log("minWidthNeeded = ", minWidthNeeded, {tooNarrowForAsandDs});
+
         let dFraction =
-            (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
-        let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+            (cumulativeGenRadii[thisGenNum - 1] + dCompensation) / (cumulativeGenRadii[thisGenNum - 1] + thisRadius / 2);
+            // (thisGenNum * thisRadius - (thisGenNum < 5 ? 100 : 80)) / (Math.max(1, thisGenNum) * thisRadius);
+        // let dOrtho = 35 / (Math.max(1, thisGenNum) * thisRadius);
+        let dOrtho = 35 / (cumulativeGenRadii[thisGenNum - 1] + dCompensation);
+        let dOrthoNudge = 15 / (cumulativeGenRadii[thisGenNum - 1] + dCompensation);
         let dOrtho2 = dOrtho;
         let newR = thisRadius;
 
@@ -6692,12 +7203,12 @@ import { Utils } from "../shared/Utils.js";
                 if (pos == 0) {
                     if (ahnNum > 1) {
                         showY = true;
-                        showDs = true;
-                        showAs = true;
-                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                        showDs = true && !tooNarrowForAsandDs;
+                        showAs = true && !tooNarrowForAsandDs;
+                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]] && thePeopleList[FanChartView.myAhnentafel.list[1]]._data && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
                         showY = true;
-                        showDs = true;
-                        showAs = true;
+                        showDs = true && !tooNarrowForAsandDs;
+                        showAs = true && !tooNarrowForAsandDs;
                     }
                 }
                 if (pos % 2 == 0) {
@@ -6709,8 +7220,8 @@ import { Utils } from "../shared/Utils.js";
                 dOrtho = 0;
                 if (pos == 2 ** gen - 1) {
                     showMT = true;
-                    showDs = true;
-                    showAs = true;
+                    showDs = true && !tooNarrowForAsandDs;
+                    showAs = true && !tooNarrowForAsandDs;
                 }
                 showAllAs = true;
                 if (pos % 2 == 1) {
@@ -6721,8 +7232,8 @@ import { Utils } from "../shared/Utils.js";
                 dOrtho = 0;
                 if (FanChartView.XAncestorList.indexOf(ahnNum) > -1) {
                     showX = true;
-                    showDs = true;
-                    showAs = true;
+                    showDs = true && !tooNarrowForAsandDs;
+                    showAs = true && !tooNarrowForAsandDs;
                 }
 
                 showAllAs = true;
@@ -6740,7 +7251,12 @@ import { Utils } from "../shared/Utils.js";
                     // AND/OR by Y-DNA inheritance
                     if (ahnNum > 1) {
                         showY = true;
-                    } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                    } else if (
+                        ahnNum == 1 &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                        thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                    ) {
                         showY = true;
                     }
                 }
@@ -6774,13 +7290,14 @@ import { Utils } from "../shared/Utils.js";
         let imgY = 0;
         let imgAngle = 0;
 
+        
         // EACH area used to be started with a complex IF statement -- leaving the structure because it chunks the code nicely visually, and for no other good reason
 
         // SHOW THE X DNA BADGE (gray with X)
         // ---- --- - --- -----  ---- ---- -
         if (1 == 1) {
-            imgX = newX * dFraction;
-            imgY = newY * dFraction;
+            imgX = newX * dFraction + (dOrthoNudge) * newY;
+            imgY = newY * dFraction - (dOrthoNudge) * newX;
             imgAngle = nameAngle;
 
             if (thisGenNum == 0) {
@@ -6798,15 +7315,15 @@ import { Utils } from "../shared/Utils.js";
 
             if (showX) {
                 // condLog("SHOW THE [ X ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, "");
+                FanChartView.addNewDNAbadge(imgX, imgY, "X", imgAngle, "", ahnNum);
             }
         }
 
         // SHOW THE Y DNA BADGE (blue with Y)
         // ---- --- - --- -----  ---- ---- -
         if (1 == 1) {
-            imgX = newX * dFraction + dOrtho * newY;
-            imgY = newY * dFraction - dOrtho * newX;
+            imgX = newX * dFraction + dOrtho * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction - dOrtho * newX - dOrthoNudge * newX;
             imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -6833,7 +7350,11 @@ import { Utils } from "../shared/Utils.js";
             showY = true;
         }
 
-        if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+        if (
+            thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+            thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+            thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+        ) {
             showY = false;
             if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
                 showDs = false;
@@ -6852,14 +7373,14 @@ import { Utils } from "../shared/Utils.js";
 
         if (showY) {
             // condLog("SHOW THE [ Y ] image for DNA highlights");
-            FanChartView.addNewDNAbadge(imgX, imgY, "Y", imgAngle, "");
+            FanChartView.addNewDNAbadge(imgX, imgY, "Y", imgAngle, "", ahnNum);
         }
 
         // SHOW THE mt DNA BADGE (pink with red mt)
         // ---- --- -- --- -----  ---- ---- --- --
         if (1 == 1) {
-            imgX = newX * dFraction - dOrtho * newY;
-            imgY = newY * dFraction + dOrtho * newX;
+            imgX = newX * dFraction - dOrtho * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction + dOrtho * newX - dOrthoNudge * newX;
             imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -6877,7 +7398,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showMT) {
                 // condLog("SHOW THE [ MT ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "MT", imgAngle, "");
+                FanChartView.addNewDNAbadge(imgX, imgY, "MT", imgAngle, "", ahnNum);
             }
         }
 
@@ -6890,8 +7411,8 @@ import { Utils } from "../shared/Utils.js";
                 "/890#" +
                 ext;
             // condLog(theLink);
-            imgX = newX * dFraction - dOrtho2 * newY;
-            imgY = newY * dFraction + dOrtho2 * newX;
+            imgX = newX * dFraction - dOrtho2 * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction + dOrtho2 * newX - dOrthoNudge * newX;
             imgAngle = nameAngle;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -6904,10 +7425,12 @@ import { Utils } from "../shared/Utils.js";
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllDs == true
             ) {
-                showDs = true;
+                showDs = !tooNarrowForAsandDs;
 
                 if (
                     FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
                     thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" &&
                     thisGenNum == 0
                 ) {
@@ -6918,7 +7441,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showDs) {
                 // condLog("SHOW THE [ Ds ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "Ds", imgAngle, theLink);
+                FanChartView.addNewDNAbadge(imgX, imgY, "Ds", imgAngle, theLink, ahnNum);
             }
         }
 
@@ -6930,8 +7453,8 @@ import { Utils } from "../shared/Utils.js";
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
                 "/89#" +
                 ext;
-            imgX = newX * dFraction + dOrtho2 * newY;
-            imgY = newY * dFraction - dOrtho2 * newX;
+            imgX = newX * dFraction + dOrtho2 * newY + dOrthoNudge * newY;
+            imgY = newY * dFraction - dOrtho2 * newX - dOrthoNudge * newX;
             imgAngle = nameAngle; //- 90;
             if (thisGenNum == 0) {
                 imgY = 100;
@@ -6945,9 +7468,11 @@ import { Utils } from "../shared/Utils.js";
                 FanChartView.currentSettings["highlight_options_howDNAlinks"] == "ShowAll" &&
                 showAllAs == true
             ) {
-                showAs = true;
+                showAs = !tooNarrowForAsandDs;
                 if (
                     FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA" &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
                     thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female" &&
                     thisGenNum == 0
                 ) {
@@ -6958,7 +7483,7 @@ import { Utils } from "../shared/Utils.js";
 
             if (showAs) {
                 // condLog("SHOW THE [ As ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "As", imgAngle, theLink);
+                FanChartView.addNewDNAbadge(imgX, imgY, "As", imgAngle, theLink, ahnNum);
             }
         }
 
@@ -6988,20 +7513,29 @@ import { Utils } from "../shared/Utils.js";
 
             if (showDNAconf) {
                 // condLog("SHOW THE [ DNAconf ] image for DNA highlights");
-                FanChartView.addNewDNAbadge(imgX, imgY, "DNAconf", imgAngle, theLink);
+                FanChartView.addNewDNAbadge(imgX, imgY, "DNAconf", imgAngle, theLink, ahnNum);
             }
         }
     }
 
     function doHighlightFor(gen, pos, ahnNum) {
         if (FanChartView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
-            if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+            ) {
                 return false;
             }
             if (pos == 0) {
                 if (ahnNum > 1) {
                     return true;
-                } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                } else if (
+                    ahnNum == 1 &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                ) {
                     return true;
                 }
             }
@@ -7022,12 +7556,21 @@ import { Utils } from "../shared/Utils.js";
                 return true;
             } else if (pos == 0) {
                 // OR by Y-DNA inheritance
-                if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+                if (
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+                ) {
                     return false;
                 }
                 if (ahnNum > 1) {
                     return true;
-                } else if (ahnNum == 1 && thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male") {
+                } else if (
+                    ahnNum == 1 &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                    thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Male"
+                ) {
                     return true;
                 }
             }
@@ -7158,26 +7701,45 @@ import { Utils } from "../shared/Utils.js";
 
             let inputDate = 1950 + "-" + aliveMMMSelector.value + "-" + aliveDDSelector;
             if (aliveYYYYSelector.value > 1) {
-                inputDate = aliveYYYYSelector.value + "-" + aliveMMMSelector.value + "-" + aliveDDSelector;
+                inputDate = aliveYYYYSelector.value + "-" + aliveMMMSelector.value + "-" + aliveDDSelector.value;
             }
+
+            if ( ahnNum > 64 && 
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]) {condLog(
+                    "Looking for alive by ",
+                    inputDate,
+                    { ahnNum },
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate,
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate,
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]
+                );
+            }   
 
             if (
                 thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == false &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > inputDate
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data &&
+                !thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving
             ) {
-                return true;
-            } else if (
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
-                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == true
-            ) {
-                return true;
+                thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving = !
+                    (thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > "0000");
             }
+                if (
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == false &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.DeathDate > inputDate
+                ) {
+                    return true;
+                } else if (
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]] &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.BirthDate <= inputDate &&
+                    thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.IsLiving == true
+                ) {
+                    return true;
+                }
         }
 
         return false;
@@ -7185,7 +7747,11 @@ import { Utils } from "../shared/Utils.js";
     function populateXAncestorList(ahnNum) {
         if (ahnNum == 1) {
             FanChartView.XAncestorList = [1];
-            if (thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female") {
+            if (
+                thePeopleList[FanChartView.myAhnentafel.list[1]] &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data &&
+                thePeopleList[FanChartView.myAhnentafel.list[1]]._data.Gender == "Female"
+            ) {
                 populateXAncestorList(2); // a woman inherits an X-chromosome from her father
                 populateXAncestorList(3); // and her mother
             } else {
@@ -7323,7 +7889,7 @@ import { Utils } from "../shared/Utils.js";
                 let doIt = doHighlightFor(FanChartView.numGens2Display, pos, ahnNum);
                 if (doIt == true) {
                     let theInfoBox = document.getElementById("wedgeBoxFor" + ahnNum);
-                    theInfoBox.setAttribute("style", "background-color: " + "yellow");
+                    if (theInfoBox) {theInfoBox.setAttribute("style", "background-color: " + "yellow");}
                 }
             }
         }
@@ -8623,7 +9189,7 @@ import { Utils } from "../shared/Utils.js";
     }
 
     function appendSVGChild(elementType, target, attributes = {}, text = "") {
-        // condLog("appending SVG Child");
+        // console.log("appending SVG Child", attributes);
         const element = document.createElementNS("http://www.w3.org/2000/svg", elementType);
         Object.entries(attributes).map((a) => element.setAttribute(a[0], a[1]));
         if (text) {
@@ -8637,7 +9203,12 @@ import { Utils } from "../shared/Utils.js";
 
     FanChartView.addNewBadge = function (newX, newY, badgeNum, nameAngle) {
         let theSVG = FanChartView.theSVG;
-
+        if (isNaN(newX)) {
+            newX = 0;
+        }
+        if (isNaN(newY)) {
+            newY = 0;
+        }
         // condLog(theSVG, newX, newY);
         // for (key in theSVG) {
         //     // condLog(": ", key, theSVG[key]);
@@ -8680,9 +9251,15 @@ import { Utils } from "../shared/Utils.js";
         d3.selectAll(".badge" + badgeNum).remove();
     };
 
-    FanChartView.addNewDNAbadge = function (newX, newY, badgeType, nameAngle, link) {
+    FanChartView.addNewDNAbadge = function (newX, newY, badgeType, nameAngle, link, ahnNum) {
         let theSVG = FanChartView.theSVG;
         let theSVG2 = theSVG.nodes()[0].firstChild;
+        if (isNaN(newX)) {
+            newX = 0;
+        }
+        if (isNaN(newY)) {
+            newY = 0;
+        }
         let DNAbadgeClr = { X: "green", Y: "blue", MT: "red", As: "white", Ds: "white", DNAconf: "orange" };
         let DNAbadgeFill = {
             X: "lightgray",
@@ -8702,6 +9279,14 @@ import { Utils } from "../shared/Utils.js";
         };
         let DNAbadgeStrokeWidth = { X: 5, Y: 5, MT: 3, As: 2, Ds: 2, DNAconf: 4 };
 
+        let thisBadgeID = "badgeDNA-" + badgeType + "-" + ahnNum;
+
+        if (document.getElementById(thisBadgeID)) {
+            //condLog("Already have this badge:", thisBadgeID);
+            document.getElementById(thisBadgeID).setAttribute("transform", "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")");
+            return;
+        }
+
         let DNAbadgeSVG = {
             X: "M 8 5 L 22 25 M 22 5 L 8 25",
             Y: "M 8 5 L 15 15 L 15 25 M 15 15 L 22 5",
@@ -8716,6 +9301,7 @@ import { Utils } from "../shared/Utils.js";
 
         var thisBadge = appendSVGChild("g", theSVG2, {
             class: "badgeDNA badgeDNA-" + badgeType,
+            id: thisBadgeID,
             transform: "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")",
         });
         let thisRect = appendSVGChild("rect", thisBadge, {
