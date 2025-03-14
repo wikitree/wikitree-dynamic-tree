@@ -241,7 +241,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
             "<BR/><BR/>" +
             `<span ><a href="#name=${person.getName()}&view=${appView}">${appIcon}</a></span>`;
     }
-    let connectionIcon = `<br/><br/><A onclick=popupConnectionDIV() title="View how this person is connected to the Primary Person in this Tree"><img style="height:24px; cursor:pointer;" src="https://dev-2025.wikitree.com/images/icons/icon-connect.svg"></A>`;
+    let connectionIcon = `<br/><br/><A onclick=popupConnectionDIV() title="View how this person is connected to the Primary Person in this Tree"><img style="height:24px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-connect.svg"></A>`;
     if (connectObject && connectObject.extra && connectObject.extra.hideConnectionIcon == true){
         connectionIcon = "";
     }
