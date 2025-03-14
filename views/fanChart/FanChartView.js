@@ -2462,7 +2462,7 @@ import { Utils } from "../shared/Utils.js";
                 nameDIV.classList = nameDIV.classList.value.replace(prevFont,  font);            
                 fontMetrics[font]["height"] = nameDIV.clientHeight; //context.measureText("M").actualBoundingBoxAscent;            
             }
-            console.log(font, metrics.width, metrics.actualBoundingBoxAscent);
+            //condLog(font, metrics.width, metrics.actualBoundingBoxAscent);
             prevFont = font;
         }
         if (nameDIV){
@@ -2470,7 +2470,7 @@ import { Utils } from "../shared/Utils.js";
         }
         // Set the font to the context
         console.log({fontMetrics}, {context});
-        console.log("Does NAME DIV 1 exist yet?", nameDIV);
+        //condLog("Does NAME DIV 1 exist yet?", nameDIV);
     }
 
     FanChartView.calculateFontMetrics = calculateFontMetrics;
@@ -2548,7 +2548,7 @@ import { Utils } from "../shared/Utils.js";
             }
             // maxCross /= FanChartView.currentScaleFactor;
             // maxRad /= FanChartView.currentScaleFactor;
-            console.log("Max Dimensions (NOT adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
+            //condLog("Max Dimensions (NOT adjusted for scaling) for GEN " + gen + " : " + maxCross + " x " + maxRad);
             let newRadius4ThisGen = Math.max(Math.ceil(maxRad), 140) + 20;
             let newCrossSpan4ThisGen = Math.ceil(maxCross) + 10;
             extraRoomNeededForBadges = false;
@@ -2728,7 +2728,7 @@ import { Utils } from "../shared/Utils.js";
 
     function recalculateMaxWidthsForCells_AI() {
         // Need to run this AFTER the wedges have been drawn, so that the widths of the cells are accurate
-        console.log(
+        //condLog(
             "Time to recalculate the max widths for the cells in the Fan Chart",
             "FanChartView.currentScaleFactor;:",
             FanChartView.currentScaleFactor
@@ -2805,7 +2805,7 @@ import { Utils } from "../shared/Utils.js";
         console.log("TIme to RE-WEDGIFY !", FanChartView.currentSettings);
         
         minimumRingRadius = fontMetrics[FanChartView.currentSettings["general_options_font4Info"]]["mDateWidth"] + 10;
-        console.log("Minimum Ring Radius:", minimumRingRadius);    
+        //condLog("Minimum Ring Radius:", minimumRingRadius);    
 
         updateCumulativeWidths();
         document.getElementById("ctrCirc").setAttribute("r", fanGenRadii[0]);
@@ -4990,7 +4990,7 @@ import { Utils } from "../shared/Utils.js";
                     // }
                     let fontRadius = 0*1.5 * fontMetrics[FanChartView.currentSettings["general_options_font4Extras"]]["height"];
                     let tweakAngle = (Math.atan(fontRadius / thisCumulativeRadius) * 180) / Math.PI;
-                    console.log("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
+                    //condLog("Gen",thisGenNum, "TweakAngle = ",tweakAngle);
                     if (thisPosNum >= numSpotsThisGen / 2) {
                         placementAngle += tweakAngle;
                     } else {
@@ -9129,7 +9129,7 @@ import { Utils } from "../shared/Utils.js";
         let thisBadgeID = "badgeDNA-" + badgeType + "-" + ahnNum;
 
         if (document.getElementById(thisBadgeID)) {
-            console.log("Already have this badge:", thisBadgeID);
+            //condLog("Already have this badge:", thisBadgeID);
             document.getElementById(thisBadgeID).setAttribute("transform", "translate(" + newX + "," + newY + ") rotate( " + nameAngle + " ) scale(" + 1 + ")");
             return;
         }
