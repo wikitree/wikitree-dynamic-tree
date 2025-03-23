@@ -495,7 +495,7 @@ ul.treeapp-tabs a:link {
   header,
   #header,
   #content,
-  main {
+  .page--content main {
     display: none;
   }
 
