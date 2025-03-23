@@ -12,7 +12,7 @@
   width: 100px;
 }
 
-.loader {
+#watchCalendar .loader {
   width: 101px;
   position: relative;
   -webkit-animation: spin 4s linear infinite;
@@ -40,8 +40,7 @@
     transform: rotate(360deg);
   }
 }
-
-.content {
+#watchCalendar .content {
   padding: 0 18px;
   display: none;
   overflow: hidden;
@@ -50,7 +49,7 @@
   margin: auto;
 }
 
-span[id^="month-"] {
+#watchCalendar span[id^="month-"] {
   padding: 0 5px;
   font-size: 1.3em;
   color: #060;

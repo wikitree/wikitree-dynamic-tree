@@ -27,27 +27,27 @@
 .newSurname {
   font-weight: bold;
 }
-.gen0 {
+#surnamesList .gen0 {
   font-size: 70px;
 }
-.gen1 {
+#surnamesList .gen1 {
   font-size: 60px;
 }
-.gen2 {
+#surnamesList .gen2 {
   font-size: 50px;
 }
-.gen3 {
+#surnamesList .gen3 {
   font-size: 40px;
 }
-.gen4 {
+#surnamesList .gen4 {
   font-size: 30px;
 }
-.gen5 {
+#surnamesList .gen5 {
   font-size: 20px;
 }
-.gen6 {
+#surnamesList .gen6 {
   font-size: 16px;
 }
-.genx {
+#surnamesList .genx {
   font-size: 14px;
 }

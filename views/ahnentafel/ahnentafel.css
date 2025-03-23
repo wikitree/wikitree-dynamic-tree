@@ -1,4 +1,4 @@
-.highlighted {
+#view-container.ahnentafelView .highlighted {
   background-color: #fad158;
 }
 #view-container.ahnentafelView {
@@ -255,7 +255,7 @@
   width: auto;
 }
 
-.detailsTable td {
+#view-container.ahnentafelView .detailsTable td {
   padding-right: 1em;
   text-align: left;
 }

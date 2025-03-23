@@ -1,15 +1,14 @@
 /* Default link styling */
-a:link {
+#cc7Container a:link {
   color: #0271fb;
 }
-a:visited {
+#cc7Container a:visited {
   color: #bd02fb;
 }
-a:hover,
-a:focus {
+#cc7Container :is(a:hover, a:focus) {
   color: #000;
 }
-a:active {
+#cc7Container a:active {
   color: #fb0e02;
 }
 div.cc7Table {
@@ -868,45 +867,47 @@ table tr.cc7filter-row input[type="text"] {
    Print styles
    ---------------------------------------------------------*/
 @media print {
-  * {
-    color: #000 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    /* background:transparent !important;*/
-  }
-  html {
-    background-color: #fff;
-  }
-  /* Hide navigation */
-  nav {
-    display: none;
-  }
+  :root:has(#cc7Container) {
+    * {
+      color: #000 !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      /* background:transparent !important;*/
+    }
+    html {
+      background-color: #fff;
+    }
+    /* Hide navigation */
+    nav {
+      display: none;
+    }
 
-  /* Show link destinations in brackets after the link text */
-  /* a[href]:after { content: " (" attr(href) ") "; }*/
-  a[href] {
-    font-weight: bold;
-    text-decoration: underline;
-    color: #06c;
-    border: none;
-  }
-  /* Don't show link destinations for JavaScript or internal links */
-  a[href^="javascript:"]:after,
-  a[href^="#"]:after {
-    content: "";
-  }
+    /* Show link destinations in brackets after the link text */
+    /* a[href]:after { content: " (" attr(href) ") "; }*/
+    a[href] {
+      font-weight: bold;
+      text-decoration: underline;
+      color: #06c;
+      border: none;
+    }
+    /* Don't show link destinations for JavaScript or internal links */
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+      content: "";
+    }
 
-  /* Show abbr title value in brackets after the text */
-  abbr[title]:after {
-    content: " (" attr(title) ")";
-  }
+    /* Show abbr title value in brackets after the text */
+    abbr[title]:after {
+      content: " (" attr(title) ")";
+    }
 
-  figure {
-    margin-bottom: 1em;
-    overflow: hidden;
-  }
+    figure {
+      margin-bottom: 1em;
+      overflow: hidden;
+    }
 
-  figure img {
-    border: 1px solid #000;
+    figure img {
+      border: 1px solid #000;
+    }
   }
 }
