@@ -1,6 +1,6 @@
 /* Normalise */
-input[type="button"],
-input[type="submit"],
+.oneNameTrees input[type="button"],
+.oneNameTrees input[type="submit"],
 .oneNameTrees #controls button,
 .oneNameTrees #help button,
 .oneNameTrees #helpButton,
