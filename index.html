@@ -20,11 +20,19 @@
     <script src="tree.js"></script>
     <script src="person_name.js"></script>
     <script type="module" src="lib/biocheck-api/src/BioCheckTemplateManager.js"></script>
-
+    <!-- 
     <link rel="stylesheet" href="https://www.wikitree.com/css/base.css" />
     <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton.css" />
     <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton-wide.css" />
-    <link rel="stylesheet" href="https://www.wikitree.com/css/layout.css" />
+    <link rel="stylesheet" href="https://www.wikitree.com/css/layout.css" /> -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous" />
+    <link rel="stylesheet" href="css/wt-stylesheet.css?v=1" />
+    <link rel="stylesheet" href="tree.css" />
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/css/select2.min.css" />
     <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
@@ -116,8 +124,6 @@
     <script type="module" src="views/stats/stats.js"></script>
     <link rel="stylesheet" href="views/stats/stats.css" />
 
-    <link rel="stylesheet" href="tree.css" />
-
     <script type="module" src="views/wtPlusMaps/wtPlusMaps.js"></script>
 
     <!-- For One Name Trees-->
@@ -167,7 +173,7 @@
           <select id="view-select"></select>
           <label for="wt-id-text">ID:</label>
           <input id="wt-id-text" type="text" placeholder="e.g. Windsor-1" />
-          <input id="show-btn" type="submit" value="GO" />
+          <input id="show-btn" class="btn btn-primary p-2"type="submit" value="GO" />
         </form>
       </div>
       <div id="wt-api-login"></div>

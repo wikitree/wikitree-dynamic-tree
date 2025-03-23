@@ -1,7 +1,7 @@
 import { AncestorLinesExplorer } from "./ancestor_lines_explorer.js";
 
 window.ALEView = class ALEView extends View {
-    static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
+    static #DESCRIPTION = "Click on the question mark in the green box below right for help.";
     meta() {
         return {
             title: "Ancestor Lines Explorer",

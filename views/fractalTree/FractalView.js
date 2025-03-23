@@ -456,6 +456,13 @@ import { Utils } from "../shared/Utils.js";
         '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
         SVGbtnCLOSE +
         "</A></span></div>";
+    var connectionPodDIV =
+        '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
 
     FractalView.prototype.meta = function () {
         return {
@@ -1152,8 +1159,8 @@ import { Utils } from "../shared/Utils.js";
 
         // Setup the LegendHTML for when we need the Legend (for multiple locations colouring legend, for example)
         var legendHTML =
-            '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A style="cursor:pointer;" onclick="FractalView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '<div id=legendDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; ; z-index:9999">' +
+            '<span style="color:red;  position:absolute; top:-0.2em; left:0em; cursor:pointer; "><A style="cursor:pointer;" onclick="FractalView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
             "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='FractalView.refreshTheLegend();'>Click to Update Legend</A></DIV><div id=innerLegend></div></div>";
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
@@ -1163,36 +1170,36 @@ import { Utils } from "../shared/Utils.js";
             "&nbsp;" +
             "</td>" +
             '<td width="5%">&nbsp;' +
-            '<span id=legendASCII style="display:inline;"><A style="cursor:pointer;" onclick="FractalView.toggleLegend();"><font size=+2>' +
+            '<span id=legendASCII style="display:inline;"><A style="cursor:pointer;" title="Hide/Show Legend" onclick="FractalView.toggleLegend();"><font size=+2>' +
             LEGEND_CLIPBOARD +
             "</font></A></span>" +
             "</td>" +
             '<td width="30%" align="center">' +
-            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display -=1; FractalView.redraw();">' +
+            ' <A style="cursor:pointer;" title="Decrease # of generations displayed" onclick="FractalView.numGens2Display -=1; FractalView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
             "[ <span id=numGensInBBar>3</span> generations ]" +
-            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display +=1; FractalView.redraw();">' +
+            ' <A style="cursor:pointer;" title="Increase # of generations displayed" onclick="FractalView.numGens2Display +=1; FractalView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right">' +
-            ' <A style="cursor:pointer;" onclick="FractalView.toggleSettings();"><font size=+2>' +
+            ' <A style="cursor:pointer;" title="Adjust Settings"  onclick="FractalView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>" +
             "&nbsp;&nbsp;" +
-            "<A onclick=FractalView.toggleAbout();>" +
+            "<A title='About this app' onclick=FractalView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
-                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                ? "&nbsp;&nbsp;<A target=helpPage title='Open up Help (free space page) for this app' href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fractal Tree is loading ...</DIV>';
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FractalView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -1261,6 +1268,13 @@ import { Utils } from "../shared/Utils.js";
         infoPanel.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML + popupDIV;
         container.innerHTML = "";
         
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+        $("#legendDIV").draggable();
+        document.getElementById("legendDIV").style.zIndex = Utils.getNextZLevel();
+        document.getElementById("legendDIV").className += " pop-up";
+
+            
         // container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
@@ -1269,9 +1283,14 @@ import { Utils } from "../shared/Utils.js";
         FractalView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -1461,7 +1480,7 @@ import { Utils } from "../shared/Utils.js";
             let innerLegend = document.getElementById("innerLegend");
             let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
 
-            console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+            // console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
             if (newBoxWidth && newBoxWidth > 0 && newBoxWidth != boxWidth) {
                 boxWidth = newBoxWidth;
                 nodeWidth = boxWidth * 1.5;
@@ -2605,22 +2624,32 @@ import { Utils } from "../shared/Utils.js";
         condLog(FractalView.fractalSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
     };
 
     FractalView.toggleLegend = function () {
-        // condLog("TIME to TOGGLE the SETTINGS NOW !!!", FractalView.fanchartSettingsOptionsObject);
         // condLog(FractalView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("legendDIV");
+        console.log("TIME to TOGGLE the SETTINGS NOW !!!", theDIV); //, FractalView.fanchartSettingsOptionsObject);
         // condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -3496,8 +3525,24 @@ import { Utils } from "../shared/Utils.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup  = function (person) {
-        console.log(personPopup.popupHTML(person, AboutAppIcon, "fractal"));
-        console.log("FanChartView.personPopup");
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
+
+            personPopup.popupHTML(
+                person,
+                {
+                    type: "Ahn",
+                    ahNum: FractalView.myAhnentafel.listByPerson[person._data.Id],
+                    primaryPerson: thePeopleList[FractalView.myAhnentafel.list[1]],
+                    myAhnentafel: FractalView.myAhnentafel,
+                    SettingsObj : Utils
+                },
+                AboutAppIcon,
+                "fractal"
+            );
+        // console.log("FractalView.personPopup");
     };
     
     

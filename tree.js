@@ -79,7 +79,7 @@ window.View = class View {
         document.querySelector(container_selector).innerHTML = `Template View for person with ID: ${person_id}`;
     }
 
-    close() { }
+    close() {}
 };
 
 window.ViewError = class ViewError extends Error {
@@ -209,12 +209,12 @@ window.ViewRegistry = class ViewRegistry {
         const urlParams = new URLSearchParams(window.location.hash.slice(1));
         let allParams = {};
         urlParams.forEach((value, key) => {
-            allParams[key] = value;  // e.g., { ancestors: '10', siblings: '1' }
+            allParams[key] = value; // e.g., { ancestors: '10', siblings: '1' }
         });
         let filteredParams = {};
         const acceptedParams = view.meta().params || [];
 
-        acceptedParams.forEach(param => {
+        acceptedParams.forEach((param) => {
             if (allParams.hasOwnProperty(param)) {
                 filteredParams[param] = allParams[param];
             }
@@ -317,7 +317,7 @@ window.ViewRegistry = class ViewRegistry {
         let url = window.location.href.split("?")[0].split("#")[0];
         url = `${url}#name=${wtID}&view=${viewSelect}`;
 
-        Object.keys(filteredParams).forEach(key => {
+        Object.keys(filteredParams).forEach((key) => {
             url += `&${key}=${filteredParams[key]}`;
         });
 
@@ -343,6 +343,7 @@ window.ViewRegistry = class ViewRegistry {
 
     clearStatus() {
         const wtStatus = document.querySelector(this.WT_STATUS);
+        wtStatus.innerHTML = "";
         wtStatus.classList.add("hidden");
         wtStatus.classList.remove("red");
         wtStatus.classList.remove("green");

@@ -15,13 +15,20 @@ window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "ONS";
     static VERBOSE = false;
     static PRIVACY_LEVELS = new Map([
-        [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
-        [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
-        [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
-        [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
-        [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
-        [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
-        [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
+        [60, "Privacy: Open"],
+        [50, "Public"],
+        [40, "Private with Public Bio and Tree"],
+        [35, "Private with Public Tree"],
+        [30, "Public Bio"],
+        [20, "Private"],
+        [10, "Unlisted"],
+        // [60, { title: "Privacy: Open", img: "./views/cc7/images/privacy_open.png" }],
+        // [50, { title: "Public", img: "./views/cc7/images/privacy_public.png" }],
+        // [40, { title: "Private with Public Bio and Tree", img: "./views/cc7/images/privacy_public-tree.png" }],
+        // [35, { title: "Private with Public Tree", img: "./views/cc7/images/privacy_privacy35.png" }],
+        // [30, { title: "Public Bio", img: "./views/cc7/images/privacy_public-bio.png" }],
+        // [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
+        // [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
     ]);
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
@@ -47,7 +54,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.watchlist = JSON.parse(localStorage.getItem(`${this.userId}_watchlist`)) || null;
         this.watchlistPromise = null;
         this.centuries = this.parseCenturies($("#centuries").val());
-        this.header = $("header");
+        this.header = null;
         this.displayedIndividuals = new Set();
         this.displayedSpouses = new Set(); // New set to keep track of displayed spouses
         this.combinedResults = {};
@@ -114,48 +121,50 @@ window.OneNameTrees = class OneNameTrees extends View {
         ];
 
         this.headerHTML = `
+      <div id="controlWrapper">
       <div id="controls">
         <div id="nameLabel" class="controlGroup">Name:
             <input type="text" id="surname" placeholder="Surname" value="${this.surname}" />
             <input type="text" id="location" placeholder="Location (Optional)" />
-            <input type="text" id="centuries" placeholder="Centuries (Optional)" /> 
-            <input type="submit" id="submit" name="submit" value="GO" />
+            <input type="text" id="centuries" placeholder="Centuries (Optional)" />
+            <input type="submit" id="submit" class="btn btn-primary btn-sm" name="submit" value="GO" />
         </div>
-        
+
         <div id="otherControls" class="controlGroup">
-            <button id="cancelFetch" title="Cancel the current fetching of profiles.">Cancel</button>
-            <button id="addNameVariants" title="See and/or edit variants of names in One Name Studies">Variants</button>
-            <button
-            id="refreshData"
+            <button id="cancelFetch" class="btn btn-primary btn-sm"
+                title="Cancel the current fetching of profiles.">Cancel</button>
+            <button id="addNameVariants" class="btn btn-secondary btn-sm"
+                title="See and/or edit variants of names in One Name Studies">Variants</button>
+            <button id="refreshData" class="btn btn-secondary btn-sm"
             title="Each set of results from WikiTree+ is stored in your browser and re-used next time in order to reduce the number of calls to WikiTree+.  Click this to refresh the list of IDs."
             >
             Refresh
             </button>
-            <button id="downloadData">Save</button>
-            <button id="loadButton" class="custom-file-upload" title="Load a previously saved One Name Trees file">
+            <button id="downloadData" class="btn btn-secondary btn-sm">Save</button>
+            <button id="loadButton" class="custom-file-upload btn btn-secondary btn-sm"
+                title="Load a previously saved One Name Trees file">
             Load
             </button>
             <input type="file" id="fileInput" style="display: none" />
 
-            <button id="toggleGeneralStats" title="Show/hide statistics">Statistics</button>
-            <button id="sheetButton" title="Download a spreadsheet file">Sheet</button>
-            <button id="helpButton" title="About this">?</button>
+            <button id="toggleGeneralStats" class="btn btn-secondary btn-sm" title="Show/hide statistics">Statistics</button>
+            <button id="sheetButton" class="btn btn-secondary btn-sm" title="Download a spreadsheet file">Sheet</button>
+            <button id="helpButton" class="btn btn-secondary btn-sm" title="About this">?</button>
             <img src="views/cc7/images/setting-icon.png" id="setting-icon" title="Settings" />
         </div>
 
         <div id="tableLabel" class="controlGroup">Table:
-            <button id="tableViewButton" title="View the data in a table">Table</button>
+            <button id="tableViewButton" class="btn btn-secondary btn-sm" title="View the data in a table">Table</button>
         </div>
         <div id="treesButtons" class="controlGroup">Trees:
         <div id="toggleButtons">
-            <button class="toggleAll" id="showAll" title="show all descendants">+</button>
-            <button class="toggleAll" id="hideAll" title="hide all descendants">−</button>
+            <button class="toggleAll btn btn-secondary btn-sm" id="showAll" title="show all descendants">+</button>
+            <button class="toggleAll btn btn-secondary btn-sm" id="hideAll" title="hide all descendants">−</button>
         </div>
-        <button id="toggleDetails" class="off" title="Show/hide birth and death details">Details</button>
-        <button id="toggleWTIDs" class="off" title="Show/hide WikiTree IDs">WT IDs</button>
+        <button id="toggleDetails" class="off btn btn-secondary btn-sm" title="Show/hide birth and death details">Details</button>
+        <button id="toggleWTIDs" class="off btn btn-secondary btn-sm" title="Show/hide WikiTree IDs">WT IDs</button>
         </div>
-        
-        
+
         <div id="loadingBarContainer">
             <div id="loadingBar"></div>
         </div>
@@ -164,16 +173,17 @@ window.OneNameTrees = class OneNameTrees extends View {
           <div id="periodStatisticsContainer" style="display: none"></div>
         </div>
       </div>
-      <button id="toggleOptions" title="Show/Hide options">-----</button>`;
+      <button id="toggleOptions" class="btn btn-secondary btn-sm" title="Show/Hide options">----</button>
+      </div>`;
 
         this.bodyHTML = `
       <div id="help" class="modal">
-      <h2>About This</h2> 
+      <h2>About This</h2>
       <button id="closeHelp">×</button>
       <button id="print">⎙</button>
       <ol>
         <li>Put a surname in the box and hit 'Go'. If you're likely to get too many results, you can enter a location and/or
-         a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"), 
+         a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"),
          a list of numbers ("16,17" or "16 17"), a range of numbers ("16-19"), and a range of years (1500-1900).)</li>
         <li>
           The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
@@ -181,12 +191,12 @@ window.OneNameTrees = class OneNameTrees extends View {
           WikiTree+**. This list is stored for the next time you enter the same surname. To refresh this list (to get the
           most up-to-date list available on WikiTree+), hit the 'Refresh' button.<br>
           * Alternatively, you can enter a list of surnames separated by commas in the Name box. If you want one name without
-           the variants, just put the name and a comma in the box.<br> 
+           the variants, just put the name and a comma in the box.<br>
           ** Note that WikiTree+ is updated once a week, so new profiles may be missing from the results.
         </li>
         <li>
         As all of the IDs returned by WikiTree+ are for open public profiles, if you are logged into the apps server,
-        you may be able to retrieve the data of more profiles. The app gets your watchlist to find any people who are 
+        you may be able to retrieve the data of more profiles. The app gets your watchlist to find any people who are
         missing from the WikiTree+ results.
       </li>
         <li>
@@ -204,7 +214,7 @@ window.OneNameTrees = class OneNameTrees extends View {
           Offspring are added to offspring lists below their parents, creating many expandable/collapsible descendant
           trees. (The + and − at the top will expand and collapse all lists.)
         </li>
-        <li>When there is more than one spouse, coloured left borders will be added to the spouses and the children to 
+        <li>When there is more than one spouse, coloured left borders will be added to the spouses and the children to
         show which children belong to which spouse.</li>
         <li>
           As the data can take a long time to load, it's a good idea to hit the 'Save' button. This will save the
@@ -224,22 +234,22 @@ window.OneNameTrees = class OneNameTrees extends View {
         <li>Privacy icons are shown to the right of (semi-private) profiles.</li>
         <li>The numbers in green to the left of the person's name are
           the number of descendants that the person has in this dataset. Click the + button to see their children.</li>
-        <li> 
+        <li>
           Click the Statistics button to see statistics about the people in the dataset.
           <ul>
             <li>
               The general statistics:
               <ul id="generalStatsHelp">
-                <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant) 
+                <li><label>Total People</label>: The total number of people in the loaded dataset. The number in parentheses is the number with the target name (or name variant)
                 as last name at birth. Click the button to see a graph.</li>
-                <li><label>Male/Female</label>: The gender distribution of the people in the dataset. If the numbers don't add up to the 
-                same number as the 'Total People' number, it will be due to some people being either missing a gender (in the database) 
+                <li><label>Male/Female</label>: The gender distribution of the people in the dataset. If the numbers don't add up to the
+                same number as the 'Total People' number, it will be due to some people being either missing a gender (in the database)
                 or being private.</li>
-                <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset. 
+                <li><label>Average Lifespan</label>: The average lifespan of the people in the dataset.
                 Click the button to see a graph.</li>
-                <li><label>Average Children per Male over 16</label>: This is per male over 16 
-                because the dataset will include their children but not those of many of the women, 
-                whose children would tend to take their father's surname 
+                <li><label>Average Children per Male over 16</label>: This is per male over 16
+                because the dataset will include their children but not those of many of the women,
+                whose children would tend to take their father's surname
                 (due to this being a name study, mostly based on last name at birth).</li>
                 <li><label>Average Children per Couple</label>: This is the average number of children per couple.</li>
                 <li><label>Migrants</label>: The number of profiles with a birth place that is not the same as the death place. Click the button for a graph of migrations.</li>
@@ -247,11 +257,11 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li><label>Unconnected</label>: The number of profiles not connected to the big trees. Click the button to see a list of the profiles.</li>
                 <li><label>No Connections</label>: The number of profiles with no relations/connections in the WikTree database. Click the button to see a list of the profiles.</li>
                 <li><label>Most Common Names</label>: This is the first names in the dataset by frequency. Click the triangle to see the whole list.</li>
-                <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.  
-                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation. 
+                <li><label>Most Common Birth Places</label>: This is the birth places in the dataset by frequency. Click the triangle(s) to see the whole list.
+                Click the numbers to see a table filtered to show only people from those places. Click the button to see an interesting visualisation.
                 On the visualisation, there are buttons to stop/start the automatic 'play'. There are also buttons to step from one period to the next.
                  You can move the location balls around by (clicking and dragging), zoom in and out, and drag the display to see more.</li>
-              </ul> 
+              </ul>
             </li>
             <li>
               The period statistics:
@@ -260,7 +270,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <li>are shown in 50 year periods by default, but the period length can be changed in the settings.</li>
               </ul>
             </li>
-            <li>In the Table View, the period buttons will not only show the statistics of the period, but also add 
+            <li>In the Table View, the period buttons will not only show the statistics of the period, but also add
             the period as a table filter.</li>
             <li>
               The statistics can be dismissed by clicking the 'Statistics' button or double-clicking the statistics
@@ -297,13 +307,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                     <li><span class="symbol">&lt;</span> for before a certain year (e.g. &lt;1776).</li>
                     <li><span class="symbol">&gt;</span> for after a certain year. (e.g. &gt;1776).</li>
                   </ul>
-                </li> 
+                </li>
                 <li>can be cleared by pressing the Clear Filters button at the top.</li>
               </ul>
             </li>
             <li>can be filtered with the period buttons in the statistics section and the location count numbers.</li>
             <li>can be sorted by clicking on the column headers.</li>
-            <li>has a 'Reverse Locations' button to let you order sort people by the last part of their birth 
+            <li>has a 'Reverse Locations' button to let you order sort people by the last part of their birth
             place (usually the country).</li>
             <li>has a 'Wide' button to make the table wider (so that the text does not wrap and the table maybe be easier to scan).</li>
             <li>can be dismissed (to return to the Trees view) by clicking the 'Table' button.</li>
@@ -334,18 +344,19 @@ window.OneNameTrees = class OneNameTrees extends View {
                 <label for="onlyLastNameAtBirth">Only Last Name at Birth:
                 <input type = "checkbox" id="onlyLastNameAtBirth" title="Show only profiles with the target surname(s) as Last Name at Birth" ${
                     this.settings.onlyLastNameAtBirth ? "checked" : ""
-                } /> 
+                } />
                 </label>
                 <label for="onlyMales">Only Males:
                 <input type = "checkbox" id="onlyMales" title="Load only males" ${
                     this.settings.onlyMales ? "checked" : ""
                 } />
                 </label>
-                <button id="clearCache" title="Clear the cache of stored data for this surname">Clear cached ${
-                    this.surname
-                } items</button>
-                <button id="clearCachedWatchlist" title="Clear the cache of stored data for the watchlist">Clear cached watchlist</button>
-                <button id="clearCacheAll" title="Clear the cache of all stored data">Clear all cached items</button>
+                <button id="clearCache" class="btn, btn-secondary btn-sm"
+                title="Clear the cache of stored data for this surname">Clear cached ${this.surname} items</button>
+                <button id="clearCachedWatchlist"  class="btn, btn-secondary btn-sm"
+                title="Clear the cache of stored data for the watchlist">Clear cached watchlist</button>
+                <button id="clearCacheAll"  class="btn, btn-secondary btn-sm"
+                title="Clear the cache of all stored data">Clear all cached items</button>
             </div>
         </div>`);
     }
@@ -354,10 +365,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         view.start();
     }
     start() {
-        $("#wt-id-text,#show-btn").prop("disabled", true).css("background-color", "lightgrey");
+        $("#wt-id-text,#show-btn").prop("disabled", true); //.css("background-color", "lightgrey");
         $("body").addClass("oneNameTrees");
-        if ($("#controls").length == 0) {
-            $(this.headerHTML).appendTo($("header"));
+        if ($("#controlWrapper").length == 0) {
+            $(this.headerHTML).insertBefore($("#view-loader"));
+            this.controls = $("#controlWrapper");
         }
         $("#cancelFetch").hide();
         //$("#helpButton").appendTo($("main")).css("float", "right").css("margin", "0.2em");
@@ -382,13 +394,13 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     close() {
         this.reset();
-        $("#wt-id-text,#show-btn").prop("disabled", false).css("background-color", "white");
-        $("#show-btn").css("background-color", "#25422d");
+        $("#wt-id-text,#show-btn").prop("disabled", false); //.css("background-color", "white");
+        // $("#show-btn").css("background-color", "#25422d");
         $("#view-select").off("change.oneNameTrees");
         $("body").removeClass("oneNameTrees");
         $(document).off("keyup.oneNameTrees");
         $(document).off("click.oneNameTrees");
-        $("#controls,#dancingTree,#toggleOptions,#help").remove();
+        $("#controlWrapper,#dancingTree,#toggleOptions,#help").remove();
         $(
             "#lifespanGraph,#peopleCountGraph,#namesTable,#unsourcedProfiles,#unconnectedProfiles,#noRelationsProfiles,#locationsVisualisation,#migrationSankey,#periodMigrants"
         ).remove();
@@ -410,7 +422,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Enter key submits the form
-        this.header.on("keyup", "#surname,#location,#centuries", function (event) {
+        this.controls.on("keyup", "#surname,#location,#centuries", function (event) {
             const value = $("#surname").val().toLowerCase();
             const location = $("#location").val().toLowerCase();
             const centuries = $this.parseCenturies($("#centuries").val());
@@ -426,7 +438,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("keyup", "location", function (event) {
+        this.controls.on("keyup", "location", function (event) {
             if (event.keyCode === 13 && $("#surname").val()) {
                 $("#submit").click();
             }
@@ -436,7 +448,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.showMoreDetails($(this));
         });
 
-        this.header.on("click.oneNameTrees", "#addNameVariants", function (e) {
+        this.controls.on("click.oneNameTrees", "#addNameVariants", function (e) {
             e.preventDefault();
             window.open(
                 "https://docs.google.com/spreadsheets/d/1VwYnlDVIw8MH4mKDQeRfJAW_2u2kSHyiGcQUw5yBepw/edit#gid=0",
@@ -445,18 +457,21 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Event listener for the search button
-        this.header.on("click.oneNameTrees", "#searchButton", function () {
+        this.controls.on("click.oneNameTrees", "#searchButton", function () {
             $this.handleSearch();
         });
 
         // Also allow searching by pressing the enter key in the search input
-        this.header.on("keyup.oneNameTrees", "#searchInput", function (event) {
+        this.controls.on("keyup.oneNameTrees", "#searchInput", function (event) {
             if (event.keyCode === 13) {
                 $this.handleSearch();
             }
         });
 
-        this.header.on("click.oneNameTrees", "#refreshData", async function () {
+        this.controls.on("click.oneNameTrees", "#refreshData", async function () {
+            const viewSelect = $(wtViewRegistry.VIEW_SELECT).val();
+            if (viewSelect !== "oneNameTrees") return;
+
             const surname = $("#surname").val();
             const location = $("#location").val();
             const centuries = $this.parseCenturies($("#centuries").val());
@@ -489,7 +504,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $("#ancestralLinePopup").remove();
         });
 
-        this.header.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
+        this.controls.on("click.oneNameTrees", ".commonLocations .locationCount", function (e) {
             e.preventDefault();
             // e.stopPropagation();
             const location = $(this).data("location") || $(this).attr("data-location");
@@ -529,13 +544,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
 
         // Delegate from .commonLocations for .locationPart click events
-        this.header.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
+        this.controls.on("click.oneNameTrees", ".commonLocations .locationPart", function (event) {
             //event.stopPropagation(); // Prevent event bubbling
             const $subItem = $(this).closest("li").toggleClass("expanded");
             $subItem.children("ul").toggle(); // Toggle visibility of the nested list
         });
 
-        this.header.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
+        this.controls.on("dblclick.oneNameTrees", "#statisticsContainer,#periodStatisticsContainer", function () {
             $("#toggleGeneralStats").trigger("click");
         });
 
@@ -566,7 +581,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("change.oneNameTrees", "#fileInput", function (event) {
+        this.controls.on("change.oneNameTrees", "#fileInput", function (event) {
             const file = event.target.files[0];
             if (file) {
                 $this.reset();
@@ -625,13 +640,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         });
 
-        this.header.on("click.oneNameTrees", "#loadButton", function () {
+        this.controls.on("click.oneNameTrees", "#loadButton", function () {
             $("#cancelFetch").trigger("click");
             wtViewRegistry.clearStatus();
             $("#fileInput").click(); // Triggers the hidden file input
         });
 
-        this.header.on("click.oneNameTrees", "#cancelFetch", function () {
+        this.controls.on("click.oneNameTrees", "#cancelFetch", function () {
             $this.cancelFetch();
         });
 
@@ -653,10 +668,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#view-select").on("change.oneNameTrees", function () {
             const view = $(this).val();
             if (view !== "oneNameTrees") {
-                $("#wt-id-text,#show-btn").prop("disabled", false).css("background-color", "white");
-                $("#show-btn").css("background-color", "#25422d");
+                $("#wt-id-text,#show-btn").prop("disabled", false); //.css("background-color", "white");
+                // $("#show-btn").css("background-color", "#25422d");
+                $("#show-btn").off("click.oneNameTrees");
             } else {
-                $("#wt-id-text,#show-btn").prop("disabled", true).css("background-color", "lightgrey");
+                $("#wt-id-text,#show-btn").prop("disabled", true); //.css("background-color", "lightgrey");
             }
         });
 
@@ -665,7 +681,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.handleSearch($(this).data("wtid"));
         });
 
-        this.header.on("click.oneNameTrees", "label", function () {
+        this.controls.on("click.oneNameTrees", "label", function () {
             // Determine which graph to toggle based on the clicked label's class
             let graphId;
 
@@ -778,7 +794,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             $this.exportTableToExcel();
         });
 
-        this.header.on("click.oneNameTrees", "#setting-icon", function () {
+        this.controls.on("click.oneNameTrees", "#setting-icon", function () {
             if ($("#oneNameTreesSettings").length == 0) {
                 $this.settingsBox.appendTo($("body"));
             }
@@ -830,7 +846,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                                     </style>
                                 </head>
                                 <body>
-                                    ${content} 
+                                    ${content}
                                 </body>
                             </html>`;
                 };
@@ -2227,10 +2243,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
-        let privacySticker = this.getPrivacySticker(person);
-        if (person.Privacy == 60) {
-            privacySticker = "";
-        }
+        const privacySticker = person.Privacy == 60 ? "" : this.getPrivacySticker(person);
 
         let html = `<li class='level_${level} person ${duplicateClass}' data-id='${personIdStr}' data-name='${
             person.Name
@@ -2757,7 +2770,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     createNameSelectBoxes() {
-        const switchButton = $(`<button id="nameSelectsSwitchButton"
+        const switchButton = $(`<button id="nameSelectsSwitchButton" class="btn btn-secondary btn-sm"
         title="Switch between WT ID search and name search">⇆</button>`);
         const nameSelects = $("<div id='nameSelects'></div>").append(switchButton);
         nameSelects.insertBefore($("#toggleDetails"));
@@ -4027,6 +4040,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Create the switch button for toggling the sort order.
         const $switchButton = $("<button>", {
             id: "locationSelectsSwitchButton",
+            class: "btn btn-secondary btn-sm",
             text: "⇆",
             title: "Switch between sort orders (count and alphabetical).",
         }).on("click.oneNameTrees", function () {
@@ -4174,10 +4188,14 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     getPrivacySticker(person) {
-        const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
-        const privacyImg = privacyLevel ? privacyLevel.img : "";
-        const privacyTitle = privacyLevel ? privacyLevel.title : "";
-        const privacy = privacyImg ? `<img src="${privacyImg}" class="privacySticker" title="${privacyTitle}" />` : "";
+        // const privacyLevel = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
+        // const privacyImg = privacyLevel ? privacyLevel.img : "";
+        // const privacyTitle = privacyLevel ? privacyLevel.title : "";
+        // const privacy = privacyImg ? `<img src="${privacyImg}" class="privacySticker" title="${privacyTitle}" />` : "";
+        const privacyTitle = OneNameTrees.PRIVACY_LEVELS.get(person.Privacy);
+        const privacy = privacyTitle
+            ? `<span data-bs-toggle="tooltip" data-bs-title="${privacyTitle}" class="privacy privacy--lg privacy--${person.Privacy}"></span>`
+            : "";
         return privacy;
     }
 
@@ -4466,13 +4484,18 @@ window.OneNameTrees = class OneNameTrees extends View {
             return isValid; // Only include rows where isValid remains true
         });
 
-        const wideTableButton = $("<button>", { id: "wideTableButton" }).text("Wide");
+        const wideTableButton = $("<button>", { id: "wideTableButton", class: "btn btn-secondary btn-sm" }).text(
+            "Wide"
+        );
         $("#tableView_wrapper #tableView_length").after(wideTableButton);
         wideTableButton.on("click.oneNameTrees", function () {
             $("section#table").toggleClass("wide");
             $(this).toggleClass("on");
         });
-        const checkLocationsButton = $("<button>", { id: "checkLocationsButton" }).text("Check Locations");
+        const checkLocationsButton = $("<button>", {
+            id: "checkLocationsButton",
+            class: "btn btn-secondary btn-sm",
+        }).text("Check Locations");
         checkLocationsButton.attr("title", "Highlight locations with possible errors");
         wideTableButton.after(checkLocationsButton);
         checkLocationsButton.on("click.oneNameTrees", function () {
@@ -4538,7 +4561,10 @@ window.OneNameTrees = class OneNameTrees extends View {
             table.draw(false); // Redraw the table without resetting the paging
         }
 
-        const flipLocationsButton = $("<button>", { id: "flipLocationsButton" }).text("Reverse locations");
+        const flipLocationsButton = $("<button>", {
+            id: "flipLocationsButton",
+            class: "btn btn-secondary btn-sm",
+        }).text("Reverse locations");
         $("#tableView_wrapper #tableView_length").after(flipLocationsButton);
         flipLocationsButton.on("click.oneNameTrees", function () {
             flipLocationOrder();
@@ -4621,7 +4647,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         if ($("#clearFilters").length) {
             return;
         }
-        const $clearButton = $("<button>", { id: "clearFilters" }).text("Clear Filters");
+        const $clearButton = $("<button>", { id: "clearFilters", class: "btn btn-secondary btn-sm" }).text(
+            "Clear Filters"
+        );
         if ($("#tableViewButton").hasClass("on")) {
             $("#tableView_filter").before($clearButton);
             //           $("#controls").append($clearButton);

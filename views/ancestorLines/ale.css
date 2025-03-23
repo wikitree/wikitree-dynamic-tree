@@ -14,12 +14,11 @@
   margin-left: 0.5em;
   margin-right: 0.5em;
 }
-div.ale select,
-div.ale input {
-  padding: 0.3em;
-  width: auto;
-  background-size: 1em 2em;
-  margin: 5px 5px 0px 0px;
+div.ale table {
+  margin-bottom: 0;
+}
+div.ale td {
+  padding: 0;
 }
 
 #generation,
@@ -33,8 +32,17 @@ div.ale input {
 #aleOptions {
   cursor: pointer;
 }
+.ale legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
+}
 
 .ale fieldset {
+  font-size: 90%;
+  line-height: 1;
   display: block;
   margin-inline-start: 2px;
   margin-inline-end: 2px;
@@ -121,8 +129,8 @@ div.ale input {
   padding: 2px;
 }
 
-#edgeFactor,
-#tHFactor {
+.ale #edgeFactor,
+.ale #tHFactor {
   width: 4em;
 }
 

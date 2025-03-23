@@ -205,6 +205,7 @@ main {
 
 .vital-info {
   padding: 0 0 10px 10px;
+  line-height: normal;
 }
 
 #tree-links a img,
@@ -246,7 +247,7 @@ main {
 }
 
 .fontSansSerif {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Roboto, Arial, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .fontBlack {
@@ -338,13 +339,16 @@ main {
   border-top: 2px red solid;
   border-bottom: 3px red solid;
   width: 55px;
+  font-size: 1rem;
+  line-height: normal;
 }
 
 .mDateBox2 {
   background-color: white;
-  border-left: 2px red solid;
+  border-left: 3px red solid;
   border-right: 3px red solid;
-  width: 110px;
+  width: 130px;
+  font-size: 1rem;
 }
 
 .quarterEmBottomMargin {
@@ -480,6 +484,26 @@ ul.treeapp-tabs a:link {
   text-decoration: none;
   margin-left: 0;
   margin-right: 0
+}
+
+label.treeapp-settings {
+  padding-left: 0.1em;
+  padding-right: 0.4em;
+  cursor: pointer;
+}
+
+input.treeapp-settings {
+  cursor: pointer;
+}
+
+hr.treeapp-personpopup {
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+}
+
+.staticPosition {
+  position: static;
+  line-height: normal;
 }
 
 /* Print styling should follow everything else to overwrite it */
