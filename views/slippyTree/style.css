@@ -7,98 +7,83 @@
  *  -- treeapps in the original wikitree,
  *  -- treeapps in the dev-2025 wikitree
  *  -- NOT standalone main page (these are in views/slippytree/index.html)
- *  -- NOT embedded into the profile page (these are in patch 010/style.css)
  */
 
 /* Rules for both the original and the dev-2025 TreeApps page */
-:root:has(.slippy-tree-container) {
-    --background-color: white;          /* the "default" background is white */
+:root.slippy-tree-root {
+    --background-color: white;          /* a "default" background of white */
 }
-:root:has(body.tree-apps .slippy-tree-container) {
+:root.slippy-tree-root:has(body.tree-apps) {
     height: 100%;
      --content-padding: 0;
-     --background-color: #f0f0ef;       /* background in the original site */
+     --background-color: #f0f0ef;       /* background in actual site */
 }
-body.tree-apps:has(.slippy-tree-container) {
+:root.slippy-tree-root body.tree-apps {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
-body.tree-apps #view-container:has(> .slippy-tree-container) {
+:root.slippy-tree-root body.tree-apps #view-container {
     flex: 1;
     min-height: auto;
     margin: 0;
 }
-
-/* Rules that only apply to dev-2025 TreeApps (which has an extra #main in the middle) */
-body.tree-apps #main:has(.slippy-tree-container) {
+:root.slippy-tree-root body.tree-apps #main {
     padding-bottom: 0;
     flex: 1;
     display: flex;
      --background-color: #f7f6f0;       /* background in the new site */
 }
-body.tree-apps #main .row:has(.slippy-tree-container) {
+:root.slippy-tree-root body.tree-apps #main .row {
     --bs-gutter-x: 0px;
     --bs-gutter-y: 0px;
     flex: 1;
     margin-top: 0 !important; /* Bootstrap is awful */
 }
-body.tree-apps #main .row:has(.slippy-tree-container) > * {
+:root.slippy-tree-root body.tree-apps #main .row > * {
     display: flex;
     flex-direction: column;
 }
-
-/* Now go wild. If the root element has "compact-footer" class, reduce size of footer */
-/* This rule can be used by any tree app. All it needs is a "hover" class too be toggled */
-/* on the footer */
-:root.compact-footer footer#footer {
-    transition-duration: 200ms;
-    transition-property: padding;
-    overflow: hidden;
-}
-:root.compact-footer footer#footer ul.nav .nav-item {
-    transition-duration: 200ms;
-    transition-property: margin;
-}
-:root.compact-footer footer#footer > * > :last-child {
-    transition-duration: 200ms;
-    transition-property: height, margin;
-}
-:root.compact-footer footer#footer > * > :last-child {
-    overflow: hidden;
-    transition-duration: 200ms;
-    transition-property: height, margin;
-}
-:root.compact-footer footer#footer:not(.hover) {
-    padding: 1em 0 0 0;
-}
-:root.compact-footer footer#footer:not(.hover) ul.nav .nav-item {
-    margin-bottom: 0;
-}
-:root.compact-footer footer#footer:not(.hover) > * > :last-child {
-    height: 0;
-    margin: 0 !important;
-}
-:root.compact-footer footer#footer:not(.hover) > * > :last-child > :first-child {
-    margin-top: 0;
-}
-:root.compact-footer #subfooter {
+:root.slippy-tree-root #subfooter {
     display: none;
 }
-@media (max-width:980px) {
-    :root.compact-footer footer#footer:not(.hover) img {
+:root.slippy-tree-root :is(footer#footer, header, .tabs--wrapper) {
+    overflow: hidden;
+    transition: height 200ms, padding 200ms, display 400ms allow-discrete;
+    --slippy-computed-height: auto;
+    height: var(--slippy-computed-height);
+}
+:root.slippy-tree-root.slippy-fullscreen :is(footer#footer, header, .tabs--wrapper) {
+    height: 0 !important;
+    padding: 0 !important;
+}
+@media ((max-height:900px) or (max-width:980px)) {
+    :root.slippy-tree-root footer#footer:not(.hover) img {
         max-height: 40px;
     }
-    :root.compact-footer footer#footer:not(.hover) figure {
+    :root.slippy-tree-root footer#footer:not(.hover) figure {
         display: flex;
         justify-content: center;
         margin: 0;
     }
-    :root.compact-footer footer#footer:not(.hover) .mb-3 {
+    :root.slippy-tree-root footer#footer:not(.hover) .mb-3 {
         margin: 0 !important;      /* Bootstrap is a disaster */
     }
-    :root.compact-footer footer#footer:not(.hover) :is(ul, p) {
+    :root.slippy-tree-root footer#footer:not(.hover) :is(ul, p) {
         display: none;
+    }
+    :root.slippy-tree-root footer#footer {
+        padding: 1em 0 0 0;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) ul.nav .nav-item {
+        margin-bottom: 0;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) > * > :last-child {
+        height: 0;
+        margin: 0 !important;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) > * > :last-child > :first-child {
+        margin-top: 0;
     }
 }
 
@@ -135,7 +120,7 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
         left: 16px;
         bottom: 28px;
         color: black;
-        -webkit-text-stroke: 6px var(--background-color), 
+        -webkit-text-stroke: 6px var(--background-color);
         -webkit-text-fill: black;
         paint-order: stroke fill;
     }
@@ -163,9 +148,35 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
     z-index: 9999;
     left: 20px;
     text-decoration: none;
+    user-select: none;
 }
 .slippy-tree-container .slippy-help-button::before {
     content: "?";
+}
+.slippy-tree-container .slippy-fullscreen-button {
+    position: absolute;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: bold;
+    width: 1em;
+    height: 1em;
+    top: 20px;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 4px solid var(--button-color);
+    color: white;
+    background: var(--button-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    left: 75px;
+    text-decoration: none;
+    content: url("resources/fullscreen.svg");
+    user-select: none;
+}
+:root.slippy-tree-root.slippy-fullscreen .slippy-tree-container .slippy-fullscreen-button {
+    content: url("resources/nonfullscreen.svg");
 }
 
 .slippy-tree-container .helpContainer {
@@ -195,6 +206,7 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
 }
 
 .slippy-tree-container .helpContainer .slippy-settings-wheel {
+    margin-top: 1em;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
@@ -295,6 +307,7 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
     display: block;
     color: initial;
     text-decoration: none;
+    position: relative;
 }
 
 .slippy-tree-container .personMenu > *:first-child {
@@ -306,6 +319,24 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
 
 .slippy-tree-container .personMenu > :is(*[data-action]:hover, *[data-action].focus) {
     background-color: #DED;
+}
+
+.slippy-tree-container .personMenu .slippy-find-menu {
+    margin-top: 4px;
+    display: flex;
+    gap: 2px;
+}
+.slippy-tree-container .personMenu .slippy-find-menu input {
+    flex: 1;
+}
+.slippy-tree-container .personMenu .slippy-find-family {
+    display: none;      /* Because non-nuclear doesn't always work */
+    height: calc(1em + 6px);
+    aspect-ratio: 1;
+    background: url("resources/person.svg") 100% no-repeat;
+}
+.slippy-tree-container .personMenu .slippy-find-family.selected {
+    background-image: url("resources/family.svg");
 }
 
 /** the tree itself */
@@ -340,10 +371,6 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
     contain: style size layout paint;
     overflow: hidden;
 
-}
-
-.slippy-tree:root {
-    font-family: sans-serif;
 }
 
 .slippy-tree a[href] {
@@ -426,7 +453,8 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
     opacity: 0.3;
 }
 .slippy-tree .relations .spouse.focus {
-    opacity: 0.6;
+    stroke-width: 4px;
+    opacity: 0.8;
 }
 .slippy-tree .relations .coparent {
     stroke: var(--coparent);
@@ -487,10 +515,10 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
     opacity: 0.8;
 }
 
-.slippy-tree-container:not(.loading) .loader {
+.slippy-tree-container:not(.loading) .slippy-loader {
     display: none;
 }
-.slippy-tree-container .loader {
+.slippy-tree-container .slippy-loader {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -503,8 +531,6 @@ body.tree-apps #main .row:has(.slippy-tree-container) > * {
     background: white;
     --_m: conic-gradient(#0000 10%,#000), linear-gradient(#000 0 0) content-box;
     mask: var(--_m);
-    -webkit-mask: var(--_m);
-    -webkit-mask-composite: source-out;
     mask-composite: subtract;
     animation: slippy-tree-loader 1s infinite linear;
 }

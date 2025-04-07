@@ -1,9 +1,6 @@
 /**
  * SlippyTree consists of two classes: SlippyTree itself, and the SlippyTreePerson.
  *
- * It doesn't use D3 and it doesn't use the default "WikiTreePerson" object - requests
- * are done in SlippyTree.load() using the FetchAPI.
- *
  * The init() method sets up, then the person is requested with "load()", which stores
  * the people in both an array (this.people) and a map (this.byid, which is keyed on both
  * the numeric ID and the "public" ID, eg "Windsor-1"). Relationships are added between
@@ -23,8 +20,6 @@
  *
  * The popup menu is created in the tree init() method, and actions set with "data-action"
  * on the menu item. When selected, SlippyPerson.action is called with that action.
- *
- * Origin branch for this is https://github.com/faceless2/wikitree-dynamic-tree/
  */
 
 if (typeof View == "undefined") { globalThis.View = ()=>{}; } // To allow debugging in node.js
@@ -35,7 +30,7 @@ class SlippyTree extends View {
     #SCROLLSTEP_KEYS = 1.1;     // Was 1.2
     #PATHPREFIX;
     static loadCount = 0;
-    LIVINGPEOPLE = "Highlight living people";  // Param to store details of current view in window location
+    LIVINGPEOPLE = "Highlight living people";
     #VIEWPARAM = "slippyTreeState";  // Param to store details of current view in window location
     #VERSION = 0; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
@@ -115,6 +110,12 @@ class SlippyTree extends View {
    <div data-action="descendants">Load descendants</div>
    <div data-action="prune">Prune to this branch</div>
    <div data-action="remove">Remove</div>
+   <div data-action="find">Find...
+     <div class="slippy-find-menu" class="hidden">
+      <input class="slippy-find-id" type="text" size="12" placeholder="Wikitree ID"/>
+      <span class="slippy-find-family selected"></span>
+     </div>
+   </div>
    <a data-action="profile">View profile</a>
   </div>
 
@@ -123,7 +124,8 @@ class SlippyTree extends View {
  <div class="relationshipName"></div>
 
  <a class="slippy-help-button"></a>
- <div class="loader"></div>
+ <a class="slippy-fullscreen-button"></a>
+ <div class="slippy-loader"></div>
  <div class="helpContainer">
   <div>
    <div class="helpCloseButton">&#x2715;</div>
@@ -255,6 +257,7 @@ class SlippyTree extends View {
             } else {
                 this.#PATHPREFIX = "/wikitree-dynamic-tree/";
             }
+            document.documentElement.classList.add("slippy-tree-root");
             this.state.container.style = "";   // Reset it, as some other tree types set style properties on it
             this.state.container.innerHTML = content.replace(/\{TAGSIZE\}/g, this.#TAGSIZE).replace(/\{PATHPREFIX\}/g, this.#PATHPREFIX).trim();
 
@@ -262,12 +265,30 @@ class SlippyTree extends View {
             this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
             this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
             this.state.personMenu = this.state.container.querySelector(".personMenu");
+            this.state.findMenu = this.state.container.querySelector(".slippy-find-menu");
+            this.state.findInput = this.state.container.querySelector(".slippy-find-id");
             const helpButton = this.state.container.querySelector(".slippy-help-button");
             const helpContainer = this.state.container.querySelector(".helpContainer");
             const helpBox = helpContainer.querySelector(":scope > :first-child");
             helpButton.addEventListener("click", (e) => {
-                this.state.personMenu.classList.add("hidden");
+                this.showMenu(false);
                 this.showHelp(helpContainer.classList.contains("hidden"));
+            });
+            this.state.container.querySelector(".slippy-fullscreen-button").addEventListener("click", (e) => {
+                // This is a bodge. To animate the full-screen animation, we first have to calculate the
+                // heights we are animating from (because they're auto initially). Do that when the animation
+                // to fullscreen continues, and set on variables which override the "auto" values in the
+                // stylesheet. These values are removed on close()
+                if (!document.documentElement.classList.contains("slippy-fullscreen")) {
+                    try {
+                        document.querySelectorAll("header, footer, .tabs--wrapper").forEach((e) => {
+                            e.style.setProperty("--slippy-computed-height", getComputedStyle(e).height);
+                        });
+                    } catch (e) { }
+                    document.documentElement.classList.add("slippy-fullscreen");
+                } else {
+                    document.documentElement.classList.remove("slippy-fullscreen");
+                }
             });
             helpBox.addEventListener("click", (e) => {
                 this.showHelp(false);
@@ -295,7 +316,6 @@ class SlippyTree extends View {
             for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
                 if (elt.getAttribute("data-action") != "profile") {
                     elt.addEventListener("click", () => {
-                        this.state.personMenu.classList.add("hidden");
                         this.state.personMenu.person.action(elt.getAttribute("data-action"));
                     });
                 }
@@ -304,7 +324,7 @@ class SlippyTree extends View {
             const pointers = [];
             this.state.svg.addEventListener("pointerdown", (e) => {
                 pointers.push({ id:e.pointerId, screenX: e.screenX, screenY: e.screenY });
-                this.state.personMenu.classList.add("hidden");
+                this.showMenu(false);
             });
             this.state.svg.addEventListener("pointerup", (e) => {
                 if (e.isPrimary) {
@@ -403,8 +423,30 @@ class SlippyTree extends View {
                 }
                 this.reposition(view);
             });
+            document.querySelector(".slippy-find-family").addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                let findFamily = e.target.classList.contains("selected");
+                this.setSettings({find: findFamily ? "individual" : "family" });
+                this.state.findInput.focus();
+            });
             const self = this;
-            this.state.container.addEventListener("keydown", (e) => {
+            this.state.findInput.addEventListener("blur", (e) => {
+                self.state.findMenu.classList.add("hidden");
+            });
+            this.state.findInput.addEventListener("change", (e) => {
+                let value = e.target.value.trim();
+                self.showMenu(false);
+                if (value.length) {
+                    self.state.personMenu.person.action("find", value);
+                }
+            });
+            this.state.container.firstElementChild.addEventListener("keydown", (e) => {
+                if (e.target == this.state.findInput) {
+                    if (e.key == "Escape") {
+                        e.target.blur();
+                    }
+                    return;
+                }
                 if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
                     e.preventDefault();
                     const menu = this.state.personMenu;
@@ -428,6 +470,9 @@ class SlippyTree extends View {
                         } else {
                             let score, best = null, max = 0x7FFFFFFF, threshold = 30;
                             for (const person of self.state.people) {
+                                if (person.isHidden()) {
+                                    continue;
+                                }
                                 if (e.key == "ArrowUp" && Math.abs(person.cx - focus.cx) < threshold && person.cy < focus.cy && (score = focus.cy - person.cy) < max) {
                                     best = person;
                                     max = score;
@@ -447,7 +492,6 @@ class SlippyTree extends View {
                                 view.cy = best.cy;
                                 view.keyboardFocus = best;
                                 this.setSecondaryFocus(best);
-                                this.setDescriptionFocus(best);
                             }
                         }
                         self.reposition(view);
@@ -493,16 +537,6 @@ class SlippyTree extends View {
                 this.reposition({});
             });
             this.state.resizeObserver.observe(this.state.container);
-            this.state.footerHoverListener = (e) => {
-                if (document.documentElement.classList.contains("compact-footer")) {
-                    e.target.classList.toggle("hover", e.type == "mouseenter");
-                }
-            };
-            if (document.querySelector("footer") != null) {
-                document.querySelector("footer").addEventListener("mouseenter", this.state.footerHoverListener);
-                document.querySelector("footer").addEventListener("mouseleave", this.state.footerHoverListener);
-                document.documentElement.classList.add("compact-footer");
-            }
 
             // We maintain our state in the URL hash, alongside some other properties
             // that apply to all views. We need to then ignore this if the view is reloaded
@@ -553,16 +587,23 @@ class SlippyTree extends View {
     close() {
         // Remember this object persists even when other views are selected.
         // Clear out all state - it's all under "this.state" now - and disconnect resize observer
+        document.documentElement.classList.remove("slippy-tree-root");
         this.state.resizeObserver.disconnect();
-        document.querySelector("footer").removeEventListener("mouseenter", this.state.footerHoverListener);
-        document.querySelector("footer").removeEventListener("mouseleave", this.state.footerHoverListener);
-        document.documentElement.classList.remove("compact-footer");
+        document.querySelectorAll("header, footer, .tabs--wrapper").forEach((e) => {
+            e.style.setProperty("--slippy-computed-height", null);
+        });
         if (this.#VIEWPARAM) {
             let v = new URLSearchParams(window.location.hash.substring(1));
             v.delete(this.#VIEWPARAM);
             window.history.replaceState(null, null, "#" + v);
         }
         delete this.state;
+    }
+
+    #setLoading(loading) {
+        if (this.state.scrollPane) {
+            this.state.scrollPane.parentNode.classList.toggle("loading", loading);
+        }
     }
 
     #arrayEquals(a, b) {
@@ -710,8 +751,10 @@ class SlippyTree extends View {
         }
         let zoomButton = document.querySelector(".slippy-settings-wheel-zoom");
         let scrollButton = document.querySelector(".slippy-settings-wheel-scroll");
+        let familyFind = document.querySelector(".slippy-find-family");
         zoomButton.classList.toggle("selected", this.settings.wheel == "zoom");
         scrollButton.classList.toggle("selected", this.settings.wheel == "scroll");
+        familyFind.classList.toggle("selected", this.settings.find != "individual");
         window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
     }
 
@@ -1005,6 +1048,12 @@ class SlippyTree extends View {
      * @param e the mouse event that triggered the menu
      */
     showMenu(person, e) {
+        if (person === false) {
+            this.state.personMenu.classList.add("hidden");
+            this.state.findMenu.classList.add("hidden");
+            this.state.findInput.value = "";
+            return;
+        }
         // Note both person and e can be missing to reposition the currently displayed menu
         if (!person) {
             person = this.state.personMenu.person;
@@ -1060,7 +1109,77 @@ class SlippyTree extends View {
                 this.state.secondaryFocus = focus;
                 this.state.secondaryFocus.svg.classList.add("secondaryfocus");
             }
+            this.setDescriptionFocus(focus);
+            this.setEdgeFocus(this.state.focus, this.state.secondaryFocus);
         }
+    }
+
+    /**
+     * Focus on the edges between "a" and "b", or if b==null, on the ancestors/descendants of "a"
+     */
+    setEdgeFocus(a, b) {
+        if (a == null) {        // Remove focus from all edges
+            this.state.svg.querySelectorAll(".relations .focus").forEach((e) => {
+                e.classList.remove("focus");
+            });
+            return;
+        }
+        if (b == a) {
+            b = null;
+        }
+        const key = b ? Math.min(a.id, b.id) + "-" + Math.max(a.id, b.id) : a.id + "-" + a.id;
+        let edges = this.state.focusEdges[key];
+        if (!edges) {
+            edges = this.state.focusEdges[key] = [];
+            if (b) {
+                let rels = a.relationships(b, { half:false, gender:false, nosibling:true });
+                for (let rel of rels) {
+                    let n0 = a;
+                    for (let p of rel.path) {
+                        let n1 = p.person;
+                        edges.push("edge-" + Math.min(n0.id, n1.id) + "-" + Math.max(n0.id, n1.id));
+                        n0 = n1;
+                    }
+                }
+            } else {
+                let q = [a];
+                while (b=q.pop()) {
+                    for (let child of b.children()) {
+                        edges.push("edge-" + Math.min(b.id, child.id) + "-" + Math.max(b.id, child.id));
+                        q.push(child);
+                    }
+                    if (b.data.NoChildren == 1) {
+                        edges.push("noissue-" + b.id);
+                    }
+                }
+                q = [a];
+                while (b=q.pop()) {
+                    for (let parent of b.parents()) {
+                        edges.push("edge-" + Math.min(b.id, parent.id) + "-" + Math.max(b.id, parent.id));
+                        q.push(parent);
+                    }
+                }
+            }
+        }
+        let firstFocus = null;
+        edges.forEach((id) => {
+            let e = document.getElementById(id) ;
+            if (e && !firstFocus) {
+                firstFocus = e;
+            }
+            if (e && !e.classList.contains("focus")) {
+                e.classList.add("focus");
+                e.parentNode.appendChild(e);    // Move to end
+            }
+        });
+        this.state.svg.querySelectorAll(".relations .focus").forEach((e) => {
+            if (!edges.includes(e.id)) {
+                e.classList.remove("focus");
+                if (firstFocus) {
+                    e.parentNode.insertBefore(e, firstFocus);   // Move to before unfocused elements
+                }
+            }
+        });
     }
 
     /**
@@ -1120,12 +1239,9 @@ class SlippyTree extends View {
         if (this.debug) console.log("Focus " + focus);
         if (this.state.view.keyboardFocus) {
             delete this.state.view.keyboardFocus;
-            this.setDescriptionFocus(null);
             this.setSecondaryFocus(null);
         }
-        if (this.browser) {
-            this.state.scrollPane.parentNode.classList.add("loading");
-        }
+        this.#setLoading(true);
 
         // Setup: ensure every person has an SVG
         let newpeople = false;
@@ -1139,7 +1255,6 @@ class SlippyTree extends View {
                 person.svg.person = person;
                 person.svg.addEventListener("click", (e) => {
                     this.setSecondaryFocus(person);
-                    this.setDescriptionFocus(person);
                     this.showMenu(person, e);
                 });
                 person.svg.setAttribute("id", "person-" + person.id);
@@ -1212,7 +1327,7 @@ class SlippyTree extends View {
                 }
             }
             if (this.browser) {
-                this.state.scrollPane.parentNode.classList.remove("loading");
+                this.#setLoading(false);
                 const peoplepane = this.state.svg.querySelector(".people");
                 const edges = this.state.svg.querySelector(".relations");
                 const labels = this.state.svg.querySelector(".labels");
@@ -1240,6 +1355,7 @@ class SlippyTree extends View {
                 this.state.view.cx0 = this.state.view.cx;
                 this.state.view.cy0 = this.state.view.cy;
                 this.state.view.callback = callback;
+                this.setEdgeFocus(this.state.focus, this.state.secondaryFocus);
                 window.requestAnimationFrame(() => { this.draw(); });
 
                 // Initiate a load to check for unloaded children, effects
@@ -1812,32 +1928,6 @@ class SlippyTree extends View {
                 people.push(person);
             }
         }
-        // Any parent edge to anyone in "focuslist" gets focus.
-        // Originally it contained just the person and their parents,
-        // but it seems more useful to highlight all ancestors and children
-        // especially in very big trees
-        let focuslist = [];
-        focuslist.push(focus);
-        for (let i=0;i<focuslist.length;i++) {
-            let p = focuslist[i];
-            if (p) {
-                for (let n of p.parents()) {
-                    focuslist.push(n);
-                }
-            }
-        }
-        let focuslist2 = [];
-        focuslist2.push(focus);
-        for (let i=0;i<focuslist2.length;i++) {
-            let p = focuslist2[i];
-            if (p) {
-                for (let n of p.children()) {
-                    focuslist2.push(n);
-                    focuslist.push(n);
-                }
-            }
-        }
-        focuslist2 = null;
         for (const person of people) {
             const children = Array.from(person.children());
             const childAngle = Math.min(25, 140 / (children.length));
@@ -1857,11 +1947,11 @@ class SlippyTree extends View {
                     }
                 }
                 if (add) {
-                    let path = edges.querySelector("#edge-" + person.id + "-" + r.person.id);
+                    let pathname = "edge-" + Math.min(person.id, r.person.id) + "-" + Math.max(person.id, r.person.id);
+                    let path = edges.querySelector("#" + pathname);
                     if (!path) {
                         path = document.createElementNS(this.#SVG, "path");
-                        path.setAttribute("id", "edge-" + person.id + "-" + r.person.id);
-                        let focaledge = false;
+                        path.setAttribute("id", pathname);
                         if (r.rel == "spouse") {        // Link to spouse
                             if (otherincluded) {
                                 if (r.type == "inferred") {
@@ -1896,7 +1986,6 @@ class SlippyTree extends View {
                             } else {
                                 path.classList.add("parent");
                             }
-                            focaledge = focuslist.includes(person) && focuslist.includes(r.person);
                             if (person.generation == r.person.generation) {
                                 path.targetSameGenerationBend = sameGenerationBend;
                             } else {
@@ -1908,12 +1997,7 @@ class SlippyTree extends View {
                         }
                         path.person0 = person;
                         path.person1 = r.person;
-                        if (focaledge) {
-                            path.classList.add("focus");
-                            edges.appendChild(path);
-                        } else {
-                            edges.insertBefore(path, edges.firstChild);
-                        }
+                        edges.appendChild(path);
                     }
                 }
             }
@@ -1924,12 +2008,7 @@ class SlippyTree extends View {
                     path.classList.add("noissue");
                     path.setAttribute("id", "noissue-" + person.id);
                     path.person0 = person;
-                    if (person == focus) {
-                        path.classList.add("focus");
-                        edges.appendChild(path);
-                    } else {
-                        edges.insertBefore(path, edges.firstChild);
-                    }
+                    edges.appendChild(path);
                 }
             } else {
                 let path = edges.querySelector("#noissue-" + person.id);
@@ -1959,7 +2038,6 @@ class SlippyTree extends View {
                 }
             }
         }
-
     }
 
     /**
@@ -2020,84 +2098,122 @@ class SlippyTree extends View {
                 y1 = Math.max(y1, y + h*2);
             }
         }
+        let points = [];
         for (let path=edges.firstElementChild;path;path=path.nextElementSibling) {
-            let d = null;
+            const cl = path.classList;
             const p0 = path.person0;
             const p1 = path.person1;
-            let px0 = 0, py0 = 0, px1 = 0, py1 = 0, px2 = 0, py2 = 0, px3 = 0, py3 = 0;
-            const cl = path.classList;
-            let xd = 0, yd = 0;
+            let d = null;
+            points.length = 0;
+            // Points is a series of quadratic beziers; every second pair is a control point.
             if (cl.contains("spouse") || cl.contains("coparent")) {
                 let edge = p0.cx < p1.cx ? -1 : 1;
-                px0 = Math.round(p0.cx) + p0.genwidth * 0.5 * edge;
-                py0 = Math.round(p0.cy) + p0.height   * 0;
-                px3 = Math.round(p1.cx) + p1.genwidth * 0.5 * edge;
-                py3 = Math.round(p1.cy) + p1.height   * 0;
-                px1 = (edge < 0 ? Math.min(px0, px3) : Math.max(px0, px3)) + 10 * edge;
-                py1 = py0;
-                px2 = px1;
-                py2 = py3;
+                let px0 = p0.cx + p0.genwidth * 0.5 * edge;
+                let py0 = p0.cy + p0.height   * 0;
+                let px2 = p1.cx + p1.genwidth * 0.5 * edge;
+                let py2 = p1.cy + p1.height   * 0;
+                let px1 = (edge < 0 ? Math.min(px0, px2) : Math.max(px0, px2)) + 10 * edge;
+                let py1 = (py0 + py2) / 2;
+                points.push(px0);
+                points.push(py0);
+                points.push(px1);
+                points.push(py0);
+                points.push(px1);
+                points.push(py1);
+                points.push(px1);
+                points.push(py2);
+                points.push(px2);
+                points.push(py2);
             } else if (cl.contains("father") || cl.contains("mother") || cl.contains("parent")) {
-                px0 = Math.round(p0.cx) + p0.genwidth * -0.5;
-                py0 = Math.round(p0.cy) + p0.height * 0;
-                px3 = Math.round(p1.cx) + p1.genwidth * 0.5;
-                py3 = Math.round(p1.cy) + p1.height   * 0;
+                let px0 = p0.cx + p0.genwidth * -0.5;
+                let py0 = p0.cy + p0.height * 0;
+                let px2 = p1.cx + p1.genwidth * 0.5;
+                let py2 = p1.cy + p1.height   * 0;
+                let px1 = (px0 + px2) / 2;
+                let py1 = (py0 + py2) / 2;
+                points.push(px0);
+                points.push(py0);
                 if (path.targetSameGenerationBend) {
-                    yd = path.targetSameGenerationBend * (py0 < py3 ? 1 : -1);
-                    xd = path.targetSameGenerationBend * (px0 < px3 ? 1 : -1);
+                    let xl = path.targetSameGenerationBend;
+                    let yl = py0 < py2 ? xl / 2 : xl / -2;
+                    points.push(px0 - xl);
+                    points.push(py0);
+                    points.push(px0 - xl);
+                    points.push(py0 + yl)
+                    points.push(px0 - xl);
+                    points.push(py0 + yl + yl);
+                    points.push(px1);
+                    points.push(py1);
+                    points.push(px2 + xl);
+                    points.push(py2 - yl - yl);
+                    points.push(px2 + xl);
+                    points.push(py2 - yl)
+                    points.push(px2 + xl);
+                    points.push(py2);
+                } else {
+                    points.push((px0 + px1) / 2);
+                    points.push(py0);
+                    points.push(px1);
+                    points.push(py1);
+                    points.push((px1 + px2) / 2);
+                    points.push(py2);
                 }
-                px1 = px0 + (px3 - px0) / 2;
-                py1 = py0;
-                px2 = px0 + (px3 - px0) / 2;
-                py2 = py3;
+                points.push(px2);
+                points.push(py2);
             } else if (cl.contains("unloaded-father") || cl.contains("unloaded-mother")) {
                 // p0 has a position, p1 (parent) does not.
-                px0 = Math.round(p0.cx) + p0.genwidth * -0.5;
-                py0 = Math.round(p0.cy) + p0.height * 0;
-                px3 = px0 - path.targetLength;
-                py3 = py0 + path.targetLength / (path.classList.contains("unloaded-father") ? -4 : 4);
-                px1 = px0 + (px3 - px0) / 2;
-                py1 = py0;
-                px2 = px0 + (px3 - px0) / 2;
-                py2 = py3;
+                let px0 = p0.cx + p0.genwidth * -0.5;
+                let py0 = p0.cy + p0.height * 0;
+                let px2 = px0 - path.targetLength;
+                let py2 = py0 + path.targetLength / (path.classList.contains("unloaded-father") ? -4 : 4);
+                let px1 = (px0 + px2) / 2;
+                let py1 = (py0 + py2) / 2;
+                points.push(px0);
+                points.push(py0);
+                points.push((px0 + px1) / 2);
+                points.push(py0);
+                points.push(px1);
+                points.push(py1);
+                points.push((px1 + px2) / 2);
+                points.push(py2);
+                points.push(px2);
+                points.push(py2);
             } else if (cl.contains("father-unloaded") || cl.contains("mother-unloaded")) {
                 // p0 has a position, p1 (child) does not.
-                px0 = px1 = Math.round(p0.cx) + p0.genwidth * +0.5;
-                py0 = py1 = Math.round(p0.cy) + p0.height * 0;
-                px2 = px3 = px0 + path.targetLength * Math.sin(path.targetAngle * Math.PI / 180);
-                py2 = py3 = py0 - path.targetLength * Math.cos(path.targetAngle * Math.PI / 180);
+                let px0 = p0.cx + p0.genwidth * +0.5;
+                let py0 = p0.cy + p0.height * 0;
+                let px1 = px0 + path.targetLength * Math.sin(path.targetAngle * Math.PI / 180);
+                let py1 = py0 - path.targetLength * Math.cos(path.targetAngle * Math.PI / 180);
+                points.push(px0);
+                points.push(py0);
+                points.push(px1);
+                points.push(py1);
             } else if (cl.contains("spouse-unloaded")) {
-                px0 = Math.round(p0.cx) + p0.genwidth * -0.5
-                py0 = Math.round(p0.cy) + p0.height   * 0;
-                px3 = px0 - path.targetLength / 2;
-                py3 = py0 + path.targetLength;
-                px1 = px2 = px3;
-                py1 = py0;
-                py2 = py3;
+                let px0 = p0.cx + p0.genwidth * -0.5
+                let py0 = p0.cy + p0.height   * 0;
+                let px2 = px0 - path.targetLength / 2;
+                let py2 = py0 + path.targetLength;
+                points.push(px0);
+                points.push(py0);
+                points.push((px0 + px2) / 2);
+                points.push(py0);
+                points.push(px2);
+                points.push(py2);
             } else if (cl.contains("noissue")) {
-                px0 = Math.round(p0.cx) + p0.genwidth * 0.5
-                py0 = Math.round(p0.cy);
+                let px0 = Math.round(p0.cx) + p0.genwidth * 0.5
+                let py0 = Math.round(p0.cy);
                 let h = p0.height;
                 d = "M " + px0 + " " + py0 + " l 5 0 m 0 " + (h / -2) + " l 0 " + h;
             }
             if (!d) {
-                if (px1 == px0 && px2 == px0 && px3 == px0 && py1 == py0 && py2 == py0 && py3 == py0) {
+                if (points.length < 4) {
                     d = "";
-                } else if (px1 != px0 || py1 != py0 || px2 != px3 || py2 != py3) {
-                    d = "M " + px0 + " " + py0 + " C ";
-                    if (xd || yd) {
-                        // If linking to same generation, add an extra curve at start and end
-                        d += (px0 - xd) + " " + py0 + " " + (px0 - xd) + " " + (py0 + yd) + " " + px0 + " " + (py0 + yd) + " ";
-                        py1 += yd;
-                        py2 -= yd;
-                        py3 -= yd;
-                    }
-                    d += px1 + " " + py1 + " " + px2 + " " + py2 + " " + px3 + " " + py3;
-                    if (xd || yd) {
-                        d += " " + (px3 + xd) + " " + py3 + " " + (px3 + xd) + " " + (py3 + yd) + " " + px3 + " " + (py3 + yd);
-                    }
                 } else {
-                    d = "M " + px0 + " " + py0 + " L " + px3 + " " + py3;
+                    d = "M " + Math.round(points[0]) + " " + Math.round(points[1]);
+                    d += points.length == 4 ? " L" : " Q";
+                    for (let i=2;i<points.length;i++) {
+                        d += " " + Math.round(points[i]);
+                    }
                 }
             }
             path.setAttribute("d", d);
@@ -2189,9 +2305,7 @@ class SlippyTree extends View {
      * @param callback the method to call once the people are loaded
      */
     load(params, callback) {
-        if (this.browser) {
-            this.state.scrollPane.parentNode.classList.add("loading");
-        }
+        this.#setLoading(true);
         this.#resetCategories();
         let usedparams = {
             action: "getPeople",
@@ -2206,12 +2320,11 @@ class SlippyTree extends View {
             if (!this.state) {
                 return;
             }
-            if (this.browser) {
-                this.state.scrollPane.parentNode.classList.remove("loading");
-            }
-//                console.log(JSON.stringify(data));
+            this.#setLoading(false);
+//            console.log(JSON.stringify(data));
             const len = this.state.people.length;
             if (data[0].people) {
+                this.state.focusEdges = {};
                 let newpeople = [];
                 for (const id in data[0].people) {
                     const r = data[0].people[id];
@@ -2287,6 +2400,44 @@ class SlippyTree extends View {
         }
 
     }
+
+    /**
+     * Load any nodes required to make a connection between "name" and "name2",
+     * and when complete call "callback")
+     *
+     * This is done by making a call to Wikitree+ and scraping the output to
+     * get a list of IDs, then requesting those IDs (with nuclear=1) from WikiTree.
+     */
+    loadConnection(name, name2, nuclear, callback) {
+        this.#setLoading(true);
+        for (const person of this.state.people) {
+            if (person.data.Name == name) {
+                const url = "https://plus.wikitree.com/function/WTPath/Path.htm?WikiTreeID1=" + name + " &WikiTreeID2=" + name2 + "&relatives=0&IgnoreIDs=";
+                fetch(url).then((response) => { return response.text()}).then(html => {
+                    this.#setLoading(false);
+//                    console.log(html);
+                    const doc = new DOMParser().parseFromString(html, "text/html");
+                    let ids = [];
+                    doc.querySelectorAll("tbody td:nth-child(3) a").forEach((e) => {
+                        let href = e.href;
+                        if (href.includes("/wiki/")) {
+                            let id = href.substring(href.lastIndexOf("/") + 1);
+                            ids.push(id);
+                        }
+                    });
+                    console.log("Connection ids: " + JSON.stringify(ids));
+                    if (ids.length > 0) {
+                        this.load({keys: ids, nuclear:nuclear, spouses:1-nuclear}, callback);
+                    }
+                }).catch(error => {
+                    this.#setLoading(false);
+                    console.log(url);
+                    console.log(error);
+                });
+            }
+        }
+    }
+
 
     /**
      * Convert an {x:n, y:n} with pixel coordinates relative to the SVG element to logical coordinates
@@ -2562,6 +2713,7 @@ class SlippyTreePerson {
      *
      * @param options may contain boolean values
      *   -- common: co-parents are classed as spouses
+     *   -- nosibling: ignore sibling relationships
      *   -- gender: gendered names: sibling becomes brother/sister, etc.
      *   -- half: half-siblings are distinguished
      *   -- maxdistance: only steps up to N are tested
@@ -2591,10 +2743,13 @@ class SlippyTreePerson {
 
             q.push({person: this, ancestral: true, path:[], skip:[this]});
             while (s=q.shift()) {
+                const person = s.person;
                 for (let r of s.person.relations) {
-                    const person = s.person;
                     let rel = r.rel;
                     if (!options.common && rel == "spouse" && r.type == "inferred") {   // Don't classify co-parents as spouses in this algo
+                        continue;
+                    }
+                    if (options.nosibling && rel == "sibling") {
                         continue;
                     }
                     if (s.skip.includes(r.person)) {
@@ -2604,7 +2759,7 @@ class SlippyTreePerson {
                     let newskip = s.skip.concat([person]);
                     let skiprel;
                     switch (rel) {
-                        case "parent":  skiprel = ["child", "parent", "sibling"]; break;
+                        case "parent":  skiprel = options.nosibling ? ["child", "parent"] : ["child", "parent", "sibling"]; break;
                         case "sibling": skiprel = ["parent", "sibling"]; break;
                         case "child":   skiprel = ["spouse", "child"]; break;
                         case "spouse":  skiprel = ["child"]; ancestral = false; break;
@@ -2896,10 +3051,15 @@ class SlippyTreePerson {
     /**
      * Execute a popupmenu action for this person
      * @param name the name of the action
+     * @param value the secondary value, which is normally null except when "find" is run with a value
      */
-    action(name) {
+    action(name, value) {
         if (this.debug) console.log("Action " + name + " on " + this);
         const tree = this.tree;
+        if (name != "find") {
+            tree.state.personMenu.classList.add("hidden");
+            tree.state.findMenu.classList.add("hidden");
+        }
         if (name == "focus") {
             // Refocus the tree on this node
             tree.setFocus(this);
@@ -3038,6 +3198,54 @@ class SlippyTreePerson {
                 person.pruned |= !q.includes(person);
             }
             tree.setFocus(focus);
+
+        } else if (name == "find") {
+            if (value == null) {
+                // Display the "find" menu.
+                tree.state.findMenu.classList.remove("hidden");
+                tree.state.findInput.focus();
+            } else {
+                let nuclear = document.querySelector(".slippy-find-family").classList.contains("selected") ? 1 : 0;
+                // Find the specified person.
+                const orig = this;
+                const other = tree.state.byid[value];
+                if (other) {
+                    tree.setEdgeFocus(orig, other);
+                    tree.setFocus(other, () => {
+                        tree.setSecondaryFocus(orig);
+                        if (nuclear) {
+                            let rels = orig.relationships(other, { half:false, gender:false, nosibling:true });
+                            let ids = [];
+                            for (let r of rels) {
+                                for (let p of r.path) {
+                                    if (!ids.includes(p.person.id)) {
+                                        ids.push(p.person.id);
+                                    }
+                                }
+                            }
+                            tree.load({keys: ids, nuclear:1}, () => {
+                                for (let id of ids) {
+                                    tree.find(id).childrenLoaded = true;
+                                }
+                                tree.setEdgeFocus(orig, other);
+                                tree.setFocus(other, () => {
+                                    tree.setSecondaryFocus(orig);
+                                });
+                            });
+                        }
+                    });
+                } else {
+                    tree.loadConnection(this.data.Name, value, nuclear, () => {
+                        let other = tree.state.byid[value];
+                        if (other) {
+                            tree.setEdgeFocus(orig, other);
+                            tree.setFocus(other, () => {
+                                tree.setSecondaryFocus(orig);
+                            });
+                        }
+                    });
+                }
+            }
         }
     }
 
@@ -3208,6 +3416,7 @@ class SlippyTreePerson {
     }
 
 }
+
 
 if (typeof window != "undefined") {
     window.SlippyTree = SlippyTree; // for wikitree-dynamic-tree
