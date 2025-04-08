@@ -5,7 +5,6 @@
  *
  * These vary for FOUR environments, the latter three are provisional
  *  -- treeapps in the original wikitree,
- *  -- treeapps in the dev-2025 wikitree
  *  -- NOT standalone main page (these are in views/slippytree/index.html)
  */
 
@@ -13,6 +12,13 @@
 :root.slippy-tree-root {
     --background-color: white;          /* a "default" background of white */
 }
+/*
+This is not a nice thing to do, but without it you can zoom away the full-screen button.
+However it's an issue on all tree apps, not just this one. Leave it off for now
+:root.slippy-tree-root * {
+    touch-action: none;
+}
+*/
 :root.slippy-tree-root:has(body.tree-apps) {
     height: 100%;
      --content-padding: 0;
@@ -177,6 +183,9 @@
 }
 :root.slippy-tree-root.slippy-fullscreen .slippy-tree-container .slippy-fullscreen-button {
     content: url("resources/nonfullscreen.svg");
+}
+:root.slippy-tree-root > body > .slippy-tree-container .slippy-fullscreen-button {
+    display: none;      /* don't need a full screen button in a full-screen app */
 }
 
 .slippy-tree-container .helpContainer {
