@@ -339,6 +339,15 @@
     background-image: url("resources/family.svg");
 }
 
+.slippy-tree-container .personMenu .output-name + img {
+    float: right;
+    position: relative;
+    margin-left: 0.4em;
+    top: -0.25em;
+    height: 1.5em;
+    cursor: pointer;
+}
+
 /** the tree itself */
 .slippy-tree {
     --male:    #CCF;                    /* color of male person */
@@ -449,7 +458,7 @@
 }
 .slippy-tree .relations .spouse {
     stroke: var(--spouse);
-    stroke-width: 2px;
+    stroke-width: 3px;
     opacity: 0.3;
 }
 .slippy-tree .relations .spouse.focus {
@@ -494,12 +503,15 @@
 }
 .slippy-tree .relations .spouse-unloaded {
     stroke: url("#spouse-unloaded");
-    stroke-width: 2px;
+    stroke-width: 3px;
     opacity: 0.5
 }
 .slippy-tree .relations .noissue {
     stroke: black;
     stroke-width: 1;
+    opacity: 0.5;
+}
+.slippy-tree .relations :is(.unloaded-mother, .unloaded-father, .father-unloaded, .mother-unloaded).focus {
     opacity: 0.5;
 }
 

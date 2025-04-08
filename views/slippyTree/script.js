@@ -103,7 +103,7 @@ class SlippyTree extends View {
   </svg>
 
   <div class="personMenu hidden">
-   <div class="output-name text-selectable"></div>
+   <div><span class="output-name text-selectable"></span><img src="{PATHPREFIX}views/slippyTree/resources/copy.svg"/></div>
    <div data-action="focus">Focus</div>
    <div data-action="nuclear">Load family</div>
    <div data-action="ancestors">Load ancestors</div>
@@ -301,6 +301,16 @@ class SlippyTree extends View {
             });
             document.querySelector(".slippy-categories").addEventListener("click", (e) => {
                 e.stopPropagation();
+            });
+            document.querySelector(".output-name + img").addEventListener("click", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                let input = document.createElement("input");
+                input.value = e.target.previousSibling.textContent;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand("copy");
+                input.remove();
             });
             document.querySelector(".download-link").addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -2191,7 +2201,7 @@ class SlippyTree extends View {
             } else if (cl.contains("spouse-unloaded")) {
                 let px0 = p0.cx + p0.genwidth * -0.5
                 let py0 = p0.cy + p0.height   * 0;
-                let px2 = px0 - path.targetLength / 2;
+                let px2 = px0 - path.targetLength * 3 / 4;
                 let py2 = py0 + path.targetLength;
                 points.push(px0);
                 points.push(py0);
