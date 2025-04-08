@@ -112,7 +112,7 @@ class SlippyTree extends View {
    <div data-action="remove">Remove</div>
    <div data-action="find">Find...
      <div class="slippy-find-menu" class="hidden">
-      <input class="slippy-find-id" type="text" size="12" placeholder="Wikitree ID"/>
+      <input class="slippy-find-id" type="text" size="12" spellcheck="false" writingsuggestions="off" autocorrect="off" autocomplete="off" placeholder="Wikitree ID"/>
       <span class="slippy-find-family selected"></span>
      </div>
    </div>
