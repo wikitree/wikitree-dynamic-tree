@@ -364,8 +364,11 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     --mother:  #F00;                    /* color of link to mother */
     --father:  #00F;                    /* color of link to father */
     --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
-    --spouse: #181;                     /* color of spouse link */
+    --spouse:  #181;                    /* color of spouse link */
     --coparent: none;                   /* color of coparent link (not drawn by default) */
+    --selection-border-width: 4px;
+    --primary-border-color: color(display-p3 1 0 0);        /* color of border around primary selection. Really, really red */
+    --secondary-border-color: black;    /* color of border around secondary selection */
     --mother-transparent:  #F000;       /* transparent version of mother */
     --father-transparent:  #00F0;       /* transparent version of father */
     --parent-transparent:  #0A00;       /* transparent version of parent */
@@ -444,12 +447,12 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 }
 
 .slippy-tree .people .focus rect {
-    stroke: red;
-    stroke-width: 2px; 
+    stroke: var(--primary-border-color);
+    stroke-width: var(--selection-border-width);
 }
 .slippy-tree .people .secondaryfocus:not(.focus) rect {
-    stroke: black;
-    stroke-width: 2px; 
+    stroke: var(--secondary-border-color);
+    stroke-width: var(--selection-border-width);
 }
 
 /* relations */
