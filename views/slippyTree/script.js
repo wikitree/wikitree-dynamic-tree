@@ -126,6 +126,10 @@ class SlippyTree extends View {
  <a class="slippy-help-button"></a>
  <a class="slippy-fullscreen-button"></a>
  <div class="slippy-loader"></div>
+ <div id="slippy-search-container" class="hidden">
+  <input id="slippy-search" type="search" placeholder="Search...">
+  <div id="slippy-search-list" class="hidden"></div>
+ </div>
  <div class="helpContainer">
   <div>
    <div class="helpCloseButton">&#x2715;</div>
@@ -233,7 +237,7 @@ class SlippyTree extends View {
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
     <p style="margin:0.5em 0 0 0">
-    Or navigate with cursor keys and +/- to zoom.
+    Cursor keys navigate, +/- to zoom, "F" to search.
     <a href="" class="download-link">Download Current View</a>
     </p>
    </div>
@@ -263,10 +267,13 @@ class SlippyTree extends View {
 
             this.setSettings();
             this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
+            const keyboardFocusContainer = this.state.container.querySelector(".slippy-tree-container");
             this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
             this.state.personMenu = this.state.container.querySelector(".personMenu");
             this.state.findMenu = this.state.container.querySelector(".slippy-find-menu");
             this.state.findInput = this.state.container.querySelector(".slippy-find-id");
+            const searchInput = this.state.container.querySelector("#slippy-search");
+            const searchList = this.state.container.querySelector("#slippy-search-list");
             const helpButton = this.state.container.querySelector(".slippy-help-button");
             const helpContainer = this.state.container.querySelector(".helpContainer");
             const helpBox = helpContainer.querySelector(":scope > :first-child");
@@ -323,6 +330,34 @@ class SlippyTree extends View {
                 this.setCategory(value);
             });
 
+            // Search box
+            searchInput.addEventListener("input", (e) => {
+                let v = e.target.value.toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "");
+                searchInput.removeAttribute("data-person");
+                let first = true;
+                for (let n=searchList.firstElementChild;n;n=n.nextElementSibling) {
+                    if (v.length && n.getAttribute("value").includes(v)) {
+                        n.classList.remove("hidden");
+                        if (first) {
+                            searchInput.setAttribute("data-person", n.getAttribute("idref"));
+                            first = false;
+                        }
+                    } else {
+                        n.classList.add("hidden");
+                        n.classList.remove("focus")
+                    }
+                }
+                searchList.classList.toggle("hidden", first);
+            });
+            searchInput.addEventListener("blur", (e) => {
+                keyboardFocusContainer.focus();
+                searchInput.parentNode.classList.add("hidden");
+                searchInput.value = "";
+                searchList.classList.add("hidden");
+                searchList.querySelectorAll(":scope .focus").forEach((e) =>  e.classList.remove("focus"));
+            });
+
+            // Menu box
             for (let elt of this.state.personMenu.querySelectorAll("[data-action]")) {
                 if (elt.getAttribute("data-action") != "profile") {
                     elt.addEventListener("click", () => {
@@ -451,13 +486,63 @@ class SlippyTree extends View {
                 }
             });
             this.state.container.firstElementChild.addEventListener("keydown", (e) => {
-                if (e.target == this.state.findInput) {
+                if (e.target.tagName == "INPUT" || e.target.tagName == "SELECT") {
                     if (e.key == "Escape") {
                         e.target.blur();
+                    } else if (e.target == searchInput) {
+                        if (e.key == "Enter") {
+                            let id = searchInput.getAttribute("data-person");
+                            if (id && id.length) {
+                                const person = this.find(id);
+                                if (person) {
+                                    this.setSecondaryFocus(person);
+                                    this.reposition({cx:person.cx, cy:person.cy, keyboardFocus: person});
+                                }
+                            }
+                            e.target.blur();
+                        } else if (e.key == "ArrowDown" || e.key == "ArrowUp") {
+                            let focus = searchList.querySelector(":scope .focus:not(.hidden)");
+                            if (!focus) {
+                                for (let n=searchList.firstElementChild;n;n=n.nextElementSibling) {
+                                    if (!n.classList.contains("hidden")) {
+                                        focus = n;
+                                        break;
+                                    }
+                                }
+                            } else {
+                                focus.classList.remove("focus");
+                                if (e.key == "ArrowUp") {
+                                    for (let n=focus.previousElementSibling;n;n=n.previousElementSibling) {
+                                        if (!n.classList.contains("hidden")) {
+                                            focus = n;
+                                            break;
+                                        }
+                                    }
+                                } else if (e.key == "ArrowDown") {
+                                    for (let n=focus.nextElementSibling;n;n=n.nextElementSibling) {
+                                        if (!n.classList.contains("hidden")) {
+                                            focus = n;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (focus) {
+                                focus.classList.add("focus");
+                                if (focus.scrollIntoViewIfNeeded) {
+                                    focus.scrollIntoViewIfNeeded();
+                                } else {
+                                    focus.scrollIntoView();
+                                }
+                                searchInput.setAttribute("data-person", focus.getAttribute("idref"));
+                            }
+                        }
                     }
-                    return;
-                }
-                if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
+                } else if (e.key == "f" || e.key == "F") {
+                    searchInput.parentNode.classList.remove("hidden");
+                    searchInput.focus();
+                    e.preventDefault();
+                } else if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
                     e.preventDefault();
                     const menu = this.state.personMenu;
                     if (menu.classList.contains("hidden")) {
@@ -568,6 +653,9 @@ class SlippyTree extends View {
                     this.showHelp(true);
                 }
             }
+            setTimeout(() => {
+                keyboardFocusContainer.focus();
+            }, 0);
         }
         SlippyTree.loadCount++;
 
@@ -1321,6 +1409,31 @@ class SlippyTree extends View {
         }
         if (newpeople) {
             this.setCategory(this.state.highlightCategory);
+            let searchList = document.getElementById("slippy-search-list");
+            while (searchList.firstChild) {
+                searchList.firstChild.remove();
+            }
+            for (const person of this.state.people) {
+                if (!person.isHidden()) {
+                    let e = document.createElement("div");
+                    e.setAttribute("idref", person.data.Name);
+                    e.setAttribute("value", person.searchName());
+                    e.innerHTML = "<span>" + person.presentationName() + " " + person.presentationExtra() + "</span>";
+                    e.addEventListener("mousedown", () => {
+                        this.reposition({cx:person.cx, cy:person.cy, keyboardFocus:person});
+                        this.setSecondaryFocus(person);
+                        document.getElementById("slippy-search").blur();
+                    });
+                    searchList.appendChild(e);
+                }
+            }
+            // We want to make sure "Smith-1" matches "Smith-1" not "Smith-10".
+            // Easiest way: make the id the first part of the value, and sort on value
+            Array.from(searchList.children).sort((a,b) => {
+                return a.getAttribute("value").localeCompare(b.getAttribute("value"))
+            }).forEach((e) => {
+                searchList.appendChild(e);
+            });
         }
 
         // First sort people into priority, then
@@ -2574,6 +2687,37 @@ class SlippyTreePerson {
         return out;
     };
 
+    searchName() {
+        // we want 'firstname lastname', firstname middlename lastname, k
+        if (!this.searchValue) {
+            let out = []
+            out.push(this.data.Name);
+            for (let sn of [this.data.LastNameAtBirth, this.data.LastNameCurrent, this.data.LastNameOther]) {
+                let n = null;
+                if (sn) {
+                    if (this.data.FirstName) {
+                        out.push(this.data.FirstName + " " + sn);
+                    }
+                    if (this.data.FirstName && this.data.MiddleName) {
+                        out.push(this.data.FirstName + " " + this.data.MiddleName + " " + sn);
+                    }
+                    if (this.data.Nicknames) {
+                        out.push(this.data.Nicknames + " " + sn);
+                    }
+                    if (this.data.RealName) {
+                        out.push(this.data.RealName + " " + sn);
+                    }
+                }
+            }
+            for (let i=0;i<out.length;i++) {    // remove dups
+                if (out.indexOf(out[i]) != i) {
+                    out.splice(i, 1);
+                }
+            }
+            this.searchValue = out.join(", ").toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "");
+        }
+        return this.searchValue;
+    }
     presentationName() {
         if (!this.data.Name) {
             return "Unloaded";

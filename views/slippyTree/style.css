@@ -110,6 +110,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     font: 14px sans-serif;
     overflow: hidden;
     --button-color: #639;
+    --menu-selected-color: #DED;
 }
 .slippy-tree-container * {
     touch-action: none !important;
@@ -327,7 +328,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 }
 
 .slippy-tree-container .personMenu > :is(*[data-action]:hover, *[data-action].focus) {
-    background-color: #DED;
+    background-color: var(--menu-selected-color);
 }
 
 .slippy-tree-container .personMenu .slippy-find-menu {
@@ -562,4 +563,36 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     to {
         transform: rotate(1turn)
     }
+}
+#slippy-search-container {
+    position: absolute;
+    right: 2em;
+    top: 1em;
+    width: 15em;
+}
+#slippy-search {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #888;
+}
+#slippy-search-list {
+    display: block;
+    position: absolute;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    max-height: 8em;
+    box-sizing: border-box;
+    width: 100%;
+    font-size: 0.7em;
+    border: 1px solid #888;
+    background: white;
+    filter: drop-shadow(8px 8px 8px #0008);
+}
+#slippy-search-list > * {
+    padding: 2px 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+#slippy-search-list .focus {
+    background-color: var(--menu-selected-color);
 }
