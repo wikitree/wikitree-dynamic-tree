@@ -102,21 +102,22 @@ class SlippyTree extends View {
    </g>
   </svg>
 
-  <div class="personMenu hidden">
+  <div class="slippy-person-menu hidden">
    <div><span class="output-name text-selectable"></span><img src="{PATHPREFIX}views/slippyTree/resources/copy.svg"/></div>
-   <div data-action="focus">Focus</div>
-   <div data-action="nuclear">Load family</div>
-   <div data-action="ancestors">Load ancestors</div>
-   <div data-action="descendants">Load descendants</div>
-   <div data-action="prune">Prune to this branch</div>
-   <div data-action="remove">Remove</div>
-   <div data-action="find">Find...
-     <div class="slippy-find-menu" class="hidden">
-      <input class="slippy-find-id" type="text" size="12" spellcheck="false" writingsuggestions="off" autocorrect="off" autocomplete="off" placeholder="Wikitree ID"/>
-      <span class="slippy-find-family selected"></span>
+   <div class="slippy-focusable" data-shortcut="f" data-action="focus"><em>F</em>ocus</div>
+   <div class="slippy-focusable" data-shortcut="l" data-action="nuclear"><em>L</em>oad family</div>
+   <div class="slippy-focusable" data-shortcut="a" data-action="ancestors">Load <em>a</em>ncestors</div>
+   <div class="slippy-focusable" data-shortcut="d" data-action="descendants">Load <em>d</em>escendants</div>
+   <div class="slippy-focusable" data-shortcut="b" data-action="prune">Prune to this <em>b</em>ranch</div>
+   <div class="slippy-focusable" data-shortcut="r" data-action="remove"><em>R</em>emove</div>
+   <div class="slippy-focusable" data-shortcut="s" data-action="search"><em>S</em>earch...
+     <div class="slippy-search-menu" class="hidden">
+      <div class="slippy-search-list" class="hidden"></div>
+      <input class="slippy-search-id" type="search" size="12" spellcheck="false" writingsuggestions="off" autocorrect="off" autocomplete="off" placeholder="Search..."/>
+      <span class="slippy-search-family selected"></span>
      </div>
    </div>
-   <a data-action="profile">View profile</a>
+   <a class="slippy-focusable" data-shortcut="p" data-action="profile">View <em>p</em>rofile</a>
   </div>
 
  </div>
@@ -126,10 +127,6 @@ class SlippyTree extends View {
  <a class="slippy-help-button"></a>
  <a class="slippy-fullscreen-button"></a>
  <div class="slippy-loader"></div>
- <div id="slippy-search-container" class="hidden">
-  <input id="slippy-search" type="search" placeholder="Search...">
-  <div id="slippy-search-list" class="hidden"></div>
- </div>
  <div class="helpContainer">
   <div>
    <div class="helpCloseButton">&#x2715;</div>
@@ -237,7 +234,7 @@ class SlippyTree extends View {
      <span>Scroll-wheel scrolls (best for trackpad)</span>
     </div>
     <p style="margin:0.5em 0 0 0">
-    Cursor keys navigate, +/- to zoom, "F" to search.
+    Cursor keys navigate, +/- to zoom
     <a href="" class="download-link">Download Current View</a>
     </p>
    </div>
@@ -269,11 +266,10 @@ class SlippyTree extends View {
             this.state.scrollPane = this.state.container.querySelector(".slippy-tree-scrollpane");
             const keyboardFocusContainer = this.state.container.querySelector(".slippy-tree-container");
             this.state.svg = this.state.container.querySelector(".slippy-tree-scrollpane > svg");
-            this.state.personMenu = this.state.container.querySelector(".personMenu");
-            this.state.findMenu = this.state.container.querySelector(".slippy-find-menu");
-            this.state.findInput = this.state.container.querySelector(".slippy-find-id");
-            const searchInput = this.state.container.querySelector("#slippy-search");
-            const searchList = this.state.container.querySelector("#slippy-search-list");
+            this.state.personMenu = this.state.container.querySelector(".slippy-person-menu");
+            this.state.searchMenu = this.state.container.querySelector(".slippy-search-menu");
+            this.state.searchInput = this.state.container.querySelector(".slippy-search-id");
+            this.state.searchList = this.state.container.querySelector(".slippy-search-list");
             const helpButton = this.state.container.querySelector(".slippy-help-button");
             const helpContainer = this.state.container.querySelector(".helpContainer");
             const helpBox = helpContainer.querySelector(":scope > :first-child");
@@ -331,15 +327,17 @@ class SlippyTree extends View {
             });
 
             // Search box
-            searchInput.addEventListener("input", (e) => {
-                let v = e.target.value.toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "");
-                searchInput.removeAttribute("data-person");
+            this.state.searchInput.addEventListener("input", (e) => {   // on keypress
+                const searchInput = e.target;
+                const searchList = this.state.searchList;
+                let v = searchInput.value.toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "");
+                searchInput.removeAttribute("data-value");
                 let first = true;
                 for (let n=searchList.firstElementChild;n;n=n.nextElementSibling) {
                     if (v.length && n.getAttribute("value").includes(v)) {
                         n.classList.remove("hidden");
                         if (first) {
-                            searchInput.setAttribute("data-person", n.getAttribute("idref"));
+                            searchInput.setAttribute("data-value", n.getAttribute("idref"));
                             first = false;
                         }
                     } else {
@@ -348,13 +346,24 @@ class SlippyTree extends View {
                     }
                 }
                 searchList.classList.toggle("hidden", first);
+                searchInput.classList.toggle("slippy-search-wtid", /-\d+$/.test(v));
             });
-            searchInput.addEventListener("blur", (e) => {
+            this.state.searchInput.addEventListener("change", (e) => {
+                const searchInput = e.target;
+                let value = searchInput.getAttribute("data-value");
+                if (!value || value.length == 0) {
+                    value = searchInput.value.trim();
+                }
+                if (value.length) {
+                    this.state.personMenu.person.action("search", value);
+                }
+            });
+            this.state.searchInput.addEventListener("blur", (e) => {
+                this.state.searchInput.value = "";
+                this.state.searchMenu.classList.add("hidden");
+                this.state.searchList.classList.add("hidden");
+                this.state.searchList.querySelectorAll(":scope .focus").forEach((e) =>  e.classList.remove("focus"));
                 keyboardFocusContainer.focus();
-                searchInput.parentNode.classList.add("hidden");
-                searchInput.value = "";
-                searchList.classList.add("hidden");
-                searchList.querySelectorAll(":scope .focus").forEach((e) =>  e.classList.remove("focus"));
             });
 
             // Menu box
@@ -382,12 +391,7 @@ class SlippyTree extends View {
                     }
                 }
             });
-            this.state.personMenu.addEventListener("pointermove", (e) => {
-                for (let n=this.state.personMenu.firstElementChild;n;n=n.nextElementSibling) {
-                    n.classList.remove("focus");
-                }
-            });
-            this.state.svg.addEventListener("pointermove", (e) => {
+            const pointerMoveHandler = (e) => {
                 e.preventDefault();
                 // Set dx/dy on pointers, because iOS doesn't have these standard props and e is read-only
                 for (const p of pointers) {
@@ -412,15 +416,26 @@ class SlippyTree extends View {
                     if (e.screenX != this.state.hoverScreenX || e.screenY != this.state.hoverScreenY) {
                         // Ignore pointer movements due to scrolling even though mouse is in same position on screen.
                         let found = null;
+                        let unfocused = true;
                         for (let elt of document.elementsFromPoint(e.pageX, e.pageY)) {
-                            if (elt == this.svg) {
+                            if (elt == e.currentTarget) {
                                 break;
+                            } else if (elt.classList.contains("slippy-focusable")) {
+                                // unfocus all siblings, focus on this one
+                                for (let n=elt.parentNode.firstElementChild;n;n=n.nextElementSibling) {
+                                    if (n.classList.contains("slippy-focusable")) {
+                                        n.classList.toggle("focus", n == elt && unfocused);
+                                    }
+                                }
+                                unfocused = false;
                             } else if (elt.parentNode.person) {
                                 found = elt.parentNode.person;
                                 break;
                             }
                         }
-                        this.setDescriptionFocus(found);
+                        if (e.currentTarget == this.state.svg) {
+                            this.setDescriptionFocus(found);
+                        }
                         this.state.hoverScreenX = e.screenX;
                         this.state.hoverScreenY = e.screenY;
                     }
@@ -449,7 +464,10 @@ class SlippyTree extends View {
                     let ncy = this.state.view.cy - dy / oscale;
                     this.reposition({scale:nscale, cx:ncx, cy:ncy});
                 }
-            });
+            };
+            this.state.svg.addEventListener("pointermove", pointerMoveHandler);
+            this.state.searchList.addEventListener("pointermove", pointerMoveHandler);
+            this.state.personMenu.addEventListener("pointermove", pointerMoveHandler);
             this.state.svg.addEventListener("wheel", (e) => {
                 // Trackpad: wheel is scroll, wheel-with-ctrl is zoom (two finger pinch), drag is scroll
                 // Mouse: wheel is zoom, drag is scroll
@@ -468,39 +486,22 @@ class SlippyTree extends View {
                 }
                 this.reposition(view);
             });
-            document.querySelector(".slippy-find-family").addEventListener("mousedown", (e) => {
+            document.querySelector(".slippy-search-family").addEventListener("mousedown", (e) => {
                 e.preventDefault();
-                let findFamily = e.target.classList.contains("selected");
-                this.setSettings({find: findFamily ? "individual" : "family" });
-                this.state.findInput.focus();
+                let searchFamily = e.target.classList.contains("selected");
+                this.setSettings({search: searchFamily ? "individual" : "family" });
+                this.state.searchInput.focus();
             });
             const self = this;
-            this.state.findInput.addEventListener("blur", (e) => {
-                self.state.findMenu.classList.add("hidden");
-            });
-            this.state.findInput.addEventListener("change", (e) => {
-                let value = e.target.value.trim();
-                self.showMenu(false);
-                if (value.length) {
-                    self.state.personMenu.person.action("find", value);
-                }
-            });
             this.state.container.firstElementChild.addEventListener("keydown", (e) => {
                 if (e.target.tagName == "INPUT" || e.target.tagName == "SELECT") {
                     if (e.key == "Escape") {
+                        e.target.removeAttribute("data-value");
                         e.target.blur();
-                    } else if (e.target == searchInput) {
-                        if (e.key == "Enter") {
-                            let id = searchInput.getAttribute("data-person");
-                            if (id && id.length) {
-                                const person = this.find(id);
-                                if (person) {
-                                    this.setSecondaryFocus(person);
-                                    this.reposition({cx:person.cx, cy:person.cy, keyboardFocus: person});
-                                }
-                            }
-                            e.target.blur();
-                        } else if (e.key == "ArrowDown" || e.key == "ArrowUp") {
+                    } else if (e.target == this.state.searchInput) {
+                        if (e.key == "ArrowDown" || e.key == "ArrowUp") {
+                            const searchInput = this.state.searchInput;
+                            const searchList = this.state.searchList;
                             let focus = searchList.querySelector(":scope .focus:not(.hidden)");
                             if (!focus) {
                                 for (let n=searchList.firstElementChild;n;n=n.nextElementSibling) {
@@ -534,86 +535,97 @@ class SlippyTree extends View {
                                 } else {
                                     focus.scrollIntoView();
                                 }
-                                searchInput.setAttribute("data-person", focus.getAttribute("idref"));
+                                searchInput.setAttribute("data-value", focus.getAttribute("idref"));
                             }
                         }
                     }
-                } else if (e.key == "f" || e.key == "F") {
-                    searchInput.parentNode.classList.remove("hidden");
-                    searchInput.focus();
-                    e.preventDefault();
-                } else if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
+                } else if (!this.state.personMenu.classList.contains("hidden")) {
                     e.preventDefault();
                     const menu = this.state.personMenu;
-                    if (menu.classList.contains("hidden")) {
-                        let view = {scale: self.state.view.scale, cx:self.state.view.cx, cy:self.state.view.cy};
-                        let focus = self.state.view.keyboardFocus;
-                        if (!focus) {
-                            focus = self.state.view.keyboardFocus = self.state.focus;
-                        }
-                        if (e.key == "Enter") {
-                            menu.selectedIndex = 0;
-                            self.showMenu(focus, e);
-                        } else if (e.key == "Escape") {
-                            this.showHelp(false);
-                        } else if (e.key == "?") {
-                            helpButton.click();
-                        } else if (e.key == "+") {
-                            view.scale *= this.#SCROLLSTEP_KEYS;
-                        } else if (e.key == "-") {
-                            view.scale /= this.#SCROLLSTEP_KEYS;
-                        } else {
-                            let score, best = null, max = 0x7FFFFFFF, threshold = 30;
-                            for (const person of self.state.people) {
-                                if (person.isHidden()) {
-                                    continue;
-                                }
-                                if (e.key == "ArrowUp" && Math.abs(person.cx - focus.cx) < threshold && person.cy < focus.cy && (score = focus.cy - person.cy) < max) {
-                                    best = person;
-                                    max = score;
-                                } else if (e.key == "ArrowDown" && Math.abs(person.cx - focus.cx) < threshold && person.cy > focus.cy && (score = person.cy - focus.cy) < max) {
-                                    best = person;
-                                    max = score;
-                                } else if (e.key == "ArrowRight" && person.cx - focus.cx > threshold && (score = ((person.cx - focus.cx) * 10) + Math.abs(person.cy - focus.cy)) < max) {
-                                    best = person;
-                                    max = score;
-                                } else if (e.key == "ArrowLeft" && focus.cx - person.cx > threshold && (score = ((focus.cx - person.cx) * 10) + Math.abs(person.cy - focus.cy)) < max) {
-                                    best = person;
-                                    max = score;
-                                }
-                            }
-                            if (best) {
-                                view.cx = best.cx;
-                                view.cy = best.cy;
-                                view.keyboardFocus = best;
-                                this.setSecondaryFocus(best);
+                    let focus = menu.querySelector(":scope > .focus");
+                    if (!focus) {
+                        focus = menu.firstElementChild;
+                        focus.classList.add("focus");
+                    }
+                    let oldfocus = focus;
+                    if (e.key == "Enter") {
+                        focus.classList.remove("focus");
+                        focus.click();
+                    } else if (e.key == "Escape") {
+                        focus.classList.remove("focus");
+                        menu.classList.add("hidden");
+                    } else if (e.key == "ArrowUp") {
+                        for (let n=focus.previousElementSibling;n;n=n.previousElementSibling) {
+                            if (n.getAttribute("data-action") && !n.classList.contains("hidden")) {
+                                focus = n;
+                                break;
                             }
                         }
-                        self.reposition(view);
+                    } else if (e.key == "ArrowDown") {
+                        for (let n=focus.nextElementSibling;n;n=n.nextElementSibling) {
+                            if (n.getAttribute("data-action") && !n.classList.contains("hidden")) {
+                                focus = n;
+                                break;
+                            }
+                        }
                     } else {
-                        let focus = menu.querySelector(":scope > .focus");
-                        if (!focus) {
-                            focus = menu.firstElementChild;
-                            focus.classList.add("focus");
+                        let kv = e.key.toLowerCase();
+                        menu.querySelectorAll(":scope [data-shortcut]:not(.hidden)").forEach((e) => {
+                            let shortcut = e.getAttribute("data-shortcut");
+                            if (kv == e.getAttribute("data-shortcut")) {
+                                focus = e;
+                                e.click();
+                            }
+                        });
+                    }
+                    if (focus && focus != oldfocus) {
+                        oldfocus.classList.remove("focus");
+                        focus.classList.add("focus");
+                    }
+                } else if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
+                    e.preventDefault();
+                    let view = {scale: self.state.view.scale, cx:self.state.view.cx, cy:self.state.view.cy};
+                    let focus = self.state.view.keyboardFocus;
+                    if (!focus) {
+                        focus = self.state.view.keyboardFocus = self.state.focus;
+                    }
+                    if (e.key == "Enter") {
+                        self.showMenu(focus, e);
+                    } else if (e.key == "Escape") {
+                        this.showHelp(false);
+                    } else if (e.key == "?") {
+                        helpButton.click();
+                    } else if (e.key == "+") {
+                        view.scale *= this.#SCROLLSTEP_KEYS;
+                    } else if (e.key == "-") {
+                        view.scale /= this.#SCROLLSTEP_KEYS;
+                    } else {
+                        let score, best = null, max = 0x7FFFFFFF, threshold = 30;
+                        for (const person of self.state.people) {
+                            if (person.isHidden()) {
+                                continue;
+                            }
+                            if (e.key == "ArrowUp" && Math.abs(person.cx - focus.cx) < threshold && person.cy < focus.cy && (score = focus.cy - person.cy) < max) {
+                                best = person;
+                                max = score;
+                            } else if (e.key == "ArrowDown" && Math.abs(person.cx - focus.cx) < threshold && person.cy > focus.cy && (score = person.cy - focus.cy) < max) {
+                                best = person;
+                                max = score;
+                            } else if (e.key == "ArrowRight" && person.cx - focus.cx > threshold && (score = ((person.cx - focus.cx) * 10) + Math.abs(person.cy - focus.cy)) < max) {
+                                best = person;
+                                max = score;
+                            } else if (e.key == "ArrowLeft" && focus.cx - person.cx > threshold && (score = ((focus.cx - person.cx) * 10) + Math.abs(person.cy - focus.cy)) < max) {
+                                best = person;
+                                max = score;
+                            }
                         }
-                        if (e.key == "Enter") {
-                            focus.classList.remove("focus");
-                            focus.click();
-                        } else if (e.key == "Escape") {
-                            focus.classList.remove("focus");
-                            menu.classList.add("hidden");
-                        } else if (e.key == "ArrowUp") {
-                            if (focus.previousElementSibling) {
-                                focus.previousElementSibling.classList.add("focus");
-                                focus.classList.remove("focus");
-                            }
-                        } else if (e.key == "ArrowDown") {
-                            if (focus.nextElementSibling) {
-                                focus.nextElementSibling.classList.add("focus");
-                                focus.classList.remove("focus");
-                            }
+                        if (best) {
+                            view.cx = best.cx;
+                            view.cy = best.cy;
+                            this.setSecondaryFocus(best);
                         }
                     }
+                    self.reposition(view);
                 }
             });
             this.state.scrollPane.addEventListener("scroll", () => {
@@ -849,10 +861,10 @@ class SlippyTree extends View {
         }
         let zoomButton = document.querySelector(".slippy-settings-wheel-zoom");
         let scrollButton = document.querySelector(".slippy-settings-wheel-scroll");
-        let familyFind = document.querySelector(".slippy-find-family");
+        let searchFamily = document.querySelector(".slippy-search-family");
         zoomButton.classList.toggle("selected", this.settings.wheel == "zoom");
         scrollButton.classList.toggle("selected", this.settings.wheel == "scroll");
-        familyFind.classList.toggle("selected", this.settings.find != "individual");
+        searchFamily.classList.toggle("selected", this.settings.search != "individual");
         window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
     }
 
@@ -903,7 +915,7 @@ class SlippyTree extends View {
             });
             doc.rootElement.querySelectorAll(".people text").forEach((e) => {
                 const id = e.parentNode.id.replace(/person-/, "");
-                const person = this.find(id);
+                const person = this.find(id, true);
                 if (person) {
                     let a = doc.createElementNS(this.#SVG, "a");
                     a.setAttribute("href", "https://www.wikitree.com/wiki/" + person.data.Name);
@@ -1039,10 +1051,10 @@ class SlippyTree extends View {
             this.reset();
             this.load({keys:data.flat()}, () => {
                 for (const id of data[0]) {
-                    const person = this.find(id);
+                    const person = this.find(id, true);
                     person.childrenLoaded = true;
                 }
-                this.setFocus(this.find(focusid), callback);
+                this.setFocus(this.find(focusid, true), callback);
             });
             return true;
         } catch (e) {
@@ -1074,8 +1086,9 @@ class SlippyTree extends View {
         }
         if (id) {
             this.load({keys:id, nuclear:1}, () => {
-                const person = this.state.byid[id];
+                const person = this.find(id, false);
                 person.childrenLoaded = true;
+                this.setSecondaryFocus(null);
                 this.setFocus(person);
             });
         }
@@ -1148,14 +1161,17 @@ class SlippyTree extends View {
     showMenu(person, e) {
         if (person === false) {
             this.state.personMenu.classList.add("hidden");
-            this.state.findMenu.classList.add("hidden");
-            this.state.findInput.value = "";
+            this.state.personMenu.querySelectorAll(":scope .focus").forEach((e) => e.classList.remove("focus"));
+            this.state.searchMenu.classList.add("hidden");
+            this.state.searchList.classList.add("hidden");
+            this.state.searchInput.value = "";
             return;
         }
         // Note both person and e can be missing to reposition the currently displayed menu
         if (!person) {
             person = this.state.personMenu.person;
         }
+        this.state.searchMenu.classList.add("hidden");
         this.state.personMenu.classList.remove("hidden");
         this.state.personMenu.showEvent = e;
         let menuWidth = this.state.personMenu.clientWidth;
@@ -1209,6 +1225,7 @@ class SlippyTree extends View {
             }
             this.setDescriptionFocus(focus);
             this.setEdgeFocus(this.state.focus, this.state.secondaryFocus);
+            this.state.view.keyboardFocus = focus;
         }
     }
 
@@ -1335,10 +1352,6 @@ class SlippyTree extends View {
      */
     setFocus(focus, callback) {
         if (this.debug) console.log("Focus " + focus);
-        if (this.state.view.keyboardFocus) {
-            delete this.state.view.keyboardFocus;
-            this.setSecondaryFocus(null);
-        }
         this.#setLoading(true);
 
         // Setup: ensure every person has an SVG
@@ -1409,30 +1422,28 @@ class SlippyTree extends View {
         }
         if (newpeople) {
             this.setCategory(this.state.highlightCategory);
-            let searchList = document.getElementById("slippy-search-list");
-            while (searchList.firstChild) {
-                searchList.firstChild.remove();
+            while (this.state.searchList.firstChild) {
+                this.state.searchList.firstChild.remove();
             }
             for (const person of this.state.people) {
                 if (!person.isHidden()) {
                     let e = document.createElement("div");
+                    e.classList.add("slippy-focusable");
                     e.setAttribute("idref", person.data.Name);
                     e.setAttribute("value", person.searchName());
-                    e.innerHTML = "<span>" + person.presentationName() + " " + person.presentationExtra() + "</span>";
+                    e.innerHTML = person.presentationName() + " " + person.presentationExtra();
                     e.addEventListener("mousedown", () => {
-                        this.reposition({cx:person.cx, cy:person.cy, keyboardFocus:person});
-                        this.setSecondaryFocus(person);
-                        document.getElementById("slippy-search").blur();
+                        this.state.personMenu.person.action("search", person.data.Name);
                     });
-                    searchList.appendChild(e);
+                    this.state.searchList.appendChild(e);
                 }
             }
             // We want to make sure "Smith-1" matches "Smith-1" not "Smith-10".
             // Easiest way: make the id the first part of the value, and sort on value
-            Array.from(searchList.children).sort((a,b) => {
+            Array.from(this.state.searchList.children).sort((a,b) => {
                 return a.getAttribute("value").localeCompare(b.getAttribute("value"))
             }).forEach((e) => {
-                searchList.appendChild(e);
+                this.state.searchList.appendChild(e);
             });
         }
 
@@ -2406,17 +2417,19 @@ class SlippyTree extends View {
     /**
      * Find a person record for the specified ID, creating it if necessary
      * @param id the numeric id of a person, although a name (eg "Windsor-1") will also work for existing ids
+     * @param load if true, create the record
      */
-    find(id) {
+    find(id, load) {
         if (typeof id == "number") {
             id = id.toString();
         } else if (typeof id != "string") {
             throw new Error("bad argument");
         }
-        let person = this.state.byid[id]; 
-        if (!person) {
+        // Note that wikitree IDs are case-insensitive
+        let person = this.state.byid[id.toLowerCase()]; 
+        if (!person && load) {
             person = new SlippyTreePerson(this, this.state.people.length, id);
-            this.state.byid[id] = person;
+            this.state.byid[id.toLowerCase()] = person;
             this.state.people.push(person);
         }
         return person;
@@ -2452,7 +2465,7 @@ class SlippyTree extends View {
                 for (const id in data[0].people) {
                     const r = data[0].people[id];
                     if (parseInt(id) > 0) {
-                        const person = this.find(id);
+                        const person = this.find(id, true);
                         person.load(data[0].people[id]);
                         newpeople.push(person);
                     }
@@ -2461,7 +2474,7 @@ class SlippyTree extends View {
                     for (const key of ["Father", "Mother"]) {
                         const id2 = person.data[key];
                         if (id2) {
-                            const other = this.find(id2);
+                            const other = this.find(id2, true);
                             let certainty = person.data.DataStatus ? person.data.DataStatus[key] : null;
                             switch (certainty) {
                                 case "30": certainty = "dna"; break;
@@ -2479,7 +2492,7 @@ class SlippyTree extends View {
                     if (person.data.Spouses) {
                         for (const r of person.data.Spouses) {
                             const id2 = r.Id.toString();
-                            const other = this.find(id2);
+                            const other = this.find(id2, true);
                             let certainty = r.DataStatus.MarriageDate;
                             if (certainty == "") {
                                 certainty = null;
@@ -2548,7 +2561,7 @@ class SlippyTree extends View {
                             ids.push(id);
                         }
                     });
-                    console.log("Connection ids: " + JSON.stringify(ids));
+                    console.log("Connection between \"" + name + "\" and \"" + name2 + "\" is through " + JSON.stringify(ids));
                     if (ids.length > 0) {
                         this.load({keys: ids, nuclear:nuclear, spouses:1-nuclear}, callback);
                     }
@@ -2609,7 +2622,7 @@ class SlippyTree extends View {
         if (keys.length) {
             this.load({keys: keys, fields: ["Father","Mother"], descendants:1}, () => {
                 for (const id of keys) {
-                    let person = this.state.byid[id];
+                    let person = this.find(id, false);
                     person.childrenLoaded = true;
                 }
                 this.checkForUnloadedChildren();
@@ -2651,8 +2664,8 @@ class SlippyTreePerson {
                 changed = true;
             }
         }
-        if (data.Name && !this.tree.state.byid[data.Name]) {
-            this.tree.state.byid[data.Name] = this;
+        if (data.Name && !this.tree.find(data.Name, false)) {
+            this.tree.state.byid[data.Name.toLowerCase()] = this;
         }
         if (changed) {
             if (this.svg) {
@@ -3205,14 +3218,14 @@ class SlippyTreePerson {
     /**
      * Execute a popupmenu action for this person
      * @param name the name of the action
-     * @param value the secondary value, which is normally null except when "find" is run with a value
+     * @param value the secondary value, which is normally null except when "search" is run with a value
      */
     action(name, value) {
-        if (this.debug) console.log("Action " + name + " on " + this);
+        if (this.debug) console.log("Action(" + name + "," + value + ") on " + this);
         const tree = this.tree;
-        if (name != "find") {
+        if (name != "search") {
             tree.state.personMenu.classList.add("hidden");
-            tree.state.findMenu.classList.add("hidden");
+            tree.state.searchMenu.classList.add("hidden");
         }
         if (name == "focus") {
             // Refocus the tree on this node
@@ -3353,20 +3366,27 @@ class SlippyTreePerson {
             }
             tree.setFocus(focus);
 
-        } else if (name == "find") {
+        } else if (name == "search") {
             if (value == null) {
-                // Display the "find" menu.
-                tree.state.findMenu.classList.remove("hidden");
-                tree.state.findInput.focus();
+                // Display the "search" menu.
+                tree.state.searchMenu.classList.remove("hidden");
+                tree.state.searchList.classList.add("hidden");
+                tree.state.searchInput.focus();
             } else {
-                let nuclear = document.querySelector(".slippy-find-family").classList.contains("selected") ? 1 : 0;
+                let nuclear = document.querySelector(".slippy-search-family").classList.contains("selected") ? 1 : 0;
                 // Find the specified person.
                 const orig = this;
-                const other = tree.state.byid[value];
-                if (other) {
+                const other = tree.find(value, false);
+                tree.showMenu(false);
+                if (other && !other.isHidden()) {
                     tree.setEdgeFocus(orig, other);
+                    tree.setSecondaryFocus(orig);
                     tree.setFocus(other, () => {
-                        tree.setSecondaryFocus(orig);
+                        tree.setEdgeFocus(orig, other);
+                        tree.setFocus(other, () => {
+                            tree.setSecondaryFocus(orig);
+                        });
+                        /*
                         if (nuclear) {
                             let rels = orig.relationships(other, { half:false, gender:false, nosibling:true });
                             let ids = [];
@@ -3379,7 +3399,7 @@ class SlippyTreePerson {
                             }
                             tree.load({keys: ids, nuclear:1}, () => {
                                 for (let id of ids) {
-                                    tree.find(id).childrenLoaded = true;
+                                    tree.find(id, true).childrenLoaded = true;
                                 }
                                 tree.setEdgeFocus(orig, other);
                                 tree.setFocus(other, () => {
@@ -3387,17 +3407,18 @@ class SlippyTreePerson {
                                 });
                             });
                         }
+                        */
                     });
                 } else {
-                    tree.loadConnection(this.data.Name, value, nuclear, () => {
-                        let other = tree.state.byid[value];
-                        if (other) {
-                            tree.setEdgeFocus(orig, other);
-                            tree.setFocus(other, () => {
-                                tree.setSecondaryFocus(orig);
-                            });
-                        }
-                    });
+                    // If it looks like a Wikitree-ID, load it.
+                    if (/-\d+$/.test(value)) {
+                        tree.loadConnection(this.data.Name, value, nuclear, () => {
+                            let other = tree.find(value, false);
+                            if (other) {
+                                this.action("search", value);
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -3595,7 +3616,7 @@ if (typeof window != "undefined") {
     tree.init(null, "Hansdatter-907", null);
     tree.restoreState(testvectors[testvectors.length - 1], () => {
         console.log("Layout 1 complete");
-        tree.setFocus(tree.find("Davis-27116"), () => {
+        tree.setFocus(tree.find("Davis-27116", true), () => {
             console.log("Layout 2 complete");
         });
     });

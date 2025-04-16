@@ -111,6 +111,30 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     overflow: hidden;
     --button-color: #639;
     --menu-selected-color: #DED;
+    --menu-width: 200px;                /* (min) width of menu */
+    --search-menu-found: white;         /* when the search menu has found an item in the tree or is empty */
+    --search-menu-not-found: #DDD;      /* when the search menu has a possibly valid wtid but it would need loading */
+    --search-menu-invalid: #FDD;        /* when the search menu has an invalid value */
+    --male:    #CCF;                    /* color of male person */
+    --female:  #FCC;                    /* color of female person */
+    --mother:  #F00;                    /* color of link to mother */
+    --father:  #00F;                    /* color of link to father */
+    --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
+    --spouse:  #181;                    /* color of spouse link */
+    --coparent: none;                   /* color of coparent link (not drawn by default) */
+    --selection-border-width: 4px;
+    --primary-border-color: color(display-p3 1 0 0);        /* color of border around primary selection. Really, really red */
+    --secondary-border-color: black;    /* color of border around secondary selection */
+    --mother-transparent:  #F000;       /* transparent version of mother */
+    --father-transparent:  #00F0;       /* transparent version of father */
+    --parent-transparent:  #0A00;       /* transparent version of parent */
+    --spouse-transparent:  #1810;       /* transparent version of spouse */
+    --unloaded-parent-length: 40px;     /* The length of a fading line indicating an unloaded parent */
+    --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
+    --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
+    --same-generation-bend: 20px;       /* The length of the extra curve to add for same-generation relations */
+    --member: #ebba34;                  /* color of "member" tag on person */
+    --highlight: #6c6;                  /* color of "highlight" tag on person */
 }
 .slippy-tree-container * {
     touch-action: none !important;
@@ -301,18 +325,19 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 }
 
 /** the menu */
-.slippy-tree-container .personMenu {
+.slippy-tree-container .slippy-person-menu {
     position: absolute;
     width: max-content;
+    min-width: var(--menu-width);
     border: 1px solid black;
     background: white;
     padding: 20px;
     font-size: 16px;
-    z-index:999;
+    z-index: 1;
     padding: 0;
 }
 
-.slippy-tree-container .personMenu > * {
+.slippy-tree-container .slippy-person-menu > * {
     padding: 8px;
     display: block;
     color: initial;
@@ -320,36 +345,80 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     position: relative;
 }
 
-.slippy-tree-container .personMenu > *:first-child {
+.slippy-tree-container .slippy-person-menu > *:first-child {
     background: #888;
     font-weight: bold;
     color: white;
     user-select: text !important;
 }
+.slippy-tree-container .slippy-person-menu em {
+    font-style: normal;
+    text-decoration: underline;
+    text-underline-offset: 10%;
+    text-decoration-thickness: 1px;
+}
+.slippy-tree-container .slippy-person-menu a:visited {
+    color: inherit !important; /* Jesus wept, f***ing bootstrap again! */
+}
 
-.slippy-tree-container .personMenu > :is(*[data-action]:hover, *[data-action].focus) {
+.slippy-tree-container .slippy-focusable {
+    cursor: pointer;
+}
+.slippy-tree-container .slippy-person-menu > *[data-action].focus {
     background-color: var(--menu-selected-color);
 }
 
-.slippy-tree-container .personMenu .slippy-find-menu {
+.slippy-tree-container .slippy-person-menu .slippy-search-menu {
     margin-top: 4px;
     display: flex;
     gap: 2px;
+    position: relative;
 }
-.slippy-tree-container .personMenu .slippy-find-menu input {
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input {
     flex: 1;
 }
-.slippy-tree-container .personMenu .slippy-find-family {
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input[data-value] {
+    background: var(--search-menu-found);
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input:not(:placeholder-shown):not(.slippy-search-wtid):not([data-value]) {
+    background: var(--search-menu-invalid);
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input.slippy-search-wtid:not([data-value]) {
+    background: var(--search-menu-not-found);
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-family {
     display: none;      /* Because non-nuclear doesn't always work */
     height: calc(1em + 6px);
     aspect-ratio: 1;
     background: url("resources/person.svg") 100% no-repeat;
 }
-.slippy-tree-container .personMenu .slippy-find-family.selected {
+.slippy-tree-container .slippy-person-menu .slippy-search-family.selected {
     background-image: url("resources/family.svg");
 }
+.slippy-tree-container .slippy-search-list {
+    display: block;
+    position: absolute;
+    top: 100%;  /* shouldn't be necessary, but is in Safari */
+    overflow-x: hidden;
+    overflow-y: scroll;
+    max-height: 8em;
+    box-sizing: border-box;
+    width: 100%;
+    font-size: 0.8em;
+    border: 1px solid #888;
+    background: white;
+    z-index: 2;
+    filter: drop-shadow(8px 8px 8px #0008);
+}
+.slippy-tree-container .slippy-search-list > * {
+    padding: 4px 4px;
+    white-space: nowrap;
+}
+.slippy-tree-container .slippy-search-list .focus {
+    background-color: var(--menu-selected-color);
+}
 
-.slippy-tree-container .personMenu .output-name + img {
+.slippy-tree-container .slippy-person-menu .output-name + img {
     float: right;
     position: relative;
     margin-left: 0.4em;
@@ -360,26 +429,6 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 
 /** the tree itself */
 .slippy-tree {
-    --male:    #CCF;                    /* color of male person */
-    --female:  #FCC;                    /* color of female person */
-    --mother:  #F00;                    /* color of link to mother */
-    --father:  #00F;                    /* color of link to father */
-    --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
-    --spouse:  #181;                    /* color of spouse link */
-    --coparent: none;                   /* color of coparent link (not drawn by default) */
-    --selection-border-width: 4px;
-    --primary-border-color: color(display-p3 1 0 0);        /* color of border around primary selection. Really, really red */
-    --secondary-border-color: black;    /* color of border around secondary selection */
-    --mother-transparent:  #F000;       /* transparent version of mother */
-    --father-transparent:  #00F0;       /* transparent version of father */
-    --parent-transparent:  #0A00;       /* transparent version of parent */
-    --spouse-transparent:  #1810;       /* transparent version of spouse */
-    --unloaded-parent-length: 40px;     /* The length of a fading line indicating an unloaded parent */
-    --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
-    --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
-    --same-generation-bend: 20px;       /* The length of the extra curve to add for same-generation relations */
-    --member: #ebba34;                  /* color of "member" tag on person */
-    --highlight: #6c6;                  /* color of "highlight" tag on person */
     /* These next properties are accessed in JS. Values must be pixels, not other lengths */
     --spouse-margin: 10px;              /* vertical distance between two adjacent spouses */
     --spouse-indent: 10px;              /* horizontal indent for a visually dependent spouse */
@@ -563,36 +612,4 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     to {
         transform: rotate(1turn)
     }
-}
-#slippy-search-container {
-    position: absolute;
-    right: 2em;
-    top: 1em;
-    width: 15em;
-}
-#slippy-search {
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #888;
-}
-#slippy-search-list {
-    display: block;
-    position: absolute;
-    overflow-x: hidden;
-    overflow-y: scroll;
-    max-height: 8em;
-    box-sizing: border-box;
-    width: 100%;
-    font-size: 0.7em;
-    border: 1px solid #888;
-    background: white;
-    filter: drop-shadow(8px 8px 8px #0008);
-}
-#slippy-search-list > * {
-    padding: 2px 4px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-#slippy-search-list .focus {
-    background-color: var(--menu-selected-color);
 }
