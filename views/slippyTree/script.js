@@ -1087,9 +1087,11 @@ class SlippyTree extends View {
         if (id) {
             this.load({keys:id, nuclear:1}, () => {
                 const person = this.find(id, false);
-                person.childrenLoaded = true;
-                this.setSecondaryFocus(null);
-                this.setFocus(person);
+                if (person) {
+                    person.childrenLoaded = true;
+                    this.setSecondaryFocus(null);
+                    this.setFocus(person);
+                }
             });
         }
     }
