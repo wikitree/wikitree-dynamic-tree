@@ -9,6 +9,6 @@ window.TimelineTreeView = class TimelineTreeView extends View {
     async init(container_selector, person_id) {
         const personData = await WikiTreeAPI.getPerson("helloWorld", person_id, ["FirstName"]);
         const name = personData["_data"]["FirstName"];
-        document.querySelector(container_selector).innerText = `Hello, ${name}`;
+        document.querySelector(container_selector).innerText = `Hello, ${name} - we will create a timeline here`;
     }
 };
