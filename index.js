@@ -74,6 +74,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "ancestorsCemeteries": new AncestorsCemeteriesView(),
         "heritage": new HeritageView(),
         "helloWorld": new HelloWorldView(),
+        "timelineTree": new TimelineTreeView(),
     };
 
     for (let key in views) {
