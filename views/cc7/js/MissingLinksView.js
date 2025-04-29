@@ -1,11 +1,12 @@
 import { Settings } from "./Settings.js";
 import { PRIVACY_LEVELS } from "./PeopleTable.js";
+import { CC7Utils } from "./CC7Utils.js";
 import { CC7Notes } from "./CC7Notes.js";
 
 export class MissingLinksView {
     static async buildView() {
         const missingLinksTable = $(`
-        <table id="missingLinksTable" class="table">
+        <table id="missingLinksTable" class="table subsetable">
             <thead>
                 <tr>
                     <th scope="column">Privacy</th>
@@ -38,7 +39,7 @@ export class MissingLinksView {
         const sortedMap = new Map(mapArray);
 
         for (let person of sortedMap.values()) {
-            const privacy = person.Privacy;
+            const privacy = person.Privacy || "?";
             const degree = person.Meta.Degrees;
             const first = person.RealName;
             const last = person.LastNameAtBirth;
@@ -48,7 +49,7 @@ export class MissingLinksView {
             const spouses = person.Spouses.length;
             const wikiTreeId = person.Name;
 
-            if (isMissingFamily(person)) {
+            if (CC7Utils.isMissingFamily(person)) {
                 // create row
                 const hasNote = idsWithNotes.has(person.Id);
                 let status = hasNote ? idsWithNotes.get(person.Id) : "";
@@ -70,9 +71,9 @@ export class MissingLinksView {
                     <td class="${person.Father > 0 ? "" : "is-lead"}">${person.Father > 0 ? "yes" : "no"}</td>
                     <td class="${person.Mother > 0 ? "" : "is-lead"}">${person.Mother > 0 ? "yes" : "no"}</td>
                     <td class="${
-                        spouses < 1 && person.DataStatus.Spouse != "blank"
+                        spouses < 1 && person.DataStatus?.Spouse != "blank"
                             ? "is-lead"
-                            : spouses > 0 && person.DataStatus.Spouse != "blank"
+                            : spouses > 0 && person.DataStatus?.Spouse != "blank"
                             ? "possible-lead"
                             : ""
                     }">${spouses}</td>
@@ -93,32 +94,6 @@ export class MissingLinksView {
                 // add row to table
                 $("#missingLinksTable tbody").append(newRow);
             }
-        }
-
-        function isMissingFamily(person) {
-            //if (person.LastNameAtBirth == "Private") return false;
-            let val = false;
-            if (Settings.current["missingFamily_options_noNoChildren"]) {
-                // no more children flag is not set
-                val = person.NoChildren != 1;
-            }
-            if (!val && Settings.current["missingFamily_options_noNoSpouses"]) {
-                // no more spouses flag is not set
-                val = person.DataStatus.Spouse != "blank";
-            }
-            if (!val && Settings.current["missingFamily_options_noParents"]) {
-                // no father or mother
-                val = !person.Father && !person.Mother;
-            }
-            if (!val && Settings.current["missingFamily_options_noChildren"]) {
-                // no more children flag is not set and they don't have any children
-                val = person.NoChildren != 1 && (!person.Child || person.Child.length == 0);
-            }
-            if (!val && Settings.current["missingFamily_options_oneParent"]) {
-                // at least one parent missing
-                val = (person.Father && !person.Mother) || (!person.Father && person.Mother);
-            }
-            return val;
         }
     }
 

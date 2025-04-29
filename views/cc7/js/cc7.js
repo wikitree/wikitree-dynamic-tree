@@ -297,10 +297,20 @@ class CC7 {
         "Touched",
     ].join(",");
 
+    static VIEWS = {
+        TABLE: "table",
+        HIERARCHY: "hierarchy",
+        LIST: "list",
+        STATS: "stats",
+        MISSING_LINKS: "ml",
+        CIRCLES: "circles",
+    };
+
     static GET_PEOPLE_LIMIT = 1000;
     static MAX_DEGREE = 7;
 
     static cancelLoadController;
+    static URL_PARAMS = {};
 
     // Constants for IndexedDB
     static CONNECTION_DB_NAME = "ConnectionFinderWTE";
@@ -313,8 +323,8 @@ class CC7 {
     constructor(selector, startId, params) {
         this.startId = startId;
         this.selector = selector;
-        this.params = params;
-        PeopleTable.setParameters(params);
+        CC7.URL_PARAMS = params;
+
         Settings.restoreSettings();
         $(selector).html(
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
@@ -364,19 +374,6 @@ class CC7 {
             </div>`
         );
 
-        // handle "degrees" parameter
-        if (params["degrees"]) {
-            const cc7Degree = Number(params["degrees"]);
-            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
-                CC7.handleDegreeChange(cc7Degree);
-            }
-        } else {
-            const cc7Degree = Utils.getCookie("w_cc7Degree");
-            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
-                CC7.handleDegreeChange(cc7Degree);
-            }
-        }
-
         $("#cc7Degree")
             .off("change")
             .on("change", function () {
@@ -388,6 +385,7 @@ class CC7 {
             .on("change", function () {
                 const theDegree = $("#cc7Degree").val();
                 CC7.updateButtonLabels(theDegree);
+                CC7.updateURL();
             });
         $("#getPeopleButton").off("click").on("click", CC7.getConnectionsAction);
 
@@ -487,6 +485,28 @@ class CC7 {
                 CC7.handleFileUpload(e);
                 this.value = "";
             });
+
+        // handle "degrees" parameter
+        if (params["degrees"]) {
+            const cc7Degree = Number(params["degrees"]);
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree, false);
+            }
+        } else {
+            const cc7Degree = Utils.getCookie("w_cc7Degree");
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree, false);
+            }
+        }
+
+        // Handle "getExtra" parameter
+        const getExtra = params["getExtra"];
+        if (typeof getExtra !== "undefined" && getExtra !== "0") {
+            $("#getExtraDegrees").prop("checked", true);
+            CC7.updateButtonLabels($("#cc7Degree").val());
+        }
+
+        // Start loading the people data
         $("#getPeopleButton").trigger("click");
         $(document).off("keyup", CC7.closeTopPopup).on("keyup", CC7.closeTopPopup);
     }
@@ -575,7 +595,7 @@ class CC7 {
         $("#getDegreeButton").text(`Get Degree ${degree}${getExtra ? "±1" : ""} Only`);
     }
 
-    static handleDegreeChange(wantedDegree) {
+    static handleDegreeChange(wantedDegree, withURLChange = true) {
         const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
         CC7.updateButtonLabels(newDegree);
         if (newDegree > 3) {
@@ -597,6 +617,47 @@ class CC7 {
         theDegree = Utils.getCookie("w_cc7Degree");
         if (newDegree != theDegree) {
             Utils.setCookie("w_cc7Degree", newDegree, { expires: 365 });
+        }
+        if (withURLChange) CC7.updateURL();
+    }
+
+    static updateURL() {
+        const url = new URL(window.location.href);
+        const usp = new URLSearchParams(url.hash.slice(1));
+        const oldHash = usp.toString();
+        const wtId = wtViewRegistry.getCurrentWtId();
+
+        usp.set("name", wtId);
+        if (!PeopleTable.ACTIVE_VIEW || PeopleTable.ACTIVE_VIEW == CC7.VIEWS.TABLE) {
+            usp.delete("cc7View");
+            delete CC7.URL_PARAMS.cc7View;
+        } else {
+            usp.set("cc7View", PeopleTable.ACTIVE_VIEW);
+            CC7.URL_PARAMS["cc7View"] = PeopleTable.ACTIVE_VIEW;
+        }
+        usp.set("degrees", $("#cc7Degree").val());
+        CC7.URL_PARAMS["degrees"] = $("#cc7Degree").val();
+
+        const subset = $("#cc7Subset").val();
+        if (subset && subset != "all") {
+            usp.set("only", subset);
+            CC7.URL_PARAMS["only"] = subset;
+        } else {
+            usp.delete("only");
+            delete CC7.URL_PARAMS.only;
+        }
+
+        if ($("#getExtraDegrees").prop("checked")) {
+            usp.set("getExtra", "1");
+            CC7.URL_PARAMS["getExtra"] = "1";
+        } else {
+            usp.delete("getExtra");
+            delete CC7.URL_PARAMS.getExtra;
+        }
+
+        const newHash = usp.toString();
+        if (newHash != oldHash) {
+            window.history.pushState(null, null, "#" + newHash);
         }
     }
 

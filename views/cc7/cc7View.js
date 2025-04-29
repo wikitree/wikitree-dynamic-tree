@@ -11,7 +11,7 @@ window.CC7View = class CC7View extends View {
             title: "CC7 Views",
             description: CC7.LONG_LOAD_WARNING,
             docs: "",
-            params: ["cc7View", "degrees"],
+            params: ["cc7View", "degrees", "only", "getExtra"],
         };
     }
 
