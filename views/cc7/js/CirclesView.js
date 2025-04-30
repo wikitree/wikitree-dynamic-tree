@@ -127,8 +127,11 @@ export class CirclesView {
         });
     }
     static connectAllToPrimaryPerson(currentRootID) {
-        condLog({ currentRootID });
-        let rootPeep = window.people.get(currentRootID);
+        condLog("connectAllToPrimaryPerson", { currentRootID });
+        condLog("window.people.size", window.people.size);
+        condLog("window.people", window.people);
+        let rootPeep = window.people.get(1.0 * currentRootID);
+        condLog({ rootPeep });
         if (rootPeep) {
             CirclesView.updateFieldsInPersonCodesObject(currentRootID, "A0", "A0-" + currentRootID);
             CirclesView.addConnectionsToThisPerson(currentRootID, "A0");
@@ -136,7 +139,9 @@ export class CirclesView {
     }
 
     static updateFieldsInPersonCodesObject(currentID, code, codeLong) {
+        condLog("updateFieldsInPersonCodesObject:", currentID, code, codeLong);
         let Peep = window.people.get(currentID);
+        let currentIDstr = "" + currentID;
         if (Peep) {
             if (!CirclesView.PersonCodesObject[currentID]) {
                 CirclesView.PersonCodesObject[currentID] = { CodesList: [code], CodesLongList: [codeLong] };
@@ -146,6 +151,12 @@ export class CirclesView {
                 CirclesView.PersonCodesObject[currentID].CodesList.indexOf(code) > -1
             ) {
                 // do NOT duplicate the code .... just return
+                return;
+            } else if (codeLong.indexOf(currentIDstr) < codeLong.length - currentIDstr.length) {
+                // do NOT duplicate if currentID is already in Long Code List .... just return
+                return;
+            } else if (code.length > 30) {
+                // Too convoluted connection .... (temporary solution)
                 return;
             } else if (CirclesView.PersonCodesObject[currentID]) {
                 CirclesView.PersonCodesObject[currentID].CodesList.push(code);
@@ -184,6 +195,10 @@ export class CirclesView {
     }
 
     static notAlreadyInCodeLong(newbie, codeLong) {
+        if (!codeLong || codeLong == "") {
+            return false;
+        }
+
         return codeLong.indexOf(newbie) == -1;
     }
 
@@ -215,7 +230,11 @@ export class CirclesView {
             let thisPeepCodeLong = thisPeepEntry.CodesLongList[thisPeepEntry.CodesList.indexOf(thisPeepCode)];
 
             // paRENTS
-            if (thisPeep.Father > 0 && CirclesView.notAlreadyInCodeLong(thisPeep.Father, thisPeepCodeLong)) {
+            if (
+                thisPeep.Father > 0 &&
+                thisPeepCodeLong > "" &&
+                CirclesView.notAlreadyInCodeLong(thisPeep.Father, thisPeepCodeLong)
+            ) {
                 if (fromWhere == "Sibling" && thisPeep.Father == p1) {
                     // do not go any further
                 } else if (fromWhere == "Kid" && (thisPeep.Father == p1 || thisPeep.Father == p2)) {
@@ -359,6 +378,7 @@ export class CirclesView {
         CirclesView.connectAllToPrimaryPerson(window.rootId);
         const mapArray = Array.from(window.people);
         mapArray.sort((a, b) => a[1]["Meta"]["Degrees"] - b[1]["Meta"]["Degrees"]);
+        condLog("mapArray:", mapArray);
         const sortedMap = new Map(mapArray);
 
         let SVGcode = "";
@@ -371,6 +391,7 @@ export class CirclesView {
             CirclesView.degreeCount[degree]++;
         }
 
+        condLog("CirclesView.degreeCount:", CirclesView.degreeCount);
         CirclesView.changeDisplayType();
 
         condLog({ sortedMap });
@@ -449,7 +470,7 @@ export class CirclesView {
         if (typeof rel == "object" && rel.full) {
             rel = rel.full;
         }
-        // console.log(first, last, degree, degreeCount[degree], rel);
+        condLog(first, last, degree, rel, newX, newY);
 
         let xDotRadius = CirclesView.dotRadius;
         if (CirclesView.displayType == "fName") {
@@ -725,6 +746,7 @@ export class CirclesView {
     }
 
     static changeDisplayType() {
+        console.log("CIRCLES VIEW - changeDisplayType");
         let SVGcode =
             "<svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg>";
         let degreeCount = CirclesView.degreeCount;
@@ -762,7 +784,7 @@ export class CirclesView {
                 //      n = 180º / sin -1 ( s / 2Radius )
                 // Note Math.sin and Math.asin in JS use radians, so replace 180º with Math.PI
                 let regPolyRadius = (2 * CirclesView.dotRadius) / (2 * Math.sin(Math.PI / degreeCount[d]));
-                condLog(
+                console.log(
                     "At CC" +
                         d +
                         " there are " +
@@ -791,6 +813,7 @@ export class CirclesView {
             if (degree == 0) {
                 currentRadiusMultipler = 0;
             }
+            // console.log("degree", degree, "currentDegree", currentDegree);
             if (degree > currentDegree) {
                 currentRadiusMultipler += radiusMultipler;
                 currentDegree = degree;
@@ -802,6 +825,7 @@ export class CirclesView {
                         // if the distance between the current radius, and the ideal regular Polygon radius is less than a dotRadius
                         // then ... just go with the slightly larger radius to fit everyone in
                         currentRadiusMultipler = regPolyRadius;
+                        desiredNumThisRing = degreeCount[degree];
                     } else {
                         // otherwise, we have too many to fit, so we'll need to figure out how to do multiple rings for this degree level
                         let currentMaxNumSides = Math.floor(
@@ -869,7 +893,7 @@ export class CirclesView {
             }
             let rightAngle = 0 - Math.PI / 2; // forces each ring to start at 12:00 / due North
             let shiftRingStart = (thisRingNum % 2) / 2; // on every other ring, shift the starting node for each ring off half a radius, so that you get a staggered pattern
-
+            // console.log({numInThisRing} ,{shiftRingStart}, {desiredNumThisRing});
             let newX =
                 5 * 0 +
                 currentRadiusMultipler *
