@@ -1418,7 +1418,7 @@ import { PDFs } from "../shared/PDFs.js";
                 thisStyle.indexOf(";", thisStyle.indexOf("stroke-width:"))
             ));
 
-            console.log({thisStroke}, {thisStrokeWidth});
+            // console.log({thisStroke}, {thisStrokeWidth});
             if (thisStrokeWidth!= currentPDFsettings.thisStrokeWidth) {
                 pdf.setLineWidth(thisStrokeWidth);
                 currentPDFsettings.thisStrokeWidth = thisStrokeWidth;  
@@ -1476,8 +1476,15 @@ import { PDFs } from "../shared/PDFs.js";
         var thisPDFmargin = 20; /// 1.5 cm ... to be multiplied by appropriate scale factor
         
         function setPDFsizes() {
+            // Every chart has at least one line, so start with the first line, and set the max/mins to that
+            thisPDFminX = thisPDFlinesArray[0][0];
+            thisPDFmaxX = thisPDFlinesArray[0][0];
+            thisPDFminY = thisPDFlinesArray[0][1];
+            thisPDFmaxY = thisPDFlinesArray[0][1];
+
             for (let index = 0; index < thisPDFlinesArray.length; index++) {
                 const element = thisPDFlinesArray[index];
+                console.log("line " + index, element );
                 thisPDFminX = Math.min(thisPDFminX, element[0], element[2]);
                 thisPDFmaxX = Math.max(thisPDFmaxX, element[0], element[2]);
                 thisPDFminY = Math.min(thisPDFminY, element[1], element[3]);
@@ -1506,7 +1513,7 @@ import { PDFs } from "../shared/PDFs.js";
 
             for (let index = 0; index < thisPDFimageArray.length; index++) {
                 const element = thisPDFimageArray[index];
-                console.log({element});
+                // console.log({element});
                 thisPDFminX = Math.min(thisPDFminX, element[2] - element[4]/2);
                 thisPDFmaxX = Math.max(thisPDFmaxX, element[2] + element[4]/2);
                 thisPDFminY = Math.min(thisPDFminY, element[3]);
@@ -1604,7 +1611,7 @@ import { PDFs } from "../shared/PDFs.js";
                 pdf.setFont(element[3], element[4]);
                 pdf.setFontStyle( element[4]);
                 pdf.setFontSize(element[5]);
-                console.log(element[0], ":", element[3], element[4]);
+                // console.log(element[0], ":", element[3], element[4]);
                 // console.log(element[0], ":", pdf.getTextWidth(element[0]));
                 // console.log({ index }, "text Y:", element[2]);
                 pdf.text(element[0],
@@ -1737,7 +1744,7 @@ import { PDFs } from "../shared/PDFs.js";
                  let thisDisplay = thisSVG.children[i].getAttribute("display");
 
                  if (thisDisplay != "none" && thisID.indexOf("line") == 0 && thisID.indexOf("ForPerson") > 0) {
-                     console.log(thisSVG.children[i]);
+                    //  console.log(thisSVG.children[i]);
                      addLineToPDF(pdf, thisSVG.children[i]);
                  }
              }
@@ -1898,7 +1905,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                  if (thisElement) {
                      let thisText = thisElement.textContent;
-                     console.log({ thisText }, { thisX }, { thisY });
+                    //  console.log({ thisText }, { thisX }, { thisY });
                      pdf.setDrawColor("#000000");
                      pdf.setLineWidth(2);
                      pdf.setFillColor(thisRRectBkgdClr);
@@ -1975,7 +1982,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                  let latestRRect = thisPDFroundedRectArray[thisPDFroundedRectArray.length - 1];
                  let latestRect = thisPDFrectArray[thisPDFrectArray.length - 1];
-                 console.log("End RRect info:", index, { latestRRect }, { thisY });
+                //  console.log("End RRect info:", index, { latestRRect }, { thisY });
                  if (latestRRect[3] < thisY - latestRRect[1]) {
                      latestRRect[3] = thisY - latestRRect[1];
                      latestRect[3] = latestRRect[3] - 30;
@@ -2015,7 +2022,7 @@ import { PDFs } from "../shared/PDFs.js";
                      height: 100,
                      src: document.getElementById("testIMGnum3").src,
                  });
-                 console.log({ newBase64String });
+                //  console.log({ newBase64String });
                  pdf2.addImage(
                      newBase64String,
                      "GIF",
@@ -2073,7 +2080,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         image.onload = function () {
             const base64String = getBase64Image(image);
-            console.log(base64String);
+            // console.log(base64String);
             theBaseString = base64String;
         };
 
@@ -2098,7 +2105,7 @@ import { PDFs } from "../shared/PDFs.js";
                 return new Promise((resolve, reject) => {
                     thisImage.onload = function () {
                         const base64String = getBase64Image(thisImage);
-                        console.log(base64String);
+                        // console.log(base64String);
                         resolve(base64String);
                     };
 
