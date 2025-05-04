@@ -1484,7 +1484,7 @@ import { PDFs } from "../shared/PDFs.js";
 
             for (let index = 0; index < thisPDFlinesArray.length; index++) {
                 const element = thisPDFlinesArray[index];
-                console.log("line " + index, element );
+                // console.log("PDF: line " + index, element[0], element[1], element[2], element[3]);
                 thisPDFminX = Math.min(thisPDFminX, element[0], element[2]);
                 thisPDFmaxX = Math.max(thisPDFmaxX, element[0], element[2]);
                 thisPDFminY = Math.min(thisPDFminY, element[1], element[3]);
@@ -1492,6 +1492,7 @@ import { PDFs } from "../shared/PDFs.js";
             }
             for (let index = 0; index < thisPDFrectArray.length; index++) {
                 const element = thisPDFrectArray[index];
+                // console.log("PDF: rect " + index, element[0], element[1], element[0] + element[2], element[1] + element[3]);
                 thisPDFminX = Math.min(thisPDFminX, element[0]);
                 thisPDFmaxX = Math.max(thisPDFmaxX, element[0] + element[2]);
                 thisPDFminY = Math.min(thisPDFminY, element[1]);
@@ -1499,6 +1500,7 @@ import { PDFs } from "../shared/PDFs.js";
             }
             for (let index = 0; index < thisPDFroundedRectArray.length; index++) {
                 const element = thisPDFroundedRectArray[index];
+                // console.log("PDF: rrect " + index, element[0], element[1], element[0] + element[2], element[1] + element[3]);
                 thisPDFminX = Math.min(thisPDFminX, element[0]);
                 thisPDFmaxX = Math.max(thisPDFmaxX, element[0] + element[2]);
                 thisPDFminY = Math.min(thisPDFminY, element[1]);
@@ -1507,13 +1509,21 @@ import { PDFs } from "../shared/PDFs.js";
 
             for (let index = 0; index < thisPDFtextArray.length; index++) {
                 const element = thisPDFtextArray[index];
+                // console.log("PDF: text " + index, element[0], element[1], element[2], element[3]);
+                // console.log("PDF: text " + index, element[1] - 150, element[2], element[1] + 150, element[2] + 21);
                 thisPDFminX = Math.min(thisPDFminX, element[1]);
                 thisPDFminY = Math.min(thisPDFminY, element[2]);
             }
 
             for (let index = 0; index < thisPDFimageArray.length; index++) {
                 const element = thisPDFimageArray[index];
-                // console.log({element});
+                // console.log(
+                //     "PDF: img " + index,
+                //     element[2] - element[4] / 2,
+                //     element[3],
+                //     element[2] + element[4] / 2,
+                //     element[3] + element[5]
+                // );
                 thisPDFminX = Math.min(thisPDFminX, element[2] - element[4]/2);
                 thisPDFmaxX = Math.max(thisPDFmaxX, element[2] + element[4]/2);
                 thisPDFminY = Math.min(thisPDFminY, element[3]);
@@ -1524,6 +1534,16 @@ import { PDFs } from "../shared/PDFs.js";
 
             thisPDFwidth = thisPDFmaxX - thisPDFminX + 2 * thisPDFmargin;
             thisPDFheight = thisPDFmaxY - thisPDFminY + 2 * thisPDFmargin;
+
+            // console.log("PDF: minX :", thisPDFminX);
+            // console.log("PDF: maxX :", thisPDFmaxX);
+            // console.log("PDF: minY :", thisPDFminY);
+            // console.log("PDF: maxY :", thisPDFmaxY);
+
+            // console.log("PDF: margin :", thisPDFmargin);
+            // console.log("PDF: thisPDFwidth :", thisPDFwidth);    
+            // console.log("PDF: thisPDFheight :", thisPDFheight);
+            
             // if (thisPDFwidth == 0) {
                 // thisPDFheight = Math.max(thisPDFheight, 2595.28); 
             // }
@@ -1554,6 +1574,7 @@ import { PDFs } from "../shared/PDFs.js";
                     24,
                     "center",
                 ]);
+                // console.log("PDF: text title", thisPDFminX, thisPDFminY + 20, thisPDFmaxX, thisPDFminY + 20 + 21);
             }
             if (thisShowFooter) {
                 thisPDFmaxY += 40;
@@ -1566,6 +1587,7 @@ import { PDFs } from "../shared/PDFs.js";
                     12,
                     "center",
                 ]);
+                // console.log("PDF: text footer", thisPDFminX, thisPDFmaxY, thisPDFmaxX, thisPDFmaxY + 10 + 21);
                 thisPDFmaxY += 10;
             }
             if (thisShowURL) {
@@ -1580,6 +1602,7 @@ import { PDFs } from "../shared/PDFs.js";
                     10,
                     "center",
                 ]);
+                // console.log("PDF: text footer", thisPDFminX, thisPDFmaxY, thisPDFmaxX, thisPDFmaxY + 10 + 21);
                 thisPDFmaxY += 10;
             }
         }
@@ -1593,10 +1616,10 @@ import { PDFs } from "../shared/PDFs.js";
                     console.log("skipping line", element);
                     continue;
                 }
-                console.log({element});
+                // console.log({element});
                 pdf.setDrawColor(element[4][0], element[4][1], element[4][2]);
                 pdf.setLineWidth(element[5]);
-                console.log("pdf.line",currentPDFsettings.thisDX + element[0], currentPDFsettings.thisDY + element[1], currentPDFsettings.thisDX + element[2], currentPDFsettings.thisDY + element[3],  element[6] );
+                // console.log("pdf.line",currentPDFsettings.thisDX + element[0], currentPDFsettings.thisDY + element[1], currentPDFsettings.thisDX + element[2], currentPDFsettings.thisDY + element[3],  element[6] );
                 pdf.line(
                     1.0 * currentPDFsettings.thisDX + 1.0 * element[0],
                     1.0 * currentPDFsettings.thisDY + 1.0 * element[1],
@@ -1990,7 +2013,11 @@ import { PDFs } from "../shared/PDFs.js";
              }
              setPDFsizes();
              console.log("w,h:", thisPDFwidth, thisPDFheight);
-             let pdf2 = new jsPDF("l", "pt", [thisPDFwidth, thisPDFheight]);
+             let orientation = "l";
+             if (thisPDFwidth < thisPDFheight) {
+                orientation = "p";
+            }
+             let pdf2 = new jsPDF(orientation, "pt", [thisPDFwidth, thisPDFheight]);
              console.log({ currentPDFsettings });
              addLinesToPDF(pdf2);
              addRectsToPDF(pdf2);
