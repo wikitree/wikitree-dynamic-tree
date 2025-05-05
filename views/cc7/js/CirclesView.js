@@ -1,4 +1,5 @@
 import { Settings } from "./Settings.js";
+import { CC7 } from "./cc7.js";
 
 export class CirclesView {
     static currentSortedMap;
@@ -9,7 +10,7 @@ export class CirclesView {
     static degreeCount = [0, 0, 0, 0, 0, 0, 0, 0, 0]; // keeps track of the current CC7 view, and how many people are at each degree
 
     static PersonCodesObject = {}; // Object that keeps track of ALL the people in the CC7 that have been retrieved to date , starting with the opening CCn that was loaded, then ideally, added to if additional peeps are added.
-        /*
+    /*
             Associated Array
                 key :  WikiTree ID # for person.
                 fields :
@@ -40,7 +41,7 @@ export class CirclesView {
         */
 
     static theLeafCollection = {}; // Object that tracks each of the unique CODES generated (for connections) and maps them to the corresponding WikiTree ID #s (unique people)
-    
+
     static buildView() {
         console.log("CIRCLES VIEW - buildView");
 
@@ -55,24 +56,21 @@ export class CirclesView {
             SVGbtnCLOSE +
             "</A></span></div>";
 
-            
-
         var innerLegendBits =
             `<P>Legend: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="orange"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC2</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="cyan"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC3</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="magenta"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC4</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="aquamarine"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC5</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="gold"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC6</text></svg>` +
-            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="deepskyblue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC7</text></svg>` + 
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="deepskyblue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC7</text></svg>` +
             `<BR/>CC1: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="green "></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Primary</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="gray"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Parent</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="blue"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Sibling</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="red"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:white;" textLength="34" lengthAdjust="spacingAndGlyphs">Spouse</text></svg>` +
-            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="lime"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">Child</text></svg>` ;
-;
+            ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="lime"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">Child</text></svg>`;
         var legendDIV =
             '<div id=legendDIV class="pop-up" style="display:block; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A onclick="document.getElementById(\'legendDIV\').style.display = \'none\'">' +
+            "<span style=\"color:red; align:left\"><A onclick=\"document.getElementById('legendDIV').style.display = 'none'\">" +
             SVGbtnCLOSE +
             "</A></span>" +
             innerLegendBits +
@@ -80,17 +78,15 @@ export class CirclesView {
 
         popupDIV += connectionPodDIV + legendDIV;
 
-        let toggleLegendFunctionCode = 
-            `if (document.getElementById("legendDIV").style.display == "none") {
+        let toggleLegendFunctionCode = `if (document.getElementById("legendDIV").style.display == "none") {
                 document.getElementById("legendDIV").style.display = "block";
             } else {
                 document.getElementById("legendDIV").style.display = "none";
-            }`; 
-            
+            }`;
 
         const circlesDisplay = $(
             `
-        <div id="circlesDisplay">
+        <div id="circlesDisplay" class="cc7ViewTab">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
                 <label title='Display coloured dot for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
@@ -135,40 +131,61 @@ export class CirclesView {
         condLog({ currentRootID });
         let rootPeep = window.people.get(currentRootID);
         if (rootPeep) {
-            CirclesView.updateFieldsInPersonCodesObject(currentRootID,"A0","A0-" + currentRootID);
+            CirclesView.updateFieldsInPersonCodesObject(currentRootID, "A0", "A0-" + currentRootID);
             CirclesView.addConnectionsToThisPerson(currentRootID, "A0");
         }
     }
 
-    static updateFieldsInPersonCodesObject ( currentID, code, codeLong ) {
+    static updateFieldsInPersonCodesObject(currentID, code, codeLong) {
         let Peep = window.people.get(currentID);
         if (Peep) {
             if (!CirclesView.PersonCodesObject[currentID]) {
                 CirclesView.PersonCodesObject[currentID] = { CodesList: [code], CodesLongList: [codeLong] };
                 CirclesView.theLeafCollection[code] = { Id: currentID };
-            } else if (CirclesView.PersonCodesObject[currentID] && CirclesView.PersonCodesObject[currentID].CodesList.indexOf(code) > -1) {
+            } else if (
+                CirclesView.PersonCodesObject[currentID] &&
+                CirclesView.PersonCodesObject[currentID].CodesList.indexOf(code) > -1
+            ) {
                 // do NOT duplicate the code .... just return
                 return;
             } else if (CirclesView.PersonCodesObject[currentID]) {
                 CirclesView.PersonCodesObject[currentID].CodesList.push(code);
-                CirclesView.PersonCodesObject[currentID].CodesLongList.push(codeLong);            
+                CirclesView.PersonCodesObject[currentID].CodesLongList.push(codeLong);
                 CirclesView.theLeafCollection[code] = { Id: currentID };
-            } 
-            let fieldsList = ["Name","Id","LongName","FirstName","RealName","LastNameAtBirth","Gender","BirthDate","BirthLocation","DeathDate","LongName", "DeathLocation","IsLiving","Spouse","Child","Sibling","Spouses","Mother","Father","PhotoData"];
+            }
+            let fieldsList = [
+                "Name",
+                "Id",
+                "LongName",
+                "FirstName",
+                "RealName",
+                "LastNameAtBirth",
+                "Gender",
+                "BirthDate",
+                "BirthLocation",
+                "DeathDate",
+                "LongName",
+                "DeathLocation",
+                "IsLiving",
+                "Spouse",
+                "Child",
+                "Sibling",
+                "Spouses",
+                "Mother",
+                "Father",
+                "PhotoData",
+            ];
             for (let f = 0; f < fieldsList.length; f++) {
                 let fldName = fieldsList[f];
                 if (Peep[fldName]) {
-                     CirclesView.PersonCodesObject[currentID][fldName] = Peep[fldName];
+                    CirclesView.PersonCodesObject[currentID][fldName] = Peep[fldName];
                 }
-                
             }
         }
-
     }
 
-    static notAlreadyInCodeLong(newbie,codeLong) {
-        return  (codeLong.indexOf(newbie) == -1) ;
-            
+    static notAlreadyInCodeLong(newbie, codeLong) {
+        return codeLong.indexOf(newbie) == -1;
     }
 
     static addConnectionsToThisPerson(thisID, code, fromWhere = "root", p1 = 0, p2 = 0) {
@@ -195,12 +212,12 @@ export class CirclesView {
         let thisPeepEntry = CirclesView.PersonCodesObject[thisID];
         let thisPeepCode = code;
 
-        if (thisPeep && thisPeepEntry){
-            let thisPeepCodeLong = thisPeepEntry.CodesLongList[ thisPeepEntry.CodesList.indexOf(thisPeepCode)];
-         
+        if (thisPeep && thisPeepEntry) {
+            let thisPeepCodeLong = thisPeepEntry.CodesLongList[thisPeepEntry.CodesList.indexOf(thisPeepCode)];
+
             // paRENTS
             if (thisPeep.Father > 0 && CirclesView.notAlreadyInCodeLong(thisPeep.Father, thisPeepCodeLong)) {
-                if ( fromWhere == "Sibling" && ( thisPeep.Father == p1 )) {
+                if (fromWhere == "Sibling" && thisPeep.Father == p1) {
                     // do not go any further
                 } else if (fromWhere == "Kid" && (thisPeep.Father == p1 || thisPeep.Father == p2)) {
                     // do not go any further
@@ -219,17 +236,22 @@ export class CirclesView {
                 }
             }
             if (thisPeep.Mother > 0 && CirclesView.notAlreadyInCodeLong(thisPeep.Mother, thisPeepCodeLong)) {
-                if ( fromWhere == "Sibling" && (thisPeep.Mother == p2 )) {
+                if (fromWhere == "Sibling" && thisPeep.Mother == p2) {
                     // do not go any further
                 } else if (fromWhere == "Kid" && (thisPeep.Mother == p1 || thisPeep.Mother == p2)) {
                     // do not go any further
-                }  else {
+                } else {
                     CirclesView.updateFieldsInPersonCodesObject(
                         thisPeep.Mother,
                         thisPeepCode + "RF",
                         thisPeepCodeLong + "|" + "RF-" + thisPeep.Mother
                     );
-                    CirclesView.addConnectionsToThisPerson(thisPeep.Mother, thisPeepCode + "RF", "Mother", thisPeep.Father);
+                    CirclesView.addConnectionsToThisPerson(
+                        thisPeep.Mother,
+                        thisPeepCode + "RF",
+                        "Mother",
+                        thisPeep.Father
+                    );
                 }
             }
 
@@ -260,7 +282,10 @@ export class CirclesView {
             if (thisPeep.Spouse && thisPeep.Spouse.length > 0) {
                 for (let i = 0; i < thisPeep.Spouse.length; i++) {
                     const nextPeep = thisPeep.Spouse[i];
-                    if (nextPeep.Id == p1 && (fromWhere == "Mother" || fromWhere == "Father" || fromWhere == "Partner")) {
+                    if (
+                        nextPeep.Id == p1 &&
+                        (fromWhere == "Mother" || fromWhere == "Father" || fromWhere == "Partner")
+                    ) {
                         continue;
                     }
                     if (nextPeep.Id > 0 && CirclesView.notAlreadyInCodeLong(nextPeep.Id, thisPeepCodeLong)) {
@@ -280,12 +305,12 @@ export class CirclesView {
             }
 
             // KIDS
-            if (thisPeep.Child && thisPeep.Child.length > 0 && (fromWhere != "Mother" && fromWhere != "Father")) {
+            if (thisPeep.Child && thisPeep.Child.length > 0 && fromWhere != "Mother" && fromWhere != "Father") {
                 for (let i = 0; i < thisPeep.Child.length; i++) {
                     const nextPeep = thisPeep.Child[i];
-                    if (fromWhere == "Partner" && (nextPeep.Mother == thisPeep.Id && nextPeep.Father == p1 ) ) {
+                    if (fromWhere == "Partner" && nextPeep.Mother == thisPeep.Id && nextPeep.Father == p1) {
                         continue;
-                    } else if (fromWhere == "Partner" && (nextPeep.Father == thisPeep.Id && nextPeep.Mother == p1 ) ) {
+                    } else if (fromWhere == "Partner" && nextPeep.Father == thisPeep.Id && nextPeep.Mother == p1) {
                         continue;
                     }
                     if (nextPeep.Id > 0 && CirclesView.notAlreadyInCodeLong(nextPeep.Id, thisPeepCodeLong)) {
@@ -299,13 +324,12 @@ export class CirclesView {
                         if (SpouseArray && SpouseArray.length > 0) {
                             for (let sp = 0; sp < SpouseArray.length; sp++) {
                                 if (SpouseArray[sp].Id == nextPeep.Father || SpouseArray[sp].Id == nextPeep.Mother) {
-                                    otherParentId = SpouseArray[sp].Id ;
+                                    otherParentId = SpouseArray[sp].Id;
                                     // break;
                                 }
-                                
                             }
                         }
-                        
+
                         CirclesView.addConnectionsToThisPerson(
                             nextPeep.Id,
                             thisPeepCode + "K" + make2Digit(i + 1),
@@ -442,20 +466,19 @@ export class CirclesView {
         } else if (
             person.Relationship &&
             person.Relationship.full &&
-            (person.Relationship.full == "father"  ||
-                person.Relationship.full == "mother"  ||
-                person.Relationship.full == "parent" )
+            (person.Relationship.full == "father" ||
+                person.Relationship.full == "mother" ||
+                person.Relationship.full == "parent")
         ) {
             thisClr = "gray";
             textClr = "white";
         } else if (
             person.Relationship &&
             person.Relationship.full &&
-            CirclesView.circlesGrayAncs == true && 
+            CirclesView.circlesGrayAncs == true &&
             (person.Relationship.full.indexOf("father") > -1 ||
-                    person.Relationship.full.indexOf("mother") > -1 ||
-                    person.Relationship.full.indexOf("parent") > -1
-            )
+                person.Relationship.full.indexOf("mother") > -1 ||
+                person.Relationship.full.indexOf("parent") > -1)
         ) {
             thisClr = "gray";
             textClr = "white";
@@ -507,8 +530,12 @@ export class CirclesView {
             (xDotRadius + 1) * 2 +
             " height=" +
             (CirclesView.dotRadius + 1) * 2 +
-            " style='position: absolute; left: " +Math.round(newX) + "px; " +
-            "top: " + Math.round(newY) + "px;' >";
+            " style='position: absolute; left: " +
+            Math.round(newX) +
+            "px; " +
+            "top: " +
+            Math.round(newY) +
+            "px;' >";
 
         let thisSVGend = "</SVG>";
 
@@ -540,11 +567,7 @@ export class CirclesView {
                 console.log("Cannot find a first name for  ", person);
             }
             thisSVGtext =
-                "<text text-anchor=middle x=10 y=15 style='font-size:14; fill:" +
-                textClr +
-                ";' >" +
-                theLtr +
-                "</text>";
+                "<text text-anchor=middle x=10 y=15 style='font-size:14; fill:" + textClr + ";' >" + theLtr + "</text>";
         } else if (CirclesView.displayType == "inits") {
             let theInits = theInitialsFrom(person);
             let textLengthParam = "";
@@ -560,15 +583,14 @@ export class CirclesView {
                 theInits +
                 "</text>";
         } else if (CirclesView.displayType == "fName") {
-            
-             let theFName = "Private";
-             if (person.RealName) {
-                 theFName = person.RealName;
-             } else if (person.FirstName) {
-                 theFName = person.FirstName;
-             } else {
-                 console.log("Cannot find a first name for  ", person);
-             }
+            let theFName = "Private";
+            if (person.RealName) {
+                theFName = person.RealName;
+            } else if (person.FirstName) {
+                theFName = person.FirstName;
+            } else {
+                console.log("Cannot find a first name for  ", person);
+            }
             let textLengthParam = "";
             if (theFName.length > 8) {
                 textLengthParam = " textLength=" + (2 * xDotRadius - 2) + " lengthAdjust=spacingAndGlyphs ";
@@ -584,13 +606,13 @@ export class CirclesView {
         } else if (CirclesView.displayType == "all") {
             let theName = "Private";
             if (person.RealName) {
-                 theName = person.RealName;
-            } else  if (person.FirstName) {
-                 theName = person.FirstName;
+                theName = person.RealName;
+            } else if (person.FirstName) {
+                theName = person.FirstName;
             } else {
-                console.log("Cannot find a first name for  ",person);
+                console.log("Cannot find a first name for  ", person);
             }
-            
+
             let textLengthParam = "";
             if (theName.length > 7) {
                 textLengthParam = " textLength=50 lengthAdjust=spacingAndGlyphs ";
@@ -721,6 +743,7 @@ export class CirclesView {
         CirclesView.circleFilled = document.getElementById("displayType_filled").checked;
         CirclesView.circlesBandW = document.getElementById("displayType_BandW").checked;
         CirclesView.circlesGrayAncs = document.getElementById("displayType_GrayAncs").checked;
+        CC7.updateURL();
 
         condLog("filled:", CirclesView.circleFilled);
 
@@ -763,8 +786,8 @@ export class CirclesView {
         let currentRingNum = 1;
         let numCirclesPerRing = [];
         let thisRingNum = 0;
-        
-        condLog("BEFORE PLACEMENT: dotRadius = " + CirclesView.dotRadius, {radiusMultipler});
+
+        condLog("BEFORE PLACEMENT: dotRadius = " + CirclesView.dotRadius, { radiusMultipler });
         for (let person of CirclesView.currentSortedMap.values()) {
             const degree = person.Meta.Degrees;
             if (degree == 0) {
@@ -801,27 +824,33 @@ export class CirclesView {
                                     )
                             );
                             maxCirclesPerRing.push(nextMaxNumSides);
-                            totalCirclesAndCounting[r] = totalCirclesAndCounting[r-1] + nextMaxNumSides;
+                            totalCirclesAndCounting[r] = totalCirclesAndCounting[r - 1] + nextMaxNumSides;
                         }
-                        condLog({maxCirclesPerRing});
+                        condLog({ maxCirclesPerRing });
                         condLog({ totalCirclesAndCounting });
-                        condLog({r});
-                        if (totalCirclesAndCounting[r-2] >= degreeCount[degree]) {
-                            condLog("We can SCALE back a ring - don't need them all because the outer ones grow exponentially!!!!");
+                        condLog({ r });
+                        if (totalCirclesAndCounting[r - 2] >= degreeCount[degree]) {
+                            condLog(
+                                "We can SCALE back a ring - don't need them all because the outer ones grow exponentially!!!!"
+                            );
                         } else {
                             condLog("We need all " + r + " rings of power.");
                         }
                         // OK ... need to SCALE the maxCirclesPerRing to divide them equally by the same ratio so the crowding looks similar
-                        let scaleFactor =  degreeCount[degree] / totalCirclesAndCounting[r-1] ;
+                        let scaleFactor = degreeCount[degree] / totalCirclesAndCounting[r - 1];
                         numCirclesPerRing = [];
                         let totalNumCirclesCounted = 0;
                         for (r = 0; r < maxCirclesPerRing.length; r++) {
                             numCirclesPerRing[r] = Math.ceil(scaleFactor * maxCirclesPerRing[r]);
-                            totalNumCirclesCounted += numCirclesPerRing[r]; 
+                            totalNumCirclesCounted += numCirclesPerRing[r];
                         }
                         condLog("WAS:", numCirclesPerRing[numCirclesPerRing.length - 1]);
-                        condLog({ numCirclesPerRing }, {totalNumCirclesCounted}, "DegreeCount: " + degreeCount[degree]);
-                        numCirclesPerRing[ numCirclesPerRing.length - 1] += (degreeCount[degree] - totalNumCirclesCounted);
+                        condLog(
+                            { numCirclesPerRing },
+                            { totalNumCirclesCounted },
+                            "DegreeCount: " + degreeCount[degree]
+                        );
+                        numCirclesPerRing[numCirclesPerRing.length - 1] += degreeCount[degree] - totalNumCirclesCounted;
                         condLog("IS NOW:", numCirclesPerRing[numCirclesPerRing.length - 1]);
 
                         numInThisRing = 0;
@@ -840,13 +869,17 @@ export class CirclesView {
 
                 condLog("DEGREE START for CC" + degree, { currentRadiusMultipler });
             }
-            let rightAngle = 0 - Math.PI/2; // forces each ring to start at 12:00 / due North
-            let shiftRingStart =  (thisRingNum % 2) / 2;  // on every other ring, shift the starting node for each ring off half a radius, so that you get a staggered pattern
+            let rightAngle = 0 - Math.PI / 2; // forces each ring to start at 12:00 / due North
+            let shiftRingStart = (thisRingNum % 2) / 2; // on every other ring, shift the starting node for each ring off half a radius, so that you get a staggered pattern
 
             let newX =
-                5 * 0 + currentRadiusMultipler * Math.cos(((numInThisRing + shiftRingStart) / desiredNumThisRing) * 2 * Math.PI + rightAngle);
+                5 * 0 +
+                currentRadiusMultipler *
+                    Math.cos(((numInThisRing + shiftRingStart) / desiredNumThisRing) * 2 * Math.PI + rightAngle);
             let newY =
-                5 * 0 + currentRadiusMultipler * Math.sin(((numInThisRing + shiftRingStart) / desiredNumThisRing) * 2 * Math.PI + rightAngle);
+                5 * 0 +
+                currentRadiusMultipler *
+                    Math.sin(((numInThisRing + shiftRingStart) / desiredNumThisRing) * 2 * Math.PI + rightAngle);
             SVGcode += CirclesView.doCircle(person, degree, newX, newY); //500 * Math.random(), 500 * Math.random());
 
             // console.log(
@@ -866,30 +899,39 @@ export class CirclesView {
                 thisRingNum++;
                 numInThisRing = 0;
                 desiredNumThisRing = numCirclesPerRing[currentRingNum];
-                if (desiredNumThisRing > 0){ 
+                if (desiredNumThisRing > 0) {
                     currentRadiusMultipler += radiusMultipler - CirclesView.dotRadius + 3;
                     // thisRingNum--;
                 }
-                condLog("RING " + currentRingNum + " for CC" + degree, { currentRadiusMultipler }, {desiredNumThisRing});
+                condLog(
+                    "RING " + currentRingNum + " for CC" + degree,
+                    { currentRadiusMultipler },
+                    { desiredNumThisRing }
+                );
             }
         }
 
         let totalWidthAllCircles = 2 * (currentRadiusMultipler + radiusMultipler);
         let leftTopAdjustment = -2 * CirclesView.dotRadius;
-        condLog("RESIZING BACKGROUND RECT:  ", {currentRadiusMultipler}, {radiusMultipler}, {totalWidthAllCircles});               
+        condLog(
+            "RESIZING BACKGROUND RECT:  ",
+            { currentRadiusMultipler },
+            { radiusMultipler },
+            { totalWidthAllCircles }
+        );
         document.getElementById("circlesDIV4SVG").innerHTML = SVGcode;
         $("#circlesDIV4SVG").draggable();
 
-        document.getElementById(
-            "CirclesBkgd"
-        ).outerHTML = `<svg id="CirclesBkgd" width="${totalWidthAllCircles + leftTopAdjustment}" height="${totalWidthAllCircles + leftTopAdjustment}" style='position:absolute; left:${
-             - totalWidthAllCircles / 2 - leftTopAdjustment
+        document.getElementById("CirclesBkgd").outerHTML = `<svg id="CirclesBkgd" width="${
+            totalWidthAllCircles + leftTopAdjustment
+        }" height="${totalWidthAllCircles + leftTopAdjustment}" style='position:absolute; left:${
+            -totalWidthAllCircles / 2 - leftTopAdjustment
         }px;  top:${
-             - totalWidthAllCircles / 2 - leftTopAdjustment
+            -totalWidthAllCircles / 2 - leftTopAdjustment
         }px;'><rect id="CirclesBkgdRect" width="${totalWidthAllCircles}" height="${totalWidthAllCircles}" style="fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1"></rect></svg>`;
-        
-        document.getElementById("circlesDIV4SVG").style.left = (totalWidthAllCircles/2) + "px";
-        document.getElementById("circlesDIV4SVG").style.top = (totalWidthAllCircles/2) + "px";
+
+        document.getElementById("circlesDIV4SVG").style.left = totalWidthAllCircles / 2 + "px";
+        document.getElementById("circlesDIV4SVG").style.top = totalWidthAllCircles / 2 + "px";
 
         $("#circlesDIV4SVG svg").each(function () {
             const $inp = $(this);

@@ -1,5 +1,6 @@
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CC7 } from "./cc7.js";
 
 export class StatsView {
     static async build(gender = "") {
@@ -15,7 +16,7 @@ export class StatsView {
         const caption = "Statistics for " + CC7Utils.tableCaptionWithSubset();
         const genNames = fillGenNames(subset);
         const statsView = $(`
-            <div id='statsView' class="subsetable ${subset}">
+            <div id='statsView' class="cc7ViewTab subsetable ${subset}">
                 <fieldset id="statsFieldset">
                     <legend>Options:</legend>
                     <label for="gender"
@@ -71,6 +72,7 @@ export class StatsView {
         $("#gender")
             .off("change")
             .on("change", function () {
+                CC7.updateURL();
                 StatsView.build($(this).val());
             });
         const familyMembers = getSubset();

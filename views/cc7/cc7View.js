@@ -1,4 +1,4 @@
-import { CC7 } from "./js/cc7.js";
+import { CC7, CC7UrlParams } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
     constructor() {
@@ -11,7 +11,7 @@ window.CC7View = class CC7View extends View {
             title: "CC7 Views",
             description: CC7.LONG_LOAD_WARNING,
             docs: "",
-            params: ["cc7View", "degrees", "only", "getExtra"],
+            params: CC7UrlParams,
         };
     }
 

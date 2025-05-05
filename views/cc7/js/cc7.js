@@ -15,7 +15,51 @@ import { Settings } from "./Settings.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
 
-export { CC7, downloadArray };
+export { CC7, downloadArray, CC7UrlParams, CC7MLParamMap, CC7CirclesParamMap };
+
+// CC7-specific URL paramters
+const CC7UrlParams = [
+    "cc7View",
+    "degrees",
+    "getExtra",
+    "only",
+    "nop",
+    "onep",
+    "nonms",
+    "nonmc",
+    "nonmcnc",
+    "gender",
+    "display",
+    "fill",
+    "bnw",
+    "gray",
+];
+
+// Map between the CC7 missing family parameter selectors, the URL parameters, and the Settings names
+const CC7MLParamMap = [
+    { id: "mlNoParents", urlp: "nop", option: "missingFamily_options_noParents" },
+    { id: "mlOneParent", urlp: "onep", option: "missingFamily_options_oneParent" },
+    { id: "mlNoNoSpouses", urlp: "nonms", option: "missingFamily_options_noNoSpouses" },
+    { id: "mlNoNoChildren", urlp: "nonmc", option: "missingFamily_options_noNoChildren" },
+    { id: "mlNoChildren", urlp: "nonmcnc", option: "missingFamily_options_noChildren" },
+];
+
+// Map between the CC7 circles parameter selectors and the URL parameters
+const CC7CirclesParamMap = [
+    { id: "displayType_filled", urlp: "fill" },
+    { id: "displayType_BandW", urlp: "bnw" },
+    { id: "displayType_GrayAncs", urlp: "gray" },
+];
+
+// Which URL parameters are valid for which view
+const CC7ParamMap = {
+    table: ["only", CC7MLParamMap.map((x) => x.urlp)].flat(),
+    list: ["only", CC7MLParamMap.map((x) => x.urlp)].flat(),
+    hierarchy: [],
+    stats: ["only", "gender"],
+    ml: CC7MLParamMap.map((x) => x.urlp),
+    circles: ["display", CC7CirclesParamMap.map((x) => x.urlp)].flat(),
+};
 
 class CC7 {
     static LONG_LOAD_WARNING =
@@ -323,7 +367,7 @@ class CC7 {
     constructor(selector, startId, params) {
         this.startId = startId;
         this.selector = selector;
-        CC7.URL_PARAMS = params;
+        Object.assign(CC7.URL_PARAMS, params);
 
         Settings.restoreSettings();
         $(selector).html(
@@ -627,38 +671,113 @@ class CC7 {
         const oldHash = usp.toString();
         const wtId = wtViewRegistry.getCurrentWtId();
 
+        // console.log(`UpdateURL, actView=${PeopleTable.ACTIVE_VIEW}, oldHash=${oldHash}`, CC7.URL_PARAMS);
+        function setUrlParam(param, value) {
+            usp.set(param, value);
+            CC7.URL_PARAMS[param] = value;
+        }
+        function clearUrlParam(param) {
+            usp.delete(param);
+            delete CC7.URL_PARAMS[param];
+        }
+
+        if (!PeopleTable.ACTIVE_VIEW) PeopleTable.ACTIVE_VIEW = CC7.VIEWS.TABLE;
+
+        // Remove all current cc7-specific parameters that don't belong to this view
+        const viewParams = CC7ParamMap[PeopleTable.ACTIVE_VIEW];
+        for (const param of CC7UrlParams) {
+            if (viewParams.includes(param)) continue;
+            clearUrlParam(param);
+        }
+        //
+        // Set parameters common to all the cc7 views
+        //
+        // This is not cc7 specific, but we set it, in case the user changed it
         usp.set("name", wtId);
-        if (!PeopleTable.ACTIVE_VIEW || PeopleTable.ACTIVE_VIEW == CC7.VIEWS.TABLE) {
-            usp.delete("cc7View");
-            delete CC7.URL_PARAMS.cc7View;
-        } else {
-            usp.set("cc7View", PeopleTable.ACTIVE_VIEW);
-            CC7.URL_PARAMS["cc7View"] = PeopleTable.ACTIVE_VIEW;
+
+        if (PeopleTable.ACTIVE_VIEW != CC7.VIEWS.TABLE) {
+            setUrlParam("cc7View", PeopleTable.ACTIVE_VIEW);
         }
         usp.set("degrees", $("#cc7Degree").val());
         CC7.URL_PARAMS["degrees"] = $("#cc7Degree").val();
 
+        if ($("#getExtraDegrees").prop("checked")) {
+            setUrlParam("getExtra", "1");
+        }
+        //
+        // Set parameters specific to the current view
+        //
         const subset = $("#cc7Subset").val();
-        if (subset && subset != "all") {
-            usp.set("only", subset);
-            CC7.URL_PARAMS["only"] = subset;
-        } else {
-            usp.delete("only");
-            delete CC7.URL_PARAMS.only;
+
+        function setMissingLinksParams() {
+            for (const pm of CC7MLParamMap) {
+                Settings.current[pm.option] ? setUrlParam(pm.urlp, "1") : clearUrlParam(pm.urlp);
+            }
+        }
+        function clearMissingLinksParams() {
+            for (const pm of CC7MLParamMap) {
+                clearUrlParam(pm.urlp);
+            }
         }
 
-        if ($("#getExtraDegrees").prop("checked")) {
-            usp.set("getExtra", "1");
-            CC7.URL_PARAMS["getExtra"] = "1";
-        } else {
-            usp.delete("getExtra");
-            delete CC7.URL_PARAMS.getExtra;
+        function setOnlyParam() {
+            clearUrlParam("only");
+            clearMissingLinksParams();
+            if (subset && subset != "all") {
+                setUrlParam("only", subset);
+                if (subset == "missing-links") {
+                    setMissingLinksParams();
+                }
+            }
+        }
+
+        switch (PeopleTable.ACTIVE_VIEW) {
+            case CC7.VIEWS.TABLE:
+            case CC7.VIEWS.LIST:
+                setOnlyParam();
+                break;
+
+            case CC7.VIEWS.STATS:
+                if (subset && subset != "all") {
+                    setUrlParam("only", subset);
+                } else {
+                    clearUrlParam("only");
+                }
+                // Only update gender if the select object exists
+                const $genderSelect = $("#gender");
+                if ($genderSelect.length) {
+                    const gender = $genderSelect.val();
+                    gender != "" ? setUrlParam("gender", gender) : clearUrlParam("gender");
+                } // else leave the old value as is
+                break;
+
+            case CC7.VIEWS.MISSING_LINKS:
+                setMissingLinksParams();
+                break;
+
+            case CC7.VIEWS.CIRCLES:
+                if ($("#circlesBtnBar").length) {
+                    const displayType = $('input[name="circlesDisplayType"]:checked').val();
+                    setUrlParam("display", displayType);
+                    for (const pm of CC7CirclesParamMap) {
+                        if ($(`#${pm.id}`).prop("checked")) {
+                            setUrlParam(pm.urlp, "1");
+                        } else {
+                            clearUrlParam(pm.urlp);
+                        }
+                    }
+                }
+                break;
+            default:
+                console.error(`Unknown view: ${PeopleTable.ACTIVE_VIEW}`);
+                break;
         }
 
         const newHash = usp.toString();
         if (newHash != oldHash) {
             window.history.pushState(null, null, "#" + newHash);
         }
+        // console.log(`..done, actView=${PeopleTable.ACTIVE_VIEW}, oldHash=${newHash}`, CC7.URL_PARAMS);
     }
 
     static closeTopPopup(e) {
