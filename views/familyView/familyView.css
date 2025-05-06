@@ -67,12 +67,31 @@
 }
 
 @media print {
-  header {
-    display: none !important;
-  }
+  :root:has(#family_group) {
+    header {
+      display: none !important;
+    }
 
-  main {
-    font-size: 90%;
+    main {
+      font-size: 90%;
+    }
+
+    #view-container {
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      font-size: 80%;
+    }
+
+    .icon {
+      display: none;
+    }
+
+    a:link, a:visited, a {
+      color: black;
+      text-decoration: none;
+    }
   }
 
   #family_group {
@@ -107,20 +126,4 @@
     font-size: 80%;
   }
 
-  #view-container {
-    width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 0 !important;
-    font-size: 80%;
-  }
-
-  .icon {
-    display: none;
-  }
-
-  a:link, a:visited, a {
-    color: black;
-    text-decoration: none;
-  }
 }
