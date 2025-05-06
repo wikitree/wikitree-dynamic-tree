@@ -519,7 +519,7 @@ hr.treeapp-personpopup {
   header,
   #header,
   #content,
-  main {
+  .page--content main {
     display: none;
   }
 

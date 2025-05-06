@@ -17,7 +17,7 @@ import { Utils } from "../../shared/Utils.js";
 
 export { CC7, downloadArray, CC7UrlParams, CC7MLParamMap, CC7CirclesParamMap };
 
-// CC7-specific URL paramters
+// CC7Views-specific URL paramters
 const CC7UrlParams = [
     "cc7View",
     "degrees",
