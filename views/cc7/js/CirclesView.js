@@ -1,4 +1,5 @@
 import { Settings } from "./Settings.js";
+import { CC7 } from "./cc7.js";
 
 export class CirclesView {
     static currentSortedMap;
@@ -85,7 +86,7 @@ export class CirclesView {
 
         const circlesDisplay = $(
             `
-        <div id="circlesDisplay">
+        <div id="circlesDisplay" class="cc7ViewTab">
             <div id=circlesBtnBar style='background-color: #f8a51d80; align: center; width="100%"' >
             Display: 
                 <label title='Display coloured dot for each person' style='cursor:pointer;'><input type=radio   name=circlesDisplayType id=displayType_dot value=dot > <font color=magenta>&#x2B24;</font></label> &nbsp;&nbsp;
@@ -138,7 +139,6 @@ export class CirclesView {
         }
     }
 
-
     static updateFieldsInPersonCodesObject(currentID, code, codeLong) {
         condLog("updateFieldsInPersonCodesObject:", currentID, code, codeLong);
         let Peep = window.people.get(currentID);
@@ -156,7 +156,6 @@ export class CirclesView {
             } else if (codeLong.indexOf(currentIDstr) < codeLong.length - currentIDstr.length) {
                 // do NOT duplicate if currentID is already in Long Code List .... just return
                 return;
-
             } else if (code.length > 30) {
                 // Too convoluted connection .... (temporary solution)
                 return;
@@ -766,6 +765,7 @@ export class CirclesView {
         CirclesView.circleFilled = document.getElementById("displayType_filled").checked;
         CirclesView.circlesBandW = document.getElementById("displayType_BandW").checked;
         CirclesView.circlesGrayAncs = document.getElementById("displayType_GrayAncs").checked;
+        CC7.updateURL();
 
         condLog("filled:", CirclesView.circleFilled);
 

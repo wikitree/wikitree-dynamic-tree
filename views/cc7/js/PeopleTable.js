@@ -7,16 +7,15 @@ import { Settings } from "./Settings.js";
 import { CC7Notes } from "./CC7Notes.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
-import { CC7 } from "./cc7.js";
+import { CC7, CC7MLParamMap, CC7CirclesParamMap } from "./cc7.js";
 
 export { PeopleTable, showTable, PRIVACY_LEVELS };
 
 class PeopleTable {
     static EXCEL = "xlsx";
     static CSV = "csv";
-    static PARAMS;
-    static ACTIVE_VIEW = "table";
-    static PREVIOUS_SUBSET = "all";
+    static ACTIVE_VIEW = CC7.VIEWS.TABLE;
+    static PREVIOUS_SUBSET = null;
 
     // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
     // Privacy_IsPrivate            True if Privacy = 20
@@ -69,14 +68,13 @@ class PeopleTable {
         const childrenNum = "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>";
         const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
         const bioCheck = Settings.current["biocheck_options_biocheckOn"];
-        const subset = $("#cc7Subset").val() || "all";
 
         let idsAndStatus = await CC7Notes.getIdsAndStatus();
         const idsWithNotes = new Map(idsAndStatus);
         idsAndStatus = null;
 
         const aTable = $(
-            `<table id='peopleTable' class='subsetable peopleTable ${subset}'>` +
+            `<table id='peopleTable' class='cc7ViewTab subsetable peopleTable'>` +
                 aCaption +
                 `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
                     bioCheck ? "/B" : ""
@@ -116,6 +114,36 @@ class PeopleTable {
         } else {
             aTable.appendTo($("#cc7Container"));
         }
+
+        PeopleTable.addWideTableButton();
+
+        if ($("#hierarchyViewButton").length == 0) {
+            $("#wideTableButton").before(
+                $(
+                    "<select id='cc7Subset' title='Select which profiles should be displayed'>" +
+                        "<option value='all' selected>All</option>" +
+                        "<option value='ancestors' title='Direct ancestors only'>Ancestors</option>" +
+                        "<option value='descendants' title='Direct descendants only'>Descendants</option>" +
+                        '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
+                        '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
+                        '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
+                        '<option value="complete" ' +
+                        'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
+                        "Complete</option>" +
+                        "</select>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='missingLinksViewButton'>Missing Links</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='circlesViewButton'>Circles</button>"
+                )
+            );
+        }
+        PeopleTable.applyViewParameters(CC7.URL_PARAMS);
+        const subset = $("#cc7Subset").val() || "all";
+        aTable.addClass(subset);
+
         let complete = 0;
         let totalPeople = 0;
         function sortIdsByDegreeAndBirthDate(keys) {
@@ -550,63 +578,72 @@ class PeopleTable {
                 PeopleTable.reverseWordOrder($(this));
             });
 
-        PeopleTable.addWideTableButton();
-
-        if ($("#hierarchyViewButton").length == 0) {
-            $("#wideTableButton").before(
-                $(
-                    "<select id='cc7Subset' title='Select which profiles should be displayed'>" +
-                        "<option value='all' selected>All</option>" +
-                        "<option value='ancestors' title='Direct ancestors only'>Ancestors</option>" +
-                        "<option value='descendants' title='Direct descendants only'>Descendants</option>" +
-                        '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
-                        '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
-                        '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
-                        '<option value="complete" ' +
-                        'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
-                        "Complete</option>" +
-                        "</select>" +
-                        "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
-                        "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
-                        "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
-                        "<button class='btn btn-secondary btn-sm viewButton' id='statsViewButton'>Stats</button>" +
-                        "<button class='btn btn-secondary btn-sm viewButton' id='missingLinksViewButton'>Missing Links</button>" +
-                        "<button class='btn btn-secondary btn-sm viewButton' id='circlesViewButton'>Circles</button>"
-                )
-            );
-        }
         $("#cc7Subset")
             .off("change")
             .on("change", function () {
-                const curTableId = $(".subsetable.active").attr("id");
-                if (curTableId == "lanceTable") {
-                    LanceView.build();
-                } else if (curTableId == "peopleTable") {
-                    drawPeopleTable();
-                } else if (curTableId == "statsView") {
-                    StatsView.build();
-                } else if (curTableId == "circlesView") {
-                    CirclesView.buildView();
+                switch (PeopleTable.ACTIVE_VIEW) {
+                    case CC7.VIEWS.TABLE:
+                        drawPeopleTable();
+                        break;
+                    case CC7.VIEWS.LIST:
+                        LanceView.build();
+                        break;
+                    case CC7.VIEWS.STATS:
+                        StatsView.build(CC7.URL_PARAMS.gender);
+                        break;
+                    case CC7.VIEWS.MISSING_LINKS:
+                        drawMissingLinksTable();
+                        break;
+                    case CC7.VIEWS.HIERARCHY:
+                    case CC7.VIEWS.CIRCLES:
+                    default:
                 }
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 } else {
                     $("#mlButtons").hide();
                 }
+                CC7.updateURL();
             });
 
         function drawPeopleTable() {
             PeopleTable.addPeopleTable(CC7Utils.tableCaptionWithSubset());
         }
 
+        function drawMissingLinksTable() {
+            // We have to redraw every time here because this might be called as result of the user changing the filter
+            if ($("#missingLinksTable").length > 0) {
+                $("#missingLinksTable").remove();
+            }
+            MissingLinksView.buildView();
+
+            // determine how many people are missing relationships and show it on the page
+            const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
+            const html = `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
+                window.cc7Degree
+            } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
+                <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
+                <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
+                children but the "no more spouses" or "no more children" checkbox is not selected.</p>`;
+
+            if ($("#ml-count").length === 0) {
+                $("#tableButtons").before(html);
+            } else {
+                $("#ml-count").html(html);
+            }
+            $("#missingLinksTable").show().addClass("active");
+        }
+
         $("#listViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
                 PeopleTable.resetHeader();
-                PeopleTable.ACTIVE_VIEW = "list";
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.LIST;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #hierarchyView, #statsView, #missingLinksTable, #circlesDisplay").hide();
+
                 if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
                     LanceView.build();
                 } else {
@@ -619,21 +656,22 @@ class PeopleTable {
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 }
+                CC7.updateURL();
             });
         $("#hierarchyViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
                 if (!window.people.get(window.rootId)) {
                     // We don't have a root, so we can't do anything
                     return;
                 }
                 PeopleTable.resetHeader();
-                PeopleTable.ACTIVE_VIEW = "hierarchy";
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.HIERARCHY;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable, #lanceTable, #statsView, #missingLinksTable, #circlesDisplay")
-                    .hide()
-                    .removeClass("active");
+
                 if ($("#hierarchyView").length == 0) {
                     Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
@@ -642,21 +680,22 @@ class PeopleTable {
                     });
                     $("#wideTableButton").hide();
                 } else {
-                    $("#hierarchyView").show();
+                    $("#hierarchyView").show().addClass("active");
                 }
                 $("#cc7Subset").hide();
                 $("#mlButtons").hide();
+                CC7.updateURL();
             });
         $("#tableViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
                 PeopleTable.resetHeader();
-                PeopleTable.ACTIVE_VIEW = "table";
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.TABLE;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #statsView, #missingLinksTable, #circlesDisplay")
-                    .hide()
-                    .removeClass("active");
+
                 $("#cc7Subset option[value='missing-links']").prop("disabled", false);
                 $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
@@ -670,66 +709,55 @@ class PeopleTable {
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 }
+                CC7.updateURL();
             });
         $("#statsViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
                 PeopleTable.resetHeader();
-                PeopleTable.ACTIVE_VIEW = "stats";
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.STATS;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable, #missingLinksTable, #circlesDisplay").hide().removeClass("active");
+
                 $("#cc7Subset").show();
+                // Remember the previous cc7Subset value if it's not what we want
+                const subset = $("#cc7Subset").val();
+                if (subset == "missing-links" || subset == "complete") {
+                    // We don't allow missin-links or complete in the stats view, but we want
+                    // to return to them when we switch back to another view
+                    PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
+                }
                 if ($("#statsView").hasClass($("#cc7Subset").val())) {
                     // We don't have to re-draw the table
+                    $("#cc7Subset option[value='missing-links']").prop("disabled", true);
+                    $("#cc7Subset option[value='complete']").prop("disabled", true);
                     $("#statsView").show().addClass("active");
                     $("#wideTableButton").show();
                 } else {
-                    StatsView.build();
+                    StatsView.build(CC7.URL_PARAMS.gender);
                 }
+                CC7.updateURL();
             });
 
         $("#missingLinksViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.MISSING_LINKS;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable, #statsView, #circlesDisplay").hide().removeClass("active");
-                $("#cc7Subset").show();
-                if ($("#missingLinksTable").length > 0) {
-                    // We don't have to re-draw the table
-                    $("#missingLinksTable").show().addClass("active");
-                } else {
-                    MissingLinksView.buildView();
+
+                // Remember the previous cc7Subset value if it's not what we want
+                const subset = $("#cc7Subset").val();
+                if (subset != "missing-links") {
+                    PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
                 }
-                // save the previous cc7Subset value
-                PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
                 // switch to missing links checkboxes
-                $("#cc7Subset").val("missing-links");
-
-                // determine how many people are missing relationships and show it on the page
-                const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
-                if ($("#ml-count").length === 0) {
-                    $("#tableButtons").before(
-                        `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
-                            window.cc7Degree
-                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
-                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
-                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
-                        children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
-                    );
-                } else {
-                    $("#ml-count").innerHTML(
-                        `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
-                            window.cc7Degree
-                        } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
-                        <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
-                        <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
-                        children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
-                    );
-                }
-
-                PeopleTable.ACTIVE_VIEW = "ml";
+                PeopleTable.showMissingLinksCheckboxes();
+                drawMissingLinksTable();
 
                 // hide top menu stuff
                 $("#degreesTable").hide();
@@ -744,6 +772,7 @@ class PeopleTable {
                 $("#ancReport").hide();
                 $("label[for='getExtraDegrees']").hide();
                 wtViewRegistry.hideInfoPanel();
+                CC7.updateURL();
             });
         $("#circlesViewButton")
             .off("click", function () {
@@ -751,10 +780,15 @@ class PeopleTable {
             })
             .on("click", function () {
                 // console.log("CLICK ON the CIRCLES VIEW BUTTON !!!!");
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.CIRCLES;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable, #peopleTable, #statsView, #missingLinksTable").hide().removeClass("active");
-                $("#cc7Subset").show();
+
+                $("#wideTableButton").hide();
+                $("#cc7Subset").hide();
+                $("#mlButtons").hide();
                 $("#ml-links").hide();
                 $("#ml-count").hide();
                 $("#ancReport").hide();
@@ -764,7 +798,7 @@ class PeopleTable {
                 $("#cc7excel").show();
                 $("#getDegreeButton").show();
                 $("#degreesTable").show();
-                
+
                 if ($("#circlesDisplay").length > 0) {
                     // We don't have to re-draw the table
                     $("#circlesDisplay").show().addClass("active");
@@ -772,49 +806,8 @@ class PeopleTable {
                 } else {
                     CirclesView.buildView();
                 }
-                
-                // save the previous cc7Subset value
-                PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
-                // switch to missing links checkboxes
-                $("#cc7Subset").val("circles");
 
-                // // determine how many people are missing relationships and show it on the page
-                // const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
-                // if ($("#ml-count").length === 0) {
-                //     $("#tableButtons").before(
-                //         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
-                //             window.cc7Degree
-                //         } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
-                // <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
-                // <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
-                // children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
-                //     );
-                // } else {
-                //     $("#ml-count").innerHTML(
-                //         `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
-                //             window.cc7Degree
-                //         } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members. 
-                // <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing. 
-                // <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or 
-                // children but the "no more spouses" or "no more children" checkbox is not selected.</p>`
-                //     );
-                // }
-
-                PeopleTable.ACTIVE_VIEW = "circles";
-
-                // hide top menu stuff
-                // $("#degreesTable").hide();
-                // $("#wideTableButton").hide();
-                // $("#savePeople").hide();
-                // $("#loadButton").hide();
-                // $("#cc7csv").hide();
-                // $("#cc7excel").hide();
-                // $("#getExtraDegrees").hide();
-                // $("#getDegreeButton").hide();
-                // $("#cc7Subset").hide();
-                // $("#ancReport").hide();
-                // $("label[for='getExtraDegrees']").hide();
-                // wtViewRegistry.hideInfoPanel();
+                CC7.updateURL();
             });
 
         if (!window.people.get(window.rootId)) {
@@ -855,12 +848,25 @@ class PeopleTable {
 
         // check the parameters to see which view should be shown
         $(document).ready(function () {
-            if (PeopleTable.ACTIVE_VIEW == "ml") {
-                $("#missingLinksViewButton").click();
-            } else if (PeopleTable.ACTIVE_VIEW == "stats") {
-                $("#statsViewButton").click();
-            } else if (PeopleTable.ACTIVE_VIEW == "circles") {                
-                $("#circlesViewButton").click();
+            switch (PeopleTable.ACTIVE_VIEW) {
+                case CC7.VIEWS.MISSING_LINKS:
+                    $("#missingLinksViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.STATS:
+                    $("#statsViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.CIRCLES:
+                    $("#circlesViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.HIERARCHY:
+                    $("#hierarchyViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.LIST:
+                    $("#listViewButton").trigger("click");
+                    break;
+                default:
+                    // table view is already the default
+                    break;
             }
         });
     }
@@ -1036,6 +1042,7 @@ class PeopleTable {
                     const optId = `#missingFamily_options_${id[2].toLowerCase() + id.substring(3)}`;
                     $(optId).prop("checked", $(this).prop("checked"));
                     $("#saveSettingsChanges").trigger("click");
+                    CC7.updateURL();
                 });
         }
         $("#mlNoParents").prop("checked", Settings.current["missingFamily_options_noParents"]);
@@ -2435,9 +2442,104 @@ class PeopleTable {
         return `${prefix}${window.cc7Degree}_${wtViewRegistry.getCurrentWtId()}`;
     }
 
-    static setParameters(params) {
-        PeopleTable.PARAMS = params;
-        PeopleTable.ACTIVE_VIEW = PeopleTable.PARAMS.cc7View;
+    /**
+     * Apply the view-specific URL parameters to the page
+     * @param {*} params - URL parameters recevied
+     */
+    static applyViewParameters(params) {
+        // Only apply a valid view parameter, otherwise assume the Table view
+        const viewParam = params.cc7View?.toLowerCase();
+        const viewsValues = Object.values(CC7.VIEWS);
+        const matchedView = viewsValues.find((view) => view.toLowerCase() === viewParam) || CC7.VIEWS.TABLE;
+        PeopleTable.ACTIVE_VIEW = matchedView;
+
+        // Check if value is a valid select option (ignoring case) for the select of the given search and if so,
+        // return proper cased value, otherwise return null
+        function validSelectOption(selectSearch, value) {
+            const lowParam = value.toLowerCase();
+            let matchedOption = null;
+            $(selectSearch).each(function () {
+                const optionValue = $(this).val();
+                if (optionValue?.toLowerCase() === lowParam) {
+                    matchedOption = optionValue;
+                    return false; // Exit .each loop early once found
+                }
+            });
+            return matchedOption;
+        }
+
+        function setMissingLinkOptions() {
+            const hasAnyMLparam = CC7MLParamMap.map((pm) => pm.urlp).some((prop) => params.hasOwnProperty(prop));
+            // We only adjust the missing link settings if there is at least one such parameter in the URL
+            if (hasAnyMLparam) {
+                for (const pm of CC7MLParamMap) {
+                    $(`#${pm.id}`).prop("checked", params[pm.urlp] ? true : false);
+                }
+                $("#saveSettingsChanges").trigger("click");
+            }
+        }
+
+        switch (matchedView) {
+            case CC7.VIEWS.TABLE:
+            case CC7.VIEWS.LIST:
+                // handle the "only" (i.e. subset) parameter(s)
+                const matchedOption = validSelectOption("#cc7Subset option", params.only || "all");
+                if (matchedOption) {
+                    $("#cc7Subset").val(matchedOption);
+                    if (matchedOption == "missing-links") {
+                        setMissingLinkOptions();
+                        PeopleTable.showMissingLinksCheckboxes();
+                    } else {
+                        $("#mlButtons").hide();
+                    }
+                }
+                break;
+
+            case CC7.VIEWS.STATS:
+                const onlyParam = validSelectOption("#cc7Subset option", params.only || "all");
+                if (onlyParam) {
+                    $("#cc7Subset").val(onlyParam);
+                }
+                // We can't set the stats gender parameter here, but we make sure it's value is correct.
+                // We also can't use validSelectOption() here as the select is not yet available.
+                const validGender = ["Male", "Female", ""];
+                const lowParam = params.gender?.toLowerCase() || "";
+                for (const optVal of validGender) {
+                    if (optVal.toLowerCase() === lowParam) {
+                        CC7.URL_PARAMS.gender = optVal;
+                        break;
+                    }
+                }
+                break;
+
+            case CC7.VIEWS.MISSING_LINKS:
+                setMissingLinkOptions();
+                break;
+
+            case CC7.VIEWS.CIRCLES:
+                const displayParam = params.display?.toLowerCase() || "inits";
+                // We only adjust the circles settings if there is at least one such parameter in the URL
+                if (
+                    params.hasOwnProperty("display") ||
+                    CC7CirclesParamMap.map((pm) => pm.urlp).some((prop) => params.hasOwnProperty(prop))
+                ) {
+                    $('input[name="circlesDisplayType"]').each(function () {
+                        if ($(this).val().toLowerCase() === displayParam) {
+                            $(this).prop("checked", true);
+                            return false;
+                        }
+                    });
+                    for (const pm of CC7CirclesParamMap) {
+                        $(`#${pm.id}`).prop("checked", params[pm.urlp] ? true : false);
+                    }
+                    $("#saveSettingsChanges").trigger("click");
+                }
+                break;
+
+            default:
+                console.error(`Unknown view: ${theView}`);
+                break;
+        }
     }
 
     static resetHeader() {
@@ -2449,12 +2551,19 @@ class PeopleTable {
         $("#cc7excel").show();
         $("#getExtraDegrees").show();
         $("#getDegreeButton").show();
-        $("#cc7Subset").val(PeopleTable.PREVIOUS_SUBSET);
+        if (PeopleTable.PREVIOUS_SUBSET) {
+            $("#cc7Subset").val(PeopleTable.PREVIOUS_SUBSET);
+            if (PeopleTable.PREVIOUS_SUBSET != "missing-links") {
+                $("#mlButtons").hide();
+            }
+            PeopleTable.PREVIOUS_SUBSET = null;
+        }
         $("#cc7Subset").show();
         $("#ancReport").show();
         $("label[for='getExtraDegrees']").show();
         $("#ml-count").remove();
         wtViewRegistry.showInfoPanel();
+        CC7.updateURL();
     }
 }
 
