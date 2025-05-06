@@ -138,6 +138,7 @@ export class CirclesView {
         }
     }
 
+
     static updateFieldsInPersonCodesObject(currentID, code, codeLong) {
         condLog("updateFieldsInPersonCodesObject:", currentID, code, codeLong);
         let Peep = window.people.get(currentID);
@@ -155,6 +156,7 @@ export class CirclesView {
             } else if (codeLong.indexOf(currentIDstr) < codeLong.length - currentIDstr.length) {
                 // do NOT duplicate if currentID is already in Long Code List .... just return
                 return;
+
             } else if (code.length > 30) {
                 // Too convoluted connection .... (temporary solution)
                 return;

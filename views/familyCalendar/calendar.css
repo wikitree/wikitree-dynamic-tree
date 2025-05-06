@@ -3,7 +3,7 @@
   width: 300px;
 }
 
-.calendar {
+#watchCalendar .calendar {
   display: none;
   height: 100%;
 }
@@ -12,7 +12,7 @@
   width: 100px;
 }
 
-.loader {
+#watchCalendar .loader {
   width: 101px;
   position: relative;
   -webkit-animation: spin 4s linear infinite;
@@ -41,7 +41,7 @@
   }
 }
 
-.content {
+#watchCalendar .content {
   padding: 0 18px;
   display: none;
   overflow: hidden;
