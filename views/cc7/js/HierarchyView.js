@@ -5,7 +5,7 @@ export class HierarchyView {
     static buildView() {
         window.visibleDegrees = 0;
         const hierarchySection = $(
-            "<section id='hierarchyView'><menu><button class='btn btn-secondary btn-sm' id='showAllDegrees'>Expand All</button>" +
+            "<section id='hierarchyView' class='cc7ViewTab'><menu><button class='btn btn-secondary btn-sm' id='showAllDegrees'>Expand All</button>" +
                 "<button id='showOneMoreDegree' class='btn btn-secondary btn-sm'>+</button>" +
                 "<button id='showOneFewerDegree' class='btn btn-secondary btn-sm'>−</button>" +
                 "</menu><ul></ul></section>"

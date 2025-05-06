@@ -86,8 +86,8 @@ export class CC7Utils {
         );
     }
 
-    static isMissingFamily(person) {
-        if (person.LastNameAtBirth == "Private") return false;
+    static isMissingFamily(person, privateHasNoMissing = true) {
+        if (privateHasNoMissing && person.LastNameAtBirth == "Private") return false;
         let val = false;
         if (Settings.current["missingFamily_options_noNoChildren"]) {
             // no more children flag is not set
