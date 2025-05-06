@@ -56,7 +56,6 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     display: none;
 }
 :root.slippy-tree-root :is(footer#footer, header, .tabs--wrapper) {
-    overflow: hidden;
     transition: height 200ms, padding 200ms, display 400ms allow-discrete;
     --slippy-computed-height: auto;
     height: var(--slippy-computed-height);
@@ -64,6 +63,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 :root.slippy-tree-root.slippy-fullscreen :is(footer#footer, header, .tabs--wrapper) {
     height: 0 !important;
     padding: 0 !important;
+    overflow: hidden;
 }
 @media ((max-height:900px) or (max-width:980px)) {
     :root.slippy-tree-root footer#footer:not(.hover) img {
@@ -81,6 +81,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
         display: none;
     }
     :root.slippy-tree-root footer#footer {
+        overflow: hidden;
         padding: 1em 0 0 0;
     }
     :root.slippy-tree-root footer#footer:not(.hover) ul.nav .nav-item {
