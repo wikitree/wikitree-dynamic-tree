@@ -440,12 +440,12 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     --other-margin: 40px;               /* min vertical distance between two unrelated nodes */
     --generation-margin: 100px;         /* horizontal distance between two generations */
     --min-person-width: 50px;           /* minimum width of a person rectangle */
+    --text-padding: 4px;                /* padding around the "text" item */
 
     display: block;
     position: relative;
     contain: style size layout paint;
     overflow: hidden;
-
 }
 
 .slippy-tree a[href] {
@@ -455,7 +455,6 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 .slippy-tree text {
     font-size: 10px;
     text-anchor: middle;
-    margin: 4px;    /* Hack! Margin doesnt apply in SVG, but we read this value in the JS to compute position */
 }
 .slippy-tree text.left {
     text-anchor: start;
