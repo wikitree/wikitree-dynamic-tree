@@ -14,7 +14,7 @@ export class LanceView {
         };
         const subset = $("#cc7Subset").val();
         const lanceTable = $(
-            `<table id='lanceTable' class="subsetable ${subset}">` +
+            `<table id='lanceTable' class="cc7ViewTab subsetable ${subset}">` +
                 "<thead>" +
                 "<tr></tr>" +
                 "</thead>" +

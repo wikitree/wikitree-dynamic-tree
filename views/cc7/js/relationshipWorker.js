@@ -422,5 +422,5 @@ function ordinal(n) {
 }
 
 function onceTwice(removal) {
-    return removal === 1 ? "once" : removal === 2 ? "twice" : `${ordinal(removal)} times`;
+    return removal === 1 ? "once" : removal === 2 ? "twice" : `${removal} times`;
 }
