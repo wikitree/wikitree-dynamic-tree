@@ -25,8 +25,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 import { Utils } from "../shared/Utils.js";
 import { PDFs } from "../shared/PDFs.js";
 
-
-
 (function () {
     const APP_ID = "FractalTree";
     var originOffsetX = 500,
@@ -43,7 +41,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "04 February 2025";
+    const AboutUpdateDate = "07 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1312,7 +1310,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         infoPanel.innerHTML = btnBarHTML + legendHTML + PDFgenPopupHTML + aboutHTML + settingsHTML + popupDIV;
         container.innerHTML = "";
-        
+
         $("#popupDIV").draggable();
         $("#connectionPodDIV").draggable();
         $("#legendDIV").draggable();
@@ -1320,7 +1318,6 @@ import { PDFs } from "../shared/PDFs.js";
         document.getElementById("legendDIV").style.zIndex = Utils.getNextZLevel();
         document.getElementById("legendDIV").className += " pop-up";
 
-            
         // container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
@@ -1329,11 +1326,11 @@ import { PDFs } from "../shared/PDFs.js";
         FractalView.closePDFpopup = function () {
             let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
             PDFgenPopupDIV.style.display = "none";
-        }
+        };
 
         FractalView.showPDFgenPopup = function () {
             let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
-            document.getElementById("PDFgenProgressBar").style.display = "none"; 
+            document.getElementById("PDFgenProgressBar").style.display = "none";
             document.getElementById("PDFgenButton").removeAttribute("disabled");
             document.getElementById("PDFgenButton").style.display = "revert";
             PDFgenPopupDIV.style.display = "block";
@@ -1341,14 +1338,16 @@ import { PDFs } from "../shared/PDFs.js";
             document.getElementById("PDFtitleText").value =
                 "Fractal Tree for " + document.getElementById("nameDivFor1").innerText;
             let thisDateObj = new Date();
-            let thisDate = [thisDateObj.getDate(), months[thisDateObj.getMonth()], thisDateObj.getFullYear()].join("-"); 
+            let thisDate = [thisDateObj.getDate(), months[thisDateObj.getMonth()], thisDateObj.getFullYear()].join("-");
             document.getElementById("PDFfooterText").value =
-                "This "+ FractalView.numGens2Display +" generation Fractal Tree was created " + thisDate + " using the FRACTAL TREE app in the Tree Apps collection on WikiTree.com.";
-            
+                "This " +
+                FractalView.numGens2Display +
+                " generation Fractal Tree was created " +
+                thisDate +
+                " using the FRACTAL TREE app in the Tree Apps collection on WikiTree.com.";
         };
 
         function convertColourNameToRGB(colourName) {
-
             let thisRGB = [0, 0, 0];
             if (colourName == "black") {
                 thisRGB = [0, 0, 0];
@@ -1401,7 +1400,7 @@ import { PDFs } from "../shared/PDFs.js";
             }
             return thisRGB;
         }
-            
+
         function addLineToPDF(pdf, lineElement) {
             let thisDX = currentPDFsettings.thisDX;
             let thisDY = currentPDFsettings.thisDY;
@@ -1413,25 +1412,30 @@ import { PDFs } from "../shared/PDFs.js";
             let thisStyle = lineElement.getAttribute("style");
             let thisStroke = thisStyle.substring(thisStyle.indexOf("stroke:") + 7, thisStyle.indexOf(";")).trim();
             let thisStrokeRGB = convertColourNameToRGB(thisStroke);
-            let thisStrokeWidth = parseInt(thisStyle.substring(
-                thisStyle.indexOf("stroke-width:") + 13,
-                thisStyle.indexOf(";", thisStyle.indexOf("stroke-width:"))
-            ));
+            let thisStrokeWidth = parseInt(
+                thisStyle.substring(
+                    thisStyle.indexOf("stroke-width:") + 13,
+                    thisStyle.indexOf(";", thisStyle.indexOf("stroke-width:"))
+                )
+            );
 
             // console.log({thisStroke}, {thisStrokeWidth});
-            if (thisStrokeWidth!= currentPDFsettings.thisStrokeWidth) {
+            if (thisStrokeWidth != currentPDFsettings.thisStrokeWidth) {
                 pdf.setLineWidth(thisStrokeWidth);
-                currentPDFsettings.thisStrokeWidth = thisStrokeWidth;  
+                currentPDFsettings.thisStrokeWidth = thisStrokeWidth;
             }
             if (thisStroke != currentPDFsettings.thisStroke) {
                 currentPDFsettings.thisStroke = thisStroke;
                 currentPDFsettings.thisStrokeRGB = thisStrokeRGB;
-                pdf.setDrawColor(currentPDFsettings.thisStrokeRGB[0], currentPDFsettings.thisStrokeRGB[1], currentPDFsettings.thisStrokeRGB[2]);
+                pdf.setDrawColor(
+                    currentPDFsettings.thisStrokeRGB[0],
+                    currentPDFsettings.thisStrokeRGB[1],
+                    currentPDFsettings.thisStrokeRGB[2]
+                );
             }
 
-            thisPDFlinesArray.push([ thisX1  ,  thisY1  ,  thisX2  ,  thisY2  , thisStrokeRGB, thisStrokeWidth, "S"]);   
-            console.log(thisX1, thisY1, thisX2, thisY2);   
-
+            thisPDFlinesArray.push([thisX1, thisY1, thisX2, thisY2, thisStrokeRGB, thisStrokeWidth, "S"]);
+            console.log(thisX1, thisY1, thisX2, thisY2);
         }
 
         function getTranslationCoordinates(thisObject) {
@@ -1443,7 +1447,8 @@ import { PDFs } from "../shared/PDFs.js";
                     .substring(
                         thisTransform.indexOf("translate(") + 10,
                         thisTransform.indexOf(")", thisTransform.indexOf("translate("))
-                    ).split(",");
+                    )
+                    .split(",");
                 thisDX = parseInt(thisDXDY[0]);
                 thisDY = parseInt(thisDXDY[1]);
             }
@@ -1474,7 +1479,7 @@ import { PDFs } from "../shared/PDFs.js";
         var thisPDFwidth = 0;
         var thisPDFheight = 0;
         var thisPDFmargin = 20; /// 1.5 cm ... to be multiplied by appropriate scale factor
-        
+
         function setPDFsizes() {
             // Every chart has at least one line, so start with the first line, and set the max/mins to that
             thisPDFminX = thisPDFlinesArray[0][0];
@@ -1524,12 +1529,12 @@ import { PDFs } from "../shared/PDFs.js";
                 //     element[2] + element[4] / 2,
                 //     element[3] + element[5]
                 // );
-                thisPDFminX = Math.min(thisPDFminX, element[2] - element[4]/2);
-                thisPDFmaxX = Math.max(thisPDFmaxX, element[2] + element[4]/2);
+                thisPDFminX = Math.min(thisPDFminX, element[2] - element[4] / 2);
+                thisPDFmaxX = Math.max(thisPDFmaxX, element[2] + element[4] / 2);
                 thisPDFminY = Math.min(thisPDFminY, element[3]);
                 thisPDFmaxY = Math.max(thisPDFmaxY, element[3] + element[5]);
             }
-            
+
             addHeaderFooterToPDF();
 
             thisPDFwidth = thisPDFmaxX - thisPDFminX + 2 * thisPDFmargin;
@@ -1541,24 +1546,25 @@ import { PDFs } from "../shared/PDFs.js";
             // console.log("PDF: maxY :", thisPDFmaxY);
 
             // console.log("PDF: margin :", thisPDFmargin);
-            // console.log("PDF: thisPDFwidth :", thisPDFwidth);    
+            // console.log("PDF: thisPDFwidth :", thisPDFwidth);
             // console.log("PDF: thisPDFheight :", thisPDFheight);
-            
-            // if (thisPDFwidth == 0) {
-                // thisPDFheight = Math.max(thisPDFheight, 2595.28); 
-            // }
 
+            // if (thisPDFwidth == 0) {
+            // thisPDFheight = Math.max(thisPDFheight, 2595.28);
+            // }
 
             currentPDFsettings.thisDX = 0 - (thisPDFminX - thisPDFmargin);
             currentPDFsettings.thisDY = 0 - (thisPDFminY - thisPDFmargin);
-
         }
 
         function addHeaderFooterToPDF() {
-            let thisTitle = document.getElementById("PDFtitleText").value;  
+            let thisTitle = document.getElementById("PDFtitleText").value;
             let thisFooter = document.getElementById("PDFfooterText").value;
-            let thisURL = "https://www.wikitree.com/apps/#name=" + FractalView.myAhnentafel.primaryPerson.getName() + "&view=fractal";
-            let thisShowTitle = document.getElementById("PDFshowTitleCheckbox").checked;    
+            let thisURL =
+                "https://www.wikitree.com/apps/#name=" +
+                FractalView.myAhnentafel.primaryPerson.getName() +
+                "&view=fractal";
+            let thisShowTitle = document.getElementById("PDFshowTitleCheckbox").checked;
             let thisShowFooter = document.getElementById("PDFshowFooterCheckbox").checked;
             let thisShowURL = document.getElementById("PDFshowURLCheckbox").checked;
 
@@ -1632,41 +1638,68 @@ import { PDFs } from "../shared/PDFs.js";
             for (let index = 0; index < thisPDFtextArray.length; index++) {
                 const element = thisPDFtextArray[index];
                 pdf.setFont(element[3], element[4]);
-                pdf.setFontStyle( element[4]);
+                pdf.setFontStyle(element[4]);
                 pdf.setFontSize(element[5]);
                 // console.log(element[0], ":", element[3], element[4]);
                 // console.log(element[0], ":", pdf.getTextWidth(element[0]));
                 // console.log({ index }, "text Y:", element[2]);
-                pdf.text(element[0],
+                pdf.text(
+                    element[0],
                     currentPDFsettings.thisDX + element[1],
-                    currentPDFsettings.thisDY + element[2],   
-                    element[6] // align  & maxWidth options             
+                    currentPDFsettings.thisDY + element[2],
+                    element[6] // align  & maxWidth options
                 );
             }
         }
         function addRectsToPDF(pdf) {
             for (let index = 0; index < thisPDFrectArray.length; index++) {
                 const element = thisPDFrectArray[index];
-                if (element[5].strokeColor) {pdf.setDrawColor(element[5].strokeColor);}
-                if (element[5].fillColor) {pdf.setFillColor(element[5].fillColor);}
-                if (element[5].lineWidth) {pdf.setLineWidth(element[5].lineWidth);}
-                pdf.rect(currentPDFsettings.thisDX + element[0], currentPDFsettings.thisDY +  element[1], element[2], element[3], element[4]);
+                if (element[5].strokeColor) {
+                    pdf.setDrawColor(element[5].strokeColor);
+                }
+                if (element[5].fillColor) {
+                    pdf.setFillColor(element[5].fillColor);
+                }
+                if (element[5].lineWidth) {
+                    pdf.setLineWidth(element[5].lineWidth);
+                }
+                pdf.rect(
+                    currentPDFsettings.thisDX + element[0],
+                    currentPDFsettings.thisDY + element[1],
+                    element[2],
+                    element[3],
+                    element[4]
+                );
             }
         }
         function addRoundedRectsToPDF(pdf) {
             for (let index = 0; index < thisPDFroundedRectArray.length; index++) {
                 const element = thisPDFroundedRectArray[index];
-                if (element[7].strokeColor) {pdf.setDrawColor(element[7].strokeColor);}
-                if (element[7].fillColor) {pdf.setFillColor(element[7].fillColor);}
-                if (element[7].lineWidth) {pdf.setLineWidth(element[7].lineWidth);}
-                pdf.roundedRect(currentPDFsettings.thisDX + element[0], currentPDFsettings.thisDY +  element[1], element[2], element[3], element[4], element[5], element[6]);
+                if (element[7].strokeColor) {
+                    pdf.setDrawColor(element[7].strokeColor);
+                }
+                if (element[7].fillColor) {
+                    pdf.setFillColor(element[7].fillColor);
+                }
+                if (element[7].lineWidth) {
+                    pdf.setLineWidth(element[7].lineWidth);
+                }
+                pdf.roundedRect(
+                    currentPDFsettings.thisDX + element[0],
+                    currentPDFsettings.thisDY + element[1],
+                    element[2],
+                    element[3],
+                    element[4],
+                    element[5],
+                    element[6]
+                );
             }
         }
 
         function addImagesToPDF(pdf) {
             for (let index = 0; index < thisPDFimageArray.length; index++) {
                 const element = thisPDFimageArray[index];
-                console.log({ index },"image Y:", element[3]);
+                console.log({ index }, "image Y:", element[3]);
                 pdf.addImage(
                     element[0],
                     element[1],
@@ -1679,15 +1712,14 @@ import { PDFs } from "../shared/PDFs.js";
                 );
             }
         }
-        
 
-        function setPDFfontBasedOnSetting( settingFont , isBold = false) {
+        function setPDFfontBasedOnSetting(settingFont, isBold = false) {
             currentPDFsettings.thisFontStyle = "normal";
             if (isBold) {
                 currentPDFsettings.thisFontStyle = "bold";
             }
             if (settingFont == "SansSerif") {
-                currentPDFsettings.thisFont = "helvetica";                
+                currentPDFsettings.thisFont = "helvetica";
             } else if (settingFont == "Serif") {
                 currentPDFsettings.thisFont = "times";
             } else if (settingFont == "Mono") {
@@ -1701,14 +1733,14 @@ import { PDFs } from "../shared/PDFs.js";
                 }
             } else if (settingFont == "Script") {
                 currentPDFsettings.thisFont = "times";
-                if ((currentPDFsettings.thisFontStyle == "bold")) {
+                if (currentPDFsettings.thisFontStyle == "bold") {
                     currentPDFsettings.thisFontStyle = "bolditalic";
                 } else {
                     currentPDFsettings.thisFontStyle = "italic";
                 }
             }
         }
-        
+
         FractalView.doPrintPDF = function () {
             document.getElementById("PDFgenButton").style.display = "none";
             document.getElementById("PDFgenProgressBar").offsetHeight;
@@ -1717,134 +1749,130 @@ import { PDFs } from "../shared/PDFs.js";
         };
 
         FractalView.printPDF = async function () {
-             let pdf = new jsPDF("l", "pt", [2595.28, 1841.89]);
-             document.getElementById("PDFgenButton").setAttribute( "disabled", true);
-             document.getElementById("PDFgenProgressBar").style.display = "revert"; //( "disabled", true);
+            let pdf = new jsPDF("l", "pt", [2595.28, 1841.89]);
+            document.getElementById("PDFgenButton").setAttribute("disabled", true);
+            document.getElementById("PDFgenProgressBar").style.display = "revert"; //( "disabled", true);
 
-             currentPDFsettings = {
-                 thisDX: 0,
-                 thisDY: 0,
-                 thisStroke: "black",
-                 thisStrokeRGB: [0, 0, 0],
-                 thisStrokeWidth: 1,
-                 thisFontSize: 18,
-                 thisFont: "helvetica",
-                 thisFontStyle: "normal",
-             };
+            currentPDFsettings = {
+                thisDX: 0,
+                thisDY: 0,
+                thisStroke: "black",
+                thisStrokeRGB: [0, 0, 0],
+                thisStrokeWidth: 1,
+                thisFontSize: 18,
+                thisFont: "helvetica",
+                thisFontStyle: "normal",
+            };
 
-             thisPDFlinesArray = [];
-             thisPDFtextArray = [];
-             thisPDFrectArray = [];
-             thisPDFroundedRectArray = [];
-             thisPDFimageArray = [];
+            thisPDFlinesArray = [];
+            thisPDFtextArray = [];
+            thisPDFrectArray = [];
+            thisPDFroundedRectArray = [];
+            thisPDFimageArray = [];
 
-             thisPDFminX = 0;
-             thisPDFminY = 0;
-             thisPDFmaxX = 0;
-             thisPDFmaxY = 0;
-             thisPDFwidth = 0;
-             thisPDFheight = 0;
-             thisPDFmargin = 20;
+            thisPDFminX = 0;
+            thisPDFminY = 0;
+            thisPDFmaxX = 0;
+            thisPDFmaxY = 0;
+            thisPDFwidth = 0;
+            thisPDFheight = 0;
+            thisPDFmargin = 20;
 
-             // pdf.setFontSize(24);
-             // thisPDFtextArray.push(['Fractal Tree - 24pt @ (20, 30)', 20, 30, "helvetica","normal", 24]);
+            // pdf.setFontSize(24);
+            // thisPDFtextArray.push(['Fractal Tree - 24pt @ (20, 30)', 20, 30, "helvetica","normal", 24]);
 
-             // pdf.setFontSize(16);
-             // thisPDFtextArray.push(['Fractal Tree - 16pt @ (30, 50)', 30, 50, "helvetica","normal", 16]);
-             // pdf.setFontSize(12);
-             // thisPDFtextArray.push(['Fractal Tree - 12pt @ (40, 70)', 40, 70, "helvetica","normal", 12]);
+            // pdf.setFontSize(16);
+            // thisPDFtextArray.push(['Fractal Tree - 16pt @ (30, 50)', 30, 50, "helvetica","normal", 16]);
+            // pdf.setFontSize(12);
+            // thisPDFtextArray.push(['Fractal Tree - 12pt @ (40, 70)', 40, 70, "helvetica","normal", 12]);
 
-             let thisSVG = document.getElementById("SVGgraphics");
-             let thisDXDY = getTranslationCoordinates(thisSVG);
-             currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
-             currentPDFsettings.thisDY = 100 + parseInt(thisDXDY[1]);
+            let thisSVG = document.getElementById("SVGgraphics");
+            let thisDXDY = getTranslationCoordinates(thisSVG);
+            currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
+            currentPDFsettings.thisDY = 100 + parseInt(thisDXDY[1]);
 
-             pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
-             pdf.setFontSize(currentPDFsettings.thisFontSize);
+            pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
+            pdf.setFontSize(currentPDFsettings.thisFontSize);
 
-             for (var i = 0; i < thisSVG.childElementCount; i++) {
-                 let thisID = thisSVG.children[i].id;
-                 let thisDisplay = thisSVG.children[i].getAttribute("display");
+            for (var i = 0; i < thisSVG.childElementCount; i++) {
+                let thisID = thisSVG.children[i].id;
+                let thisDisplay = thisSVG.children[i].getAttribute("display");
 
-                 if (thisDisplay != "none" && thisID.indexOf("line") == 0 && thisID.indexOf("ForPerson") > 0) {
+                if (thisDisplay != "none" && thisID.indexOf("line") == 0 && thisID.indexOf("ForPerson") > 0) {
                     //  console.log(thisSVG.children[i]);
-                     addLineToPDF(pdf, thisSVG.children[i]);
-                 }
-             }
-             for (let index = 1; index <= 2 ** FractalView.numGens2Display; index++) {
-                 let thisWedgeName = "wedgeInfoFor" + index;
-                 let thisWedgeElement = document.getElementById(thisWedgeName);
-                 let thisRRectBkgdClr = "#FFFF00";
-                 let thisWedgeBkgdClr = "#FF00FF";
+                    addLineToPDF(pdf, thisSVG.children[i]);
+                }
+            }
+            for (let index = 1; index <= 2 ** FractalView.numGens2Display; index++) {
+                let thisWedgeName = "wedgeInfoFor" + index;
+                let thisWedgeElement = document.getElementById(thisWedgeName);
+                let thisRRectBkgdClr = "#FFFF00";
+                let thisWedgeBkgdClr = "#FF00FF";
 
-                 if (thisWedgeElement) {
-                     let thisWedgeParent = thisWedgeElement.parentNode;
-                     let thisWedgeStyle = thisWedgeElement.getAttribute("style");
-                     if (thisWedgeStyle) {
-                         thisWedgeBkgdClr = thisWedgeStyle
-                             .substring(thisWedgeStyle.indexOf("background-color:") + 17)
-                             .trim(); // , thisWedgeStyle.indexOf(";", thisWedgeStyle.indexOf("background-color:"))).trim();
-                     }
-                     if (thisWedgeParent) {
-                         let thisWedgeParentStyle = thisWedgeParent.getAttribute("style");
-                         if (thisWedgeParentStyle) {
-                             thisRRectBkgdClr = thisWedgeParentStyle
-                                 .substring(
-                                     thisWedgeParentStyle.indexOf("background-color:") + 17,
-                                     thisWedgeParentStyle.indexOf(
-                                         ";",
-                                         thisWedgeParentStyle.indexOf("background-color:")
-                                     )
-                                 )
-                                 .trim();
-                         }
-                     }
-                 }
+                if (thisWedgeElement) {
+                    let thisWedgeParent = thisWedgeElement.parentNode;
+                    let thisWedgeStyle = thisWedgeElement.getAttribute("style");
+                    if (thisWedgeStyle) {
+                        thisWedgeBkgdClr = thisWedgeStyle
+                            .substring(thisWedgeStyle.indexOf("background-color:") + 17)
+                            .trim(); // , thisWedgeStyle.indexOf(";", thisWedgeStyle.indexOf("background-color:"))).trim();
+                    }
+                    if (thisWedgeParent) {
+                        let thisWedgeParentStyle = thisWedgeParent.getAttribute("style");
+                        if (thisWedgeParentStyle) {
+                            thisRRectBkgdClr = thisWedgeParentStyle
+                                .substring(
+                                    thisWedgeParentStyle.indexOf("background-color:") + 17,
+                                    thisWedgeParentStyle.indexOf(";", thisWedgeParentStyle.indexOf("background-color:"))
+                                )
+                                .trim();
+                        }
+                    }
+                }
 
-                 let thisID = "nameDivFor" + index;
-                 let thisElement = document.getElementById(thisID);
-                 let thisX = currentPDFsettings.thisDX;
-                 let thisY = currentPDFsettings.thisDY;
+                let thisID = "nameDivFor" + index;
+                let thisElement = document.getElementById(thisID);
+                let thisX = currentPDFsettings.thisDX;
+                let thisY = currentPDFsettings.thisDY;
 
-                 if (thisElement) {
-                     let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
-                     if (thisPersonObject) {
-                         let thisDXDY = getTranslationCoordinates(thisPersonObject);
-                         currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
-                         currentPDFsettings.thisDY = parseInt(thisDXDY[1]);
+                if (thisElement) {
+                    let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
+                    if (thisPersonObject) {
+                        let thisDXDY = getTranslationCoordinates(thisPersonObject);
+                        currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
+                        currentPDFsettings.thisDY = parseInt(thisDXDY[1]);
 
-                         thisX = parseInt(thisDXDY[0]) - 150;
-                         thisY = parseInt(thisDXDY[1]) - 100;
-                     }
-                     thisPDFroundedRectArray.push([
-                         thisX,
-                         thisY,
-                         300,
-                         200,
-                         15,
-                         15,
-                         "DF",
-                         { fillColor: thisRRectBkgdClr, strokeColor: "#000000", lineWidth: 2 },
-                     ]);
-                     pdf.setFillColor(thisWedgeBkgdClr);
-                     thisPDFrectArray.push([
-                         thisX + 15,
-                         thisY + 15,
-                         270,
-                         170,
-                         "F",
-                         { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
-                     ]);
-                 } else {
-                     continue;
-                 }
+                        thisX = parseInt(thisDXDY[0]) - 150;
+                        thisY = parseInt(thisDXDY[1]) - 100;
+                    }
+                    thisPDFroundedRectArray.push([
+                        thisX,
+                        thisY,
+                        300,
+                        200,
+                        15,
+                        15,
+                        "DF",
+                        { fillColor: thisRRectBkgdClr, strokeColor: "#000000", lineWidth: 2 },
+                    ]);
+                    pdf.setFillColor(thisWedgeBkgdClr);
+                    thisPDFrectArray.push([
+                        thisX + 15,
+                        thisY + 15,
+                        270,
+                        170,
+                        "F",
+                        { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
+                    ]);
+                } else {
+                    continue;
+                }
 
                 thisID = "extraInfoFor" + index;
                 thisElement = document.getElementById(thisID);
-                setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Extra, false);                
+                setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Extra, false);
                 pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
                 pdf.setFontStyle(currentPDFsettings.thisFontStyle);
-                
 
                 if (thisElement) {
                     // thisY += 5;
@@ -1864,29 +1892,28 @@ import { PDFs } from "../shared/PDFs.js";
                         ]);
                         thisY += 21;
                         // if (pdf.getTextWidth(textLine) > 300) {
-                            // thisY += 8;
+                        // thisY += 8;
                         // }
                     }
                 }
 
-                 thisID = "photoImgFor" + index;
-                 thisElement = document.getElementById(thisID);
-                 if (
-                     thisElement &&
-                     thisElement.src > "" &&
-                     document.location.host.indexOf("apps.wikitree.com") > -1 &&
-                     thisElement.src.indexOf("www.wikitree.com") > -1 &&
-                     thisElement.parentNode.style.display != "none"
-                 ) {
+                thisID = "photoImgFor" + index;
+                thisElement = document.getElementById(thisID);
+                if (
+                    thisElement &&
+                    thisElement.src > "" &&
+                    document.location.host.indexOf("apps.wikitree.com") > -1 &&
+                    thisElement.src.indexOf("www.wikitree.com") > -1 &&
+                    thisElement.parentNode.style.display != "none"
+                ) {
                     //  let thisBaseString = theBaseString;
 
-
-                     let thisBaseString = await setupWaitForBase64Image({
-                         width: thisElement.width,
-                         height: thisElement.height,
-                         src: thisElement.src,
-                         ahnNum:index
-                     });
+                    let thisBaseString = await setupWaitForBase64Image({
+                        width: thisElement.width,
+                        height: thisElement.height,
+                        src: thisElement.src,
+                        ahnNum: index,
+                    });
                     //  if (thePeopleList[window.FractalView.myAhnentafel.list[index]].getGender() == "Male") {
                     //      thisBaseString = PDFs.maleGIFbase64string;
                     //  } else if (thePeopleList[window.FractalView.myAhnentafel.list[index]].getGender() == "Female") {
@@ -1895,204 +1922,222 @@ import { PDFs } from "../shared/PDFs.js";
                     //      thisBaseString = PDFs.nogenderGIFbase64string;
                     //  }
 
-                     thisY += 10;
-                     thisPDFimageArray.push([
-                         thisBaseString,
-                         // "/apps/clarke11007/images/icons/female.gif",
-                         "",
-                         thisX + 150 - thisElement.width / 2,
-                         thisY,
-                         thisElement.width,
-                         thisElement.height,
-                     ]);
-                     thisY += thisElement.height;
-                 } else if (thisElement && thisElement.src > "" && thisElement.parentNode.style.display != "none") {
-                     thisPDFimageArray.push([
-                         thisElement.src,
-                         "PNG",
-                         thisX + 150 - thisElement.width / 2,
-                         thisY,
-                         thisElement.width,
-                         thisElement.height,
-                     ]);
-                     thisY += thisElement.height + 20;
-                 }
+                    thisY += 10;
+                    thisPDFimageArray.push([
+                        thisBaseString,
+                        // "/apps/clarke11007/images/icons/female.gif",
+                        "",
+                        thisX + 150 - thisElement.width / 2,
+                        thisY,
+                        thisElement.width,
+                        thisElement.height,
+                    ]);
+                    thisY += thisElement.height;
+                } else if (thisElement && thisElement.src > "" && thisElement.parentNode.style.display != "none") {
+                    let thisBaseString = await setupWaitForBase64Image({
+                        width: thisElement.width,
+                        height: thisElement.height,
+                        src: thisElement.src,
+                        ahnNum: index,
+                    });
 
-                 thisID = "nameDivFor" + index;
-                 thisElement = document.getElementById(thisID);
-                //  currentPDFsettings.thisFont = 
+                    thisPDFimageArray.push([
+                        thisBaseString, //thisElement.src,
+                        "PNG",
+                        thisX + 150 - thisElement.width / 2,
+                        thisY,
+                        thisElement.width,
+                        thisElement.height,
+                    ]);
+                    thisY += thisElement.height + 20;
+                }
+
+                thisID = "nameDivFor" + index;
+                thisElement = document.getElementById(thisID);
+                //  currentPDFsettings.thisFont =
                 setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Names, true);
                 //  currentPDFsettings.thisFontStyle = "bold";
-                 pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
-                 pdf.setFontStyle( currentPDFsettings.thisFontStyle);
+                pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
+                pdf.setFontStyle(currentPDFsettings.thisFontStyle);
 
-                 if (thisElement) {
-                     let thisText = thisElement.textContent;
+                if (thisElement) {
+                    let thisText = thisElement.textContent;
                     //  console.log({ thisText }, { thisX }, { thisY });
-                     pdf.setDrawColor("#000000");
-                     pdf.setLineWidth(2);
-                     pdf.setFillColor(thisRRectBkgdClr);
+                    pdf.setDrawColor("#000000");
+                    pdf.setLineWidth(2);
+                    pdf.setFillColor(thisRRectBkgdClr);
 
-                     pdf.setFillColor("#FFFFFF");
-                     thisPDFtextArray.push([
-                         thisText,
-                         thisX + 150,
-                         thisY + 30,
-                         currentPDFsettings.thisFont,
-                         currentPDFsettings.thisFontStyle,
-                         currentPDFsettings.thisFontSize,
-                         { align: "center", maxWidth: 300 },
-                     ]);
-                     if (pdf.getTextWidth(thisText) > 300) {
-                         thisY += 21;
-                     }
-                 }
+                    pdf.setFillColor("#FFFFFF");
+                    thisPDFtextArray.push([
+                        thisText,
+                        thisX + 150,
+                        thisY + 30,
+                        currentPDFsettings.thisFont,
+                        currentPDFsettings.thisFontStyle,
+                        currentPDFsettings.thisFontSize,
+                        { align: "center", maxWidth: 300 },
+                    ]);
+                    if (pdf.getTextWidth(thisText) > 300) {
+                        thisY += 21;
+                    }
+                }
 
                 //  currentPDFsettings.thisFontStyle = "normal";
-                 setPDFfontBasedOnSetting( FractalView.currentSettings.general_options_font4Info, false );
-                 pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
+                setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Info, false);
+                pdf.setFont(currentPDFsettings.thisFont, currentPDFsettings.thisFontStyle);
 
-                 thisID = "birthDivFor" + index;
-                 thisElement = document.getElementById(thisID);
-                 if (thisElement) {
-                     thisY += 5;
-                     let thisTextArray = thisElement.innerHTML.split("<br>");
-                     // console.log({ thisText }, { thisX }, { thisY });
-                     // pdf.setDrawColor("#000000");
-                     for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
-                         const textLine = thisTextArray[textIndex];
-                         thisY += 21;
-                         thisPDFtextArray.push([
-                             textLine,
-                             thisX + 150,
-                             thisY + 30,
-                             currentPDFsettings.thisFont,
-                             currentPDFsettings.thisFontStyle,
-                             currentPDFsettings.thisFontSize,
-                             { align: "center", maxWidth: 300 },
-                         ]);
-                         if (pdf.getTextWidth(textLine) > 300) {
-                             thisY += 21;
-                         }
-                     }
-                 }
+                thisID = "birthDivFor" + index;
+                thisElement = document.getElementById(thisID);
+                if (thisElement) {
+                    thisY += 5;
+                    let thisTextArray = thisElement.innerHTML.split("<br>");
+                    // console.log({ thisText }, { thisX }, { thisY });
+                    // pdf.setDrawColor("#000000");
+                    for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                        const textLine = thisTextArray[textIndex];
+                        thisY += 21;
+                        thisPDFtextArray.push([
+                            textLine,
+                            thisX + 150,
+                            thisY + 30,
+                            currentPDFsettings.thisFont,
+                            currentPDFsettings.thisFontStyle,
+                            currentPDFsettings.thisFontSize,
+                            { align: "center", maxWidth: 300 },
+                        ]);
+                        if (pdf.getTextWidth(textLine) > 300) {
+                            thisY += 21;
+                        }
+                    }
+                }
 
-                 thisID = "deathDivFor" + index;
-                 thisElement = document.getElementById(thisID);
-                 if (thisElement) {
-                     thisY += 5;
-                     let thisTextArray = thisElement.innerHTML.split("<br>");
-                     // console.log({ thisText }, { thisX }, { thisY });
-                     // pdf.setDrawColor("#000000");
-                     for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
-                         const textLine = thisTextArray[textIndex];
-                         thisY += 21;
-                         thisPDFtextArray.push([
-                             textLine,
-                             thisX + 150,
-                             thisY + 30,
-                             currentPDFsettings.thisFont,
-                             currentPDFsettings.thisFontStyle,
-                             currentPDFsettings.thisFontSize,
-                             { align: "center", maxWidth: 300 },
-                         ]);
-                         if (pdf.getTextWidth(textLine) > 300) {
-                             thisY += 21;
-                         }
-                     }
-                 }
-                 thisY += 40; // have to take into consideration the height of the text - since thisY is the top of the text
+                thisID = "deathDivFor" + index;
+                thisElement = document.getElementById(thisID);
+                if (thisElement) {
+                    thisY += 5;
+                    let thisTextArray = thisElement.innerHTML.split("<br>");
+                    // console.log({ thisText }, { thisX }, { thisY });
+                    // pdf.setDrawColor("#000000");
+                    for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                        const textLine = thisTextArray[textIndex];
+                        thisY += 21;
+                        thisPDFtextArray.push([
+                            textLine,
+                            thisX + 150,
+                            thisY + 30,
+                            currentPDFsettings.thisFont,
+                            currentPDFsettings.thisFontStyle,
+                            currentPDFsettings.thisFontSize,
+                            { align: "center", maxWidth: 300 },
+                        ]);
+                        if (pdf.getTextWidth(textLine) > 300) {
+                            thisY += 21;
+                        }
+                    }
+                }
+                thisY += 40; // have to take into consideration the height of the text - since thisY is the top of the text
 
-                 let latestRRect = thisPDFroundedRectArray[thisPDFroundedRectArray.length - 1];
-                 let latestRect = thisPDFrectArray[thisPDFrectArray.length - 1];
+                let latestRRect = thisPDFroundedRectArray[thisPDFroundedRectArray.length - 1];
+                let latestRect = thisPDFrectArray[thisPDFrectArray.length - 1];
                 //  console.log("End RRect info:", index, { latestRRect }, { thisY });
-                 if (latestRRect[3] < thisY - latestRRect[1]) {
-                     latestRRect[3] = thisY - latestRRect[1];
-                     latestRect[3] = latestRRect[3] - 30;
-                 }
-             }
-             setPDFsizes();
-             console.log("w,h:", thisPDFwidth, thisPDFheight);
-             let orientation = "l";
-             if (thisPDFwidth < thisPDFheight) {
+                if (latestRRect[3] < thisY - latestRRect[1]) {
+                    latestRRect[3] = thisY - latestRRect[1];
+                    latestRect[3] = latestRRect[3] - 30;
+                }
+            }
+            setPDFsizes();
+            console.log("w,h:", thisPDFwidth, thisPDFheight);
+            let orientation = "l";
+            if (thisPDFwidth < thisPDFheight) {
                 orientation = "p";
             }
-             let pdf2 = new jsPDF(orientation, "pt", [thisPDFwidth, thisPDFheight]);
-             console.log({ currentPDFsettings });
-             addLinesToPDF(pdf2);
-             addRectsToPDF(pdf2);
-             addRoundedRectsToPDF(pdf2);
-             addImagesToPDF(pdf2);
-             addTextsToPDF(pdf2);
+            let pdf2 = new jsPDF(orientation, "pt", [thisPDFwidth, thisPDFheight]);
+            console.log({ currentPDFsettings });
+            addLinesToPDF(pdf2);
+            addRectsToPDF(pdf2);
+            addRoundedRectsToPDF(pdf2);
+            addImagesToPDF(pdf2);
+            addTextsToPDF(pdf2);
 
-             // const canvas = document.createElement("canvas");
-             // canvas.width = 75;//img.width;
-             // canvas.height = 75;//img.height;
-             // // let c = document.getElementById("myCanvas");
-             // let ctx = canvas.getContext("2d");
-             // let img = document.getElementById("photoImgFor1");
-             // ctx.drawImage(img, 10, 10);
-             // console.log(canvas.toDataURL());
+            // const canvas = document.createElement("canvas");
+            // canvas.width = 75;//img.width;
+            // canvas.height = 75;//img.height;
+            // // let c = document.getElementById("myCanvas");
+            // let ctx = canvas.getContext("2d");
+            // let img = document.getElementById("photoImgFor1");
+            // ctx.drawImage(img, 10, 10);
+            // console.log(canvas.toDataURL());
 
-             // if (document.getElementById("testIMGnum1") && document.getElementById("testIMGnum1").src > "") {
-             //     pdf2.addImage(document.getElementById("testIMGnum1"), "PNG", 500, 200, 75, 75);
-             // }
-             // if (document.getElementById("testIMGnum2") && document.getElementById("testIMGnum2").src > "") {
-             //     pdf2.addImage(document.getElementById("testIMGnum2").src, "GIF", 500, 200, 75, 75);
-             // }
-             if (1==2 && document.getElementById("testIMGnum3") && document.getElementById("testIMGnum3").src > "") {
+            // if (document.getElementById("testIMGnum1") && document.getElementById("testIMGnum1").src > "") {
+            //     pdf2.addImage(document.getElementById("testIMGnum1"), "PNG", 500, 200, 75, 75);
+            // }
+            // if (document.getElementById("testIMGnum2") && document.getElementById("testIMGnum2").src > "") {
+            //     pdf2.addImage(document.getElementById("testIMGnum2").src, "GIF", 500, 200, 75, 75);
+            // }
+            if (1 == 2 && document.getElementById("testIMGnum3") && document.getElementById("testIMGnum3").src > "") {
                 //  pdf2.addImage(getBase64Image(document.getElementById("testIMGnum3")), "GIF", 500, 200, 300, 500);
 
-                 // console.log("setupWaitForBase64Image",
-                 let newBase64String = await setupWaitForBase64Image({
-                     width: 75,
-                     height: 100,
-                     src: document.getElementById("testIMGnum3").src,
-                 });
+                // console.log("setupWaitForBase64Image",
+                let newBase64String = await setupWaitForBase64Image({
+                    width: 75,
+                    height: 100,
+                    src: document.getElementById("testIMGnum3").src,
+                });
                 //  console.log({ newBase64String });
-                 pdf2.addImage(
-                     newBase64String,
-                     "GIF",
-                     500,
-                     100, 75, 100
+                pdf2.addImage(
+                    newBase64String,
+                    "GIF",
+                    500,
+                    100,
+                    75,
+                    100
                     //  document.getElementById("testIMGnum3").width,
                     //  document.getElementById("testIMGnum3").height /* , 75, 75 */
-                 );
-                 // pdf2.addImage(
-                 //     setupWaitForBase64Image({width:75,height:100,src:document.getElementById("testIMGnum3").src}),
-                 //     "GIF",
-                 //     500,
-                 //     50,
-                 //     100,
-                 //     100
-                 // );
-             }
-             // pdf2.addImage(theBaseString, "PNG", 500, 100, 75, 75);
-             let fileName4PDF = "FractalTree_" + FractalView.myAhnentafel.primaryPerson.getName() + "_" + FractalView.numGens2Display + "gens_"+ datetimestamp() +".pdf";
-             pdf2.save(fileName4PDF);
-             FractalView.closePDFpopup();
-         };
+                );
+                // pdf2.addImage(
+                //     setupWaitForBase64Image({width:75,height:100,src:document.getElementById("testIMGnum3").src}),
+                //     "GIF",
+                //     500,
+                //     50,
+                //     100,
+                //     100
+                // );
+            }
+            // pdf2.addImage(theBaseString, "PNG", 500, 100, 75, 75);
 
-         function pad(n) {
-             return n < 10 ? "0" + n.toString(10) : n.toString(10);
-         }
+            //  pdf2.text(100,100, "DRAFT Fractal Tree - ROTATED TEXT SAMPLE", null, 45);
 
-         var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            let fileName4PDF =
+                "FractalTree_" +
+                FractalView.myAhnentafel.primaryPerson.getName() +
+                "_" +
+                FractalView.numGens2Display +
+                "gens_" +
+                datetimestamp() +
+                ".pdf";
+            pdf2.save(fileName4PDF);
+            FractalView.closePDFpopup();
+        };
 
-         // 26 Feb 16:19:34
-         function datetimestamp() {
-             var d = new Date();
-             var time = [pad(d.getHours()), pad(d.getMinutes()), pad(d.getSeconds())].join("");
-             return [d.getFullYear(), months[d.getMonth()], d.getDate(),time].join("-"); 
-         }
+        function pad(n) {
+            return n < 10 ? "0" + n.toString(10) : n.toString(10);
+        }
 
+        var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // 26 Feb 16:19:34
+        function datetimestamp() {
+            var d = new Date();
+            var time = [pad(d.getHours()), pad(d.getMinutes()), pad(d.getSeconds())].join("");
+            return [d.getFullYear(), months[d.getMonth()], d.getDate(), time].join("-");
+        }
 
         var theBaseString = "";
 
         function getBase64Image(img) {
             const canvas = document.createElement("canvas");
             canvas.width = img.width;
-            canvas.height = img.height; 
+            canvas.height = img.height;
             const ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0);
             const dataURL = canvas.toDataURL("image/png");
@@ -2103,7 +2148,6 @@ import { PDFs } from "../shared/PDFs.js";
         image.src = "https://apps.wikitree.com/apps/clarke11007/images/icons/no-gender.gif";
         // image.src = "https://apps.wikitree.com/apps/clarke11007/pix/PhotoLines.png";
         // image.src = "https://www.wikitree.com/photo.php/thumb/3/30/Clarke-11007.jpg/75px-Clarke-11007.jpg";
-        
 
         image.onload = function () {
             const base64String = getBase64Image(image);
@@ -2111,20 +2155,20 @@ import { PDFs } from "../shared/PDFs.js";
             theBaseString = base64String;
         };
 
-        function setupWaitForBase64Image( imageObj ) {
-            let thisImage ;
+        function setupWaitForBase64Image(imageObj) {
+            let thisImage;
             if (imageObj.src > "" && imageObj.width > 0 && imageObj.height > 0) {
                 console.log("imageObj.src", imageObj.src, "WIDTH & HEIGHT");
-                 thisImage = new Image(imageObj.width,imageObj.height);
-                 thisImage.crossOrigin = "use-credentials";
+                thisImage = new Image(imageObj.width, imageObj.height);
+                thisImage.crossOrigin = "use-credentials";
                 thisImage.src = imageObj.src;
             } else if (imageObj.src > "" && imageObj.width > 0) {
-                 thisImage = new Image( imageObj.width);
-                 thisImage.crossOrigin = "use-credentials";
+                thisImage = new Image(imageObj.width);
+                thisImage.crossOrigin = "use-credentials";
                 thisImage.src = imageObj.src;
             } else if (imageObj.src > "") {
-                 thisImage = new Image();
-                 thisImage.crossOrigin = "use-credentials";
+                thisImage = new Image();
+                thisImage.crossOrigin = "use-credentials";
                 thisImage.src = imageObj.src;
             }
 
@@ -2140,16 +2184,14 @@ import { PDFs } from "../shared/PDFs.js";
                         // if (imageObj.index % 2 == 0) {
                         // reject(new Error("Failed to load this silly image"));
 
-                        if (imageObj.ahnNum  == 1) {
-
+                        if (imageObj.ahnNum == 1) {
                             if (FractalView.myAhnentafel.primaryPerson.getGender() == "Male") {
                                 resolve(PDFs.maleGIFbase64string);
-                            } else if (FractalView.myAhnentafel.primaryPerson.getGender() =="Female") {
+                            } else if (FractalView.myAhnentafel.primaryPerson.getGender() == "Female") {
                                 resolve(PDFs.femaleGIFbase64string);
                             } else {
                                 resolve(PDFs.nogenderGIFbase64string);
                             }
-                                
                         } else if (imageObj.ahnNum % 2 == 0) {
                             resolve(PDFs.maleGIFbase64string);
                         } else if (imageObj.ahnNum % 2 == 1) {
@@ -2157,7 +2199,6 @@ import { PDFs } from "../shared/PDFs.js";
                         } else {
                             resolve(PDFs.nogenderGIFbase64string);
                         }
-
                     };
                 });
             } else {
@@ -2310,7 +2351,6 @@ import { PDFs } from "../shared/PDFs.js";
                 } else {
                     legendDIV.style.display = "none";
                 }
-
             }
         };
 
@@ -2574,7 +2614,7 @@ import { PDFs } from "../shared/PDFs.js";
                 y2: 0,
                 style: "stroke: blue; stroke-width: 4;",
             });
-           /*  g.append("line").attrs({
+            /*  g.append("line").attrs({
                 id: "line1ForPerson" + index,
                 display: "none",
                 x1: 0,
@@ -3955,7 +3995,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         // condLog("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
         condLog("Adding new node with boxWidth = ", boxWidth);
-        
+
         // Draw the person boxes
         nodeEnter
             .append("foreignObject")
@@ -4079,7 +4119,9 @@ import { PDFs } from "../shared/PDFs.js";
                     ancestorObject.ahnNum
                 } style="background-color: ${theClr} ; padding:5, border-color:black; border:2;">
                 <div class="vital-info"  id=vital${ancestorObject.ahnNum}>
-                <span  class="extras font${font4Extra}" id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
+                <span  class="extras font${font4Extra}" id=extraInfoFor${
+                    ancestorObject.ahnNum
+                }>${extraInfoForThisAnc}${extraBR}</span>
 						<div class="image-box" id=photoDivFor${ancestorObject.ahnNum} style="text-align: center"><img  id=photoImgFor${
                     ancestorObject.ahnNum
                 } src="https://www.wikitree.com/${photoUrl}"></div>
@@ -4422,32 +4464,31 @@ import { PDFs } from "../shared/PDFs.js";
         });
     };
 
-     /**
+    /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup  = function (person) {
+    Tree.prototype.personPopup = function (person) {
         if (!Utils.firstTreeAppPopUpPopped) {
             $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
             Utils.firstTreeAppPopUpPopped = true;
         }
 
-            personPopup.popupHTML(
-                person,
-                {
-                    type: "Ahn",
-                    ahNum: FractalView.myAhnentafel.listByPerson[person._data.Id],
-                    primaryPerson: thePeopleList[FractalView.myAhnentafel.list[1]],
-                    myAhnentafel: FractalView.myAhnentafel,
-                    SettingsObj : Utils
-                },
-                AboutAppIcon,
-                "fractal"
-            );
+        personPopup.popupHTML(
+            person,
+            {
+                type: "Ahn",
+                ahNum: FractalView.myAhnentafel.listByPerson[person._data.Id],
+                primaryPerson: thePeopleList[FractalView.myAhnentafel.list[1]],
+                myAhnentafel: FractalView.myAhnentafel,
+                SettingsObj: Utils,
+            },
+            AboutAppIcon,
+            "fractal"
+        );
         // console.log("FractalView.personPopup");
     };
-    
-    
-    function placeHolder4PersonPopup (person, xy) {
+
+    function placeHolder4PersonPopup(person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
@@ -4505,7 +4546,7 @@ import { PDFs } from "../shared/PDFs.js";
             condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
-    };
+    }
 
     /**
      * Remove all popups. It will also remove
