@@ -724,7 +724,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog("draw descendantTree:", this.descendantTree);
             this.descendantTree.draw();
             condLog("drawTree done", this.ancestorTree, this.descendantTree);
-            this.svg.node().querySelectorAll("foreignObject").forEach((e) => { e.setAttribute("height", Math.max(0.1, e.firstElementChild.clientHeight)); });  // https://github.com/wikitree/wikitree-dynamic-tree/issues/42
+            this.svg
+                .node()
+                .querySelectorAll("foreignObject")
+                .forEach((e) => {
+                    e.setAttribute("height", Math.max(0.1, e.firstElementChild.clientHeight));
+                }); // https://github.com/wikitree/wikitree-dynamic-tree/issues/42
         }
 
         /**
@@ -1005,7 +1010,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         drawCouple(couple) {
-            const div = document.createElement("div");  // Not xhtml:div, that's a D3 hack
+            const div = document.createElement("div"); // Not xhtml:div, that's a D3 hack
             if (!couple.a || !couple.a.isNoSpouse) {
                 div.appendChild(this.drawPerson(couple, L));
             }
