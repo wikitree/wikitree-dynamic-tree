@@ -56,7 +56,6 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     display: none;
 }
 :root.slippy-tree-root :is(footer#footer, header, .tabs--wrapper) {
-    overflow: hidden;
     transition: height 200ms, padding 200ms, display 400ms allow-discrete;
     --slippy-computed-height: auto;
     height: var(--slippy-computed-height);
@@ -64,6 +63,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 :root.slippy-tree-root.slippy-fullscreen :is(footer#footer, header, .tabs--wrapper) {
     height: 0 !important;
     padding: 0 !important;
+    overflow: hidden;
 }
 @media ((max-height:900px) or (max-width:980px)) {
     :root.slippy-tree-root footer#footer:not(.hover) img {
@@ -81,6 +81,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
         display: none;
     }
     :root.slippy-tree-root footer#footer {
+        overflow: hidden;
         padding: 1em 0 0 0;
     }
     :root.slippy-tree-root footer#footer:not(.hover) ul.nav .nav-item {
@@ -106,12 +107,20 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 :has(> .slippy-tree-container) {
     position: relative;
 }
-.slippy-tree-container {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    font: 14px sans-serif;
-    overflow: hidden;
+
+/**
+ * This rule is solely for downloaded SVG
+ */
+.slippy-tree:root {
+    font-family: sans-serif;
+}
+
+/**
+ * Put all variables in here. Some of them are used in the .slippy-tree-container,
+ * eg in the help dialog. But they also have to be defined on .slippy-tree so they
+ * apply in the downloaded image too
+ */
+.slippy-tree-container, .slippy-tree {
     --button-color: #639;
     --menu-selected-color: #DED;
     --menu-width: 200px;                /* (min) width of menu */
@@ -138,6 +147,13 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     --same-generation-bend: 20px;       /* The length of the extra curve to add for same-generation relations */
     --member: #ebba34;                  /* color of "member" tag on person */
     --highlight: #6c6;                  /* color of "highlight" tag on person */
+}
+.slippy-tree-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    font: 14px sans-serif;
+    overflow: hidden;
 }
 .slippy-tree-container * {
     touch-action: none !important;
@@ -439,12 +455,12 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     --other-margin: 40px;               /* min vertical distance between two unrelated nodes */
     --generation-margin: 100px;         /* horizontal distance between two generations */
     --min-person-width: 50px;           /* minimum width of a person rectangle */
+    --text-padding: 4px;                /* padding around the "text" item */
 
     display: block;
     position: relative;
     contain: style size layout paint;
     overflow: hidden;
-
 }
 
 .slippy-tree a[href] {
@@ -454,7 +470,6 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 .slippy-tree text {
     font-size: 10px;
     text-anchor: middle;
-    margin: 4px;    /* Hack! Margin doesnt apply in SVG, but we read this value in the JS to compute position */
 }
 .slippy-tree text.left {
     text-anchor: start;

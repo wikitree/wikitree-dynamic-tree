@@ -1478,15 +1478,11 @@ class SlippyTree extends View {
                     text.appendChild(document.createTextNode(person.presentationName()));
                     text.appendChild(document.createTextNode(person.presentationExtra()));
                     let bbox = text.getBBox();
-                    // NOTE: this is a hack to let us style with CSS. margin is not an SVG property
                     const style = getComputedStyle(text);
-                    const pt = this.#evalLength(style, style.marginTop);
-                    const pr = this.#evalLength(style, style.marginRight);
-                    const pb = this.#evalLength(style, style.marginBottom);
-                    const pl = this.#evalLength(style, style.marginLeft);
-                    person.width = Math.ceil(bbox.width + pl + pr);
-                    person.height = Math.ceil(bbox.height + pt + pb);
-                    text.setAttribute("y", Math.round(pt + (person.height - pb - pt) * 0.8));
+                    const padding = style ? this.#evalLength(style, style.getPropertyValue("--text-padding")) : 4;
+                    person.width = Math.ceil(bbox.width + padding + padding);
+                    person.height = Math.ceil(bbox.height + padding + padding);
+                    text.setAttribute("y", Math.round(padding + (person.height - padding - padding) * 0.8));
                 }
                 const ps = this.#TAGSIZE; // person.height;
                 path.setAttribute("d", "M 0 0 H " + ps + " L 0 " + ps + " Z");
