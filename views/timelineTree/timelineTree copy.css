@@ -1,92 +1,7 @@
 #ttreeContainer {
-  padding: 0.3em;
-  position: relative;
-  height: 1000px;
-  overflow-y: scroll;
-  border:solid 2px green;
-}
-#ttreeHeader {
-  height: 50px;
-  position: sticky;
-  top: 5px;
-}
-#ttreeMain {
-  height: 11000px;
-}
-
-.headerRow {
-  fill: #26ADEA;
-  stroke-width:0;
-}
-.headerText1{
-  fill:white;
-  font-family:Arial, sans-serif;
-  font-size:14px;
-  font-weight:normal;
-}
-.headerText2{
-  fill:black;
-  font-family:Arial, sans-serif;
-  font-size:11px;
-  font-weight:normal;
-}
-
-.gridLine1 {  stroke:#222222;  stroke-width:2 }
-.gridLine2 {  stroke:#BBBBBB;  stroke-width:1; stroke-dasharray:3,3; }
-.gridLine3 {  stroke:#DDDDDD;  stroke-width:1; stroke-dasharray:3,3; }
-
-.gridText {
-  fill:black;
-  font-family:Arial, sans-serif;
-  font-size:11px;
-  font-weight:normal;
-}
-
-.rowEven {  fill: #FFFFFF;  stroke-width:0; }
-.rowOdd  {  fill: #EEEEFF;  stroke-width:0; }
-
-.rowText {
-  fill:black;
-  font-family:Arial, sans-serif;
-  font-size:11px;
-  font-weight:normal"';
-}
-
-.barGeneral { stroke-width:0; stroke:#000000; }
-.familyLine {
-  stroke:#007700;
-  stroke-width:1;
-}
-.barTextF {
-  fill:black;
-  font-family:Arial, sans-serif;
-  font-size:11px;
-  font-weight:normal;
-  text-anchor:end
-}
-.barTextB {
-  fill:black;
-  font-family:Arial, sans-serif;
-  font-size:11px;
-  font-weight:normal;
-}
-.famDot1 {
-  stroke-width:0;
-  fill:black;
-}
-.famDot2 {
-  stroke-width:0;
-  fill:grey;
-}
-.famDot3 {
-  stroke-width:1;
-  stroke:black;
-  fill:none;
-}
-
-
-
-  #treeSvg {
+    padding: 0.3em;
+  }
+  #ttreeSvg {
     overflow-x: auto;
     width: 100%;
   }
@@ -224,7 +139,49 @@
     font-size: 1.3em;
     margin-bottom: 0.5em;
   }
-    
+  
+  .ttree .bioReport {
+    background: white;
+    border-radius: 1em;
+    border: 3px solid forestgreen;
+    box-shadow: 0.5em 0.5em 0.5em 0.5em #ccc;
+    cursor: grab;
+    display: none;
+    position: absolute;
+    padding: 1.5em 1em 1em;
+    /* white-space: nowrap; */
+    z-index: 10000;
+  }
+  .ttree .bioReport caption {
+    font-family: sans-serif;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: left;
+    padding: 0.5em;
+    background: white;
+    border-top: 1px solid forestgreen;
+    border-bottom: 1px solid forestgreen;
+  }
+  
+  .ttree .bioReport w {
+    position: absolute;
+    top: 0;
+    left: 0.5em;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .ttree .bioReport.wrap {
+    width: 80%;
+    white-space: normal;
+  }
+  .ttree .bioReportTable ol {
+    margin-left: 2em;
+  }
+  .ttree .bioReportTable td {
+    border-top: none;
+    border-bottom: none;
+  }
+  
   @media print {
     .ttree-not-printable {
       display: none;

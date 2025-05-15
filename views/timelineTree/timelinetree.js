@@ -47,12 +47,18 @@ export class TimelineTree {
         <p>Use this application to view a tree view of the ancestors of a specific individual, but formatted along a timeline.</p>
         <p><em><b>Warning</b>: This is a work in progress</p>
         <h3>Display and Interaction</h3>
+        <img src="/apps/lowe6667/views/timelineTree/help-annot.png"/><br/>
         <ul>
             <li>More info to be provided.</li>
         </ul>
+        <h3>Feedback</h3>
+        <p>If you have any suggestions for improvements, or find bugs that need fixing, please email: davidblowe@gmail.com</p>
    `;
 
     static startID = "";
+    static people = [];
+    static families = [];
+
 
     constructor(selector, person_id) {
 
@@ -70,12 +76,12 @@ export class TimelineTree {
                   <option value="4">4</option>
                   <option value="5">5</option>
                   <option value="6">6</option>
-                </select>
-                <label>Include siblings:&nbsp;</label><input type="checkbox" id="paramSiblings" checked>
-                <label>Flip timeline:&nbsp;</label><input type="checkbox" id="paramFlip">
-                <label>Show locations:&nbsp;</label><input type="checkbox" id="paramLocs">
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;
                 <button id="generateTree" class="btn btn-primary btn-sm" title="Generate a new tree using current parameters">
-                  Generate Tree</button>
+                  Regenerate Tree</button>&nbsp;&nbsp;&nbsp;&nbsp;
+                <label>Include siblings:&nbsp;</label><input type="checkbox" id="paramSiblings" checked>&nbsp;&nbsp;&nbsp;&nbsp;
+                <label>Flip timeline:&nbsp;</label><input type="checkbox" id="paramFlip">&nbsp;&nbsp;&nbsp;&nbsp;
+                <label>Show locations:&nbsp;</label><input type="checkbox" id="paramLocs">&nbsp;&nbsp;&nbsp;&nbsp;
                 <button id="help-button" class="btn btn-secondary btn-sm" title="About this application.">
                   <b>?</b></button
                 ><input id="fileInput" type="file" style="display: none" />
@@ -117,6 +123,11 @@ export class TimelineTree {
         
         TimelineTree.generateTree();
 
+        // And then allow for updates when changing the parameters
+        $("#paramFlip").change(TimelineTree.redisplayTree);
+        $("#paramLocs").change(TimelineTree.redisplayTree);
+        $("#paramSiblings").change(TimelineTree.redisplayTree);
+
     }
 
     //===================================================================================
@@ -126,36 +137,57 @@ export class TimelineTree {
 
         // Building message 
         const timelineSVG = `
-            <svg id="svgheader" height="60" width="1000">
-                <text x="400" y="40" style="fill:black; font-family:'Sofia', cursive, sans-serif; font-size:24px; font-weight:normal">~~ Family Timeline ~~</text>
+            <svg id="svgheader" height="60">
+               <text x="400" y="40" style="fill:black; font-family:'Sofia', cursive, sans-serif; font-size:24px; font-weight:normal">~~ Family Timeline ~~</text>
             </svg></br>
-            <svg id="svgtree" height="100" width="1000">
+            <svg id="svgtree" height="100">
                 <text x="100" y="35" style="fill:black; font-family:Arial, sans-serif; font-size:12px; font-weight:normal">Please wait - loading....</text>
                 <defs id="svgdefs"></defs>
             </svg>
         `;
         $("#svgContainer").html(timelineSVG);
 
-        var people = [];
-        var families = [];
+        TimelineTree.people = [];
+        TimelineTree.families = [];
 
         // retrieve list of people and families
-        await TimelineTree.retrievePeopleList(people, families, TimelineTree.startID,  $("#paramGens").val(), $("#paramSiblings").prop("checked"));
-        if (people.length == 0) {
+        await TimelineTree.retrievePeopleList(TimelineTree.people, TimelineTree.families, TimelineTree.startID,  $("#paramGens").val());
+        if (TimelineTree.people.length == 0) {
             var svgElem = document.getElementById("svgtree");
             svgElem.innerHTML = '<text x="100" y="35" style="fill:black; font-family:Arial, sans-serif; font-size:14px; font-weight:normal">ERROR - No people retrieved....</text>';
             return;
         }
 
         // then display...
-        TimelineTree.showTree(people, families, TimelineTree.startID, $("#paramFlip").prop("checked"), $("#paramLocs").prop("checked"));
+        TimelineTree.showTree(TimelineTree.people, TimelineTree.families, TimelineTree.startID, $("#paramSiblings").prop("checked"), $("#paramFlip").prop("checked"), $("#paramLocs").prop("checked"));
+    }
+
+
+
+    //===================================================================================
+    // Class TimelineTree: method to redisplay existing tree
+
+    static redisplayTree (event) {
+        TimelineTree.showTree(TimelineTree.people, TimelineTree.families, TimelineTree.startID, $("#paramSiblings").prop("checked"), $("#paramFlip").prop("checked"), $("#paramLocs").prop("checked"));
     }
 
     //===================================================================================
-    // Class TimelineTree: method to retrieve all relevant people to be displayed
+    // Class TimelineTree: Show all relevant people to be displayed
 
-    static showTree(people, families, startID, paramFlip, paramLocs) {
+    static showTree(people, families, startID, paramSiblings, paramFlip, paramLocs) {
 
+        // How many people to show
+        var numPeopleToShow = 0;
+        if (paramSiblings) numPeopleToShow = people.length;
+        else {
+            for (var i=0; i<people.length; i++) {
+                if (!(people[i]["type"] == "sibling") && !(people[i]["type"] == "halfSibling")) numPeopleToShow++;
+            }
+        }
+
+        // Build the display
+        let now = new Date();
+        var yearCurrent = now.getFullYear();
         var svgText="";
 
         // Set key formatting parameters
@@ -170,39 +202,66 @@ export class TimelineTree {
         var barBase = labelLoc[8];
 
         // Add formatting info for the fade out on time timeline bars
-        var svgDefs = document.getElementById("svgdefs");
-        svgDefs.innerHTML += "<linearGradient id='gradM0a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM0 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourM0 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradM0b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM0 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradF0a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF0 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourF0 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradF0b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF0 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradX0a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX0 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourX0 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradX0b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX0 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradM1a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM1 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourM1 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradM1b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM1 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradF1a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF1 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourF1 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradF1b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF1 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradX1a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX1 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourX1 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradX1b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX1 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradM2a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM2 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourM2 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradM2b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM2 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradF2a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF2 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourF2 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradF2b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF2 + ";stop-opacity:0.5' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradX2a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX2 + ";stop-opacity:0.5'/><stop offset='100%' style='stop-color:" + barColourX2 + ";stop-opacity:1' /></linearGradient>";
-        svgDefs.innerHTML += "<linearGradient id='gradX2b' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX2 + ";stop-opacity:0.5' /></linearGradient>";
-        
+        var svgDefs = "";
+        svgDefs += "<linearGradient id='gradM0a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM0 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradM0b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM0 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradF0a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF0 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradF0b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF0 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradX0a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX0 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradX0b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX0 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX0 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradM1a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM1 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradM1b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM1 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradF1a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF1 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradF1b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF1 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradX1a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX1 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradX1b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX1 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX1 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradM2a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM2 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradM2b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourM2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourM2 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradF2a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF2 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradF2b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourF2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourF2 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradX2a' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX2 + ";stop-opacity:1' /></linearGradient>";
+        svgDefs += "<linearGradient id='gradX2b' x1='100%' y1='0%' x2='0%' y2='0%'><stop offset='0%' style='stop-color:" + barColourX2 + ";stop-opacity:0'/><stop offset='100%' style='stop-color:" + barColourX2 + ";stop-opacity:1' /></linearGradient>";
+
         // === Timeline settings ===
-        // First, find the earliest and latest years
-        var yearCurrent = 2025; // ###
+        // First determine the dates to use on the timeline
+
+        for (var i=0; i<people.length; i++) {
+            people[i]["useBirth"] = Number(people[i]["BirthYear"]);
+            people[i]["useDeath"] = Number(people[i]["DeathYear"]);
+            people[i]["useBirthExt"] = false;
+            people[i]["useDeathExt"] = false;
+            if (people[i]["useBirth"] == 0) {
+                people[i]["useBirthExt"]=true;
+                // OK what date do we use for the birth? Is there a marriage date?
+                if (Number(families[people[i]["family"]]["useDate"]) > 0) {
+                    people[i]["useBirth"] = Number(families[people[i]["family"]]["useDate"])+20 + 1;
+                }
+                // OK, use the fathers "useDate" +40 years
+                else {
+                    var fatherIdx = people.findIndex(item => item.id == people[i]["details"]["Father"]);
+                    people[i]["useBirth"] = Number(people[fatherIdx]["useBirth"]) + 40;
+                    families[people[i]["family"]]["useDate"] = Number(people[fatherIdx]["useBirth"]) + 20;
+                }
+            }
+            if (people[i]["useDeath"] == 0) {
+                people[i]["useDeathExt"]=true;
+                if (people[i]["details"]["IsLiving"] == 0) people[i]["useDeath"] = people[i]["useBirth"] + 20;
+                else people[i]["useDeath"] = yearCurrent;
+            }
+        }
+
+        // Then find the earliest and latest years
+
         var yearEarliest = yearCurrent, yearLatest = 0;
         for (var i=0; i<people.length; i++) {
-            if ((people[i]["BirthYear"] != "0000") && (people[i]["BirthYear"] < yearEarliest)) yearEarliest = Number(people[i]["BirthYear"]);
-            if ((people[i]["BirthYear"] != "0000") && (people[i]["BirthYear"] > yearLatest))   yearLatest   = Number(people[i]["BirthYear"]);
-            if ((people[i]["DeathYear"] != "0000") && (people[i]["DeathYear"] < yearEarliest)) yearEarliest = Number(people[i]["DeathYear"]);
-            if ((people[i]["DeathYear"] != "0000") && (people[i]["DeathYear"] > yearLatest))   yearLatest   = Number(people[i]["DeathYear"]);
+            if (people[i]["useBirth"] < yearEarliest) yearEarliest = Number(people[i]["useBirth"]);
+            if (people[i]["useBirth"] > yearLatest)   yearLatest   = Number(people[i]["useBirth"]);
+            if (people[i]["useDeath"] < yearEarliest) yearEarliest = Number(people[i]["useDeath"]);
+            if (people[i]["useDeath"] > yearLatest)   yearLatest   = Number(people[i]["useDeath"]);
         }
         if (yearEarliest > yearLatest) yearEarliest = yearLatest;
-        yearEarliest = yearEarliest - 50;
-        yearLatest = yearLatest + 35;
+        yearEarliest = yearEarliest - 25;
+        yearLatest = yearLatest + 40;
         // Then move to nearest 25 year boundary
         yearEarliest -= (yearEarliest % 25);
         yearLatest   -= (yearLatest % 25);
@@ -211,15 +270,16 @@ export class TimelineTree {
         var yearStart = yearLatest;
         var yearEnd = yearEarliest
         
-        var gridStart = yearCurrent;
+        var gridStart = yearStart;
         var gridGap = 25;
         
         var headerHeight = 40;
         var rowHeight = 16;
         var tableWidth = barBase + (yearStart - yearEnd)*ptsPerYear;
-        var tableHeight = people.length * rowHeight + headerHeight + 20;
+        var tableHeight = numPeopleToShow * rowHeight + headerHeight + 20;
 
-        var txtStyle = 'style="fill:black; font-family:Arial, sans-serif; font-size:11px; font-weight:normal"';
+        var txtStyle  = 'style="fill:black; font-family:Arial, sans-serif; font-size:11px; font-weight:normal"';
+        var txtStyleR = 'style="fill:black; font-family:Arial, sans-serif; font-size:11px; font-weight:normal" text-anchor="end"';
 
         var svgElem = document.getElementById("svgtree");
         var elemTxt;
@@ -240,39 +300,46 @@ export class TimelineTree {
         var alternate = 0;
         var rowY, rowColour;
         elemTxt = "";
-        for (var i=0; i<people.length; i++) {
+        for (var i=0; i<numPeopleToShow; i++) {
             // Add in row background
             if (alternate==0) rowColour = "#FFFFFF"; else rowColour = "#EEEEFF";
             alternate = (alternate+1)%2;
             rowY = (i * rowHeight) + headerHeight;
-            elemTxt += '<rect x="0" y="' + rowY + '" width="' + tableWidth + '" height="' + rowHeight + '" style="fill:' + rowColour + ';stroke-width:0"/>';
+            elemTxt += '<a href="/apps/lowe6667/#name=' + people[i]["details"]["Name"] + '&view=timelineTree"><rect x="0" y="' + rowY + '" width="' + tableWidth + '" height="' + rowHeight + '" style="fill:' + rowColour + ';stroke-width:0"/></a>';
         }
-        svgText += elemTxt;			
+        svgText += elemTxt;
 
         // create grid lines
         var gridYear = gridStart, gridY1 = headerHeight, gridY2 = tableHeight;
         elemTxt = "";
         while (gridYear > yearEnd) {
-            var gridX = barBase + (yearStart-gridYear)*ptsPerYear;
+            var gridX = calcX(gridYear);
             if ((gridYear%100)==0) elemTxt += "<line x1='" + gridX + "' y1='" + gridY1 + "' x2='" + gridX + "' y2='" + gridY2 + "' style='stroke:#BBBBBB;stroke-width:1' stroke-dasharray='3,3'/>";
             else                   elemTxt += "<line x1='" + gridX + "' y1='" + gridY1 + "' x2='" + gridX + "' y2='" + gridY2 + "' style='stroke:#DDDDDD;stroke-width:1' stroke-dasharray='3,3'/>";
             var gridXtext = gridX - 15;
             elemTxt += '<text x="' + gridXtext + '" y="33" ' + txtStyle + '>' + gridYear + '</text>';
             gridYear -= gridGap;
         }
-        gridX = barBase + (yearStart-yearCurrent)*ptsPerYear;
+        gridX = barBase;
         elemTxt += '<line x1="' + gridX + '" y1="' + gridY1 + '" x2="' + gridX + '" y2="' + gridY2 + '" style="stroke:#222222;stroke-width:2"/>';
         svgText += elemTxt;
 
         // Add in people details and time bars
         elemTxt = "";
+        var personCount = 0;
         for (i=0; i<people.length; i++) {
+            if (!paramSiblings && ((people[i]["type"] == "sibling") || (people[i]["type"] == "halfSibling"))) {
+                people[i]["row"] = -1;                
+                continue;
+            }
+            people[i]["row"] = personCount;
+
             var p = people[i];
 
-            rowY = (i * rowHeight) + headerHeight;
+            rowY = (personCount * rowHeight) + headerHeight;
 
             // Add in row text elements
-            rowY = (i * rowHeight) + headerHeight + 13;
+            rowY = (personCount * rowHeight) + headerHeight + 13;
             rowX = labelLoc[0] + 5; if (p["generation"] != null)                   elemTxt += '<text x="' + rowX + '" y="' + rowY + '" ' + txtStyle + '>' + p["generation"] + '</text>';
             rowX = labelLoc[1] + 5; if (p["details"]["Gender"] != null)            elemTxt += '<text x="' + rowX + '" y="' + rowY + '" ' + txtStyle + '>' + p["details"]["Gender"] + '</text>';
             rowX = labelLoc[2] + 5; if (p["details"]["LastNameAtBirth"] != null)   elemTxt += '<text x="' + rowX + '" y="' + rowY + '" ' + txtStyle + '>' + p["details"]["LastNameAtBirth"] + '</text>';
@@ -284,9 +351,6 @@ export class TimelineTree {
 
             // Add in timeline bar
             // extract year information
-            var deathExt = false;
-            if (p["DeathYear"] == null) deathExt = true;
-            else if (p["DeathYear"]=="0000") deathExt = true;
 
             var barColour, barDef;
             if (p["type"] == "target") {
@@ -295,6 +359,10 @@ export class TimelineTree {
                     case "Female" : barColour = barColourF0; barDef = "#gradF0";  break;
                     default  : barColour = barColourX0; barDef = "#gradX0"; 
                 }
+                // And update the title
+                let title = '~~ ' + p["details"]["FirstName"] + ' ' + p["details"]["LastNameAtBirth"] + " : TimeLine Tree ~~";
+                let titleText = '<text x="400" y="40" style="fill:black; font-family:"Sofia", cursive, sans-serif; font-size:24px; font-weight:normal">' + title + '</text>';
+                document.getElementById("svgheader").innerHTML = titleText;
             }
             else if ((p["type"] == "sibling") || (p["type"] == "ancestor")) {
                 switch (p["details"]["Gender"]) {
@@ -311,97 +379,138 @@ export class TimelineTree {
                 }
             }
 
-
             //create main bar
-            var barY1 = (i * rowHeight) + headerHeight + 2;
-            var barX1;
-            if (p["DeathYear"] == "0000") {
-                if (p["details"]["IsLiving"] == 0) {
-                    barX1 = barBase + (yearStart-p["BirthYear"]-30)*ptsPerYear;
-                }
-                else {
-                    barX1 = barBase + (yearStart-yearCurrent)*ptsPerYear;
-                }
-            } else barX1 = barBase + (yearStart-p["DeathYear"])*ptsPerYear;
-            var barX2 = barBase + (yearStart-p["BirthYear"])*ptsPerYear;
+            var barY1 = (personCount * rowHeight) + headerHeight + 2;
+            var barX1, barX2;
+            var deathExt = p["useDeathExt"];
+            var birthExt = p["useBirthExt"];
+
+            if (!paramFlip) {
+                barX1 = calcX(p["useDeath"]);
+                barX2 = calcX(p["useBirth"]);
+            }
+            else {
+                barX1 = calcX(p["useBirth"]);
+                barX2 = calcX(p["useDeath"]);
+            }
+
             var barWidth = barX2-barX1;
+            if (barWidth < 10) barWidth = 10;
+
             if (barWidth==0) { barWidth=5; barX1 = barX1 - 5; }
             elemTxt += '<rect x="' + barX1 + '" y="' + barY1 + '" width="' + barWidth + '" height="10" style="fill:' + barColour + ';stroke-width:0;stroke:#000000"/>';
 
             // create uncertain death bar
             if (deathExt) {
-                var barExt1X1 = barX1 - 30, barExt2X1 = barX1 - 60;
-                elemTxt += '<rect x="' + barExt1X1 + '" y="' + barY1 + '" width="30" height="10" style="fill:url(' + barDef + 'a);stroke-width:0;stroke:#000000"/>';
-                elemTxt += '<rect x="' + barExt2X1 + '" y="' + barY1 + '" width="30" height="10" style="fill:url(' + barDef + 'b);stroke-width:0;stroke:#000000"/>';
+                if (!paramFlip) {
+                    var barExt1X1 = barX1 - 60;
+                    elemTxt += '<rect x="' + barExt1X1 + '" y="' + barY1 + '" width="60" height="10" style="fill:url(' + barDef + 'a);stroke-width:0;stroke:#000000"/>';
+                }
+                else {
+                    var barExt1X1 = barX2;
+                    elemTxt += '<rect x="' + barExt1X1 + '" y="' + barY1 + '" width="60" height="10" style="fill:url(' + barDef + 'b);stroke-width:0;stroke:#000000"/>';
+                }
             }
-
+            // create uncertain birth bar
+            if (birthExt) {
+                if (!paramFlip) {
+                    var barExt1X1 = barX2;
+                    elemTxt += '<rect x="' + barExt1X1 + '" y="' + barY1 + '" width="60" height="10" style="fill:url(' + barDef + 'b);stroke-width:0;stroke:#000000"/>';
+                }
+                else {
+                    var barExt1X1 = barX1-60;
+                    elemTxt += '<rect x="' + barExt1X1 + '" y="' + barY1 + '" width="60" height="10" style="fill:url(' + barDef + 'a);stroke-width:0;stroke:#000000"/>';
+                }
+            }
+            personCount++;
         }
         svgText += elemTxt;
-
+        
         // And now add in family grouping lines
-        drawFamilyGroups(people, families, startID)
+        drawFamilyGroups(people, families, numPeopleToShow)
 
         // And finally, actually draw the tree
-    	svgElem.innerHTML += svgText;
+        var svgFull = svgText + '<defs id="svgdefs">' + svgDefs + '</defs>';
+        document.getElementById("svgtree").innerHTML = svgFull;
 
         //===========================================================
 
-		function drawFamilyGroups(people, families, startID) {
+		function calcX(year) {
+            if (paramFlip) return barBase + (year - yearEnd)*ptsPerYear;
+            else return barBase + (yearStart-year)*ptsPerYear;;
+        }
+			
+            //===========================================================
+
+		function drawFamilyGroups(people, families, numPeopleToShow) {
 			
             
 		    // draw horizontal line for each person
-			drawIndivLines(people, families);
+			drawIndivLines(people, families, numPeopleToShow);
 
 			// draw marriage bars for parents
-			drawMarriageLines(people, families);
+			drawMarriageLines(people, families, numPeopleToShow);
 			}
 
 		//===========================================================
 
-        function drawIndivLines(people, families) {
+        function drawIndivLines(people, families, numPeopleToShow) {
 			
             /* draw horizontal line for each person */
             var elemTxt = "";
-            for (var i=0; i<people.length; i++) {
-                var lineY = (i * rowHeight) + headerHeight + 7;
+
+            for (i=0; i<people.length; i++) {
+                if (!paramSiblings && ((people[i]["type"] == "sibling") || (people[i]["type"] == "halfSibling"))) continue;
+                var lineY = (people[i]["row"] * rowHeight) + headerHeight + 7;
                 var textY = lineY + 5;
 
-                var lineX1 = barBase + (yearStart-people[i]["BirthYear"])*ptsPerYear;
+                var lineX1 = calcX(people[i]["useBirth"]);
                 var lineX2;
                 // Is this person in a family?
                 if (people[i]["family"] == null) lineX2 = lineX1;
-                else lineX2 = barBase + (yearStart - families[people[i]["family"]]["useDate"]) * ptsPerYear;
-
+                else lineX2 = calcX(families[people[i]["family"]]["useDate"]);
                 elemTxt += '<line x1="' + lineX1 + '" y1="' + lineY + '" x2="' + lineX2 + '" y2="' + lineY + '" style="stroke:#007700;stroke-width:1"/>';
 
-                var textX = lineX2 + 10;
+                var textX;
+                if (!paramFlip) textX = lineX2 + 10;
+                else textX = lineX2 - 10;
+
                 var sn = people[i]["details"]["LastNameAtBirth"];   if (sn == "Unknown") sn = "?";
                 var gn = people[i]["details"]["FirstName"]; if (gn == "Unknown") gn = "?";
                 var by = people[i]["BirthYear"]; if (by == "0000") by = "?";
                 var dy = people[i]["DeathYear"]; if (dy == "0000") dy = "?";
-                elemTxt += '<text x="' + textX + '" y="' + textY + '" ' + txtStyle + '>' + sn + ', ' + gn + ' (' + by + '-' + dy + ')</text>';					
+                if (!paramFlip) elemTxt += '<text x="' + textX + '" y="' + textY + '" ' + txtStyle + '>' + sn + ', ' + gn + ' (' + by + '-' + dy + ')</text>';
+                else elemTxt += '<text x="' + textX + '" y="' + textY + '" ' + txtStyleR + '>' + sn + ', ' + gn + ' (' + by + '-' + dy + ')</text>';
             }
             svgText += elemTxt;			
         }
 
 		//===========================================================
 
-        function drawMarriageLines(people, families) {
+        function drawMarriageLines(people, families, numPeopleToShow) {
 
             var elemTxt = "";
 
             // for each marriage
             for (var i=0; i<families.length; i++) {
+                // Only show if child in this family is being shown or both parents are being shown (i.e need two people)
+                var shouldShow = false;
+                for (var j=0; j<people.length; j++) if ((people[j]["row"])&&(people[j]["family"]==i)) shouldShow = true;
+                if (!(people.find(item => item.id == families[i]["Father"]) == undefined) &&
+                    !(people.find(item => item.id == families[i]["Mother"]) == undefined)) shouldShow = true;
+                if (!shouldShow) continue;
+console.log("Showing family " + i);
+
                 var topIdx, btmIdx;
 
                 // Is there a father?
                 if (families[i]["Father"] != 0) {
                     topIdx = people.findIndex(item => item.id === families[i]["Father"]);
                     // Add bullet
-                    var cY = (topIdx * rowHeight) + headerHeight + 7;
-                    var cX = barBase + (yearStart-families[i]["useDate"])*ptsPerYear;
+                    var cY = (people[topIdx]["row"] * rowHeight) + headerHeight + 7;
+                    var cX = calcX(families[i]["useDate"]);
                     elemTxt += '<circle cx="' + cX + '" cy="' + cY + '" r="3" stroke-width="0" fill="black"/>';
-            }
+                }
                 else {
                     // find oldest child of family
                     for (var j=0; j<people.length; j++) {
@@ -415,8 +524,8 @@ export class TimelineTree {
                 if (families[i]["Mother"] != 0) {
                     btmIdx = people.findIndex(item => item.id === families[i]["Mother"]);
                     // Add bullet
-                    var cY = (btmIdx * rowHeight) + headerHeight + 7;
-                    var cX = barBase + (yearStart-families[i]["useDate"])*ptsPerYear;
+                    var cY = (people[btmIdx]["row"] * rowHeight) + headerHeight + 7;
+                    var cX = calcX(families[i]["useDate"]);
                     elemTxt += '<circle cx="' + cX + '" cy="' + cY + '" r="3" stroke-width="0" fill="black"/>';
                 }
                 else {
@@ -428,20 +537,21 @@ export class TimelineTree {
                         }
                     }
                 }
-                var lineY1 = (topIdx * rowHeight) + headerHeight + 7;
-                var lineY2 = (btmIdx * rowHeight) + headerHeight + 7;
-                var lineX = barBase + (yearStart-families[i]["useDate"])*ptsPerYear;
+                var lineY1 = (people[topIdx]["row"] * rowHeight) + headerHeight + 7;
+                var lineY2 = (people[btmIdx]["row"] * rowHeight) + headerHeight + 7;
+                var lineX = calcX(families[i]["useDate"]);
                 elemTxt += '<line x1="' + lineX + '" y1="' + lineY1 + '" x2="' + lineX + '" y2="' + lineY2 + '" style="stroke:#007700;stroke-width:1"/>';
             }
 
             svgText += elemTxt;	
+
         }
     }
 
     //===================================================================================
     // Class TimelineTree: method to retrieve all relevant people to be displayed
 
-    static async retrievePeopleList(people, families, startID, paramGens, paramSiblings) {
+    static async retrievePeopleList(people, families, startID, paramGens) {
         // Retrieve list of people
         console.log(`Retrieving relatives for person with ID=${startID}`);
         let starttime = performance.now();
@@ -457,12 +567,12 @@ export class TimelineTree {
         let ancestorsIDs = ancestorsList.map(item => item["Id"]);  // Extract Ids of all ancestors
         var fields=["Id","PageId","Name","FirstName","MiddleName","LastNameAtBirth","LastNameCurrent",
                     "BirthDate","DeathDate","BirthLocation","DeathLocation","Gender","IsLiving","Father","Mother",
-                    "Children","Spouses"];
-        const relatives_json = await WikiTreeAPI.getRelatives("TimelineTree", ancestorsIDs, fields, {getChildren: (paramSiblings?1:0), getSpouses: true});
+                    "Children","Spouses","Privacy"];
+        const relatives_json = await WikiTreeAPI.getRelatives("TimelineTree", ancestorsIDs, fields, {getChildren: 1, getSpouses: true});
         let ancestorsDetails = relatives_json ? Object.values(relatives_json) : [];
 
         let elapsedTime = performance.now() - starttime;
-        console.log(`Elapsed time : ${elapsedTime}ms.`);
+        console.log(`Total elapsed time : ${elapsedTime}ms.`);
         if (TimelineTree.DEBUG) console.log(ancestorsDetails);
 
         // Then flatten into a single list of people with suitable ordering
@@ -472,8 +582,8 @@ export class TimelineTree {
         keyPerson["type"]="target";
         // Extract key info
         for (var i=0; i<people.length; i++) {
-            people[i]["BirthYear"] = people[i]["details"]["BirthDate"].substr(0,4);
-            people[i]["DeathYear"] = people[i]["details"]["DeathDate"].substr(0,4);
+            people[i]["BirthYear"] = Number(people[i]["details"]["BirthDate"].substr(0,4));
+            people[i]["DeathYear"] = Number(people[i]["details"]["DeathDate"].substr(0,4));
         }
 
 
@@ -495,7 +605,6 @@ export class TimelineTree {
         let mothersID = keyPerson["person"]["Mother"]
         let motherPerson = ancestorsDetails.find(item => item.user_id === mothersID);
         if (TimelineTree.DEBUG) console.log("Checking tree for Person=" + startID + "; Father=" + fathersID + "; Mother=" + mothersID);
-
 
         // Add fathers relatives
         TimelineTree.extractRelatives(people, fathersID, ancestorsDetails, gen+1);
@@ -519,6 +628,13 @@ export class TimelineTree {
         var siblingsSorted=[];
         // add self
         var keyPersonDetails = keyPerson["person"];
+        if (Number(keyPersonDetails["Privacy"])<50 && !("FirstName" in keyPersonDetails)) {
+            keyPersonDetails["FirstName"] = "(private)";
+            keyPersonDetails["BirthDate"] = "0000";
+            keyPersonDetails["BirthLocation"] = "";
+            keyPersonDetails["DeathDate"] = "0000";
+            keyPersonDetails["DeathLocation"] = "";
+            }
         siblings.push({"id": startID, "details":keyPersonDetails, "generation": gen});
 
         // add siblings (via father)
@@ -526,6 +642,13 @@ export class TimelineTree {
             let fathersChildren = fatherPerson["person"]["Children"]
             var children = [];
             for (const childID in fathersChildren) {
+                if (Number(fathersChildren[childID]["Privacy"])<50 && !("FirstName" in fathersChildren[childID])) {
+                    fathersChildren[childID]["FirstName"] = "(private)";
+                    fathersChildren[childID]["BirthDate"] = "0000";
+                    fathersChildren[childID]["BirthLocation"] = "";
+                    fathersChildren[childID]["DeathDate"] = "0000";
+                    fathersChildren[childID]["DeathLocation"] = "";
+                }
                 children.push({"id": fathersChildren[childID]["Id"], "details": fathersChildren[childID], "generation": gen});
             }
             siblings.push(...children);
@@ -535,6 +658,13 @@ export class TimelineTree {
             let mothersChildren = motherPerson["person"]["Children"]
             var children = [];
             for (const childID in mothersChildren) {
+                if (Number(mothersChildren[childID]["Privacy"])<50 && !("FirstName" in mothersChildren[childID])) {
+                    mothersChildren[childID]["FirstName"] = "(private)";
+                    mothersChildren[childID]["BirthDate"] = "0000";
+                    mothersChildren[childID]["BirthLocation"] = "";
+                    mothersChildren[childID]["DeathDate"] = "0000";
+                    mothersChildren[childID]["DeathLocation"] = "";
+                }
                 children.push({"id": mothersChildren[childID]["Id"], "details": mothersChildren[childID], "generation": gen});
             }
             siblings.push(...children);
@@ -543,7 +673,7 @@ export class TimelineTree {
         while (siblings.length > 0) {
             var oldestSibling = 0;
             var iSibling;
-            for (iSibling=0; iSibling<siblings.length; iSibling++) {
+            for (iSibling=1; iSibling<siblings.length; iSibling++) {
                 if (siblings[iSibling]["details"]["BirthDate"].substring(0,4) < siblings[oldestSibling]["details"]["BirthDate"].substring(0,4)) oldestSibling = iSibling;
             }
             var siblingToMove = siblings[oldestSibling];
@@ -568,7 +698,6 @@ export class TimelineTree {
         // Add other spouses of father
         if (typeof fatherPerson != 'undefined') {
             let fathersSpouses = fatherPerson["person"]["Spouses"]
-            // console.log(fathersSpouses);
             var wives = [];
             for (const spouseID in fathersSpouses) {
                 if (spouseID != mothersID) {
@@ -623,7 +752,7 @@ export class TimelineTree {
                 if (Number(useDate) == 0) useDate = person["details"]["BirthDate"].substring(0,4) - 1;
                 var family = {
                     "Father": person["details"]["Father"],
-                    "Mother": person["details"]["Mother"], 
+                    "Mother": (foundMother > 0) ? person["details"]["Mother"] : 0,
                     "marriageDate": ((foundMother > 0) ? people[foundFather]["details"]["Spouses"][foundMother]["marriage_date"] : 0),
                     "useDate": useDate,
                     "married": ((foundMother > 0) ? true : false),
@@ -641,7 +770,7 @@ export class TimelineTree {
             }
             if (foundMother >=0) {
                 var family = {
-                    "Father": person["details"]["Father"],
+                    "Father": 0,
                     "Mother": person["details"]["Mother"], 
                     "marriageDate": 0,
                     "useDate": person["details"]["BirthDate"].substring(0,4) - 1,
@@ -666,7 +795,6 @@ export class TimelineTree {
                 // check if already exists
                 const matched = families.find(item => item.Father === person["Id"] && item.Mother === spouses[spouse]["Id"]) ||
                                 families.find(item => item.Mother === person["Id"] && item.Father === spouses[spouse]["Id"]);
-                // console.log(`P1=${person["Id"]}, P2=${spouses[spouse]["Id"]}, Matched=${matched}`);
                 if (matched == undefined) {
                     let family = {"Father": person["Id"], "Mother": spouses[spouse]["Id"], 
                                   "marriageDate": spouses[spouse]["marriage_date"],
