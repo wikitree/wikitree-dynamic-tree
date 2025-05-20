@@ -41,7 +41,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "07 May 2025";
+    const AboutUpdateDate = "19 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
