@@ -32,8 +32,36 @@ export class PDFs {
         thisFontStyle: "normal", // normal , bold, italic, bolditalic
     };
 
+    static hex2array(hexString) {
+        let trans = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+        let theRGBarray = [0, 0, 0];
+        if (hexString.length == 7) {
+            theRGBarray = [
+                16 * trans.indexOf(hexString.substr(1, 1)) + trans.indexOf(hexString.substr(2, 1)),
+                16 * trans.indexOf(hexString.substr(3, 1)) + trans.indexOf(hexString.substr(4, 1)),
+                16 * trans.indexOf(hexString.substr(5, 1)) + trans.indexOf(hexString.substr(6, 1)),
+            ];
+        } else {
+            if (hexString.length == 4) {
+                theRGBarray = [
+                    16 * trans.indexOf(hexString.substr(1, 1)) + trans.indexOf(hexString.substr(1, 1)),
+                    16 * trans.indexOf(hexString.substr(2, 1)) + trans.indexOf(hexString.substr(2, 1)),
+                    16 * trans.indexOf(hexString.substr(3, 1)) + trans.indexOf(hexString.substr(3, 1)),
+                ];
+            } else {
+                console.error("hexString must be 7 characters long");
+                return [0, 0, 0];
+            }
+        }
+        return theRGBarray;
+    }
+
     static convertColourNameToRGB(colourName) {
         let thisRGB = [0, 0, 0];
+        if (colourName[0] == "#") {
+            return this.hex2array(colourName);
+        }
+
         if (colourName == "black") {
             thisRGB = [0, 0, 0];
         } else if (colourName == "red") {
@@ -488,7 +516,7 @@ export class PDFs {
         if (imageObj.src > "") {
             return new Promise((resolve, reject) => {
                 thisImage.onload = function () {
-                    const base64String = getBase64Image(thisImage);
+                    const base64String = PDFs.getBase64Image(thisImage);
                     // console.log(base64String);
                     resolve(base64String);
                 };
@@ -507,6 +535,8 @@ export class PDFs {
                         } else {
                             thisGender = "unknown"; //resolve(this.nogenderGIFbase64string);
                         }
+                    } else if (wtViewRegistry.currentView.id == "superbig") {
+                        thisGender = SuperBigFamView.myAhnentafel.primaryPerson.getGender();
                     } else {
                         thisGender = rootPerson.Gender;
                     }
