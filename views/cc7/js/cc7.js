@@ -288,6 +288,7 @@ class CC7 {
             <li>The Legend, Person Popup and Connection Pod are all draggable, as is the Circle View itself.</li>
             <li>Click a circle to show the person's popup with more information.</li>   
             <li>Click the link in the popup to show the connection(s) to the primary person.</li>             
+            <li>Click the &#x1F4BE; icon in the button bar to save a PDF of the current Circles Chart.</li>             
         </ul>
         <h3>Other points</h3>
         <ul>
