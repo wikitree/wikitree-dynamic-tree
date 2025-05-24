@@ -12,6 +12,8 @@ export class PDFs {
     static thisPDFrectArray = [];
     static thisPDFroundedRectArray = [];
     static thisPDFimageArray = [];
+    static thisPDFellipseArray = []; // ellipses and circles
+    static thisPDFarcsArray = []; // arcs and sectors
 
     static thisPDFminX = 0;
     static thisPDFminY = 0;
@@ -31,6 +33,35 @@ export class PDFs {
         thisFont: "helvetica", // helvetica, times, courier, symbol, zapfdingbats
         thisFontStyle: "normal", // normal , bold, italic, bolditalic
     };
+
+    static resetAll() {
+        PDFs.currentPDFsettings = {
+            thisDX: 0,
+            thisDY: 0,
+            thisStroke: "black",
+            thisStrokeRGB: [0, 0, 0],
+            thisStrokeWidth: 1,
+            thisFontSize: 18,
+            thisFont: "helvetica",
+            thisFontStyle: "normal",
+        };
+
+        PDFs.thisPDFlinesArray = [];
+        PDFs.thisPDFtextArray = [];
+        PDFs.thisPDFrectArray = [];
+        PDFs.thisPDFroundedRectArray = [];
+        PDFs.thisPDFimageArray = [];
+        PDFs.thisPDFellipseArray = [];
+        PDFs.thisPDFarcsArray = [];
+
+        PDFs.thisPDFminX = 0;
+        PDFs.thisPDFminY = 0;
+        PDFs.thisPDFmaxX = 0;
+        PDFs.thisPDFmaxY = 0;
+        PDFs.thisPDFwidth = 0;
+        PDFs.thisPDFheight = 0;
+        PDFs.thisPDFmargin = 20;
+    }
 
     static hex2array(hexString) {
         let trans = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
@@ -131,6 +162,20 @@ export class PDFs {
         return [thisDX, thisDY];
     }
 
+    static getRotationAngle(thisObject) {
+        let thisTransform = thisObject.getAttribute("transform");
+        let thisTheta = 0;
+
+        if (thisTransform && thisTransform.indexOf("rotate") > -1) {
+            thisTheta = thisTransform.substring(
+                thisTransform.indexOf("rotate(") + 7,
+                thisTransform.indexOf(")", thisTransform.indexOf("rotate("))
+            );
+            thisTheta = parseInt(thisTheta);
+        }
+        return 360 - thisTheta;
+    }
+
     static getValueFromStyleString(style, styleName) {
         let styleString = "" + style;
         let thisValue = styleString.substring(
@@ -213,6 +258,8 @@ export class PDFs {
                 pdf.setTextColor(element[6].fillColor[0], element[6].fillColor[1], element[6].fillColor[2]);
             } else if (element[6].fill) {
                 pdf.setTextColor(element[6].fill);
+            } else {
+                pdf.setTextColor("black");
             }
             // console.log(element[0], ":", element[3], element[4]);
             // console.log(element[0], ":", pdf.getTextWidth(element[0]));
@@ -222,6 +269,7 @@ export class PDFs {
                 this.currentPDFsettings.thisDX + element[1],
                 this.currentPDFsettings.thisDY + element[2],
                 element[6] // align  & maxWidth options
+                // 135
             );
         }
     }
@@ -270,6 +318,57 @@ export class PDFs {
         }
     }
 
+    static addEllipsesToPDF(pdf, phase = 0) {
+        // pdf.ellipse(950, 950, 195, 195, "DF");
+        // console.log("Ellipses:", this.thisPDFellipseArray);
+        for (let index = 0; index < this.thisPDFellipseArray.length; index++) {
+            const element = this.thisPDFellipseArray[index];
+            if (phase > 0 && phase != element[5].phase) {
+                continue;
+            }
+
+            if (element[5].strokeColor) {
+                pdf.setDrawColor(element[5].strokeColor);
+            }
+            if (element[5].fillColor) {
+                pdf.setFillColor(element[5].fillColor);
+            }
+            if (element[5].lineWidth) {
+                pdf.setLineWidth(element[5].lineWidth);
+            }
+            pdf.ellipse(
+                this.currentPDFsettings.thisDX + element[0], // cx
+                this.currentPDFsettings.thisDY + element[1], // cy
+                element[2], // rx
+                element[3], // ry
+                element[4] // DF / F / D
+            );
+        }
+    }
+    static addArcsToPDF(pdf) {
+        // thisPDFarcsArray.push([[VertexArray, BezierArray], CX, CY, [1, 1], style, options, true]);
+        for (let index = 0; index < this.thisPDFarcsArray.length; index++) {
+            const element = this.thisPDFarcsArray[index];
+            if (element[5].strokeColor) {
+                pdf.setDrawColor(element[5].strokeColor);
+            }
+            if (element[5].fillColor) {
+                pdf.setFillColor(element[5].fillColor);
+            }
+            if (element[5].lineWidth) {
+                pdf.setLineWidth(element[5].lineWidth);
+            }
+            pdf.lines(
+                element[0], // commands arrays
+                this.currentPDFsettings.thisDX + element[1], // cx
+                this.currentPDFsettings.thisDY + element[2], // cy
+                element[3], // scale [x, y]
+                element[4], //  DF / F / D
+                element[6] // true/false - close path
+            );
+        }
+    }
+
     static addImagesToPDF(pdf) {
         for (let index = 0; index < this.thisPDFimageArray.length; index++) {
             const element = this.thisPDFimageArray[index];
@@ -282,7 +381,8 @@ export class PDFs {
                 element[4],
                 element[5],
                 element[6],
-                element[7]
+                element[7],
+                element[8]
             );
         }
     }
@@ -345,6 +445,24 @@ export class PDFs {
             this.thisPDFminY = Math.min(this.thisPDFminY, element[1]);
             this.thisPDFmaxY = Math.max(this.thisPDFmaxY, element[1] + element[3]);
         }
+        for (let index = 0; index < this.thisPDFellipseArray.length; index++) {
+            const element = this.thisPDFellipseArray[index];
+            // console.log("PDF: ellipse " + index, element[0], element[1], element[0] + element[2], element[1] + element[3]);
+            this.thisPDFminX = Math.min(this.thisPDFminX, element[0] - element[2]);
+            this.thisPDFmaxX = Math.max(this.thisPDFmaxX, element[0] + element[2]);
+            this.thisPDFminY = Math.min(this.thisPDFminY, element[1] - element[3]);
+            this.thisPDFmaxY = Math.max(this.thisPDFmaxY, element[1] + element[3]);
+        }
+        for (let index = 0; index < this.thisPDFarcsArray.length; index++) {
+            const element = this.thisPDFarcsArray[index];
+            // this.thisPDFarcsArray.push([[VertexArray, BezierArray], CX, CY, [1, 1], style, options, true]);
+            let vertex = element[0][0];
+            let DxDy = [Math.abs(vertex[0]), Math.abs(vertex[1])];
+            this.thisPDFminX = Math.min(this.thisPDFminX, element[1] - DxDy[0]);
+            this.thisPDFmaxX = Math.max(this.thisPDFmaxX, element[1] + DxDy[0]);
+            this.thisPDFminY = Math.min(this.thisPDFminY, element[2] - DxDy[1]);
+            this.thisPDFmaxY = Math.max(this.thisPDFmaxY, element[2] + DxDy[1]);
+        }
         for (let index = 0; index < this.thisPDFroundedRectArray.length; index++) {
             const element = this.thisPDFroundedRectArray[index];
             // console.log("PDF: rrect " + index, element[0], element[1], element[0] + element[2], element[1] + element[3]);
@@ -358,8 +476,25 @@ export class PDFs {
             const element = this.thisPDFtextArray[index];
             // console.log("PDF: text " + index, element[0], element[1], element[2], element[3]);
             // console.log("PDF: text " + index, element[1] - 150, element[2], element[1] + 150, element[2] + 21);
+
+            // BASIC MINIMUMS
             this.thisPDFminX = Math.min(this.thisPDFminX, element[1]);
             this.thisPDFminY = Math.min(this.thisPDFminY, element[2]);
+
+            // COMPLICATED MINIMUMS - if - align:center and maxWidth is defined
+            if (element[6].align == "center" && element[6].maxWidth) {
+                this.thisPDFminX = Math.min(this.thisPDFminX, element[1] - element[6].maxWidth / 2);
+                this.thisPDFmaxX = Math.max(this.thisPDFmaxX, element[1] + element[6].maxWidth / 2);
+                if (element[6].angle) {
+                    this.thisPDFminY = Math.min(this.thisPDFminY, element[2] - element[6].maxWidth / 2);
+                    this.thisPDFmaxY = Math.max(this.thisPDFmaxY, element[2] + element[6].maxWidth / 2);
+                } else {
+                    this.thisPDFmaxY = Math.max(this.thisPDFmaxY, element[2]);
+                }
+            } else {
+                this.thisPDFmaxX = Math.max(this.thisPDFmaxX, element[1]);
+                this.thisPDFmaxY = Math.max(this.thisPDFmaxY, element[2]);
+            }
         }
 
         for (let index = 0; index < this.thisPDFimageArray.length; index++) {
@@ -419,7 +554,7 @@ export class PDFs {
                 thisFontSize,
                 { align: "center", fill: "black", fillColor: [0, 0, 0] },
             ]);
-            console.log("PDF: text title", this.thisPDFminX, this.thisPDFminY + 20, { thisFontSize });
+            // console.log("PDF: text title", this.thisPDFminX, this.thisPDFminY + 20, { thisFontSize });
         }
         if (thisShowFooter) {
             this.thisPDFmaxY += 40;
@@ -441,14 +576,14 @@ export class PDFs {
                 thisFontSize,
                 { align: "center", fill: "black" },
             ]);
-            console.log(
-                "PDF: text footer",
-                this.thisPDFminX,
-                this.thisPDFmaxY,
-                this.thisPDFmaxX,
-                this.thisPDFmaxY + 10 + 21,
-                { thisFontSize }
-            );
+            // console.log(
+            //     "PDF: text footer",
+            //     this.thisPDFminX,
+            //     this.thisPDFmaxY,
+            //     this.thisPDFmaxX,
+            //     this.thisPDFmaxY + 10 + 21,
+            //     { thisFontSize }
+            // );
             this.thisPDFmaxY += 10;
         }
         if (thisShowURL) {
@@ -472,14 +607,14 @@ export class PDFs {
                 thisFontSize,
                 { align: "center", fill: "black" },
             ]);
-            console.log(
-                "PDF: text URL",
-                this.thisPDFminX,
-                this.thisPDFmaxY,
-                this.thisPDFmaxX,
-                this.thisPDFmaxY + 10 + 21,
-                { thisFontSize }
-            );
+            // console.log(
+            //     "PDF: text URL",
+            //     this.thisPDFminX,
+            //     this.thisPDFmaxY,
+            //     this.thisPDFmaxX,
+            //     this.thisPDFmaxY + 10 + 21,
+            //     { thisFontSize }
+            // );
             this.thisPDFmaxY += 10;
         }
     }
@@ -499,7 +634,7 @@ export class PDFs {
     static async setupWaitForBase64Image(imageObj) {
         let thisImage;
         if (imageObj.src > "" && imageObj.width > 0 && imageObj.height > 0) {
-            console.log("imageObj.src", imageObj.src, "WIDTH & HEIGHT");
+            // console.log("imageObj.src", imageObj.src, "WIDTH & HEIGHT");
             thisImage = new Image(imageObj.width, imageObj.height);
             thisImage.crossOrigin = "use-credentials";
             thisImage.src = imageObj.src;
@@ -525,9 +660,11 @@ export class PDFs {
                     // if (imageObj.index % 2 == 0) {
                     // reject(new Error("Failed to load this silly image"));
                     let thisGender = "unknown";
-                    if (wtViewRegistry.currentView.id == "fractal") {
-                        if (imageObj.ahnNum == 1) {
+                    if (wtViewRegistry.currentView.id == "fractal" || wtViewRegistry.currentView.id == "fanchart") {
+                        if (imageObj.ahnNum == 1 && wtViewRegistry.currentView.id == "fractal") {
                             thisGender = FractalView.myAhnentafel.primaryPerson.getGender();
+                        } else if (imageObj.ahnNum == 1 && wtViewRegistry.currentView.id == "fanchart") {
+                            thisGender = FanChartView.myAhnentafel.primaryPerson.getGender();
                         } else if (imageObj.ahnNum % 2 == 0) {
                             thisGender = "Male"; //resolve(this.maleGIFbase64string);
                         } else if (imageObj.ahnNum % 2 == 1) {
@@ -541,7 +678,7 @@ export class PDFs {
                         thisGender = rootPerson.Gender;
                     }
 
-                    console.log("ON ERROR : thisGender", thisGender);
+                    // console.log("ON ERROR : thisGender", thisGender);
                     if (thisGender == "Male") {
                         // console.log("ON ERROR : maleGIFbase64string", maleGIFbase64string);
                         // console.log("ON ERROR : this.maleGIFbase64string", this.maleGIFbase64string);
@@ -567,5 +704,71 @@ export class PDFs {
         ctx.drawImage(img, 0, 0);
         const dataURL = canvas.toDataURL("image/png");
         return dataURL;
+    }
+
+    // PDFs.addArcToPDF(0, 0, 250, 180, 90, "F", { fillColor: "#FF0000", strokeColor: "#000000", lineWidth: 2 });
+
+    static addArcToPDF(CX, CY, R, startAngle, sweepAngle, style = "DF", options = {}) {
+        let thisDX = this.currentPDFsettings.thisDX;
+        let thisDY = this.currentPDFsettings.thisDY;
+
+        let fillColor = options.fillColor || "#FFFFFF";
+        let strokeColor = options.strokeColor || "#000000";
+        let lineWidth = options.lineWidth || 1;
+
+        let ASweep = sweepAngle * (Math.PI / 180);
+        let StartAngle = startAngle * (Math.PI / 180);
+        let y0 = Math.sin(ASweep / 2);
+        let x0 = Math.cos(ASweep / 2);
+        let tx = ((1 - x0) * 4) / 3;
+        let ty = y0 - (tx * x0) / (y0 + 0.0001);
+
+        let Px = [];
+        let Py = [];
+        let Pts = [
+            { X: 0, Y: 0 },
+            { X: 0, Y: 0 },
+            { X: 0, Y: 0 },
+            { X: 0, Y: 0 },
+        ];
+
+        Px[0] = x0;
+        Py[0] = -y0;
+        Px[1] = x0 + tx;
+        Py[1] = -ty;
+        Px[2] = x0 + tx;
+        Py[2] = ty;
+        Px[3] = x0;
+        Py[3] = y0;
+
+        // rotation and translation of control points
+        let sn = Math.sin(StartAngle + ASweep / 2);
+        let cs = Math.cos(StartAngle + ASweep / 2);
+        Pts[0].X = CX + Math.round(R * (Px[0] * cs - Py[0] * sn));
+        Pts[0].Y = CY + Math.round(R * (Px[0] * sn + Py[0] * cs));
+
+        // for iCurve = 0 to NCurves - 1 do begin
+        let iCurve = 0;
+
+        let AStart = StartAngle + ASweep * iCurve;
+        sn = Math.sin(AStart + ASweep / 2);
+        cs = Math.cos(AStart + ASweep / 2);
+
+        let VertexArray = [Pts[0].X - CX, Pts[0].Y - CY];
+        let BezierArray = [];
+        for (i = 1; i <= 3; i++) {
+            Pts[i + iCurve * 3].X = CX + Math.round(R * (Px[i] * cs - Py[i] * sn));
+            Pts[i + iCurve * 3].Y = CY + Math.round(R * (Px[i] * sn + Py[i] * cs));
+
+            BezierArray.push(Pts[i + iCurve * 3].X - Pts[0 + iCurve * 3].X);
+            BezierArray.push(Pts[i + iCurve * 3].Y - Pts[0 + iCurve * 3].Y);
+        }
+
+        // console.log("startAngle:" + startAngle, "BezierArray", BezierArray);
+        // console.log("Pts", Pts);
+        // end;
+
+        this.thisPDFarcsArray.push([[VertexArray, BezierArray], CX, CY, [1, 1], style, options, true]);
+        // this.thisPDFarcsArray.push([[BezierArray], Pts[0].X, Pts[0].Y, [1, 1], style, options, false]);
     }
 }
