@@ -2575,7 +2575,7 @@ import { Utils } from "../shared/Utils.js";
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup  = function (person) {
+    Tree.prototype.personPopup = function (person) {
         if (!Utils.firstTreeAppPopUpPopped) {
             $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
             Utils.firstTreeAppPopUpPopped = true;
@@ -2588,17 +2588,16 @@ import { Utils } from "../shared/Utils.js";
                 primaryPerson: thePeopleList[FandokuView.myAhnentafel.list[1]],
                 myAhnentafel: FandokuView.myAhnentafel,
                 SettingsObj: Utils,
-                extra: { hideConnectionIcon: true , hideSpouse: true},
+                extra: { hideConnectionIcon: true, hideSpouse: true },
             },
             AboutAppIcon,
             "fandoku"
         );
-            
+
         // console.log("FandokuView.personPopup");
     };
-    
-    
-    function placeHolder4PersonPopup (person, xy) {
+
+    function placeHolder4PersonPopup(person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
@@ -2657,7 +2656,7 @@ import { Utils } from "../shared/Utils.js";
             condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
-    };
+    }
 
     /**
      * Remove all popups. It will also remove

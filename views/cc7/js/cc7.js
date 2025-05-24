@@ -14,6 +14,7 @@ import { CC7Notes } from "./CC7Notes.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CirclesView } from "./CirclesView.js";
 
 export { CC7, downloadArray, CC7UrlParams, CC7MLParamMap, CC7CirclesParamMap };
 
@@ -288,6 +289,7 @@ class CC7 {
             <li>The Legend, Person Popup and Connection Pod are all draggable, as is the Circle View itself.</li>
             <li>Click a circle to show the person's popup with more information.</li>   
             <li>Click the link in the popup to show the connection(s) to the primary person.</li>             
+            <li>Click the &#x1F4BE; icon in the button bar to save a PDF of the current Circles Chart.</li>             
         </ul>
         <h3>Other points</h3>
         <ul>
@@ -1325,6 +1327,9 @@ class CC7 {
             })
             .then(() => {
                 console.log("Data added to RelationshipFinderWTE.");
+                if (CirclesView.firstDegreeCirclesToRevise.length > 0) {
+                    CirclesView.checkForDegree1CirclesToRevise();
+                }
             })
             .catch((error) => {
                 console.error("Error:", error);
@@ -1343,6 +1348,9 @@ class CC7 {
             })
             .then(() => {
                 console.log("Data added to ConnectionFinderWTE.");
+                if (CirclesView.firstDegreeCirclesToRevise.length > 0) {
+                    CirclesView.checkForDegree1CirclesToRevise();
+                }
             })
             .catch((error) => {
                 console.error("Error:", error);
