@@ -14,6 +14,7 @@ import { CC7Notes } from "./CC7Notes.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CirclesView } from "./CirclesView.js";
 
 export { CC7, downloadArray, CC7UrlParams, CC7MLParamMap, CC7CirclesParamMap };
 
@@ -1326,6 +1327,9 @@ class CC7 {
             })
             .then(() => {
                 console.log("Data added to RelationshipFinderWTE.");
+                if (CirclesView.firstDegreeCirclesToRevise.length > 0) {
+                    CirclesView.checkForDegree1CirclesToRevise();
+                }
             })
             .catch((error) => {
                 console.error("Error:", error);
@@ -1344,6 +1348,9 @@ class CC7 {
             })
             .then(() => {
                 console.log("Data added to ConnectionFinderWTE.");
+                if (CirclesView.firstDegreeCirclesToRevise.length > 0) {
+                    CirclesView.checkForDegree1CirclesToRevise();
+                }
             })
             .catch((error) => {
                 console.error("Error:", error);
