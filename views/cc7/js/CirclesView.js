@@ -43,6 +43,7 @@ export class CirclesView {
         */
 
     static theLeafCollection = {}; // Object that tracks each of the unique CODES generated (for connections) and maps them to the corresponding WikiTree ID #s (unique people)
+    static firstDegreeCirclesToRevise = []; // Array of the first degree circles that need to be revised, as they are not yet colour coded by Relationships
 
     static buildView() {
         console.log("CIRCLES VIEW - buildView");
@@ -994,6 +995,16 @@ export class CirclesView {
         }
     }
 
+    // ====================================================================
+    // Re: issue of sometimes Degree 1 colouring is not occurring
+    // - this is because the person is not being added to the map with the correct relationship - OR - the relationship is in the process of being calculated and not done yet
+    // SOLUTION ?
+    // - add a check to see if the relationship is already calculated and if not, then do the calculation
+    //  - USE: array to keep track of degree = 1 circles,
+    // and check all of those who are NOT children once the first round has been done
+    //  (add check when the WTE Connection finder and Relationship finder are done)
+    // ====================================================================
+
     static doCircle(person, thisDegree, newX, newY) {
         condLog(CirclesView.displayType, person);
         const blobColours = [
@@ -1037,6 +1048,17 @@ export class CirclesView {
         let thisClr = blobColours[degree]; // predominant colour for circles, specificially, circle FILL colour (turns white if fill is off or in B&W mode)
         let outlineClr = "black"; // outline of dot - will be black normally, but when filled and B&W modes are both turned off, it becomes the colour previously known as the fill colour (blobColour)
         let textClr = "black"; // colour of the text inside the circle (letter, initials or names & dates) - usually black unless filled is on and fill colour is too dark
+
+        // CHECK for Degree 1 relationships
+        if (degree == 1) {
+            if (person.Relationship == undefined) {
+                condLog("CirclesView.doCircle - degree 1 person:", person.Relationship, person.Id, person.LongName);
+                this.firstDegreeCirclesToRevise.push(person.Id);
+            } else if (this.firstDegreeCirclesToRevise.indexOf(person.Id) > -1) {
+                condLog("FOUND a degree 1 person READY to revise:", person.Relationship, person.Id, person.LongName);
+                this.firstDegreeCirclesToRevise.splice(this.firstDegreeCirclesToRevise.indexOf(person.Id), 1);
+            }
+        }
 
         if (degree == 0) {
             textClr = "white";
@@ -1540,6 +1562,9 @@ export class CirclesView {
             { radiusMultipler },
             { totalWidthAllCircles }
         );
+
+        this.checkForDegree1CirclesToRevise();
+
         document.getElementById("circlesDIV4SVG").innerHTML = SVGcode;
         $("#circlesDIV4SVG").draggable();
 
@@ -1633,5 +1658,94 @@ export class CirclesView {
                 console.log(CirclesView.PersonCodesObject[CirclesView.theLeafCollection["A0"].Id]);
             });
         });
+    }
+
+    static checkForDegree1CirclesToRevise() {
+        // console.log("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
+        if (this.firstDegreeCirclesToRevise.length > 0) {
+            // REVISIT the degree 1 circles
+            for (let f = 0; f < this.firstDegreeCirclesToRevise.length; f++) {
+                const fID = this.firstDegreeCirclesToRevise[f];
+                const person = CirclesView.currentSortedMap.get(fID);
+                if (person.Relationship == undefined) {
+                    // console.log(
+                    //     "CirclesView.doCircle - degree 1 person STILL NOT ready for re-colouring:",
+                    //     person.Relationship,
+                    //     person.Id,
+                    //     person.LongName
+                    // );
+                } else {
+                    // console.log(
+                    //     "FOUND a degree 1 person READY to revise:",
+                    //     person.Relationship,
+                    //     person.Id,
+                    //     person.LongName
+                    // );
+
+                    let personCircle = document.getElementById("circlePerson" + fID);
+                    if (personCircle) {
+                        let personObj = { ellipse: personCircle.children[0], text: personCircle.children[1] };
+                        if (personCircle.children[0].tagName != "ellipse") {
+                            for (let c = 0; c < personCircle.children.length; c++) {
+                                personObj[personCircle.children[c].tagName] = personCircle.children[c];
+                            }
+                        }
+                        // console.log("Update ", personObj["ellipse"], personObj["text"]);
+
+                        let thisClr = "lawngreen";
+                        let textClr = "black";
+
+                        if (
+                            person.Relationship &&
+                            person.Relationship.full &&
+                            (person.Relationship.full == "father" ||
+                                person.Relationship.full == "mother" ||
+                                person.Relationship.full == "parent")
+                        ) {
+                            thisClr = "gray";
+                            textClr = "white";
+                        } else if (
+                            person.Relationship &&
+                            person.Relationship.full &&
+                            CirclesView.circlesGrayAncs == true &&
+                            (person.Relationship.full.indexOf("father") > -1 ||
+                                person.Relationship.full.indexOf("mother") > -1 ||
+                                person.Relationship.full.indexOf("parent") > -1)
+                        ) {
+                            thisClr = "gray";
+                            textClr = "white";
+                        } else if (
+                            person.Relationship &&
+                            person.Relationship.full &&
+                            (person.Relationship.full.indexOf("husband") > -1 ||
+                                person.Relationship.full.indexOf("wife") > -1 ||
+                                person.Relationship.full.indexOf("spouse") > -1)
+                        ) {
+                            thisClr = "red";
+                            textClr = "white";
+                        } else if (person.Relationship == "") {
+                            thisClr = "red";
+                            textClr = "white";
+                        } else if (
+                            person.Relationship &&
+                            person.Relationship.full &&
+                            (person.Relationship.full.indexOf("brother") > -1 ||
+                                person.Relationship.full.indexOf("sister") > -1 ||
+                                person.Relationship.full.indexOf("sibling") > -1)
+                        ) {
+                            thisClr = "blue";
+                            textClr = "white";
+                        }
+
+                        personObj["ellipse"].setAttribute("fill", thisClr);
+                        personObj["text"].setAttribute("style", "font-size:14; fill:" + textClr);
+                    } else {
+                        console.log("Could not find the circle for this person:", person.Id);
+                    }
+
+                    this.firstDegreeCirclesToRevise.splice(f, 1);
+                }
+            }
+        }
     }
 }
