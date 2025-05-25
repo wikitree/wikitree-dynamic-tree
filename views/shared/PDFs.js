@@ -513,8 +513,22 @@ export class PDFs {
         }
     }
 
-    static setPDFsizes(tmpPDF) {
+    static setPDFsizes(tmpPDF, overrideObject = null) {
         this.setPDFsMaxMins();
+        if (overrideObject) {
+            if (overrideObject.minX) {
+                this.thisPDFminX = overrideObject.minX;
+            }
+            if (overrideObject.maxX) {
+                this.thisPDFmaxX = overrideObject.maxX;
+            }
+            if (overrideObject.minY) {
+                this.thisPDFminY = overrideObject.minY;
+            }
+            if (overrideObject.maxY) {
+                this.thisPDFmaxY = overrideObject.maxY;
+            }
+        }
 
         this.addHeaderFooterToPDF(tmpPDF);
 
