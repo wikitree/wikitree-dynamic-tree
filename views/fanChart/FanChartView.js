@@ -1961,7 +1961,17 @@ import { PDFs } from "../shared/PDFs.js";
             // cx, cy, r, startAngle, endAngle, style, options
 
             // ALL COMPONENTS HAVE BEEN ADDED TO THE PDF - NOW DO THE FINAL CALCULATIONS
-            PDFs.setPDFsizes(tmpPDF);
+            PDFs.setPDFsMaxMins();
+            // console.log("thisPDFmaxY", PDFs.thisPDFmaxY);
+            let thisMaxY = PDFs.thisPDFmaxY;
+            if (FanChartView.maxAngle == 180) {
+                thisMaxY = 1.0 * ctrCircle.getAttribute("r");
+            } else if (FanChartView.maxAngle == 240) {
+                thisMaxY = (5 / 9) * thisMaxY;
+            }
+
+            PDFs.setPDFsizes(tmpPDF, { maxY: thisMaxY });
+
             console.log("w,h:", PDFs.thisPDFwidth, PDFs.thisPDFheight);
             // console.log(PDFs.thisPDFarcsArray);
 
