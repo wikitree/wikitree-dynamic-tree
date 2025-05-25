@@ -1458,6 +1458,7 @@ import { PDFs } from "../shared/PDFs.js";
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
             numGens2PDF = Math.min(4, numGens2PDF);
+            let thisCrossRadius = 150;
 
             let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
             document.getElementById("PDFgenButton").setAttribute("disabled", true);
@@ -1569,6 +1570,13 @@ import { PDFs } from "../shared/PDFs.js";
                         }
                     }
 
+                    let thisR = Math.sqrt(thisX * thisX + thisY * thisY);
+                    let thisGenNum = Math.floor(Math.log2(index));
+                    let thisGenAngle = FanChartView.maxAngle / 2 ** thisGenNum;
+                    thisCrossRadius = thisR * 2 * Math.PI * (thisGenAngle / 360);
+
+                    // CENTRAL DOT (ellipse) - to mark CENTRE of the SECTOR - for alignment purposes and debugging
+
                     // PDFs.thisPDFellipseArray.push([
                     //     thisX,
                     //     thisY,
@@ -1581,10 +1589,10 @@ import { PDFs } from "../shared/PDFs.js";
                     // HORIZONTAL LINE at TOP of each Cell - for alignment purposes and debugging
 
                     // PDFs.thisPDFlinesArray.push([
-                    //     thisX - 150 * thisXdx - 100 * thisYdx,
-                    //     thisY - 100 * thisYdy - 150 * thisXdy,
-                    //     thisX + 150 * thisXdx - 100 * thisYdx,
-                    //     thisY - 100 * thisYdy + 150 * thisXdy,
+                    //     thisX - (thisCrossRadius / 2) * thisXdx - 100 * thisYdx,
+                    //     thisY - 100 * thisYdy - (thisCrossRadius / 2) * thisXdy,
+                    //     thisX + (thisCrossRadius / 2) * thisXdx - 100 * thisYdx,
+                    //     thisY - 100 * thisYdy + (thisCrossRadius / 2) * thisXdy,
                     //     [255, 0, 0],
                     //     1,
                     //     0,
@@ -1703,94 +1711,6 @@ import { PDFs } from "../shared/PDFs.js";
                         src: thisElement.src,
                         ahnNum: index,
                     });
-                    //  if (thePeopleList[window.FanChartView.myAhnentafel.list[index]].getGender() == "Male") {
-                    //      thisBaseString = PDFs.maleGIFbase64string;
-                    //  } else if (thePeopleList[window.FanChartView.myAhnentafel.list[index]].getGender() == "Female") {
-                    //      thisBaseString = PDFs.femaleGIFbase64string;
-                    //  } else {
-                    //      thisBaseString = PDFs.nogenderGIFbase64string;
-                    //  }
-
-                    // thisY -= 10 * thisYdy;
-                    // thisX -= 10 * thisYdx;
-
-                    // PDFs.thisPDFellipseArray.push([
-                    //     thisX,
-                    //     thisY,
-                    //     7,
-                    //     7,
-                    //     "DF",
-                    //     { fillColor: "red", strokeColor: "yellow", lineWidth: 2, phase: 2 },
-                    // ]);
-
-                    // PDFs.thisPDFellipseArray.push([
-                    //     thisX, //+ thisElement.height * thisYdx,
-                    //     thisY + thisElement.height, //* thisYdy,
-                    //     7,
-                    //     7,
-                    //     "DF",
-                    //     { fillColor: "green", strokeColor: "yellow", lineWidth: 2, phase: 2 },
-                    // ]);
-
-                    // PDFs.thisPDFellipseArray.push([
-                    //     thisX - thisElement.height * thisYdx,
-                    //     thisY + thisElement.height - thisElement.height * thisYdy,
-                    //     7,
-                    //     7,
-                    //     "DF",
-                    //     { fillColor: "blue", strokeColor: "yellow", lineWidth: 2, phase: 2 },
-                    // ]);
-
-                    // PDFs.thisPDFimageArray.push([
-                    //     thisBaseString,
-                    //     // "/apps/clarke11007/images/icons/female.gif",
-                    //     "",
-                    //     thisX + (thisElement.width / 2) * thisXdx,
-                    //     thisY + (thisElement.width / 2) * thisXdy,
-                    //     thisElement.width,
-                    //     thisElement.height,
-                    //     "",
-                    //     "",
-                    //     thisTheta,
-                    // ]);
-
-                    // PDFs.thisPDFimageArray.push([
-                    //     thisBaseString,
-                    //     // "/apps/clarke11007/images/icons/female.gif",
-                    //     "",
-                    //     thisX,
-                    //     thisY,
-                    //     thisElement.width,
-                    //     thisElement.height,
-                    //     "",
-                    //     "",
-                    //     thisTheta,
-                    // ]);
-
-                    // PDFs.thisPDFimageArray.push([
-                    //     thisBaseString,
-                    //     // "/apps/clarke11007/images/icons/female.gif",
-                    //     "",
-                    //     thisX,
-                    //     thisY,
-                    //     thisElement.width,
-                    //     thisElement.height,
-                    //     "",
-                    //     "",
-                    // ]);
-
-                    // PDFs.thisPDFimageArray.push([
-                    //     thisBaseString,
-                    //     // "/apps/clarke11007/images/icons/female.gif",
-                    //     "",
-                    //     thisX,
-                    //     thisY,
-                    //     thisElement.width,
-                    //     thisElement.height,
-                    //     "",
-                    //     "",
-                    //     180 + thisTheta,
-                    // ]);
 
                     PDFs.thisPDFimageArray.push([
                         thisBaseString,
@@ -1895,6 +1815,15 @@ import { PDFs } from "../shared/PDFs.js";
                     thisY += 5 * thisYdy;
                     thisX += 5 * thisYdx;
                     let thisTextArray = thisElement.innerHTML.split("<br>");
+
+                    if (thisTextArray.length > 1) {
+                        let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
+                        if (thisTextsTextWidth > thisCrossRadius) {
+                            let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
+                            thisTextArray[2] = thisTextArray[1].substring(splitIndex).trim();
+                            thisTextArray[1] = thisTextArray[1].substring(0, splitIndex).trim();
+                        }
+                    }
                     // console.log({ thisText }, { thisX }, { thisY });
                     // pdf.setDrawColor("#000000");
                     for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
@@ -1911,10 +1840,10 @@ import { PDFs } from "../shared/PDFs.js";
                             PDFs.currentPDFsettings.thisFontSize,
                             { rotationDirection: 1, angle: thisTheta },
                         ]);
-                        if (tmpPDF.getTextWidth(textLine) > 300) {
-                            thisY += 19 * thisYdy;
-                            thisX += 19 * thisYdx;
-                        }
+                        // if (tmpPDF.getTextWidth(textLine) > 300) {
+                        //     thisY += 19 * thisYdy;
+                        //     thisX += 19 * thisYdx;
+                        // }
                     }
                 }
 
@@ -1924,6 +1853,16 @@ import { PDFs } from "../shared/PDFs.js";
                     thisY += 5 * thisYdy;
                     thisX += 5 * thisYdx;
                     let thisTextArray = thisElement.innerHTML.split("<br>");
+
+                    if (thisTextArray.length > 1) {
+                        let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
+                        if (thisTextsTextWidth > thisCrossRadius) {
+                            let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
+                            thisTextArray[2] = thisTextArray[1].substring(splitIndex).trim();
+                            thisTextArray[1] = thisTextArray[1].substring(0, splitIndex).trim();
+                        }
+                    }
+
                     // console.log({ thisText }, { thisX }, { thisY });
                     // pdf.setDrawColor("#000000");
                     for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
