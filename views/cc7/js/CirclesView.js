@@ -88,6 +88,8 @@ export class CirclesView {
             document.getElementById("PDFgenButton").setAttribute("disabled", true);
             document.getElementById("PDFgenProgressBar").style.display = "revert"; //( "disabled", true);
 
+            PDFs.resetAll();
+
             PDFs.currentPDFsettings = {
                 thisDX: 0,
                 thisDY: 0,
@@ -99,19 +101,19 @@ export class CirclesView {
                 thisFontStyle: "normal",
             };
 
-            PDFs.thisPDFlinesArray = [];
-            PDFs.thisPDFtextArray = [];
-            PDFs.thisPDFrectArray = [];
-            PDFs.thisPDFroundedRectArray = [];
-            PDFs.thisPDFimageArray = [];
+            // PDFs.thisPDFlinesArray = [];
+            // PDFs.thisPDFtextArray = [];
+            // PDFs.thisPDFrectArray = [];
+            // PDFs.thisPDFroundedRectArray = [];
+            // PDFs.thisPDFimageArray = [];
 
-            PDFs.thisPDFminX = 0;
-            PDFs.thisPDFminY = 0;
-            PDFs.thisPDFmaxX = 0;
-            PDFs.thisPDFmaxY = 0;
-            PDFs.thisPDFwidth = 0;
-            PDFs.thisPDFheight = 0;
-            PDFs.thisPDFmargin = 20;
+            // PDFs.thisPDFminX = 0;
+            // PDFs.thisPDFminY = 0;
+            // PDFs.thisPDFmaxX = 0;
+            // PDFs.thisPDFmaxY = 0;
+            // PDFs.thisPDFwidth = 0;
+            // PDFs.thisPDFheight = 0;
+            // PDFs.thisPDFmargin = 20;
 
             let thisSVG = document.getElementById("circlesDIV4SVG");
             let thisDXDY = PDFs.getTranslationCoordinates(thisSVG);
