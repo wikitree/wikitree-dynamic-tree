@@ -906,7 +906,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     signal
                 );
                 if (!this.isActive()) {
-                    return;     // We are no longer the current view, exit immediately without cleanup
+                    return; // We are no longer the current view, exit immediately without cleanup
                 }
 
                 // Conditional second API call
@@ -920,7 +920,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     signal
                 );
                 if (!this.isActive()) {
-                    return;     // We are no longer the current view, exit immediately without cleanup
+                    return; // We are no longer the current view, exit immediately without cleanup
                 }
 
                 // Further processing if connected DNA tests are found
@@ -939,7 +939,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                     const connectedProfilesResults = await Promise.all(connectedProfilesPromises);
                     if (!this.isActive()) {
-                        return;     // We are no longer the current view, exit immediately without cleanup
+                        return; // We are no longer the current view, exit immediately without cleanup
                     }
 
                     let dataThing = $(this).parent();
@@ -1082,7 +1082,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const selector = popup.find(".dnaTestResults");
         await this.populateTestResults(selector, connectedDNATests, connectedProfiles);
         if (!this.isActive()) {
-            return;     // We are no longer the current view, exit immediately without cleanup
+            return; // We are no longer the current view, exit immediately without cleanup
         }
 
         const parentTop = parent.offset().top - $(window).scrollTop();
@@ -1152,7 +1152,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 // depend on the API you're using (e.g., batch requests or individual gets)
                 const fetchedProfiles = await this.getPeople(missingProfileIds, 0, 1000);
                 if (!this.isActive()) {
-                    return;     // We are no longer the current view, exit immediately without cleanup
+                    return; // We are no longer the current view, exit immediately without cleanup
                 }
 
                 const theProfiles = fetchedProfiles?.[2];
@@ -1179,7 +1179,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $this = this;
         await this.getDNAConnections(connectedProfiles);
         if (!this.isActive()) {
-            return;     // We are no longer the current view, exit immediately without cleanup
+            return; // We are no longer the current view, exit immediately without cleanup
         }
         let connectionsHtml = "<ul class='dnaConnections'>";
         if (connectedProfiles.length > 0) {
@@ -1353,7 +1353,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSL1WDK4-ReqYPjJ3L-ynxwGgAQOLsNdBcI7gKFCxzU3jLd5L_-YiiCz77faR9L362jjVpP-38JjSEa/pub?output=csv"
             );
             if (!this.isActive()) {
-                return;     // We are no longer the current view, exit immediately without cleanup
+                return; // We are no longer the current view, exit immediately without cleanup
             }
 
             if (!response.ok) {
@@ -1640,7 +1640,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 })
             ).then((results) => Object.assign({}, ...results));
             if (!this.isActive()) {
-                return;     // We are no longer the current view, exit immediately without cleanup
+                return; // We are no longer the current view, exit immediately without cleanup
             }
 
             // Cache the fetched data
@@ -1680,7 +1680,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             const starttime = performance.now();
             const [aborted, theresMore, people] = await this.getPeople(ids, start, limit, options);
             if (!this.isActive()) {
-                return;     // We are no longer the current view, exit immediately without cleanup
+                return; // We are no longer the current view, exit immediately without cleanup
             }
             if (aborted) {
                 return [true, 0];
@@ -1930,7 +1930,7 @@ window.OneNameTrees = class OneNameTrees extends View {
     async processBatches(ids, surname) {
         const $this = this;
         if (!this.isActive()) {
-            return;     // We are no longer the current view, exit immediately without cleanup
+            return; // We are no longer the current view, exit immediately without cleanup
         }
 
         if (!ids || ids.length === 0) {
@@ -1969,7 +1969,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             // start/limit values".
             const [aborted, theresmore, people] = await this.getPeople(batchIds);
             if (!this.isActive()) {
-                return;     // We are no longer the current view, exit immediately without cleanup
+                return; // We are no longer the current view, exit immediately without cleanup
             }
             const callTime = performance.now() - callStart;
             if (aborted || $this.cancelling) {
@@ -2944,7 +2944,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     completeDisplay() {
         if (!this.isActive()) {
-            return;     // We are no longer the current view, exit immediately without cleanup
+            return; // We are no longer the current view, exit immediately without cleanup
         }
         // If this.displayedIndividuals (set) is empty, create it by getting all the IDs from the HTML
         if (this.displayedIndividuals.size === 0) {
@@ -4738,7 +4738,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $this.reset();
         const [aborted, data] = await $this.getONTids(surname, location, centuries);
         if (!this.isActive()) {
-            return;     // We are no longer the current view, exit immediately without cleanup
+            return; // We are no longer the current view, exit immediately without cleanup
         }
         if (aborted) {
             wtViewRegistry.showNotice("Data retrieval cancelled.");
@@ -4778,7 +4778,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.showNotice("Fetching your watchlist...");
             const watchlist = await this.watchlistPromise;
             if (!this.isActive()) {
-                return;     // We are no longer the current view, exit immediately without cleanup
+                return; // We are no longer the current view, exit immediately without cleanup
             }
             watchlistFetched = true;
             wtViewRegistry.showNotice("Watchlist retrieved...");
