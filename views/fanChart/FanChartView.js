@@ -1717,7 +1717,6 @@ import { PDFs } from "../shared/PDFs.js";
                         // "/apps/clarke11007/images/icons/female.gif",
                         "",
                         thisX + thisElement.height * thisYdx - (thisElement.width / 2) * thisXdx,
-
                         thisY - thisElement.height + thisElement.height * thisYdy - (thisElement.width / 2) * thisXdy,
 
                         thisElement.width,
@@ -1740,8 +1739,8 @@ import { PDFs } from "../shared/PDFs.js";
                     PDFs.thisPDFimageArray.push([
                         thisBaseString, //thisElement.src,
                         "PNG",
-                        thisX - (thisElement.width / 2) * thisXdx,
-                        thisY - (thisElement.width / 2) * thisXdy,
+                        thisX + thisElement.height * thisYdx - (thisElement.width / 2) * thisXdx,
+                        thisY - thisElement.height + thisElement.height * thisYdy - (thisElement.width / 2) * thisXdy,
                         thisElement.width,
                         thisElement.height,
                         "",
