@@ -1,14 +1,14 @@
 #ttreeContainer {
-  padding: 0.3em;
+  padding: 0em;
   position: relative;
-  height: 1000px;
+  height: 800px;
   overflow-y: scroll;
   border:solid 2px green;
 }
 #ttreeHeader {
   height: 50px;
   position: sticky;
-  top: 5px;
+  top: 0px;
 }
 #ttreeMain {
   height: 11000px;
@@ -27,7 +27,7 @@
 .headerText2{
   fill:black;
   font-family:Arial, sans-serif;
-  font-size:11px;
+  font-size:12px;
   font-weight:normal;
 }
 
@@ -38,7 +38,7 @@
 .gridText {
   fill:black;
   font-family:Arial, sans-serif;
-  font-size:11px;
+  font-size:12px;
   font-weight:normal;
 }
 
@@ -48,11 +48,21 @@
 .rowText {
   fill:black;
   font-family:Arial, sans-serif;
-  font-size:11px;
-  font-weight:normal"';
+  font-size:12px;
+  font-weight:normal;
 }
 
 .barGeneral { stroke-width:0; stroke:#000000; }
+.barTerminate {
+  fill:red;
+  stroke-width:1;
+  stroke:black;
+}
+.barTerminate2 {
+  fill:none;
+  stroke-width:2;
+  stroke:black;
+}
 .familyLine {
   stroke:#007700;
   stroke-width:1;
@@ -60,16 +70,24 @@
 .barTextF {
   fill:black;
   font-family:Arial, sans-serif;
-  font-size:11px;
+  font-size:12px;
   font-weight:normal;
-  text-anchor:end
+  text-anchor:end;
 }
 .barTextB {
   fill:black;
   font-family:Arial, sans-serif;
-  font-size:11px;
+  font-size:12px;
   font-weight:normal;
 }
+.barHighlight { stroke-width:2 !important; stroke-dasharray:5,5 !important; stroke:black !important;  }
+.barHover:hover { stroke-width:2 !important; stroke:#000000 !important; }
+.barHover:hover + rect { stroke-width:2 !important; stroke:#000000 !important; }
+.abar:link { text-decoration: none !important; }
+.abar:visited { text-decoration: none !important; }
+.abar:hover { text-decoration: underline !important; }
+.abar:active { text-decoration: none !important; }
+
 .famDot1 {
   stroke-width:0;
   fill:black;
@@ -188,7 +206,7 @@
     width: 4em;
   }
   
-  .ttree #help-text {
+  #help-text {
     display: none;
     border: 3px solid forestgreen;
     border-radius: 1em;
@@ -203,8 +221,22 @@
     z-index: 11000;
     cursor: default;
   }
+  #spinner {
+    border: 2px solid forestgreen;
+    border-radius: 2em;
+    padding: 0.3em 1em;
+    margin: 1em auto;
+    position: absolute;
+    top: 200px;
+    left: 200px;
+    width: 8em;
+    background: white;
+    box-shadow: 1em 1em 1em grey;
+    z-index: 11000;
+    cursor: default;
+  }
   
-  .ttree xx {
+  xx {
     position: absolute;
     top: 0.2em;
     right: 0.6em;
@@ -214,13 +246,13 @@
     color: red;
   }
   
-  .ttree #help-text:hover {
+  #help-text:hover {
     cursor: grab;
   }
-  .ttree #help-text:active {
+  #help-text:active {
     cursor: grabbing;
   }
-  .ttree #help-text h3 {
+  #help-text h3 {
     font-size: 1.3em;
     margin-bottom: 0.5em;
   }

@@ -7,30 +7,25 @@
  * It constructs the visualiation using SVG, and is based on an earlier standalone version that displayed data stored
  * in a JSON file extracted from RootMagic.
  *
- * ==================================
- * Ackowledgements: 
- * Much of the structure of the app has been generated from the "Ancestor Lines Explorer" app. Thanks are due
- * to the developers of that app!
- * 
- * 
+ * (Note: Much of the structure of the app has been generated from the "Ancestor Lines Explorer" app. Thanks are due
+ * to the developers of that app!)
  * 
  * Suggestion for further development are welcome.
  * David Lowe (davidblowe@gmail.com)
  * 
  * ==================================
- * Version 2:
- *   Changing the underlying data model to allow for simpler display
- *   Added ability to load additional generations etc.
- * Version 3:
- *   Added dynamic loading of additional generations (and stop indicator)
- *   Added loading spinner
+ * Working version 2:
+ * 
+ * Changing the underlying data model to allow for simpler display
+ * Added ability to dynamically change the number of generations etc.
+ * 
  */
 
 
 //===================================================================================
 // Key parameters and data
 
-let ttreeStartGens = 2;
+let ttreeStartGens = 3;
 let selector;
 
 const ttreeDebug = true;
@@ -71,12 +66,11 @@ const ttreeHelpText = `
     <xx>[ x ]</xx>
     <h2 style="text-align: center">About TimelineTree</h2>
     <p>Use this application to view a tree view of the ancestors of a specific individual, but formatted along a timeline.</p>
-    <p><em><b>Please note</b>: This is a work in progress</b></em></p>
+    <p><em><b>Warning</b>: This is a work in progress</p>
     <h3>Display and Interaction</h3>
     <img src="/apps/lowe6667/views/timelineTree/help-annot.png"/><br/>
     <ul>
-        <li>Click on a primary ancestors bar (shown in darker colours): (a) if parents are already shown then that branch will contract; (b) if that branch is not shown, then it will appear (and load from the server if needed)</li>
-        <li>Click on a persons name to show their wikitree page in a new tab
+        <li>More info to be provided.</li>
     </ul>
     <h3>Feedback</h3>
     <p>If you have any suggestions for improvements, or find bugs that need fixing, please email: davidblowe@gmail.com</p>
@@ -162,37 +156,35 @@ window.TimelineTreeView = class TimelineTreeView extends View {
 // Load and display the tree
 
 async function loadTree (event) {
-
     ttreePeople = null;
     ttreeQueue = [];
 
     // build the tree and the display components
+    ttreeStartGens = 3;
     await generateTree();
 
     // Initialise current focus person
     let focusPersonIdx = ttreePeople.findIndex(item => item["Id"] == ttreePrimaryID);
     let focusPerson = ttreePeople[focusPersonIdx];
     let focusFamily = ttreeFamilies[focusPerson["ChildIn"]];
-    ttreeCurrentFocusPerson = focusPersonIdx;
 
     // Select just the core family for initial display
     console.log(`Tree has been built - now to display core family`);
-    for (let i=0; i<ttreePeople.length; i++) ttreePeople[i]["Visible"] = false;
-    for (let i=0; i<ttreeAncestors.length; i++) {
-        let person = ttreePeople.find(item => item["Id"] == Number(ttreeAncestors[i]["key"]));
-        person["Visible"] = true;
-        // then activate their spouses
-        let spouses = person["Details"]["Spouses"];
-        for (const spouseID in spouses) {
-            const spouse = ttreePeople.find(item => item["Id"] == spouseID);
-            if (spouse != null ) spouse["Visible"] = true;
-        }
-        
+    for (let i=0; i<ttreePeople.length; i++) {
+        ttreePeople[i]["Visible"] = false;
     }
+    focusPerson["Visible"] = true;
+    for (let i=0; i<focusFamily["Parents"].length; i++) ttreePeople[focusFamily["Parents"][i]["Row"]]["Visible"] = true;
+    for (let i=0; i<focusFamily["Children"].length; i++) ttreePeople[focusFamily["Children"][i]["Row"]]["Visible"] = true;
     updateSibs(event);
 
     // And finally update the whole display
     updateDisplay(event);
+
+    // And then move the display to centre on the key person
+    const row = ttreePeople.findIndex(item => item["Id"] == ttreePrimaryID);
+    const elemX = document.getElementById(`personSetF-${row}`);
+    elemX.scrollIntoView({behavior: "smooth", block: "center"});
 }
 
 
@@ -201,10 +193,15 @@ async function loadTree (event) {
 
 async function updateDisplayPerson (event) {
 
-    const elemSpinner = document.getElementById("spinner");
-    elemSpinner.style.display = "block";
-
     let personRow = event.target.parentElement.id.substring(11);
+
+    // Update the highlighting of the current selected person
+    $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
+    $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
+    ttreeCurrentFocusPerson = personRow;
+    $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).addClass("barHighlight")
+    $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).addClass("barHighlight")
+
 
     // Check if there are parents, and if so then are they active (note: only need to check one parent?
     // If either parent is active, then should be contracting not expanding
@@ -215,9 +212,9 @@ async function updateDisplayPerson (event) {
     else if ((family["Parents"][0]["Row"] >= 0) && (ttreePeople[family["Parents"][0]["Row"]]["Visible"])) expanding = false;
     else if ((family["Parents"][1]["Row"] >= 0) && (ttreePeople[family["Parents"][1]["Row"]]["Visible"])) expanding = false;
 
-    console.log(`Changing person ${personRow}: expanding=${expanding}`);
+    if (ttreeDebug) console.log(`Changing person ${personRow}: expanding=${expanding}`);
 
-    // If expanding, load parents, then make them (and all spouses) visible.
+    // If expanding, load parents, then them (and all spouses) visible.
     if (expanding) {
         for (let j=0; j<family["Parents"].length; j++) {
             let parentIdx = family["Parents"][j]["Row"];
@@ -249,17 +246,17 @@ async function updateDisplayPerson (event) {
         }
     } 
 
-    // Remove highlighting of the current selected person
-    $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
-    $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
-    ttreeCurrentFocusPerson = personRow;
-
     // Then update the display
     updateSibs(event);
     updateDisplay(event);
 
+    // And update the highlighting of the current selected person
+    $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
+    $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
+    ttreeCurrentFocusPerson = personRow;
+    $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).addClass("barHighlight")
+    $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).addClass("barHighlight")
     
-    elemSpinner.style.display = "none";
 
     function hidePerson (row) {
         const person = ttreePeople[row];
@@ -302,7 +299,7 @@ async function loadQueuedPeople () {
     }
     ttreeQueue = [];
     if (retrievalList.length == 0) return;
-    console.log(`Loading ${retrievalList.length} new people`);
+    if (ttreeDebug) console.log(`Loading ${retrievalList.length} new people`);
 
     // For each person, load their family
     const relsFields=["Id","PageId","Name","FirstName","MiddleName","LastNameAtBirth","LastNameCurrent",
@@ -318,14 +315,7 @@ async function loadQueuedPeople () {
         addPerson(person["person"], "ancestor", true);
         // Then add each parent, sibling, spouse, and child
         for (let parent in person["person"]["Parents"]) addPerson(person["person"]["Parents"][parent], "ancestor", false);
-        // for (let sibling in person["person"]["Siblings"]) addPerson(person["person"]["Siblings"][sibling], "sibling", false);
-        for (let sibling in person["person"]["Siblings"]) {
-            // check if full or half sibling?
-            let type;
-            if ((person["person"]["Siblings"][sibling]["Father"] == person["person"]["Father"]) && (person["person"]["Siblings"][sibling]["Mother"] == person["person"]["Mother"])) type="sibling";
-            else type = "halfsibling";
-            addPerson(person["person"]["Siblings"][sibling], type, false);
-        }
+        for (let sibling in person["person"]["Siblings"]) addPerson(person["person"]["Siblings"][sibling], "sibling", false);
         for (let spouse in person["person"]["Spouses"]) {
             addPerson(person["person"]["Spouses"][spouse], "stepParent", false);
         }
@@ -336,7 +326,12 @@ async function loadQueuedPeople () {
 
     // Then update the data for people...
     updatePeople();
-    // Then generate the display elems
+    // Show the results
+    if (ttreeDebug) console.log(ttreeAncestors);
+    if (ttreeDebug) console.log(ttreePeople);
+    if (ttreeDebug) console.log(ttreeFamilies);
+
+    // The generate the display elems
     buildDisplayElems();
     // And finally update the whole display
     updateSibs();
@@ -388,7 +383,7 @@ function updateSibs (event) {
 
 function updateDisplay (event) {
 
-    // First step, rescale display based on displayed people.
+    // First step, rescale dispay based on displayed people.
     rescaleDisplay();
 
     // =============================================================================
@@ -420,7 +415,6 @@ function updateDisplay (event) {
             for (const familyIdx of mother["ParentIn"]) {
                 let spouseRow = ttreeFamilies[familyIdx]["Parents"][0]["Row"];
                 if (spouseRow < 0) continue;
-                if (ttreePeople[spouseRow]["Type"] != "stepParent") continue;
                 if (ttreePeople[spouseRow]["Visible"] && (ttreePeople[spouseRow]["ShowRow"] == -1) && (spouseRow != fatherIdx)) {
                     ttreePeople[spouseRow]["ShowRow"] = maxRow;
                     maxRow++;
@@ -467,7 +461,6 @@ function updateDisplay (event) {
             for (const familyIdx of father["ParentIn"]) {
                 let spouseRow = ttreeFamilies[familyIdx]["Parents"][1]["Row"];
                 if (spouseRow < 0) continue;
-                if (ttreePeople[spouseRow]["Type"] != "stepParent") continue;
                 if (ttreePeople[spouseRow]["Visible"] && (ttreePeople[spouseRow]["ShowRow"] == -1) && (spouseRow != motherIdx)) {
                     ttreePeople[spouseRow]["ShowRow"] = maxRow;
                     maxRow++;
@@ -609,7 +602,7 @@ function updateDisplay (event) {
     elemAll.setAttribute("width", totalWidth);
     elemH.setAttribute("width", totalWidth);
     elemM.setAttribute("width", totalWidth);
-    elemM.style.height = `${totalHeight}px`;
+    elemM.style.height = totalHeight;
 
     // And add event handlers for clicking on a bar
     for (let i=0; i<ttreePeople.length; i++) {
@@ -620,13 +613,6 @@ function updateDisplay (event) {
             $(`#personBarB-${i} > rect`).addClass("barHover")
         }
     }
-
-    $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).addClass("barHighlight")
-    $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).addClass("barHighlight")
-
-    // And then move the display to centre on the key person
-    // const elemX = document.getElementById(`personSetF-${ttreeCurrentFocusPerson}`);
-    // elemX.scrollIntoView(true);
 
 }
 
@@ -656,7 +642,7 @@ function rescaleDisplay() {
     yearEarliest -= (yearEarliest % 25);
     yearLatest   -= (yearLatest % 25);
     dispYearsWidth = (yearLatest - yearEarliest) * ptsPerYear;
-    console.log(`Updated year range: ${yearEarliest}-${yearLatest}`);
+    if (ttreeDebug) console.log(`Year range: ${yearEarliest}-${yearLatest}`);
 
     // Then update the x coords for each persons bar
     for (let i=0; i<ttreePeople.length; i++) {
@@ -753,12 +739,8 @@ async function generateTree () {
             </svg>
             <svg id="ttreeMain" y="100" width="2000"></svg>
         </div>
-        <div id="spinner"><img src="./views/timelineTree/spinner.gif"/></div>
         <div id="help-text">${ttreeHelpText}</div>`);       
     console.log(`Building new tree for person with ID=${ttreePrimaryID}`);
-
-    const elemSpinner = document.getElementById("spinner");
-    elemSpinner.style.display = "block";
 
     let paramFlip = false;
     
@@ -789,8 +771,6 @@ async function generateTree () {
    const elapsedTime = performance.now() - starttime;
    console.log(`Retrieved ${ttreePeople.length} total people in tree`);
    console.log(`Total elapsed time : ${elapsedTime}ms.`);
-
-   elemSpinner.style.display = "none";
 }
 
 
@@ -925,7 +905,7 @@ function buildDisplayElems() {
                 default       : barColour = barColourX0; barDef = "#gradX0"; 
             }
         }
-        else if ((person["Type"] == "sibling") || (person["Type"] == "siblingStep")) {
+        else if (person["Type"] == "sibling") {
             switch (person["Details"]["Gender"]) {
                 case "Male"   : barColour = barColourM1; barDef = "#gradM1"; break;
                 case "Female" : barColour = barColourF1; barDef = "#gradF1";  break;
@@ -956,21 +936,14 @@ function buildDisplayElems() {
         if (!person["Death"]["Known"]) blocksFwd += `<rect x="${xBarEnd}" y="4" width="50" height="10" style="fill:url(${barDef}L);stroke-width:0;stroke:#000000"/>`;
         blocksFwd += `</svg>`
 
-        // Add terminating marker
-        if (ttreeFamilies[person["ChildIn"]]["Parents"].length == 0) {
-            // blocksFwd += `<polygon points="${xBarStart-5},7 ${xBarStart-2},4 ${xBarStart+2},4 ${xBarStart+5},7 ${xBarStart+5},11 ${xBarStart+2},14 ${xBarStart-2},14 ${xBarStart-5},11" class="barTerminate"/>`;
-            blocksFwd += `<polyline points="${xBarStart},9 ${xBarStart-5},9 ${xBarStart-5},2 ${xBarStart-5},16" class="barTerminate2"/>`;
-        }
-        // Add family line
+        // Add family line, marriage dots, and names/dates
         blocksFwd +=    `<line x1="${xFamilyLine}" y1="9" x2="${xBarStart + 2}" y2="9" class="familyLine"/>`;
-        // Add marriage dots
         for (const famIdx of person["ParentIn"]) {
             const fData = ttreeFamilies[famIdx]["Status"];
             const xPF = (fData["Use"] - setStart) * ptsPerYear;
             const mdot = (fData["Married"]) ? ((fData["Known"]) ? "famDot1" : "famDot2" ) : "famDot3";
             blocksFwd += `<circle cx="${xPF}" cy="9" r="3" class="${mdot}"/>`;
         }
-        // Add names/dates
         blocksFwd += `<a href="http://wikitree.com/wiki/${person["Details"]["Name"]}" class="abar" target="_blank"><text x="${xFamilyLine - 10}" y="13" class="barTextF">${gn} ${sn} (${by}-${dy})</text></a>`
         blocksFwd += `</svg>`;
 
@@ -992,20 +965,14 @@ function buildDisplayElems() {
         if (!person["Death"]["Known"]) blocksBwd += `<rect x="${xBarEnd-50}" y="4" width="50" height="10" style="fill:url(${barDef}R);stroke-width:0;stroke:#000000"/>`;
         blocksBwd += `</svg>`
 
-        // Add terminating marker
-        if (ttreeFamilies[person["ChildIn"]]["Parents"].length == 0) {
-            blocksBwd += `<polygon points="${xBarEnd-5},7 ${xBarEnd-2},4 ${xBarEnd+2},4 ${xBarEnd+5},7 ${xBarEnd+5},11 ${xBarEnd+2},14 ${xBarEnd-2},14 ${xBarEnd-5},11" class="barTerminate"/>`;
-        }
-        // Add family line
+        // Add family line, marriage dots, and names/dates
         blocksBwd +=    `<line x1="${xBarStart - 2}" y1="9" x2="${xFamilyLine}" y2="9" class="familyLine"/>`;
-        // Add marriage dots
         for (const famIdx of person["ParentIn"]) {
             const fData = ttreeFamilies[famIdx]["Status"];
             const xPF = (setStart - fData["Use"]) * ptsPerYear;
             const mdot = (fData["Married"]) ? ((fData["Known"]) ? "famDot1" : "famDot2" ) : "famDot3";
             blocksBwd += `<circle cx="${xPF}" cy="9" r="3" class="${mdot}"/>`;
         }
-        // Add names/dates
         blocksBwd += `<a href="http://wikitree.com/wiki/${person["Details"]["Name"]}" class="abar" target="_blank"><text x="${xFamilyLine + 10}" y="13" class="barTextB">${gn} ${sn} (${by}-${dy})</text></a>`
         blocksBwd += `</svg>`;
 
@@ -1045,6 +1012,8 @@ async function loadPeople() {
     console.log(`Retrieved ${ancestorsList.length} people in direct tree`);
     hdrMsg.innerHTML = `Retrieved ${ancestorsList.length} direct ancestors (please wait whilst we get everyone else)`;
     if (ancestorsList.length == 0) return false;
+
+    if (ttreeDebug) console.log(ancestorsList);
     
     // Then have to retrieve the relatives of each ancestor (parents + spouse + children + siblings)
     let ancestorsIDs = ancestorsList.map(item => item["Id"]);  // Extract Ids of all ancestors
@@ -1062,13 +1031,7 @@ async function loadPeople() {
         addPerson(ancestor["person"], "ancestor", true);
         // Then add each parent, sibling, spouse, and child
         for (let parent in ancestor["person"]["Parents"]) addPerson(ancestor["person"]["Parents"][parent], "ancestor", false);
-        for (let sibling in ancestor["person"]["Siblings"]) {
-            // check if full or half sibling?
-            let type;
-            if ((ancestor["person"]["Siblings"][sibling]["Father"] == ancestor["person"]["Father"]) && (ancestor["person"]["Siblings"][sibling]["Mother"] == ancestor["person"]["Mother"])) type="sibling";
-            else type = "halfsibling";
-            addPerson(ancestor["person"]["Siblings"][sibling], type, false);
-        }
+        for (let sibling in ancestor["person"]["Siblings"]) addPerson(ancestor["person"]["Siblings"][sibling], "sibling", false);
         if (i>0) for (let spouse in ancestor["person"]["Spouses"]) addPerson(ancestor["person"]["Spouses"][spouse], "stepParent", false);        
         if (i>0) for (let child in ancestor["person"]["Children"]) addPerson(ancestor["person"]["Children"][child], "halfSibling", false);
     }
@@ -1092,9 +1055,6 @@ function addPerson(person, type, primary) {
         }
         else {
             if ((type=="ancestor")||(ttreePeople[personIdx]["Type"]=="ancestor")) ttreePeople[personIdx]["Type"] = "ancestor";
-            else if ((type=="sibling")&&(ttreePeople[personIdx]["Type"]=="stepParent")) ttreePeople[personIdx]["Type"] = "siblingStep";
-            else if ((type=="stepParent")&&(ttreePeople[personIdx]["Type"]=="sibling")) ttreePeople[personIdx]["Type"] = "siblingStep";
-            else if ((type=="siblingStep")||(ttreePeople[personIdx]["Type"]=="siblingStep")) ttreePeople[personIdx]["Type"] = "siblingStep";
             else if ((type=="sibling")||(ttreePeople[personIdx]["Type"]=="sibling")) ttreePeople[personIdx]["Type"] = "sibling";
             else if ((type=="halfSibling")||(ttreePeople[personIdx]["Type"]=="halfSibling")) ttreePeople[personIdx]["Type"] = "halfSibling";
             else ttreePeople[personIdx]["Type"] = "stepParent";
@@ -1128,15 +1088,15 @@ function updatePeople() {
         person["Gen"] = -1;
 
         // Determine birthYear
-        const by = Number(("" + person["Details"]["BirthDate"]).substring(0,4));
-        const bd = Number(("" + person["Details"]["BirthDateDecade"]).substring(0,4));
+        const by = Number(person["Details"]["BirthDate"].substring(0,4));
+        const bd = Number(person["Details"]["BirthDateDecade"].substring(0,4));
         if (by > 0) person["Birth"] = {"Year":by, "Known":true};
         else if (bd > 0) person["Birth"] = {"Year":bd+10, "Known":false};
         else person["Birth"] = {"Year":null, "Known":false};
 
         // Determine deathYear
-        const dy = Number(("" + person["Details"]["DeathDate"]).substring(0,4));
-        const dd = Number(("" + person["Details"]["DeathDateDecade"]).substring(0,4));
+        const dy = Number(person["Details"]["DeathDate"].substring(0,4));
+        const dd = Number(person["Details"]["DeathDateDecade"].substring(0,4));
         const dl = (person["Details"]["IsLiving"] == 1);
         if (dy > 0) person["Death"] = {"Year":dy, "Known":true, "IsLiving":dl};
         else if (dd > 0) person["Death"] = {"Year":dd, "Known":false, "IsLiving":dl};
@@ -1163,6 +1123,8 @@ function updatePeople() {
                       "Data"     : {"EarliestBirth": person["Birth"]["Year"], "LatestBirth": person["Birth"]["Year"]},
                       "Status"   : {"Married": false, "Date": null, "Known": false, "Use": null},
                       "NewItem"  : true};
+            const child = {"ID": person["Id"], "Row": i};
+            family["Children"].push(child);
             ttreeFamilies.push(family);
             familyIdx = ttreeFamilies.length - 1;
         }
