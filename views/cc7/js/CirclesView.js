@@ -388,33 +388,39 @@ export class CirclesView {
                 14,
                 { align: "left", fill: "black", strokeColor: "black" },
             ]);
-            PDFs.thisPDFtextArray.push([
-                "Total",
-                5 + PDFs.thisPDFminX, //+ 150,
-                45 + whereY,
-                "helvetica",
-                "bold",
-                14,
-                { align: "left", fill: "black", strokeColor: "black" },
-            ]);
 
             let dt = document.getElementById("degreesTable");
             let numCols = dt.rows[0].cells.length - 1;
 
+            // Only show the TOTAL row if that exists (won't exist if you're showing a single Degree only, and not a range of Degrees)
+            if (dt.rows[2]) {
+                PDFs.thisPDFtextArray.push([
+                    "Total",
+                    5 + PDFs.thisPDFminX, //+ 150,
+                    45 + whereY,
+                    "helvetica",
+                    "bold",
+                    14,
+                    { align: "left", fill: "black", strokeColor: "black" },
+                ]);
+            }
+
             for (let r = 0; r < 3; r++) {
                 const thisRow = dt.rows[r];
-                for (let c = 0; c < numCols; c++) {
-                    const thisEntry = thisRow.cells[c + 1].innerText;
+                if (thisRow) {
+                    for (let c = 0; c < numCols; c++) {
+                        const thisEntry = thisRow.cells[c + 1].innerText;
 
-                    PDFs.thisPDFtextArray.push([
-                        thisEntry,
-                        125 + c * 40 + PDFs.thisPDFminX, //+ 140,
-                        5 + r * 20 + whereY,
-                        "helvetica",
-                        "normal",
-                        14,
-                        { align: "right", maxWidth: 40, fill: "black", strokeColor: "black" },
-                    ]);
+                        PDFs.thisPDFtextArray.push([
+                            thisEntry,
+                            125 + c * 40 + PDFs.thisPDFminX, //+ 140,
+                            5 + r * 20 + whereY,
+                            "helvetica",
+                            "normal",
+                            14,
+                            { align: "right", maxWidth: 40, fill: "black", strokeColor: "black" },
+                        ]);
+                    }
                 }
             }
 
@@ -438,11 +444,29 @@ export class CirclesView {
                 return;
             }
 
+            let useSmartLegend = document.getElementById("PDFuseSmartLegend").checked;
+
+            if (document.getElementById("PDFshowLegendNot").checked) {
+                return;
+            }
+
             let whereY = PDFs.thisPDFminY - 60;
             if (document.getElementById("PDFshowLegendBelow").checked) {
                 whereY = PDFs.thisPDFmaxY + 20;
             }
 
+            let dt = document.getElementById("degreesTable");
+            let numCols = dt.rows[0].cells.length - 1;
+            let startingDeg = 1;
+            let endingDeg = numCols;
+            if (numCols == 1) {
+                startingDeg = parseInt(dt.rows[0].cells[1].innerText);
+                endingDeg = startingDeg;
+            }
+            if (!useSmartLegend) {
+                startingDeg = 1;
+                endingDeg = 7;
+            }
             const blobColours = [
                 "green",
                 "lawngreen",
@@ -474,7 +498,7 @@ export class CirclesView {
                 { align: "left", fill: "black", strokeColor: "black" },
             ]);
 
-            for (let cc = 2; cc <= 7; cc++) {
+            for (let cc = Math.max(2, startingDeg); cc <= Math.min(7, endingDeg); cc++) {
                 PDFs.thisPDFroundedRectArray.push([
                     thisMaxX + cc * 28, //- 0.5 * thisR,
                     whereY, // - 0.5 * thisR,
@@ -485,39 +509,6 @@ export class CirclesView {
                     "DF",
                     { fillColor: blobColours[cc], strokeColor: "black", lineWidth: 1 },
                 ]);
-
-                if (cc > 2) {
-                    PDFs.thisPDFroundedRectArray.push([
-                        thisMaxX + cc * 28, //- 0.5 * thisR,
-                        whereY + 28, // - 0.5 * thisR,
-                        2 * 12,
-                        2 * 12,
-                        12, // 2 * thisR,
-                        12, // 2 * thisR,
-                        "DF",
-                        { fillColor: blobColours[5 + cc], strokeColor: "black", lineWidth: 1 },
-                    ]);
-
-                    PDFs.thisPDFtextArray.push([
-                        CC1rels[cc - 3],
-                        thisMaxX + cc * 28 + 12,
-                        whereY + 42, //39 - (cc > 5 ? 0 : 3),
-                        "helvetica",
-                        "normal",
-                        7, //cc == 6 ? 6 : 7,
-                        { align: "center", maxWidth: 24, fill: cc == 7 ? "black" : "white", strokeColor: "white" },
-                    ]);
-
-                    // PDFs.thisPDFtextArray.push([
-                    //     CC1rels[cc - 2],
-                    //     thisMaxX + cc * 28 + 10,
-                    //     whereY + 38,
-                    //     "helvetica",
-                    //     "normal",
-                    //     9,
-                    //     { align: "center", maxWidth: 24, fill: "black", strokeColor: "black" },
-                    // ]);
-                }
 
                 PDFs.thisPDFtextArray.push([
                     "CC" + cc,
@@ -530,15 +521,60 @@ export class CirclesView {
                 ]);
             }
 
-            PDFs.thisPDFtextArray.push([
-                "CC1:",
-                thisMaxX + 2 * 28 + 10,
-                whereY + 42,
-                "helvetica",
-                "bold",
-                9,
-                { align: "center", maxWidth: 28, fill: "black", strokeColor: "black" },
-            ]);
+            startingDeg = 3;
+            if (numCols == 1) {
+                endingDeg = 3;
+                if (!useSmartLegend) {
+                    endingDeg = 7;
+                }
+            } else {
+                endingDeg = 7;
+            }
+
+            for (let cc = startingDeg; cc <= endingDeg; cc++) {
+                PDFs.thisPDFroundedRectArray.push([
+                    thisMaxX + cc * 28, //- 0.5 * thisR,
+                    whereY + 28, // - 0.5 * thisR,
+                    2 * 12,
+                    2 * 12,
+                    12, // 2 * thisR,
+                    12, // 2 * thisR,
+                    "DF",
+                    { fillColor: blobColours[5 + cc], strokeColor: "black", lineWidth: 1 },
+                ]);
+
+                PDFs.thisPDFtextArray.push([
+                    CC1rels[cc - 3],
+                    thisMaxX + cc * 28 + 12,
+                    whereY + 42, //39 - (cc > 5 ? 0 : 3),
+                    "helvetica",
+                    "normal",
+                    7, //cc == 6 ? 6 : 7,
+                    { align: "center", maxWidth: 24, fill: cc == 7 ? "black" : "white", strokeColor: "white" },
+                ]);
+
+                // PDFs.thisPDFtextArray.push([
+                //     CC1rels[cc - 2],
+                //     thisMaxX + cc * 28 + 10,
+                //     whereY + 38,
+                //     "helvetica",
+                //     "normal",
+                //     9,
+                //     { align: "center", maxWidth: 24, fill: "black", strokeColor: "black" },
+                // ]);
+            }
+
+            if (numCols > 1) {
+                PDFs.thisPDFtextArray.push([
+                    "CC1:",
+                    thisMaxX + 2 * 28 + 10,
+                    whereY + 42,
+                    "helvetica",
+                    "bold",
+                    9,
+                    { align: "center", maxWidth: 28, fill: "black", strokeColor: "black" },
+                ]);
+            }
 
             if (document.getElementById("PDFshowLegendBelow").checked) {
                 // NEED to add a visual element at the bottom of the degree table so proper MAX Y is calculated
@@ -591,14 +627,15 @@ export class CirclesView {
             SVGbtnCLOSE +
             "</a></span>" +
             "<H3 align=center>PDF Generator</H3><div id=innerPDFgen>" +
-            "<input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Circles Chart PDF<BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Circles Chart for John Smith'>" +
+            "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Circles Chart PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Circles Chart for John Smith'>" +
             "<BR/><BR/>" +
-            "Include Degree Table:<BR/> <input style='margin-left: 20px;' type=radio name=PDFshowDegreeTableCheckbox id=PDFshowDegreeTableNot > Not at all <input type=radio name=PDFshowDegreeTableCheckbox id=PDFshowDegreeTableAbove checked > Above   <input type=radio name=PDFshowDegreeTableCheckbox id=PDFshowDegreeTableBelow > Below   " +
+            "Include Degree Table:<BR/> <label><input style='margin-left: 20px;' type=radio name=PDFshowDegreeTableCheckbox id=PDFshowDegreeTableNot > Not at all</label> <label><input type=radio name=PDFshowDegreeTableCheckbox id=PDFshowDegreeTableAbove checked > Above</label>   <label><input type=radio name=PDFshowDegreeTableCheckbox id=PDFshowDegreeTableBelow > Below</label>   " +
             "<BR/><BR/>" +
-            "Include Legend:<BR/> <input style='margin-left: 20px;' type=radio name=PDFshowLegendCheckbox id=PDFshowLegendNot > Not at all <input type=radio name=PDFshowLegendCheckbox id=PDFshowLegendAbove > Above   <input type=radio name=PDFshowLegendCheckbox id=PDFshowLegendBelow checked> Below   " +
+            "Include Legend:<BR/> <label><input style='margin-left: 20px;' type=radio name=PDFshowLegendCheckbox id=PDFshowLegendNot > Not at all</label> <label><input type=radio name=PDFshowLegendCheckbox id=PDFshowLegendAbove > Above</label>   <label><input type=radio name=PDFshowLegendCheckbox id=PDFshowLegendBelow checked> Below</label>   " +
+            "&nbsp;&nbsp;&nbsp; <label><input style='margin-left: 20px;' type=checkbox name=PDFuseSmartLegend id=PDFuseSmartLegend > Use Smart Legend (only show CCs used)</label> " +
             "<BR/><BR/>" +
-            "<input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF<BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Circles Chart created TODAY using CC7 VIEWS app in Tree Apps collection on WikiTree.com.'>" +
-            "<BR/><BR/><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF" +
+            "<label><input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Circles Chart created TODAY using CC7 VIEWS app in Tree Apps collection on WikiTree.com.'>" +
+            "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
             "<BR/><BR/>" +
             "<button id=PDFgenButton class='btn btn-primary'  onclick=CC7View.doPrintPDF()>Generate PDF now</button> " +
             "<button id=PDFgenProgressBar class='btn-secondary'  style='display:none;' ></button> " +
@@ -1053,10 +1090,10 @@ export class CirclesView {
 
         // CHECK for Degree 1 relationships
         if (degree == 1) {
-            if (person.Relationship == undefined) {
+            if (person && person.Relationship == undefined) {
                 condLog("CirclesView.doCircle - degree 1 person:", person.Relationship, person.Id, person.LongName);
                 this.firstDegreeCirclesToRevise.push(person.Id);
-            } else if (this.firstDegreeCirclesToRevise.indexOf(person.Id) > -1) {
+            } else if (person && this.firstDegreeCirclesToRevise.indexOf(person.Id) > -1) {
                 condLog("FOUND a degree 1 person READY to revise:", person.Relationship, person.Id, person.LongName);
                 this.firstDegreeCirclesToRevise.splice(this.firstDegreeCirclesToRevise.indexOf(person.Id), 1);
             }
@@ -1663,89 +1700,91 @@ export class CirclesView {
     }
 
     static checkForDegree1CirclesToRevise() {
-        // console.log("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
+        console.log("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
         if (this.firstDegreeCirclesToRevise.length > 0) {
             // REVISIT the degree 1 circles
             for (let f = 0; f < this.firstDegreeCirclesToRevise.length; f++) {
                 const fID = this.firstDegreeCirclesToRevise[f];
                 const person = CirclesView.currentSortedMap.get(fID);
-                if (person.Relationship == undefined) {
-                    // console.log(
-                    //     "CirclesView.doCircle - degree 1 person STILL NOT ready for re-colouring:",
-                    //     person.Relationship,
-                    //     person.Id,
-                    //     person.LongName
-                    // );
-                } else {
-                    // console.log(
-                    //     "FOUND a degree 1 person READY to revise:",
-                    //     person.Relationship,
-                    //     person.Id,
-                    //     person.LongName
-                    // );
-
-                    let personCircle = document.getElementById("circlePerson" + fID);
-                    if (personCircle) {
-                        let personObj = { ellipse: personCircle.children[0], text: personCircle.children[1] };
-                        if (personCircle.children[0].tagName != "ellipse") {
-                            for (let c = 0; c < personCircle.children.length; c++) {
-                                personObj[personCircle.children[c].tagName] = personCircle.children[c];
-                            }
-                        }
-                        // console.log("Update ", personObj["ellipse"], personObj["text"]);
-
-                        let thisClr = "lawngreen";
-                        let textClr = "black";
-
-                        if (
-                            person.Relationship &&
-                            person.Relationship.full &&
-                            (person.Relationship.full == "father" ||
-                                person.Relationship.full == "mother" ||
-                                person.Relationship.full == "parent")
-                        ) {
-                            thisClr = "gray";
-                            textClr = "white";
-                        } else if (
-                            person.Relationship &&
-                            person.Relationship.full &&
-                            CirclesView.circlesGrayAncs == true &&
-                            (person.Relationship.full.indexOf("father") > -1 ||
-                                person.Relationship.full.indexOf("mother") > -1 ||
-                                person.Relationship.full.indexOf("parent") > -1)
-                        ) {
-                            thisClr = "gray";
-                            textClr = "white";
-                        } else if (
-                            person.Relationship &&
-                            person.Relationship.full &&
-                            (person.Relationship.full.indexOf("husband") > -1 ||
-                                person.Relationship.full.indexOf("wife") > -1 ||
-                                person.Relationship.full.indexOf("spouse") > -1)
-                        ) {
-                            thisClr = "red";
-                            textClr = "white";
-                        } else if (person.Relationship == "") {
-                            thisClr = "red";
-                            textClr = "white";
-                        } else if (
-                            person.Relationship &&
-                            person.Relationship.full &&
-                            (person.Relationship.full.indexOf("brother") > -1 ||
-                                person.Relationship.full.indexOf("sister") > -1 ||
-                                person.Relationship.full.indexOf("sibling") > -1)
-                        ) {
-                            thisClr = "blue";
-                            textClr = "white";
-                        }
-
-                        personObj["ellipse"].setAttribute("fill", thisClr);
-                        personObj["text"].setAttribute("style", "font-size:14; fill:" + textClr);
+                if (person) {
+                    if (person.Relationship == undefined) {
+                        // console.log(
+                        //     "CirclesView.doCircle - degree 1 person STILL NOT ready for re-colouring:",
+                        //     person.Relationship,
+                        //     person.Id,
+                        //     person.LongName
+                        // );
                     } else {
-                        console.log("Could not find the circle for this person:", person.Id);
-                    }
+                        // console.log(
+                        //     "FOUND a degree 1 person READY to revise:",
+                        //     person.Relationship,
+                        //     person.Id,
+                        //     person.LongName
+                        // );
 
-                    this.firstDegreeCirclesToRevise.splice(f, 1);
+                        let personCircle = document.getElementById("circlePerson" + fID);
+                        if (personCircle) {
+                            let personObj = { ellipse: personCircle.children[0], text: personCircle.children[1] };
+                            if (personCircle.children[0].tagName != "ellipse") {
+                                for (let c = 0; c < personCircle.children.length; c++) {
+                                    personObj[personCircle.children[c].tagName] = personCircle.children[c];
+                                }
+                            }
+                            // console.log("Update ", personObj["ellipse"], personObj["text"]);
+
+                            let thisClr = "lawngreen";
+                            let textClr = "black";
+
+                            if (
+                                person.Relationship &&
+                                person.Relationship.full &&
+                                (person.Relationship.full == "father" ||
+                                    person.Relationship.full == "mother" ||
+                                    person.Relationship.full == "parent")
+                            ) {
+                                thisClr = "gray";
+                                textClr = "white";
+                            } else if (
+                                person.Relationship &&
+                                person.Relationship.full &&
+                                CirclesView.circlesGrayAncs == true &&
+                                (person.Relationship.full.indexOf("father") > -1 ||
+                                    person.Relationship.full.indexOf("mother") > -1 ||
+                                    person.Relationship.full.indexOf("parent") > -1)
+                            ) {
+                                thisClr = "gray";
+                                textClr = "white";
+                            } else if (
+                                person.Relationship &&
+                                person.Relationship.full &&
+                                (person.Relationship.full.indexOf("husband") > -1 ||
+                                    person.Relationship.full.indexOf("wife") > -1 ||
+                                    person.Relationship.full.indexOf("spouse") > -1)
+                            ) {
+                                thisClr = "red";
+                                textClr = "white";
+                            } else if (person.Relationship == "") {
+                                thisClr = "red";
+                                textClr = "white";
+                            } else if (
+                                person.Relationship &&
+                                person.Relationship.full &&
+                                (person.Relationship.full.indexOf("brother") > -1 ||
+                                    person.Relationship.full.indexOf("sister") > -1 ||
+                                    person.Relationship.full.indexOf("sibling") > -1)
+                            ) {
+                                thisClr = "blue";
+                                textClr = "white";
+                            }
+
+                            personObj["ellipse"].setAttribute("fill", thisClr);
+                            personObj["text"].setAttribute("style", "font-size:14; fill:" + textClr);
+                        } else {
+                            console.log("Could not find the circle for this person:", person.Id);
+                        }
+
+                        this.firstDegreeCirclesToRevise.splice(f, 1);
+                    }
                 }
             }
         }
