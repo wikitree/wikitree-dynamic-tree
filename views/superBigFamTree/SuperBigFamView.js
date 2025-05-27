@@ -2320,10 +2320,10 @@ import { PDFs } from "../shared/PDFs.js";
             SVGbtnCLOSE +
             "</a></span>" +
             "<H3 align=center>PDF Generator</H3><div id=innerPDFgen>" +
-            "<input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Super Tree PDF<BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Super Tree for John Smith'>" +
+            "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Super Tree PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Super Tree for John Smith'>" +
             "<BR/><BR/>" +
-            "<input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF<BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Super Tree created TODAY using Super Tree app in Tree Apps collection on WikiTree.com.'>" +
-            "<BR/><BR/><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF" +
+            "<label><input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Super Tree created TODAY using Super Tree app in Tree Apps collection on WikiTree.com.'>" +
+            "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
             "<BR/><BR/>" +
             "<button id=PDFgenButton class='btn btn-primary'  onclick=SuperBigFamView.doPrintPDF()>Generate PDF now</button> " +
             "<button id=PDFgenProgressBar class='btn-secondary'  style='display:none;' ></button> " +
