@@ -1289,10 +1289,10 @@ import { PDFs } from "../shared/PDFs.js";
             "<H3 align=center>PDF Generator</H3>" +
             "NOTE: This <B>Save as PDF</B> feature is still in development. It is currently limited to 4 generations. <br/>Some options on the Fan Chart may not be saved on the PDF.<BR>Thank you for patience as other features and additional generations are added to the PDF programming.<BR/><BR/>" +
             "<div id=innerPDFgen>" +
-            "<input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Fan Chart PDF<BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Fan Chart for John Smith'>" +
+            "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Fan Chart PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Fan Chart for John Smith'>" +
             "<BR/><BR/>" +
-            "<input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF<BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Fan Chart created TODAY using Fan Chart app in Tree Apps collection on WikiTree.com.'>" +
-            "<BR/><BR/><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF" +
+            "<label><input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Fan Chart created TODAY using Fan Chart app in Tree Apps collection on WikiTree.com.'>" +
+            "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
             "<BR/><BR/>" +
             "<button id=PDFgenButton class='btn btn-primary'  onclick=FanChartView.doPrintPDF()>Generate PDF now</button> " +
             "<button id=PDFgenProgressBar class='btn-secondary'  style='display:none;' ></button> " +
@@ -1717,7 +1717,6 @@ import { PDFs } from "../shared/PDFs.js";
                         // "/apps/clarke11007/images/icons/female.gif",
                         "",
                         thisX + thisElement.height * thisYdx - (thisElement.width / 2) * thisXdx,
-
                         thisY - thisElement.height + thisElement.height * thisYdy - (thisElement.width / 2) * thisXdy,
 
                         thisElement.width,
@@ -1740,8 +1739,8 @@ import { PDFs } from "../shared/PDFs.js";
                     PDFs.thisPDFimageArray.push([
                         thisBaseString, //thisElement.src,
                         "PNG",
-                        thisX - (thisElement.width / 2) * thisXdx,
-                        thisY - (thisElement.width / 2) * thisXdy,
+                        thisX + thisElement.height * thisYdx - (thisElement.width / 2) * thisXdx,
+                        thisY - thisElement.height + thisElement.height * thisYdy - (thisElement.width / 2) * thisXdy,
                         thisElement.width,
                         thisElement.height,
                         "",
