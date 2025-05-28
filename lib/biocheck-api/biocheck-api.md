@@ -23,6 +23,7 @@ FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 
 Build person from WikiTree API profile object
 and determine if it can be used to check sources and style
+This method is used from an app, either on app server or tree tools
 
 #### Parameters
 
@@ -114,6 +115,7 @@ Returns **[Boolean][7]** true if profile could not be checked due to date
 ### build
 
 Initalize person for browser extension.
+This method should only be used from the Browser Extension
 Uses fields from the web page including mBirthDate, mDeathDate,
 mStatusFather, mStatusMother
 
@@ -179,9 +181,13 @@ This can take some time. You can instead use loadPrep to get
 a promise and then await loadTemplates using that promise if
 there is other initialization to be performed.
 
+*   Throws **any** error getting response
+
 ### loadPrep
 
-Send request to laod templates from WT+
+Send request to load templates from WT+
+
+*   Throws **any** error getting response
 
 Returns **any** promise for use with loadTemplates
 
@@ -192,6 +198,10 @@ load Templates - wait for load to complete
 #### Parameters
 
 *   `p`  promise returned from loadPrep
+
+<!---->
+
+*   Throws **any** error getting response
 
 ## Biography
 
