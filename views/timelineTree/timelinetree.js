@@ -197,6 +197,29 @@ async function loadTree (event) {
     ttreeCurrentFocusPerson = focusPersonIdx;
 
     // Select just the core family for initial display
+    // Start with key person, and iterate through parents (terminate if not in direct ancestor list)
+    console.log(`Tree has been built - now to select core family fro display`);
+    for (let i=0; i<ttreePeople.length; i++) ttreePeople[i]["Visible"] = false;
+    makeVisible(focusPerson["Id"]);
+
+    function makeVisible (personId) {
+        // Is this person in ancestor list?
+        if (ttreeAncestors.findIndex(item => item["key"] == personId) < 0) return;
+        let person = ttreePeople.find(item => item["Id"] == personId);
+        person["Visible"] = true;
+        // then activate their spouses
+        let spouses = person["Details"]["Spouses"];
+        for (const spouseID in spouses) {
+            const spouse = ttreePeople.find(item => item["Id"] == spouseID);
+            if (spouse != null ) spouse["Visible"] = true;
+        }
+        // then activate parents
+        let family = ttreeFamilies[person["ChildIn"]];
+        for (let i=0; i<family["Parents"].length; i++) makeVisible(family["Parents"][i]["ID"]);
+    }
+
+/*
+    // Select just the core family for initial display
     console.log(`Tree has been built - now to display core family`);
     for (let i=0; i<ttreePeople.length; i++) ttreePeople[i]["Visible"] = false;
     for (let i=0; i<ttreeAncestors.length; i++) {
@@ -210,6 +233,7 @@ async function loadTree (event) {
         }
         
     }
+*/
     updateSibs(event);
 
     // And finally update the whole display
@@ -1453,6 +1477,9 @@ function updatePeople() {
             }
         }
         if (firstChildBirth < currentYear) person["Birth"]["Use"] = firstChildBirth - 30;
+        // And finally, if still no birth date, just use 50 years prior to Death-USe
+        if (person["Birth"]["Use"] == 0) person["Birth"]["Use"] = person["Death"]["Use"] - 50;
+
         const family = ttreeFamilies[person["ChildIn"]];
         if (family["Status"]["Use"]<=0) family["Status"]["Use"] = person["Birth"]["Use"] - 10;
     }
