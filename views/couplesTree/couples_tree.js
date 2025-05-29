@@ -387,6 +387,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             $("#ct-help-text").draggable();
 
             const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+            this.svg = svg;
             const g = svg.append("g");
 
             // Setup zoom and pan
@@ -723,6 +724,12 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog("draw descendantTree:", this.descendantTree);
             this.descendantTree.draw();
             condLog("drawTree done", this.ancestorTree, this.descendantTree);
+            this.svg
+                .node()
+                .querySelectorAll("foreignObject")
+                .forEach((e) => {
+                    e.setAttribute("height", Math.max(0.1, e.firstElementChild.clientHeight));
+                }); // https://github.com/wikitree/wikitree-dynamic-tree/issues/42
         }
 
         /**
@@ -1003,7 +1010,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         }
 
         drawCouple(couple) {
-            const div = document.createElement("xhtml:div");
+            const div = document.createElement("div"); // Not xhtml:div, that's a D3 hack
             if (!couple.a || !couple.a.isNoSpouse) {
                 div.appendChild(this.drawPerson(couple, L));
             }
@@ -1696,7 +1703,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 // Ensure we bring the spouses list to the front
                 // This is hacky code and should be improved ... if you know how
                 d3.select(wrapper).each(function () {
-                    let childNode = this.parentNode.parentNode; // should be the xhtml:div node
+                    let childNode = this.parentNode.parentNode; // should be the div node
                     if (childNode) {
                         let parentNode = childNode.parentNode;
                         do {

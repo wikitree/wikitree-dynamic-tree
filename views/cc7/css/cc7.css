@@ -866,45 +866,47 @@ div.cc7Table .cc7filter-row th {
    Print styles
    ---------------------------------------------------------*/
 @media print {
-  * {
-    color: #000 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    /* background:transparent !important;*/
-  }
-  html {
-    background-color: #fff;
-  }
-  /* Hide navigation */
-  :root:has(#cc7Container) nav {
-    display: none;
-  }
+  :root:has(#cc7Container) {
+    * {
+      color: #000 !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      /* background:transparent !important;*/
+    }
+    html {
+      background-color: #fff;
+    }
+    /* Hide navigation */
+    nav {
+      display: none;
+    }
 
-  /* Show link destinations in brackets after the link text */
-  /* a[href]:after { content: " (" attr(href) ") "; }*/
-  a[href] {
-    font-weight: bold;
-    text-decoration: underline;
-    color: #06c;
-    border: none;
-  }
-  /* Don't show link destinations for JavaScript or internal links */
-  a[href^="javascript:"]:after,
-  a[href^="#"]:after {
-    content: "";
-  }
+    /* Show link destinations in brackets after the link text */
+    /* a[href]:after { content: " (" attr(href) ") "; }*/
+    a[href] {
+      font-weight: bold;
+      text-decoration: underline;
+      color: #06c;
+      border: none;
+    }
+    /* Don't show link destinations for JavaScript or internal links */
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+      content: "";
+    }
 
-  /* Show abbr title value in brackets after the text */
-  abbr[title]:after {
-    content: " (" attr(title) ")";
-  }
+    /* Show abbr title value in brackets after the text */
+    abbr[title]:after {
+      content: " (" attr(title) ")";
+    }
 
-  figure {
-    margin-bottom: 1em;
-    overflow: hidden;
-  }
+    figure {
+      margin-bottom: 1em;
+      overflow: hidden;
+    }
 
-  figure img {
-    border: 1px solid #000;
+    figure img {
+      border: 1px solid #000;
+    }
   }
 }

@@ -393,11 +393,12 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     close() {
+        $("body").removeClass("oneNameTrees");
         this.reset();
+        this.cancelFetch();
         $("#wt-id-text,#show-btn").prop("disabled", false); //.css("background-color", "white");
         // $("#show-btn").css("background-color", "#25422d");
         $("#view-select").off("change.oneNameTrees");
-        $("body").removeClass("oneNameTrees");
         $(document).off("keyup.oneNameTrees");
         $(document).off("click.oneNameTrees");
         $("#controlWrapper,#dancingTree,#toggleOptions,#help").remove();
@@ -405,6 +406,13 @@ window.OneNameTrees = class OneNameTrees extends View {
             "#lifespanGraph,#peopleCountGraph,#namesTable,#unsourcedProfiles,#unconnectedProfiles,#noRelationsProfiles,#locationsVisualisation,#migrationSankey,#periodMigrants"
         ).remove();
         $("title").text("Tree Apps");
+    }
+
+    /**
+     * Return true if OneNameTree is the current tree view, false otherwise
+     */
+    isActive() {
+        return document.body.classList.contains("oneNameTrees");
     }
 
     addListeners() {
@@ -897,6 +905,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                     },
                     signal
                 );
+                if (!this.isActive()) {
+                    return; // We are no longer the current view, exit immediately without cleanup
+                }
 
                 // Conditional second API call
 
@@ -908,6 +919,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                     },
                     signal
                 );
+                if (!this.isActive()) {
+                    return; // We are no longer the current view, exit immediately without cleanup
+                }
 
                 // Further processing if connected DNA tests are found
                 if (connectedDNATestsResult && connectedDNATestsResult.length > 0) {
@@ -924,6 +938,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                     });
 
                     const connectedProfilesResults = await Promise.all(connectedProfilesPromises);
+                    if (!this.isActive()) {
+                        return; // We are no longer the current view, exit immediately without cleanup
+                    }
 
                     let dataThing = $(this).parent();
                     if (!dataThing.data("name")) {
@@ -1064,6 +1081,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         // Method to populate DNA Test results, modified to handle the provided data structure.
         const selector = popup.find(".dnaTestResults");
         await this.populateTestResults(selector, connectedDNATests, connectedProfiles);
+        if (!this.isActive()) {
+            return; // We are no longer the current view, exit immediately without cleanup
+        }
 
         const parentTop = parent.offset().top - $(window).scrollTop();
         const modalTop = parentTop + parent.outerHeight() + 20;
@@ -1131,6 +1151,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 // Construct your API call to fetch missing profiles. The specifics of this call
                 // depend on the API you're using (e.g., batch requests or individual gets)
                 const fetchedProfiles = await this.getPeople(missingProfileIds, 0, 1000);
+                if (!this.isActive()) {
+                    return; // We are no longer the current view, exit immediately without cleanup
+                }
 
                 const theProfiles = fetchedProfiles?.[2];
                 // These are objects with the profile ID as the key.  Need an array of the profiles.
@@ -1155,6 +1178,9 @@ window.OneNameTrees = class OneNameTrees extends View {
     async buildTestCardHtml(test, connectedProfiles) {
         const $this = this;
         await this.getDNAConnections(connectedProfiles);
+        if (!this.isActive()) {
+            return; // We are no longer the current view, exit immediately without cleanup
+        }
         let connectionsHtml = "<ul class='dnaConnections'>";
         if (connectedProfiles.length > 0) {
             connectedProfiles.forEach((profile) => {
@@ -1326,6 +1352,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             const response = await fetch(
                 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSL1WDK4-ReqYPjJ3L-ynxwGgAQOLsNdBcI7gKFCxzU3jLd5L_-YiiCz77faR9L362jjVpP-38JjSEa/pub?output=csv"
             );
+            if (!this.isActive()) {
+                return; // We are no longer the current view, exit immediately without cleanup
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1482,7 +1511,9 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     cancelFetch() {
-        wtViewRegistry.showNotice("Cancelling data retrieval...");
+        if (this.isActive()) {
+            wtViewRegistry.showNotice("Cancelling data retrieval...");
+        }
         this.cancelling = true;
         if (this.cancelFetchController) {
             this.cancelFetchController.abort();
@@ -1608,6 +1639,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                     return { [name]: await response.json() };
                 })
             ).then((results) => Object.assign({}, ...results));
+            if (!this.isActive()) {
+                return; // We are no longer the current view, exit immediately without cleanup
+            }
 
             // Cache the fetched data
             localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -1645,6 +1679,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             callNr += 1;
             const starttime = performance.now();
             const [aborted, theresMore, people] = await this.getPeople(ids, start, limit, options);
+            if (!this.isActive()) {
+                return; // We are no longer the current view, exit immediately without cleanup
+            }
             if (aborted) {
                 return [true, 0];
             }
@@ -1892,6 +1929,9 @@ window.OneNameTrees = class OneNameTrees extends View {
 
     async processBatches(ids, surname) {
         const $this = this;
+        if (!this.isActive()) {
+            return; // We are no longer the current view, exit immediately without cleanup
+        }
 
         if (!ids || ids.length === 0) {
             console.error("No IDs provided for processing.");
@@ -1928,6 +1968,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             // and the API spec says "The initial set of profiles are returned in the results unpaginated by the
             // start/limit values".
             const [aborted, theresmore, people] = await this.getPeople(batchIds);
+            if (!this.isActive()) {
+                return; // We are no longer the current view, exit immediately without cleanup
+            }
             const callTime = performance.now() - callStart;
             if (aborted || $this.cancelling) {
                 cancelIt();
@@ -2900,8 +2943,8 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     completeDisplay() {
-        if (!document.body.classList.contains("oneNameTrees")) {
-            return; // If we are no longer the active view, do nothing
+        if (!this.isActive()) {
+            return; // We are no longer the current view, exit immediately without cleanup
         }
         // If this.displayedIndividuals (set) is empty, create it by getting all the IDs from the HTML
         if (this.displayedIndividuals.size === 0) {
@@ -4694,6 +4737,9 @@ window.OneNameTrees = class OneNameTrees extends View {
         const $this = this;
         $this.reset();
         const [aborted, data] = await $this.getONTids(surname, location, centuries);
+        if (!this.isActive()) {
+            return; // We are no longer the current view, exit immediately without cleanup
+        }
         if (aborted) {
             wtViewRegistry.showNotice("Data retrieval cancelled.");
             $this.disableCancel();
@@ -4731,6 +4777,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.updateLoadingBar(2);
             wtViewRegistry.showNotice("Fetching your watchlist...");
             const watchlist = await this.watchlistPromise;
+            if (!this.isActive()) {
+                return; // We are no longer the current view, exit immediately without cleanup
+            }
             watchlistFetched = true;
             wtViewRegistry.showNotice("Watchlist retrieved...");
             this.updateLoadingBar(5);
