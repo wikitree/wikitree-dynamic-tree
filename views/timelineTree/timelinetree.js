@@ -121,16 +121,15 @@ window.TimelineTreeView = class TimelineTreeView extends View {
                 <label>Bulk load generations: </label>
                 <select id="paramLoad" title="Number of generations">
                   <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option value="3" selected>3</option>
                   <option value="4">4</option>
-                  <option value="5" selected>5</option>
+                  <option value="5">5</option>
                   <option value="6">6</option>
                   <option value="7">7</option>
                   <option value="8">8</option>
                   <option value="9">9</option>
                   <option value="10">10</option>
                   <option value="11">11</option>
-                  <option value="12">12</option>
                 </select>
                 &nbsp;
                 <button id="bulkLoad" class="btn btn-primary btn-sm" title="load specified number of gens">Load</button>
