@@ -322,18 +322,19 @@ export class CirclesView {
             console.log("w,h:", PDFs.thisPDFwidth, PDFs.thisPDFheight);
 
             // Must set ORIENTATION based on the width and height of the PDF - doesn't like it otherwise.
-            let orientation = "l";
-            if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
-                orientation = "p";
-            }
+            // let orientation = "l";
+            // if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
+            //     orientation = "p";
+            // }
 
-            let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
+            // let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
             // console.log(PDFs.currentPDFsettings);
-            // PDFs.addLinesToPDF(realPDF);
-            // PDFs.addRectsToPDF(realPDF);
-            PDFs.addRoundedRectsToPDF(realPDF);
-            PDFs.addImagesToPDF(realPDF);
-            PDFs.addTextsToPDF(realPDF);
+
+            // PDFs.addRoundedRectsToPDF(realPDF);
+            // PDFs.addImagesToPDF(realPDF);
+            // PDFs.addTextsToPDF(realPDF);
+
+            let realPDF = PDFs.assemblePDF(["roundedRects", "images", "texts"]);
 
             let fileName4PDF =
                 "CirclesChart_" +
@@ -638,7 +639,7 @@ export class CirclesView {
             "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
             "<BR/><BR/>" +
             "<button id=PDFgenButton class='btn btn-primary'  onclick=CC7View.doPrintPDF()>Generate PDF now</button> " +
-            "<button id=PDFgenProgressBar class='btn-secondary'  style='display:none;' ></button> " +
+            "<span id=PDFgenProgressBar class='btn-secondary'  style='display:none;' >Processing PDF .... please hold ...</span> " +
             "</div></div>";
 
         popupDIV += connectionPodDIV + legendDIV + PDFgenPopupHTML;
