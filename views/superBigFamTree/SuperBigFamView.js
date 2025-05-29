@@ -172,7 +172,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "28 May 2025";
+    const AboutUpdateDate = "29 May 2025";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -833,9 +833,17 @@ import { PDFs } from "../shared/PDFs.js";
 
         for (var i = 0; i < thisSVG.childElementCount; i++) {
             let thisPerson = thisSVG.children[i];
+            let personWidth = 300;
             if (thisPerson.classList.length == 0) {
                 continue; // skip the SVG element itself because it has no class attached, so can't be a person / ancestor
             }
+            if (thisPerson.children && thisPerson.children.length > 0) {
+                if (thisPerson.children[0].getAttribute("width") > "") {
+                    personWidth = parseInt(thisPerson.children[0].getAttribute("width"));
+                    console.log("personWidth: ", { personWidth });
+                }
+            }
+
             let bkgdClr = PDFs.getValueFromStyleString(
                 thisPerson.children[0].children[0].getAttribute("style"),
                 "background-color"
@@ -862,7 +870,7 @@ import { PDFs } from "../shared/PDFs.js";
             PDFs.thisPDFroundedRectArray.push([
                 thisPersonX,
                 thisPersonY,
-                300,
+                personWidth,
                 200,
                 15,
                 15,
@@ -971,11 +979,11 @@ import { PDFs } from "../shared/PDFs.js";
                             thisTextFont,
                             thisTextFontStyle,
                             thisTextFontSize,
-                            { align: "center", maxWidth: 300 },
+                            { align: "center", maxWidth: personWidth },
                         ]);
 
                         thisPersonY += 25;
-                        if (tmpPDF.getTextWidth(thisTextPiece) > 300) {
+                        if (tmpPDF.getTextWidth(thisTextPiece) > personWidth) {
                             thisPersonY += 21;
                         }
                     }
@@ -1045,7 +1053,7 @@ import { PDFs } from "../shared/PDFs.js";
                 PDFs.thisPDFroundedRectArray.push([
                     thisX,
                     thisY,
-                    300,
+                    personWidth,
                     200,
                     15,
                     15,
@@ -1056,7 +1064,7 @@ import { PDFs } from "../shared/PDFs.js";
                 PDFs.thisPDFrectArray.push([
                     thisX + 15,
                     thisY + 15,
-                    270,
+                    personWidth - 30,
                     170,
                     "F",
                     { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
@@ -1085,7 +1093,7 @@ import { PDFs } from "../shared/PDFs.js";
                         PDFs.currentPDFsettings.thisFont,
                         PDFs.currentPDFsettings.thisFontStyle,
                         PDFs.currentPDFsettings.thisFontSize,
-                        { align: "center", maxWidth: 300 },
+                        { align: "center", maxWidth: personWidth },
                     ]);
                     thisY += 21;
                     // if (pdf.getTextWidth(textLine) > 300) {
@@ -1170,9 +1178,9 @@ import { PDFs } from "../shared/PDFs.js";
                     PDFs.currentPDFsettings.thisFont,
                     PDFs.currentPDFsettings.thisFontStyle,
                     PDFs.currentPDFsettings.thisFontSize,
-                    { align: "center", maxWidth: 300 },
+                    { align: "center", maxWidth: personWidth },
                 ]);
-                if (tmpPDF.getTextWidth(thisText) > 300) {
+                if (tmpPDF.getTextWidth(thisText) > personWidth) {
                     thisY += 21;
                 }
             }
@@ -1198,9 +1206,9 @@ import { PDFs } from "../shared/PDFs.js";
                         PDFs.currentPDFsettings.thisFont,
                         PDFs.currentPDFsettings.thisFontStyle,
                         PDFs.currentPDFsettings.thisFontSize,
-                        { align: "center", maxWidth: 300 },
+                        { align: "center", maxWidth: personWidth },
                     ]);
-                    if (tmpPDF.getTextWidth(textLine) > 300) {
+                    if (tmpPDF.getTextWidth(textLine) > personWidth) {
                         thisY += 21;
                     }
                 }
@@ -1223,9 +1231,9 @@ import { PDFs } from "../shared/PDFs.js";
                         PDFs.currentPDFsettings.thisFont,
                         PDFs.currentPDFsettings.thisFontStyle,
                         PDFs.currentPDFsettings.thisFontSize,
-                        { align: "center", maxWidth: 300 },
+                        { align: "center", maxWidth: personWidth },
                     ]);
-                    if (tmpPDF.getTextWidth(textLine) > 300) {
+                    if (tmpPDF.getTextWidth(textLine) > personWidth) {
                         thisY += 21;
                     }
                 }
