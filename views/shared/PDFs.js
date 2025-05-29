@@ -224,29 +224,121 @@ export class PDFs {
         // console.log(thisX1, thisY1, thisX2, thisY2);
     }
 
-    static addLinesToPDF(pdf) {
+    static isThisPointInsideSetupBounds(x, y, pdfPageSetupObject) {
+        if (
+            x >= pdfPageSetupObject.minX &&
+            x <= pdfPageSetupObject.maxX &&
+            y >= pdfPageSetupObject.minY &&
+            y <= pdfPageSetupObject.maxY
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    static addLinesToPDF(pdf, pdfPageSetupObject) {
         // console.log(this.currentPDFsettings);
         // console.log("this.thisPDFlinesArray", this.thisPDFlinesArray);
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         for (let index = 0; index < this.thisPDFlinesArray.length; index++) {
             const element = this.thisPDFlinesArray[index];
             if (element[0] == 0 && element[1] == 0 && element[2] == 0 && element[3] == 0) {
                 console.log("skipping line", element);
                 continue;
             }
+
+            // let useThisLine = true;
+
+            // if (pdfPageSetupObject) {
+            //     useThisLine = false;
+            //     if (
+            //         this.isThisPointInsideSetupBounds(
+            //             this.currentPDFsettings.thisDX + element[0],
+            //             this.currentPDFsettings.thisDY + element[1],
+            //             pdfPageSetupObject
+            //         ) ||
+            //         this.isThisPointInsideSetupBounds(
+            //             this.currentPDFsettings.thisDX + element[2],
+            //             this.currentPDFsettings.thisDY + element[3],
+            //             pdfPageSetupObject
+            //         )
+            //     ) {
+            //         useThisLine = true; // at least one end of the line is inside the PDF page setup bounds
+            //     } else if (
+            //         Math.min(this.currentPDFsettings.thisDY + element[1], this.currentPDFsettings.thisDY + element[3]) <
+            //             pdfPageSetupObject.minY &&
+            //         Math.max(this.currentPDFsettings.thisDY + element[1], this.currentPDFsettings.thisDY + element[3]) >
+            //             pdfPageSetupObject.minY
+            //     ) {
+            //         let xIntercept =
+            //             this.currentPDFsettings.thisDX +
+            //             element[0] +
+            //             ((element[2] - element[0]) *
+            //                 (pdfPageSetupObject.minY - (this.currentPDFsettings.thisDY + element[1]))) /
+            //                 (element[3] - element[1]);
+
+            //         if (xIntercept >= pdfPageSetupObject.minX && xIntercept <= pdfPageSetupObject.maxX) {
+            //             useThisLine = true; // the line crosses the top edge of the PDF page setup bounds
+            //         }
+            //     } else if (
+            //         Math.min(
+            //             this.currentPDFsettings.thisDY + element[1],
+            //             this.currentPDFsettings.thisDY + element[3]
+            //         ) <= pdfPageSetupObject.maxY &&
+            //         Math.max(
+            //             this.currentPDFsettings.thisDY + element[1],
+            //             this.currentPDFsettings.thisDY + element[3]
+            //         ) >= pdfPageSetupObject.maxY
+            //     ) {
+            //         let xIntercept =
+            //             this.currentPDFsettings.thisDX +
+            //             element[0] +
+            //             ((element[2] - element[0]) *
+            //                 (pdfPageSetupObject.minY - (this.currentPDFsettings.thisDY + element[1]))) /
+            //                 (element[3] - element[1]);
+            //         if (xIntercept >= pdfPageSetupObject.minX && xIntercept <= pdfPageSetupObject.maxX) {
+            //             useThisLine = true; // the line crosses the top edge of the PDF page setup bounds
+            //         }
+
+            //         // skip lines that are below the PDF page setup bounds
+            //     }
+
+            //     if (useThisLine == false) {
+            //         continue; // skip lines that are outside the PDF page setup bounds
+            //     }
+            // }
+
             // console.log({element});
             pdf.setDrawColor(element[4][0], element[4][1], element[4][2]);
             pdf.setLineWidth(element[5]);
             // console.log("pdf.line",this.currentPDFsettings.thisDX + element[0], this.currentPDFsettings.thisDY + element[1], this.currentPDFsettings.thisDX + element[2], this.currentPDFsettings.thisDY + element[3],  element[6] );
             pdf.line(
-                1.0 * this.currentPDFsettings.thisDX + 1.0 * element[0],
-                1.0 * this.currentPDFsettings.thisDY + 1.0 * element[1],
-                1.0 * this.currentPDFsettings.thisDX + 1.0 * element[2],
-                1.0 * this.currentPDFsettings.thisDY + 1.0 * element[3]
+                1.0 * this.currentPDFsettings.thisDX + 1.0 * element[0] - pdfPageSetupObject.minX,
+                1.0 * this.currentPDFsettings.thisDY + 1.0 * element[1] - pdfPageSetupObject.minY,
+                1.0 * this.currentPDFsettings.thisDX + 1.0 * element[2] - pdfPageSetupObject.minX,
+                1.0 * this.currentPDFsettings.thisDY + 1.0 * element[3] - pdfPageSetupObject.minY
             );
         }
     }
 
-    static addTextsToPDF(pdf) {
+    static addTextsToPDF(pdf, pdfPageSetupObject) {
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         for (let index = 0; index < this.thisPDFtextArray.length; index++) {
             const element = this.thisPDFtextArray[index];
             pdf.setFont(element[3], element[4]);
@@ -266,14 +358,23 @@ export class PDFs {
             // console.log({ index }, "text Y:", element[2]);
             pdf.text(
                 element[0],
-                this.currentPDFsettings.thisDX + element[1],
-                this.currentPDFsettings.thisDY + element[2],
+                this.currentPDFsettings.thisDX + element[1] - pdfPageSetupObject.minX,
+                this.currentPDFsettings.thisDY + element[2] - pdfPageSetupObject.minY,
                 element[6] // align  & maxWidth options
                 // 135
             );
         }
     }
-    static addRectsToPDF(pdf) {
+    static addRectsToPDF(pdf, pdfPageSetupObject) {
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         for (let index = 0; index < this.thisPDFrectArray.length; index++) {
             const element = this.thisPDFrectArray[index];
             if (element[5].strokeColor) {
@@ -286,15 +387,24 @@ export class PDFs {
                 pdf.setLineWidth(element[5].lineWidth);
             }
             pdf.rect(
-                this.currentPDFsettings.thisDX + element[0],
-                this.currentPDFsettings.thisDY + element[1],
+                this.currentPDFsettings.thisDX + element[0] - pdfPageSetupObject.minX,
+                this.currentPDFsettings.thisDY + element[1] - pdfPageSetupObject.minY,
                 element[2],
                 element[3],
                 element[4]
             );
         }
     }
-    static addRoundedRectsToPDF(pdf) {
+    static addRoundedRectsToPDF(pdf, pdfPageSetupObject) {
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         for (let index = 0; index < this.thisPDFroundedRectArray.length; index++) {
             const element = this.thisPDFroundedRectArray[index];
             if (element[7].strokeColor) {
@@ -307,8 +417,8 @@ export class PDFs {
                 pdf.setLineWidth(element[7].lineWidth);
             }
             pdf.roundedRect(
-                this.currentPDFsettings.thisDX + element[0],
-                this.currentPDFsettings.thisDY + element[1],
+                this.currentPDFsettings.thisDX + element[0] - pdfPageSetupObject.minX,
+                this.currentPDFsettings.thisDY + element[1] - pdfPageSetupObject.minY,
                 element[2],
                 element[3],
                 element[4],
@@ -318,7 +428,16 @@ export class PDFs {
         }
     }
 
-    static addEllipsesToPDF(pdf, phase = 0) {
+    static addEllipsesToPDF(pdf, phase = 0, pdfPageSetupObject) {
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         // pdf.ellipse(950, 950, 195, 195, "DF");
         // console.log("Ellipses:", this.thisPDFellipseArray);
         for (let index = 0; index < this.thisPDFellipseArray.length; index++) {
@@ -337,15 +456,24 @@ export class PDFs {
                 pdf.setLineWidth(element[5].lineWidth);
             }
             pdf.ellipse(
-                this.currentPDFsettings.thisDX + element[0], // cx
-                this.currentPDFsettings.thisDY + element[1], // cy
+                this.currentPDFsettings.thisDX + element[0] - pdfPageSetupObject.minX, // cx
+                this.currentPDFsettings.thisDY + element[1] - pdfPageSetupObject.minY, // cy
                 element[2], // rx
                 element[3], // ry
                 element[4] // DF / F / D
             );
         }
     }
-    static addArcsToPDF(pdf) {
+    static addArcsToPDF(pdf, pdfPageSetupObject) {
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         // thisPDFarcsArray.push([[VertexArray, BezierArray], CX, CY, [1, 1], style, options, true]);
         for (let index = 0; index < this.thisPDFarcsArray.length; index++) {
             const element = this.thisPDFarcsArray[index];
@@ -360,8 +488,8 @@ export class PDFs {
             }
             pdf.lines(
                 element[0], // commands arrays
-                this.currentPDFsettings.thisDX + element[1], // cx
-                this.currentPDFsettings.thisDY + element[2], // cy
+                this.currentPDFsettings.thisDX + element[1] - pdfPageSetupObject.minX, // cx
+                this.currentPDFsettings.thisDY + element[2] - pdfPageSetupObject.minY, // cy
                 element[3], // scale [x, y]
                 element[4], //  DF / F / D
                 element[6] // true/false - close path
@@ -369,15 +497,24 @@ export class PDFs {
         }
     }
 
-    static addImagesToPDF(pdf) {
+    static addImagesToPDF(pdf, pdfPageSetupObject) {
+        if (!pdfPageSetupObject) {
+            pdfPageSetupObject = {
+                minX: 0,
+                minY: 0,
+                maxX: this.thisPDFmaxX,
+                maxY: this.thisPDFmaxY,
+            };
+        }
+
         for (let index = 0; index < this.thisPDFimageArray.length; index++) {
             const element = this.thisPDFimageArray[index];
             // console.log({ index }, "image Y:", element[3]);
             pdf.addImage(
                 element[0],
                 element[1],
-                this.currentPDFsettings.thisDX + element[2],
-                this.currentPDFsettings.thisDY + element[3],
+                this.currentPDFsettings.thisDX + element[2] - pdfPageSetupObject.minX,
+                this.currentPDFsettings.thisDY + element[3] - pdfPageSetupObject.minY,
                 element[4],
                 element[5],
                 element[6],
@@ -784,5 +921,153 @@ export class PDFs {
 
         this.thisPDFarcsArray.push([[VertexArray, BezierArray], CX, CY, [1, 1], style, options, true]);
         // this.thisPDFarcsArray.push([[BezierArray], Pts[0].X, Pts[0].Y, [1, 1], style, options, false]);
+    }
+
+    static assemblePDF(piecesArray, overrideObject = null) {
+        const maxPDFdimensions = 14000; // Maximum width and height of the PDF
+        const hardMargin = 10; // Minimum margin around the PDF content
+
+        // console.log("thisPDFtextArray", this.thisPDFtextArray);
+        // console.log("thisPDFroundedRectArray", this.thisPDFroundedRectArray);
+
+        let thisRealPDFwidth = this.thisPDFwidth;
+        if (overrideObject && overrideObject.width) {
+            thisRealPDFwidth = overrideObject.width;
+        }
+        let thisRealPDFheight = this.thisPDFheight;
+        if (overrideObject && overrideObject.height) {
+            thisRealPDFheight = overrideObject.height;
+        }
+
+        let thisPDFpageWidth = thisRealPDFwidth;
+        let thisPDFpageHeight = thisRealPDFheight;
+        let numWpages = 1;
+        let numHpages = 1;
+        let totalNumPages = 1;
+        let pdfPageSetupObject = null;
+
+        if (thisRealPDFwidth > maxPDFdimensions) {
+            numWpages = Math.ceil(thisRealPDFwidth / (maxPDFdimensions + 2 * hardMargin));
+            let actualWidthAllPages = thisRealPDFwidth + (2 * (numWpages - 1) - 1) * hardMargin;
+            thisPDFpageWidth = Math.round(actualWidthAllPages / numWpages);
+        }
+        if (thisRealPDFheight > maxPDFdimensions) {
+            numHpages = Math.ceil(thisRealPDFheight / (maxPDFdimensions + 2 * hardMargin));
+            let actualHeightAllPages = thisRealPDFheight + (2 * (numHpages - 1) - 1) * hardMargin;
+            thisPDFpageHeight = Math.round(actualHeightAllPages / numHpages);
+        }
+        totalNumPages = numWpages * numHpages;
+
+        let orientation = "l";
+        if (thisPDFpageWidth < thisPDFpageHeight) {
+            orientation = "p";
+        }
+
+        pdfPageSetupObject = {
+            orientation: orientation,
+            thisPDFpageWidth: thisPDFpageWidth,
+            thisPDFpageHeight: thisPDFpageHeight,
+            theW: 1,
+            theH: 1,
+            totalNumPages: totalNumPages,
+            minX: 0,
+            maxX: thisPDFpageWidth,
+            minY: 0,
+            maxY: thisPDFpageHeight,
+        };
+
+        let pdf = new jsPDF(orientation, "pt", [thisPDFpageWidth, thisPDFpageHeight]);
+
+        // PDFs.assemblePDF(realPDF, ["lines","rects","roundedRects","images","texts"]);
+        for (let theW = 0; theW < numWpages; theW++) {
+            for (let theH = 0; theH < numHpages; theH++) {
+                let thePageNum = theW + theH * numWpages + 1;
+                condLog({ numWpages }, { numHpages }, { totalNumPages }, { thisPDFpageWidth }, { thisPDFpageHeight });
+                if (totalNumPages > 1) {
+                    pdfPageSetupObject.theW = theW;
+                    pdfPageSetupObject.theH = theH;
+                    pdfPageSetupObject.minX = theW * (thisPDFpageWidth - 2 * hardMargin);
+                    pdfPageSetupObject.maxX = pdfPageSetupObject.minX + thisPDFpageWidth;
+                    pdfPageSetupObject.minY = theH * (thisPDFpageHeight - 2 * hardMargin);
+                    pdfPageSetupObject.maxY = pdfPageSetupObject.minY + thisPDFpageHeight;
+                }
+
+                if (thePageNum > 1) {
+                    pdf.addPage([thisPDFpageWidth, thisPDFpageHeight], orientation);
+                }
+                if (totalNumPages > 1) {
+                    if (theW == 0 || theH == 0 || theW == numWpages - 1 || theH == numHpages - 1) {
+                        // EDGE SHEET - show the placement aid along the perimeter of the page
+                        pdf.setDrawColor(0, 0, 0);
+                        pdf.setLineWidth(1);
+                        let pgBuf = 3;
+                        let pgStartX = 5;
+                        let pgStartY = 5;
+
+                        if (theW == numWpages - 1) {
+                            pgStartX = thisPDFpageWidth - (numWpages - 1) * pgBuf - 5;
+                        } else if (theW > 0) {
+                            pgStartX = thisPDFpageWidth / 2 - (numWpages * pgBuf) / 2;
+                        }
+
+                        if (theH == numHpages - 1) {
+                            pgStartY = thisPDFpageHeight - (numHpages - 1) * pgBuf - 5;
+                        } else if (theH > 0) {
+                            pgStartY = thisPDFpageHeight / 2 - (numHpages * pgBuf) / 2;
+                        }
+
+                        console.log({ theW }, { theH }, "pgStartX", pgStartX, "pgStartY", pgStartY, "pgBuf", pgBuf);
+
+                        for (let pgW = 0; pgW <= numWpages; pgW++) {
+                            pdf.line(
+                                pgStartX + pgW * pgBuf,
+                                pgStartY,
+                                pgStartX + pgW * pgBuf,
+                                pgStartY + numHpages * pgBuf
+                            );
+                        }
+                        for (let pgH = 0; pgH <= numHpages; pgH++) {
+                            pdf.line(
+                                pgStartX,
+                                pgStartY + pgH * pgBuf,
+                                pgStartX + numWpages * pgBuf,
+                                pgStartY + pgH * pgBuf
+                            );
+                        }
+                        pdf.setFillColor(0, 0, 255);
+                        pdf.rect(pgStartX + theW * pgBuf, pgStartY + theH * pgBuf, pgBuf, pgBuf, "F");
+                    }
+                }
+                // }
+
+                for (let index = 0; index < piecesArray.length; index++) {
+                    const element = piecesArray[index];
+                    if (element == "lines") {
+                        this.addLinesToPDF(pdf, pdfPageSetupObject);
+                    } else if (element == "texts") {
+                        this.addTextsToPDF(pdf, pdfPageSetupObject);
+                    } else if (element == "rects") {
+                        this.addRectsToPDF(pdf, pdfPageSetupObject);
+                    } else if (element == "roundedRects") {
+                        this.addRoundedRectsToPDF(pdf, pdfPageSetupObject);
+                    } else if (element.indexOf("ellipses") > -1) {
+                        let phase = 0;
+                        if (element.indexOf(":") > -1) {
+                            phase = parseInt(element.split(":")[1]);
+                        }
+                        this.addEllipsesToPDF(pdf, phase, pdfPageSetupObject);
+                    } else if (element == "arcs") {
+                        this.addArcsToPDF(pdf, pdfPageSetupObject);
+                    } else if (element == "images") {
+                        this.addImagesToPDF(pdf, pdfPageSetupObject);
+                    }
+                    if (index == 3) {
+                        // pdf.addPage("tabloid", "landscape");
+                    }
+                }
+            }
+        }
+
+        return pdf;
     }
 }
