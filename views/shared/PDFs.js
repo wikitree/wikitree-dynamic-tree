@@ -374,13 +374,20 @@ export class PDFs {
                 maxY: this.thisPDFmaxY,
             };
         }
-
+        // console.log("Adding Rects to PDF", this.thisPDFrectArray);
         for (let index = 0; index < this.thisPDFrectArray.length; index++) {
             const element = this.thisPDFrectArray[index];
             if (element[5].strokeColor) {
+                // console.log("Setting stroke color", index, element[5], element[5].strokeColor);
+                if (element[5].strokeColor == undefined || element[5].strokeColor == "undefined") {
+                    element[5].strokeColor = "black";
+                }
                 pdf.setDrawColor(element[5].strokeColor);
             }
             if (element[5].fillColor) {
+                if (element[5].fillColor == undefined || element[5].fillColor == "undefined") {
+                    element[5].fillColor = "white";
+                }
                 pdf.setFillColor(element[5].fillColor);
             }
             if (element[5].lineWidth) {
@@ -408,9 +415,15 @@ export class PDFs {
         for (let index = 0; index < this.thisPDFroundedRectArray.length; index++) {
             const element = this.thisPDFroundedRectArray[index];
             if (element[7].strokeColor) {
+                if (element[7].strokeColor == undefined || element[7].strokeColor == "undefined") {
+                    element[7].strokeColor = "black";
+                }
                 pdf.setDrawColor(element[7].strokeColor);
             }
             if (element[7].fillColor) {
+                if (element[7].fillColor == undefined || element[7].fillColor == "undefined") {
+                    element[7].fillColor = "white";
+                }
                 pdf.setFillColor(element[7].fillColor);
             }
             if (element[7].lineWidth) {
