@@ -41,7 +41,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "28 May 2025";
+    const AboutUpdateDate = "29 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1433,6 +1433,7 @@ import { PDFs } from "../shared/PDFs.js";
                 let thisWedgeElement = document.getElementById(thisWedgeName);
                 let thisRRectBkgdClr = "#FFFF00";
                 let thisWedgeBkgdClr = "#FF00FF";
+                let wedgeWidth = 300;
 
                 if (thisWedgeElement) {
                     let thisWedgeParent = thisWedgeElement.parentNode;
@@ -1452,6 +1453,14 @@ import { PDFs } from "../shared/PDFs.js";
                                 )
                                 .trim();
                         }
+
+                        if (thisWedgeParent.parentNode) {
+                            let thisWedgeParentParentWidth = thisWedgeParent.parentNode.getAttribute("width");
+                            if (thisWedgeParentParentWidth) {
+                                wedgeWidth = parseInt(thisWedgeParentParentWidth);
+                                // console.log({ wedgeWidth }, { thisWedgeParentParentWidth });
+                            }
+                        }
                     }
                 }
 
@@ -1467,13 +1476,13 @@ import { PDFs } from "../shared/PDFs.js";
                         PDFs.currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
                         PDFs.currentPDFsettings.thisDY = parseInt(thisDXDY[1]);
 
-                        thisX = parseInt(thisDXDY[0]) - 150;
+                        thisX = parseInt(thisDXDY[0]) - wedgeWidth / 2;
                         thisY = parseInt(thisDXDY[1]) - 100;
                     }
                     PDFs.thisPDFroundedRectArray.push([
                         thisX,
                         thisY,
-                        300,
+                        wedgeWidth,
                         200,
                         15,
                         15,
@@ -1484,7 +1493,7 @@ import { PDFs } from "../shared/PDFs.js";
                     PDFs.thisPDFrectArray.push([
                         thisX + 15,
                         thisY + 15,
-                        270,
+                        wedgeWidth - 30,
                         170,
                         "F",
                         { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
@@ -1508,12 +1517,12 @@ import { PDFs } from "../shared/PDFs.js";
                         const textLine = thisTextArray[textIndex];
                         PDFs.thisPDFtextArray.push([
                             textLine,
-                            thisX + 150,
+                            thisX + wedgeWidth / 2,
                             thisY + 30,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
                             PDFs.currentPDFsettings.thisFontSize,
-                            { align: "center", maxWidth: 300 },
+                            { align: "center", maxWidth: wedgeWidth },
                         ]);
                         thisY += 21;
                         // if (pdf.getTextWidth(textLine) > 300) {
@@ -1552,7 +1561,7 @@ import { PDFs } from "../shared/PDFs.js";
                         thisBaseString,
                         // "/apps/clarke11007/images/icons/female.gif",
                         "",
-                        thisX + 150 - thisElement.width / 2,
+                        thisX + wedgeWidth / 2 - thisElement.width / 2,
                         thisY,
                         thisElement.width,
                         thisElement.height,
@@ -1569,7 +1578,7 @@ import { PDFs } from "../shared/PDFs.js";
                     PDFs.thisPDFimageArray.push([
                         thisBaseString, //thisElement.src,
                         "PNG",
-                        thisX + 150 - thisElement.width / 2,
+                        thisX + wedgeWidth / 2 - thisElement.width / 2,
                         thisY,
                         thisElement.width,
                         thisElement.height,
@@ -1595,14 +1604,14 @@ import { PDFs } from "../shared/PDFs.js";
                     // pdf.setFillColor("#FFFFFF");
                     PDFs.thisPDFtextArray.push([
                         thisText,
-                        thisX + 150,
+                        thisX + wedgeWidth / 2,
                         thisY + 30,
                         PDFs.currentPDFsettings.thisFont,
                         PDFs.currentPDFsettings.thisFontStyle,
                         PDFs.currentPDFsettings.thisFontSize,
-                        { align: "center", maxWidth: 300 },
+                        { align: "center", maxWidth: wedgeWidth },
                     ]);
-                    if (tmpPDF.getTextWidth(thisText) > 300) {
+                    if (tmpPDF.getTextWidth(thisText) > wedgeWidth) {
                         thisY += 21;
                     }
                 }
@@ -1623,14 +1632,14 @@ import { PDFs } from "../shared/PDFs.js";
                         thisY += 21;
                         PDFs.thisPDFtextArray.push([
                             textLine,
-                            thisX + 150,
+                            thisX + wedgeWidth / 2,
                             thisY + 30,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
                             PDFs.currentPDFsettings.thisFontSize,
-                            { align: "center", maxWidth: 300 },
+                            { align: "center", maxWidth: wedgeWidth },
                         ]);
-                        if (tmpPDF.getTextWidth(textLine) > 300) {
+                        if (tmpPDF.getTextWidth(textLine) > wedgeWidth) {
                             thisY += 21;
                         }
                     }
@@ -1648,14 +1657,14 @@ import { PDFs } from "../shared/PDFs.js";
                         thisY += 21;
                         PDFs.thisPDFtextArray.push([
                             textLine,
-                            thisX + 150,
+                            thisX + wedgeWidth / 2,
                             thisY + 30,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
                             PDFs.currentPDFsettings.thisFontSize,
-                            { align: "center", maxWidth: 300 },
+                            { align: "center", maxWidth: wedgeWidth },
                         ]);
-                        if (tmpPDF.getTextWidth(textLine) > 300) {
+                        if (tmpPDF.getTextWidth(textLine) > wedgeWidth) {
                             thisY += 21;
                         }
                     }
