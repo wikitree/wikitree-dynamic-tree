@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "24 May 2025";
+    const AboutUpdateDate = "28 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1295,7 +1295,7 @@ import { PDFs } from "../shared/PDFs.js";
             "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
             "<BR/><BR/>" +
             "<button id=PDFgenButton class='btn btn-primary'  onclick=FanChartView.doPrintPDF()>Generate PDF now</button> " +
-            "<button id=PDFgenProgressBar class='btn-secondary'  style='display:none;' ></button> " +
+            "<span id=PDFgenProgressBar class='btn-secondary'  style='display:none;' >Processing PDF .... please hold ...</span> " +
             "</div></div>";
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
@@ -1975,25 +1975,36 @@ import { PDFs } from "../shared/PDFs.js";
             // console.log(PDFs.thisPDFarcsArray);
 
             // Must set ORIENTATION based on the width and height of the PDF - doesn't like it otherwise.
-            let orientation = "l";
-            if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
-                orientation = "p";
-            }
+            // let orientation = "l";
+            // if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
+            //     orientation = "p";
+            // }
 
             // console.log(PDFs.thisPDFtextArray);
-            let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
+            // let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
             // console.log(PDFs.currentPDFsettings);
 
             // TOTALLY MADE UP LINES Drawing
 
-            PDFs.addArcsToPDF(realPDF);
-            PDFs.addEllipsesToPDF(realPDF, 1);
-            PDFs.addLinesToPDF(realPDF);
-            PDFs.addRectsToPDF(realPDF);
-            PDFs.addRoundedRectsToPDF(realPDF);
-            PDFs.addImagesToPDF(realPDF);
-            PDFs.addTextsToPDF(realPDF);
-            PDFs.addEllipsesToPDF(realPDF, 2);
+            // PDFs.addArcsToPDF(realPDF);
+            // PDFs.addEllipsesToPDF(realPDF, 1);
+            // PDFs.addLinesToPDF(realPDF);
+            // PDFs.addRectsToPDF(realPDF);
+            // PDFs.addRoundedRectsToPDF(realPDF);
+            // PDFs.addImagesToPDF(realPDF);
+            // PDFs.addTextsToPDF(realPDF);
+            // PDFs.addEllipsesToPDF(realPDF, 2);
+
+            let realPDF = PDFs.assemblePDF([
+                "arcs",
+                "ellipses:1",
+                "lines",
+                "rects",
+                "roundedRects",
+                "images",
+                "texts",
+                "ellipses:2",
+            ]);
 
             // var ctx = realPDF.context2d;
 
