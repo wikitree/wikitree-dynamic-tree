@@ -382,12 +382,14 @@ export class PDFs {
                 if (element[5].strokeColor == undefined || element[5].strokeColor == "undefined") {
                     element[5].strokeColor = "black";
                 }
+                element[5].strokeColor = element[5].strokeColor.replace("Grey", "Gray");
                 pdf.setDrawColor(element[5].strokeColor);
             }
             if (element[5].fillColor) {
                 if (element[5].fillColor == undefined || element[5].fillColor == "undefined") {
                     element[5].fillColor = "white";
                 }
+                element[5].fillColor = element[5].fillColor.replace("Grey", "Gray");
                 pdf.setFillColor(element[5].fillColor);
             }
             if (element[5].lineWidth) {
@@ -418,12 +420,14 @@ export class PDFs {
                 if (element[7].strokeColor == undefined || element[7].strokeColor == "undefined") {
                     element[7].strokeColor = "black";
                 }
+                element[7].strokeColor = element[7].strokeColor.replace("Grey", "Gray");
                 pdf.setDrawColor(element[7].strokeColor);
             }
             if (element[7].fillColor) {
                 if (element[7].fillColor == undefined || element[7].fillColor == "undefined") {
                     element[7].fillColor = "white";
                 }
+                element[7].fillColor = element[7].fillColor.replace("Grey", "Gray");
                 pdf.setFillColor(element[7].fillColor);
             }
             if (element[7].lineWidth) {
