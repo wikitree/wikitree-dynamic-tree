@@ -1,12 +1,15 @@
 #ttreeContainer {
-  padding: 0em;
   position: relative;
-  height: 800px;
-  overflow-y: scroll;
+  overflow: visible;
+  overflow-x: scroll !important;
+  height: 100vh;
+  padding: 0em;
   border:solid 2px green;
+  z-index: 2000;
 }
 #ttreeHeader {
   height: 50px;
+  position: -webkit-sticky;
   position: sticky;
   top: 0px;
 }
@@ -15,11 +18,11 @@
 }
 
 .headerRow {
-  fill: #26ADEA;
+  fill: #C6DDEA;
   stroke-width:0;
 }
 .headerText1{
-  fill:white;
+  fill:black;
   font-family:Arial, sans-serif;
   font-size:14px;
   font-weight:normal;
@@ -64,7 +67,7 @@
   stroke:black;
 }
 .familyLine {
-  stroke:#007700;
+  stroke:#00AA00;
   stroke-width:1;
 }
 .barTextF {
