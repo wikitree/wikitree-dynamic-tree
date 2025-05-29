@@ -41,7 +41,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "19 May 2025";
+    const AboutUpdateDate = "28 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1189,8 +1189,8 @@ import { PDFs } from "../shared/PDFs.js";
             "<label><input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Fractal Tree created TODAY using Fractal Tree app in Tree Apps collection on WikiTree.com.'>" +
             "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
             "<BR/><BR/>" +
-            "<button id=PDFgenButton class='btn btn-primary'  onclick=FractalView.doPrintPDF()>Generate PDF now</button> " +
-            "<button id=PDFgenProgressBar class='btn-secondary'  style='display:none;' ></button> " +
+            "<button id=PDFgenButton class='btn btn-primary'  onclick='FractalView.doPrintPDF();'>Generate PDF now</button> " +
+            "<span id=PDFgenProgressBar class='btn-secondary'  style='display:none;' >Processing PDF .... please hold ...</span> " +
             "</div></div>";
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
@@ -1676,48 +1676,20 @@ import { PDFs } from "../shared/PDFs.js";
             console.log("w,h:", PDFs.thisPDFwidth, PDFs.thisPDFheight);
 
             // Must set ORIENTATION based on the width and height of the PDF - doesn't like it otherwise.
-            let orientation = "l";
-            if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
-                orientation = "p";
-            }
+            // let orientation = "l";
+            // if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
+            //     orientation = "p";
+            // }
 
-            let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
-            console.log(PDFs.currentPDFsettings);
-            PDFs.addLinesToPDF(realPDF);
-            PDFs.addRectsToPDF(realPDF);
-            PDFs.addRoundedRectsToPDF(realPDF);
-            PDFs.addImagesToPDF(realPDF);
-            PDFs.addTextsToPDF(realPDF);
+            // let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
+            // console.log(PDFs.currentPDFsettings);
+            // PDFs.addLinesToPDF(realPDF);
+            // PDFs.addRectsToPDF(realPDF);
+            // PDFs.addRoundedRectsToPDF(realPDF);
+            // PDFs.addImagesToPDF(realPDF);
+            // PDFs.addTextsToPDF(realPDF);
 
-            if (1 == 2 && document.getElementById("testIMGnum3") && document.getElementById("testIMGnum3").src > "") {
-                //  pdf2.addImage(getBase64Image(document.getElementById("testIMGnum3")), "GIF", 500, 200, 300, 500);
-
-                // console.log("setupWaitForBase64Image",
-                let newBase64String = await setupWaitForBase64Image({
-                    width: 75,
-                    height: 100,
-                    src: document.getElementById("testIMGnum3").src,
-                });
-                //  console.log({ newBase64String });
-                pdf2.addImage(
-                    newBase64String,
-                    "GIF",
-                    500,
-                    100,
-                    75,
-                    100
-                    //  document.getElementById("testIMGnum3").width,
-                    //  document.getElementById("testIMGnum3").height /* , 75, 75 */
-                );
-                // pdf2.addImage(
-                //     setupWaitForBase64Image({width:75,height:100,src:document.getElementById("testIMGnum3").src}),
-                //     "GIF",
-                //     500,
-                //     50,
-                //     100,
-                //     100
-                // );
-            }
+            let realPDF = PDFs.assemblePDF(["lines", "rects", "roundedRects", "images", "texts"]);
 
             let fileName4PDF =
                 "FractalTree_" +
