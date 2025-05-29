@@ -93,7 +93,7 @@ window.TimelineTreeView = class TimelineTreeView extends View {
     static #DESCRIPTION = "Shows a tree structure in a timeline format.";
     meta() {
         return {
-            title: "Timeline Tree v3",
+            title: "Timeline Tree",
             description: TimelineTreeView.#DESCRIPTION,
         };
     }
@@ -229,33 +229,6 @@ async function bulkLoad(event) {
     // build the tree and the display components
     ttreeShowGens = $("#paramLoad").val();
     loadTree(event);
-/*
-    await generateTree();
-
-    // Initialise current focus person
-    let focusPersonIdx = ttreePeople.findIndex(item => item["Id"] == ttreePrimaryID);
-    let focusPerson = ttreePeople[focusPersonIdx];
-    let focusFamily = ttreeFamilies[focusPerson["ChildIn"]];
-    ttreeCurrentFocusPerson = focusPersonIdx;
-
-    // Select everyone for display
-    const gens = ttreeShowGens-2;
-    // Determine who to show
-    //   All people from gen 1 to gen n-1
-    //   Only direct ancestors and their spouses at gen    
-    for (let i=0; i<ttreePeople.length; i++) {
-        if (ttreePeople[i]["Generation"] < gens)
-            ttreePeople[i]["Visible"] = true;
-        else if ((ttreePeople[i]["Generation"] == gens) && ((ttreePeople[i]["Type"] == "ancestor") || (ttreePeople[i]["Type"] == "stepParent")))
-            ttreePeople[i]["Visible"] = true;
-        else
-            ttreePeople[i]["Visible"] = false;
-    }
-    updateSibs(event);
-
-    // And finally update the whole display
-    updateDisplay(event);
-*/
 }
 
 //===================================================================================
