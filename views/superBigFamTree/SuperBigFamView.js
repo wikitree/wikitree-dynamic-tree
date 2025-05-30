@@ -150,6 +150,7 @@
 
 import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 import { Utils } from "../shared/Utils.js";
+import { PDFs } from "../shared/PDFs.js";
 
 (function () {
     const APP_ID = "SuperBigTree";
@@ -166,11 +167,12 @@ import { Utils } from "../shared/Utils.js";
 
     let font4Name = "Arial";
     let font4Info = "Arial";
+    let font4Extra = "Mono";
 
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "04 February 2025";
+    const AboutUpdateDate = "29 May 2025";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -761,6 +763,531 @@ import { Utils } from "../shared/Utils.js";
     var AltRedsArray = []; // to be defined shortly
     var BluesArray = []; // to be defined shortly
 
+    SuperBigFamView.doPrintPDF = function () {
+        document.getElementById("PDFgenButton").style.display = "none";
+        document.getElementById("PDFgenProgressBar").offsetHeight;
+        document.getElementById("PDFgenProgressBar").style.display = "block"; //( "disabled", true);
+        SuperBigFamView.printPDF();
+    };
+
+    SuperBigFamView.printPDF = async function () {
+        let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
+        document.getElementById("PDFgenButton").setAttribute("disabled", true);
+        document.getElementById("PDFgenProgressBar").style.display = "revert"; //( "disabled", true);
+
+        PDFs.currentPDFsettings = {
+            thisDX: 0,
+            thisDY: 0,
+            thisStroke: "black",
+            thisStrokeRGB: [0, 0, 0],
+            thisStrokeWidth: 1,
+            thisFontSize: 18,
+            thisFont: "helvetica",
+            thisFontStyle: "normal",
+        };
+
+        PDFs.thisPDFlinesArray = [];
+        PDFs.thisPDFtextArray = [];
+        PDFs.thisPDFrectArray = [];
+        PDFs.thisPDFroundedRectArray = [];
+        PDFs.thisPDFimageArray = [];
+
+        PDFs.thisPDFminX = 0;
+        PDFs.thisPDFminY = 0;
+        PDFs.thisPDFmaxX = 0;
+        PDFs.thisPDFmaxY = 0;
+        PDFs.thisPDFwidth = 0;
+        PDFs.thisPDFheight = 0;
+        PDFs.thisPDFmargin = 20;
+
+        let thisSVG = document.getElementById("SVGgraphics");
+        let theConnectors = document.getElementById("theConnectors");
+        let thisDXDY = PDFs.getTranslationCoordinates(thisSVG);
+        PDFs.currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
+        PDFs.currentPDFsettings.thisDY = 100 + parseInt(thisDXDY[1]);
+
+        tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+        tmpPDF.setFontSize(PDFs.currentPDFsettings.thisFontSize);
+
+        for (var i = 0; i < theConnectors.childElementCount; i++) {
+            let thisPolyLine = theConnectors.children[i];
+            let strokeColourString = thisPolyLine.getAttribute("stroke");
+            let strokeColour = PDFs.convertColourNameToRGB(strokeColourString);
+            if (strokeColourString == "#EEE") {
+                console.log("Skipping this PolyLine because it is #EEE");
+                continue;
+            } else {
+                console.log("Adding this PolyLine with strokeColour: ", { strokeColourString }, { strokeColour });
+            }
+
+            PDFs.thisPDFlinesArray.push([
+                thisPolyLine.points[0].x + PDFs.currentPDFsettings.thisDX,
+                thisPolyLine.points[0].y + PDFs.currentPDFsettings.thisDY,
+                thisPolyLine.points[1].x + PDFs.currentPDFsettings.thisDX,
+                thisPolyLine.points[1].y + PDFs.currentPDFsettings.thisDY,
+                strokeColour,
+                thisPolyLine.getAttribute("stroke-width"),
+                "S",
+            ]);
+        }
+
+        for (var i = 0; i < thisSVG.childElementCount; i++) {
+            let thisPerson = thisSVG.children[i];
+            let personWidth = 300;
+            if (thisPerson.classList.length == 0) {
+                continue; // skip the SVG element itself because it has no class attached, so can't be a person / ancestor
+            }
+            if (thisPerson.children && thisPerson.children.length > 0) {
+                if (thisPerson.children[0].getAttribute("width") > "") {
+                    personWidth = parseInt(thisPerson.children[0].getAttribute("width"));
+                    console.log("personWidth: ", { personWidth });
+                }
+            }
+
+            let bkgdClr = PDFs.getValueFromStyleString(
+                thisPerson.children[0].children[0].getAttribute("style"),
+                "background-color"
+            );
+            // console.log("bkgdClr: ", { bkgdClr });
+            let translationObj = PDFs.getTranslationCoordinates(thisPerson);
+            // console.log(
+            //     "translationObj: ",
+            //     { translationObj },
+            //     "x:",
+            //     thisPerson.children[0].getAttribute("x"),
+            //     "y:",
+            //     thisPerson.children[0].getAttribute("y")
+            // );
+
+            let thisPersonX =
+                translationObj[0] + 1.0 * thisPerson.children[0].getAttribute("x") + PDFs.currentPDFsettings.thisDX;
+            let thisPersonY =
+                translationObj[1] +
+                1.0 * thisPerson.children[0].getAttribute("y") -
+                0 * 100 +
+                PDFs.currentPDFsettings.thisDY;
+
+            PDFs.thisPDFroundedRectArray.push([
+                thisPersonX,
+                thisPersonY,
+                personWidth,
+                200,
+                15,
+                15,
+                "DF",
+                { fillColor: bkgdClr, strokeColor: "#000000", lineWidth: 2 },
+            ]);
+
+            let thisPersonTexts = thisPerson.children[0].children[0].children[0].children[0].children;
+            // console.log(thisPersonTexts);
+            thisPersonX += thisPerson.children[0].getAttribute("width") / 2;
+            thisPersonY += 25;
+
+            for (var t = 0; t < thisSVG.childElementCount; t++) {
+                let thisTextObj = thisPersonTexts[t];
+                if (thisTextObj && thisTextObj.innerHTML.indexOf("<img") > -1) {
+                    // console.log("photo: ", thisTextObj.innerHTML);
+
+                    // thisID = "photoImgFor" + index;
+                    let thisElement = thisTextObj.children[0]; // document.getElementById(thisID);
+                    if (
+                        thisElement &&
+                        thisElement.src > "" &&
+                        document.location.host.indexOf("apps.wikitree.com") > -1 &&
+                        thisElement.src.indexOf("www.wikitree.com") > -1 &&
+                        thisElement.parentNode.style.display != "none"
+                    ) {
+                        //  let thisBaseString = theBaseString;
+
+                        let thisBaseString = await PDFs.setupWaitForBase64Image({
+                            width: thisElement.width,
+                            height: thisElement.height,
+                            src: thisElement.src,
+                        });
+                        //  if (thePeopleList[window.SuperBigFamView.myAhnentafel.list[index]].getGender() == "Male") {
+                        //      thisBaseString = PDFs.maleGIFbase64string;
+                        //  } else if (thePeopleList[window.SuperBigFamView.myAhnentafel.list[index]].getGender() == "Female") {
+                        //      thisBaseString = PDFs.femaleGIFbase64string;
+                        //  } else {
+                        //      thisBaseString = PDFs.nogenderGIFbase64string;
+                        //  }
+                        thisPersonY -= 25;
+
+                        PDFs.thisPDFimageArray.push([
+                            thisBaseString,
+                            // "/apps/clarke11007/images/icons/female.gif",
+                            "",
+                            thisPersonX - thisElement.width / 2,
+                            thisPersonY,
+                            thisElement.width,
+                            thisElement.height,
+                        ]);
+                        thisPersonY += thisElement.height + 20;
+                        // thisPersonY += 10;
+                    } else if (thisElement && thisElement.src > "" && thisElement.parentNode.style.display != "none") {
+                        let thisBaseString = await PDFs.setupWaitForBase64Image({
+                            width: thisElement.width,
+                            height: thisElement.height,
+                            src: thisElement.src,
+                        });
+                        thisPersonY -= 25;
+
+                        PDFs.thisPDFimageArray.push([
+                            thisBaseString, //thisElement.src,
+                            "PNG",
+                            thisPersonX - thisElement.width / 2,
+                            thisPersonY,
+                            thisElement.width,
+                            thisElement.height,
+                        ]);
+                        thisPersonY += thisElement.height + 20;
+                    }
+                } else if (thisTextObj && thisTextObj.innerText > "") {
+                    let thisTextArray = thisTextObj.innerText.split("\n");
+                    let thisTextFont = "helvetica";
+                    let thisTextFontSize = 18;
+                    let thisTextFontStyle = "normal";
+                    if (thisTextObj.classList.value.indexOf("fontBold") > -1) {
+                        thisTextFontStyle = "bold";
+                    }
+                    if (thisTextObj.classList.value.indexOf("fontSerif") > -1) {
+                        thisTextFont = "times";
+                    } else if (thisTextObj.classList.value.indexOf("fontMono") > -1) {
+                        thisTextFont = "courier";
+                    } else if (thisTextObj.classList.value.indexOf("fontFantasy") > -1) {
+                        thisTextFont = "helvetica";
+                        if (thisTextFontStyle == "bold") {
+                            thisTextFontStyle = "bolditalic";
+                        } else {
+                            thisTextFontStyle = "italic";
+                        }
+                    } else if (thisTextObj.classList.value.indexOf("fontScript") > -1) {
+                        thisTextFont = "times";
+                        if (thisTextFontStyle == "bold") {
+                            thisTextFontStyle = "bolditalic";
+                        } else {
+                            thisTextFontStyle = "italic";
+                        }
+                    }
+
+                    for (let tt = 0; tt < thisTextArray.length; tt++) {
+                        const thisTextPiece = thisTextArray[tt];
+                        PDFs.thisPDFtextArray.push([
+                            thisTextPiece,
+                            thisPersonX,
+                            thisPersonY, //+ 20 * t,
+                            thisTextFont,
+                            thisTextFontStyle,
+                            thisTextFontSize,
+                            { align: "center", maxWidth: personWidth },
+                        ]);
+
+                        thisPersonY += 25;
+                        if (tmpPDF.getTextWidth(thisTextPiece) > personWidth) {
+                            thisPersonY += 21;
+                        }
+                    }
+                    // console.log(thisTextObj.id);
+                }
+            }
+            let currentRRect = PDFs.thisPDFroundedRectArray[PDFs.thisPDFroundedRectArray.length - 1];
+            // console.log(
+            //     "RectRangle: (",
+            //     currentRRect[0],
+            //     currentRRect[1],
+            //     ") -> (",
+            //     currentRRect[0] + currentRRect[2],
+            //     currentRRect[1] + currentRRect[3],
+            //     ")"
+            // );
+            // console.log("bottom Y of text @ ", thisPersonY);
+            if (thisPersonY > currentRRect[1] + currentRRect[3]) {
+                // console.log("NEED TO LOWER RRECT for  ", thisPersonY);
+                PDFs.thisPDFroundedRectArray[PDFs.thisPDFroundedRectArray.length - 1][3] =
+                    thisPersonY - currentRRect[1];
+            }
+        }
+
+        for (let index = 1; index <= 2 ** SuperBigFamView.numGens2Display; index++) {
+            let thisWedgeName = "wedgeInfoFor" + index;
+            let thisWedgeElement = document.getElementById(thisWedgeName);
+            let thisRRectBkgdClr = "#FFFF00";
+            let thisWedgeBkgdClr = "#FF00FF";
+
+            if (thisWedgeElement) {
+                let thisWedgeParent = thisWedgeElement.parentNode;
+                let thisWedgeStyle = thisWedgeElement.getAttribute("style");
+                if (thisWedgeStyle) {
+                    thisWedgeBkgdClr = thisWedgeStyle
+                        .substring(thisWedgeStyle.indexOf("background-color:") + 17)
+                        .trim(); // , thisWedgeStyle.indexOf(";", thisWedgeStyle.indexOf("background-color:"))).trim();
+                }
+                if (thisWedgeParent) {
+                    let thisWedgeParentStyle = thisWedgeParent.getAttribute("style");
+                    if (thisWedgeParentStyle) {
+                        thisRRectBkgdClr = thisWedgeParentStyle
+                            .substring(
+                                thisWedgeParentStyle.indexOf("background-color:") + 17,
+                                thisWedgeParentStyle.indexOf(";", thisWedgeParentStyle.indexOf("background-color:"))
+                            )
+                            .trim();
+                    }
+                }
+            }
+
+            let thisID = "nameDivFor" + index;
+            let thisElement = document.getElementById(thisID);
+            let thisX = PDFs.currentPDFsettings.thisDX;
+            let thisY = PDFs.currentPDFsettings.thisDY;
+
+            if (thisElement) {
+                let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
+                if (thisPersonObject) {
+                    let thisDXDY = PDFs.getTranslationCoordinates(thisPersonObject);
+                    PDFs.currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
+                    PDFs.currentPDFsettings.thisDY = parseInt(thisDXDY[1]);
+
+                    thisX = parseInt(thisDXDY[0]) - 150;
+                    thisY = parseInt(thisDXDY[1]) - 100;
+                }
+                PDFs.thisPDFroundedRectArray.push([
+                    thisX,
+                    thisY,
+                    personWidth,
+                    200,
+                    15,
+                    15,
+                    "DF",
+                    { fillColor: thisRRectBkgdClr, strokeColor: "#000000", lineWidth: 2 },
+                ]);
+                // pdf.setFillColor(thisWedgeBkgdClr);
+                PDFs.thisPDFrectArray.push([
+                    thisX + 15,
+                    thisY + 15,
+                    personWidth - 30,
+                    170,
+                    "F",
+                    { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
+                ]);
+            } else {
+                continue;
+            }
+
+            thisID = "extraInfoFor" + index;
+            thisElement = document.getElementById(thisID);
+            PDFs.setPDFfontBasedOnSetting(SuperBigFamView.currentSettings.general_options_font4Extra, false);
+            tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+            tmpPDF.setFontStyle(PDFs.currentPDFsettings.thisFontStyle);
+
+            if (thisElement) {
+                // thisY += 5;
+                let thisTextArray = thisElement.innerHTML.split("<br>");
+                // console.log({ thisText }, { thisX }, { thisY });
+                // pdf.setDrawColor("#000000");
+                for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                    const textLine = thisTextArray[textIndex];
+                    PDFs.thisPDFtextArray.push([
+                        textLine,
+                        thisX + 150,
+                        thisY + 30,
+                        PDFs.currentPDFsettings.thisFont,
+                        PDFs.currentPDFsettings.thisFontStyle,
+                        PDFs.currentPDFsettings.thisFontSize,
+                        { align: "center", maxWidth: personWidth },
+                    ]);
+                    thisY += 21;
+                    // if (pdf.getTextWidth(textLine) > 300) {
+                    // thisY += 8;
+                    // }
+                }
+            }
+
+            thisID = "photoImgFor" + index;
+            thisElement = document.getElementById(thisID);
+            if (
+                thisElement &&
+                thisElement.src > "" &&
+                document.location.host.indexOf("apps.wikitree.com") > -1 &&
+                thisElement.src.indexOf("www.wikitree.com") > -1 &&
+                thisElement.parentNode.style.display != "none"
+            ) {
+                //  let thisBaseString = theBaseString;
+
+                let thisBaseString = await PDFs.setupWaitForBase64Image({
+                    width: thisElement.width,
+                    height: thisElement.height,
+                    src: thisElement.src,
+                });
+                //  if (thePeopleList[window.SuperBigFamView.myAhnentafel.list[index]].getGender() == "Male") {
+                //      thisBaseString = PDFs.maleGIFbase64string;
+                //  } else if (thePeopleList[window.SuperBigFamView.myAhnentafel.list[index]].getGender() == "Female") {
+                //      thisBaseString = PDFs.femaleGIFbase64string;
+                //  } else {
+                //      thisBaseString = PDFs.nogenderGIFbase64string;
+                //  }
+
+                thisY += 10;
+                PDFs.thisPDFimageArray.push([
+                    thisBaseString,
+                    // "/apps/clarke11007/images/icons/female.gif",
+                    "",
+                    thisX + 150 - thisElement.width / 2,
+                    thisY,
+                    thisElement.width,
+                    thisElement.height,
+                ]);
+                thisY += thisElement.height;
+            } else if (thisElement && thisElement.src > "" && thisElement.parentNode.style.display != "none") {
+                let thisBaseString = await PDFs.setupWaitForBase64Image({
+                    width: thisElement.width,
+                    height: thisElement.height,
+                    src: thisElement.src,
+                });
+
+                PDFs.thisPDFimageArray.push([
+                    thisBaseString, //thisElement.src,
+                    "PNG",
+                    thisX + 150 - thisElement.width / 2,
+                    thisY,
+                    thisElement.width,
+                    thisElement.height,
+                ]);
+                thisY += thisElement.height + 20;
+            }
+
+            thisID = "nameDivFor" + index;
+            thisElement = document.getElementById(thisID);
+            //  PDFs.currentPDFsettings.thisFont =
+            PDFs.setPDFfontBasedOnSetting(SuperBigFamView.currentSettings.general_options_font4Names, true);
+            //  PDFs.currentPDFsettings.thisFontStyle = "bold";
+            tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+            tmpPDF.setFontStyle(PDFs.currentPDFsettings.thisFontStyle);
+
+            if (thisElement) {
+                let thisText = thisElement.textContent;
+                //  console.log({ thisText }, { thisX }, { thisY });
+                // pdf.setDrawColor("#000000");
+                // pdf.setLineWidth(2);
+                // pdf.setFillColor(thisRRectBkgdClr);
+
+                // pdf.setFillColor("#FFFFFF");
+                PDFs.thisPDFtextArray.push([
+                    thisText,
+                    thisX + 150,
+                    thisY + 30,
+                    PDFs.currentPDFsettings.thisFont,
+                    PDFs.currentPDFsettings.thisFontStyle,
+                    PDFs.currentPDFsettings.thisFontSize,
+                    { align: "center", maxWidth: personWidth },
+                ]);
+                if (tmpPDF.getTextWidth(thisText) > personWidth) {
+                    thisY += 21;
+                }
+            }
+
+            //  PDFs.currentPDFsettings.thisFontStyle = "normal";
+            PDFs.setPDFfontBasedOnSetting(SuperBigFamView.currentSettings.general_options_font4Info, false);
+            tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+
+            thisID = "birthDivFor" + index;
+            thisElement = document.getElementById(thisID);
+            if (thisElement) {
+                thisY += 5;
+                let thisTextArray = thisElement.innerHTML.split("<br>");
+                // console.log({ thisText }, { thisX }, { thisY });
+                // pdf.setDrawColor("#000000");
+                for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                    const textLine = thisTextArray[textIndex];
+                    thisY += 21;
+                    PDFs.thisPDFtextArray.push([
+                        textLine,
+                        thisX + 150,
+                        thisY + 30,
+                        PDFs.currentPDFsettings.thisFont,
+                        PDFs.currentPDFsettings.thisFontStyle,
+                        PDFs.currentPDFsettings.thisFontSize,
+                        { align: "center", maxWidth: personWidth },
+                    ]);
+                    if (tmpPDF.getTextWidth(textLine) > personWidth) {
+                        thisY += 21;
+                    }
+                }
+            }
+
+            thisID = "deathDivFor" + index;
+            thisElement = document.getElementById(thisID);
+            if (thisElement) {
+                thisY += 5;
+                let thisTextArray = thisElement.innerHTML.split("<br>");
+                // console.log({ thisText }, { thisX }, { thisY });
+                // pdf.setDrawColor("#000000");
+                for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                    const textLine = thisTextArray[textIndex];
+                    thisY += 21;
+                    PDFs.thisPDFtextArray.push([
+                        textLine,
+                        thisX + 150,
+                        thisY + 30,
+                        PDFs.currentPDFsettings.thisFont,
+                        PDFs.currentPDFsettings.thisFontStyle,
+                        PDFs.currentPDFsettings.thisFontSize,
+                        { align: "center", maxWidth: personWidth },
+                    ]);
+                    if (tmpPDF.getTextWidth(textLine) > personWidth) {
+                        thisY += 21;
+                    }
+                }
+            }
+            thisY += 40; // have to take into consideration the height of the text - since thisY is the top of the text
+
+            let latestRRect = PDFs.thisPDFroundedRectArray[PDFs.thisPDFroundedRectArray.length - 1];
+            let latestRect = PDFs.thisPDFrectArray[PDFs.thisPDFrectArray.length - 1];
+            //  console.log("End RRect info:", index, { latestRRect }, { thisY });
+            if (latestRRect[3] < thisY - latestRRect[1]) {
+                latestRRect[3] = thisY - latestRRect[1];
+                latestRect[3] = latestRRect[3] - 30;
+            }
+        }
+
+        // ALL COMPONENTS HAVE BEEN ADDED TO THE PDF - NOW DO THE FINAL CALCULATIONS
+        PDFs.setPDFsizes(tmpPDF);
+        console.log("w,h:", PDFs.thisPDFwidth, PDFs.thisPDFheight);
+
+        // Must set ORIENTATION based on the width and height of the PDF - doesn't like it otherwise.
+        // let orientation = "l";
+        // if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
+        //     orientation = "p";
+        // }
+
+        // let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
+        // console.log(PDFs.currentPDFsettings);
+        // PDFs.addLinesToPDF(realPDF);
+        // PDFs.addRectsToPDF(realPDF);
+        // PDFs.addRoundedRectsToPDF(realPDF);
+        // PDFs.addImagesToPDF(realPDF);
+        // PDFs.addTextsToPDF(realPDF);
+
+        let realPDF = PDFs.assemblePDF(["lines", "rects", "roundedRects", "images", "texts"]);
+
+        let fileName4PDF =
+            "SuperTree_" +
+            SuperBigFamView.myAhnentafel.primaryPerson.getName() +
+            "_" +
+            "A" +
+            SuperBigFamView.numAncGens2Display +
+            "D" +
+            SuperBigFamView.numDescGens2Display +
+            "C" +
+            SuperBigFamView.numCuzGens2Display +
+            "_" +
+            PDFs.datetimestamp() +
+            ".pdf";
+
+        realPDF.save(fileName4PDF);
+
+        SuperBigFamView.closePDFpopup();
+    };
+
     SuperBigFamView.prototype.meta = function () {
         return {
             title: "Super Tree",
@@ -1095,6 +1622,19 @@ import { Utils } from "../shared/Utils.js";
                                 { value: "No", text: "No" },
                             ],
                             defaultValue: "Yes",
+                        },
+                        {
+                            optionName: "font4Extra",
+                            type: "radio",
+                            label: "Font for Extras",
+                            values: [
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Mono",
                         },
                         { optionName: "break1", type: "br" },
                         {
@@ -1629,7 +2169,8 @@ import { Utils } from "../shared/Utils.js";
             '<span id=CousinUpDownSpan>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fontDarkGreen fontBold">BRANCHES:</span> <button title="Decrease # of Aunt/Uncle/Cousin generations displayed"  id=CousinsBtnSVGdown class="btnSVG" onclick="SuperBigFamView.numCuzGens2Display -=1; SuperBigFamView.redrawCuz();">' +
             SVGbtnDOWN +
             "</button> " +
-            "[ <span id=numCuzGensInBBar>none</span> ]" + ' <button id=CousinsBtnSVGup class="btnSVG" title="Increase # of Aunt/Uncle/Cousin generations displayed" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
+            "[ <span id=numCuzGensInBBar>none</span> ]" +
+            ' <button id=CousinsBtnSVGup class="btnSVG" title="Increase # of Aunt/Uncle/Cousin generations displayed" onclick="SuperBigFamView.numCuzGens2Display +=1; SuperBigFamView.redrawCuz();">' +
             SVGbtnUP +
             "</button></span> " +
             //
@@ -1658,6 +2199,9 @@ import { Utils } from "../shared/Utils.js";
             '<A title="Change Zoom level - 3 settings" onclick="SuperBigFamView.reZoom();">' +
             SVGbtnRESIZE2 +
             "</A>&nbsp;&nbsp;&nbsp;&nbsp;" +
+            ' <A style="cursor:pointer;" title="Save as PDF"  onclick="SuperBigFamView.showPDFgenPopup();">' +
+            PRINTER_ICON +
+            "</A>&nbsp;&nbsp;" +
             ' <A style="cursor:pointer;" title="Adjust Settings"  onclick="SuperBigFamView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>" +
@@ -1750,11 +2294,26 @@ import { Utils } from "../shared/Utils.js";
 
         popupDIV += connectionPodDIV;
 
+        var PDFgenPopupHTML =
+            '<div id=PDFgenPopupDIV class="pop-up" style="display:none; position:absolute; right:80px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; ; z-index:9999">' +
+            '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="SuperBigFamView.closePDFpopup();">' +
+            SVGbtnCLOSE +
+            "</a></span>" +
+            "<H3 align=center>PDF Generator</H3><div id=innerPDFgen>" +
+            "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Super Tree PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Super Tree for John Smith'>" +
+            "<BR/><BR/>" +
+            "<label><input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Super Tree created TODAY using Super Tree app in Tree Apps collection on WikiTree.com.'>" +
+            "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
+            "<BR/><BR/>" +
+            "<button id=PDFgenButton class='btn btn-primary'  onclick=SuperBigFamView.doPrintPDF()>Generate PDF now</button> " +
+            "<span id=PDFgenProgressBar class='btn-secondary'  style='display:none;' >Processing PDF .... please hold ...</span> " +
+            "</div></div>";
+
         // var popupDIV = "<DIV id=popupDIV width=200px height=500px style='float:top; background-color:blue;'></DIV>";
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
         let infoPanel = document.getElementById("info-panel");
         // let mainDIV = document.getElementsByTagName("main");
-        infoPanel.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML + popupDIV;
+        infoPanel.innerHTML = btnBarHTML + legendHTML + PDFgenPopupHTML + aboutHTML + settingsHTML + popupDIV;
         infoPanel.classList.remove("hidden");
         infoPanel.parentNode.classList.add("stickyDIV");
         infoPanel.parentNode.style.padding = "0px";
@@ -1768,6 +2327,30 @@ import { Utils } from "../shared/Utils.js";
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
+
+        SuperBigFamView.closePDFpopup = function () {
+            let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
+            PDFgenPopupDIV.style.display = "none";
+        };
+
+        SuperBigFamView.showPDFgenPopup = function () {
+            let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
+            document.getElementById("PDFgenProgressBar").style.display = "none";
+            document.getElementById("PDFgenButton").removeAttribute("disabled");
+            document.getElementById("PDFgenButton").style.display = "revert";
+            PDFgenPopupDIV.style.display = "block";
+            PDFgenPopupDIV.style.zIndex = Utils.getNextZLevel();
+            document.getElementById("PDFtitleText").value =
+                "Super Tree for " + document.getElementById("nameDiv-A0").innerText;
+            let thisDateObj = new Date();
+            let thisDate = [thisDateObj.getDate(), PDFs.months[thisDateObj.getMonth()], thisDateObj.getFullYear()].join(
+                "-"
+            );
+            document.getElementById("PDFfooterText").value =
+                "This Super Big Family Tree was created " +
+                thisDate +
+                " using the SUPER TREE app in the Tree Apps collection on WikiTree.com.";
+        };
 
         SuperBigFamView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
@@ -8369,99 +8952,6 @@ import { Utils } from "../shared/Utils.js";
         let maxVitalHt = 0;
         let originalMaxHt = currentMaxHeight4Box;
         return;
-        for (let ahnNum = 1; ahnNum < 2 ** SuperBigFamView.numGens2Display; ahnNum++) {
-            const elem = document.getElementById("wedgeInfo-" + ahnNum);
-            const vital = document.getElementById("vital-" + ahnNum);
-            if (elem) {
-                const rect = elem.getBoundingClientRect();
-                if (elem) {
-                    condLog("ELEM Ht = ", rect.height);
-                    maxHt = Math.max(maxHt, rect.height);
-                }
-            }
-            if (vital) {
-                condLog("vital Ht = ", vital.offsetHeight);
-                maxVitalHt = Math.max(maxVitalHt, vital.offsetHeight);
-            }
-        }
-        condLog("TALLEST Box = ", maxHt);
-        condLog("TALLEST VITAL Box = ", maxVitalHt);
-
-        const primePerp = document.getElementById("vital1");
-        condLog(primePerp);
-        for (const prop in primePerp) {
-            // if (Object.hasOwnProperty.call(primePerp, prop)) {
-            const val = primePerp[prop];
-            // condLog(prop, val);
-            // }
-        }
-
-        let theBoxTightness = SuperBigFamView.currentSettings["general_options_tightness"];
-
-        let vBoxHeight = 300 + 20 * SuperBigFamView.currentSettings["general_options_vSpacing"]; //SuperBigFamView.currentSettings["general_options_vBoxHeight"];
-        // let vSpacing = SuperBigFamView.currentSettings["general_options_vSpacing"];
-
-        let prevCurrentMax = currentMaxHeight4Box;
-        let doAdjust = false;
-        if (vBoxHeight > 0) {
-            vSpacing = Math.max(1, Math.min(10, vSpacing));
-            doAdjust = 20 + vSpacing * 20 != currentMaxHeight4Box;
-            currentMaxHeight4Box = 20 + vSpacing * 20;
-            doAdjust = true;
-        } else {
-            currentMaxHeight4Box = Math.max(60, maxVitalHt - 70) + theBoxTightness * 20;
-            doAdjust = prevCurrentMax != currentMaxHeight4Box;
-        }
-        let yScaleFactor = currentMaxHeight4Box / 153;
-        condLog("currentMaxHeight4Box = ", currentMaxHeight4Box, "(adjustHeightsIfNeeded)");
-        condLog("vBoxHeight", vBoxHeight);
-        condLog("SuperBigFamView.maxDiamPerGen", SuperBigFamView.maxDiamPerGen);
-
-        for (let ahnNum = 1; doAdjust && ahnNum < 2 ** SuperBigFamView.numGens2Display; ahnNum++) {
-            const elem = document.getElementById("wedgeInfo-" + ahnNum);
-            if (elem) {
-                let X = 0;
-                let Y = 0;
-                let i = ahnNum;
-                let thisGenNum = Math.floor(Math.log2(ahnNum));
-                let xScaleFactor = boxWidth / (580 - theBoxTightness * 180);
-                // let yScaleFactor = (currentMaxHeight4Box * 1 + 84.0 + theBoxTightness * 80) / 200;
-                // let yScaleFactor = (maxVitalHt - 80 + theBoxTightness * 80) / 200;
-                // let yScaleFactor = (currentMaxHeight4Box - 80 + theBoxTightness * 80) / 200;
-                // if (vBoxHeight > 0) {
-                //     yScaleFactor = currentMaxHeight4Box / 153;
-                // }
-                for (let g = 1; g <= thisGenNum; g++) {
-                    if (g % 2 == 1) {
-                        X +=
-                            0 +
-                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
-                                2 *
-                                SuperBigFamView.maxDiamPerGen[g] *
-                                xScaleFactor -
-                            1 * SuperBigFamView.maxDiamPerGen[g] * xScaleFactor;
-                        // condLog(i, g, Math.floor(g/2) , SuperBigFamView.maxDiamPerGen[g] , "X",X);
-                    } else {
-                        Y +=
-                            0 +
-                            ((i & (2 ** (thisGenNum - g))) / 2 ** (thisGenNum - g)) *
-                                2 *
-                                SuperBigFamView.maxDiamPerGen[g] *
-                                yScaleFactor -
-                            1 * SuperBigFamView.maxDiamPerGen[g] * yScaleFactor;
-                        // condLog(i, g, Math.floor(g/2) , SuperBigFamView.maxDiamPerGen[g] , "Y",Y);
-                    }
-                }
-                condLog(ahnNum, "translate(" + X + "," + Y + ")");
-                if (elem.parentNode.parentNode.parentNode) {
-                    elem.parentNode.parentNode.parentNode.setAttribute("transform", "translate(" + X + "," + Y + ")");
-                }
-            }
-        }
-
-        if (doAdjust) {
-            SuperBigFamView.drawLines();
-        }
 
         // condLog( ancestorObject.ahnNum, thisGenNum, thisPosNum, ancestorObject.person._data.FirstName, ancestorObject.person._data.Name , X , Y);
     }
@@ -10852,7 +11342,9 @@ import { Utils } from "../shared/Utils.js";
                         leafObject.Code
                     } style="background-color: ${theClr} ; padding:5, border-color:black; border:2;">
                 <div class="vital-info"  id=vital-${leafObject.Code}>
-                <span  id=extraInfo-${leafObject.Code}>${extraInfoForThisAnc}${extraBR}</span>
+                <span class="extra font${font4Extra}" id=extraInfo-${
+                        leafObject.Code
+                    }>${extraInfoForThisAnc}${extraBR}</span>
 						<div class="image-box" id=photoDiv-${leafObject.Code} style="text-align: center"><img id=imgSRC-${
                         leafObject.Code
                     } src="https://www.wikitree.com/${photoUrl}"></div>
@@ -11285,7 +11777,7 @@ import { Utils } from "../shared/Utils.js";
     /**
      * Show a popup for the person.
      */
-    SuperBigFamView.personPopup = Tree.prototype.personPopup = function ( person ) {
+    SuperBigFamView.personPopup = Tree.prototype.personPopup = function (person) {
         if (!Utils.firstTreeAppPopUpPopped) {
             $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
             Utils.firstTreeAppPopUpPopped = true;
@@ -11297,9 +11789,9 @@ import { Utils } from "../shared/Utils.js";
                 const code = person._data.CodesList[c];
                 if (code && SuperBigFamView.theLeafCollection[code] && SuperBigFamView.theLeafCollection[code].degree) {
                     howManyDegrees = Math.min(howManyDegrees, SuperBigFamView.theLeafCollection[code].degree);
-                }                
+                }
             }
-        };
+        }
 
         let degreeText = "";
         if (howManyDegrees > 1 && howManyDegrees < 999) {
@@ -11312,14 +11804,14 @@ import { Utils } from "../shared/Utils.js";
             type: "CC",
             person: person,
             leafCollection: SuperBigFamView.theLeafCollection,
-            appID:APP_ID, 
+            appID: APP_ID,
             SettingsObj: Utils,
-            extra:{degree:degreeText, hideConnectionIcon:false}
+            extra: { degree: degreeText, hideConnectionIcon: false },
         });
         // console.log("SuperBigFamView.personPopup");
-    }
-    
-    function placeHolderFunction4Popup (person, xy, Code) {
+    };
+
+    function placeHolderFunction4Popup(person, xy, Code) {
         this.removePopups();
         condLog("PERSON POPUP : ", SuperBigFamView.currentPopupID, person, Code, xy);
         // let thisPeep = thePeopleList[person._data.Id];
@@ -11641,7 +12133,7 @@ import { Utils } from "../shared/Utils.js";
             SuperBigFamView.currentPopupID = -1;
             document.getElementById("popupDIV").style.display = "none";
         });
-    };
+    }
 
     /**
      * Remove all popups. It will also remove
@@ -11665,11 +12157,11 @@ import { Utils } from "../shared/Utils.js";
         // condLog("REMOVE POPUP");
     };
 
-     SuperBigFamView.removePodDIV = function () {
-        //  document.getElementById("connectionPodDIV").innerHTML = "";         
-         document.getElementById("connectionPodDIV").style.display = "none";
-         // condLog("REMOVE POPUP");
-     };
+    SuperBigFamView.removePodDIV = function () {
+        //  document.getElementById("connectionPodDIV").innerHTML = "";
+        document.getElementById("connectionPodDIV").style.display = "none";
+        // condLog("REMOVE POPUP");
+    };
 
     /**
      * Manage the ancestors tree
@@ -13314,6 +13806,7 @@ import { Utils } from "../shared/Utils.js";
     function updateFontsIfNeeded() {
         if (
             SuperBigFamView.currentSettings["general_options_font4Names"] == font4Name &&
+            SuperBigFamView.currentSettings["general_options_font4Extra"] == font4Extra &&
             SuperBigFamView.currentSettings["general_options_font4Info"] == font4Info
         ) {
             condLog("NOTHING to see HERE in UPDATE FONT land");
@@ -13329,10 +13822,12 @@ import { Utils } from "../shared/Utils.js";
 
             font4Name = SuperBigFamView.currentSettings["general_options_font4Names"];
             font4Info = SuperBigFamView.currentSettings["general_options_font4Info"];
+            font4Extra = SuperBigFamView.currentSettings["general_options_font4Extra"];
 
             let nameElements = document.getElementsByClassName("name");
             for (let e = 0; e < nameElements.length; e++) {
                 const element = nameElements[e];
+                element.classList.remove("fontArial");
                 element.classList.remove("fontSerif");
                 element.classList.remove("fontSansSerif");
                 element.classList.remove("fontMono");
@@ -13343,12 +13838,24 @@ import { Utils } from "../shared/Utils.js";
             let infoElements = document.getElementsByClassName("vital");
             for (let e = 0; e < infoElements.length; e++) {
                 const element = infoElements[e];
+                element.classList.remove("fontArial");
                 element.classList.remove("fontSerif");
                 element.classList.remove("fontSansSerif");
                 element.classList.remove("fontMono");
                 element.classList.remove("fontFantasy");
                 element.classList.remove("fontScript");
                 element.classList.add("font" + font4Info);
+            }
+            let extraElements = document.getElementsByClassName("extra");
+            for (let e = 0; e < extraElements.length; e++) {
+                const element = extraElements[e];
+                element.classList.remove("fontArial");
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Extra);
             }
         }
     }
