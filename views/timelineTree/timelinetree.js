@@ -1,4 +1,4 @@
-    /*
+/*
  * TimelineTree
  *
  * This is a wikitree tree app, intended to display a hybrid family tree / timeline, showing thefamily relationships
@@ -218,25 +218,8 @@ async function loadTree (event) {
         for (let i=0; i<family["Parents"].length; i++) makeVisible(family["Parents"][i]["ID"]);
     }
 
-/*
-    // Select just the core family for initial display
-    console.log(`Tree has been built - now to display core family`);
-    for (let i=0; i<ttreePeople.length; i++) ttreePeople[i]["Visible"] = false;
-    for (let i=0; i<ttreeAncestors.length; i++) {
-        let person = ttreePeople.find(item => item["Id"] == Number(ttreeAncestors[i]["key"]));
-        person["Visible"] = true;
-        // then activate their spouses
-        let spouses = person["Details"]["Spouses"];
-        for (const spouseID in spouses) {
-            const spouse = ttreePeople.find(item => item["Id"] == spouseID);
-            if (spouse != null ) spouse["Visible"] = true;
-        }
-        
-    }
-*/
-    updateSibs(event);
-
     // And finally update the whole display
+    updateSibs(event);
     updateDisplay(event);
 }
 
@@ -1153,19 +1136,19 @@ async function loadPeople() {
     console.log(`Retrieving direct ancestors (up to gen=${ttreeShowGens}) for person with ID=${ttreePrimaryID}`);
 
     // Begin by retrieving all ancestors for the primaryID person
-    const ancFields=["Id","Name","Father","Mother"];
-    const ancestors_json = await WikiTreeAPI.getAncestors("TimelineTree", ttreePrimaryID, ttreeShowGens-1, ancFields);
-    let ancestorsList = ancestors_json ? Object.values(ancestors_json) : [];
-    console.log(`Retrieved ${ancestorsList.length} people in direct tree`);
-    hdrMsg.innerHTML = `Retrieved ${ancestorsList.length} direct ancestors (please wait whilst we get everyone else)`;
-    if (ancestorsList.length == 0) return false;
-    
+    const peopleFields=["Id","Name","Father","Mother"];
+    const peopleOptions = {ancestors: ttreeShowGens-1};
+    const getPeopleResult = await WikiTreeAPI.getPeople("TimelineTree", ttreePrimaryID, peopleFields, peopleOptions);
+    let ancestorIDs = Object.keys(getPeopleResult[2]);
+    console.log(`Retrieved ${ancestorIDs.length} people in direct tree`);
+    hdrMsg.innerHTML = `Retrieved ${ancestorIDs.length} direct ancestors (please wait whilst we get everyone else)`;
+    if (ancestorIDs.length == 0) return false;
+
     // Then have to retrieve the relatives of each ancestor (parents + spouse + children + siblings)
-    let ancestorsIDs = ancestorsList.map(item => item["Id"]);  // Extract Ids of all ancestors
     const relsFields=["Id","PageId","Name","FirstName","MiddleName","LastNameAtBirth","LastNameCurrent",
                 "BirthDate","DeathDate","BirthDateDecade", "DeathDateDecade", "BirthLocation","DeathLocation","Gender","IsLiving","Father","Mother",
                 "Parents", "Children","Spouses","Siblings", "Privacy"];
-    const relatives_json = await WikiTreeAPI.getRelatives("TimelineTree", ancestorsIDs, relsFields, {getChildren: 1, getSpouses: true, getSiblings: true, getParents: true});
+    const relatives_json = await WikiTreeAPI.getRelatives("TimelineTree", ancestorIDs, relsFields, {getChildren: 1, getSpouses: true, getSiblings: true, getParents: true});
     ttreeAncestors = relatives_json ? Object.values(relatives_json) : [];
 
     
