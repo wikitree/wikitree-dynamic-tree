@@ -3168,12 +3168,18 @@ import { PDFs } from "../shared/PDFs.js";
                             true,
                             myWTuserID
                         );
-                        let biography = new Biography(theSourceRules);
-                        biography.parse(thePerson.getBio(), thePerson, "");
-                        let hasSources = biography.validate();
+                        if (!canUseThis) {
+                            // console.log("BioCheck: canUseThis is false for", thePerson);
+                            thePeopleList[theBioPerson.getProfileId()]["biocheck"] = null;
+                            thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = false;
+                        } else {
+                            let biography = new Biography(theSourceRules);
+                            biography.parse(thePerson.getBio(), thePerson, "");
+                            let hasSources = biography.validate();
 
-                        thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
-                        thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
+                            thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
+                            thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
+                        }
                     }
 
                     FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
@@ -4407,7 +4413,7 @@ import { PDFs } from "../shared/PDFs.js";
             // FanChartView.theAncestors[ancNum],
             false,
             false,
-            true,
+            false,
             myUserID
         );
         let biography = new Biography(theSourceRules);
@@ -4562,15 +4568,23 @@ import { PDFs } from "../shared/PDFs.js";
                         // FanChartView.theAncestors[ancNum],
                         false,
                         false,
-                        true,
+                        false,
                         myUserID
                     );
-                    let biography = new Biography(theSourceRules);
-                    biography.parse(theBioPerson.getBio(), theBioPerson, "");
-                    let hasSources = biography.validate();
-                    // console.log({ canUseThis }, { hasSources }, { biography }, { myUserID }, thePerson);
-                    thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
-                    thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
+
+                    if (!canUseThis) {
+                        // console.log("BioCheck: canUseThis is false for", thePerson);
+                        thePeopleList[theBioPerson.getProfileId()]["biocheck"] = null;
+                        thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = false;
+                    } else {
+                        let biography = new Biography(theSourceRules);
+                        biography.parse(theBioPerson.getBio(), theBioPerson, "");
+                        let hasSources = biography.validate();
+                        // console.log("BioCheck: canUseThis is TRUE for", thePerson, biography, hasSources);
+                        // console.log({ canUseThis }, { hasSources }, { biography }, { myUserID }, thePerson);
+                        thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
+                        thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
+                    }
 
                     // condLog("ADDED ", thePerson);
                 }
@@ -9495,9 +9509,12 @@ import { PDFs } from "../shared/PDFs.js";
                 "Style issues",
                 "Bio Check Pass: has sources",
             ];
+            thisColourArray[0] = "#FFFFFF";
             if (!thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck) {
+                // console.log("No BioCheck for ", ahnNum, " - returning default colour", thisColourArray[0]);
                 return thisColourArray[0];
             }
+            // console.log("BioCheck ColourArray:", thisColourArray);
             let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
             // let theStyles = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck.styles;
             let hasSources = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources;
