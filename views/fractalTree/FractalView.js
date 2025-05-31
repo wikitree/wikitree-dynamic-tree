@@ -194,7 +194,7 @@ import { PDFs } from "../shared/PDFs.js";
         "RoyalBlue",
         "FireBrick",
         "Blue",
-        "SlateGrey",
+        "SlateGray",
         "DarkMagenta",
         "Red",
         "DarkOrange",
