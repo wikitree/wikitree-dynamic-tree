@@ -850,7 +850,7 @@ export class PDFs {
                     if (thisGender == "Male") {
                         // console.log("ON ERROR : maleGIFbase64string", maleGIFbase64string);
                         // console.log("ON ERROR : this.maleGIFbase64string", this.maleGIFbase64string);
-                        console.log("ON ERROR : PDFs.maleGIFbase64string", PDFs.maleGIFbase64string);
+                        // console.log("ON ERROR : PDFs.maleGIFbase64string", PDFs.maleGIFbase64string);
                         resolve(PDFs.maleGIFbase64string);
                     } else if (thisGender == "Female") {
                         resolve(PDFs.femaleGIFbase64string);
