@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test page only</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <div id="main" style="position:sticky; top:0">
+        <div id="controlBlock"  style="position: sticky; top:0">
+            <div class="mb-1">
+            <label>Show extra:&nbsp;</label><input type="checkbox" id="pShow" checked>
+            </div>
+        </div>
+
+        <div id="svgContainer" style="position: relative" style="position: sticky; top:0">
+            <svg id="svgTitle" height="30" width="1000" style="position: sticky; top:0"><br/>
+                <text id="rowtitle" x="10" y="10" style="fill:black; font-family:Arial, sans-serif; font-size:12px; font-weight:normal">Header</text>
+            </svg>
+            <svg id="svgTree"  height="750" width="1000">
+            </svg>
+        </div>
+    </div>
+    <script>
+        var debugOn = false; // set to true to turn on debug logging to the console
+        
+        var elem = "";
+        for (i=0; i<10; i++) {
+            elem += '<svg x=' + 0 + ' y=' + i*15 + ' id="row' + i + ' visibility="visible">'
+            elem +=    '<text id="rowtext' + i + '" x="10" y="10" style="fill:black; font-family:Arial, sans-serif; font-size:12px; font-weight:normal">Item ' + i + '</text>'
+            elem +=    '<rect x="100" y="0" width="100" height="10" style="fill: #8888FF; stroke-width:0; stroke:#000000"/>'
+            elem += '</svg>'
+        }
+        elem +=    '<rect id="box1" x="250" y="100" width="50" height="50" style="fill: #FF8888; stroke-width:0; stroke:#000000"/>'
+
+        svgElem = document.getElementById("svgTree");
+        svgElem.innerHTML += elem;
+        
+        
+        $("#pShow").change(showExtra);
+
+
+
+        function showExtra () {
+
+            svgElem = document.getElementById("box1");
+            
+            let counter = 0;
+            const intervalId = setInterval(() => {
+                // Your code to be executed goes here
+                svgElem.setAttribute("x",250+counter);
+                svgElem.setAttribute("opacity",counter/100);
+
+                counter++;
+                if (counter >= 100) clearInterval(intervalId);
+                }, 10); // Delay of 10 milliseconds between executions
+
+            // for (i=1; i<3; i++) {
+            //     $("#g"+i).attr('visibility', $('#pShow').prop('checked')?'visible':'hidden');
+            // }
+        }
+    </script>
+    </body>
+</html>
