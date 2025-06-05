@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "28 May 2025";
+    const AboutUpdateDate = "31 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1287,7 +1287,7 @@ import { PDFs } from "../shared/PDFs.js";
             SVGbtnCLOSE +
             "</a></span>" +
             "<H3 align=center>PDF Generator</H3>" +
-            "NOTE: This <B>Save as PDF</B> feature is still in development. It is currently limited to 4 generations. <br/>Some options on the Fan Chart may not be saved on the PDF.<BR>Thank you for patience as other features and additional generations are added to the PDF programming.<BR/><BR/>" +
+            "NOTE: This <B>Save as PDF</B> feature is still in development. It is currently limited to 7 generations. <br/>Some options on the Fan Chart may not be saved on the PDF.<br/>Some text or graphics placement may still need adjustment.<BR>Thank you for patience as other features and additional generations are added to the PDF programming.<BR/><BR/>" +
             "<div id=innerPDFgen>" +
             "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Fan Chart PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Fan Chart for John Smith'>" +
             "<BR/><BR/>" +
@@ -1425,7 +1425,7 @@ import { PDFs } from "../shared/PDFs.js";
         FanChartView.showPDFgenPopup = function () {
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
-            numGens2PDF = Math.min(4, numGens2PDF);
+            numGens2PDF = Math.min(7, numGens2PDF);
 
             let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
             document.getElementById("PDFgenProgressBar").style.display = "none";
@@ -1457,7 +1457,7 @@ import { PDFs } from "../shared/PDFs.js";
         FanChartView.printPDF = async function () {
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
-            numGens2PDF = Math.min(4, numGens2PDF);
+            numGens2PDF = Math.min(7, numGens2PDF);
             let thisCrossRadius = 150;
 
             let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
@@ -1557,6 +1557,10 @@ import { PDFs } from "../shared/PDFs.js";
 
                 if (thisElement) {
                     let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
+                    let thisGenNum = Math.floor(Math.log2(index));
+                    if (thisGenNum == 4) {
+                        thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode;
+                    }
                     if (thisPersonObject) {
                         let thisDXDY = PDFs.getTranslationCoordinates(thisPersonObject);
                         PDFs.currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
@@ -1571,17 +1575,30 @@ import { PDFs } from "../shared/PDFs.js";
                     }
 
                     let thisR = Math.sqrt(thisX * thisX + thisY * thisY);
-                    let thisGenNum = Math.floor(Math.log2(index));
                     let thisGenAngle = FanChartView.maxAngle / 2 ** thisGenNum;
                     thisCrossRadius = thisR * 2 * Math.PI * (thisGenAngle / 360);
+
+                    if (index == 1) {
+                        thisCrossRadius = 1.7 * ctrCircle.getAttribute("r");
+                    }
+
+                    condLog(
+                        { index },
+                        { thisX },
+                        { thisY },
+                        { thisR },
+                        { thisGenNum },
+                        { thisGenAngle },
+                        { thisCrossRadius }
+                    );
 
                     // CENTRAL DOT (ellipse) - to mark CENTRE of the SECTOR - for alignment purposes and debugging
 
                     // PDFs.thisPDFellipseArray.push([
                     //     thisX,
                     //     thisY,
-                    //     5,
-                    //     5,
+                    //     8,
+                    //     8,
                     //     "DF",
                     //     { fillColor: "blue", strokeColor: "yellow", lineWidth: 2, phase: 2 },
                     // ]);
@@ -1597,6 +1614,29 @@ import { PDFs } from "../shared/PDFs.js";
                     //     1,
                     //     0,
                     // ]);
+
+                    // VERTICAL LINE through MIDDLE of each Cell - for alignment purposes and debugging
+                    // if (index % 2 == 0) {
+                    //     PDFs.thisPDFlinesArray.push([
+                    //         thisX /* - (thisCrossRadius / 2) * thisXdx */ - (thisCrossRadius / 2) * thisYdx,
+                    //         thisY - (thisCrossRadius / 2) * thisYdy /* - (thisCrossRadius / 2) * thisXdy */,
+                    //         thisX /* + (thisCrossRadius / 2) * thisXdx */ + (thisCrossRadius / 2) * thisYdx,
+                    //         thisY + (thisCrossRadius / 2) * thisYdy /* + (thisCrossRadius / 2) * thisXdy */,
+                    //         [0, 0, 255],
+                    //         2,
+                    //         0,
+                    //     ]);
+                    // } else {
+                    //     PDFs.thisPDFlinesArray.push([
+                    //         thisX /* - (thisCrossRadius / 2) * thisXdx */ - (thisCrossRadius / 2) * thisYdx,
+                    //         thisY - (thisCrossRadius / 2) * thisYdy /* - (thisCrossRadius / 2) * thisXdy */,
+                    //         thisX /* + (thisCrossRadius / 2) * thisXdx */ + (thisCrossRadius / 2) * thisYdx,
+                    //         thisY + (thisCrossRadius / 2) * thisYdy /* + (thisCrossRadius / 2) * thisXdy */,
+                    //         [0, 255, 0],
+                    //         2,
+                    //         0,
+                    //     ]);
+                    // }
 
                     // PDFs.thisPDFellipseArray.push([
                     //     thisX - 150 * thisXdx - 100 * thisYdx,
@@ -1627,8 +1667,13 @@ import { PDFs } from "../shared/PDFs.js";
                     //     { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
                     // ]);
 
-                    thisY -= 100 * thisYdy;
-                    thisX -= 100 * thisYdx;
+                    if (thisGenNum <= 4 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
+                        thisY -= 100 * thisYdy;
+                        thisX -= 100 * thisYdx;
+                    } else {
+                        thisY -= (thisCrossRadius / 2 - 20) * thisYdy;
+                        thisX -= (thisCrossRadius / 2 - 20) * thisYdx;
+                    }
                 } else {
                     continue;
                 }
@@ -1751,6 +1796,8 @@ import { PDFs } from "../shared/PDFs.js";
                     thisX += (thisElement.height + 20) * thisYdx;
                 }
 
+                let thisHereFontSize = PDFs.currentPDFsettings.thisFontSize; // temporary holding variable for font size when we need to squish in names or places in tight wedges
+
                 thisID = "nameDivFor" + index;
                 thisElement = document.getElementById(thisID);
                 //  PDFs.currentPDFsettings.thisFont =
@@ -1770,8 +1817,20 @@ import { PDFs } from "../shared/PDFs.js";
                     // ]);
 
                     let thisText = thisElement.textContent;
+                    let thisText2 = "";
 
                     let thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
+
+                    if (thisTextsTextWidth > thisCrossRadius) {
+                        let splitIndex = thisText.indexOf(" ", thisText.length / 2);
+                        let splitIndex2 = thisText.lastIndexOf(" ", thisText.length / 2);
+                        if (Math.abs(splitIndex2 - thisText.length / 2) < Math.abs(splitIndex - thisText.length / 2)) {
+                            splitIndex = splitIndex2;
+                        }
+                        thisText2 = thisText.substring(splitIndex).trim();
+                        thisText = thisText.substring(0, splitIndex).trim();
+                        thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
+                    }
 
                     //  console.log({ thisText }, { thisX }, { thisY });
                     // pdf.setDrawColor("#000000");
@@ -1781,22 +1840,54 @@ import { PDFs } from "../shared/PDFs.js";
                     // PDFs.thisPDFlinesArray.push([thisX - 150, thisY, thisX + 150, thisY, [0, 0, 255], 1, 0]);
                     // pdf.setFillColor("#FFFFFF");
 
+                    thisHereFontSize = PDFs.currentPDFsettings.thisFontSize;
+                    tmpPDF.setFontSize(thisHereFontSize);
+                    thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
+
+                    while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                        thisHereFontSize -= 1;
+                        tmpPDF.setFontSize(thisHereFontSize);
+                        thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
+                    }
+
                     PDFs.thisPDFtextArray.push([
                         thisText,
                         thisX - (thisTextsTextWidth / 2) * thisXdx,
                         thisY - (thisTextsTextWidth / 2) * thisXdy,
                         PDFs.currentPDFsettings.thisFont,
                         PDFs.currentPDFsettings.thisFontStyle,
-                        PDFs.currentPDFsettings.thisFontSize,
+                        thisHereFontSize,
                         {
                             rotationDirection: 1,
                             angle: thisTheta,
                         },
                     ]);
 
-                    if (tmpPDF.getTextWidth(thisText) > 300) {
+                    if (thisText2 > "") {
                         thisY += 19 * thisYdy;
                         thisX += 19 * thisYdx;
+                        thisHereFontSize = PDFs.currentPDFsettings.thisFontSize;
+                        tmpPDF.setFontSize(thisHereFontSize);
+                        thisTextsTextWidth = tmpPDF.getTextWidth(thisText2);
+
+                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                            thisHereFontSize -= 1;
+                            tmpPDF.setFontSize(thisHereFontSize);
+                            thisTextsTextWidth = tmpPDF.getTextWidth(thisText2);
+                        }
+
+                        PDFs.thisPDFtextArray.push([
+                            thisText2,
+                            thisX - (thisTextsTextWidth / 2) * thisXdx,
+                            thisY - (thisTextsTextWidth / 2) * thisXdy,
+                            PDFs.currentPDFsettings.thisFont,
+                            PDFs.currentPDFsettings.thisFontStyle,
+                            thisHereFontSize,
+                            {
+                                rotationDirection: 1,
+                                angle: thisTheta,
+                            },
+                        ]);
                     }
                 }
 
@@ -1819,6 +1910,13 @@ import { PDFs } from "../shared/PDFs.js";
                         let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
                         if (thisTextsTextWidth > thisCrossRadius) {
                             let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
+                            let splitIndex2 = thisTextArray[1].lastIndexOf(" ", thisTextArray[1].length / 2);
+                            if (
+                                Math.abs(splitIndex2 - thisTextArray[1].length / 2) <
+                                Math.abs(splitIndex - thisTextArray[1].length / 2)
+                            ) {
+                                splitIndex = splitIndex2;
+                            }
                             thisTextArray[2] = thisTextArray[1].substring(splitIndex).trim();
                             thisTextArray[1] = thisTextArray[1].substring(0, splitIndex).trim();
                         }
@@ -1829,14 +1927,23 @@ import { PDFs } from "../shared/PDFs.js";
                         const textLine = thisTextArray[textIndex];
                         thisY += 19 * thisYdy;
                         thisX += 19 * thisYdx;
+                        thisHereFontSize = PDFs.currentPDFsettings.thisFontSize;
+                        tmpPDF.setFontSize(thisHereFontSize);
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
+
+                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                            thisHereFontSize -= 1;
+                            tmpPDF.setFontSize(thisHereFontSize);
+                            thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
+                        }
+
                         PDFs.thisPDFtextArray.push([
                             textLine,
                             thisX - (thisTextsTextWidth / 2) * thisXdx,
                             thisY - (thisTextsTextWidth / 2) * thisXdy,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
-                            PDFs.currentPDFsettings.thisFontSize,
+                            thisHereFontSize,
                             { rotationDirection: 1, angle: thisTheta },
                         ]);
                         // if (tmpPDF.getTextWidth(textLine) > 300) {
@@ -1857,6 +1964,13 @@ import { PDFs } from "../shared/PDFs.js";
                         let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
                         if (thisTextsTextWidth > thisCrossRadius) {
                             let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
+                            let splitIndex2 = thisTextArray[1].lastIndexOf(" ", thisTextArray[1].length / 2);
+                            if (
+                                Math.abs(splitIndex2 - thisTextArray[1].length / 2) <
+                                Math.abs(splitIndex - thisTextArray[1].length / 2)
+                            ) {
+                                splitIndex = splitIndex2;
+                            }
                             thisTextArray[2] = thisTextArray[1].substring(splitIndex).trim();
                             thisTextArray[1] = thisTextArray[1].substring(0, splitIndex).trim();
                         }
@@ -1868,14 +1982,24 @@ import { PDFs } from "../shared/PDFs.js";
                         const textLine = thisTextArray[textIndex];
                         thisY += 19 * thisYdy;
                         thisX += 19 * thisYdx;
+
+                        thisHereFontSize = PDFs.currentPDFsettings.thisFontSize;
+                        tmpPDF.setFontSize(thisHereFontSize);
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
+
+                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 5) {
+                            thisHereFontSize -= 1;
+                            tmpPDF.setFontSize(thisHereFontSize);
+                            thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
+                        }
+
                         PDFs.thisPDFtextArray.push([
                             textLine,
                             thisX - (thisTextsTextWidth / 2) * thisXdx,
                             thisY - (thisTextsTextWidth / 2) * thisXdy,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
-                            PDFs.currentPDFsettings.thisFontSize,
+                            thisHereFontSize,
                             { rotationDirection: 1, angle: thisTheta },
                         ]);
                         if (tmpPDF.getTextWidth(textLine) > 300) {
@@ -3030,19 +3154,32 @@ import { PDFs } from "../shared/PDFs.js";
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
                     FanChartView.theAncestors = result[2];
                     condLog("theAncestors:", FanChartView.theAncestors);
-                    // condLog("person with which to drawTree:", person);
+                    // console.log("person with which to drawTree:", person);
                     // for (let index = 0; index < FanChartView.theAncestors.length; index++) {
                     let myWTuserID = window.wtViewRegistry.session.lm.user.name;
                     for (const index in FanChartView.theAncestors) {
                         thePeopleList.add(FanChartView.theAncestors[index]);
 
                         let thePerson = new BioCheckPerson();
-                        let canUseThis = thePerson.canUse(FanChartView.theAncestors[index], false, true, myWTuserID);
-                        let biography = new Biography(theSourceRules);
-                        biography.parse(thePerson.getBio(), thePerson, "");
-                        let hasSources = biography.validate();
-                        thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
-                        thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
+                        let canUseThis = thePerson.canUse(
+                            FanChartView.theAncestors[index],
+                            false,
+                            false,
+                            true,
+                            myWTuserID
+                        );
+                        if (!canUseThis) {
+                            // console.log("BioCheck: canUseThis is false for", thePerson);
+                            thePeopleList[theBioPerson.getProfileId()]["biocheck"] = null;
+                            thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = false;
+                        } else {
+                            let biography = new Biography(theSourceRules);
+                            biography.parse(thePerson.getBio(), thePerson, "");
+                            let hasSources = biography.validate();
+
+                            thePeopleList[thePerson.getProfileId()]["biocheck"] = biography;
+                            thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
+                        }
                     }
 
                     FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
@@ -4251,6 +4388,43 @@ import { PDFs } from "../shared/PDFs.js";
     };
 
     /**
+     * Update the BioCheck on a person
+     * @param {string} id - the ID of the person to update
+     *
+     */
+
+    FanChartView.updateBioCheck = function (ancNum) {
+        condLog("FanChartView.updateBioCheck - 3175", ancNum);
+
+        // let thePerson = FanChartView.theAncestors[ancNum];
+        let thisID = FanChartView.myAhnentafel.list[ancNum];
+        let thePerson = thePeopleList[thisID]._data;
+        // console.log("UPDATING ", thePerson);
+        if (thePerson.Id < 0) {
+            // console.log("UPDATING Private ", thePerson);
+        }
+
+        let theBioPerson = new BioCheckPerson();
+        let myUserID = window.wtViewRegistry.session.lm.user.id; // WikiTree userID (#) for the person logged in
+
+        // console.log("theBioPerson:", theBioPerson);
+        let canUseThis = theBioPerson.canUse(
+            thePerson,
+            // FanChartView.theAncestors[ancNum],
+            false,
+            false,
+            false,
+            myUserID
+        );
+        let biography = new Biography(theSourceRules);
+        biography.parse(theBioPerson.getBio(), theBioPerson, "");
+        let hasSources = biography.validate();
+        // console.log({ canUseThis }, { hasSources }, { biography }, { myUserID }, thePerson);
+        thePeopleList[thisID]["biocheck"] = biography;
+        thePeopleList[thisID]["bioHasSources"] = hasSources;
+    };
+
+    /**
      * Load and display a person
      */
     FanChartView.prototype.load = function (id) {
@@ -4317,7 +4491,7 @@ import { PDFs } from "../shared/PDFs.js";
                     "MiddleInitial",
                     "MiddleName",
                     "RealName",
-
+                    "Bio",
                     "IsLiving",
                     "Nicknames",
                     "Prefix",
@@ -4372,7 +4546,7 @@ import { PDFs } from "../shared/PDFs.js";
                 // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
                 for (const ancNum in FanChartView.theAncestors) {
                     let thePerson = FanChartView.theAncestors[ancNum];
-                    // condLog("ADDING ", thePerson);
+                    // console.log("ADDING ", thePerson);
                     if (thePerson.Id < 0) {
                         thePerson.Id = 100 - thePerson.Id;
                         thePerson["Name"] = "Private-" + thePerson.Id;
@@ -4388,12 +4562,29 @@ import { PDFs } from "../shared/PDFs.js";
                     thePeopleList.add(thePerson);
 
                     let theBioPerson = new BioCheckPerson();
-                    let canUseThis = theBioPerson.canUse(FanChartView.theAncestors[ancNum], false, true, myUserID);
-                    let biography = new Biography(theSourceRules);
-                    biography.parse(theBioPerson.getBio(), theBioPerson, "");
-                    let hasSources = biography.validate();
-                    thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
-                    thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
+                    // console.log("theBioPerson:", theBioPerson);
+                    let canUseThis = theBioPerson.canUse(
+                        thePerson,
+                        // FanChartView.theAncestors[ancNum],
+                        false,
+                        false,
+                        false,
+                        myUserID
+                    );
+
+                    if (!canUseThis) {
+                        // console.log("BioCheck: canUseThis is false for", thePerson);
+                        thePeopleList[theBioPerson.getProfileId()]["biocheck"] = null;
+                        thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = false;
+                    } else {
+                        let biography = new Biography(theSourceRules);
+                        biography.parse(theBioPerson.getBio(), theBioPerson, "");
+                        let hasSources = biography.validate();
+                        // console.log("BioCheck: canUseThis is TRUE for", thePerson, biography, hasSources);
+                        // console.log({ canUseThis }, { hasSources }, { biography }, { myUserID }, thePerson);
+                        thePeopleList[theBioPerson.getProfileId()]["biocheck"] = biography;
+                        thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
+                    }
 
                     // condLog("ADDED ", thePerson);
                 }
@@ -5424,10 +5615,10 @@ import { PDFs } from "../shared/PDFs.js";
 
             let doDebug = false;
             if (ancestorObject.ahnNum == 40) {
-                doDebug = true;
+                // doDebug = true;
             }
             if (doDebug) {
-                console.log(
+                condLog(
                     "POSITION node ",
                     ancestorObject.ahnNum,
                     { thisGenNum },
@@ -8367,6 +8558,10 @@ import { PDFs } from "../shared/PDFs.js";
             }
         } else if (FanChartView.currentSettings["highlight_options_highlightBy"] == "bioCheckStyle") {
             // condLog("Check Bio:", ahnNum, thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources);
+            if (!FanChartView.myAhnentafel.list[ahnNum] || !thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]) {
+                console.log("No person found for ahnNum:", ahnNum);
+                return false;
+            }
             let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
 
             if (
@@ -9314,9 +9509,12 @@ import { PDFs } from "../shared/PDFs.js";
                 "Style issues",
                 "Bio Check Pass: has sources",
             ];
+            thisColourArray[0] = "#FFFFFF";
             if (!thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck) {
+                // console.log("No BioCheck for ", ahnNum, " - returning default colour", thisColourArray[0]);
                 return thisColourArray[0];
             }
+            // console.log("BioCheck ColourArray:", thisColourArray);
             let theBioCheck = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck;
             // let theStyles = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].biocheck.styles;
             let hasSources = thePeopleList[FanChartView.myAhnentafel.list[ahnNum]].bioHasSources;
