@@ -36,10 +36,8 @@ const maxRows = 2000;
 let setOffsetF = 50;    // Positions each persons bar Set this far before the Family Use date (to leave room for name)
 const setOffsetB = 150;   // Positions each persons bar Set this far before the Family Use date (to leave room for name)
 
-let ttreePeople;     // List of people downloaded
-                     //   Each will be: "type" (primary, ancestor, descendent, sibling, halfSibling, stepParent)
-let ttreeFamilies;   // List of families geerated from the people data
-let ttreeShow;       // Ordered list of people to show
+let ttreePeople;
+let ttreeFamilies;
 
 let currentYear, yearEarliest, yearLatest;
 let ttreeOrigin;
@@ -234,8 +232,9 @@ async function loadTree (event) {
     makeVisible(focusPerson.Id, 0);
 
     function makeVisible (personId, gen) {
-        // Stop if gone too deep or not in people list
+        // Stop if gone too deep
         if (gen > ttreeShowGens) return;
+        // Stop if person is not in people list?
         if (ttreePeople.findIndex(item => item.Id == personId) < 0) return;
         // Make this person visible
         let person = ttreePeople.find(item => item.Id == personId);
@@ -245,36 +244,20 @@ async function loadTree (event) {
         for (let i=0; i<family.Parents.length; i++) makeVisible(family.Parents[i].ID, gen+1);
         // then activate their spouses (but not for original person)
         if (personId == ttreeOrigin) return;
+
+        // Check each family that this person is a "ParentIn" - and make the other parent visible
         for (const famIdx of person.ParentIn) {
             for (let i=0; i<ttreeFamilies[famIdx].Parents.length; i++) {
-                if (ttreeFamilies[famIdx].Parents[i].Idx < 0) continue;
-                if (ttreePeople[ttreeFamilies[famIdx].Parents[i].Idx].Birth.Use == 0) continue;
-                ttreePeople[ttreeFamilies[famIdx].Parents[i].Idx].Visible = true;
+                if (ttreeFamilies[famIdx].Parents[i].Row < 0) continue;
+                if (ttreePeople[ttreeFamilies[famIdx].Parents[i].Row].Birth.Use == 0) continue;
+                ttreePeople[ttreeFamilies[famIdx].Parents[i].Row].Visible = true;
             }
-        }
-    }
-
-    // Make core persons spouses and children visible
-    for (const famIdx of focusPerson.ParentIn) {
-        for (let i=0; i<ttreeFamilies[famIdx].Parents.length; i++) {
-            if (ttreeFamilies[famIdx].Parents[i].Idx < 0) continue;
-            ttreePeople[ttreeFamilies[famIdx].Parents[i].Idx].Visible = true;
-        }
-        for (let i=0; i<ttreeFamilies[famIdx].Children.length; i++) {
-            if (ttreeFamilies[famIdx].Children[i].Idx < 0) continue;
-            ttreePeople[ttreeFamilies[famIdx].Children[i].Idx].Visible = true;
         }
     }
 
     // And finally update the whole display
     updateSibs(event);
     updateDisplay(event);
-
-    // Show the results
-    if (ttreeDebug) console.log(ttreePeople);
-    if (ttreeDebug) console.log(ttreeFamilies);
-    if (ttreeDebug) console.log(ttreeShow);
-
 
     return true;
 }
@@ -285,8 +268,8 @@ async function loadTree (event) {
 
 async function updateDisplayPerson (event) {
 
-    let personIdx = event.target.parentElement.id.substring(11);
-    let person = ttreePeople[personIdx];
+    let personRow = event.target.parentElement.id.substring(11);
+    let person = ttreePeople[personRow];
 
     // Was this a "shift-click"?
     if (event.shiftKey) {
@@ -303,10 +286,10 @@ async function updateDisplayPerson (event) {
     let family = ttreeFamilies[person.ChildIn];
     let expanding = true;
     if (family.Parents == 0) expanding = false;
-    else if ((family.Parents[0].Idx >= 0) && (ttreePeople[family.Parents[0].Idx].Visible)) expanding = false;
-    else if ((family.Parents[1].Idx >= 0) && (ttreePeople[family.Parents[1].Idx].Visible)) expanding = false;
+    else if ((family.Parents[0].Row >= 0) && (ttreePeople[family.Parents[0].Row].Visible)) expanding = false;
+    else if ((family.Parents[1].Row >= 0) && (ttreePeople[family.Parents[1].Row].Visible)) expanding = false;
 
-    console.log(`Changing person ${personIdx}: expanding=${expanding}`);
+    console.log(`Changing person ${personRow}: expanding=${expanding}`);
 
     // If expanding, load parents, then make them (and all spouses) visible.
     if (expanding) {
@@ -330,15 +313,15 @@ async function updateDisplayPerson (event) {
         // then activate parents
         let family = ttreeFamilies[person.ChildIn];
         for (let i=0; i<family.Parents.length; i++) {
-            if (family.Parents[i].Idx >= 0) ttreePeople[family.Parents[i].Idx].Visible = true;
+            if (family.Parents[i].Row >= 0) ttreePeople[family.Parents[i].Row].Visible = true;
         }
         // then activate their spouses (but not for original person)
         if (person.Id != ttreeOrigin) {
             // Check each family that this person is a "ParentIn" - and make the other parent visible
             for (const famIdx of person.ParentIn) {
                 for (let i=0; i<ttreeFamilies[famIdx].Parents.length; i++) {
-                    if (ttreeFamilies[famIdx].Parents[i].Idx < 0) continue;
-                    ttreePeople[ttreeFamilies[famIdx].Parents[i].Idx].Visible = true;
+                    if (ttreeFamilies[famIdx].Parents[i].Row < 0) continue;
+                    ttreePeople[ttreeFamilies[famIdx].Parents[i].Row].Visible = true;
                 }
             }
         }
@@ -348,15 +331,15 @@ async function updateDisplayPerson (event) {
     else {
         // Hide each parent
         for (let j=0; j<family.Parents.length; j++) {
-            if (family.Parents[j].Idx < 0) continue;
-            hidePerson(family.Parents[j].Idx);
+            if (family.Parents[j].Row < 0) continue;
+            hidePerson(family.Parents[j].Row);
         }
     } 
 
     // Remove highlighting of the current selected person
     $(`#personBarF-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
     $(`#personBarB-${ttreeCurrentFocusPerson} > rect`).removeClass("barHighlight")
-    ttreeCurrentFocusPerson = personIdx;
+    ttreeCurrentFocusPerson = personRow;
 
     // Then update the display
     updateSibs(event);
@@ -376,7 +359,7 @@ async function updateDisplayPerson (event) {
         for (const famIdx of person.ParentIn) {
             const family = ttreeFamilies[famIdx];
             for (let i=0; i<family.Parents.length; i++) {
-                const parentIdx = family.Parents[i].Idx;
+                const parentIdx = family.Parents[i].Row;
                 if (parentIdx >= 0) ttreePeople[parentIdx].Visible = false;
             }
         }
@@ -384,8 +367,8 @@ async function updateDisplayPerson (event) {
         // Hide each parent
         const family = ttreeFamilies[person.ChildIn];
         for (let j=0; j<family.Parents.length; j++) {
-            if (family.Parents[j].Idx < 0) continue;
-            hidePerson(family.Parents[j].Idx);
+            if (family.Parents[j].Row < 0) continue;
+            hidePerson(family.Parents[j].Row);
         }
     }
 }
@@ -420,8 +403,8 @@ function updateSibs (event) {
             let disp = false;
             const family = ttreeFamilies[person.ChildIn];
             for (let j = 0; j < family.Parents.length; j++) {
-                if ((family.Parents[j].Idx < 0) || (ttreePeople[family.Parents[j].Idx].Generation < 0)) continue;
-                if (ttreePeople[family.Parents[j].Idx].Visible) disp = true;
+                if ((family.Parents[j].Row < 0) || (ttreePeople[family.Parents[j].Row].Generation < 1)) continue;
+                if (ttreePeople[family.Parents[j].Row].Visible) disp = true;
             }
             ttreePeople[i].Visible = disp;
         }                
@@ -437,7 +420,12 @@ function updateDisplay (event) {
 
     // =============================================================================
     // Then determine the ordering of the active people!
-    ttreeShow = [];
+    let maxRow = 0;
+
+    // First step is to remove everyone
+    for (let i=0; i<ttreePeople.length; i++) ttreePeople[i].ShowRow = -1;
+
+    // Then determine the display row for each visible person
     let primaryPersonIdx = ttreePeople.findIndex(item => item.Id == ttreeOrigin);
     addToDisplayList(primaryPersonIdx);
 
@@ -447,8 +435,8 @@ function updateDisplay (event) {
 
         let family = ttreeFamilies[ttreePeople[personIdx].ChildIn];
 
-        const fatherIdx = (family.Parents.length > 0) ? family.Parents[0].Idx : -1;
-        const motherIdx = (family.Parents.length > 0) ? family.Parents[1].Idx : -1;
+        const fatherIdx = (family.Parents.length > 0) ? family.Parents[0].Row : -1;
+        const motherIdx = (family.Parents.length > 0) ? family.Parents[1].Row : -1;
 
         // Add fathers family
         addToDisplayList(fatherIdx);
@@ -457,24 +445,25 @@ function updateDisplay (event) {
         if (motherIdx >= 0) {
             const mother = ttreePeople[motherIdx];
             for (const familyIdx of mother.ParentIn) {
-                let spouseIdx = ttreeFamilies[familyIdx].Parents[0].Idx;
-                if (spouseIdx < 0) continue;
-                if (ttreePeople[spouseIdx].Type != "stepParent") continue;
-                if (ttreePeople[spouseIdx].Visible && !(ttreeShow.includes(spouseIdx)) && (spouseIdx != fatherIdx)) {
-                    ttreeShow.push(spouseIdx);
+                let spouseRow = ttreeFamilies[familyIdx].Parents[0].Row;
+                if (spouseRow < 0) continue;
+                if (ttreePeople[spouseRow].Type != "stepParent") continue;
+                if (ttreePeople[spouseRow].Visible && (ttreePeople[spouseRow].ShowRow == -1) && (spouseRow != fatherIdx)) {
+                    ttreePeople[spouseRow].ShowRow = maxRow;
+                    maxRow++;
                 }
             }
         }
 
         let siblings = [];
         // Identify self + visible siblings (Idx, Birth)
-        siblings.push({"Idx":personIdx, "Birth": ttreePeople[personIdx].Birth.Use});
+        siblings.push({"Row":personIdx, "Birth": ttreePeople[personIdx].Birth.Use});
         if (fatherIdx >= 0) {
             const father = ttreePeople[fatherIdx];
             for (const familyIdx of father.ParentIn) {
                 for (let i=0; i<ttreeFamilies[familyIdx].Children.length; i++) {
-                    const childIdx = ttreeFamilies[familyIdx].Children[i].Idx;
-                    siblings.push({"Idx":childIdx, "Birth": ttreePeople[childIdx].Birth.Use});
+                    const childIdx = ttreeFamilies[familyIdx].Children[i].Row;
+                    siblings.push({"Row":childIdx, "Birth": ttreePeople[childIdx].Birth.Use});
                 }
             }
         }
@@ -482,19 +471,20 @@ function updateDisplay (event) {
             const mother = ttreePeople[motherIdx];
             for (const familyIdx of mother.ParentIn) {
                 for (let i=0; i<ttreeFamilies[familyIdx].Children.length; i++) {
-                    const childIdx = ttreeFamilies[familyIdx].Children[i].Idx;
-                    siblings.push({"Idx":childIdx, "Birth": ttreePeople[childIdx].Birth.Use});
+                    const childIdx = ttreeFamilies[familyIdx].Children[i].Row;
+                    siblings.push({"Row":childIdx, "Birth": ttreePeople[childIdx].Birth.Use});
                 }
             }
         }
         // Remove duplicates
-        siblings = siblings.filter((o, index, arr) => index === arr.findIndex((item) => (item.Idx === o.Idx)));
+        siblings = siblings.filter((o, index, arr) => index === arr.findIndex((item) => (item.Row === o.Row)));
         // Then sort by Birth
         siblings.sort((sib1,sib2) => sib1.Birth - sib2.Birth);
         // Then add each visible sibling to a Row.
         for (let i=0; i<siblings.length; i++) {
-            if (ttreePeople[siblings[i].Idx].Visible && !(ttreeShow.includes(siblings[i].Idx))) {
-                ttreeShow.push(siblings[i].Idx);
+            if (ttreePeople[siblings[i].Row].Visible && (ttreePeople[siblings[i].Row].ShowRow == -1)) {
+                ttreePeople[siblings[i].Row].ShowRow = maxRow;
+                maxRow++;
             }
         }
 
@@ -502,11 +492,12 @@ function updateDisplay (event) {
         if (fatherIdx >= 0) {
             const father = ttreePeople[fatherIdx];
             for (const familyIdx of father.ParentIn) {
-                let spouseIdx = ttreeFamilies[familyIdx].Parents[1].Idx;
-                if (spouseIdx < 0) continue;
-                if (ttreePeople[spouseIdx].Type != "stepParent") continue;
-                if (ttreePeople[spouseIdx].Visible && !(ttreeShow.includes(spouseIdx)) && (spouseIdx != motherIdx)) {
-                    ttreeShow.push(spouseIdx);
+                let spouseRow = ttreeFamilies[familyIdx].Parents[1].Row;
+                if (spouseRow < 0) continue;
+                if (ttreePeople[spouseRow].Type != "stepParent") continue;
+                if (ttreePeople[spouseRow].Visible && (ttreePeople[spouseRow].ShowRow == -1) && (spouseRow != motherIdx)) {
+                    ttreePeople[spouseRow].ShowRow = maxRow;
+                    maxRow++;
                 }
             }
         }
@@ -514,36 +505,6 @@ function updateDisplay (event) {
         // Add mothers family
         addToDisplayList(motherIdx);
     }
-
-    // Add core persons spouses and children 
-    let corePersonIdx = ttreePeople.findIndex(item => item.Id == ttreeOrigin);
-    const corePersonRow = ttreeShow.indexOf(corePersonIdx);
-    const spliceInc = (ttreePeople[corePersonIdx].Gender == "Male") ? 1 : 0
-    let spliceLoc = corePersonRow + spliceInc;
-    let children = [];
-    for (const famIdx of ttreePeople[corePersonIdx].ParentIn) {
-        for (let i=0; i<ttreeFamilies[famIdx].Children.length; i++) {
-            if (ttreeFamilies[famIdx].Children[i].Idx < 0) continue;
-            if (ttreePeople[ttreeFamilies[famIdx].Children[i].Idx].Visible) {
-                children.push(ttreeFamilies[famIdx].Children[i].Idx);                
-            }
-        }
-    }
-    children.sort((sib1,sib2) => ttreePeople[sib1].Birth.Use - ttreePeople[sib2].Birth.Use);
-    ttreeShow.splice(spliceLoc, 0, ...children);
-    spliceLoc += spliceInc*children.length;
-    
-    for (const famIdx of ttreePeople[corePersonIdx].ParentIn) {
-        for (let i=0; i<ttreeFamilies[famIdx].Parents.length; i++) {
-            if (ttreeFamilies[famIdx].Parents[i].Idx < 0) continue;
-            if (ttreeFamilies[famIdx].Parents[i].Idx == corePersonIdx) continue;
-            if (ttreePeople[ttreeFamilies[famIdx].Parents[i].Idx].Visible) {
-                ttreeShow.splice(spliceLoc,0,ttreeFamilies[famIdx].Parents[i].Idx);
-                spliceLoc += spliceInc;
-            }
-        }
-    }
-
 
     // For each person: show/hide and adjust location of their details
     for (let i=0; i<ttreePeople.length; i++) {
@@ -553,8 +514,7 @@ function updateDisplay (event) {
         let elem;
 
         // Show text info
-        const row = ttreeShow.indexOf(i);
-        let y = (row * rowHeight) + 14;
+        let y = (person.ShowRow * rowHeight) + 14;
         elem = document.getElementById(`personTextS-${i}`);  elem.setAttribute('visibility', show);  elem.setAttribute('y', y);
         elem = document.getElementById(`personTextL-${i}`);  elem.setAttribute('visibility', show);  elem.setAttribute('y', y);
         // Show bars
@@ -570,8 +530,8 @@ function updateDisplay (event) {
         // Need to show the line if either parent is active
         let disp = false;
         for (let j = 0; j < family.Parents.length; j++) {
-            if (family.Parents[j].Idx < 0) continue;
-            if (ttreePeople[family.Parents[j].Idx].Visible) disp = true;
+            if (family.Parents[j].Row < 0) continue;
+            if (ttreePeople[family.Parents[j].Row].Visible) disp = true;
         }
         const show = disp ? 'show' : 'hidden';
         elem = document.getElementById(`familyLinesF-${i}`);  elem.setAttribute('visibility', show);
@@ -580,20 +540,18 @@ function updateDisplay (event) {
         // And then need to adjust line position based on each parent and each child
         let topRow = null, btmRow = null;
         for (let j = 0; j < family.Parents.length; j++) {
-            if (family.Parents[j].Idx < 0) continue;
-            const parent = ttreePeople[family.Parents[j].Idx];
+            if (family.Parents[j].Row < 0) continue;
+            const parent = ttreePeople[family.Parents[j].Row];
             if (!(parent.Visible)) continue
-            const row = ttreeShow.indexOf(family.Parents[j].Idx)
-            if ((topRow == null) || (row < topRow)) topRow = row;
-            if ((btmRow == null) || (row > btmRow)) btmRow = row;
+            if ((topRow == null) || (parent.ShowRow < topRow)) topRow = parent.ShowRow;
+            if ((btmRow == null) || (parent.ShowRow > btmRow)) btmRow = parent.ShowRow;
         }
         for (let j = 0; j < family.Children.length; j++) {
-            if (family.Children[j].Idx < 0) continue;
-            const child = ttreePeople[family.Children[j].Idx];
+            if (family.Children[j].Row < 0) continue;
+            const child = ttreePeople[family.Children[j].Row];
             if (!(child.Visible)) continue
-            const row = ttreeShow.indexOf(family.Children[j].Idx)
-            if ((topRow == null) || (row < topRow)) topRow = row;
-            if ((btmRow == null) || (row > btmRow)) btmRow = row;
+            if ((topRow == null) || (child.ShowRow < topRow)) topRow = child.ShowRow;
+            if ((btmRow == null) || (child.ShowRow > btmRow)) btmRow = child.ShowRow;
         }
         const y1  = (topRow * rowHeight) + 23;
         const y2  = (btmRow * rowHeight) + 23;
@@ -674,16 +632,16 @@ function updateDisplay (event) {
     // --------------------------------------------
     // Adjust overall size
     const totalWidth = Number(dispTextWidth + dispYearsWidth);
-    const totalHeight = ttreeShow.length * 16 + 40;
+    const totalHeight = maxRow * 16 + 40;
     elemAll.setAttribute("width", totalWidth);
     elemH.setAttribute("width", totalWidth);
     elemM.setAttribute("width", totalWidth);
     elemM.style.height = `${totalHeight}px`;
 
+
     // And add event handlers for clicking on a bar
-    const clickableTypes = ["primary", "ancestor", "descendent"];
     for (let i=0; i<ttreePeople.length; i++) {
-        if (clickableTypes.includes(ttreePeople[i].Type)) {
+        if (ttreePeople[i].Type == "ancestor") {
             $(`#personBarF-${i}`).off('click').on('click', updateDisplayPerson);
             $(`#personBarF-${i} > rect`).addClass("barHover")
             $(`#personBarB-${i}`).off('click').on('click', updateDisplayPerson);    
@@ -852,6 +810,10 @@ async function generateTree () {
         elemSpinner.style.display = "none";
         return false;
     }
+
+    // Show the results
+    if (ttreeDebug) console.log(ttreePeople);
+    if (ttreeDebug) console.log(ttreeFamilies);
 
     // The generate the display elems
     buildDisplayElems();
@@ -1041,7 +1003,7 @@ function buildDisplayElems() {
 
         // Determine colour of the bar (based on person gender and type)
         let barColour, barDef;
-        if ((person.Type == "primary")||(person.Type == "ancestor")||(person.Type == "descendent")) {
+        if (person.Type == "ancestor") {
             switch (person.Gender) {
                 case "Male"   : barColour = barColourM0; barDef = "#gradM0"; break;
                 case "Female" : barColour = barColourF0; barDef = "#gradF0";  break;
@@ -1214,7 +1176,7 @@ function addPerson(person) {
                       "Parents" : {"Father": person.Father, "Mother": person.Mother},
                       "Spouses" : spouses,
                       "ChildIn": -1, "ParentIn": new Set([]),
-                      "Gender": person.Gender, "Generation": null, "Type": null, "Visible": null, "Privacy": person.Privacy
+                      "Gender": person.Gender, "Generation": null, "Type": null, "Visible": null, "ShowRow": -1, "Privacy": person.Privacy
                     });
 }
 
@@ -1233,7 +1195,7 @@ function updatePeople() {
         ttreePeople[i].ParentIn = new Set([]);
     }
 
-    // Step 1a: For each person: determine their "type" (primary, ancestor, descendent, sibling, halfSibling, stepParent)
+    // Step 1a: For each person: determine their "type" (ancestor, sibling, halfSibling, stepParent)
     setAncestor(ttreeOrigin);
     function setAncestor(ancID) {
         let idx = ttreePeople.findIndex(item => item.Id == ancID);
@@ -1242,16 +1204,13 @@ function updatePeople() {
         setAncestor(ttreePeople[idx].Parents.Father);
         setAncestor(ttreePeople[idx].Parents.Mother);
     }
-    let primaryPerson = ttreePeople.find(item => item.Id == ttreeOrigin);
-    primaryPerson.Type="primary";
     for (let i=0; i<ttreePeople.length; i++) {
         let person = ttreePeople[i];
         let father = ttreePeople.find(item => item.Id == person.Parents.Father)
         let mother = ttreePeople.find(item => item.Id == person.Parents.Mother)
         let fatherType = (father == undefined) ? "null" : father.Type;
         let motherType = (mother == undefined) ? "null" : mother.Type;
-        if ((person.Type == "primary") || (person.Type == "ancestor")) {}
-        else if ((fatherType == "primary")||(motherType == "primary")) person.Type = "descendent";
+        if (person.Type == "ancestor") {}
         else if ((fatherType == "ancestor")&&(motherType == "ancestor")) person.Type = "sibling";
         else if ((fatherType == "ancestor")||(motherType == "ancestor")) person.Type = "halfSibling";
         else {
@@ -1318,8 +1277,8 @@ function updatePeople() {
             // If no existing family then create a new one
             if (familyIdx == -1) {
                 // Create a new family
-                family = {"Parents"  : [{"ID": person.Parents.Father, "Idx": ttreePeople.findIndex(item => item.Id == person.Parents.Father)},
-                                        {"ID": person.Parents.Mother, "Idx": ttreePeople.findIndex(item => item.Id == person.Parents.Mother)}],
+                family = {"Parents"  : [{"ID": person.Parents.Father, "Row": ttreePeople.findIndex(item => item.Id == person.Parents.Father)},
+                                        {"ID": person.Parents.Mother, "Row": ttreePeople.findIndex(item => item.Id == person.Parents.Mother)}],
                         "Children" : [],
                         "Data"     : {"EarliestBirth": person.Birth.Year, "LatestBirth": person.Birth.Year},
                         "Status"   : {"Married": false, "Date": null, "Known": false, "Use": null},
@@ -1331,7 +1290,7 @@ function updatePeople() {
         }
 
         // Add this person as a child of the family
-        const child = {"ID": person.Id, "Idx": i};
+        const child = {"ID": person.Id, "Row": i};
         family.Children.push(child);
 
         // Then update the family Data
@@ -1367,8 +1326,8 @@ function updatePeople() {
     
             // Does not exist, so create a family
             if (familyIdx < 0) {
-                let parent1 = {"ID": person.Id, "Idx": ttreePeople.findIndex(item => item.Id == person.Id)}
-                let parent2 = {"ID": spouseID, "Idx": ttreePeople.findIndex(item => item.Id == spouseID)};
+                let parent1 = {"ID": person.Id, "Row": ttreePeople.findIndex(item => item.Id == person.Id)}
+                let parent2 = {"ID": spouseID, "Row": ttreePeople.findIndex(item => item.Id == spouseID)};
                 let parents = (person.Gender == "Female") ? [parent2, parent1] : [parent1, parent2];
                 const family = {"Parents"  : parents,
                               "Children" : [],
@@ -1402,9 +1361,9 @@ function updatePeople() {
         let possibleDate = null;
         if (family.Data.EarliestBirth > 0) possibleDate = family.Data.EarliestBirth;
         for (let j=0; j>family.Parents.length; j++) {
-            if ((family.Parents[j].Idx >= 0) && (ttreePeople[family.Parents[j].Idx].Death.Year > 0))
-                if ((possibleDate == null) || (ttreePeople[family.Parents[j].Idx].Death.Year < possibleDate))
-                    possibleDate = ttreePeople[family.Parents[j].Idx].Death.Year;
+            if ((family.Parents[j].Row >= 0) && (ttreePeople[family.Parents[j].Row].Death.Year > 0))
+                if ((possibleDate == null) || (ttreePeople[family.Parents[j].Row].Death.Year < possibleDate))
+                    possibleDate = ttreePeople[family.Parents[j].Row].Death.Year;
         }
         if (possibleDate > 0) {
             family.Status.Use = possibleDate;
@@ -1420,8 +1379,8 @@ function updatePeople() {
         // Else check for latest birth of a parent         
         let latestParentBirth = 0;
         for (let j=0; j>family.Parents.length; j++) {
-            if ((family.Parents[j].Idx >= 0) && (ttreePeople[family.Parents[j].Idx].Birth.Year > 0))
-                latestParentBirth = ttreePeople[family.Parents[j].Idx].Birth.Year;
+            if ((family.Parents[j].Row >= 0) && (ttreePeople[family.Parents[j].Row].Birth.Year > 0))
+                latestParentBirth = ttreePeople[family.Parents[j].Row].Birth.Year;
         }
         if (latestParentBirth > 0)
             family.Status.Use = latestParentBirth + 20;
@@ -1487,7 +1446,7 @@ function updatePeople() {
 
         for (const familyIdx of person.ParentIn) {
             for (let j=0; j<ttreeFamilies[familyIdx].Children.length; j++) {
-                const childIdx = ttreeFamilies[familyIdx].Children[j].Idx;
+                const childIdx = ttreeFamilies[familyIdx].Children[j].Row;
                 if ((ttreePeople[childIdx].Birth.Use > 0) && (ttreePeople[childIdx].Birth.Use < firstChildBirth))
                     firstChildBirth = ttreePeople[childIdx].Birth.Use;
             }
@@ -1510,7 +1469,7 @@ function updatePeople() {
         ttreePeople[personIdx].Generation = gen;
         let family = ttreeFamilies[ttreePeople[personIdx].ChildIn];
         for (let j=0; j<family.Parents.length; j++) {
-            setGen(family.Parents[j].Idx, gen+1);
+            setGen(family.Parents[j].Row, gen+1);
         }
     }
 
