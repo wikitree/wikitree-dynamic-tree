@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "31 May 2025";
+    const AboutUpdateDate = "12 June 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -4262,6 +4262,8 @@ import { PDFs } from "../shared/PDFs.js";
                 const Gal = FanChartView.myAhnentafel.list[GalIndex];
                 let stillLookingForMarriage = true;
                 let thisMarriage = "";
+                FanChartView.myAhnentafel.marriageList[GuyIndex] = thisMarriage;
+
                 if (Guy && Gal && thePeopleList[Guy] && thePeopleList[Gal] && thePeopleList[Guy]._data.Spouses) {
                     for (
                         let mNum = 0;
@@ -4531,7 +4533,7 @@ import { PDFs } from "../shared/PDFs.js";
                 let loadFather = -1;
                 let loadMother = -1;
 
-                condLog("ORIGINAL Ancestors:", FanChartView.theAncestors);
+                // console.log("ORIGINAL Ancestors:", FanChartView.theAncestors);
                 // condLog(result);
                 // condLog(resultByKey[id]);
                 // condLog(resultByKey[id].Id);
@@ -4540,13 +4542,27 @@ import { PDFs } from "../shared/PDFs.js";
                 // condLog("person with which to drawTree:", person);
 
                 // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
+                // NEEDED to be TWEAKED because getPeople was returning NULL instead of negative integers for private people
 
                 let myUserID = window.wtViewRegistry.session.lm.user.name;
+                let currentNegativeCounter = 100;
 
                 // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                for (const ancNum in FanChartView.theAncestors) {
-                    let thePerson = FanChartView.theAncestors[ancNum];
+
+                for (const idNum in FanChartView.theAncestors) {
+                    // NOTE: idNum is actually the ID # of the person in theAncestors array, not the Ahnentafel number
+                    let thePerson = FanChartView.theAncestors[idNum];
+                    let leapFrogsNeededArray = [];
                     // console.log("ADDING ", thePerson);
+                    if (thePerson.Father == null && thePerson.BirthNamePrivate) {
+                        // console.log("WE HAVE A NULL FATHER HERE !!!!", "poor idNum # " + idNum, thePerson);
+                        leapFrogsNeededArray.push("Father");
+                    }
+                    if (thePerson.Mother == null && thePerson.BirthNamePrivate) {
+                        // console.log("WE HAVE A NULL MoTHER HERE !!!!", "poor idNum # " + idNum, thePerson);
+                        leapFrogsNeededArray.push("Mother");
+                    }
+
                     if (thePerson.Id < 0) {
                         thePerson.Id = 100 - thePerson.Id;
                         thePerson["Name"] = "Private-" + thePerson.Id;
@@ -4565,7 +4581,7 @@ import { PDFs } from "../shared/PDFs.js";
                     // console.log("theBioPerson:", theBioPerson);
                     let canUseThis = theBioPerson.canUse(
                         thePerson,
-                        // FanChartView.theAncestors[ancNum],
+                        // FanChartView.theAncestors[idNum],
                         false,
                         false,
                         false,
@@ -4586,13 +4602,148 @@ import { PDFs } from "../shared/PDFs.js";
                         thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
                     }
 
-                    // condLog("ADDED ", thePerson);
-                }
+                    // DO GET PRIVATE DAD HERE ??
+                    // DO GET PRIVATE MOM HERE ??
+                    if (leapFrogsNeededArray.length > 0) {
+                        // console.log("LEAPFROG NEEDED for ", thePerson, leapFrogsNeededArray);
 
-                condLog("person:", person);
+                        WikiTreeAPI.getAncestors(APP_ID, idNum, 5, [
+                            // WikiTreeAPI.getPeople(
+                            // (appId, IDs, fields, options = {})
+                            // APP_ID,
+                            // id,
+
+                            // [
+                            "Id",
+                            "Derived.BirthName",
+                            "Derived.BirthNamePrivate",
+                            "FirstName",
+                            "MiddleInitial",
+                            "MiddleName",
+                            "RealName",
+                            "Bio",
+                            "IsLiving",
+                            "Nicknames",
+                            "Prefix",
+                            "Suffix",
+                            "LastNameAtBirth",
+                            "LastNameCurrent",
+                            "BirthDate",
+                            "BirthLocation",
+                            "DeathDate",
+                            "DeathLocation",
+                            "Mother",
+                            "Father",
+                            "Children",
+                            "Parents",
+                            "Spouses",
+                            "Siblings",
+                            "Photo",
+                            "Name",
+                            "Gender",
+                            "Privacy",
+                            "DataStatus",
+
+                            "Manager",
+                            "Creator",
+                            "IsMember",
+                            "Created",
+                            "BirthDateDecade",
+                            "DeathDateDecade",
+                            "Bio",
+                        ]).then(function (result) {
+                            let newSetOfAncestors = result;
+                            // console.log("New set of Ancestors:", newSetOfAncestors);
+
+                            if (leapFrogsNeededArray.indexOf("Father") > -1) {
+                                let privateParentID = currentNegativeCounter - newSetOfAncestors[0].Father;
+                                thePeopleList[idNum]._data.Father = privateParentID;
+                                newSetOfAncestors[0].Father = privateParentID;
+
+                                if (person._data.Id == idNum) {
+                                    person._data.Father = privateParentID;
+                                }
+
+                                // console.log(
+                                //     "Looking for Father with ID of ",
+                                //     newSetOfAncestors[0].Father,
+                                //     thePeopleList[idNum]._data.Father,
+                                //     thePeopleList[idNum]._data.Mother
+                                // );
+                            }
+                            if (leapFrogsNeededArray.indexOf("Mother") > -1) {
+                                let privateParentID = currentNegativeCounter - newSetOfAncestors[0].Mother;
+                                thePeopleList[idNum]._data.Mother = privateParentID;
+                                newSetOfAncestors[0].Mother = privateParentID;
+
+                                if (person._data.Id == idNum) {
+                                    person._data.Mother = privateParentID;
+                                }
+
+                                // console.log(
+                                //     "Looking for Mother with ID of ",
+                                //     newSetOfAncestors[0].Mother,
+                                //     thePeopleList[idNum]._data.Father,
+                                //     thePeopleList[idNum]._data.Mother
+                                // );
+                            }
+                            for (let a = 1; a < newSetOfAncestors.length; a++) {
+                                let anc = newSetOfAncestors[a];
+                                if (anc.Id < 0) {
+                                    anc.Id = currentNegativeCounter - anc.Id;
+                                    anc.Name = "Privt-" + anc.Id;
+                                    anc.LastNameAtBirth = "TBD!";
+                                }
+
+                                thePeopleList.add(anc);
+                            }
+                            FanChartView.myAhnentafel.update(person);
+
+                            let relativeName = [
+                                "kid",
+                                "Person",
+                                "Father",
+                                "Mother",
+                                "Grandfather",
+                                "Grandmother",
+                                "Grandfather",
+                                "Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                            ];
+
+                            // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                            for (var a = 1; a < 16; a++) {
+                                let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
+                                // condLog("Peep ",a, thisPeep);
+                                if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                                    thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                                    if (a % 2 == 0) {
+                                        thisPeep._data["Gender"] = "Male";
+                                    } else {
+                                        thisPeep._data["Gender"] = "Female";
+                                    }
+                                    // condLog("FOUND a TBD!", thisPeep);
+                                }
+                            }
+
+                            self.drawTree(person);
+                        });
+                    }
+
+                    // condLog("ADDED ", thePerson);
+                } // END OF FOR LOOP
+
+                // console.log("person:", person);
 
                 if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
-                    //   condLog("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
+                    console.log("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
                     let privatePerson = FanChartView.theAncestors[-1];
                     //   condLog(privatePerson);
                     //   condLog(privatePerson.Id, privatePerson.Mother, privatePerson.Father);
@@ -4870,7 +5021,7 @@ import { PDFs } from "../shared/PDFs.js";
      * Testing username change ...
      */
     FanChartView.prototype._load = function (id) {
-        condLog("INITIAL _load - line:3598", id);
+        console.log("INITIAL _load - line:3598", id);
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -4902,7 +5053,7 @@ import { PDFs } from "../shared/PDFs.js";
             "Privacy",
             "DataStatus",
         ]);
-        condLog("_load PersonObj:", thePersonObject);
+        console.log("_load PersonObj:", thePersonObject);
         return thePersonObject;
     };
 
@@ -6105,7 +6256,9 @@ import { PDFs } from "../shared/PDFs.js";
                 } else {
                     if (
                         FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum] &&
-                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate
+                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate &&
+                        FanChartView.myAhnentafel.list[ancestorObject.ahnNum] &&
+                        FanChartView.myAhnentafel.list[ancestorObject.ahnNum + 1]
                     ) {
                         condLog(
                             "mDateDIV display:",
