@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "12 June 2025";
+    const AboutUpdateDate = "15 June 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1457,8 +1457,7 @@ import { PDFs } from "../shared/PDFs.js";
         FanChartView.printPDF = async function () {
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
-            numGens2PDF = Math.min(7, numGens2PDF);
-            let thisCrossRadius = 150;
+            numGens2PDF = Math.min(10, numGens2PDF);
 
             let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
             document.getElementById("PDFgenButton").setAttribute("disabled", true);
@@ -1474,7 +1473,9 @@ import { PDFs } from "../shared/PDFs.js";
             tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
             tmpPDF.setFontSize(PDFs.currentPDFsettings.thisFontSize);
 
+            // =======================================
             // ADD PRIMARY PERSON CIRCLE
+            // =======================================
             let ctrCircle = document.getElementById("ctrCirc");
             let theCircleFillColour = "#FFFF00";
             let ctrCircleFill = PDFs.getValueFromStyleString(ctrCircle.getAttribute("style"), "fill");
@@ -1492,6 +1493,77 @@ import { PDFs } from "../shared/PDFs.js";
                 "DF",
                 { fillColor: theCircleFillColour, strokeColor: "#000000", lineWidth: 2, phase: 1 },
             ]);
+
+            // =======================================
+            // ADD the OTHER ARCS AROUND THE FAN CHART
+            // =======================================
+
+            let fanChartDegreeSpan = FanChartView.maxAngle;
+            let fanChartDegree2Begin = 180 - (fanChartDegreeSpan - 180) / 2;
+            let ringInnerRadii = [];
+
+            for (let index = 2 ** numGens2PDF - 1; index > 1; index--) {
+                let thisGenNum = Math.floor(Math.log2(index));
+                let bkgdWedgeName = "wedge" + 2 ** thisGenNum + "n" + (index - 2 ** thisGenNum);
+                let bkgdWedgeElement = document.getElementById(bkgdWedgeName);
+                if (bkgdWedgeElement) {
+                    let thisWedgeStyle = bkgdWedgeElement.getAttribute("style");
+                    let thisSVGpathD = bkgdWedgeElement.getAttribute("d");
+                    let thisWedgeFillColour = "#FFFFFF"; // "#F0FFF0";
+                    if (thisWedgeStyle > "") {
+                        let thisWedgeStyleFill = PDFs.getValueFromStyleString(thisWedgeStyle, "fill");
+                        if (thisWedgeStyleFill.indexOf("rgb") > -1) {
+                            thisWedgeFillColour = Utils.rgbToHex(thisWedgeStyleFill); // "#F0FFF0"
+                        } else {
+                            thisWedgeFillColour = thisWedgeStyleFill;
+                        }
+                        // console.log("Wedge fill colour:", thisWedgeFillColour);
+                    }
+                    if (thisSVGpathD > "") {
+                        let Acoords = thisSVGpathD
+                            .substring(thisSVGpathD.indexOf("A"), thisSVGpathD.indexOf("L"))
+                            .trim()
+                            .split(" ");
+                        if (Acoords && Acoords.length > 1) {
+                            let maxAbsVal = 0;
+                            for (let aIndex = 1; aIndex < Acoords.length; aIndex++) {
+                                maxAbsVal = Math.max(maxAbsVal, Math.abs(1.0 * Acoords[aIndex]));
+                            }
+
+                            console.log(
+                                "ADD Wedge with  fill colour:",
+                                thisWedgeFillColour,
+                                "radius:",
+                                maxAbsVal,
+                                { thisGenNum },
+                                Acoords
+                            );
+                            ringInnerRadii[thisGenNum] = maxAbsVal;
+
+                            if (maxAbsVal > 0) {
+                                PDFs.addArcToPDF(
+                                    0,
+                                    0,
+                                    maxAbsVal,
+                                    fanChartDegree2Begin +
+                                        (index - 2 ** thisGenNum) * (fanChartDegreeSpan / 2 ** thisGenNum),
+                                    fanChartDegreeSpan / 2 ** thisGenNum,
+                                    "DF",
+                                    {
+                                        fillColor: thisWedgeFillColour,
+                                        strokeColor: "#000000",
+                                        lineWidth: 2,
+                                    }
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // ADD the CONTENT from INSIDE the FAN CHART
+            // ==========================================
 
             // for (let index = 1; index <= 2 ** FanChartView.numGens2Display; index++) {
             for (let index = 1; index < 2 ** numGens2PDF; index++) {
@@ -1555,9 +1627,16 @@ import { PDFs } from "../shared/PDFs.js";
                 let thisXdy = 0 - Math.sin(((thisTheta + 0) * Math.PI) / 180);
                 let thisXdx = 0 + Math.cos(((thisTheta + 0) * Math.PI) / 180);
 
+                let thisGenNum = Math.floor(Math.log2(index));
+                let thisPosNum = index - 2 ** thisGenNum; // 1, 2, 3, 4, 5, 6, 7, 8, etc.
+                let isLeftSide = thisPosNum < 2 ** (thisGenNum - 1) ? true : false; // true for left side, false for right side
+
+                let thisCrossRadius = 150;
+                let thisRingsInnerRadius = 150;
+                let maxTextWidth = 150;
+
                 if (thisElement) {
                     let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
-                    let thisGenNum = Math.floor(Math.log2(index));
                     if (thisGenNum == 4) {
                         thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode;
                     }
@@ -1577,6 +1656,11 @@ import { PDFs } from "../shared/PDFs.js";
                     let thisR = Math.sqrt(thisX * thisX + thisY * thisY);
                     let thisGenAngle = FanChartView.maxAngle / 2 ** thisGenNum;
                     thisCrossRadius = thisR * 2 * Math.PI * (thisGenAngle / 360);
+
+                    if (thisGenNum > 4) {
+                        // LINE from CENTRE to the EDGE of the SECTOR - for alignment purposes and debugging
+                        thisRingsInnerRadius = ringInnerRadii[thisGenNum] - ringInnerRadii[thisGenNum - 1];
+                    }
 
                     if (index == 1) {
                         thisCrossRadius = 1.7 * ctrCircle.getAttribute("r");
@@ -1603,6 +1687,18 @@ import { PDFs } from "../shared/PDFs.js";
                     //     { fillColor: "blue", strokeColor: "yellow", lineWidth: 2, phase: 2 },
                     // ]);
 
+                    if (thisGenNum > 4) {
+                        // LINE through CENTRE to the EDGES of the SECTOR in OUTER RINGS - for alignment purposes and debugging
+                        // PDFs.thisPDFlinesArray.push([
+                        //     thisX - (thisRingsInnerRadius / 2) * thisXdx,
+                        //     thisY - (thisRingsInnerRadius / 2) * thisXdy,
+                        //     thisX + (thisRingsInnerRadius / 2) * thisXdx,
+                        //     thisY + (thisRingsInnerRadius / 2) * thisXdy,
+                        //     [255, 0, 0],
+                        //     2,
+                        //     0,
+                        // ]);
+                    }
                     // HORIZONTAL LINE at TOP of each Cell - for alignment purposes and debugging
 
                     // PDFs.thisPDFlinesArray.push([
@@ -1615,7 +1711,8 @@ import { PDFs } from "../shared/PDFs.js";
                     //     0,
                     // ]);
 
-                    // VERTICAL LINE through MIDDLE of each Cell - for alignment purposes and debugging
+                    // VERTICAL LINE through MIDDLE of each Cell in OUTER RINGS - for alignment purposes and debugging
+                    // if (thisGenNum > 4) {
                     // if (index % 2 == 0) {
                     //     PDFs.thisPDFlinesArray.push([
                     //         thisX /* - (thisCrossRadius / 2) * thisXdx */ - (thisCrossRadius / 2) * thisYdx,
@@ -1636,6 +1733,7 @@ import { PDFs } from "../shared/PDFs.js";
                     //         2,
                     //         0,
                     //     ]);
+                    // }
                     // }
 
                     // PDFs.thisPDFellipseArray.push([
@@ -1667,16 +1765,35 @@ import { PDFs } from "../shared/PDFs.js";
                     //     { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
                     // ]);
 
-                    if (thisGenNum <= 4 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
-                        thisY -= 100 * thisYdy;
-                        thisX -= 100 * thisYdx;
+                    if (thisGenNum <= 4) {
+                        thisY -= (thisRingsInnerRadius / 2 + 30) * thisYdy;
+                        thisX -= (thisRingsInnerRadius / 2 + 30) * thisYdx;
+                        maxTextWidth = thisCrossRadius - 20;
+                    } else if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
+                        thisY -= (thisRingsInnerRadius / 2 - 15) * thisYdy;
+                        thisX -= (thisRingsInnerRadius / 2 - 15) * thisYdx;
+                        maxTextWidth = thisCrossRadius - 20;
                     } else {
                         thisY -= (thisCrossRadius / 2 - 20) * thisYdy;
                         thisX -= (thisCrossRadius / 2 - 20) * thisYdx;
+                        maxTextWidth = thisRingsInnerRadius - 4;
                     }
                 } else {
                     continue;
                 }
+
+                condLog(
+                    "The NUMBERS for ",
+                    { index },
+                    { thisGenNum },
+                    { thisPosNum },
+                    { isLeftSide },
+                    { thisRingsInnerRadius },
+                    { maxTextWidth },
+                    { thisCrossRadius },
+                    { thisX },
+                    { thisY }
+                );
 
                 thisID = "extraInfoFor" + index;
                 thisElement = document.getElementById(thisID);
@@ -1693,13 +1810,30 @@ import { PDFs } from "../shared/PDFs.js";
                         const textLine = thisTextArray[textIndex];
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
 
+                        // console.log({ textLine }, { thisX }, { thisY }, { thisTextsTextWidth }, { thisCrossRadius });
+
                         //thisX  - 150 * thisXdx - 100 * thisYdx,
                         // thisY - 100 * thisYdy - 150 * thisXdy,
 
+                        let thisExtraX = thisX - (thisTextsTextWidth / 2) * thisXdx;
+                        let thisExtraY = thisY - (thisTextsTextWidth / 2) * thisXdy;
+
+                        if (thisGenNum <= 4 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
+                            // see above calculation of thisY and thisX
+                        } else {
+                            if (isLeftSide) {
+                                thisExtraX = thisX - (thisRingsInnerRadius / 2 - 5) * thisXdx;
+                                thisExtraY = thisY - (thisRingsInnerRadius / 2 - 5) * thisXdy;
+                            } else {
+                                thisExtraX = thisX + (thisRingsInnerRadius / 2 - 5 - thisTextsTextWidth) * thisXdx;
+                                thisExtraY = thisY + (thisRingsInnerRadius / 2 - 5 - thisTextsTextWidth) * thisXdy;
+                            }
+                        }
+
                         PDFs.thisPDFtextArray.push([
                             textLine,
-                            thisX - (thisTextsTextWidth / 2) * thisXdx,
-                            thisY - (thisTextsTextWidth / 2) * thisXdy,
+                            thisExtraX,
+                            thisExtraY,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
                             PDFs.currentPDFsettings.thisFontSize,
@@ -1821,7 +1955,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                     let thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
 
-                    if (thisTextsTextWidth > thisCrossRadius) {
+                    if (thisTextsTextWidth > maxTextWidth) {
                         let splitIndex = thisText.indexOf(" ", thisText.length / 2);
                         let splitIndex2 = thisText.lastIndexOf(" ", thisText.length / 2);
                         if (Math.abs(splitIndex2 - thisText.length / 2) < Math.abs(splitIndex - thisText.length / 2)) {
@@ -1844,7 +1978,7 @@ import { PDFs } from "../shared/PDFs.js";
                     tmpPDF.setFontSize(thisHereFontSize);
                     thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
 
-                    while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                    while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 6) {
                         thisHereFontSize -= 1;
                         tmpPDF.setFontSize(thisHereFontSize);
                         thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
@@ -1870,7 +2004,7 @@ import { PDFs } from "../shared/PDFs.js";
                         tmpPDF.setFontSize(thisHereFontSize);
                         thisTextsTextWidth = tmpPDF.getTextWidth(thisText2);
 
-                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                        while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 6) {
                             thisHereFontSize -= 1;
                             tmpPDF.setFontSize(thisHereFontSize);
                             thisTextsTextWidth = tmpPDF.getTextWidth(thisText2);
@@ -1908,7 +2042,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                     if (thisTextArray.length > 1) {
                         let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
-                        if (thisTextsTextWidth > thisCrossRadius) {
+                        if (thisTextsTextWidth > maxTextWidth) {
                             let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
                             let splitIndex2 = thisTextArray[1].lastIndexOf(" ", thisTextArray[1].length / 2);
                             if (
@@ -1931,7 +2065,7 @@ import { PDFs } from "../shared/PDFs.js";
                         tmpPDF.setFontSize(thisHereFontSize);
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
 
-                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                        while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 6) {
                             thisHereFontSize -= 1;
                             tmpPDF.setFontSize(thisHereFontSize);
                             thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
@@ -1962,7 +2096,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                     if (thisTextArray.length > 1) {
                         let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
-                        if (thisTextsTextWidth > thisCrossRadius) {
+                        if (thisTextsTextWidth > maxTextWidth) {
                             let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
                             let splitIndex2 = thisTextArray[1].lastIndexOf(" ", thisTextArray[1].length / 2);
                             if (
@@ -1987,7 +2121,7 @@ import { PDFs } from "../shared/PDFs.js";
                         tmpPDF.setFontSize(thisHereFontSize);
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
 
-                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 5) {
+                        while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 5) {
                             thisHereFontSize -= 1;
                             tmpPDF.setFontSize(thisHereFontSize);
                             thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
@@ -2018,66 +2152,6 @@ import { PDFs } from "../shared/PDFs.js";
                 //     latestRRect[3] = thisY - latestRRect[1];
                 //     latestRect[3] = latestRRect[3] - 30;
                 // }
-            }
-
-            let fanChartDegreeSpan = FanChartView.maxAngle;
-            let fanChartDegree2Begin = 180 - (fanChartDegreeSpan - 180) / 2;
-
-            for (let index = 2 ** numGens2PDF - 1; index > 1; index--) {
-                let thisGenNum = Math.floor(Math.log2(index));
-                let bkgdWedgeName = "wedge" + 2 ** thisGenNum + "n" + (index - 2 ** thisGenNum);
-                let bkgdWedgeElement = document.getElementById(bkgdWedgeName);
-                if (bkgdWedgeElement) {
-                    let thisWedgeStyle = bkgdWedgeElement.getAttribute("style");
-                    let thisSVGpathD = bkgdWedgeElement.getAttribute("d");
-                    let thisWedgeFillColour = "#0000FF"; // "#F0FFF0";
-                    if (thisWedgeStyle > "") {
-                        let thisWedgeStyleFill = PDFs.getValueFromStyleString(thisWedgeStyle, "fill");
-                        if (thisWedgeStyleFill.indexOf("rgb") > -1) {
-                            thisWedgeFillColour = Utils.rgbToHex(thisWedgeStyleFill); // "#F0FFF0"
-                        } else {
-                            thisWedgeFillColour = thisWedgeStyleFill;
-                        }
-                        // console.log("Wedge fill colour:", thisWedgeFillColour);
-                    }
-                    if (thisSVGpathD > "") {
-                        let Acoords = thisSVGpathD
-                            .substring(thisSVGpathD.indexOf("A"), thisSVGpathD.indexOf("L"))
-                            .trim()
-                            .split(" ");
-                        if (Acoords && Acoords.length > 1) {
-                            let maxAbsVal = 0;
-                            for (let aIndex = 1; aIndex < Acoords.length; aIndex++) {
-                                maxAbsVal = Math.max(maxAbsVal, Math.abs(1.0 * Acoords[aIndex]));
-                            }
-
-                            // console.log(
-                            //     "ADD Wedge with  fill colour:",
-                            //     thisWedgeFillColour,
-                            //     "radius:",
-                            //     maxAbsVal,
-                            //     Acoords
-                            // );
-
-                            if (maxAbsVal > 0) {
-                                PDFs.addArcToPDF(
-                                    0,
-                                    0,
-                                    maxAbsVal,
-                                    fanChartDegree2Begin +
-                                        (index - 2 ** thisGenNum) * (fanChartDegreeSpan / 2 ** thisGenNum),
-                                    fanChartDegreeSpan / 2 ** thisGenNum,
-                                    "DF",
-                                    {
-                                        fillColor: thisWedgeFillColour,
-                                        strokeColor: "#000000",
-                                        lineWidth: 2,
-                                    }
-                                );
-                            }
-                        }
-                    }
-                }
             }
 
             // ADD SOME ARC SECTORS
