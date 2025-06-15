@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "31 May 2025";
+    const AboutUpdateDate = "15 June 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1457,8 +1457,7 @@ import { PDFs } from "../shared/PDFs.js";
         FanChartView.printPDF = async function () {
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
-            numGens2PDF = Math.min(7, numGens2PDF);
-            let thisCrossRadius = 150;
+            numGens2PDF = Math.min(10, numGens2PDF);
 
             let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
             document.getElementById("PDFgenButton").setAttribute("disabled", true);
@@ -1474,7 +1473,9 @@ import { PDFs } from "../shared/PDFs.js";
             tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
             tmpPDF.setFontSize(PDFs.currentPDFsettings.thisFontSize);
 
+            // =======================================
             // ADD PRIMARY PERSON CIRCLE
+            // =======================================
             let ctrCircle = document.getElementById("ctrCirc");
             let theCircleFillColour = "#FFFF00";
             let ctrCircleFill = PDFs.getValueFromStyleString(ctrCircle.getAttribute("style"), "fill");
@@ -1492,6 +1493,77 @@ import { PDFs } from "../shared/PDFs.js";
                 "DF",
                 { fillColor: theCircleFillColour, strokeColor: "#000000", lineWidth: 2, phase: 1 },
             ]);
+
+            // =======================================
+            // ADD the OTHER ARCS AROUND THE FAN CHART
+            // =======================================
+
+            let fanChartDegreeSpan = FanChartView.maxAngle;
+            let fanChartDegree2Begin = 180 - (fanChartDegreeSpan - 180) / 2;
+            let ringInnerRadii = [];
+
+            for (let index = 2 ** numGens2PDF - 1; index > 1; index--) {
+                let thisGenNum = Math.floor(Math.log2(index));
+                let bkgdWedgeName = "wedge" + 2 ** thisGenNum + "n" + (index - 2 ** thisGenNum);
+                let bkgdWedgeElement = document.getElementById(bkgdWedgeName);
+                if (bkgdWedgeElement) {
+                    let thisWedgeStyle = bkgdWedgeElement.getAttribute("style");
+                    let thisSVGpathD = bkgdWedgeElement.getAttribute("d");
+                    let thisWedgeFillColour = "#FFFFFF"; // "#F0FFF0";
+                    if (thisWedgeStyle > "") {
+                        let thisWedgeStyleFill = PDFs.getValueFromStyleString(thisWedgeStyle, "fill");
+                        if (thisWedgeStyleFill.indexOf("rgb") > -1) {
+                            thisWedgeFillColour = Utils.rgbToHex(thisWedgeStyleFill); // "#F0FFF0"
+                        } else {
+                            thisWedgeFillColour = thisWedgeStyleFill;
+                        }
+                        // console.log("Wedge fill colour:", thisWedgeFillColour);
+                    }
+                    if (thisSVGpathD > "") {
+                        let Acoords = thisSVGpathD
+                            .substring(thisSVGpathD.indexOf("A"), thisSVGpathD.indexOf("L"))
+                            .trim()
+                            .split(" ");
+                        if (Acoords && Acoords.length > 1) {
+                            let maxAbsVal = 0;
+                            for (let aIndex = 1; aIndex < Acoords.length; aIndex++) {
+                                maxAbsVal = Math.max(maxAbsVal, Math.abs(1.0 * Acoords[aIndex]));
+                            }
+
+                            console.log(
+                                "ADD Wedge with  fill colour:",
+                                thisWedgeFillColour,
+                                "radius:",
+                                maxAbsVal,
+                                { thisGenNum },
+                                Acoords
+                            );
+                            ringInnerRadii[thisGenNum] = maxAbsVal;
+
+                            if (maxAbsVal > 0) {
+                                PDFs.addArcToPDF(
+                                    0,
+                                    0,
+                                    maxAbsVal,
+                                    fanChartDegree2Begin +
+                                        (index - 2 ** thisGenNum) * (fanChartDegreeSpan / 2 ** thisGenNum),
+                                    fanChartDegreeSpan / 2 ** thisGenNum,
+                                    "DF",
+                                    {
+                                        fillColor: thisWedgeFillColour,
+                                        strokeColor: "#000000",
+                                        lineWidth: 2,
+                                    }
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // ADD the CONTENT from INSIDE the FAN CHART
+            // ==========================================
 
             // for (let index = 1; index <= 2 ** FanChartView.numGens2Display; index++) {
             for (let index = 1; index < 2 ** numGens2PDF; index++) {
@@ -1555,9 +1627,16 @@ import { PDFs } from "../shared/PDFs.js";
                 let thisXdy = 0 - Math.sin(((thisTheta + 0) * Math.PI) / 180);
                 let thisXdx = 0 + Math.cos(((thisTheta + 0) * Math.PI) / 180);
 
+                let thisGenNum = Math.floor(Math.log2(index));
+                let thisPosNum = index - 2 ** thisGenNum; // 1, 2, 3, 4, 5, 6, 7, 8, etc.
+                let isLeftSide = thisPosNum < 2 ** (thisGenNum - 1) ? true : false; // true for left side, false for right side
+
+                let thisCrossRadius = 150;
+                let thisRingsInnerRadius = 150;
+                let maxTextWidth = 150;
+
                 if (thisElement) {
                     let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
-                    let thisGenNum = Math.floor(Math.log2(index));
                     if (thisGenNum == 4) {
                         thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode;
                     }
@@ -1577,6 +1656,11 @@ import { PDFs } from "../shared/PDFs.js";
                     let thisR = Math.sqrt(thisX * thisX + thisY * thisY);
                     let thisGenAngle = FanChartView.maxAngle / 2 ** thisGenNum;
                     thisCrossRadius = thisR * 2 * Math.PI * (thisGenAngle / 360);
+
+                    if (thisGenNum > 4) {
+                        // LINE from CENTRE to the EDGE of the SECTOR - for alignment purposes and debugging
+                        thisRingsInnerRadius = ringInnerRadii[thisGenNum] - ringInnerRadii[thisGenNum - 1];
+                    }
 
                     if (index == 1) {
                         thisCrossRadius = 1.7 * ctrCircle.getAttribute("r");
@@ -1603,6 +1687,18 @@ import { PDFs } from "../shared/PDFs.js";
                     //     { fillColor: "blue", strokeColor: "yellow", lineWidth: 2, phase: 2 },
                     // ]);
 
+                    if (thisGenNum > 4) {
+                        // LINE through CENTRE to the EDGES of the SECTOR in OUTER RINGS - for alignment purposes and debugging
+                        // PDFs.thisPDFlinesArray.push([
+                        //     thisX - (thisRingsInnerRadius / 2) * thisXdx,
+                        //     thisY - (thisRingsInnerRadius / 2) * thisXdy,
+                        //     thisX + (thisRingsInnerRadius / 2) * thisXdx,
+                        //     thisY + (thisRingsInnerRadius / 2) * thisXdy,
+                        //     [255, 0, 0],
+                        //     2,
+                        //     0,
+                        // ]);
+                    }
                     // HORIZONTAL LINE at TOP of each Cell - for alignment purposes and debugging
 
                     // PDFs.thisPDFlinesArray.push([
@@ -1615,7 +1711,8 @@ import { PDFs } from "../shared/PDFs.js";
                     //     0,
                     // ]);
 
-                    // VERTICAL LINE through MIDDLE of each Cell - for alignment purposes and debugging
+                    // VERTICAL LINE through MIDDLE of each Cell in OUTER RINGS - for alignment purposes and debugging
+                    // if (thisGenNum > 4) {
                     // if (index % 2 == 0) {
                     //     PDFs.thisPDFlinesArray.push([
                     //         thisX /* - (thisCrossRadius / 2) * thisXdx */ - (thisCrossRadius / 2) * thisYdx,
@@ -1636,6 +1733,7 @@ import { PDFs } from "../shared/PDFs.js";
                     //         2,
                     //         0,
                     //     ]);
+                    // }
                     // }
 
                     // PDFs.thisPDFellipseArray.push([
@@ -1667,16 +1765,35 @@ import { PDFs } from "../shared/PDFs.js";
                     //     { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
                     // ]);
 
-                    if (thisGenNum <= 4 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
-                        thisY -= 100 * thisYdy;
-                        thisX -= 100 * thisYdx;
+                    if (thisGenNum <= 4) {
+                        thisY -= (thisRingsInnerRadius / 2 + 30) * thisYdy;
+                        thisX -= (thisRingsInnerRadius / 2 + 30) * thisYdx;
+                        maxTextWidth = thisCrossRadius - 20;
+                    } else if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
+                        thisY -= (thisRingsInnerRadius / 2 - 15) * thisYdy;
+                        thisX -= (thisRingsInnerRadius / 2 - 15) * thisYdx;
+                        maxTextWidth = thisCrossRadius - 20;
                     } else {
                         thisY -= (thisCrossRadius / 2 - 20) * thisYdy;
                         thisX -= (thisCrossRadius / 2 - 20) * thisYdx;
+                        maxTextWidth = thisRingsInnerRadius - 4;
                     }
                 } else {
                     continue;
                 }
+
+                condLog(
+                    "The NUMBERS for ",
+                    { index },
+                    { thisGenNum },
+                    { thisPosNum },
+                    { isLeftSide },
+                    { thisRingsInnerRadius },
+                    { maxTextWidth },
+                    { thisCrossRadius },
+                    { thisX },
+                    { thisY }
+                );
 
                 thisID = "extraInfoFor" + index;
                 thisElement = document.getElementById(thisID);
@@ -1693,13 +1810,30 @@ import { PDFs } from "../shared/PDFs.js";
                         const textLine = thisTextArray[textIndex];
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
 
+                        // console.log({ textLine }, { thisX }, { thisY }, { thisTextsTextWidth }, { thisCrossRadius });
+
                         //thisX  - 150 * thisXdx - 100 * thisYdx,
                         // thisY - 100 * thisYdy - 150 * thisXdy,
 
+                        let thisExtraX = thisX - (thisTextsTextWidth / 2) * thisXdx;
+                        let thisExtraY = thisY - (thisTextsTextWidth / 2) * thisXdy;
+
+                        if (thisGenNum <= 4 || (thisGenNum == 5 && FanChartView.maxAngle == 360)) {
+                            // see above calculation of thisY and thisX
+                        } else {
+                            if (isLeftSide) {
+                                thisExtraX = thisX - (thisRingsInnerRadius / 2 - 5) * thisXdx;
+                                thisExtraY = thisY - (thisRingsInnerRadius / 2 - 5) * thisXdy;
+                            } else {
+                                thisExtraX = thisX + (thisRingsInnerRadius / 2 - 5 - thisTextsTextWidth) * thisXdx;
+                                thisExtraY = thisY + (thisRingsInnerRadius / 2 - 5 - thisTextsTextWidth) * thisXdy;
+                            }
+                        }
+
                         PDFs.thisPDFtextArray.push([
                             textLine,
-                            thisX - (thisTextsTextWidth / 2) * thisXdx,
-                            thisY - (thisTextsTextWidth / 2) * thisXdy,
+                            thisExtraX,
+                            thisExtraY,
                             PDFs.currentPDFsettings.thisFont,
                             PDFs.currentPDFsettings.thisFontStyle,
                             PDFs.currentPDFsettings.thisFontSize,
@@ -1821,7 +1955,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                     let thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
 
-                    if (thisTextsTextWidth > thisCrossRadius) {
+                    if (thisTextsTextWidth > maxTextWidth) {
                         let splitIndex = thisText.indexOf(" ", thisText.length / 2);
                         let splitIndex2 = thisText.lastIndexOf(" ", thisText.length / 2);
                         if (Math.abs(splitIndex2 - thisText.length / 2) < Math.abs(splitIndex - thisText.length / 2)) {
@@ -1844,7 +1978,7 @@ import { PDFs } from "../shared/PDFs.js";
                     tmpPDF.setFontSize(thisHereFontSize);
                     thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
 
-                    while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                    while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 6) {
                         thisHereFontSize -= 1;
                         tmpPDF.setFontSize(thisHereFontSize);
                         thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
@@ -1870,7 +2004,7 @@ import { PDFs } from "../shared/PDFs.js";
                         tmpPDF.setFontSize(thisHereFontSize);
                         thisTextsTextWidth = tmpPDF.getTextWidth(thisText2);
 
-                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                        while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 6) {
                             thisHereFontSize -= 1;
                             tmpPDF.setFontSize(thisHereFontSize);
                             thisTextsTextWidth = tmpPDF.getTextWidth(thisText2);
@@ -1908,7 +2042,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                     if (thisTextArray.length > 1) {
                         let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
-                        if (thisTextsTextWidth > thisCrossRadius) {
+                        if (thisTextsTextWidth > maxTextWidth) {
                             let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
                             let splitIndex2 = thisTextArray[1].lastIndexOf(" ", thisTextArray[1].length / 2);
                             if (
@@ -1931,7 +2065,7 @@ import { PDFs } from "../shared/PDFs.js";
                         tmpPDF.setFontSize(thisHereFontSize);
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
 
-                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 6) {
+                        while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 6) {
                             thisHereFontSize -= 1;
                             tmpPDF.setFontSize(thisHereFontSize);
                             thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
@@ -1962,7 +2096,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                     if (thisTextArray.length > 1) {
                         let thisTextsTextWidth = tmpPDF.getTextWidth(thisTextArray[1]);
-                        if (thisTextsTextWidth > thisCrossRadius) {
+                        if (thisTextsTextWidth > maxTextWidth) {
                             let splitIndex = thisTextArray[1].indexOf(" ", thisTextArray[1].length / 2);
                             let splitIndex2 = thisTextArray[1].lastIndexOf(" ", thisTextArray[1].length / 2);
                             if (
@@ -1987,7 +2121,7 @@ import { PDFs } from "../shared/PDFs.js";
                         tmpPDF.setFontSize(thisHereFontSize);
                         let thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
 
-                        while (thisTextsTextWidth > thisCrossRadius && thisHereFontSize > 5) {
+                        while (thisTextsTextWidth > maxTextWidth && thisHereFontSize > 5) {
                             thisHereFontSize -= 1;
                             tmpPDF.setFontSize(thisHereFontSize);
                             thisTextsTextWidth = tmpPDF.getTextWidth(textLine);
@@ -2018,66 +2152,6 @@ import { PDFs } from "../shared/PDFs.js";
                 //     latestRRect[3] = thisY - latestRRect[1];
                 //     latestRect[3] = latestRRect[3] - 30;
                 // }
-            }
-
-            let fanChartDegreeSpan = FanChartView.maxAngle;
-            let fanChartDegree2Begin = 180 - (fanChartDegreeSpan - 180) / 2;
-
-            for (let index = 2 ** numGens2PDF - 1; index > 1; index--) {
-                let thisGenNum = Math.floor(Math.log2(index));
-                let bkgdWedgeName = "wedge" + 2 ** thisGenNum + "n" + (index - 2 ** thisGenNum);
-                let bkgdWedgeElement = document.getElementById(bkgdWedgeName);
-                if (bkgdWedgeElement) {
-                    let thisWedgeStyle = bkgdWedgeElement.getAttribute("style");
-                    let thisSVGpathD = bkgdWedgeElement.getAttribute("d");
-                    let thisWedgeFillColour = "#0000FF"; // "#F0FFF0";
-                    if (thisWedgeStyle > "") {
-                        let thisWedgeStyleFill = PDFs.getValueFromStyleString(thisWedgeStyle, "fill");
-                        if (thisWedgeStyleFill.indexOf("rgb") > -1) {
-                            thisWedgeFillColour = Utils.rgbToHex(thisWedgeStyleFill); // "#F0FFF0"
-                        } else {
-                            thisWedgeFillColour = thisWedgeStyleFill;
-                        }
-                        // console.log("Wedge fill colour:", thisWedgeFillColour);
-                    }
-                    if (thisSVGpathD > "") {
-                        let Acoords = thisSVGpathD
-                            .substring(thisSVGpathD.indexOf("A"), thisSVGpathD.indexOf("L"))
-                            .trim()
-                            .split(" ");
-                        if (Acoords && Acoords.length > 1) {
-                            let maxAbsVal = 0;
-                            for (let aIndex = 1; aIndex < Acoords.length; aIndex++) {
-                                maxAbsVal = Math.max(maxAbsVal, Math.abs(1.0 * Acoords[aIndex]));
-                            }
-
-                            // console.log(
-                            //     "ADD Wedge with  fill colour:",
-                            //     thisWedgeFillColour,
-                            //     "radius:",
-                            //     maxAbsVal,
-                            //     Acoords
-                            // );
-
-                            if (maxAbsVal > 0) {
-                                PDFs.addArcToPDF(
-                                    0,
-                                    0,
-                                    maxAbsVal,
-                                    fanChartDegree2Begin +
-                                        (index - 2 ** thisGenNum) * (fanChartDegreeSpan / 2 ** thisGenNum),
-                                    fanChartDegreeSpan / 2 ** thisGenNum,
-                                    "DF",
-                                    {
-                                        fillColor: thisWedgeFillColour,
-                                        strokeColor: "#000000",
-                                        lineWidth: 2,
-                                    }
-                                );
-                            }
-                        }
-                    }
-                }
             }
 
             // ADD SOME ARC SECTORS
@@ -4262,6 +4336,8 @@ import { PDFs } from "../shared/PDFs.js";
                 const Gal = FanChartView.myAhnentafel.list[GalIndex];
                 let stillLookingForMarriage = true;
                 let thisMarriage = "";
+                FanChartView.myAhnentafel.marriageList[GuyIndex] = thisMarriage;
+
                 if (Guy && Gal && thePeopleList[Guy] && thePeopleList[Gal] && thePeopleList[Guy]._data.Spouses) {
                     for (
                         let mNum = 0;
@@ -4531,7 +4607,7 @@ import { PDFs } from "../shared/PDFs.js";
                 let loadFather = -1;
                 let loadMother = -1;
 
-                condLog("ORIGINAL Ancestors:", FanChartView.theAncestors);
+                // console.log("ORIGINAL Ancestors:", FanChartView.theAncestors);
                 // condLog(result);
                 // condLog(resultByKey[id]);
                 // condLog(resultByKey[id].Id);
@@ -4540,13 +4616,27 @@ import { PDFs } from "../shared/PDFs.js";
                 // condLog("person with which to drawTree:", person);
 
                 // ROUTINE DESIGNED TO LEAPFROG PRIVATE PARENTS AND GRANDPARENTS
+                // NEEDED to be TWEAKED because getPeople was returning NULL instead of negative integers for private people
 
                 let myUserID = window.wtViewRegistry.session.lm.user.name;
+                let currentNegativeCounter = 100;
 
                 // for (var ancNum = 0; ancNum < FanChartView.theAncestors.length; ancNum++) {
-                for (const ancNum in FanChartView.theAncestors) {
-                    let thePerson = FanChartView.theAncestors[ancNum];
+
+                for (const idNum in FanChartView.theAncestors) {
+                    // NOTE: idNum is actually the ID # of the person in theAncestors array, not the Ahnentafel number
+                    let thePerson = FanChartView.theAncestors[idNum];
+                    let leapFrogsNeededArray = [];
                     // console.log("ADDING ", thePerson);
+                    if (thePerson.Father == null && thePerson.BirthNamePrivate) {
+                        // console.log("WE HAVE A NULL FATHER HERE !!!!", "poor idNum # " + idNum, thePerson);
+                        leapFrogsNeededArray.push("Father");
+                    }
+                    if (thePerson.Mother == null && thePerson.BirthNamePrivate) {
+                        // console.log("WE HAVE A NULL MoTHER HERE !!!!", "poor idNum # " + idNum, thePerson);
+                        leapFrogsNeededArray.push("Mother");
+                    }
+
                     if (thePerson.Id < 0) {
                         thePerson.Id = 100 - thePerson.Id;
                         thePerson["Name"] = "Private-" + thePerson.Id;
@@ -4565,7 +4655,7 @@ import { PDFs } from "../shared/PDFs.js";
                     // console.log("theBioPerson:", theBioPerson);
                     let canUseThis = theBioPerson.canUse(
                         thePerson,
-                        // FanChartView.theAncestors[ancNum],
+                        // FanChartView.theAncestors[idNum],
                         false,
                         false,
                         false,
@@ -4586,13 +4676,148 @@ import { PDFs } from "../shared/PDFs.js";
                         thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = hasSources;
                     }
 
-                    // condLog("ADDED ", thePerson);
-                }
+                    // DO GET PRIVATE DAD HERE ??
+                    // DO GET PRIVATE MOM HERE ??
+                    if (leapFrogsNeededArray.length > 0) {
+                        // console.log("LEAPFROG NEEDED for ", thePerson, leapFrogsNeededArray);
 
-                condLog("person:", person);
+                        WikiTreeAPI.getAncestors(APP_ID, idNum, 5, [
+                            // WikiTreeAPI.getPeople(
+                            // (appId, IDs, fields, options = {})
+                            // APP_ID,
+                            // id,
+
+                            // [
+                            "Id",
+                            "Derived.BirthName",
+                            "Derived.BirthNamePrivate",
+                            "FirstName",
+                            "MiddleInitial",
+                            "MiddleName",
+                            "RealName",
+                            "Bio",
+                            "IsLiving",
+                            "Nicknames",
+                            "Prefix",
+                            "Suffix",
+                            "LastNameAtBirth",
+                            "LastNameCurrent",
+                            "BirthDate",
+                            "BirthLocation",
+                            "DeathDate",
+                            "DeathLocation",
+                            "Mother",
+                            "Father",
+                            "Children",
+                            "Parents",
+                            "Spouses",
+                            "Siblings",
+                            "Photo",
+                            "Name",
+                            "Gender",
+                            "Privacy",
+                            "DataStatus",
+
+                            "Manager",
+                            "Creator",
+                            "IsMember",
+                            "Created",
+                            "BirthDateDecade",
+                            "DeathDateDecade",
+                            "Bio",
+                        ]).then(function (result) {
+                            let newSetOfAncestors = result;
+                            // console.log("New set of Ancestors:", newSetOfAncestors);
+
+                            if (leapFrogsNeededArray.indexOf("Father") > -1) {
+                                let privateParentID = currentNegativeCounter - newSetOfAncestors[0].Father;
+                                thePeopleList[idNum]._data.Father = privateParentID;
+                                newSetOfAncestors[0].Father = privateParentID;
+
+                                if (person._data.Id == idNum) {
+                                    person._data.Father = privateParentID;
+                                }
+
+                                // console.log(
+                                //     "Looking for Father with ID of ",
+                                //     newSetOfAncestors[0].Father,
+                                //     thePeopleList[idNum]._data.Father,
+                                //     thePeopleList[idNum]._data.Mother
+                                // );
+                            }
+                            if (leapFrogsNeededArray.indexOf("Mother") > -1) {
+                                let privateParentID = currentNegativeCounter - newSetOfAncestors[0].Mother;
+                                thePeopleList[idNum]._data.Mother = privateParentID;
+                                newSetOfAncestors[0].Mother = privateParentID;
+
+                                if (person._data.Id == idNum) {
+                                    person._data.Mother = privateParentID;
+                                }
+
+                                // console.log(
+                                //     "Looking for Mother with ID of ",
+                                //     newSetOfAncestors[0].Mother,
+                                //     thePeopleList[idNum]._data.Father,
+                                //     thePeopleList[idNum]._data.Mother
+                                // );
+                            }
+                            for (let a = 1; a < newSetOfAncestors.length; a++) {
+                                let anc = newSetOfAncestors[a];
+                                if (anc.Id < 0) {
+                                    anc.Id = currentNegativeCounter - anc.Id;
+                                    anc.Name = "Privt-" + anc.Id;
+                                    anc.LastNameAtBirth = "TBD!";
+                                }
+
+                                thePeopleList.add(anc);
+                            }
+                            FanChartView.myAhnentafel.update(person);
+
+                            let relativeName = [
+                                "kid",
+                                "Person",
+                                "Father",
+                                "Mother",
+                                "Grandfather",
+                                "Grandmother",
+                                "Grandfather",
+                                "Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                                "Great-Grandfather",
+                                "Great-Grandmother",
+                            ];
+
+                            // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                            for (var a = 1; a < 16; a++) {
+                                let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
+                                // condLog("Peep ",a, thisPeep);
+                                if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                                    thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                                    if (a % 2 == 0) {
+                                        thisPeep._data["Gender"] = "Male";
+                                    } else {
+                                        thisPeep._data["Gender"] = "Female";
+                                    }
+                                    // condLog("FOUND a TBD!", thisPeep);
+                                }
+                            }
+
+                            self.drawTree(person);
+                        });
+                    }
+
+                    // condLog("ADDED ", thePerson);
+                } // END OF FOR LOOP
+
+                // console.log("person:", person);
 
                 if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
-                    //   condLog("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
+                    console.log("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
                     let privatePerson = FanChartView.theAncestors[-1];
                     //   condLog(privatePerson);
                     //   condLog(privatePerson.Id, privatePerson.Mother, privatePerson.Father);
@@ -4870,7 +5095,7 @@ import { PDFs } from "../shared/PDFs.js";
      * Testing username change ...
      */
     FanChartView.prototype._load = function (id) {
-        condLog("INITIAL _load - line:3598", id);
+        console.log("INITIAL _load - line:3598", id);
         let thePersonObject = WikiTreeAPI.getPerson(APP_ID, id, [
             "Id",
             "Derived.BirthName",
@@ -4902,7 +5127,7 @@ import { PDFs } from "../shared/PDFs.js";
             "Privacy",
             "DataStatus",
         ]);
-        condLog("_load PersonObj:", thePersonObject);
+        console.log("_load PersonObj:", thePersonObject);
         return thePersonObject;
     };
 
@@ -6105,7 +6330,9 @@ import { PDFs } from "../shared/PDFs.js";
                 } else {
                     if (
                         FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum] &&
-                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate
+                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate &&
+                        FanChartView.myAhnentafel.list[ancestorObject.ahnNum] &&
+                        FanChartView.myAhnentafel.list[ancestorObject.ahnNum + 1]
                     ) {
                         condLog(
                             "mDateDIV display:",
