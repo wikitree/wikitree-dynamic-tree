@@ -1,34 +1,163 @@
 /**
- * First three rules force some changes to the tree nodes
+ * First set of rules force some changes to the tree nodes
  * outside the view-container - required because the
  * slippy-tree-container must fill the rest of the screen.
+ *
+ * These vary for FOUR environments, the latter three are provisional
+ *  -- treeapps in the original wikitree,
+ *  -- NOT standalone main page (these are in views/slippytree/index.html)
  */
-:root:has(.slippy-tree-container) {
+
+/* Rules for both the original and the dev-2025 TreeApps page */
+:root.slippy-tree-root {
+    --background-color: white;          /* a "default" background of white */
     height: 100%;
-     --content-padding: 0;
 }
-body:has(.slippy-tree-container) {
+/*
+This is not a nice thing to do, but without it you can zoom away the full-screen button.
+However it's an issue on all tree apps, not just this one. Leave it off for now
+:root.slippy-tree-root * {
+    touch-action: none;
+}
+*/
+:root.slippy-tree-root:has(.tree-apps) {
+     --background-color: #f0f0ef;       /* background in actual site */
+}
+:root.slippy-tree-root body {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
-#view-container:has(.slippy-tree-container) {
+:root.slippy-tree-root body #view-container {
     flex: 1;
     min-height: auto;
+    margin: 0;
+}
+:root.slippy-tree-root main {
+     --content-padding: 0;      /* Set here, no higher, as apps.wikitree.com uses this in header */
+}
+:root.slippy-tree-root body #main {
+    padding-bottom: 0;
+    flex: 1;
+    display: flex;
+     --background-color: #f7f6f0;       /* background in the new site */
+}
+:root.slippy-tree-root body #main .row {
+    --bs-gutter-x: 0px;
+    --bs-gutter-y: 0px;
+    flex: 1;
+    margin-top: 0 !important; /* Bootstrap is awful */
+}
+:root.slippy-tree-root body #main .row > * {
+    display: flex;
+    flex-direction: column;
+}
+:root.slippy-tree-root #subfooter {
+    display: none;
+}
+:root.slippy-tree-root :is(footer#footer, header, .tabs--wrapper) {
+    transition: height 200ms, padding 200ms, display 400ms allow-discrete;
+    --slippy-computed-height: auto;
+    height: var(--slippy-computed-height);
+}
+:root.slippy-tree-root.slippy-fullscreen :is(footer#footer, header, .tabs--wrapper) {
+    height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+@media ((max-height:900px) or (max-width:980px)) {
+    :root.slippy-tree-root footer#footer:not(.hover) img {
+        max-height: 40px;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) figure {
+        display: flex;
+        justify-content: center;
+        margin: 0;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) .mb-3 {
+        margin: 0 !important;      /* Bootstrap is a disaster */
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) :is(ul, p) {
+        display: none;
+    }
+    :root.slippy-tree-root footer#footer {
+        overflow: hidden;
+        padding: 1em 0 0 0;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) ul.nav .nav-item {
+        margin-bottom: 0;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) > * > :last-child {
+        height: 0;
+        margin: 0 !important;
+    }
+    :root.slippy-tree-root footer#footer:not(.hover) > * > :last-child > :first-child {
+        margin-top: 0;
+    }
+}
+ 
+
+/**
+ * Below here everything is prefixed with .slippy-tree-container.
+ * The next rule and the pos:absolute are to ensure that whatever the size
+ * of the thing that contains slippy-tree-container, a) the container will
+ * fill it, and b) it will never be dependent on the size of its children.
+ * With that done, the view-container can be sized any way we like.
+ */
+:has(> .slippy-tree-container) {
+    position: relative;
 }
 
 /**
- * Below here everything is prefixed with .slippy-tree-container
+ * This rule is solely for downloaded SVG
  */
+.slippy-tree:root {
+    font-family: sans-serif;
+}
+
+/**
+ * Put all variables in here. Some of them are used in the .slippy-tree-container,
+ * eg in the help dialog. But they also have to be defined on .slippy-tree so they
+ * apply in the downloaded image too
+ */
+.slippy-tree-container, .slippy-tree {
+    --button-color: #639;
+    --menu-selected-color: #DED;
+    --menu-width: 200px;                /* (min) width of menu */
+    --search-menu-found: white;         /* when the search menu has found an item in the tree or is empty */
+    --search-menu-not-found: #DDD;      /* when the search menu has a possibly valid wtid but it would need loading */
+    --search-menu-invalid: #FDD;        /* when the search menu has an invalid value */
+    --male:    #CCF;                    /* color of male person */
+    --female:  #FCC;                    /* color of female person */
+    --mother:  #F00;                    /* color of link to mother */
+    --father:  #00F;                    /* color of link to father */
+    --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
+    --spouse:  #181;                    /* color of spouse link */
+    --coparent: none;                   /* color of coparent link (not drawn by default) */
+    --selection-border-width: 4px;
+    --primary-border-color: color(display-p3 1 0 0);        /* color of border around primary selection. Really, really red */
+    --secondary-border-color: black;    /* color of border around secondary selection */
+    --mother-transparent:  #F000;       /* transparent version of mother */
+    --father-transparent:  #00F0;       /* transparent version of father */
+    --parent-transparent:  #0A00;       /* transparent version of parent */
+    --spouse-transparent:  #1810;       /* transparent version of spouse */
+    --unloaded-parent-length: 40px;     /* The length of a fading line indicating an unloaded parent */
+    --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
+    --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
+    --same-generation-bend: 20px;       /* The length of the extra curve to add for same-generation relations */
+    --member: #ebba34;                  /* color of "member" tag on person */
+    --highlight: #6c6;                  /* color of "highlight" tag on person */
+}
 .slippy-tree-container {
-    position: relative;
+    position: absolute;
+    width: 100%;
+    height: 100%;
     font: 14px sans-serif;
     overflow: hidden;
-    height: 100%;
-    --button-color: #639;
 }
 .slippy-tree-container * {
     touch-action: none !important;
+    box-sizing: initial;        /* Bootstrap is so toxic */
 }
 .slippy-tree-container h1 {
     font-size: 16px;
@@ -37,11 +166,11 @@ body:has(.slippy-tree-container) {
 
 @media (min-width: 800px) {
     .slippy-tree-container .relationshipName {
-        position: fixed;
+        position: absolute;
         left: 16px;
         bottom: 28px;
         color: black;
-        -webkit-text-stroke: 6px #f0f0ef;
+        -webkit-text-stroke: 6px var(--background-color);
         -webkit-text-fill: black;
         paint-order: stroke fill;
     }
@@ -68,9 +197,39 @@ body:has(.slippy-tree-container) {
     align-items: center;
     z-index: 9999;
     left: 20px;
+    text-decoration: none;
+    user-select: none;
 }
 .slippy-tree-container .slippy-help-button::before {
     content: "?";
+}
+.slippy-tree-container .slippy-fullscreen-button {
+    position: absolute;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: bold;
+    width: 1em;
+    height: 1em;
+    top: 20px;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 4px solid var(--button-color);
+    color: white;
+    background: var(--button-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    left: 75px;
+    text-decoration: none;
+    content: url("resources/fullscreen.svg");
+    user-select: none;
+}
+:root.slippy-tree-root.slippy-fullscreen .slippy-tree-container .slippy-fullscreen-button {
+    content: url("resources/nonfullscreen.svg");
+}
+:root.slippy-tree-root > body > .slippy-tree-container .slippy-fullscreen-button {
+    display: none;      /* don't need a full screen button in a full-screen app */
 }
 
 .slippy-tree-container .helpContainer {
@@ -100,6 +259,7 @@ body:has(.slippy-tree-container) {
 }
 
 .slippy-tree-container .helpContainer .slippy-settings-wheel {
+    margin-top: 1em;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
@@ -184,54 +344,110 @@ body:has(.slippy-tree-container) {
 }
 
 /** the menu */
-.slippy-tree-container .personMenu {
+.slippy-tree-container .slippy-person-menu {
     position: absolute;
     width: max-content;
+    min-width: var(--menu-width);
     border: 1px solid black;
     background: white;
     padding: 20px;
     font-size: 16px;
-    z-index:999;
+    z-index: 1;
     padding: 0;
 }
 
-.slippy-tree-container .personMenu > * {
+.slippy-tree-container .slippy-person-menu > * {
     padding: 8px;
     display: block;
     color: initial;
     text-decoration: none;
+    position: relative;
 }
 
-.slippy-tree-container .personMenu > *:first-child {
+.slippy-tree-container .slippy-person-menu > *:first-child {
     background: #888;
     font-weight: bold;
     color: white;
     user-select: text !important;
 }
+.slippy-tree-container .slippy-person-menu em {
+    font-style: normal;
+    text-decoration: underline;
+    text-underline-offset: 10%;
+    text-decoration-thickness: 1px;
+}
+.slippy-tree-container .slippy-person-menu a:visited {
+    color: inherit !important; /* Jesus wept, f***ing bootstrap again! */
+}
 
-.slippy-tree-container .personMenu > :is(*[data-action]:hover, *[data-action].focus) {
-    background-color: #DED;
+.slippy-tree-container .slippy-focusable {
+    cursor: pointer;
+}
+.slippy-tree-container .slippy-person-menu > *[data-action].focus {
+    background-color: var(--menu-selected-color);
+}
+
+.slippy-tree-container .slippy-person-menu .slippy-search-menu {
+    margin-top: 4px;
+    display: flex;
+    gap: 2px;
+    position: relative;
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input {
+    flex: 1;
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input[data-value] {
+    background: var(--search-menu-found);
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input:not(:placeholder-shown):not(.slippy-search-wtid):not([data-value]) {
+    background: var(--search-menu-invalid);
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-menu input.slippy-search-wtid:not([data-value]) {
+    background: var(--search-menu-not-found);
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-family {
+    display: none;      /* Because non-nuclear doesn't always work */
+    height: calc(1em + 6px);
+    aspect-ratio: 1;
+    background: url("resources/person.svg") 100% no-repeat;
+}
+.slippy-tree-container .slippy-person-menu .slippy-search-family.selected {
+    background-image: url("resources/family.svg");
+}
+.slippy-tree-container .slippy-search-list {
+    display: block;
+    position: absolute;
+    top: 100%;  /* shouldn't be necessary, but is in Safari */
+    overflow-x: hidden;
+    overflow-y: scroll;
+    max-height: 8em;
+    box-sizing: border-box;
+    width: 100%;
+    font-size: 0.8em;
+    border: 1px solid #888;
+    background: white;
+    z-index: 2;
+    filter: drop-shadow(8px 8px 8px #0008);
+}
+.slippy-tree-container .slippy-search-list > * {
+    padding: 4px 4px;
+    white-space: nowrap;
+}
+.slippy-tree-container .slippy-search-list .focus {
+    background-color: var(--menu-selected-color);
+}
+
+.slippy-tree-container .slippy-person-menu .output-name + img {
+    float: right;
+    position: relative;
+    margin-left: 0.4em;
+    top: -0.25em;
+    height: 1.5em;
+    cursor: pointer;
 }
 
 /** the tree itself */
-.slippy-tree-container .slippy-tree {
-    --male:    #CCF;                    /* color of male person */
-    --female:  #FCC;                    /* color of female person */
-    --mother:  #F00;                    /* color of link to mother */
-    --father:  #00F;                    /* color of link to father */
-    --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
-    --spouse: #181;                     /* color of spouse link */
-    --coparent: none;                   /* color of coparent link (not drawn by default) */
-    --mother-transparent:  #F000;       /* transparent version of mother */
-    --father-transparent:  #00F0;       /* transparent version of father */
-    --parent-transparent:  #0A00;       /* transparent version of parent */
-    --spouse-transparent:  #1810;       /* transparent version of spouse */
-    --unloaded-parent-length: 40px;     /* The length of a fading line indicating an unloaded parent */
-    --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
-    --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
-    --same-generation-bend: 20px;       /* The length of the extra curve to add for same-generation relations */
-    --member: #ebba34;                  /* color of "member" tag on person */
-    --highlight: #6c6;                  /* color of "highlight" tag on person */
+.slippy-tree {
     /* These next properties are accessed in JS. Values must be pixels, not other lengths */
     --spouse-margin: 10px;              /* vertical distance between two adjacent spouses */
     --spouse-indent: 10px;              /* horizontal indent for a visually dependent spouse */
@@ -239,158 +455,162 @@ body:has(.slippy-tree-container) {
     --other-margin: 40px;               /* min vertical distance between two unrelated nodes */
     --generation-margin: 100px;         /* horizontal distance between two generations */
     --min-person-width: 50px;           /* minimum width of a person rectangle */
+    --text-padding: 4px;                /* padding around the "text" item */
 
     display: block;
     position: relative;
     contain: style size layout paint;
     overflow: hidden;
-
-}
-.slippy-tree-container .slippy-tree a[href] {
-    fill: blue;
 }
 
-.slippy-tree-container .slippy-tree text {
+.slippy-tree a[href] {
+    fill: black;
+}
+
+.slippy-tree text {
     font-size: 10px;
     text-anchor: middle;
-    margin: 4px;    /* Hack! Margin doesnt apply in SVG, but we read this value in the JS to compute position */
 }
-.slippy-tree-container .slippy-tree text.left {
+.slippy-tree text.left {
     text-anchor: start;
 }
 
-.slippy-tree-container .slippy-tree .people rect {
+.slippy-tree .people rect {
     fill: white;
     stroke: #aaa;
     stroke-width: 1px;
 }
 
-.slippy-tree-container .slippy-tree .people > * {
+.slippy-tree .people > * {
     cursor: pointer;
 }
 
-.slippy-tree-container .slippy-tree .people .pending {
+.slippy-tree .people .pending {
     opacity: 0.3;
 }
 
-.slippy-tree-container .slippy-tree .people .male rect {
+.slippy-tree .people .male rect {
     fill: var(--male);
 }
 
-.slippy-tree-container .slippy-tree .people .female rect {
+.slippy-tree .people .female rect {
     fill: var(--female);
 }
 
-.slippy-tree-container .slippy-tree .people path {
+.slippy-tree .people path {
     display: none;
 }
 
-.slippy-tree-container .slippy-tree .people .highlight path {
+.slippy-tree .people .highlight path {
     display: initial;
     fill: var(--highlight);
 }
-.slippy-tree-container .slippy-tree .people .member path {
+.slippy-tree .people .member path {
     display: initial;
     fill: var(--member);
 }
 
-.slippy-tree-container .slippy-tree .people .activeuser path {
+.slippy-tree .people .activeuser path {
     fill: var(--activeuser);
 }
 
-.slippy-tree-container .slippy-tree .people .focus rect {
-    stroke: red;
-    stroke-width: 2px; 
+.slippy-tree .people .focus rect {
+    stroke: var(--primary-border-color);
+    stroke-width: var(--selection-border-width);
 }
-.slippy-tree-container .slippy-tree .people .secondaryfocus:not(.focus) rect {
-    stroke: black;
-    stroke-width: 2px; 
+.slippy-tree .people .secondaryfocus:not(.focus) rect {
+    stroke: var(--secondary-border-color);
+    stroke-width: var(--selection-border-width);
 }
 
 /* relations */
-.slippy-tree-container .slippy-tree .relations :is(path, line) {
+.slippy-tree .relations :is(path, line) {
     opacity: 0.1;
     fill: none;
     stroke-width: 4px;
     stroke: #888;       /* default color, always overridden */
 }
-.slippy-tree-container .slippy-tree .relations .mother {
+.slippy-tree .relations .mother {
     stroke: var(--mother);
 }
-.slippy-tree-container .slippy-tree .relations .father {
+.slippy-tree .relations .father {
     stroke: var(--father);
 }
-.slippy-tree-container .slippy-tree .relations .spouse {
+.slippy-tree .relations .spouse {
     stroke: var(--spouse);
-    stroke-width: 2px;
+    stroke-width: 3px;
     opacity: 0.3;
 }
-.slippy-tree-container .slippy-tree .relations .spouse.focus {
-    opacity: 0.6;
+.slippy-tree .relations .spouse.focus {
+    stroke-width: 4px;
+    opacity: 0.8;
 }
-.slippy-tree-container .slippy-tree .relations .coparent {
+.slippy-tree .relations .coparent {
     stroke: var(--coparent);
     stroke-width: 2px;
     opacity: 0.3;
     stroke-dasharray: 2px;
 }
-.slippy-tree-container .slippy-tree .relations .coparent.focus {
+.slippy-tree .relations .coparent.focus {
     opacity: 0.6;
 }
-.slippy-tree-container .slippy-tree .relations .dna {
+.slippy-tree .relations .dna {
     stroke-width: 16px;
 }
-.slippy-tree-container .slippy-tree .relations .confident {
+.slippy-tree .relations .confident {
     stroke-width: 9px;
 }
-.slippy-tree-container .slippy-tree .relations .nonbiological {
+.slippy-tree .relations .nonbiological {
     stroke: var(--neutral);
 }
-.slippy-tree-container .slippy-tree .relations .parent {
+.slippy-tree .relations .parent {
     stroke: var(--neutral);
 }
-.slippy-tree-container .slippy-tree .relations .uncertain {
+.slippy-tree .relations .uncertain {
     stroke-dasharray: 8px;
 }
-.slippy-tree-container .slippy-tree .relations .unloaded-mother {
+.slippy-tree .relations .unloaded-mother {
     stroke: url("#unloaded-mother");
 }
-.slippy-tree-container .slippy-tree .relations .unloaded-father {
+.slippy-tree .relations .unloaded-father {
     stroke: url("#unloaded-father");
 }
-.slippy-tree-container .slippy-tree .relations .father-unloaded {
+.slippy-tree .relations .father-unloaded {
     stroke: url("#father-unloaded");
 }
-.slippy-tree-container .slippy-tree .relations .mother-unloaded {
+.slippy-tree .relations .mother-unloaded {
     stroke: url("#mother-unloaded");
 }
-.slippy-tree-container .slippy-tree .relations .spouse-unloaded {
+.slippy-tree .relations .spouse-unloaded {
     stroke: url("#spouse-unloaded");
-    stroke-width: 2px;
+    stroke-width: 3px;
     opacity: 0.5
 }
-.slippy-tree-container .slippy-tree .relations .noissue {
+.slippy-tree .relations .noissue {
     stroke: black;
     stroke-width: 1;
     opacity: 0.5;
 }
+.slippy-tree .relations :is(.unloaded-mother, .unloaded-father, .father-unloaded, .mother-unloaded).focus {
+    opacity: 0.5;
+}
 
 /* labels */
-.slippy-tree-container .slippy-tree .labels .marriage {
+.slippy-tree .labels .marriage {
     font-size: 8px;
     fill: black;
     transform: translate(8px, 0.4em);
 }
 
 /* general */
-.slippy-tree-container .slippy-tree :is(.relations, .people. .labels) .focus {
+.slippy-tree :is(.relations, .people. .labels) .focus {
     opacity: 0.8;
 }
 
-.slippy-tree-container:not(.loading) .loader {
+.slippy-tree-container:not(.loading) .slippy-loader {
     display: none;
 }
-.slippy-tree-container .loader {
+.slippy-tree-container .slippy-loader {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -403,8 +623,6 @@ body:has(.slippy-tree-container) {
     background: white;
     --_m: conic-gradient(#0000 10%,#000), linear-gradient(#000 0 0) content-box;
     mask: var(--_m);
-    -webkit-mask: var(--_m);
-    -webkit-mask-composite: source-out;
     mask-composite: subtract;
     animation: slippy-tree-loader 1s infinite linear;
 }

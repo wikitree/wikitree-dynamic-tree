@@ -1,4 +1,4 @@
-import { CC7 } from "./js/cc7.js";
+import { CC7, CC7UrlParams } from "./js/cc7.js";
 
 window.CC7View = class CC7View extends View {
     constructor() {
@@ -11,22 +11,25 @@ window.CC7View = class CC7View extends View {
             title: "CC7 Views",
             description: CC7.LONG_LOAD_WARNING,
             docs: "",
+            params: CC7UrlParams,
         };
     }
 
-    init(container_selector, person_id) {
+    init(container_selector, person_id, params) {
         // Our view fiddles with the overflow style value of view-container, so we want to reset it to its original
         // value once the user is done with our view.
         // However, init() can be called multiple times while the view is active (i.e. everytime the GO button is clicked)
         // so we save the overflow value only if close() had been called since we last saved it
         if (!this.overflow) {
-            this.overflow = $("#view-container").css("overflow");
+            // Note this can't be done with the JQuery css() function as that returns evaluated style.
+            // We want only the value from the "style" attribute (which should be null)
+            this.overflow = document.querySelector("#view-container").style.overflow || ""; // not $("#view-container").css("overflow");
         }
-        const cc7 = new CC7(container_selector, person_id);
+        const cc7 = new CC7(container_selector, person_id, params);
     }
 
     close() {
-        // Another view is about to be activated, retore the original overflow value of view-container
+        // Another view is about to be activated, restore the original overflow value of view-container
         $("#view-container").css({
             overflow: this.overflow,
         });

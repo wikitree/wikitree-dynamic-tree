@@ -31,6 +31,9 @@ export class API {
         "Privacy",
         "RealName",
         "Suffix",
+
+        "Spouse", // added for Person Popups
+        "PhotoData"
     ];
 
     static FOR_BIO_CHECK = ["Bio", "IsMember", "Manager"];

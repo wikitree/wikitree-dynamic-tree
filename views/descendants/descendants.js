@@ -9,7 +9,7 @@ window.DescendantsView = class DescendantsView extends View {
 
     close() {
         // Another view is about to be activated, retore the original overflow value of view-container
-        $("#view-container").css("overflow", "auto");
+        $("#view-container").css("overflow", "");
         $("body").removeClass("descendants");
 
         function removeEventListeners() {

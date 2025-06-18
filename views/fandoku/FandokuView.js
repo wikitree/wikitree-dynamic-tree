@@ -13,6 +13,9 @@
  *
  * The Button Bar does not resize, but has clickable elements, which set global variables in the FandokuView, then calls a redraw
  */
+
+import { Utils } from "../shared/Utils.js";
+
 (function () {
     const APP_ID = "Fandoku";
     var originOffsetX = 500,
@@ -35,13 +38,13 @@
     const FullAppName = "FanDoku Game";
     const AboutPreamble =
         "The FanDoku Game was originally created as a fusion of the popular Fan Chart app and the logic game of Sudoku.<br>It was created to live amongst the WikiTree family of Tree Apps during the HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 July 2023";
+    const AboutUpdateDate = "04 February 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fandokuTransparent.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
-    const AboutAdditionalProgrammers = "";// "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
+    const AboutAdditionalProgrammers = ""; // "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
     const AboutAssistants = "Rob Pavey";
     const AboutLatestG2G = "https://www.wikitree.com/g2g/1492414/play-the-new-fandoku-game";
-    const AboutHelpDoc =  "";//"https://www.wikitree.com/wiki/Space:Fan_Chart_app";
+    const AboutHelpDoc = ""; //"https://www.wikitree.com/wiki/Space:Fan_Chart_app";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
     const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -185,6 +188,19 @@
         );
     }
     fandokuCheer.loop = false;
+
+    var popupDIV =
+        '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+    var connectionPodDIV =
+        '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
 
     // STATIC VARIABLES --> USED to store variables used to customize the current display of the FanDoku game
 
@@ -622,22 +638,22 @@
         var btnBarHTML =
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%" style="padding-left:10px;">' +
-            "<button id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
+            "<button class='btn btn-primary' title='Start the Fandoku Game now!' id=startGameButton style='padding: 5px' onclick='FandokuView.startGame();'>Start Game</button>" +
             "<span id=preGameFans>" +
-            '<A onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
-            ' <A onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
+            '<A title="Display Circle Chart (360º)" onclick="FandokuView.maxAngle = 360; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
+            ' <A title="Display Traditional Fan Chart (240º)" onclick="FandokuView.maxAngle = 240; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
+            ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FandokuView.maxAngle = 180; FandokuView.redraw();"><img  style="height:30px;"  src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
             "</span>" +
             "<span id=gameTimer style='display:none'>0:00</span>" +
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="center">' +
             "<span id=preGameGens>" +
-            ' <A onclick="FandokuView.numGens2Display -=1; FandokuView.redraw();">' +
+            ' <A title="Decrease # of generations displayed" onclick="FandokuView.numGens2Display -=1; FandokuView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
             "[ <span id=numGensInBBar>4</span> generations ]" +
-            ' <A onclick="FandokuView.numGens2Display +=1; FandokuView.redraw();">' +
+            ' <A title="Increase # of generations displayed" onclick="FandokuView.numGens2Display +=1; FandokuView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</span>" +
@@ -645,54 +661,52 @@
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right"  style="padding-right:10px;">' +
-            "<button id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
-            "<button id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
-            ' <A onclick="FandokuView.toggleSettings();"><font size=+2>' +
+            "<button  title='Play another round of Fandoku!' class='btn btn-primary' id=resetGameButton style='padding: 5px; display:none;'  onclick='FandokuView.resetGame();'>Play Again</button>" +
+            "<button  title='End the Game now' class='btn btn-secondary' id=endGameButton style='padding: 5px; display:none;'  onclick='FandokuView.endGame();'>End Game</button>" +
+            ' <A title="Adjust Settings"  onclick="FandokuView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>&nbsp;&nbsp;" +
-            "<A onclick=FandokuView.toggleAbout();>" +
+            "<A title='About this app' onclick=FandokuView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
-                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                ? "&nbsp;&nbsp;<A target=helpPage title='Open up Help (free space page) for this app' href='" +
+                  AboutHelpDoc +
+                  "'>" +
+                  SVGbtnHELP +
+                  "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table></div><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial FanDoku game is loading ...</DIV>' +
             '<DIV id=FeedbackArea style="text-align:center; background-color:papayawhip;">Feedback and Directions and Encouragement will go here</DIV>';
 
-            var aboutHTML =
-                '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
-                `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FandokuView.toggleAbout();">` +
-                SVGbtnCLOSE +
-                "</a></span>" +
-                "<H3>About the " +
-                FullAppName +
-                "</H3>" +
-                AboutPreamble +
-                "<br>" +
-                "<br>Last updated: " +
-                AboutUpdateDate +
-                "<br>App Icon: " +
-                AboutAppIcon +
-                "<br>Original Author: " +
-                AboutOriginalAuthor +
-                (AboutAdditionalProgrammers > ""
-                    ? "<br>Additional Programming by: " + AboutAdditionalProgrammers
-                    : "") +
-                "<br>Assistance and Code borrowed from: " +
-                AboutAssistants +
-                "<br/>" +
-                (AboutLatestG2G > ""
-                    ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>"
-                    : "") +
-                (AboutHelpDoc > ""
-                    ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>"
-                    : "") +
-                (AboutOtherApps > ""
-                    ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
-                    : "") +
-                "</div>";
-                        
+        var aboutHTML =
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
+            `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FandokuView.toggleAbout();">` +
+            SVGbtnCLOSE +
+            "</a></span>" +
+            "<H3>About the " +
+            FullAppName +
+            "</H3>" +
+            AboutPreamble +
+            "<br>" +
+            "<br>Last updated: " +
+            AboutUpdateDate +
+            "<br>App Icon: " +
+            AboutAppIcon +
+            "<br>Original Author: " +
+            AboutOriginalAuthor +
+            (AboutAdditionalProgrammers > "" ? "<br>Additional Programming by: " + AboutAdditionalProgrammers : "") +
+            "<br>Assistance and Code borrowed from: " +
+            AboutAssistants +
+            "<br/>" +
+            (AboutLatestG2G > "" ? "<br><A target=_blank href='" + AboutLatestG2G + "'>Latest G2G post</A>" : "") +
+            (AboutHelpDoc > "" ? "<br><A target=helpPage href='" + AboutHelpDoc + "'>Free Space help page</A>" : "") +
+            (AboutOtherApps > ""
+                ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
+                : "") +
+            "</div>";
+
         var settingsHTML = "";
         // '<div id=settingsDIV style="display:inline-block; position:absolute; right:20px; background-color:aliceblue; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">'+
         // '<span style="color:red; align:left"><A onclick="FandokuView.cancelSettings();">[ <B><font color=red>x</font></B> ]</A></span>' ;
@@ -722,7 +736,20 @@
         // '</div>';
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
+        // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML + aboutHTML + settingsHTML + popupDIV;
+        container.innerHTML = "";
+
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+
+        // container.innerHTML = btnBarHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
@@ -731,9 +758,14 @@
         FandokuView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -1180,12 +1212,12 @@
                 { ancestors: newLevel + 1, minGeneration: newLevel }
             ).then(function (result) {
                 if (result) {
-                    condLog("loadAncestorsAtLevel",newLevel, result);
+                    condLog("loadAncestorsAtLevel", newLevel, result);
                     // need to put in the test ... in case we get a null result, which we will eventually at the end of the line
                     FandokuView.theAncestors = result[2];
                     condLog("theAncestors:", FandokuView.theAncestors);
                     // condLog("person with which to drawTree:", person);
-                    for ( index in FandokuView.theAncestors) {
+                    for (let index in FandokuView.theAncestors) {
                         thePeopleList.add(FandokuView.theAncestors[index]);
                     }
                     FandokuView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
@@ -1680,7 +1712,7 @@
             condLog("FandokuView.myAhnentafel.list[ ahnNum ] : ", FandokuView.myAhnentafel.list[ahnNum]);
             let thePeep = thePeopleList[FandokuView.myAhnentafel.list[ahnNum]];
             if (thePeep) {
-                theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
+                let theNameDIVhtml = "<B>" + getFullName(thePeep) + "</B>";
                 if (FandokuView.currentSettings["rules_options_showLifeSpan"] == true) {
                     theNameDIVhtml += "<br/>(" + getLifeSpan(thePeep) + ")";
                 }
@@ -1886,10 +1918,15 @@
         condLog(FandokuView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -1925,45 +1962,48 @@
             }
             // condLog(".load person:",person);
 
-             // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
+            // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
             WikiTreeAPI.getPeople(
-                // (appId, IDs, fields, options = {}) 
-                APP_ID , id,
-                ["Id",
-                "Derived.BirthName",
-                "Derived.BirthNamePrivate",
-                "FirstName",
-                "MiddleInitial",
-                "MiddleName",
-                "RealName",
-                "Nicknames",
-                "Prefix",
-                "Suffix",
-                "LastNameAtBirth",
-                "LastNameCurrent",
-                "BirthDate",
-                "BirthLocation",
-                "DeathDate",
-                "DeathLocation",
-                "Mother",
-                "Father",
-                "Children",
-                "Parents",
-                "Spouses",
-                "Siblings",
-                "Photo",
-                "Name",
-                "Gender",
-                "Privacy"],
+                // (appId, IDs, fields, options = {})
+                APP_ID,
+                id,
+                [
+                    "Id",
+                    "Derived.BirthName",
+                    "Derived.BirthNamePrivate",
+                    "FirstName",
+                    "MiddleInitial",
+                    "MiddleName",
+                    "RealName",
+                    "Nicknames",
+                    "Prefix",
+                    "Suffix",
+                    "LastNameAtBirth",
+                    "LastNameCurrent",
+                    "BirthDate",
+                    "BirthLocation",
+                    "DeathDate",
+                    "DeathLocation",
+                    "Mother",
+                    "Father",
+                    "Children",
+                    "Parents",
+                    "Spouses",
+                    "Siblings",
+                    "Photo",
+                    "Name",
+                    "Gender",
+                    "Privacy",
+                ],
                 {
-                    ancestors:5
+                    ancestors: 5,
                 }
             ).then(function (result) {
                 condLog("load", id, result);
                 FandokuView.theAncestors = result[2];
                 condLog("theAncestors:", FandokuView.theAncestors);
                 condLog("person with which to drawTree:", person);
-                for ( index in  FandokuView.theAncestors) {
+                for (let index in FandokuView.theAncestors) {
                     const element = FandokuView.theAncestors[index];
                     thePeopleList.add(FandokuView.theAncestors[index]);
                 }
@@ -2241,7 +2281,7 @@
                     return `
                     <div  id=wedgeBoxFor${
                         ancestorObject.ahnNum
-                    } class="box" style="background-color: ${theClr} ; border:0; ">
+                    } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
                     ${photoDiv}
                     <div class="name centered" id=nameDivFor${ancestorObject.ahnNum}><B>${getSettingsName(
                         person
@@ -2535,7 +2575,29 @@
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, xy) {
+    Tree.prototype.personPopup = function (person) {
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
+        personPopup.popupHTML(
+            person,
+            {
+                type: "Ahn",
+                ahNum: FandokuView.myAhnentafel.listByPerson[person._data.Id],
+                primaryPerson: thePeopleList[FandokuView.myAhnentafel.list[1]],
+                myAhnentafel: FandokuView.myAhnentafel,
+                SettingsObj: Utils,
+                extra: { hideConnectionIcon: true, hideSpouse: true },
+            },
+            AboutAppIcon,
+            "fandoku"
+        );
+
+        // console.log("FandokuView.personPopup");
+    };
+
+    function placeHolder4PersonPopup(person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
@@ -2551,7 +2613,6 @@
         }
 
         let zoomFactor = Math.max(1, 1 / FandokuView.currentScaleFactor);
- 
 
         var popup = this.svg
             .append("g")
@@ -2595,7 +2656,7 @@
             condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
-    };
+    }
 
     /**
      * Remove all popups. It will also remove
@@ -2765,62 +2826,6 @@
     }
 
     /**
-     * Turn a wikitree Place into a location as per format string
-     */
-    function settingsStyleLocation(locString, formatString) {
-        // take the locString as input, and break it up into parts, separated by commas
-        // In an IDEAL world, the place name would be entered thusly:
-        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
-        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
-        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
-
-        if (formatString == "Full") {
-            // there's no need for doing any parsing --> just return the whole kit and caboodle
-            return locString;
-        }
-
-        var parts = locString.split(",");
-        if (parts.length == 1) {
-            // there's no way to reformat/parse a single item location
-            return locString;
-        }
-
-        let town = parts[0];
-        let country = parts[parts.length - 1];
-        let region = "";
-        if (parts.length > 2) {
-            region = parts[parts.length - 2];
-        }
-
-        if (formatString == "Country") {
-            return country;
-        } else if (formatString == "Region") {
-            if (region > "") {
-                return region;
-            } else {
-                return country;
-            }
-        } else if (formatString == "Town") {
-            return town;
-        } else if (formatString == "TownCountry") {
-            return town + ", " + country;
-        } else if (formatString == "RegionCountry") {
-            if (region > "") {
-                return region + ", " + country;
-            } else {
-                return town + ", " + country;
-            }
-        } else if (formatString == "TownRegion") {
-            if (region > "") {
-                return town + ", " + region;
-            } else {
-                return town + ", " + country;
-            }
-        }
-        return "";
-    }
-
-    /**
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
@@ -2835,7 +2840,7 @@
                     return year;
                 }
                 if (month) {
-                    month2digits = month;
+                    let month2digits = month;
                     if (month < 10) {
                         month2digits = "0" + month;
                     }
@@ -2897,7 +2902,7 @@
             //     FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
             //     FandokuView.currentSettings["place_options_showBirth"] == true
             // ) {
-            thisPlace = settingsStyleLocation(
+            thisPlace = Utils.settingsStyleLocation(
                 person.getBirthLocation(),
                 "Full"
                 // FandokuView.currentSettings["place_options_locationFormatBD"]
@@ -2926,7 +2931,7 @@
             //     FandokuView.currentSettings["place_options_locationTypes"] == "detailed" &&
             //     FandokuView.currentSettings["place_options_showDeath"] == true
             // ) {
-            thisPlace = settingsStyleLocation(
+            thisPlace = Utils.settingsStyleLocation(
                 person.getDeathLocation(),
                 "Full"
                 // FandokuView.currentSettings["place_options_locationFormatBD"]
@@ -3091,10 +3096,10 @@
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
-        PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
-        RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
-        GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
-        RedsArray = [
+        let PastelsArray = ["#CCFFFF", "#CCFFCC", "#FFFFCC", "#FFE5CC", "#FFCCCC", "#FFCCE5", "#FFCCFF", "#E5CCFF"];
+        let RainbowArray = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"];
+        let GreysArray = ["#B8B8B8", "#D8D8D8", "#C0C0C0", "#E0E0E0", "#C8C8C8", "#E8E8E8", "#D0D0D0", "#F0F0F0"];
+        let RedsArray = [
             "#FFA0A0",
             "#FFB0B0",
             "#FFC0C0",
@@ -3114,7 +3119,7 @@
             "#FFE8E0",
             "#FFF8F0",
         ];
-        BluesArray = [
+        let BluesArray = [
             "#A0A0FF",
             "#B0B0FF",
             "#C0C0FF",
@@ -3134,7 +3139,7 @@
             "#E0E8FF",
             "#F0F8FF",
         ];
-        GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
+        let GreensArray = ["#00B400", "#33FF33", "#00CD00", "#55FF55", "#00E600", "#77FF77", "#00FF00", "#99FF99"];
 
         let AllColoursArrays = [
             ColourArray,

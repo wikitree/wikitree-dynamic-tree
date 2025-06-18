@@ -86,10 +86,10 @@ export class CCTE {
     constructor(containerSelector) {
         $(containerSelector).html(`<div id="cctContainer" class="cct">
             <div id="controlBlock" class="cct-not-printable">
-              <div id="help-text">${CCTE.HELP_TEXT}</div>
+              <div id="help-text" class="pop-up">${CCTE.HELP_TEXT}</div>
               <fieldset id="cctFieldset">
                 <legend id="cctOptions" title="Click to Close/Open the options">Options - click here to open/close</legend>
-                <table id="optionsTbl">
+                <table id="optionsTbl" class="table-borderless">
                   <tr>
                     <td>
                       <input
@@ -129,15 +129,15 @@ export class CCTE {
                     <td>
                       <button
                         id="drawTreeButton"
-                        class="small button"
+                        class="btn btn-primary btn-sm"
                         title="Redraw the tree, expanding all collapsed branches">
                         Redraw Tree
                       </button>
                       <button
                         id="help-button"
-                        class="small button"
+                        class="btn btn-secondary btn-sm"
                         title="About this app">
-                        ?
+                        <b>?</b>
                       </button>
                       <!-- DEBUGGING - some help with debugging animation issues
                       <label
@@ -242,11 +242,11 @@ export class CCTE {
                         id="cctBrickWallColour"
                         type="color"
                         value="#FF0000"
-                        title='Choose the colour for people chosen as a "brick wall".' />
+                        title='Choose the colour for people chosen as a "brick wall".' />&nbsp;
                     </td>
                     <td colspan=3 rowspan=2>
                     <fieldset><legend title='Set what constitutes a "brick wall."'>Add to Brick Wall: </legend>
-                    <table>
+                    <table class="table-borderless">
                       <tr>
                         <td>
                           <input
@@ -327,7 +327,7 @@ export class CCTE {
                         id="cctLinkLineColour"
                         type="color"
                         value="#CCCCCC"
-                        title="Choose the colour for the lines connecting ancestors." />
+                        title="Choose the colour for the lines connecting ancestors." />&nbsp;
                     </td>
                   </tr>
                 </table>
@@ -351,15 +351,25 @@ export class CCTE {
                     wtViewRegistry.hideInfoPanel();
                     window.aleShowingInfo = false;
                 }
-                $("#help-text").slideToggle("fast");
+                $("#help-text").css("z-index", `${CCTE.getNextZLevel()}`).slideToggle("fast");
             });
         $("#help-text").draggable();
 
-        // Add the help text as a pop-up
-        $("#help-text")
-            .off("dblclick")
-            .on("dblclick", function () {
+        // Set up pop-ups (help text, alt spouse and children lists) closing and focus
+        $("#cctContainer")
+            .off("dblclick", ".pop-up")
+            .on("dblclick", ".pop-up", function () {
                 $(this).slideToggle("fast");
+            });
+        $("#cctContainer")
+            .off("click", ".pop-up")
+            .on("click", ".pop-up", function () {
+                const self = $(this);
+                const myId = self.attr("id");
+                const [popupAtTop] = CCTE.findTopPopup();
+                if (myId != popupAtTop.attr("id")) {
+                    self.css("z-index", `${CCTE.getNextZLevel()}`);
+                }
             });
         $("#help-text xx")
             .off("click")
@@ -470,23 +480,27 @@ export class CCTE {
 
     static closePopUp(e) {
         if (e.key === "Escape") {
-            // Find the popup with the highest z-index
-            let highestZIndex = 0;
-            let lastPopup = null;
-            $("#help-text:visible, .children-list:visible, .alt-spouse-list-wrapper:visible").each(function () {
-                const zIndex = parseInt($(this).css("z-index"), 10);
-                if (zIndex > highestZIndex) {
-                    highestZIndex = zIndex;
-                    lastPopup = $(this);
-                }
-            });
-
-            // Close the popup with the highest z-index
+            // Find the popup with the highest z-index and close it
+            const [lastPopup, highestZIndex] = CCTE.findTopPopup();
             if (lastPopup) {
                 CCTE.setNextZLevel(highestZIndex + 1);
                 lastPopup.slideUp("fast");
             }
         }
+    }
+
+    static findTopPopup() {
+        // Find the popup with the highest z-index
+        let highestZIndex = 0;
+        let lastPopup = null;
+        $(".pop-up:visible").each(function () {
+            const zIndex = parseInt($(this).css("z-index"), 10);
+            if (zIndex > highestZIndex) {
+                highestZIndex = zIndex;
+                lastPopup = $(this);
+            }
+        });
+        return [lastPopup, highestZIndex];
     }
 
     static saveOptionCookies() {

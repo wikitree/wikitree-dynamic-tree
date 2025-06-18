@@ -1,13 +1,21 @@
 import { HierarchyView } from "./HierarchyView.js";
 import { LanceView } from "./LanceView.js";
+import { MissingLinksView } from "./MissingLinksView.js";
+import { CirclesView } from "./CirclesView.js";
+import { StatsView } from "./StatsView.js";
 import { Settings } from "./Settings.js";
-import { CC7Utils } from "./Utils.js";
+import { CC7Notes } from "./CC7Notes.js";
+import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
-import { CC7 } from "./cc7.js";
+import { CC7, CC7MLParamMap, CC7CirclesParamMap } from "./cc7.js";
 
-export class PeopleTable {
+export { PeopleTable, showTable, PRIVACY_LEVELS };
+
+class PeopleTable {
     static EXCEL = "xlsx";
     static CSV = "csv";
+    static ACTIVE_VIEW = CC7.VIEWS.TABLE;
+    static PREVIOUS_SUBSET = null;
 
     // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
     // Privacy_IsPrivate            True if Privacy = 20
@@ -27,11 +35,11 @@ export class PeopleTable {
         ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
     ]);
 
-    static async addPeopleTable(caption) {
+    static async addPeopleTable(caption = null) {
         $("#savePeople").show();
         // Set root person if it is not already set
         if (window.rootPerson) {
-            if (window.rootPerson?.Name != $("#wt-id-text").val()) {
+            if (window.rootPerson?.Name != Utils.getTreeAppWtId()) {
                 window.rootPerson = false;
             }
         }
@@ -45,8 +53,9 @@ export class PeopleTable {
             });
         }
         window.rootPerson = rootPerson;
-        // Get first name of root person
-        const rootFirstName = rootPerson?.FirstName || window.rootId;
+        if (!caption) caption = CC7Utils.tableCaption();
+
+        const rootFirstName = rootPerson?.FirstName || window.rootId; // Get first name of root person
         const sortTitle = "title='Click to sort'";
         const aCaption = `<caption>${caption}</caption>`;
         const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
@@ -59,10 +68,13 @@ export class PeopleTable {
         const childrenNum = "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>";
         const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
         const bioCheck = Settings.current["biocheck_options_biocheckOn"];
-        const subset = $("#cc7Subset").val() || "all";
+
+        let idsAndStatus = await CC7Notes.getIdsAndStatus();
+        const idsWithNotes = new Map(idsAndStatus);
+        idsAndStatus = null;
 
         const aTable = $(
-            `<table id='peopleTable' class='peopleTable ${subset}'>` +
+            `<table id='peopleTable' class='cc7ViewTab subsetable peopleTable'>` +
                 aCaption +
                 `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
                     bioCheck ? "/B" : ""
@@ -77,9 +89,19 @@ export class PeopleTable {
                 `<th data-order='' id='lnab' ${sortTitle}>Last Name at Birth</th>` +
                 `<th data-order='' id='lnc' ${sortTitle}>Current Last Name</th>` +
                 `<th data-order='' id='birthdate' ${sortTitle}>Birth Date</th>` +
-                `<th data-order='' id='birthlocation' ${sortTitle}>Birth Place</th>` +
+                `<th data-order='' id="birthlocation" data-flow="f2b" >` +
+                `<span class="sortColumn" ${sortTitle}>Birth Place</span>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 `<th data-order='' id='deathdate' ${sortTitle}>Death Date</th>` +
-                `<th data-order='' id='deathlocation' ${sortTitle}>Death Place</th>` +
+                `<th data-order='' id="deathlocation" data-flow="f2b" >` +
+                `<span class="sortColumn" ${sortTitle}>Death Place</span>` +
+                `<span class="reverseWords" style="cursor: pointer;" title="Click to reverse the location names"> ` +
+                `<img src="${CC7Utils.imagePath(
+                    "reverse.svg"
+                )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
                 ageAtDeathCol +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
                 createdTH +
@@ -92,6 +114,36 @@ export class PeopleTable {
         } else {
             aTable.appendTo($("#cc7Container"));
         }
+
+        PeopleTable.addWideTableButton();
+
+        if ($("#hierarchyViewButton").length == 0) {
+            $("#wideTableButton").before(
+                $(
+                    "<select id='cc7Subset' title='Select which profiles should be displayed'>" +
+                        "<option value='all' selected>All</option>" +
+                        "<option value='ancestors' title='Direct ancestors only'>Ancestors</option>" +
+                        "<option value='descendants' title='Direct descendants only'>Descendants</option>" +
+                        '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
+                        '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
+                        '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
+                        '<option value="complete" ' +
+                        'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
+                        "Complete</option>" +
+                        "</select>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='statsViewButton'>Stats</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='missingLinksViewButton'>Missing Links</button>" +
+                        "<button class='btn btn-secondary btn-sm viewButton' id='circlesViewButton'>Circles</button>"
+                )
+            );
+        }
+        PeopleTable.applyViewParameters(CC7.URL_PARAMS);
+        const subset = $("#cc7Subset").val() || "all";
+        aTable.addClass(subset);
+
         let complete = 0;
         let totalPeople = 0;
         function sortIdsByDegreeAndBirthDate(keys) {
@@ -99,101 +151,33 @@ export class PeopleTable {
             return [...keys]
                 .map((k) => {
                     const mPerson = window.people.get(k);
-                    if (typeof mPerson.fixedBirthDate === "undefined") {
-                        CC7Utils.fixBirthDate(mPerson);
-                    }
                     const degree = +mPerson.Meta.Degrees;
-                    return [+k, degree < 0 ? 100 : degree, mPerson.fixedBirthDate];
+                    // if we got a profile without a degree (i.e. -1, we got that at some point with private profiles)
+                    // then sort them last
+                    return [+k, degree < 0 ? 100 : degree, mPerson.adjustedBirth];
                 })
                 .sort((a, b) => {
                     if (a[1] == b[1]) {
-                        return collator.compare(a[2], b[2]);
+                        return collator.compare(a[2].date, b[2].date);
                     } else {
                         return a[1] - b[1];
                     }
                 });
         }
 
-        for (let [id, , birthDate] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
+        for (let [id, , adjustedBirth] of sortIdsByDegreeAndBirthDate(window.people.keys())) {
             totalPeople++;
             const mPerson = window.people.get(id);
             if (mPerson.Hide) continue;
 
-            const completeCondition =
-                !isMissingFamily(mPerson) &&
-                mPerson.Father &&
-                mPerson.Mother &&
-                mPerson.DeathDate &&
-                mPerson.DeathLocation &&
-                mPerson.BirthDate &&
-                mPerson.BirthLocation &&
-                mPerson.NoChildren == 1 &&
-                mPerson.DataStatus.Spouse == "blank";
+            const completeCondition = CC7Utils.isProfileComplete(mPerson);
             if (completeCondition) {
                 complete++;
             }
-            // Filter by the selected subset
-            switch (subset) {
-                case "above":
-                    if (!mPerson.isAbove) continue; // hide
-                    break;
+            // Ignore profiles not in the selected subset
+            if (!CC7Utils.profileIsInSubset(mPerson, subset)) continue;
 
-                case "below":
-                    if (mPerson.isAbove) continue; // hide
-                    break;
-
-                case "ancestors":
-                    if (mPerson.isAncestor) break; // show
-                    continue;
-
-                case "descendants":
-                    if (typeof mPerson.isAncestor != "undefined" && !mPerson.isAncestor) break; // show
-                    continue;
-
-                case "missing-links":
-                    if (isMissingFamily(mPerson)) break; // show
-                    continue; // else hide
-
-                case "complete":
-                    if (completeCondition) break; // show
-                    continue; // else hide
-
-                default:
-                    break;
-            }
-
-            function isMissingFamily(person) {
-                if (person.LastNameAtBirth == "Private") return false;
-                let val = false;
-                if (Settings.current["missingFamily_options_noNoChildren"]) {
-                    // no more children flag is not set
-                    val = person.NoChildren != 1;
-                }
-                if (!val && Settings.current["missingFamily_options_noNoSpouses"]) {
-                    // no more spouses flag is not set
-                    val = person.DataStatus.Spouse != "blank";
-                }
-                if (!val && Settings.current["missingFamily_options_noParents"]) {
-                    // no father or mother
-                    val = !person.Father && !person.Mother;
-                }
-                if (!val && Settings.current["missingFamily_options_noChildren"]) {
-                    // no more children flag is not set and they don't have any children
-                    val = person.NoChildren != 1 && (!person.Child || person.Child.length == 0);
-                }
-                if (!val && Settings.current["missingFamily_options_oneParent"]) {
-                    // at least one parent missing
-                    val = (person.Father && !person.Mother) || (!person.Father && person.Mother);
-                }
-                return val;
-            }
-
-            let deathDate = CC7Utils.ymdFix(mPerson.DeathDate);
-            if (deathDate == "") {
-                if (mPerson.deathDateDecade) {
-                    deathDate = mPerson.DeathDateDecade;
-                }
-            }
+            const ajustedDeath = mPerson.adjustedDeath;
             let birthLocation = mPerson.BirthLocation;
             let birthLocationReversed = "";
             if (birthLocation == null || typeof birthLocation == "undefined") {
@@ -233,30 +217,8 @@ export class PeopleTable {
                 firstName = mPerson.RealName;
             }
 
-            if (birthDate == "unknown") {
-                birthDate = "";
-            }
-            if (deathDate == "unknown") {
-                deathDate = "";
-            }
-
-            let dBirthDate;
-            if (mPerson.BirthDate) {
-                dBirthDate = mPerson.BirthDate.replaceAll("-", "");
-            } else if (mPerson.BirthDateDecade) {
-                dBirthDate = PeopleTable.getApproxDate2(mPerson.BirthDateDecade).Date.replace("-", "").padEnd(8, "0");
-            } else {
-                dBirthDate = "00000000";
-            }
-
-            let dDeathDate;
-            if (mPerson.DeathDate) {
-                dDeathDate = mPerson.DeathDate.replaceAll("-", "");
-            } else if (mPerson.DeathDateDecade) {
-                dDeathDate = PeopleTable.getApproxDate2(mPerson.DeathDateDecade).Date.replace("-", "").padEnd(8, "0");
-            } else {
-                dDeathDate = "00000000";
-            }
+            const dBirthDate = adjustedBirth.date.replaceAll("-", "");
+            const dDeathDate = ajustedDeath.date.replaceAll("-", "");
 
             if (firstName == undefined) {
                 firstName = "Private";
@@ -319,12 +281,17 @@ export class PeopleTable {
             };
 
             if ($("#cc7Container").length) {
-                degreeCell = "<td class='degree'>" + mPerson.Meta.Degrees + "°</td>";
-                relationCell = `<td class='relation' title="${mPerson?.Relationship?.full || ""}">${
-                    mPerson?.Relationship?.abbr || ""
+                const hasNote = idsWithNotes.has(mPerson.Id);
+                let status = hasNote ? idsWithNotes.get(mPerson.Id) : "";
+                if (status != "") status = " " + status;
+                degreeCell = `<td class="degree${
+                    hasNote ? " hasNote" : ""
+                }${status}" title="Degree. Click to add/edit Notes.">${mPerson.Meta.Degrees}°</td>`;
+                relationCell = `<td class='relation' title="${mPerson.Relationship?.full || ""}">${
+                    mPerson.Relationship?.abbr || ""
                 }</td>`;
                 ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
-                drelation = "data-relation=''";
+                drelation = `data-relation="${mPerson.Relationship?.abbr || ""}"`;
                 if (mPerson.Created) {
                     created =
                         "<td class='created aDate'>" +
@@ -335,28 +302,21 @@ export class PeopleTable {
                     created = "<td class='created aDate'></td>";
                 }
 
-                let mAgeAtDeath = CC7Utils.ageAtDeath(mPerson);
-                let mAgeAtDeathNum = CC7Utils.ageAtDeath(mPerson, false);
-
-                if (mAgeAtDeath === false && mAgeAtDeath !== "0") {
-                    mAgeAtDeath = "";
+                const atDeath = Utils.ageAtDeath(mPerson);
+                if (atDeath.age != "") {
+                    if (atDeath.age < 5) {
+                        diedYoung = true;
+                        diedVeryYoung = true;
+                        diedYoungIcon = Settings.current["icons_options_veryYoung"];
+                        diedYoungTitle = "Died before age 5";
+                    } else if (atDeath.age < 16) {
+                        diedYoung = true;
+                        diedYoungIcon = Settings.current["icons_options_young"];
+                        diedYoungTitle = "Died before age 16";
+                    }
                 }
-                if (mAgeAtDeathNum < 0) {
-                    mAgeAtDeath = 0;
-                }
-                if (mAgeAtDeathNum < 5 && (mAgeAtDeath != false || mAgeAtDeathNum === 0)) {
-                    diedYoung = true;
-                    diedVeryYoung = true;
-                    diedYoungIcon = Settings.current["icons_options_veryYoung"];
-                    diedYoungTitle = "Died before age 5";
-                } else if (mAgeAtDeathNum < 16 && mAgeAtDeath != false) {
-                    diedYoung = true;
-                    diedYoungIcon = Settings.current["icons_options_young"];
-                    diedYoungTitle = "Died before age 16";
-                }
-
-                ageAtDeathCell = "<td class='age-at-death'>" + mAgeAtDeath + "</td>";
-                dAgeAtDeath = "data-age-at-death='" + mAgeAtDeathNum + "'";
+                ageAtDeathCell = "<td class='age-at-death'>" + atDeath.annotatedAge + "</td>";
+                dAgeAtDeath = "data-age-at-death='" + Utils.ageForSort(atDeath) + "'";
 
                 if (mPerson.Touched) {
                     touched =
@@ -516,11 +476,11 @@ export class PeopleTable {
                     "'>" +
                     mPerson.LastNameCurrent +
                     "</a></td><td class='aDate birthdate'>" +
-                    birthDate +
+                    adjustedBirth.display +
                     "</td><td class='location birthlocation'>" +
                     CC7Utils.htmlEntities(birthLocation) +
                     "</td><td  class='aDate deathdate'>" +
-                    deathDate +
+                    ajustedDeath.display +
                     "</td><td class='location deathlocation'>" +
                     CC7Utils.htmlEntities(deathLocation) +
                     "</td>" +
@@ -552,122 +512,166 @@ export class PeopleTable {
             CC7Utils.setOverflow("auto");
         }
 
-        $("#cc7Container").on("click", "img.privacyImage, .bioIssue", function (event) {
-            event.stopImmediatePropagation();
-            const id = $(this).closest("tr").attr("data-id");
-            const p = window.people.get(+id);
-            if (event.altKey) {
-                // Provide a way to examine the data record of a specific person
-                console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
-            } else if (p.hasBioIssues) {
-                PeopleTable.showBioCheckReport($(this));
-            }
-        });
+        $("#cc7Container")
+            .off("click", "img.privacyImage, .bioIssue")
+            .on("click", "img.privacyImage, .bioIssue", function (event) {
+                event.stopImmediatePropagation();
+                const id = $(this).closest("tr").attr("data-id");
+                const p = window.people.get(+id);
+                if (event.altKey) {
+                    // Provide a way to examine the data record of a specific person
+                    console.log(`${p.Name}, ${p.BirthNamePrivate}`, p);
+                } else if (p.hasBioIssues) {
+                    PeopleTable.showBioCheckReport($(this));
+                }
+            });
 
-        $("#cc7Container").on("click", "img.familyHome", function () {
-            PeopleTable.showFamilySheet($(this));
-        });
+        $("#cc7Container")
+            .off("click", "img.familyHome")
+            .on("click", "img.familyHome", function () {
+                PeopleTable.showFamilySheet($(this));
+            });
 
-        $("#cc7Container").on("click", "img.timelineButton", function () {
-            PeopleTable.showTimeline($(this));
-        });
+        $("#cc7Container")
+            .off("click", "img.timelineButton")
+            .on("click", "img.timelineButton", function () {
+                PeopleTable.showTimeline($(this));
+            });
 
-        $("#cc7Container").on("click", "th[id]", function () {
-            PeopleTable.sortByThis($(this));
-        });
+        $("#cc7Container")
+            .off("click", "td.degree")
+            .on("click", "td.degree", function (event) {
+                CC7Notes.processNoteCellClick($(this));
+            });
 
-        PeopleTable.addWideTableButton();
-        if ($("#hierarchyViewButton").length == 0) {
-            $("#wideTableButton").before(
-                $(
-                    "<select id='cc7Subset' title='Select which profiles should be displayed'>" +
-                        "<option value='all' selected>All</option>" +
-                        "<option value='ancestors' title='Direct ancestors only'>Ancestors</option>" +
-                        "<option value='descendants' title='Direct descendants only'>Descendants</option>" +
-                        '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
-                        '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
-                        '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
-                        '<option value="complete" ' +
-                        'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
-                        "Complete</option>" +
-                        "</select>" +
-                        "<button class='button small viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
-                        "<button class='button small viewButton' id='listViewButton'>List</button>" +
-                        "<button class='button small viewButton active' id='tableViewButton'>Table</button>"
-                )
-            );
-        }
+        $("#cc7Container")
+            .off("click", ".deleteNoteBtn")
+            .on("click", ".deleteNoteBtn", function (event) {
+                CC7Notes.deleteNote($(this));
+            });
+
+        $("#cc7Container")
+            .off("click", ".cancelNoteBtn")
+            .on("click", ".cancelNoteBtn", function (event) {
+                CC7Notes.cancelNote($(this));
+            });
+
+        $("#cc7Container")
+            .off("click", "th[id]")
+            .on("click", "th[id]", function () {
+                const el = $(this);
+                const id = el.attr("id");
+                if (id !== "birthlocation" && id !== "deathlocation") {
+                    PeopleTable.sortByThis(el);
+                }
+            });
+        $("#cc7Container")
+            .off("click", "th span.sortColumn")
+            .on("click", "th span.sortColumn", function () {
+                var el = $(this).closest("th");
+                PeopleTable.sortByThis(el);
+            });
+
+        $("#cc7Container")
+            .off("click", "th span.reverseWords")
+            .on("click", "th span.reverseWords", function () {
+                PeopleTable.reverseWordOrder($(this));
+            });
+
         $("#cc7Subset")
             .off("change")
             .on("change", function () {
-                const curTableId = $("table.active").attr("id");
-                if (curTableId == "lanceTable") {
-                    LanceView.build();
-                } else if (curTableId == "peopleTable") {
-                    drawPeopleTable();
+                switch (PeopleTable.ACTIVE_VIEW) {
+                    case CC7.VIEWS.TABLE:
+                        drawPeopleTable();
+                        break;
+                    case CC7.VIEWS.LIST:
+                        LanceView.build();
+                        break;
+                    case CC7.VIEWS.STATS:
+                        StatsView.build(CC7.URL_PARAMS.gender);
+                        break;
+                    case CC7.VIEWS.MISSING_LINKS:
+                        drawMissingLinksTable();
+                        break;
+                    case CC7.VIEWS.HIERARCHY:
+                    case CC7.VIEWS.CIRCLES:
+                    default:
                 }
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 } else {
                     $("#mlButtons").hide();
                 }
+                CC7.updateURL();
             });
 
         function drawPeopleTable() {
-            const subset = $("#cc7Subset").val();
-            let subsetWord = "";
-            switch (subset) {
-                case "ancestors":
-                    subsetWord = " (Ancestors Only)";
-                    break;
-                case "descendants":
-                    subsetWord = " (Descendants Only)";
-                    break;
-                case "above":
-                    subsetWord = ' ("Above" Only)';
-                    break;
-                case "below":
-                    subsetWord = ' ("Below" Only)';
-                    break;
-                case "missing-links":
-                    subsetWord = " (Missing Family)";
-                    break;
-                case "complete":
-                    subsetWord = " (Complete)";
-                    break;
-                default:
-                    break;
+            PeopleTable.addPeopleTable(CC7Utils.tableCaptionWithSubset());
+        }
+
+        function drawMissingLinksTable() {
+            // We have to redraw every time here because this might be called as result of the user changing the filter
+            if ($("#missingLinksTable").length > 0) {
+                $("#missingLinksTable").remove();
             }
-            PeopleTable.addPeopleTable(PeopleTable.tableCaption() + subsetWord);
+            MissingLinksView.buildView();
+
+            // determine how many people are missing relationships and show it on the page
+            const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
+            const html = `<p id="ml-count"><strong>Missing Links: </strong>Displaying ${missingLinksCount} people within ${
+                window.cc7Degree
+            } degrees of ${wtViewRegistry.getCurrentWtId()} who may be missing family members.
+                <span style="background-color: rgba(255, 0, 0, 0.1); padding: 3px;">Red</span> means family members are missing.
+                <span style="background-color: rgba(255, 255, 0, 0.1); padding: 3px;">Yellow</span> means there are spouses or
+                children but the "no more spouses" or "no more children" checkbox is not selected.</p>`;
+
+            if ($("#ml-count").length === 0) {
+                $("#tableButtons").before(html);
+            } else {
+                $("#ml-count").html(html);
+            }
+            $("#missingLinksTable").show().addClass("active");
         }
 
         $("#listViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.LIST;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable,#hierarchyView").hide();
+
                 if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
                     LanceView.build();
                 } else {
                     $("#lanceTable").show().addClass("active");
                     $("#wideTableButton").hide();
                 }
+                $("#cc7Subset option[value='missing-links']").prop("disabled", false);
+                $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 }
+                CC7.updateURL();
             });
         $("#hierarchyViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
                 if (!window.people.get(window.rootId)) {
                     // We don't have a root, so we can't do anything
                     return;
                 }
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.HIERARCHY;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#peopleTable,#lanceTable").hide().removeClass("active");
+
                 if ($("#hierarchyView").length == 0) {
                     Utils.showShakingTree(CC7Utils.CC7_CONTAINER_ID, function () {
                         // We only call HierarchyView.buildView after a timeout in order to give the shaking tree
@@ -676,17 +680,24 @@ export class PeopleTable {
                     });
                     $("#wideTableButton").hide();
                 } else {
-                    $("#hierarchyView").show();
+                    $("#hierarchyView").show().addClass("active");
                 }
                 $("#cc7Subset").hide();
                 $("#mlButtons").hide();
+                CC7.updateURL();
             });
         $("#tableViewButton")
             .off("click")
             .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.TABLE;
+                $(".cc7ViewTab").removeClass("active").hide();
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
-                $("#hierarchyView, #lanceTable").hide().removeClass("active");
+
+                $("#cc7Subset option[value='missing-links']").prop("disabled", false);
+                $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
                 if ($("#peopleTable").hasClass($("#cc7Subset").val())) {
                     // We don't have to re-draw the table
@@ -698,6 +709,105 @@ export class PeopleTable {
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 }
+                CC7.updateURL();
+            });
+        $("#statsViewButton")
+            .off("click")
+            .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.resetHeader();
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.STATS;
+                $(".cc7ViewTab").removeClass("active").hide();
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+
+                $("#cc7Subset").show();
+                // Remember the previous cc7Subset value if it's not what we want
+                const subset = $("#cc7Subset").val();
+                if (subset == "missing-links" || subset == "complete") {
+                    // We don't allow missin-links or complete in the stats view, but we want
+                    // to return to them when we switch back to another view
+                    PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
+                }
+                if ($("#statsView").hasClass($("#cc7Subset").val())) {
+                    // We don't have to re-draw the table
+                    $("#cc7Subset option[value='missing-links']").prop("disabled", true);
+                    $("#cc7Subset option[value='complete']").prop("disabled", true);
+                    $("#statsView").show().addClass("active");
+                    $("#wideTableButton").show();
+                } else {
+                    StatsView.build(CC7.URL_PARAMS.gender);
+                }
+                CC7.updateURL();
+            });
+
+        $("#missingLinksViewButton")
+            .off("click")
+            .on("click", function () {
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.MISSING_LINKS;
+                $(".cc7ViewTab").removeClass("active").hide();
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+
+                // Remember the previous cc7Subset value if it's not what we want
+                const subset = $("#cc7Subset").val();
+                if (subset != "missing-links") {
+                    PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
+                }
+                // switch to missing links checkboxes
+                PeopleTable.showMissingLinksCheckboxes();
+                drawMissingLinksTable();
+
+                // hide top menu stuff
+                $("#degreesTable").hide();
+                $("#wideTableButton").hide();
+                $("#savePeople").hide();
+                $("#loadButton").hide();
+                $("#cc7csv").hide();
+                $("#cc7excel").hide();
+                $("#getExtraDegrees").hide();
+                $("#getDegreeButton").hide();
+                $("#cc7Subset").hide();
+                $("#ancReport").hide();
+                $("label[for='getExtraDegrees']").hide();
+                wtViewRegistry.hideInfoPanel();
+                CC7.updateURL();
+            });
+        $("#circlesViewButton")
+            .off("click", function () {
+                // console.log("CLICK OFF - Circles View btn");
+            })
+            .on("click", function () {
+                // console.log("CLICK ON the CIRCLES VIEW BUTTON !!!!");
+                if ($(this).hasClass("active")) return; // Don't do anything if already active
+                PeopleTable.ACTIVE_VIEW = CC7.VIEWS.CIRCLES;
+                $(".cc7ViewTab").removeClass("active").hide();
+                $(".viewButton").removeClass("active");
+                $(this).addClass("active");
+
+                $("#wideTableButton").hide();
+                $("#cc7Subset").hide();
+                $("#mlButtons").hide();
+                $("#ml-links").hide();
+                $("#ml-count").hide();
+                $("#ancReport").hide();
+                $("#savePeople").show();
+                $("#loadButton").show();
+                $("#cc7csv").show();
+                $("#cc7excel").show();
+                $("#getDegreeButton").show();
+                $("#degreesTable").show();
+
+                if ($("#circlesDisplay").length > 0) {
+                    // We don't have to re-draw the table
+                    $("#circlesDisplay").show().addClass("active");
+                    CirclesView.updateView();
+                } else {
+                    CirclesView.buildView();
+                }
+
+                CC7.updateURL();
             });
 
         if (!window.people.get(window.rootId)) {
@@ -714,7 +824,7 @@ export class PeopleTable {
 
         if ($("#cc7excel").length == 0) {
             $(
-                '<button id="cc7excel" title="Export an Excel file." class="small button" style="display: inline-block;">Excel</button>'
+                '<button id="cc7excel" title="Export an Excel file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">Excel</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7excel")
                 .off("click")
@@ -724,7 +834,7 @@ export class PeopleTable {
         }
         if ($("#cc7csv").length == 0) {
             $(
-                '<button id="cc7csv" title="Export a CSV file." class="small button" style="display: inline-block;">CSV</button>'
+                '<button id="cc7csv" title="Export a CSV file." class="btn btn-secondary btn-sm ms-1" style="display: inline-block;">CSV</button>'
             ).insertAfter($("#loadButton"));
             $("#cc7csv")
                 .off("click")
@@ -735,6 +845,30 @@ export class PeopleTable {
         $("#lanceTable").removeClass("active");
         aTable.addClass("active");
         aTable.floatingScroll();
+
+        // check the parameters to see which view should be shown
+        $(document).ready(function () {
+            switch (PeopleTable.ACTIVE_VIEW) {
+                case CC7.VIEWS.MISSING_LINKS:
+                    $("#missingLinksViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.STATS:
+                    $("#statsViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.CIRCLES:
+                    $("#circlesViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.HIERARCHY:
+                    $("#hierarchyViewButton").trigger("click");
+                    break;
+                case CC7.VIEWS.LIST:
+                    $("#listViewButton").trigger("click");
+                    break;
+                default:
+                    // table view is already the default
+                    break;
+            }
+        });
     }
 
     static location2ways(locationText) {
@@ -745,84 +879,76 @@ export class PeopleTable {
         return [s2b, b2s];
     }
 
-    static fillLocations(rows, order) {
+    static fillLocations(rows, colClass, order) {
         rows.each(function () {
             $(this)
-                .find("td.birthlocation")
-                .text($(this).attr("data-birthlocation" + order));
-            $(this)
-                .find("td.deathlocation")
-                .text($(this).attr("data-deathlocation" + order));
+                .find(`td.${colClass}`)
+                .text($(this).attr(`data-${colClass}${order}`));
         });
         return rows;
     }
 
+    static reverseWordOrder(el) {
+        const th = el.closest("th");
+        const flow = th.attr("data-flow");
+        const newFlow = flow == "f2b" ? "b2f" : "f2b";
+        th.attr("data-flow", newFlow);
+        const col = th.attr("id");
+
+        const aTable = $("#peopleTable");
+        let rows = aTable.find("tbody tr");
+        PeopleTable.fillLocations(rows, col, newFlow == "b2f" ? "-reversed" : "");
+    }
+
     static sortByThis(el) {
+        const collator = new Intl.Collator();
         const aTable = $("#peopleTable");
 
-        let sorter = el.attr("id");
+        let sortFieldName = el.attr("id");
         let rows = aTable.find("tbody tr");
-        if (sorter == "birthlocation" || sorter == "deathlocation") {
-            if (sorter == "birthlocation") {
-                if (el.attr("data-order") == "s2b") {
-                    sorter = "birthlocation-reversed";
-                    el.attr("data-order", "b2s");
-                    rows = PeopleTable.fillLocations(rows, "-reversed");
-                } else {
-                    el.attr("data-order", "s2b");
-                    rows = PeopleTable.fillLocations(rows, "");
-                }
-            } else if (sorter == "deathlocation") {
-                if (el.attr("data-order") == "s2b") {
-                    sorter = "deathlocation-reversed";
-                    el.attr("data-order", "b2s");
-                    rows = PeopleTable.fillLocations(rows, "-reversed");
-                } else {
-                    el.attr("data-order", "s2b");
-                    rows = PeopleTable.fillLocations(rows, "");
-                }
-            }
-            rows.sort(function (a, b) {
-                if ($(b).data(sorter) == "") {
-                    return true;
-                }
-                return $(a).data(sorter).localeCompare($(b).data(sorter));
-            });
-        } else if (isNaN(rows.data(sorter))) {
+        const locationSort = sortFieldName == "birthlocation" || sortFieldName == "deathlocation";
+        // For location sorts, determine whether we sort on back-to-front or front-to-back names
+        if (locationSort && el.attr("data-flow") == "b2f") sortFieldName = `${sortFieldName}-reversed`;
+        // If the column wasn't sorted before, we sort it ascending, otherwise we flip the direction of sort
+        if (locationSort || hasNaN(rows, sortFieldName)) {
             if (el.attr("data-order") == "asc") {
+                // Sort descending
                 rows.sort(function (a, b) {
-                    if ($(a).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(b).data(sorter).toString().localeCompare($(a).data(sorter));
+                    return collator.compare($(b).data(sortFieldName), $(a).data(sortFieldName));
                 });
                 el.attr("data-order", "desc");
             } else {
+                // Sort ascending
                 rows.sort(function (a, b) {
-                    if ($(b).data(sorter) == "") {
-                        return true;
-                    }
-                    return $(a).data(sorter).toString().localeCompare($(b).data(sorter));
+                    return collator.compare($(a).data(sortFieldName), $(b).data(sortFieldName));
                 });
                 el.attr("data-order", "asc");
             }
         } else {
+            // We're sorting only numeric values
             if (el.attr("data-order") == "asc") {
-                rows.sort((a, b) => ($(b).data(sorter) > $(a).data(sorter) ? 1 : -1));
+                // Sort descending
+                rows.sort((a, b) => $(b).data(sortFieldName) - $(a).data(sortFieldName));
                 el.attr("data-order", "desc");
             } else {
-                rows.sort((a, b) => ($(a).data(sorter) > $(b).data(sorter) ? 1 : -1));
+                // Sort ascending
+                rows.sort((a, b) => $(a).data(sortFieldName) - $(b).data(sortFieldName));
                 el.attr("data-order", "asc");
             }
         }
+        // Rewrite the table rows in the new order
         aTable.find("tbody").append(rows);
-        rows.each(function () {
-            const toBottom = ["", "00000000"];
-            if (toBottom.includes(el.data(sorter))) {
-                aTable.find("tbody").append(el);
-            }
-        });
-        aTable.find("tr.main").prependTo(aTable.find("tbody"));
+
+        function hasNaN(rows, sorter) {
+            let hasNaN = false;
+            rows.each(function () {
+                if (isNaN($(this).data(sorter))) {
+                    hasNaN = true;
+                    return false; // Stops further iteration
+                }
+            });
+            return hasNaN;
+        }
     }
 
     static async addWideTableButton() {
@@ -831,7 +957,7 @@ export class PeopleTable {
         if ($("#wideTableButton").length == 0) {
             const pTable = $(".peopleTable");
             const wideTableButton = $(
-                "<div id='tableButtons'><button class='button small' id='wideTableButton'>Wide Table</button></div>"
+                "<div id='tableButtons'><button class='btn btn-secondary btn-sm' id='wideTableButton'>Wide Table</button></div>"
             );
             wideTableButton.insertBefore(pTable);
 
@@ -896,23 +1022,6 @@ export class PeopleTable {
             : `<a target='_blank' href='https://www.wikitree.com/index.php?title=Special:NetworkFeed&who=${wtRef}'>${text}</a>`;
     }
 
-    static tableCaption() {
-        const person = window.people.get(window.rootId);
-        let displName;
-        if (person) {
-            displName = new PersonName(person).withParts(CC7Utils.WANTED_NAME_PARTS);
-        } else {
-            displName = wtViewRegistry.getCurrentWtId();
-        }
-        let caption = "";
-        if ($("#cc7Container").hasClass("degreeView")) {
-            caption = `Degree ${window.cc7Degree} connected people for ${displName}`;
-        } else {
-            caption = `CC${window.cc7Degree} for ${displName}`;
-        }
-        return caption;
-    }
-
     static showMissingLinksCheckboxes() {
         $("#mlButtons").show();
         if ($("#mlButtons").length == 0) {
@@ -933,6 +1042,7 @@ export class PeopleTable {
                     const optId = `#missingFamily_options_${id[2].toLowerCase() + id.substring(3)}`;
                     $(optId).prop("checked", $(this).prop("checked"));
                     $("#saveSettingsChanges").trigger("click");
+                    CC7.updateURL();
                 });
         }
         $("#mlNoParents").prop("checked", Settings.current["missingFamily_options_noParents"]);
@@ -1022,6 +1132,12 @@ export class PeopleTable {
                     "Show only rows with these column values. > and < may be used for numerical columns.";
                 filterRow.appendChild(filterCell);
                 return;
+            } else if (i == 2) {
+                return;
+            } else if (i == 3) {
+                $(filterCell).append($("<select id='cc7DegFilter' title=''></select>"));
+                $(filterRow).append(filterCell);
+                return;
             }
             const headerCellText = headerCell.textContent.trim();
             const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
@@ -1032,7 +1148,7 @@ export class PeopleTable {
                 filterInput.type = "text";
                 filterInput.classList.add("filter-input");
 
-                // Check the length of the text in the first 50 cells of the column
+                // Check the the text in the first 50 cells of the column to determine its type
                 const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
                 let isNumeric = 0;
                 let isDate = 0;
@@ -1083,7 +1199,7 @@ export class PeopleTable {
             headerRow.parentElement.insertBefore(filterRow, headerRow);
         }
 
-        function formatOptions(option) {
+        function formatPBOption(option) {
             // option:
             // {
             //     "id": "value attribute" || "option text",
@@ -1096,11 +1212,103 @@ export class PeopleTable {
             return $(`<img class="privacyImage" src="./${option.text}"/>`);
         }
         $("#cc7PBFilter").select2({
-            templateResult: formatOptions,
-            templateSelection: formatOptions,
+            templateResult: formatPBOption,
+            templateSelection: formatPBOption,
             dropdownParent: $("#cc7Container"),
             minimumResultsForSearch: Infinity,
-            width: "2em",
+            width: "100%",
+        });
+
+        const shapeOptions = new Map([
+            [
+                "none",
+                {
+                    title: "Clear filter",
+                    html: " ",
+                    // html: '<svg viewBox="0 0 100 100"><polygon points="10,10 90,90" style="fill:white;"/></svg>',
+                },
+            ],
+            [
+                "all",
+                {
+                    title: "All notes, regardless of status",
+                    html: `<svg viewBox="0 0 100 100">
+                        <defs>
+                        <linearGradient id="blue-pink-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#1daddd;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#e05c6a;stop-opacity:1" />
+                        </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="100" height="100" fill="url(#blue-pink-gradient)" />
+                        <polygon points="100,0 100,50 50,0" style="fill:white;" />
+                    </svg>`,
+                },
+            ],
+            [
+                "st-none",
+                {
+                    title: "Notes with no defined state",
+                    html: `<svg viewBox="0 0 100 100">
+                        <defs>
+                        <linearGradient id="blue-pink-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#1daddd;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#e05c6a;stop-opacity:1" />
+                        </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="100" height="100" fill="url(#blue-pink-gradient)" />
+                    </svg>`,
+                },
+            ],
+            [
+                "st-todo",
+                {
+                    title: "Notes with ToDo state",
+                    html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:red;"/></svg>',
+                },
+            ],
+            [
+                "st-busy",
+                {
+                    title: "Notes with In Progress state",
+                    html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:rgb(255, 255, 0);"/></svg>',
+                },
+            ],
+            [
+                "st-done",
+                {
+                    id: "st-done",
+                    title: "Notes with Done state",
+                    html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:rgb(0, 255, 0);"/></svg>',
+                },
+            ],
+        ]);
+
+        function formatDegOption(data) {
+            // data:
+            // {
+            //     "id": "value attribute" || "option text",
+            //     "text": "label attribute" || "option text",
+            //     "element": HTMLOptionElement
+            // }
+            const option = shapeOptions.get(data.id);
+            if (option) {
+                return $('<span class="cc7DegFilter-option">' + option.html + "</span>");
+            }
+            return data.text; // Default for free-typed numbers
+        }
+
+        $("#cc7DegFilter").select2({
+            placeholder: "Type a number or select a symbol",
+            tags: true, // Allow custom input
+            data: [...shapeOptions.entries()].map((opt) => ({ id: opt[0], title: opt[1].title })),
+            templateResult: formatDegOption,
+            templateSelection: formatDegOption,
+            // dropdownParent: $("#cc7Container"),
+            escapeMarkup: function (markup) {
+                return markup;
+            }, // Allow custom HTML
+            // multiple: true,
+            width: "3em",
         });
 
         document.getElementById("view-container").addEventListener("input", function (event) {
@@ -1111,10 +1319,12 @@ export class PeopleTable {
         });
 
         $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
+        $("#cc7DegFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
 
         // Add Clear Filters button
         $("#clearTableFiltersButton").remove();
         const clearFiltersButton = document.createElement("button");
+        clearFiltersButton.className = "btn btn-secondary btn-sm ms-1";
         clearFiltersButton.textContent = "X";
         clearFiltersButton.title = "Clear Filters";
         clearFiltersButton.id = "clearTableFiltersButton";
@@ -1133,6 +1343,7 @@ export class PeopleTable {
             input.value = "";
         });
         $("#cc7PBFilter").val("all").trigger("change");
+        $("#cc7DegFilter").val("none").trigger("change");
         PeopleTable.filterFunction();
         PeopleTable.updateClearFiltersButtonVisibility();
     }
@@ -1143,6 +1354,26 @@ export class PeopleTable {
         const hasThead = table.querySelector("thead") !== null;
         const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
         const filterInputs = table.querySelectorAll(".filter-input");
+
+        // Collect the active filter info, i.e. all the filter inputs that have values
+        // Note that these do not include the privacy nor the degree filter
+        const filters = [];
+        filterInputs.forEach((input, inputIndex) => {
+            const filterText = input.value.toLowerCase();
+            if (filterText.length == 0) {
+                return;
+            }
+            filters.push({
+                colIndex: Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 1,
+                text: filterText,
+                isDateCol: input.classList.contains("date-input"),
+                isNumericCol: input.classList.contains("numeric-input"),
+            });
+        });
+
+        // Get the filter values for the privacy and degree filters
+        const reqPrivacy = $("#cc7PBFilter").select2("data")[0].id;
+        const reqDegree = $("#cc7DegFilter").val();
 
         rows.forEach((row, rowIndex) => {
             // Skip first row only if there's no 'thead'
@@ -1155,84 +1386,19 @@ export class PeopleTable {
                 return;
             }
 
-            const filters = [];
-            filterInputs.forEach((input, inputIndex) => {
-                let filterText = input.value.toLowerCase();
-                if (filterText.length == 0) {
+            // Perform the filter action for each of the found filters
+            let displayRow = true;
+            // filters.forEach((filter, inputIndex) => {
+            for (const filter of filters) {
+                let cellText = row.children[filter.colIndex].textContent.toLowerCase();
+                if (!shouldKeepRow(cellText, filter.text, filter.isNumericCol, filter.isDateCol)) {
+                    // Once one filter says no, we can stop looking
+                    row.style.display = "none";
                     return;
                 }
-                const columnIndex =
-                    Array.from(input.parentElement.parentElement.children).indexOf(input.parentElement) + 1;
-                filters.push({
-                    input: input,
-                    cellText: row.children[columnIndex].textContent.toLowerCase(),
-                });
-            });
+            }
 
-            let displayRow = true;
-            filters.forEach((filter, inputIndex) => {
-                const input = filter.input;
-                let filterText = input.value.toLowerCase();
-                let cellText = filter.cellText;
-                const isDateColumn = input.classList.contains("date-input");
-                const isNumericColumn = input.classList.contains("numeric-input");
-                let operator;
-                if (["<", ">", "!", "?"].includes(filterText[0])) {
-                    operator = filterText[0];
-                    if (operator == "!") operator = "!=";
-                    filterText = filterText.slice(1);
-                    if (filterText.length == 0 && operator != "?") {
-                        return;
-                    }
-                }
-
-                // Perform the appropriate checks
-                // Note, since we want the && of all the filters, the code below should only set
-                // displayRow to false as and when necessary (and never set it to true).
-                if (operator == "?") {
-                    // Select rows with an empty cell in this column
-                    if (cellText != "") displayRow = false;
-                } else if (
-                    (isNumericColumn && filterText != "~") ||
-                    (isDateColumn && (operator == ">" || operator == "<"))
-                ) {
-                    // Use the operator to do an actual comparison
-                    if (filterText.length > 0) {
-                        if (operator) {
-                            filterText = parseFloat(filterText);
-                        } else if (!operator && isNumericColumn) {
-                            operator = "=="; // Default to equality if there's no operator
-                            filterText = parseFloat(filterText.replace(/[<>~]/g, ""));
-                        } else {
-                            filterText = `"${filterText}"`;
-                        }
-                        if (isDateColumn) {
-                            let year = cellText.slice(0, 4); // Get the year part of the date
-                            if (year.endsWith("s")) {
-                                year = year.slice(0, -1); // Remove the 's' for decade dates
-                            }
-                            cellText = parseFloat(year);
-                        } else if (isNumericColumn) {
-                            cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
-                        } else {
-                            cellText = `"${cellText}"`;
-                        }
-                        if (!eval(cellText + operator + filterText)) {
-                            displayRow = false;
-                        }
-                    }
-                } else {
-                    // Perform partial matching and lip the result for the not (!) operator
-                    let aMatch = cellText.includes(filterText);
-                    if (operator == "!=") {
-                        aMatch = !aMatch;
-                    }
-                    if (!aMatch) displayRow = false;
-                }
-            });
-            // Add the Privacy/BioCheck filter
-            const pbFilterSelected = $("#cc7PBFilter").select2("data")[0];
-            const reqPrivacy = pbFilterSelected.id;
+            // Check the Privacy/BioCheck filter
             if (reqPrivacy != "all") {
                 if (reqPrivacy == "bioOK") {
                     if (row.children[0].classList.contains("bioIssue")) displayRow = false;
@@ -1243,24 +1409,109 @@ export class PeopleTable {
                     if (rowPrivacy != reqPrivacy) displayRow = false;
                 }
             }
+            if (!displayRow) {
+                row.style.display = "none";
+                return;
+            }
+
+            // Check the degree filter
+            if (reqDegree != "none") {
+                const $cell = $(row.children[3]);
+                if (reqDegree == "all") {
+                    displayRow = $cell.hasClass("hasNote");
+                } else if (reqDegree == "st-none") {
+                    displayRow =
+                        $cell.hasClass("hasNote") &&
+                        !$cell.hasClass("ToDo") &&
+                        !$cell.hasClass("InProgress") &&
+                        !$cell.hasClass("Done");
+                } else if (reqDegree == "st-todo") {
+                    displayRow = $cell.hasClass("ToDo");
+                } else if (reqDegree == "st-busy") {
+                    displayRow = $cell.hasClass("InProgress");
+                } else if (reqDegree == "st-done") {
+                    displayRow = $cell.hasClass("Done");
+                } else {
+                    // Treat it as a numeric filter
+                    displayRow = shouldKeepRow($cell.text(), reqDegree, true, false);
+                }
+            }
 
             row.style.display = displayRow ? "" : "none";
         });
         $("#peopleTable").floatingScroll("update");
+
+        function shouldKeepRow(cellValue, filterValue, isNumericColumn, isDateColumn) {
+            let cellText = cellValue;
+            let filterText = filterValue;
+            let keepRow = true;
+            let operator;
+            if (["<", ">", "!", "?"].includes(filterText[0])) {
+                operator = filterText[0];
+                if (operator == "!") operator = "!=";
+                filterText = filterText.slice(1);
+                if (filterText.length == 0 && operator != "?") {
+                    // filtertext start with an operator, but is still incomplete, so ignore the filter
+                    return keepRow;
+                }
+            }
+
+            // Perform the appropriate checks
+            // Note, since we want the && of all the filters, the code below should only set
+            // displayRow to false as and when necessary (and never set it to true).
+            if (operator == "?") {
+                // Select rows with an empty cell in this column
+                if (cellText != "") keepRow = false;
+            } else if (
+                (isNumericColumn && filterText != "~") ||
+                (isDateColumn && (operator == ">" || operator == "<"))
+            ) {
+                // Use the operator to do an actual comparison
+                if (filterText.length > 0) {
+                    if (operator) {
+                        filterText = parseFloat(filterText);
+                    } else if (!operator && isNumericColumn) {
+                        operator = "=="; // Default to equality if there's no operator
+                        filterText = parseFloat(filterText.replace(/[<>~°]/g, ""));
+                    } else {
+                        filterText = `"${filterText}"`;
+                    }
+                    if (isDateColumn) {
+                        let year = cellText.slice(0, 4); // Get the year part of the date
+                        if (year.endsWith("s")) {
+                            year = year.slice(0, -1); // Remove the 's' for decade dates
+                        }
+                        cellText = parseFloat(year);
+                    } else if (isNumericColumn) {
+                        cellText = parseFloat(cellText.replace(/[<>~]/g, ""));
+                    } else {
+                        cellText = `"${cellText}"`;
+                    }
+                    if (!eval(cellText + operator + filterText)) {
+                        keepRow = false;
+                    }
+                }
+            } else {
+                // Perform partial matching and flip the result for the not (!) operator
+                let aMatch = cellText.includes(filterText);
+                if (operator == "!=") {
+                    aMatch = !aMatch;
+                }
+                if (!aMatch) keepRow = false;
+            }
+            return keepRow;
+        }
     }
 
     static anyFilterActive() {
         return (
             Array.from(document.querySelectorAll(".filter-input")).some((input) => input.value.trim() !== "") ||
-            $("#cc7PBFilter").select2("data")[0].id != "all"
+            $("#cc7PBFilter").select2("data")[0].id != "all" ||
+            $("#cc7DegFilter").val() != "none"
         );
     }
 
     static updateClearFiltersButtonVisibility() {
-        // let anyFilterHasText = Array.from(document.querySelectorAll(".filter-input")).some(
-        //     (input) => input.value.trim() !== ""
-        // );
-        // if ($("#cc7PBFilter").select2("data")[0].id != "all") anyFilterHasText = true;
         const clearFiltersButton = document.querySelector("#clearTableFiltersButton");
         clearFiltersButton.style.display = PeopleTable.anyFilterActive() ? "inline-block" : "none";
     }
@@ -1276,101 +1527,60 @@ export class PeopleTable {
         PeopleTable.updateClearFiltersButtonVisibility();
     }
 
-    static getApproxDate(theDate) {
-        let approx = false;
-        let aDate;
-        if (theDate.match(/0s$/) != null) {
-            aDate = theDate.replace(/0s/, "5");
-            approx = true;
-        } else {
-            const bits = theDate.split("-");
-            if (theDate.match(/00\-00$/) != null) {
-                aDate = bits[0] + "-07-02";
-                approx = true;
-            } else if (theDate.match(/-00$/) != null) {
-                aDate = bits[0] + "-" + bits[1] + "-" + "16";
-                approx = true;
-            } else {
-                aDate = theDate;
-            }
-        }
-        return { Date: aDate, Approx: approx };
-    }
-
-    static getApproxDate2(theDate) {
-        let approx = false;
-        let aDate;
-        if (theDate.match(/0s$/) != null) {
-            aDate = theDate.replace(/0s/, "5");
-            approx = true;
-        } else {
-            const bits = theDate.split("-");
-            if (theDate.match(/00\-00$/) != null || !bits[1]) {
-                aDate = bits[0] + "-07-02";
-                approx = true;
-            } else if (theDate.match(/-00$/) != null) {
-                aDate = bits[0] + "-" + bits[1] + "-" + "16";
-                approx = true;
-            } else {
-                aDate = theDate;
-            }
-        }
-        return { Date: aDate, Approx: approx };
-    }
-
     static #BMD_EVENTS = ["Birth", "Death", "Marriage"];
 
     static getTimelineEvents(tPerson) {
         const family = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
         const timeLineEvent = [];
-        const startDate = PeopleTable.getTheYear(tPerson.BirthDate, "Birth", tPerson);
 
-        // Get all BMD events for each family member
-        family.forEach(function (aPerson) {
+        // Get birth, marriage, and death (BMD) events for each family member.
+        // Since this is a timeline we only add events that have known dates.
+        family.forEach(function (evPerson) {
             PeopleTable.#BMD_EVENTS.forEach(function (ev) {
-                let evDate = "";
+                let evDate = { date: "", annotation: "" };
                 let evLocation;
-                if (aPerson[ev + "Date"]) {
-                    evDate = aPerson[ev + "Date"];
-                    evLocation = aPerson[ev + "Location"];
-                } else if (aPerson[ev + "DateDecade"]) {
-                    evDate = aPerson[ev + "DateDecade"];
-                    evLocation = aPerson[ev + "Location"];
-                }
                 if (ev == "Marriage") {
-                    const marriageData = tPerson.Marriage[aPerson.Id];
-                    if (marriageData && marriageData[ev + "Date"]) {
-                        evDate = marriageData[ev + "Date"];
+                    // We already have the sorted marriages and we only collect marriages for which we have dates and have
+                    // loaded the profile (it won't be present if it is in the next, not retrieved CC)
+                    // TODO:
+                    //  . collect all the marriage events. Currently we do not collect marriages for people in the outer ring
+                    //    because their partners are typically in the next ring and therefore we do not know who they are.
+                    //    The Marriage field is only populated for known people, while 'Spouses' contain marriage dates and
+                    //    IDs, but in random order. so we could say "marriage to nth spouse" for example.
+                    //    Also, currently we do not collect any marriage dates of a spouse with possible other spouses,
+                    //    but we probably could and probably should.  The same goes for marriages of parents to other spouses.
+                    const marriageData = tPerson.Marriage[evPerson.Id];
+                    if (marriageData) {
+                        evDate = Utils.formAdjustedDate(
+                            marriageData.MarriageDate,
+                            "",
+                            marriageData.DataStatus?.MarriageDate
+                        );
                         evLocation = marriageData[ev + "Location"];
                     }
+                } else {
+                    evDate = evPerson[`adjusted${ev}`];
+                    evLocation = evPerson[ev + "Location"];
                 }
-                if (aPerson.Relation) {
-                    const theRelation = aPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
-                    const gender = aPerson.Gender;
-                    if (theRelation == "Child") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "son", "daughter", "child");
-                    } else if (theRelation == "Sibling") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "brother", "sister", "sibling");
-                    } else if (theRelation == "Parent") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "father", "mother", "parent");
-                    } else if (theRelation == "Spouse") {
-                        aPerson.Relation = CC7Utils.mapGender(gender, "husband", "wife", "spouse");
-                    } else {
-                        aPerson.Relation = theRelation;
+                if (evDate.date != "" && evDate.date != "0000-00-00" && CC7Utils.isOK(evDate.date)) {
+                    if (evPerson.Relation) {
+                        const theRelation = evPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
+                        const gender = evPerson.Gender;
+                        if (theRelation == "Child") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "son", "daughter", "child");
+                        } else if (theRelation == "Sibling") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "brother", "sister", "sibling");
+                        } else if (theRelation == "Parent") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "father", "mother", "parent");
+                        } else if (theRelation == "Spouse") {
+                            evPerson.Relation = CC7Utils.mapGender(gender, "husband", "wife", "spouse");
+                        } else {
+                            evPerson.Relation = theRelation;
+                        }
                     }
-                }
-                if (evDate != "" && evDate != "0000" && CC7Utils.isOK(evDate)) {
-                    let fName = aPerson.FirstName;
-                    if (!aPerson.FirstName) {
-                        fName = aPerson.RealName;
-                    }
-                    let bDate = aPerson.BirthDate;
-                    if (!aPerson.BirthDate) {
-                        bDate = aPerson.BirthDateDecade;
-                    }
-                    let mBio = aPerson.bio;
-                    if (!aPerson.bio) {
-                        mBio = "";
+                    let fName = evPerson.FirstName;
+                    if (!evPerson.FirstName) {
+                        fName = evPerson.RealName;
                     }
                     if (evLocation == undefined) {
                         evLocation = "";
@@ -1379,126 +1589,105 @@ export class PeopleTable {
                         eventDate: evDate,
                         location: evLocation,
                         firstName: fName,
-                        LastNameAtBirth: aPerson.LastNameAtBirth,
-                        lastNameCurrent: aPerson.LastNameCurrent,
-                        birthDate: bDate,
-                        relation: aPerson.Relation,
-                        bio: mBio,
+                        LastNameAtBirth: evPerson.LastNameAtBirth,
+                        lastNameCurrent: evPerson.LastNameCurrent,
+                        birthDate: evPerson.adjustedBirth,
+                        relation: evPerson.Relation,
                         evnt: ev,
-                        wtId: aPerson.Name,
+                        wtId: evPerson.Name,
                     });
                 }
             });
-            // Look for military events in bios
-            if (aPerson.bio) {
-                const tlTemplates = aPerson.bio.match(/\{\{[^]*?\}\}/gm);
-                if (tlTemplates != null) {
-                    const warTemplates = [
-                        "Creek War",
-                        "French and Indian War",
-                        "Iraq War",
-                        "Korean War",
-                        "Mexican-American War",
-                        "Spanish-American War",
-                        "The Great War",
-                        "US Civil War",
-                        "Vietnam War",
-                        "War in Afghanistan",
-                        "War of 1812",
-                        "World War II",
-                    ];
-                    tlTemplates.forEach(function (aTemp) {
-                        let evDate = "";
-                        let evLocation = "";
-                        let ev = "";
-                        let evDateStart = "";
-                        let evDateEnd = "";
-                        let evStart;
-                        let evEnd;
-                        aTemp = aTemp.replaceAll(/[{}]/g, "");
-                        const bits = aTemp.split("|");
-                        const templateTitle = bits[0].replaceAll(/\n/g, "").trim();
-                        bits.forEach(function (aBit) {
-                            const aBitBits = aBit.split("=");
-                            const aBitField = aBitBits[0].trim();
-                            if (aBitBits[1]) {
-                                const aBitFact = aBitBits[1].trim().replaceAll(/\n/g, "");
-                                if (warTemplates.includes(templateTitle) && CC7Utils.isOK(aBitFact)) {
-                                    if (aBitField == "startdate") {
-                                        evDateStart = PeopleTable.dateToYMD(aBitFact);
-                                        evStart = "joined " + templateTitle;
-                                    }
-                                    if (aBitField == "enddate") {
-                                        evDateEnd = PeopleTable.dateToYMD(aBitFact);
-                                        evEnd = "left " + templateTitle;
-                                    }
-                                    if (aBitField == "enlisted") {
-                                        evDateStart = PeopleTable.dateToYMD(aBitFact);
-                                        evStart = "enlisted for " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "discharged") {
-                                        evDateEnd = PeopleTable.dateToYMD(aBitFact);
-                                        evEnd = "discharged from " + templateTitle.replace("american", "American");
-                                    }
-                                    if (aBitField == "branch") {
-                                        evLocation = aBitFact;
-                                    }
+            // Look for military events in templates
+            const tlTemplates = evPerson.Templates;
+            if (tlTemplates && tlTemplates.length > 0) {
+                const warTemplates = [
+                    "Creek War",
+                    "French and Indian War",
+                    "Iraq War",
+                    "Korean War",
+                    "Mexican-American War",
+                    "Spanish-American War",
+                    "The Great War",
+                    "US Civil War",
+                    "Vietnam War",
+                    "War in Afghanistan",
+                    "War of 1812",
+                    "World War II",
+                ];
+                tlTemplates.forEach(function (aTemp) {
+                    let evLocation = "";
+                    let evDateStart = "";
+                    let evDateEnd = "";
+                    let evStart;
+                    let evEnd;
+                    const templateTitle = aTemp["name"];
+                    if (templateTitle && !warTemplates.includes(templateTitle)) return;
+
+                    let the = "the ";
+                    const lowerTitle = templateTitle.toLowerCase();
+                    if (lowerTitle.startsWith("the") || lowerTitle.startsWith("world")) the = "";
+                    const params = aTemp["params"];
+                    if (params) {
+                        Object.entries(params).forEach(([param, value]) => {
+                            const paramValue = value?.trim()?.replaceAll(/\n/g, "");
+                            // These dates are not necessarily in YYYY-MM-DD format so we need to convert them first
+                            if (CC7Utils.isOK(paramValue)) {
+                                if (param == "startdate") {
+                                    evDateStart = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evStart = `joined ${the}` + templateTitle;
+                                } else if (param == "enddate") {
+                                    evDateEnd = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evEnd = `left ${the}` + templateTitle;
+                                } else if (param == "enlisted") {
+                                    evDateStart = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evStart = `enlisted in ${the}` + templateTitle.replace("american", "American");
+                                } else if (param == "discharged") {
+                                    evDateEnd = Utils.formAdjustedDate(PeopleTable.dateToYMD(paramValue));
+                                    evEnd = `discharged from ${the}` + templateTitle.replace("american", "American");
+                                } else if (param == "branch") {
+                                    evLocation = paramValue;
                                 }
                             }
                         });
-                        if (CC7Utils.isOK(evDateStart)) {
-                            evDate = evDateStart;
-                            ev = evStart;
-                            timeLineEvent.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: aPerson.FirstName,
-                                LastNameAtBirth: aPerson.LastNameAtBirth,
-                                lastNameCurrent: aPerson.LastNameCurrent,
-                                birthDate: aPerson.BirthDate,
-                                relation: aPerson.Relation,
-                                bio: aPerson.bio,
-                                evnt: ev,
-                                wtId: aPerson.Name,
-                            });
-                        }
-                        if (CC7Utils.isOK(evDateEnd)) {
-                            evDate = evDateEnd;
-                            ev = evEnd;
-                            timeLineEvent.push({
-                                eventDate: evDate,
-                                location: evLocation,
-                                firstName: aPerson.FirstName,
-                                LastNameAtBirth: aPerson.LastNameAtBirth,
-                                lastNameCurrent: aPerson.LastNameCurrent,
-                                birthDate: aPerson.BirthDate,
-                                relation: aPerson.Relation,
-                                bio: aPerson.bio,
-                                evnt: ev,
-                                wtId: aPerson.Name,
-                            });
-                        }
-                    });
-                }
+                    }
+                    if (evDateStart && CC7Utils.isOK(evDateStart.date)) {
+                        timeLineEvent.push({
+                            eventDate: evDateStart,
+                            location: evLocation,
+                            firstName: evPerson.FirstName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.Relation,
+                            evnt: evStart,
+                            wtId: evPerson.Name,
+                        });
+                    }
+                    if (evDateEnd && CC7Utils.isOK(evDateEnd.date)) {
+                        timeLineEvent.push({
+                            eventDate: evDateEnd,
+                            location: evLocation,
+                            firstName: evPerson.FirstName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.Relation,
+                            evnt: evEnd,
+                            wtId: evPerson.Name,
+                        });
+                    }
+                });
             }
         });
         return timeLineEvent;
     }
 
-    static getTheYear(theDate, ev, person) {
-        if (!CC7Utils.isOK(theDate)) {
-            if (ev == "Birth" || ev == "Death") {
-                theDate = person[ev + "DateDecade"];
-            }
-        }
-        let theDateM = theDate?.match(/[0-9]{4}/);
-        if (CC7Utils.isOK(theDateM)) {
-            return parseInt(theDateM[0]);
-        } else {
-            return false;
-        }
-    }
-
+    /**
+     * Attempt to convert a user entered date to YYYY-MM-DD if necessary
+     * @param {*} enteredDate
+     * @returns
+     */
     static dateToYMD(enteredDate) {
         let enteredD;
         if (enteredDate.match(/[0-9]{3,4}\-[0-9]{2}\-[0-9]{2}/)) {
@@ -1519,38 +1708,27 @@ export class PeopleTable {
 
             if (enteredDate.match(/jan/i) != null) {
                 eDMonth = "01";
-            }
-            if (enteredDate.match(/feb/i) != null) {
+            } else if (enteredDate.match(/feb/i) != null) {
                 eDMonth = "02";
-            }
-            if (enteredDate.match(/mar/i) != null) {
+            } else if (enteredDate.match(/mar/i) != null) {
                 eDMonth = "03";
-            }
-            if (enteredDate.match(/apr/i) != null) {
+            } else if (enteredDate.match(/apr/i) != null) {
                 eDMonth = "04";
-            }
-            if (enteredDate.match(/may/i) != null) {
+            } else if (enteredDate.match(/may/i) != null) {
                 eDMonth = "05";
-            }
-            if (enteredDate.match(/jun/i) != null) {
+            } else if (enteredDate.match(/jun/i) != null) {
                 eDMonth = "06";
-            }
-            if (enteredDate.match(/jul/i) != null) {
+            } else if (enteredDate.match(/jul/i) != null) {
                 eDMonth = "07";
-            }
-            if (enteredDate.match(/aug/i) != null) {
+            } else if (enteredDate.match(/aug/i) != null) {
                 eDMonth = "08";
-            }
-            if (enteredDate.match(/sep/i) != null) {
+            } else if (enteredDate.match(/sep/i) != null) {
                 eDMonth = "09";
-            }
-            if (enteredDate.match(/oct/i) != null) {
+            } else if (enteredDate.match(/oct/i) != null) {
                 eDMonth = "10";
-            }
-            if (enteredDate.match(/nov/i) != null) {
+            } else if (enteredDate.match(/nov/i) != null) {
                 eDMonth = "11";
-            }
-            if (enteredDate.match(/dec/i) != null) {
+            } else if (enteredDate.match(/dec/i) != null) {
                 eDMonth = "12";
             }
             enteredD = eDYear + "-" + eDMonth + "-" + eDDate;
@@ -1559,65 +1737,42 @@ export class PeopleTable {
     }
 
     static buildTimeline(tPerson, timelineEvents) {
+        // tPerson is the person for which a timeline is being constructed
+        const RIBBON = "&#x1F397;";
         const tPersonFirstName = tPerson.FirstName || "(Private)";
         const timelineTable = $(
-            `<div class='timeline' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
+            `<div class='timeline pop-up' data-wtid='${tPerson.Name}'><w>↔</w><x>[ x ]</x><table class="timelineTable">` +
                 `<caption>Events in the life of ${tPersonFirstName}'s family</caption>` +
                 "<thead><th class='tlDate'>Date</th><th class='tlBioAge'>Age</th>" +
                 "<th class='tlEventDescription'>Event</th><th class='tlEventLocation'>Location</th>" +
                 `</thead><tbody></tbody></table></div>`
         );
-        let bpDead = false;
-        let bpDeadAge;
+        let tlpDead = false;
+        let tlpDeadAge;
         timelineEvents.forEach(function (aFact) {
             // Add events to the table
             const isEventForBioPerson = aFact.wtId == tPerson.Name;
-            const showDate = aFact.eventDate.replace("-00-00", "").replace("-00", "");
-            const tlDate = "<td class='tlDate'>" + showDate + "</td>";
-            let aboutAge = "";
-            let bpBdate = tPerson.BirthDate;
-            if (!tPerson.BirthDate) {
-                bpBdate = tPerson.BirthDateDecade.replace(/0s/, "5");
-            }
-            let hasBdate = true;
-            if (bpBdate == "0000-00-00") {
-                hasBdate = false;
-            }
-            const bpBD = PeopleTable.getApproxDate(bpBdate);
-            const evDate = PeopleTable.getApproxDate(aFact.eventDate);
-            const aPersonBD = PeopleTable.getApproxDate(aFact.birthDate);
-            if (bpBD.Approx == true) {
-                aboutAge = "~";
-            }
-            if (evDate.Approx == true) {
-                aboutAge = "~";
-            }
-            const bpAgeAtEvent = CC7Utils.getAge(new Date(bpBD.Date), new Date(evDate.Date));
-            let bpAge;
-            if (bpAgeAtEvent == 0) {
-                bpAge = "";
-            } else if (bpAgeAtEvent < 0) {
-                bpAge = `–${-bpAgeAtEvent}`;
+            const tlDate = "<td class='tlDate'>" + aFact.eventDate.display + "</td>";
+            const tlPersonBirth = tPerson.adjustedBirth;
+            const eventDate = aFact.eventDate;
+            const evPersonBirth = aFact.birthDate;
+            const tlpAgeAtEvent = Utils.ageAtEvent(tlPersonBirth, eventDate);
+            let renderedAgeAtEvent = "";
+
+            if (tlpDead == true) {
+                const theDiff = tlpAgeAtEvent.age - tlpDeadAge.age;
+                const diffAnnotation = Utils.statusOfDiff(tlpDeadAge.annotation, tlpAgeAtEvent.annotation);
+                renderedAgeAtEvent = `${RIBBON}+ ${diffAnnotation}${Math.floor(theDiff)}`;
+            } else if (isEventForBioPerson && aFact.evnt == "Birth") {
+                renderedAgeAtEvent = "";
             } else {
-                bpAge = `${bpAgeAtEvent}`;
+                renderedAgeAtEvent = tlpAgeAtEvent.annotatedAge;
             }
-            if (bpDead == true) {
-                const theDiff = parseInt(bpAgeAtEvent - bpDeadAge);
-                bpAge = "&#x1F397;+ " + theDiff;
-            }
-            let theBPAge;
-            if (aboutAge != "" && bpAge != "") {
-                theBPAge = "(" + bpAge + ")";
-            } else {
-                theBPAge = bpAge;
-            }
-            if (hasBdate == false) {
-                theBPAge = "";
-            }
+
             const tlBioAge =
                 "<td class='tlBioAge'>" +
-                (aFact.evnt == "Death" && aFact.wtId == tPerson.Name ? "&#x1F397; " : "") +
-                theBPAge +
+                (aFact.evnt == "Death" && aFact.wtId == tPerson.Name ? `${RIBBON} ` : "") +
+                renderedAgeAtEvent +
                 "</td>";
             if (aFact.relation == undefined || isEventForBioPerson) {
                 aFact.relation = "";
@@ -1627,26 +1782,17 @@ export class PeopleTable {
             const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
 
             let fNames = aFact.firstName || "(Private)";
-            if (aFact.evnt == "marriage") {
+            if (aFact.evnt == "Marriage") {
                 fNames = tPersonFirstName + " and " + fNames;
                 relation = "";
             }
             const tlFirstName = CC7Utils.profileLink(aFact.wtId, fNames);
             const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
 
-            if (aPersonBD.Approx == true) {
-                aboutAge = "~";
-            }
-            let aPersonAge = CC7Utils.getAge(new Date(aPersonBD.Date), new Date(evDate.Date));
-            if (aPersonAge == 0 || aPersonBD.Date.match(/0000/) != null) {
-                aPersonAge = "";
-                aboutAge = "";
-            }
-            let theAge;
-            if (aboutAge != "" && aPersonAge != "") {
-                theAge = "(" + aPersonAge + ")";
-            } else {
-                theAge = aPersonAge;
+            const evPersonAge = Utils.ageAtEvent(evPersonBirth, eventDate);
+            let renderedEvpAge = evPersonAge.annotatedAge;
+            if (evPersonAge.age == 0 || evPersonBirth.date.match(/0000/) != null) {
+                renderedEvpAge = "";
             }
 
             let descr;
@@ -1656,7 +1802,7 @@ export class PeopleTable {
                     " of " +
                     (relation == "" ? relation : relation + ", ") +
                     tlFirstName +
-                    (theAge == "" ? "" : ", " + theAge);
+                    (renderedEvpAge == "" ? "" : ", " + renderedEvpAge);
             } else {
                 const who =
                     relation == ""
@@ -1664,7 +1810,7 @@ export class PeopleTable {
                         : CC7Utils.capitalizeFirstLetter(relation) +
                           " " +
                           tlFirstName +
-                          (theAge == "" ? "" : ", " + theAge + ",");
+                          (renderedEvpAge == "" ? "" : ", " + renderedEvpAge + ",");
                 descr = who + " " + eventName;
             }
 
@@ -1680,8 +1826,8 @@ export class PeopleTable {
             );
             timelineTable.find("tbody").append(tlTR);
             if (aFact.evnt == "Death" && aFact.wtId == tPerson.Name) {
-                bpDead = true;
-                bpDeadAge = bpAgeAtEvent;
+                tlpDead = true;
+                tlpDeadAge = tlpAgeAtEvent;
             }
         });
         return timelineTable;
@@ -1690,7 +1836,7 @@ export class PeopleTable {
     static showTimeline(jqClicked) {
         const theClickedRow = jqClicked.closest("tr");
         const id = +theClickedRow.attr("data-id");
-        let tPerson = window.people.get(id);
+        const tPerson = window.people.get(id);
         const theClickedName = tPerson.Name;
         const familyId = theClickedName.replace(" ", "_") + "_timeLine";
         const $timelineTable = $(`#${familyId}`);
@@ -1705,13 +1851,13 @@ export class PeopleTable {
         const familyFacts = PeopleTable.getTimelineEvents(tPerson);
         // Sort the events
         familyFacts.sort((a, b) => {
-            return a.eventDate.localeCompare(b.eventDate);
+            return a.eventDate.date.localeCompare(b.eventDate.date);
         });
         if (!tPerson.FirstName) {
             tPerson.FirstName = tPerson.RealName;
         }
         // Make a table
-        const timelineTable = PeopleTable.buildTimeline(tPerson, familyFacts, familyId);
+        const timelineTable = PeopleTable.buildTimeline(tPerson, familyFacts);
         timelineTable.attr("id", familyId);
         PeopleTable.showTable(jqClicked, timelineTable, 30, 30);
     }
@@ -1720,9 +1866,6 @@ export class PeopleTable {
         // Attach the table to the container div
         theTable.prependTo($("#cc7Container"));
         theTable.draggable();
-        theTable.off("dblclick").on("dblclick", function () {
-            $(this).slideUp();
-        });
 
         PeopleTable.setOffset(jqClicked, theTable, lOffset, tOffset);
         $(window).resize(function () {
@@ -1733,12 +1876,6 @@ export class PeopleTable {
 
         theTable.css("z-index", `${Settings.getNextZLevel()}`);
         theTable.slideDown("slow");
-        theTable
-            .find("x")
-            .off("click")
-            .on("click", function () {
-                theTable.slideUp();
-            });
         theTable
             .find("w")
             .off("click")
@@ -1763,13 +1900,13 @@ export class PeopleTable {
     static showBioCheckReport(jqClicked) {
         const theClickedRow = jqClicked.closest("tr");
         const id = +theClickedRow.attr("data-id");
-        let person = window.people.get(id);
+        const person = window.people.get(id);
         if (typeof person.bioCheckReport == "undefined" || person.bioCheckReport.length == 0) {
             return;
         }
         const theClickedName = person.Name;
-        const familyId = theClickedName.replace(" ", "_") + "_bioCheck";
-        const $bioReportTable = $(`#${familyId}`);
+        const bioReportId = theClickedName.replace(" ", "_") + "_bioCheck";
+        const $bioReportTable = $(`#${bioReportId}`);
         if ($bioReportTable.length) {
             $bioReportTable.css("z-index", `${Settings.getNextZLevel()}`).slideToggle(() => {
                 PeopleTable.setOffset(jqClicked, $bioReportTable, 30, 30);
@@ -1778,14 +1915,14 @@ export class PeopleTable {
         }
 
         const bioReportTable = PeopleTable.getBioCheckReportTable(person);
-        bioReportTable.attr("id", familyId);
+        bioReportTable.attr("id", bioReportId);
         PeopleTable.showTable(jqClicked, bioReportTable, 30, 30);
     }
 
     static getBioCheckReportTable(person) {
         const issueWord = person.bioCheckReport.length == 1 ? "issue" : "issues";
         const bioCheckTable = $(
-            `<div class='bioReport' data-wtid='${person.Name}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
+            `<div class='bioReport pop-up' data-wtid='${person.Name}'><w>↔</w><x>[ x ]</x><table class="bioReportTable">` +
                 `<caption>Bio Check found the following ${issueWord} with the biography of ${person.FirstName}</caption>` +
                 "<tbody><tr><td><ol></ol></td></tr></tbody></table></div>"
         );
@@ -1815,13 +1952,12 @@ export class PeopleTable {
         }
         const captionHTML = CC7Utils.profileLink(CC7Utils.htmlEntities(kPeople[0].Name), disName);
         const kTable = $(
-            `<div class='familySheet'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
+            `<div class='familySheet pop-up'><w>↔</w><x>[ x ]</x><table><caption>${captionHTML}</caption>` +
                 "<thead><tr><th>Relation</th><th>Name</th><th>Birth Date</th><th>Birth Place</th><th>Death Date</th><th>Death Place</th></tr></thead>" +
                 "<tbody></tbody></table></div>"
         );
         kPeople.forEach(function (kPers) {
             let rClass = "";
-            let isDecades = false;
             kPers.RelationShow = kPers.Relation;
             if (kPers.Relation == undefined || kPers.Active) {
                 kPers.Relation = "Sibling";
@@ -1829,28 +1965,11 @@ export class PeopleTable {
                 rClass = "self";
             }
 
-            let bDate;
-            if (kPers.BirthDate) {
-                bDate = kPers.BirthDate;
-            } else if (kPers.BirthDateDecade) {
-                bDate = kPers.BirthDateDecade.slice(0, -1) + "-00-00";
-                isDecades = true;
-            } else {
-                bDate = "0000-00-00";
+            if (typeof kPers.adjustedBirth == "undefined") {
+                Utils.setAdjustedDates(kPers);
             }
-
-            let dDate;
-            if (kPers.DeathDate) {
-                dDate = kPers.DeathDate;
-            } else if (kPers.DeathDateDecade) {
-                if (kPers.DeathDateDecade == "unknown") {
-                    dDate = "0000-00-00";
-                } else {
-                    dDate = kPers.DeathDateDecade.slice(0, -1) + "-00-00";
-                }
-            } else {
-                dDate = "0000-00-00";
-            }
+            const bDate = kPers.adjustedBirth;
+            const dDate = kPers.adjustedDeath;
 
             if (kPers.BirthLocation == null || kPers.BirthLocation == undefined) {
                 kPers.BirthLocation = "";
@@ -1872,20 +1991,12 @@ export class PeopleTable {
                 }
             }
             if (oName) {
-                let oBDate = CC7Utils.ymdFix(bDate);
-                let oDDate = CC7Utils.ymdFix(dDate);
-                if (isDecades == true) {
-                    oBDate = kPers.BirthDateDecade;
-                    if (oDDate != "") {
-                        oDDate = kPers.DeathDateDecade;
-                    }
-                }
                 const linkName = CC7Utils.htmlEntities(kPers.Name);
                 const aLine = $(
                     "<tr data-name='" +
                         kPers.Name +
                         "' data-birthdate='" +
-                        bDate.replaceAll(/\-/g, "") +
+                        bDate.date.replaceAll(/\-/g, "") +
                         "' data-relation='" +
                         kPers.Relation +
                         "' class='" +
@@ -1897,11 +2008,11 @@ export class PeopleTable {
                         "</td><td>" +
                         CC7Utils.profileLink(linkName, oName) +
                         "</td><td class='aDate'>" +
-                        oBDate +
+                        bDate.display +
                         "</td><td>" +
                         kPers.BirthLocation +
                         "</td><td class='aDate'>" +
-                        oDDate +
+                        dDate.display +
                         "</td><td>" +
                         kPers.DeathLocation +
                         "</td></tr>"
@@ -1954,8 +2065,21 @@ export class PeopleTable {
         return kTable;
     }
 
-    static doFamilySheet(fPerson, jqClicked) {
+    static buildAndShowFamilySheet(fPerson, jqClicked) {
+        CC7Utils.assignRelationshipsFor(fPerson);
+        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
+        const famSheet = PeopleTable.peopleToTable(thisFamily);
+
         const theClickedName = fPerson.Name;
+        const familyId = theClickedName.replace(" ", "_") + "_family";
+        famSheet.attr("id", familyId);
+        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
+    }
+
+    static showFamilySheet(jqClicked) {
+        const theClickedRow = jqClicked.closest("tr");
+        const theClickedName = theClickedRow.attr("data-name");
+
         const familyId = theClickedName.replace(" ", "_") + "_family";
         const $famSheet = $(`#${familyId}`);
         if ($famSheet.length) {
@@ -1965,73 +2089,62 @@ export class PeopleTable {
             return;
         }
 
-        CC7Utils.assignRelationshipsFor(fPerson);
-        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
-
-        const famSheet = PeopleTable.peopleToTable(thisFamily);
-        famSheet.attr("id", familyId);
-        PeopleTable.showTable(jqClicked, famSheet, 30, 30);
-    }
-
-    static showFamilySheet(jqClicked) {
-        const theClickedRow = jqClicked.closest("tr");
-        const theClickedName = theClickedRow.attr("data-name");
         const theClickedId = +theClickedRow.attr("data-id");
-
-        const aPeo = window.people.get(theClickedId);
-        if (aPeo?.Parent?.length > 0 || aPeo?.Child?.length > 0) {
-            PeopleTable.doFamilySheet(aPeo, jqClicked);
+        const clickedPerson = window.people.get(theClickedId);
+        if (clickedPerson?.Parent?.length && clickedPerson?.Child?.length) {
+            PeopleTable.buildAndShowFamilySheet(clickedPerson, jqClicked);
         } else if (!theClickedName.startsWith("Private") || theClickedId > 0) {
             const key = theClickedName.startsWith("Private") ? theClickedId : theClickedName;
-            console.log(`Calling getRelatives for ${key}`);
+            console.log(`Calling getPeople to obtain relatives for ${key}`);
             WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
-                action: "getRelatives",
-                getSpouses: "1",
-                getChildren: "1",
-                getParents: "1",
-                getSiblings: "1",
+                action: "getPeople",
                 keys: key,
-            }).then((data) => {
-                // Construct this person so it conforms to the profiles retrieved using getPeople
-                const mPerson = PeopleTable.convertToInternal(data[0].items[0]);
-                PeopleTable.doFamilySheet(mPerson, jqClicked);
+                nuclear: 1,
+                fields: CC7.GET_PEOPLE_FIELDS,
+            }).then((result) => {
+                // Construct this person so it conforms to the profiles we retrieved previously
+                if (result[0]?.status == "") {
+                    const iPerson = PeopleTable.convertToInternal(key, result);
+                    PeopleTable.buildAndShowFamilySheet(iPerson, jqClicked);
+                } else {
+                    console.log(`Could not obtain relatives for ${key}: ${result[0]?.status}`);
+                }
             });
         }
     }
 
-    static convertToInternal(item) {
-        const pData = item.person;
-        if (!pData.Name && item.user_name) pData.Name = item.user_name;
-        if (!pData.Name) pData.Name = pData.Id;
-
-        const person = PeopleTable.addFamilyToPerson(pData);
-        if (person.Parents) person.Parents = Object.keys(person.Parents);
-        if (person.Siblings) person.Siblings = Object.keys(person.Siblings);
-        if (person.Children) person.Children = Object.keys(person.Children);
-        person.Marriage = {};
-        if (person.Spouses) {
-            for (const sp of Object.values(person.Spouses)) {
-                person.Marriage[sp.Id] = {
-                    MarriageDate: sp.marriage_date,
-                    MarriageEndDate: sp.marriage_end_date,
-                    MarriageLocation: sp.marriage_location,
-                    DoNotDisplay: sp.do_not_display,
-                };
+    static convertToInternal(key, result) {
+        const rootId = result[0].resultByKey[key]?.Id;
+        const profiles = result[0].people ? Object.values(result[0].people) : [];
+        const peopleMap = new Map();
+        // Collect all the family members in a map
+        for (const person of profiles) {
+            const id = +person.Id;
+            if (id < 0) {
+                person.Name = `Private${id}`;
+                person.DataStatus = { Spouse: "", Gender: "" };
+            } else if (!person.Name) {
+                // WT seems not to return Name for some private profiles, even though they do
+                // return a positive id for them, so we just set Name to Id since WT URLs work for both.
+                person.Name = `${id}`;
+            }
+            if (!peopleMap.has(id)) {
+                // This is a new person, add them to the tree
+                Utils.setAdjustedDates(person);
+                person.Parents = [person.Father, person.Mother];
+                person.Hide = person.Id != rootId;
+                // To be filled shortly via populateRelativeArrays()
+                person.Parent = [];
+                person.Spouse = [];
+                person.Sibling = [];
+                person.Child = [];
+                person.Marriage = {};
+                peopleMap.set(id, person);
             }
         }
-        const curPerson = window.people.get(+person.Id);
-        if (curPerson) {
-            // Copy fields not present in the new person from the old to the new
-            let x = Object.entries(curPerson);
-            for (const [key, value] of x) {
-                if (typeof person[key] == "undefined") {
-                    person[key] = value;
-                }
-            }
-        }
-        window.people.set(+person.Id, person);
-        return person;
+        CC7.populateRelativeArrays(peopleMap);
+        return peopleMap.get(rootId);
     }
 
     static addFamilyToPerson(person) {
@@ -2238,7 +2351,7 @@ export class PeopleTable {
             .forEach((aCell) => {
                 const bCell = `B${aCell.substring(1)}`;
                 const wtId = ws[aCell].v;
-                if (wtId.match(/.+\-.+/)) {
+                if (wtId?.match(/.+\-.+/)) {
                     // Add a hyperlink to the WtId cell
                     ws[aCell].l = { Target: `https://www.wikitree.com/wiki/${wtId}` };
                 }
@@ -2328,4 +2441,131 @@ export class PeopleTable {
         const prefix = $("#cc7Container").hasClass("degreeView") ? "CC_Deg" : "CC";
         return `${prefix}${window.cc7Degree}_${wtViewRegistry.getCurrentWtId()}`;
     }
+
+    /**
+     * Apply the view-specific URL parameters to the page
+     * @param {*} params - URL parameters recevied
+     */
+    static applyViewParameters(params) {
+        // Only apply a valid view parameter, otherwise assume the Table view
+        const viewParam = params.cc7View?.toLowerCase();
+        const viewsValues = Object.values(CC7.VIEWS);
+        const matchedView = viewsValues.find((view) => view.toLowerCase() === viewParam) || CC7.VIEWS.TABLE;
+        PeopleTable.ACTIVE_VIEW = matchedView;
+
+        // Check if value is a valid select option (ignoring case) for the select of the given search and if so,
+        // return proper cased value, otherwise return null
+        function validSelectOption(selectSearch, value) {
+            const lowParam = value.toLowerCase();
+            let matchedOption = null;
+            $(selectSearch).each(function () {
+                const optionValue = $(this).val();
+                if (optionValue?.toLowerCase() === lowParam) {
+                    matchedOption = optionValue;
+                    return false; // Exit .each loop early once found
+                }
+            });
+            return matchedOption;
+        }
+
+        function setMissingLinkOptions() {
+            const hasAnyMLparam = CC7MLParamMap.map((pm) => pm.urlp).some((prop) => params.hasOwnProperty(prop));
+            // We only adjust the missing link settings if there is at least one such parameter in the URL
+            if (hasAnyMLparam) {
+                for (const pm of CC7MLParamMap) {
+                    $(`#${pm.id}`).prop("checked", params[pm.urlp] ? true : false);
+                }
+                $("#saveSettingsChanges").trigger("click");
+            }
+        }
+
+        switch (matchedView) {
+            case CC7.VIEWS.TABLE:
+            case CC7.VIEWS.LIST:
+                // handle the "only" (i.e. subset) parameter(s)
+                const matchedOption = validSelectOption("#cc7Subset option", params.only || "all");
+                if (matchedOption) {
+                    $("#cc7Subset").val(matchedOption);
+                    if (matchedOption == "missing-links") {
+                        setMissingLinkOptions();
+                        PeopleTable.showMissingLinksCheckboxes();
+                    } else {
+                        $("#mlButtons").hide();
+                    }
+                }
+                break;
+
+            case CC7.VIEWS.STATS:
+                const onlyParam = validSelectOption("#cc7Subset option", params.only || "all");
+                if (onlyParam) {
+                    $("#cc7Subset").val(onlyParam);
+                }
+                // We can't set the stats gender parameter here, but we make sure it's value is correct.
+                // We also can't use validSelectOption() here as the select is not yet available.
+                const validGender = ["Male", "Female", ""];
+                const lowParam = params.gender?.toLowerCase() || "";
+                for (const optVal of validGender) {
+                    if (optVal.toLowerCase() === lowParam) {
+                        CC7.URL_PARAMS.gender = optVal;
+                        break;
+                    }
+                }
+                break;
+
+            case CC7.VIEWS.MISSING_LINKS:
+                setMissingLinkOptions();
+                break;
+
+            case CC7.VIEWS.CIRCLES:
+                const displayParam = params.display?.toLowerCase() || "inits";
+                // We only adjust the circles settings if there is at least one such parameter in the URL
+                if (
+                    params.hasOwnProperty("display") ||
+                    CC7CirclesParamMap.map((pm) => pm.urlp).some((prop) => params.hasOwnProperty(prop))
+                ) {
+                    $('input[name="circlesDisplayType"]').each(function () {
+                        if ($(this).val().toLowerCase() === displayParam) {
+                            $(this).prop("checked", true);
+                            return false;
+                        }
+                    });
+                    for (const pm of CC7CirclesParamMap) {
+                        $(`#${pm.id}`).prop("checked", params[pm.urlp] ? true : false);
+                    }
+                    $("#saveSettingsChanges").trigger("click");
+                }
+                break;
+
+            default:
+                console.error(`Unknown view: ${theView}`);
+                break;
+        }
+    }
+
+    static resetHeader() {
+        $("#degreesTable").show();
+        $("#wideTableButton").show();
+        $("#savePeople").show();
+        $("#loadButton").show();
+        $("#cc7csv").show();
+        $("#cc7excel").show();
+        $("#getExtraDegrees").show();
+        $("#getDegreeButton").show();
+        if (PeopleTable.PREVIOUS_SUBSET) {
+            $("#cc7Subset").val(PeopleTable.PREVIOUS_SUBSET);
+            if (PeopleTable.PREVIOUS_SUBSET != "missing-links") {
+                $("#mlButtons").hide();
+            }
+            PeopleTable.PREVIOUS_SUBSET = null;
+        }
+        $("#cc7Subset").show();
+        $("#ancReport").show();
+        $("label[for='getExtraDegrees']").show();
+        $("#ml-count").remove();
+        wtViewRegistry.showInfoPanel();
+        CC7.updateURL();
+    }
 }
+
+const showTable = PeopleTable.showTable;
+const PRIVACY_LEVELS = PeopleTable.PRIVACY_LEVELS;

@@ -22,6 +22,8 @@ import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
 import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
+import { Utils } from "../shared/Utils.js";
+import { PDFs } from "../shared/PDFs.js";
 
 (function () {
     const APP_ID = "FractalTree";
@@ -39,7 +41,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "12 March 2024";
+    const AboutUpdateDate = "31 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -163,6 +165,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
     let font4Name = "Arial";
     let font4Info = "SansSerif";
+    let font4Extra = "Courier";
 
     // function sayHi() {
     //     console.log("Gday Mate");
@@ -191,7 +194,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         "RoyalBlue",
         "FireBrick",
         "Blue",
-        "SlateGrey",
+        "SlateGray",
         "DarkMagenta",
         "Red",
         "DarkOrange",
@@ -450,6 +453,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     var AltRedsArray = []; // to be defined shortly
     var BluesArray = []; // to be defined shortly
 
+    var popupDIV =
+        '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+    var connectionPodDIV =
+        '<div id=connectionPodDIV style="display:none; width:fit-content; position:absolute; left:50px; top:225px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+        '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePodDIV();">' +
+        SVGbtnCLOSE +
+        "</A></span></div>";
+
+    popupDIV += connectionPodDIV;
+
     FractalView.prototype.meta = function () {
         return {
             title: "Fractal Tree",
@@ -457,8 +473,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             docs: "https://www.WikiTree.com/wiki/Dynamic_Tree",
         };
     };
-
-    
 
     FractalView.resetSettingsDIVtoDefaults = function () {
         // console.log("Here you are inside FractalView.resetSettingsDIVtoDefaults");
@@ -492,36 +506,33 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
     };
 
-
     FractalView.redrawAfterLoadSettings = function () {
-        // console.log("Here you are inside FractalView.redrawAfterLoadSettings");
-        
-            FractalView.tweakSettingsToHideShowElements();
-            FractalView.updateLegendTitle();
-            FractalView.updateHighlightDescriptor();
+        console.log("Here you are inside FractalView.redrawAfterLoadSettings");
 
-            let showBadges = FractalView.currentSettings["general_options_showBadges"];
-            if (!showBadges) {
-                let stickerLegend = document.getElementById("stickerLegend");
-                stickerLegend.style.display = "none";
-                if (
-                    FractalView.currentSettings["highlight_options_showHighlights"] == false &&
-                    FractalView.currentSettings["colour_options_colourBy"] != "Location" &&
-                    FractalView.currentSettings["colour_options_colourBy"] != "Family"
-                ) {
-                    let legendDIV = document.getElementById("legendDIV");
-                    legendDIV.style.display = "none";
-                }
+        FractalView.tweakSettingsToHideShowElements();
+        FractalView.updateLegendTitle();
+        FractalView.updateHighlightDescriptor();
+
+        let showBadges = FractalView.currentSettings["general_options_showBadges"];
+        if (!showBadges) {
+            let stickerLegend = document.getElementById("stickerLegend");
+            stickerLegend.style.display = "none";
+            if (
+                FractalView.currentSettings["highlight_options_showHighlights"] == false &&
+                FractalView.currentSettings["colour_options_colourBy"] != "Location" &&
+                FractalView.currentSettings["colour_options_colourBy"] != "Family"
+            ) {
+                let legendDIV = document.getElementById("legendDIV");
+                legendDIV.style.display = "none";
             }
+        }
 
-            WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
-                expires: 365,
-            });
+        WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
+            expires: 365,
+        });
 
-            FractalView.redraw();
-
+        FractalView.redraw();
     };
-
 
     FractalView.prototype.init = function (selector, startId) {
         // condLog("FractalView.js - line:18", selector) ;
@@ -681,6 +692,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 { value: "both", text: "both" },
                             ],
                             defaultValue: "none",
+                        },
+                        {
+                            optionName: "font4Extra",
+                            type: "radio",
+                            label: "Font for Extras",
+                            values: [
+                                { value: "SansSerif", text: "Arial" },
+                                { value: "Mono", text: "Courier" },
+                                { value: "Serif", text: "Times" },
+                                { value: "Fantasy", text: "Fantasy" },
+                                { value: "Script", text: "Script" },
+                            ],
+                            defaultValue: "Mono",
                         },
                         { optionName: "break1", type: "br" },
                         {
@@ -930,12 +954,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                                 { value: "GGrand", text: "Great-Grandparent" },
                                 { value: "GGGrand", text: "2x Great Grandparent" },
                                 { value: "GGGGrand", text: "3x Great Grandparent" },
+                                { value: "BioCheck", text: "Bio Check status" },
                                 { value: "Family", text: "Family Stats" },
                                 { value: "Location", text: "Location" },
 
                                 // { value: "Town", text: "by Place name" },
                                 // { value: "Region", text: "by Region (Province/State)" },
                                 // { value: "Country", text: "by Country" },
+                                // { value: "DNAstatus", text: "Parental status" },
                                 { value: "random", text: "random chaos" },
                             ],
                             defaultValue: "Generation",
@@ -1150,9 +1176,24 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         // Setup the LegendHTML for when we need the Legend (for multiple locations colouring legend, for example)
         var legendHTML =
-            '<div id=legendDIV style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left"><A style="cursor:pointer;" onclick="FractalView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
+            '<div id=legendDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; ; z-index:9999">' +
+            '<span style="color:red;  position:absolute; top:-0.2em; left:0em; cursor:pointer; "><A style="cursor:pointer;" onclick="FractalView.hideLegend();">[ <B><font color=red>x</font></B> ]</A></span>' +
             "<H3 align=center>Legend</H3><div id=refreshLegend style='display:none; cursor:pointer;'><A onclick='FractalView.refreshTheLegend();'>Click to Update Legend</A></DIV><div id=innerLegend></div></div>";
+
+        var PDFgenPopupHTML =
+            '<div id=PDFgenPopupDIV class="pop-up" style="display:none; position:absolute; right:80px; background-color:#EDEADE; border: solid darkgreen 4px; border-radius: 15px; padding: 15px; ; z-index:9999">' +
+            '<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FractalView.closePDFpopup();">' +
+            SVGbtnCLOSE +
+            "</a></span>" +
+            "<H3 align=center>PDF Generator</H3><div id=innerPDFgen>" +
+            "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Fractal Tree PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Fractal Tree for John Smith'>" +
+            "<BR/><BR/>" +
+            "<label><input type=checkbox id=PDFshowFooterCheckbox checked> Display Citation at bottom of PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFfooterText value='Fractal Tree created TODAY using Fractal Tree app in Tree Apps collection on WikiTree.com.'>" +
+            "<BR/><BR/><label><input type=checkbox id=PDFshowURLCheckbox checked> Add URL to bottom of PDF</label>" +
+            "<BR/><BR/>" +
+            "<button id=PDFgenButton class='btn btn-primary'  onclick='FractalView.doPrintPDF();'>Generate PDF now</button> " +
+            "<span id=PDFgenProgressBar class='btn-secondary'  style='display:none;' >Processing PDF .... please hold ...</span> " +
+            "</div></div>";
 
         // Setup the Button Bar --> Initial version will use mostly text links, but should be replaced with icons - ideally images that have a highlighted / unhighlighted version, where appropriate
         var btnBarHTML =
@@ -1161,36 +1202,49 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             "&nbsp;" +
             "</td>" +
             '<td width="5%">&nbsp;' +
-            '<span id=legendASCII style="display:inline;"><A style="cursor:pointer;" onclick="FractalView.toggleLegend();"><font size=+2>' +
+            '<span id=legendASCII style="display:inline;"><A style="cursor:pointer;" title="Hide/Show Legend" onclick="FractalView.toggleLegend();"><font size=+2>' +
             LEGEND_CLIPBOARD +
             "</font></A></span>" +
             "</td>" +
             '<td width="30%" align="center">' +
-            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display -=1; FractalView.redraw();">' +
+            ' <A style="cursor:pointer;" title="Decrease # of generations displayed" onclick="FractalView.numGens2Display -=1; FractalView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
             "[ <span id=numGensInBBar>3</span> generations ]" +
-            ' <A style="cursor:pointer;" onclick="FractalView.numGens2Display +=1; FractalView.redraw();">' +
+            ' <A style="cursor:pointer;" title="Increase # of generations displayed" onclick="FractalView.numGens2Display +=1; FractalView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</td>" +
             '<td width="5%" id=loadingTD align="center" style="font-style:italic; color:blue">&nbsp;</td>' +
             '<td width="30%" align="right">' +
-            ' <A style="cursor:pointer;" onclick="FractalView.toggleSettings();"><font size=+2>' +
+            // '<img id=testIMGnum1 src="https://www.wikitree.com/images/wikitree-logo.png" width=20 height=20 title="WikiTree" alt="WikiTree" />' +
+            // "&nbsp;&nbsp;" +
+            // '<img id=testIMGnum2 src="https://www.wikitree.com/images/icons/male.gif" width=20 height=20 title="WikiTree" alt="WikiTree" />' +
+            // "&nbsp;&nbsp;" +
+            // '<img id=testIMGnum3 src="https://apps.wikitree.com/apps/clarke11007/images/icons/female.gif" width=20 height=20 title="WikiTree" alt="WikiTree" />' +
+            "&nbsp;&nbsp;" +
+            ' <A style="cursor:pointer;" title="Save as PDF"  onclick="FractalView.showPDFgenPopup();">' +
+            PRINTER_ICON +
+            "</A>&nbsp;&nbsp;" +
+            ' <A style="cursor:pointer;" title="Adjust Settings"  onclick="FractalView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
             "</font></A>" +
             "&nbsp;&nbsp;" +
-            "<A onclick=FractalView.toggleAbout();>" +
+            "<A title='About this app' onclick=FractalView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
-                ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
+                ? "&nbsp;&nbsp;<A target=helpPage title='Open up Help (free space page) for this app' href='" +
+                  AboutHelpDoc +
+                  "'>" +
+                  SVGbtnHELP +
+                  "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
             '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;">Please wait while initial Fractal Tree is loading ...</DIV>';
 
         var aboutHTML =
-            '<div id=aboutDIV style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px;}">' +
+            '<div id=aboutDIV class="pop-up" style="display:none; position:absolute; right:20px; background-color:aliceblue; border: solid blue 4px; border-radius: 15px; padding: 15px; zIndex:9999}">' +
             `<span style="color:red; position:absolute; top:0.2em; right:0.6em; cursor:pointer;"><a onclick="FractalView.toggleAbout();">` +
             SVGbtnCLOSE +
             "</a></span>" +
@@ -1249,17 +1303,508 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             "</div>";
 
         // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
-        container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
+        // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML + legendHTML + PDFgenPopupHTML + aboutHTML + settingsHTML + popupDIV;
+        container.innerHTML = "";
+
+        $("#popupDIV").draggable();
+        $("#connectionPodDIV").draggable();
+        $("#legendDIV").draggable();
+        $("#PDFgenPopupDIV").draggable();
+        document.getElementById("legendDIV").style.zIndex = Utils.getNextZLevel();
+        document.getElementById("legendDIV").className += " pop-up";
+
+        // container.innerHTML = btnBarHTML + legendHTML + aboutHTML + settingsHTML;
 
         var saveSettingsChangesButton = document.getElementById("saveSettingsChanges");
         saveSettingsChangesButton.addEventListener("click", (e) => settingsChanged(e));
 
+        FractalView.closePDFpopup = function () {
+            let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
+            PDFgenPopupDIV.style.display = "none";
+        };
+
+        FractalView.showPDFgenPopup = function () {
+            let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
+            document.getElementById("PDFgenProgressBar").style.display = "none";
+            document.getElementById("PDFgenButton").removeAttribute("disabled");
+            document.getElementById("PDFgenButton").style.display = "revert";
+            PDFgenPopupDIV.style.display = "block";
+            PDFgenPopupDIV.style.zIndex = Utils.getNextZLevel();
+            document.getElementById("PDFtitleText").value =
+                "Fractal Tree for " + document.getElementById("nameDivFor1").innerText;
+            let thisDateObj = new Date();
+            let thisDate = [thisDateObj.getDate(), months[thisDateObj.getMonth()], thisDateObj.getFullYear()].join("-");
+            document.getElementById("PDFfooterText").value =
+                "This " +
+                FractalView.numGens2Display +
+                " generation Fractal Tree was created " +
+                thisDate +
+                " using the FRACTAL TREE app in the Tree Apps collection on WikiTree.com.";
+        };
+
+        // PDFs.currentPDFsettings = {
+        //     thisDX: 0,
+        //     thisDY: 0,
+        //     thisStroke: "black",
+        //     thisStrokeRGB: [0, 0, 0],
+        //     thisStrokeWidth: 1,
+        //     thisFontSize: 18,
+        //     thisFont: "helvetica", // helvetica, times, courier, symbol, zapfdingbats
+        //     thisFontStyle: "normal", // normal , bold, italic, bolditalic
+        // };
+
+        // var PDFs.thisPDFimageArray = [];
+        // var PDFs.thisPDFlinesArray = [];
+        // var PDFs.thisPDFtextArray = [];
+        // var PDFs.thisPDFrectArray = [];
+        // var PDFs.thisPDFroundedRectArray = [];
+
+        // var PDFs.thisPDFminX = 0;
+        // var PDFs.thisPDFminY = 0;
+        // var PDFs.thisPDFmaxX = 0;
+        // var PDFs.thisPDFmaxY = 0;
+        // var PDFs.thisPDFwidth = 0;
+        // var PDFs.thisPDFheight = 0;
+        // var PDFs.thisPDFmargin = 20; /// 1.5 cm ... to be multiplied by appropriate scale factor
+
+        FractalView.doPrintPDF = function () {
+            document.getElementById("PDFgenButton").style.display = "none";
+            document.getElementById("PDFgenProgressBar").offsetHeight;
+            document.getElementById("PDFgenProgressBar").style.display = "block"; //( "disabled", true);
+            FractalView.printPDF();
+        };
+
+        FractalView.printPDF = async function () {
+            let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
+            document.getElementById("PDFgenButton").setAttribute("disabled", true);
+            document.getElementById("PDFgenProgressBar").style.display = "revert"; //( "disabled", true);
+
+            // PDFs.currentPDFsettings = {
+            //     thisDX: 0,
+            //     thisDY: 0,
+            //     thisStroke: "black",
+            //     thisStrokeRGB: [0, 0, 0],
+            //     thisStrokeWidth: 1,
+            //     thisFontSize: 18,
+            //     thisFont: "helvetica",
+            //     thisFontStyle: "normal",
+            // };
+
+            // PDFs.thisPDFlinesArray = [];
+            // PDFs.thisPDFtextArray = [];
+            // PDFs.thisPDFrectArray = [];
+            // PDFs.thisPDFroundedRectArray = [];
+            // PDFs.thisPDFimageArray = [];
+
+            // PDFs.thisPDFminX = 0;
+            // PDFs.thisPDFminY = 0;
+            // PDFs.thisPDFmaxX = 0;
+            // PDFs.thisPDFmaxY = 0;
+            // PDFs.thisPDFwidth = 0;
+            // PDFs.thisPDFheight = 0;
+            // PDFs.thisPDFmargin = 20;
+
+            PDFs.resetAll();
+
+            let thisSVG = document.getElementById("SVGgraphics");
+            let thisDXDY = PDFs.getTranslationCoordinates(thisSVG);
+            PDFs.currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
+            PDFs.currentPDFsettings.thisDY = 100 + parseInt(thisDXDY[1]);
+
+            tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+            tmpPDF.setFontSize(PDFs.currentPDFsettings.thisFontSize);
+
+            for (var i = 0; i < thisSVG.childElementCount; i++) {
+                let thisID = thisSVG.children[i].id;
+                let thisDisplay = thisSVG.children[i].getAttribute("display");
+
+                if (thisDisplay != "none" && thisID.indexOf("line") == 0 && thisID.indexOf("ForPerson") > 0) {
+                    //  console.log(thisSVG.children[i]);
+                    PDFs.addLineToPDF(thisSVG.children[i]);
+                }
+            }
+            for (let index = 1; index <= 2 ** FractalView.numGens2Display; index++) {
+                let thisWedgeName = "wedgeInfoFor" + index;
+                let thisWedgeElement = document.getElementById(thisWedgeName);
+                let thisRRectBkgdClr = "#FFFF00";
+                let thisWedgeBkgdClr = "#FF00FF";
+                let wedgeWidth = 300;
+
+                if (thisWedgeElement) {
+                    let thisWedgeParent = thisWedgeElement.parentNode;
+                    let thisWedgeStyle = thisWedgeElement.getAttribute("style");
+                    if (thisWedgeStyle) {
+                        thisWedgeBkgdClr = thisWedgeStyle
+                            .substring(thisWedgeStyle.indexOf("background-color:") + 17)
+                            .trim(); // , thisWedgeStyle.indexOf(";", thisWedgeStyle.indexOf("background-color:"))).trim();
+                    }
+                    if (thisWedgeParent) {
+                        let thisWedgeParentStyle = thisWedgeParent.getAttribute("style");
+                        if (thisWedgeParentStyle) {
+                            thisRRectBkgdClr = thisWedgeParentStyle
+                                .substring(
+                                    thisWedgeParentStyle.indexOf("background-color:") + 17,
+                                    thisWedgeParentStyle.indexOf(";", thisWedgeParentStyle.indexOf("background-color:"))
+                                )
+                                .trim();
+                        }
+
+                        if (thisWedgeParent.parentNode) {
+                            let thisWedgeParentParentWidth = thisWedgeParent.parentNode.getAttribute("width");
+                            if (thisWedgeParentParentWidth) {
+                                wedgeWidth = parseInt(thisWedgeParentParentWidth);
+                                // console.log({ wedgeWidth }, { thisWedgeParentParentWidth });
+                            }
+                        }
+                    }
+                }
+
+                let thisID = "nameDivFor" + index;
+                let thisElement = document.getElementById(thisID);
+                let thisX = PDFs.currentPDFsettings.thisDX;
+                let thisY = PDFs.currentPDFsettings.thisDY;
+
+                if (thisElement) {
+                    let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
+                    if (thisPersonObject) {
+                        let thisDXDY = PDFs.getTranslationCoordinates(thisPersonObject);
+                        PDFs.currentPDFsettings.thisDX = parseInt(thisDXDY[0]);
+                        PDFs.currentPDFsettings.thisDY = parseInt(thisDXDY[1]);
+
+                        thisX = parseInt(thisDXDY[0]) - wedgeWidth / 2;
+                        thisY = parseInt(thisDXDY[1]) - 100;
+                    }
+                    PDFs.thisPDFroundedRectArray.push([
+                        thisX,
+                        thisY,
+                        wedgeWidth,
+                        200,
+                        15,
+                        15,
+                        "DF",
+                        { fillColor: thisRRectBkgdClr, strokeColor: "#000000", lineWidth: 2 },
+                    ]);
+                    // pdf.setFillColor(thisWedgeBkgdClr);
+                    PDFs.thisPDFrectArray.push([
+                        thisX + 15,
+                        thisY + 15,
+                        wedgeWidth - 30,
+                        170,
+                        "F",
+                        { fillColor: thisWedgeBkgdClr, strokeColor: thisWedgeBkgdClr, lineWidth: 0 },
+                    ]);
+                } else {
+                    continue;
+                }
+
+                thisID = "extraInfoFor" + index;
+                thisElement = document.getElementById(thisID);
+                PDFs.setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Extra, false);
+                tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+                tmpPDF.setFontStyle(PDFs.currentPDFsettings.thisFontStyle);
+
+                if (thisElement) {
+                    // thisY += 5;
+                    let thisTextArray = thisElement.innerHTML.split("<br>");
+                    // console.log({ thisText }, { thisX }, { thisY });
+                    // pdf.setDrawColor("#000000");
+                    for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                        const textLine = thisTextArray[textIndex];
+                        PDFs.thisPDFtextArray.push([
+                            textLine,
+                            thisX + wedgeWidth / 2,
+                            thisY + 30,
+                            PDFs.currentPDFsettings.thisFont,
+                            PDFs.currentPDFsettings.thisFontStyle,
+                            PDFs.currentPDFsettings.thisFontSize,
+                            { align: "center", maxWidth: wedgeWidth },
+                        ]);
+                        thisY += 21;
+                        // if (pdf.getTextWidth(textLine) > 300) {
+                        // thisY += 8;
+                        // }
+                    }
+                }
+
+                thisID = "photoImgFor" + index;
+                thisElement = document.getElementById(thisID);
+                if (
+                    thisElement &&
+                    thisElement.src > "" &&
+                    document.location.host.indexOf("apps.wikitree.com") > -1 &&
+                    thisElement.src.indexOf("www.wikitree.com") > -1 &&
+                    thisElement.parentNode.style.display != "none"
+                ) {
+                    //  let thisBaseString = theBaseString;
+
+                    let thisBaseString = await setupWaitForBase64Image({
+                        width: thisElement.width,
+                        height: thisElement.height,
+                        src: thisElement.src,
+                        ahnNum: index,
+                    });
+                    //  if (thePeopleList[window.FractalView.myAhnentafel.list[index]].getGender() == "Male") {
+                    //      thisBaseString = PDFs.maleGIFbase64string;
+                    //  } else if (thePeopleList[window.FractalView.myAhnentafel.list[index]].getGender() == "Female") {
+                    //      thisBaseString = PDFs.femaleGIFbase64string;
+                    //  } else {
+                    //      thisBaseString = PDFs.nogenderGIFbase64string;
+                    //  }
+
+                    thisY += 10;
+                    PDFs.thisPDFimageArray.push([
+                        thisBaseString,
+                        // "/apps/clarke11007/images/icons/female.gif",
+                        "",
+                        thisX + wedgeWidth / 2 - thisElement.width / 2,
+                        thisY,
+                        thisElement.width,
+                        thisElement.height,
+                    ]);
+                    thisY += thisElement.height;
+                } else if (thisElement && thisElement.src > "" && thisElement.parentNode.style.display != "none") {
+                    let thisBaseString = await setupWaitForBase64Image({
+                        width: thisElement.width,
+                        height: thisElement.height,
+                        src: thisElement.src,
+                        ahnNum: index,
+                    });
+
+                    PDFs.thisPDFimageArray.push([
+                        thisBaseString, //thisElement.src,
+                        "PNG",
+                        thisX + wedgeWidth / 2 - thisElement.width / 2,
+                        thisY,
+                        thisElement.width,
+                        thisElement.height,
+                    ]);
+                    thisY += thisElement.height + 20;
+                }
+
+                thisID = "nameDivFor" + index;
+                thisElement = document.getElementById(thisID);
+                //  PDFs.currentPDFsettings.thisFont =
+                PDFs.setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Names, true);
+                //  PDFs.currentPDFsettings.thisFontStyle = "bold";
+                tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+                tmpPDF.setFontStyle(PDFs.currentPDFsettings.thisFontStyle);
+
+                if (thisElement) {
+                    let thisText = thisElement.textContent;
+                    //  console.log({ thisText }, { thisX }, { thisY });
+                    // pdf.setDrawColor("#000000");
+                    // pdf.setLineWidth(2);
+                    // pdf.setFillColor(thisRRectBkgdClr);
+
+                    // pdf.setFillColor("#FFFFFF");
+                    PDFs.thisPDFtextArray.push([
+                        thisText,
+                        thisX + wedgeWidth / 2,
+                        thisY + 30,
+                        PDFs.currentPDFsettings.thisFont,
+                        PDFs.currentPDFsettings.thisFontStyle,
+                        PDFs.currentPDFsettings.thisFontSize,
+                        { align: "center", maxWidth: wedgeWidth },
+                    ]);
+                    if (tmpPDF.getTextWidth(thisText) > wedgeWidth) {
+                        thisY += 21;
+                    }
+                }
+
+                //  PDFs.currentPDFsettings.thisFontStyle = "normal";
+                PDFs.setPDFfontBasedOnSetting(FractalView.currentSettings.general_options_font4Info, false);
+                tmpPDF.setFont(PDFs.currentPDFsettings.thisFont, PDFs.currentPDFsettings.thisFontStyle);
+
+                thisID = "birthDivFor" + index;
+                thisElement = document.getElementById(thisID);
+                if (thisElement) {
+                    thisY += 5;
+                    let thisTextArray = thisElement.innerHTML.split("<br>");
+                    // console.log({ thisText }, { thisX }, { thisY });
+                    // pdf.setDrawColor("#000000");
+                    for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                        const textLine = thisTextArray[textIndex];
+                        thisY += 21;
+                        PDFs.thisPDFtextArray.push([
+                            textLine,
+                            thisX + wedgeWidth / 2,
+                            thisY + 30,
+                            PDFs.currentPDFsettings.thisFont,
+                            PDFs.currentPDFsettings.thisFontStyle,
+                            PDFs.currentPDFsettings.thisFontSize,
+                            { align: "center", maxWidth: wedgeWidth },
+                        ]);
+                        if (tmpPDF.getTextWidth(textLine) > wedgeWidth) {
+                            thisY += 21;
+                        }
+                    }
+                }
+
+                thisID = "deathDivFor" + index;
+                thisElement = document.getElementById(thisID);
+                if (thisElement) {
+                    thisY += 5;
+                    let thisTextArray = thisElement.innerHTML.split("<br>");
+                    // console.log({ thisText }, { thisX }, { thisY });
+                    // pdf.setDrawColor("#000000");
+                    for (let textIndex = 0; textIndex < thisTextArray.length; textIndex++) {
+                        const textLine = thisTextArray[textIndex];
+                        thisY += 21;
+                        PDFs.thisPDFtextArray.push([
+                            textLine,
+                            thisX + wedgeWidth / 2,
+                            thisY + 30,
+                            PDFs.currentPDFsettings.thisFont,
+                            PDFs.currentPDFsettings.thisFontStyle,
+                            PDFs.currentPDFsettings.thisFontSize,
+                            { align: "center", maxWidth: wedgeWidth },
+                        ]);
+                        if (tmpPDF.getTextWidth(textLine) > wedgeWidth) {
+                            thisY += 21;
+                        }
+                    }
+                }
+                thisY += 40; // have to take into consideration the height of the text - since thisY is the top of the text
+
+                let latestRRect = PDFs.thisPDFroundedRectArray[PDFs.thisPDFroundedRectArray.length - 1];
+                let latestRect = PDFs.thisPDFrectArray[PDFs.thisPDFrectArray.length - 1];
+                //  console.log("End RRect info:", index, { latestRRect }, { thisY });
+                if (latestRRect[3] < thisY - latestRRect[1]) {
+                    latestRRect[3] = thisY - latestRRect[1];
+                    latestRect[3] = latestRRect[3] - 30;
+                }
+            }
+
+            // ALL COMPONENTS HAVE BEEN ADDED TO THE PDF - NOW DO THE FINAL CALCULATIONS
+            PDFs.setPDFsizes(tmpPDF);
+            console.log("w,h:", PDFs.thisPDFwidth, PDFs.thisPDFheight);
+
+            // Must set ORIENTATION based on the width and height of the PDF - doesn't like it otherwise.
+            // let orientation = "l";
+            // if (PDFs.thisPDFwidth < PDFs.thisPDFheight) {
+            //     orientation = "p";
+            // }
+
+            // let realPDF = new jsPDF(orientation, "pt", [PDFs.thisPDFwidth, PDFs.thisPDFheight]);
+            // console.log(PDFs.currentPDFsettings);
+            // PDFs.addLinesToPDF(realPDF);
+            // PDFs.addRectsToPDF(realPDF);
+            // PDFs.addRoundedRectsToPDF(realPDF);
+            // PDFs.addImagesToPDF(realPDF);
+            // PDFs.addTextsToPDF(realPDF);
+
+            let realPDF = PDFs.assemblePDF(["lines", "rects", "roundedRects", "images", "texts"]);
+
+            let fileName4PDF =
+                "FractalTree_" +
+                FractalView.myAhnentafel.primaryPerson.getName() +
+                "_" +
+                FractalView.numGens2Display +
+                "gens_" +
+                PDFs.datetimestamp() +
+                ".pdf";
+
+            realPDF.save(fileName4PDF);
+
+            FractalView.closePDFpopup();
+        };
+
+        var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // 26 Feb 16:19:34
+
+        var theBaseString = "";
+
+        function getBase64Image(img) {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL("image/png");
+            return dataURL;
+        }
+
+        const image = new Image();
+        image.src = "https://apps.wikitree.com/apps/clarke11007/images/icons/no-gender.gif";
+        // image.src = "https://apps.wikitree.com/apps/clarke11007/pix/PhotoLines.png";
+        // image.src = "https://www.wikitree.com/photo.php/thumb/3/30/Clarke-11007.jpg/75px-Clarke-11007.jpg";
+
+        image.onload = function () {
+            const base64String = getBase64Image(image);
+            // console.log(base64String);
+            theBaseString = base64String;
+        };
+
+        function setupWaitForBase64Image(imageObj) {
+            let thisImage;
+            if (imageObj.src > "" && imageObj.width > 0 && imageObj.height > 0) {
+                console.log("imageObj.src", imageObj.src, "WIDTH & HEIGHT");
+                thisImage = new Image(imageObj.width, imageObj.height);
+                thisImage.crossOrigin = "use-credentials";
+                thisImage.src = imageObj.src;
+            } else if (imageObj.src > "" && imageObj.width > 0) {
+                thisImage = new Image(imageObj.width);
+                thisImage.crossOrigin = "use-credentials";
+                thisImage.src = imageObj.src;
+            } else if (imageObj.src > "") {
+                thisImage = new Image();
+                thisImage.crossOrigin = "use-credentials";
+                thisImage.src = imageObj.src;
+            }
+
+            if (imageObj.src > "") {
+                return new Promise((resolve, reject) => {
+                    thisImage.onload = function () {
+                        const base64String = getBase64Image(thisImage);
+                        // console.log(base64String);
+                        resolve(base64String);
+                    };
+
+                    thisImage.onerror = function () {
+                        // if (imageObj.index % 2 == 0) {
+                        // reject(new Error("Failed to load this silly image"));
+
+                        if (imageObj.ahnNum == 1) {
+                            if (FractalView.myAhnentafel.primaryPerson.getGender() == "Male") {
+                                resolve(PDFs.maleGIFbase64string);
+                            } else if (FractalView.myAhnentafel.primaryPerson.getGender() == "Female") {
+                                resolve(PDFs.femaleGIFbase64string);
+                            } else {
+                                resolve(PDFs.nogenderGIFbase64string);
+                            }
+                        } else if (imageObj.ahnNum % 2 == 0) {
+                            resolve(PDFs.maleGIFbase64string);
+                        } else if (imageObj.ahnNum % 2 == 1) {
+                            resolve(PDFs.femaleGIFbase64string);
+                        } else {
+                            resolve(PDFs.nogenderGIFbase64string);
+                        }
+                    };
+                });
+            } else {
+                return "NO IMG SRC";
+            }
+        }
+
         FractalView.toggleAbout = function () {
             let aboutDIV = document.getElementById("aboutDIV");
             let settingsDIV = document.getElementById("settingsDIV");
+            if (!Utils.firstTreeAppPopUpPopped) {
+                $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+                Utils.firstTreeAppPopUpPopped = true;
+            }
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
+                    aboutDIV.style.zIndex = Utils.getNextZLevel();
                     settingsDIV.style.display = "none";
                 } else {
                     aboutDIV.style.display = "none";
@@ -1267,130 +1812,143 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             }
         };
 
-    function settingsChanged(e) {
-        if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
-            condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
-            WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
-                expires: 365,
-            });
-            console.log("NEW settings are:", FractalView.currentSettings);
+        function settingsChanged(e) {
+            if (FractalView.fractalSettingsOptionsObject.hasSettingsChanged(FractalView.currentSettings)) {
+                condLog("the SETTINGS HAVE CHANGED - the CALL TO SETTINGS OBJ  told me so !");
+                WTapps_Utils.setCookie("wtapps_fractal", JSON.stringify(FractalView.currentSettings), {
+                    expires: 365,
+                });
+                console.log("NEW settings are:", FractalView.currentSettings);
 
-            FractalView.tweakSettingsToHideShowElements();
-            
-            
-            // if (!showBadges) {
-            //     FractalView.removeBadges();
-            // }
-            
-            FractalView.updateHighlightDescriptor();
-            
-            FractalView.myAncestorTree.draw();
-            // updateFontsIfNeeded();
-            adjustHeightsIfNeeded();
+                FractalView.tweakSettingsToHideShowElements();
 
-        } else {
-            condLog("NOTHING happened according to SETTINGS OBJ");
-        }
-    }
+                // if (!showBadges) {
+                //     FractalView.removeBadges();
+                // }
 
-    FractalView.updateLegendTitle = function () {
-        let colourBy = FractalView.currentSettings["colour_options_colourBy"];
-        let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
-        let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
+                FractalView.updateHighlightDescriptor();
 
-        let legendDIV = document.getElementById("legendDIV");
-        let LegendTitle = document.getElementById("LegendTitle");
-        let LegendTitleH3 = document.getElementById("LegendTitleH3");
-                
-        BRbetweenLegendAndStickers.style.display = "block";
-        LegendTitleH3.style.display = "block";
-        condLog("NEW UPDATE SETTINGS: ", colourBy, colour_options_specifyByFamily, colour_options_specifyByLocation);
-
-        if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
-            LegendTitle.textContent = "Age at death";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
-            LegendTitle.textContent = "Birth Country";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
-            LegendTitle.textContent = "Birth Region";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("BirthTown") > -1) {
-            LegendTitle.textContent = "Birth Town";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
-            LegendTitle.textContent = "Country of Death";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
-            LegendTitle.textContent = "Region of Death";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("DeathTown") > -1) {
-            LegendTitle.textContent = "Town of Death";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
-            LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
-        } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
-            LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
-        }
-        
-    }
-
-    FractalView.updateHighlightDescriptor = function () {
-        let legendDIV = document.getElementById("legendDIV");
-        let legendToggle = document.getElementById("legendASCII");
-        let innerLegend = document.getElementById("innerLegend");
-
-        legendDIV.style.display = "block";
-        legendToggle.style.display = "inline-block";
-
-        document.getElementById("highlightDescriptor").style.display = "block";
-        if (FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "mitochondrial DNA (mtDNA) ancestors";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "X, Y, mitochondrial DNA ancestors";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "Relationships confirmed by DNA";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "Profiles that pass the BioCheck";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
-            document.getElementById("highlightPeepsDescriptor").textContent = "Profiles that fail the BioCheck";
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
-            let catNameSelector = document.getElementById("highlight_options_catName");
-            let rawValue = catNameSelector.value.trim();
-            document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
-            currentHighlightCategory = rawValue;
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
-            let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
-            let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
-            let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
-            if (aliveYYYYSelector.value > 1) {
-                document.getElementById("highlightPeepsDescriptor").textContent =
-                    "Alive on " +
-                    aliveDDSelector.value +
-                    " " +
-                    monthNames[aliveMMMSelector.value - 1] +
-                    " " +
-                    aliveYYYYSelector.value;
+                FractalView.myAncestorTree.draw();
+                // updateFontsIfNeeded();
+                adjustHeightsIfNeeded();
+                console.log("just finished Adjust Heights");
             } else {
-                document.getElementById("highlightPeepsDescriptor").textContent =
-                    "Alive on " + aliveDDSelector.value + " " + monthNames[aliveMMMSelector.value - 1] + " " + 1950;
+                condLog("NOTHING happened according to SETTINGS OBJ");
             }
-        } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioText") {
-            let bioTextSelector = document.getElementById("highlight_options_bioText");
-            document.getElementById("highlightPeepsDescriptor").textContent =
-                'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
-        } else {
-            document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
         }
 
-        if (FractalView.currentSettings["highlight_options_showHighlights"] != true) {            
-            document.getElementById("highlightDescriptor").style.display = "none";
-        }
+        FractalView.updateLegendTitle = function () {
+            let colourBy = FractalView.currentSettings["colour_options_colourBy"];
+            let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
+            let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
 
-    }
+            let legendDIV = document.getElementById("legendDIV");
+            let LegendTitle = document.getElementById("LegendTitle");
+            let LegendTitleH3 = document.getElementById("LegendTitleH3");
 
-    FractalView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
-        // console.log("function: updateCurrentSettingsBasedOnCookieValues");
-        // console.log(theCookieString);
-        const theCookieSettings = JSON.parse(theCookieString);
-        // console.log("JSON version of the settings are:", theCookieSettings);
+            BRbetweenLegendAndStickers.style.display = "block";
+            LegendTitleH3.style.display = "block";
+            condLog(
+                "NEW UPDATE SETTINGS: ",
+                colourBy,
+                colour_options_specifyByFamily,
+                colour_options_specifyByLocation
+            );
+
+            if (colourBy == "Family" && colour_options_specifyByFamily == "age") {
+                LegendTitle.textContent = "Age at death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthCountry") {
+                LegendTitle.textContent = "Birth Country";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthRegion") {
+                LegendTitle.textContent = "Birth Region";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("BirthTown") > -1) {
+                LegendTitle.textContent = "Birth Town";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathCountry") {
+                LegendTitle.textContent = "Country of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathRegion") {
+                LegendTitle.textContent = "Region of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation.indexOf("DeathTown") > -1) {
+                LegendTitle.textContent = "Town of Death";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "BirthDeathCountry") {
+                LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
+            } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
+                LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+            } else if (colourBy == "BioCheck") {
+                LegendTitle.textContent = "Bio Check Status";
+            }
+        };
+
+        FractalView.updateHighlightDescriptor = function () {
+            let legendDIV = document.getElementById("legendDIV");
+            let legendToggle = document.getElementById("legendASCII");
+            let innerLegend = document.getElementById("innerLegend");
+
+            legendDIV.style.display = "block";
+            console.log("SHOW LEGEND DIV  - line # 2221");
+            legendToggle.style.display = "inline-block";
+
+            document.getElementById("highlightDescriptor").style.display = "block";
+            if (FractalView.currentSettings["highlight_options_highlightBy"] == "YDNA") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "Y DNA ancestors";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "mtDNA") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "mitochondrial DNA (mtDNA) ancestors";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "XDNA") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "X Chromosome inheritance path";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAinheritance") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "X, Y, mitochondrial DNA ancestors";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "DNAconfirmed") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "Relationships confirmed by DNA";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckOK") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "Profiles that pass the BioCheck";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioCheckFail") {
+                document.getElementById("highlightPeepsDescriptor").textContent = "Profiles that fail the BioCheck";
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "cat") {
+                let catNameSelector = document.getElementById("highlight_options_catName");
+                let rawValue = catNameSelector.value.trim();
+                document.getElementById("highlightPeepsDescriptor").textContent = rawValue;
+                currentHighlightCategory = rawValue;
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "aliveDay") {
+                let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+                let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+                let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+                if (aliveYYYYSelector.value > 1) {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Alive on " +
+                        aliveDDSelector.value +
+                        " " +
+                        monthNames[aliveMMMSelector.value - 1] +
+                        " " +
+                        aliveYYYYSelector.value;
+                } else {
+                    document.getElementById("highlightPeepsDescriptor").textContent =
+                        "Alive on " + aliveDDSelector.value + " " + monthNames[aliveMMMSelector.value - 1] + " " + 1950;
+                }
+            } else if (FractalView.currentSettings["highlight_options_highlightBy"] == "bioText") {
+                let bioTextSelector = document.getElementById("highlight_options_bioText");
+                document.getElementById("highlightPeepsDescriptor").textContent =
+                    'Biographies that contain the word: "' + bioTextSelector.value.trim() + '"';
+            } else {
+                document.getElementById("highlightPeepsDescriptor").textContent = "Something else ...";
+            }
+
+            if (FractalView.currentSettings["highlight_options_showHighlights"] != true) {
+                document.getElementById("highlightDescriptor").style.display = "none";
+
+                let showBadges = FractalView.currentSettings["general_options_showBadges"];
+                let colourBy = FractalView.currentSettings["colour_options_colourBy"];
+                if (showBadges || colourBy == "Family" || colourBy == "Location") {
+                    // Fine to leave the legend DIV showing
+                } else {
+                    legendDIV.style.display = "none";
+                }
+            }
+        };
+
+        FractalView.updateCurrentSettingsBasedOnCookieValues = function (theCookieString) {
+            // console.log("function: updateCurrentSettingsBasedOnCookieValues");
+            // console.log(theCookieString);
+            const theCookieSettings = JSON.parse(theCookieString);
+            // console.log("JSON version of the settings are:", theCookieSettings);
             for (const key in theCookieSettings) {
                 if (Object.hasOwnProperty.call(theCookieSettings, key)) {
                     const element = theCookieSettings[key];
@@ -1431,148 +1989,148 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // ADD SPECIAL SETTING THAT GETS MISSED OTHERWISE:
             // FractalView.currentSettings["general_options_badgeLabels_otherValue"] =
             //     theCookieSettings["general_options_badgeLabels_otherValue"];
-    }
-        
+        };
 
-    FractalView.tweakSettingsToHideShowElements = function () {
-        let showBadges = FractalView.currentSettings["general_options_showBadges"];
-        let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
-        let colourBy = FractalView.currentSettings["colour_options_colourBy"];
-        let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
-        let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
+        FractalView.tweakSettingsToHideShowElements = function () {
+            let showBadges = FractalView.currentSettings["general_options_showBadges"];
+            let newBoxWidth = FractalView.currentSettings["general_options_boxWidth"];
+            let colourBy = FractalView.currentSettings["colour_options_colourBy"];
+            let colour_options_specifyByFamily = FractalView.currentSettings["colour_options_specifyByFamily"];
+            let colour_options_specifyByLocation = FractalView.currentSettings["colour_options_specifyByLocation"];
 
-        let legendDIV = document.getElementById("legendDIV");
-        let LegendTitle = document.getElementById("LegendTitle");
-        let LegendTitleH3 = document.getElementById("LegendTitleH3");
-        let stickerLegend = document.getElementById("stickerLegend");
-        let legendToggle = document.getElementById("legendASCII");
-        let innerLegend = document.getElementById("innerLegend");
-        let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
+            let legendDIV = document.getElementById("legendDIV");
+            let LegendTitle = document.getElementById("LegendTitle");
+            let LegendTitleH3 = document.getElementById("LegendTitleH3");
+            let stickerLegend = document.getElementById("stickerLegend");
+            let legendToggle = document.getElementById("legendASCII");
+            let innerLegend = document.getElementById("innerLegend");
+            let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
 
-        console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
-        if (newBoxWidth && newBoxWidth > 0 && newBoxWidth != boxWidth) {
-            boxWidth = newBoxWidth;
-            nodeWidth = boxWidth * 1.5;
-        }
+            // console.log("BOX WIDTH - ", newBoxWidth, "vs", boxWidth);
+            if (newBoxWidth && newBoxWidth > 0 && newBoxWidth != boxWidth) {
+                boxWidth = newBoxWidth;
+                nodeWidth = boxWidth * 1.5;
+            }
 
-        if (FractalView.currentSettings["general_options_vBoxHeight"] != 1) {
-            document.getElementById("general_options_vSpacing_label").style.display = "none";
-            document.getElementById("general_options_vSpacing").style.display = "none";
-        } else {
-            document.getElementById("general_options_vSpacing_label").style.display = "inline-block";
-            document.getElementById("general_options_vSpacing").style.display = "inline-block";
-        }
-
-        let specFamSelector = document.getElementById("colour_options_specifyByFamily");
-        let specLocSelector = document.getElementById("colour_options_specifyByLocation");
-        let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
-        let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
-        let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
-        let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-
-        if (FractalView.currentSettings["colour_options_colourBy"] != "Family") {
-            specFamSelector.style.display = "none";
-            specFamSelectorLabel.style.display = "none";
-            specFamSelectorBR.style.display = "none";
-        } else {
-            specFamSelector.style.display = "inline-block";
-            specFamSelectorLabel.style.display = "inline-block";
-            specFamSelectorBR.style.display = "inline-block";
-        }
-
-        if (FractalView.currentSettings["colour_options_colourBy"] != "Location") {
-            specLocSelector.style.display = "none";
-            specLocSelectorLabel.style.display = "none";
-            specLocSelectorBR.style.display = "none";
-        } else if (FractalView.currentSettings["colour_options_colourBy"] == "Location") {
-            document.getElementById("colour_options_palette").style.display = "none";
-            document.getElementById("colour_options_palette_label").style.display = "none";
-            document.getElementById("colour_options_palette_BR").style.display = "none";
-            specLocSelector.style.display = "inline-block";
-            specLocSelectorLabel.style.display = "inline-block";
-            specLocSelectorBR.style.display = "inline-block";
-        }
-
-        let break4DNASelector = document.getElementById("highlight_options_break4DNA");
-        let howDNAlinksSelectorBR = document.getElementById("highlight_options_howDNAlinks_BR");
-        if (FractalView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") == -1) {
-            break4DNASelector.parentNode.style.display = "none";
-            howDNAlinksSelectorBR.parentNode.style.display = "none";
-        } else {
-            break4DNASelector.parentNode.style.display = "block";
-            howDNAlinksSelectorBR.parentNode.style.display = "block";
-        }
-
-        let catNameSelector = document.getElementById("highlight_options_catName");
-        let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
-        if (FractalView.currentSettings["highlight_options_highlightBy"] != "cat") {
-            catNameSelector.style.display = "none";
-            catNameSelectorLabel.style.display = "none";
-        } else {
-            catNameSelector.style.display = "inline-block";
-            catNameSelectorLabel.style.display = "inline-block";
-        }
-
-        let bioTextSelector = document.getElementById("highlight_options_bioText");
-        let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
-        if (FractalView.currentSettings["highlight_options_highlightBy"] != "bioText") {
-            bioTextSelector.style.display = "none";
-            bioTextSelectorLabel.style.display = "none";
-        } else {
-            bioTextSelector.style.display = "inline-block";
-            bioTextSelectorLabel.style.display = "inline-block";
-        }
-
-        let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
-        let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
-        let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
-
-        if (FractalView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
-            aliveYYYYSelector.parentNode.parentNode.style.display = "none";
-            aliveMMMSelector.parentNode.style.display = "none";
-            aliveDDSelector.parentNode.style.display = "none";
-        } else {
-            aliveYYYYSelector.parentNode.parentNode.style.display = "block";
-            aliveMMMSelector.parentNode.style.display = "block";
-            aliveDDSelector.parentNode.style.display = "block";
-        }
-
-        if (showBadges || colourBy == "Family" || colourBy == "Location") {
-            legendDIV.style.display = "block";
-            stickerLegend.style.display = "block";
-            legendToggle.style.display = "inline-block";
-            if (colourBy == "Family" || colourBy == "Location") {
-                FractalView.updateLegendTitle();
+            if (FractalView.currentSettings["general_options_vBoxHeight"] != 1) {
+                document.getElementById("general_options_vSpacing_label").style.display = "none";
+                document.getElementById("general_options_vSpacing").style.display = "none";
             } else {
-                BRbetweenLegendAndStickers.style.display = "none";
-                LegendTitleH3.style.display = "none";
-                innerLegend.innerHTML = "";
+                document.getElementById("general_options_vSpacing_label").style.display = "inline-block";
+                document.getElementById("general_options_vSpacing").style.display = "inline-block";
             }
 
-            if (!showBadges) {
+            let specFamSelector = document.getElementById("colour_options_specifyByFamily");
+            let specLocSelector = document.getElementById("colour_options_specifyByLocation");
+            let specFamSelectorLabel = document.getElementById("colour_options_specifyByFamily_label");
+            let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
+            let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
+            let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
+
+            if (FractalView.currentSettings["colour_options_colourBy"] != "Family") {
+                specFamSelector.style.display = "none";
+                specFamSelectorLabel.style.display = "none";
+                specFamSelectorBR.style.display = "none";
+            } else {
+                specFamSelector.style.display = "inline-block";
+                specFamSelectorLabel.style.display = "inline-block";
+                specFamSelectorBR.style.display = "inline-block";
+            }
+
+            if (FractalView.currentSettings["colour_options_colourBy"] != "Location") {
+                specLocSelector.style.display = "none";
+                specLocSelectorLabel.style.display = "none";
+                specLocSelectorBR.style.display = "none";
+            } else if (FractalView.currentSettings["colour_options_colourBy"] == "Location") {
+                document.getElementById("colour_options_palette").style.display = "none";
+                document.getElementById("colour_options_palette_label").style.display = "none";
+                document.getElementById("colour_options_palette_BR").style.display = "none";
+                specLocSelector.style.display = "inline-block";
+                specLocSelectorLabel.style.display = "inline-block";
+                specLocSelectorBR.style.display = "inline-block";
+            }
+
+            let break4DNASelector = document.getElementById("highlight_options_break4DNA");
+            let howDNAlinksSelectorBR = document.getElementById("highlight_options_howDNAlinks_BR");
+            if (FractalView.currentSettings["highlight_options_highlightBy"].indexOf("DNA") == -1) {
+                break4DNASelector.parentNode.style.display = "none";
+                howDNAlinksSelectorBR.parentNode.style.display = "none";
+            } else {
+                break4DNASelector.parentNode.style.display = "block";
+                howDNAlinksSelectorBR.parentNode.style.display = "block";
+            }
+
+            let catNameSelector = document.getElementById("highlight_options_catName");
+            let catNameSelectorLabel = document.getElementById("highlight_options_catName_label");
+            if (FractalView.currentSettings["highlight_options_highlightBy"] != "cat") {
+                catNameSelector.style.display = "none";
+                catNameSelectorLabel.style.display = "none";
+            } else {
+                catNameSelector.style.display = "inline-block";
+                catNameSelectorLabel.style.display = "inline-block";
+            }
+
+            let bioTextSelector = document.getElementById("highlight_options_bioText");
+            let bioTextSelectorLabel = document.getElementById("highlight_options_bioText_label");
+            if (FractalView.currentSettings["highlight_options_highlightBy"] != "bioText") {
+                bioTextSelector.style.display = "none";
+                bioTextSelectorLabel.style.display = "none";
+            } else {
+                bioTextSelector.style.display = "inline-block";
+                bioTextSelectorLabel.style.display = "inline-block";
+            }
+
+            let aliveYYYYSelector = document.getElementById("highlight_options_aliveYYYY");
+            let aliveMMMSelector = document.getElementById("highlight_options_aliveMMM");
+            let aliveDDSelector = document.getElementById("highlight_options_aliveDD");
+
+            if (FractalView.currentSettings["highlight_options_highlightBy"] != "aliveDay") {
+                aliveYYYYSelector.parentNode.parentNode.style.display = "none";
+                aliveMMMSelector.parentNode.style.display = "none";
+                aliveDDSelector.parentNode.style.display = "none";
+            } else {
+                aliveYYYYSelector.parentNode.parentNode.style.display = "block";
+                aliveMMMSelector.parentNode.style.display = "block";
+                aliveDDSelector.parentNode.style.display = "block";
+            }
+
+            if (showBadges || colourBy == "Family" || colourBy == "Location") {
+                legendDIV.style.display = "block";
+                console.log("SHOW LEGEND DIV  - line # 2425");
+                stickerLegend.style.display = "block";
+                legendToggle.style.display = "inline-block";
+                if (colourBy == "Family" || colourBy == "Location") {
+                    FractalView.updateLegendTitle();
+                } else {
+                    BRbetweenLegendAndStickers.style.display = "none";
+                    LegendTitleH3.style.display = "none";
+                    innerLegend.innerHTML = "";
+                }
+
+                if (!showBadges) {
+                    stickerLegend.style.display = "none";
+                }
+            } else {
+                // if (colourBy == "Family" || colourBy == "Location") {
+                // } else {
+                // }
+                legendDIV.style.display = "none";
                 stickerLegend.style.display = "none";
+                legendToggle.style.display = "none";
             }
-        } else {
-            // if (colourBy == "Family" || colourBy == "Location") {
+
+            // if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
+            //     FractalView.updateHighlightDescriptor();
             // } else {
+            //     document.getElementById("highlightDescriptor").style.display = "none";
             // }
-            legendDIV.style.display = "none";
-            stickerLegend.style.display = "none";
-            legendToggle.style.display = "none";
-        }
 
-        // if (FractalView.currentSettings["highlight_options_showHighlights"] == true) {
-        //     FractalView.updateHighlightDescriptor();
-        // } else {
-        //     document.getElementById("highlightDescriptor").style.display = "none";
-        // }
-
-        // if (FractalView.myAncestorTree) {
-        //     FractalView.myAncestorTree.draw();
-        // }
-        // updateFontsIfNeeded();
-        // adjustHeightsIfNeeded();
-    };
+            // if (FractalView.myAncestorTree) {
+            //     FractalView.myAncestorTree.draw();
+            // }
+            // updateFontsIfNeeded();
+            // adjustHeightsIfNeeded();
+        };
 
         // CREATE the SVG object (which will be placed immediately under the button bar)
         const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
@@ -1644,9 +2202,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 y1: 0,
                 x2: 0,
                 y2: 0,
-                style: "stroke: black; stroke-width: 2;",
+                style: "stroke: blue; stroke-width: 4;",
             });
-            g.append("line").attrs({
+            /*  g.append("line").attrs({
                 id: "line1ForPerson" + index,
                 display: "none",
                 x1: 0,
@@ -1662,7 +2220,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 y1: 0,
                 x2: 0,
                 y2: 0,
-                style: "stroke: red; stroke-width: 2;",
+                style: "stroke: red; stroke-width: 3;",
             });
             g.append("line").attrs({
                 id: "line3ForPerson" + index,
@@ -1672,7 +2230,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 x2: 0,
                 y2: 0,
                 style: "stroke: green; stroke-width: 4;",
-            });
+            }); */
         }
 
         // BEFORE we go further ... let's add the DNA objects we might need later
@@ -1866,7 +2424,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         }
 
         FractalView.tweakSettingsToHideShowElements();
-        
+
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         let bkgdClrSelector = document.getElementById("colour_options_colourBy");
 
@@ -1889,7 +2447,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         let specLocSelectorLabel = document.getElementById("colour_options_specifyByLocation_label");
         let specFamSelectorBR = document.getElementById("colour_options_specifyByFamily_BR");
         let specLocSelectorBR = document.getElementById("colour_options_specifyByLocation_BR");
-        
+
         if (FractalView.currentSettings["colour_options_colourBy"] != "Family") {
             specFamSelector.style.display = "none";
             specFamSelectorLabel.style.display = "none";
@@ -1899,11 +2457,10 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             specLocSelector.style.display = "none";
             specLocSelectorLabel.style.display = "none";
             specLocSelectorBR.style.display = "none";
-        } else if (FractalView.currentSettings["colour_options_colourBy"] == "Location") { 
+        } else if (FractalView.currentSettings["colour_options_colourBy"] == "Location") {
             document.getElementById("colour_options_palette").style.display = "none";
             document.getElementById("colour_options_palette_label").style.display = "none";
             document.getElementById("colour_options_palette_BR").style.display = "none";
-
         }
 
         // SOME minor tweaking needed in the HIGHLIGHT tab of the Settings object since some drop-downs are contingent upon which original option was chosen
@@ -1940,15 +2497,14 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             aliveMMMSelector.parentNode.style.display = "none";
             aliveDDSelector.parentNode.style.display = "none";
         }
-        
-        
+
         FractalView.updateHighlightDescriptor();
         FractalView.updateLegendTitle();
 
         // updateFontsIfNeeded();
 
         let showBadges = FractalView.currentSettings["general_options_showBadges"];
-         if (!showBadges) {
+        if (!showBadges) {
             let stickerLegend = document.getElementById("stickerLegend");
             stickerLegend.style.display = "none";
             if (
@@ -1959,10 +2515,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 let legendDIV = document.getElementById("legendDIV");
                 legendDIV.style.display = "none";
             }
-         }
+        }
 
         //  console.log("SELF LOAD end values of legendDIV:", legendDIV.style.display, showBadges,FractalView.currentSettings["highlight_options_showHighlights"]);
-
     };
 
     function showRefreshInLegend() {
@@ -2092,9 +2647,9 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         condLog("DRAWING LINES stuff should go here");
 
         const lineAtBottomOfSVG = document.getElementById("lineAtBottomOfSVG");
-        let bottomFeederY = 2 ** (Math.ceil(FractalView.numGens2Display/2) - 1) - 1;        
-        lineAtBottomOfSVG.setAttribute("y1",500*bottomFeederY + 300);
-        lineAtBottomOfSVG.setAttribute("y2",500*bottomFeederY + 300);
+        let bottomFeederY = 2 ** (Math.ceil(FractalView.numGens2Display / 2) - 1) - 1;
+        lineAtBottomOfSVG.setAttribute("y1", 500 * bottomFeederY + 300);
+        lineAtBottomOfSVG.setAttribute("y2", 500 * bottomFeederY + 300);
 
         for (let index = 0; index < 2 ** (FractalView.numGens2Display - 1); index++) {
             const element = document.getElementById("lineForPerson" + index);
@@ -2379,11 +2934,19 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     FractalView.theAncestors = result[2];
                     // condLog("theAncestors:", FractalView.theAncestors);
                     // condLog("person with which to drawTree:", person);
+                    let myUserID = window.wtViewRegistry.session.lm.user.name;
+
                     for (const index in FractalView.theAncestors) {
                         thePeopleList.add(FractalView.theAncestors[index]);
 
                         let thePerson = new BioCheckPerson();
-                        let canUseThis = thePerson.canUse(FractalView.theAncestors[index], false, true, "Clarke-11007");
+                        let canUseThis = thePerson.canUse(
+                            FractalView.theAncestors[index],
+                            false,
+                            false,
+                            false,
+                            myUserID
+                        );
                         let biography = new Biography(theSourceRules);
                         biography.parse(thePerson.getBio(), thePerson, "");
                         let hasSources = biography.validate();
@@ -2596,22 +3159,32 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         condLog(FractalView.fractalSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("settingsDIV");
         condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
             let aboutDIV = document.getElementById("aboutDIV");
             aboutDIV.style.display = "none";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
     };
 
     FractalView.toggleLegend = function () {
-        // condLog("TIME to TOGGLE the SETTINGS NOW !!!", FractalView.fanchartSettingsOptionsObject);
         // condLog(FractalView.fanchartSettingsOptionsObject.getDefaultOptions());
         let theDIV = document.getElementById("legendDIV");
+        console.log("TIME to TOGGLE the SETTINGS NOW !!!", theDIV); //, FractalView.fanchartSettingsOptionsObject);
         // condLog("SETTINGS ARE:", theDIV.style.display);
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
         if (theDIV.style.display == "none") {
             theDIV.style.display = "block";
+            theDIV.style.zIndex = Utils.getNextZLevel();
         } else {
             theDIV.style.display = "none";
         }
@@ -2695,6 +3268,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 FractalView.theAncestors = result[2];
                 condLog("theAncestors:", FractalView.theAncestors);
                 condLog("person with which to drawTree:", person);
+                let myUserID = window.wtViewRegistry.session.lm.user.name;
                 for (const ancNum in FractalView.theAncestors) {
                     let thePerson = FractalView.theAncestors[ancNum];
                     if (thePerson.Id < 0) {
@@ -2712,7 +3286,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     thePeopleList.add(thePerson);
 
                     let theBioPerson = new BioCheckPerson();
-                    let canUseThis = theBioPerson.canUse(thePerson, false, true, "Clarke-11007");
+                    let canUseThis = theBioPerson.canUse(thePerson, false, false, false, myUserID);
                     let biography = new Biography(theSourceRules);
                     biography.parse(theBioPerson.getBio(), theBioPerson, "");
                     let hasSources = biography.validate();
@@ -3020,6 +3594,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
         // condLog("line:579 in prototype.drawNodes ","node:", node, "nodeEnter:", nodeEnter);
         condLog("Adding new node with boxWidth = ", boxWidth);
+
         // Draw the person boxes
         nodeEnter
             .append("foreignObject")
@@ -3128,6 +3703,8 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 let photoUrl = person.getPhotoUrl(75),
                     treeUrl = window.location.pathname + "?id=" + person.getName();
 
+                // photoUrl = null; //  "/apps/clarke11007/pix/PhotoLines.png"; // SWAP OUT PHOTO HERE FOR TESTING !!!!!
+
                 // Use generic gender photos if there is not profile photo available
                 if (!photoUrl) {
                     if (person.getGender() === "Male") {
@@ -3137,14 +3714,16 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     }
                 }
 
-                return `<div class="top-info centered" id=wedgeInfoFor${
+                return `<div class="top-info centered"  id=wedgeInfoFor${
                     ancestorObject.ahnNum
                 } style="background-color: ${theClr} ; padding:5, border-color:black; border:2;">
                 <div class="vital-info"  id=vital${ancestorObject.ahnNum}>
-                <span  id=extraInfoFor${ancestorObject.ahnNum}>${extraInfoForThisAnc}${extraBR}</span>
-						<div class="image-box" id=photoDivFor${
-                            ancestorObject.ahnNum
-                        } style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>
+                <span  class="extras font${font4Extra}" id=extraInfoFor${
+                    ancestorObject.ahnNum
+                }>${extraInfoForThisAnc}${extraBR}</span>
+						<div class="image-box" id=photoDivFor${ancestorObject.ahnNum} style="text-align: center"><img  id=photoImgFor${
+                    ancestorObject.ahnNum
+                } src="https://www.wikitree.com/${photoUrl}"></div>
 						  <div class="name fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
 						    ${getSettingsName(person)}
 						  </div>
@@ -3298,6 +3877,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             // LET'S UPDATE THE PHOTO !
             let photoUrl = d.getPhotoUrl(75); // will exist if there is a unique photo for this person, if not - then we can show silhouette if option says that's ok
+            photoUrl = null; //  "/apps/clarke11007/pix/PhotoLines.png";
             thisDIVtoUpdate = document.getElementById("photoDivFor" + ancestorObject.ahnNum);
 
             if (thisDIVtoUpdate) {
@@ -3486,7 +4066,28 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     /**
      * Show a popup for the person.
      */
-    Tree.prototype.personPopup = function (person, xy) {
+    Tree.prototype.personPopup = function (person) {
+        if (!Utils.firstTreeAppPopUpPopped) {
+            $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+            Utils.firstTreeAppPopUpPopped = true;
+        }
+
+        personPopup.popupHTML(
+            person,
+            {
+                type: "Ahn",
+                ahNum: FractalView.myAhnentafel.listByPerson[person._data.Id],
+                primaryPerson: thePeopleList[FractalView.myAhnentafel.list[1]],
+                myAhnentafel: FractalView.myAhnentafel,
+                SettingsObj: Utils,
+            },
+            AboutAppIcon,
+            "fractal"
+        );
+        // console.log("FractalView.personPopup");
+    };
+
+    function placeHolder4PersonPopup(person, xy) {
         this.removePopups();
 
         var photoUrl = person.getPhotoUrl(75),
@@ -3544,7 +4145,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             condLog("d3.select treeViewerContainer onclick - REMOVE POPUP");
             popup.remove();
         });
-    };
+    }
 
     /**
      * Remove all popups. It will also remove
@@ -4001,66 +4602,6 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     }
 
     /**
-     * Turn a wikitree Place into a location as per format string
-     */
-    function settingsStyleLocation(locString, formatString) {
-        // take the locString as input, and break it up into parts, separated by commas
-        // In an IDEAL world, the place name would be entered thusly:
-        // TOWN , (optional COUNTY), PROVINCE or STATE or REGION NAME , COUNTRY
-        // So we want the parts at locations 0 , N - 1, and N for Town, Region, Country respectively
-        // IF there are < 3 parts, then we have to do some assumptions and rejiggering to supply the formatString with a plausible result
-
-        if (!locString || locString == "") {
-            // if we get a dud location as input - return an emptry string
-            return "";
-        }
-        if (formatString == "Full") {
-            // there's no need for doing any parsing --> just return the whole kit and caboodle
-            return locString;
-        }
-
-        var parts = locString.split(",");
-        if (parts.length == 1) {
-            // there's no way to reformat/parse a single item location
-            return locString;
-        }
-
-        let town = parts[0];
-        let country = parts[parts.length - 1];
-        let region = "";
-        if (parts.length > 2) {
-            region = parts[parts.length - 2];
-        }
-
-        if (formatString == "Country") {
-            return country;
-        } else if (formatString == "Region") {
-            if (region > "") {
-                return region;
-            } else {
-                return country;
-            }
-        } else if (formatString == "Town") {
-            return town;
-        } else if (formatString == "TownCountry") {
-            return town + ", " + country;
-        } else if (formatString == "RegionCountry") {
-            if (region > "") {
-                return region + ", " + country;
-            } else {
-                return town + ", " + country;
-            }
-        } else if (formatString == "TownRegion") {
-            if (region > "") {
-                return town + ", " + region;
-            } else {
-                return town + ", " + country;
-            }
-        }
-        return "";
-    }
-
-    /**
      * Turn a wikitree formatted date into a date as per format string
      */
     function settingsStyleDate(dateString, formatString) {
@@ -4137,7 +4678,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     FractalView.currentSettings["place_options_locationTypes"] == "detailed" &&
                     FractalView.currentSettings["place_options_showBirth"] == true
                 ) {
-                    thisPlace = settingsStyleLocation(
+                    thisPlace = Utils.settingsStyleLocation(
                         person.getBirthLocation(),
                         FractalView.currentSettings["place_options_locationFormatBD"]
                     );
@@ -4165,7 +4706,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                     FractalView.currentSettings["place_options_locationTypes"] == "detailed" &&
                     FractalView.currentSettings["place_options_showDeath"] == true
                 ) {
-                    thisPlace = settingsStyleLocation(
+                    thisPlace = Utils.settingsStyleLocation(
                         person.getDeathLocation(),
                         FractalView.currentSettings["place_options_locationFormatBD"]
                     );
@@ -4343,7 +4884,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
         thisTextColourArray = {};
         let thisColourArray = getColourArray();
 
-        if (settingForColourBy == "Family") {
+        if (settingForColourBy == "Family" || settingForColourBy == "BioCheck" || settingForColourBy == "DNAstatus") {
             // condLog("TextClrSetting = ", txtClrSetting);
 
             let innerCode = "";
@@ -4385,9 +4926,36 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
             }
+            if (settingForColourBy == "BioCheck") {
+                let clrSwatchUNK =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "white" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+
+                innerCode = clrSwatchUNK + " Bio Check status unknown"; // <br/>" +  clrSwatchLIVING + " still living";
+
+                let BioStatuses = [
+                    "No birth nor death dates",
+                    "Unsourced",
+                    "Style issues",
+                    "Bio Check Pass: has sources",
+                ];
+
+                for (let index = 0; index < BioStatuses.length; index++) {
+                    innerCode += "<br/>";
+                    if (index == BioStatuses.length - 1) {
+                        innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + BioStatuses[index];
+                    } else {
+                        innerCode += clrSwatchArray[3 * index + 2] + " " + BioStatuses[index];
+                    }
+                }
+                condLog("innerCode:", innerCode);
+            }
+
             //  condLog("thisTextColourArray", thisTextColourArray);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
+            console.log("SHOW LEGEND DIV  - line # 5248");
         } else if (settingForColourBy == "Location") {
             // thisTextColourArray = {};
             // let thisColourArray = getColourArray();
@@ -4508,6 +5076,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
             // condLog(sortedLocs);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
+            console.log("SHOW LEGEND DIV  - line # 5369");
         } else {
             for (let index = 0; index < thisColourArray.length; index++) {
                 let theTextFontClr = "Black";
@@ -4691,6 +5260,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
     function updateFontsIfNeeded() {
         if (
             FractalView.currentSettings["general_options_font4Names"] == font4Name &&
+            FractalView.currentSettings["general_options_font4Extra"] == font4Extra &&
             FractalView.currentSettings["general_options_font4Info"] == font4Info
         ) {
             // console.log("NOTHING to see HERE in UPDATE FONT land");
@@ -4706,6 +5276,7 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
 
             font4Name = FractalView.currentSettings["general_options_font4Names"];
             font4Info = FractalView.currentSettings["general_options_font4Info"];
+            font4Extra = FractalView.currentSettings["general_options_font4Extra"];
 
             let nameElements = document.getElementsByClassName("name");
             for (let e = 0; e < nameElements.length; e++) {
@@ -4726,6 +5297,17 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 element.classList.remove("fontFantasy");
                 element.classList.remove("fontScript");
                 element.classList.add("font" + font4Info);
+            }
+
+            let extraElements = document.getElementsByClassName("extras");
+            for (let e = 0; e < extraElements.length; e++) {
+                const element = extraElements[e];
+                element.classList.remove("fontSerif");
+                element.classList.remove("fontSansSerif");
+                element.classList.remove("fontMono");
+                element.classList.remove("fontFantasy");
+                element.classList.remove("fontScript");
+                element.classList.add("font" + font4Extra);
             }
         }
     }
@@ -6092,6 +6674,47 @@ import { WTapps_Utils } from "../fanChart/WTapps_Utils.js";
                 thisColourArray = RainbowArrayLong;
             }
             return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
+        } else if (settingForColourBy == "BioCheck") {
+            let BioStatuses = [
+                "No birth nor death dates",
+                "Marked Unsourced",
+                "==Sources== or &lt;references/> ?",
+                "No sources found",
+                "Style issues",
+                "Bio Check Pass: has sources",
+            ];
+            thisColourArray[0] = "#FFFFFF";
+            // console.log("Finding the biocheck for ", ahnNum, ":", thePeopleList[FractalView.myAhnentafel.list[ahnNum]]);
+            if (!thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck) {
+                // console.log("No BioCheck for ", ahnNum, " - returning default colour", thisColourArray[0]);
+                return thisColourArray[0];
+            }
+            // console.log("BioCheck ColourArray:", thisColourArray);
+            let theBioCheck = thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck;
+            // let theStyles = thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck.styles;
+            let hasSources = thePeopleList[FractalView.myAhnentafel.list[ahnNum]].bioHasSources;
+            condLog(theBioCheck);
+
+            // if (theBioCheck.isEmpty() ) {
+            //     return thisColourArray[1];
+            // } else
+            if (theBioCheck.isUndated()) {
+                return thisColourArray[2];
+            } else if (theBioCheck.isMarkedUnsourced()) {
+                return thisColourArray[5];
+            } else if (hasSources == false) {
+                return thisColourArray[5];
+            } else if (theBioCheck.isMissingReferencesTag()) {
+                return thisColourArray[8];
+            } else if (theBioCheck.isMissingSourcesHeading()) {
+                return thisColourArray[8];
+            } else if (theBioCheck.hasStyleIssues()) {
+                return thisColourArray[8];
+            } else if (hasSources == true) {
+                return "lime";
+            } else {
+                return thisColourArray[0];
+            }
         } else if (settingForColourBy == "Family") {
             if (settingForSpecifyByFamily == "age") {
                 let thisAge = thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.age;

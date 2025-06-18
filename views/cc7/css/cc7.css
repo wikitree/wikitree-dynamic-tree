@@ -1,17 +1,3 @@
-/* Default link styling */
-a:link {
-  color: #0271fb;
-}
-a:visited {
-  color: #bd02fb;
-}
-a:hover,
-a:focus {
-  color: #000;
-}
-a:active {
-  color: #fb0e02;
-}
 div.cc7Table {
   --content-padding: 0;
 }
@@ -26,6 +12,10 @@ div.cc7Table table th.tlBioAge {
   text-align: center;
 }
 
+#missingLinksTable .Female,
+#missingLinksTable .Male {
+  background-color: white;
+}
 div.cc7Table .Female {
   background-color: #ffe6ea;
 }
@@ -43,9 +33,11 @@ div.cc7Table button[disabled] {
 }
 
 img.familyHome,
-img.privacyImage,
 img.timelineButton {
   height: 15px;
+}
+img.privacyImage {
+  height: 18px;
 }
 .cc7Table .bioIssue,
 img.familyHome,
@@ -61,6 +53,7 @@ div.cc7Table #tree {
   width: 5em;
   margin: auto;
 }
+.cc7Table .cc7notes,
 .cc7Table .bioReport,
 .cc7Table .familySheet,
 .cc7Table .timeline {
@@ -74,6 +67,67 @@ div.cc7Table #tree {
   padding: 1.5em 1em 1em;
   white-space: nowrap;
   z-index: 10000;
+}
+.cc7notes textarea {
+  width: 90%;
+  display: block;
+  margin: 1em auto;
+  height: 10em;
+}
+.cc7notes h2 {
+  font-size: 1.2em;
+}
+.cc7Table .degree.hasNote {
+  position: relative; /* Ensure the gradient respects the td's bounds */
+}
+.cc7Table tr.Male .degree.hasNote {
+  background: linear-gradient(to top right, #cceeff, #1daddd);
+}
+.cc7Table tr.Female .degree.hasNote {
+  background: linear-gradient(to top right, #ffe6ea, #e05c6a);
+}
+.cc7Table tr .degree.hasNote {
+  background: linear-gradient(to top right, #f5f5f5, #c3f6c7);
+}
+.cc7Table .degree.ToDo::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid red; /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
+}
+.cc7Table .degree.InProgress::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid rgb(255, 255, 0); /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
+}
+.cc7Table .degree.Parked::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid rgb(0, 0, 255); /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
+}
+.cc7Table .degree.Done::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0; /* Align to the top-right corner */
+  width: 0;
+  height: 0;
+  border-top: 10px solid rgb(0, 255, 0); /* Triangle color and height */
+  border-left: 10px solid transparent; /* Transparent left edge */
 }
 .cc7Table .bioReport {
   white-space: normal;
@@ -104,6 +158,7 @@ th.tlBioAge {
 .tlDate {
   white-space: nowrap;
 }
+.cc7notes x,
 .bioReport x,
 .timeline x,
 .familySheet x {
@@ -127,7 +182,7 @@ th.tlBioAge {
   font-weight: bold;
 }
 .timelineTable .BioPerson,
-.timelineTable .marriage {
+.timelineTable .Marriage {
   font-weight: bold;
 }
 div.cc7Table .timelineTable {
@@ -169,6 +224,7 @@ div.cc7Table .timelineTable td {
   background: white;
   border-top: 1px solid forestgreen;
   border-bottom: 1px solid forestgreen;
+  caption-side: top;
 }
 
 .cc7Table #degreesTable {
@@ -341,41 +397,28 @@ span.missingText {
 .cc7Table .relationCell {
   white-space: nowrap;
 }
-#getPeopleButton {
-  width: 7em;
-  text-align: center;
-  margin-left: 1em;
-  margin-right: 0.5em;
-  white-space: nowrap;
-  margin-bottom: 1em;
-}
 #cc7Degree {
-  width: 2.5em;
-  min-width: 2.5em;
-  margin-right: 0.5em;
+  width: 3em;
+  min-width: 3em;
 }
 #cc7Degree option {
   text-align: center;
 }
-#getDegreeButton {
-  margin-right: 20px;
-}
 
-div.cc7Table select,
-div.cc7Table input {
-  padding: 0.3em;
-  width: auto;
-  padding-right: 1em;
-  background-size: 1em 2em;
-}
 #cc7Subset {
   margin-left: 1em;
   min-width: 3em;
   padding-right: 1.5em;
 }
-#cc7PBFilter {
+#cc7DegFilter {
   min-width: 1em;
 }
+.cc7DegFilter-option svg {
+  width: 15px;
+  height: 15px;
+  vertical-align: middle;
+}
+
 div.cc7Table #settingsDIV input[type="radio"] {
   min-width: 40px;
 }
@@ -422,6 +465,14 @@ div.cc7Table #settingsDIV input[type="radio"] {
 }
 .cc7ImgKey span.none {
   height: 1.3em;
+}
+
+.cc7Table #mlButtons {
+  margin-top: 0.75em;
+  margin-left: 1em;
+}
+.cc7Table #mlButtons label {
+  margin-right: 0.5em;
 }
 
 td.degree {
@@ -545,7 +596,7 @@ div.cc7Table th[id] {
 }
 
 button.viewButton {
-  background: #25422d;
+  /* background: #25422d;
   border: 0;
   outline: none;
   cursor: pointer;
@@ -561,7 +612,8 @@ button.viewButton {
   font-weight: normal;
   text-decoration: none !important;
   cursor: pointer;
-  line-height: normal;
+  line-height: normal; */
+  margin-left: 1em;
   transition: all 0.1s ease-in-out;
   box-shadow: 0px 2px 4px 0px gray;
 }
@@ -571,7 +623,7 @@ button.viewButton.active {
   color: #25422d;
   font-weight: bold;
   transform: translateY(2px);
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
 }
 
 div.degreeView #hierarchyViewButton {
@@ -645,7 +697,10 @@ div.cc7Table #savePeople {
   font-size: 0.8em;
 }
 
-table tr.cc7filter-row input[type="text"] {
+div.cc7Table .cc7filter-row th {
+  padding: 0;
+}
+#cc7Container table tr.cc7filter-row input[type="text"] {
   width: 100%;
   box-sizing: border-box;
   padding: 0.1em;
@@ -683,60 +738,175 @@ table tr.cc7filter-row input[type="text"] {
   width: 100%;
 }
 
-#cc7Container li.select2-results__option {
-  height: 0.8em;
-  margin-bottom: 0;
+#cc7Container ul.select2-results__options {
+  margin: 0;
+  padding: 0 0 0 6px;
 }
-#cc7Container .select2-dropdown {
-  width: 40px !important;
+#cc7Container li.select2-results__option {
+  min-height: 18px;
+  padding: 0;
+  margin-bottom: 0 !important;
+}
+÷#cc7Container .select2-dropdown {
+  width: 45px !important;
+}
+#cc7Container.cc7Table span.select2-selection__rendered {
+  min-width: 2.5em;
+}
+#cc7Container.cc7Table span.select2-results ul {
+  margin-left: 0;
 }
 #cc7Container #relation,
 #cc7Container td.relation {
   width: 3em;
 }
+#cc7Container #statsView fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0.625em;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+#cc7Container legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
+}
+#cc7Container #statsView #resultsContainer {
+  margin: 25px auto;
+  text-align: center;
+}
+
+#cc7Container #statsTable {
+  border-collapse: collapse;
+  margin: 5px auto 10px;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+#cc7Container #statsTable caption {
+  border-radius: 5px 5px 0 0;
+  border-top: 1px solid forestgreen;
+  border-left: 1px solid forestgreen;
+  border-right: 1px solid forestgreen;
+  caption-side: top;
+}
+
+#cc7Container #statsTable thead tr {
+  background-color: #25422d;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+}
+
+#cc7Container #statsTable th,
+#cc7Container #statsTable td {
+  padding: 10px 12px;
+}
+
+#cc7Container #statsTable tbody {
+  background-color: white;
+}
+
+#cc7Container #statsTable tbody tr:nth-of-type(even) {
+  background-color: #f7f6f0;
+}
+
+#cc7Container #statsTable tbody tr:last-of-type {
+  border-bottom: 2px solid #25422d;
+}
+
+/* ---
+  Missing Links Styles
+---*/
+#missingLinksTable {
+  text-align: center;
+  margin: auto;
+}
+
+#missingLinksTable th {
+  text-align: center;
+  padding: 10px;
+}
+
+#missingLinksTable td {
+  padding: 10px;
+}
+
+#missingLinksTable td.is-lead {
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+#missingLinksTable td.possible-lead {
+  background-color: rgba(255, 255, 0, 0.1);
+}
+
+#ml-privacy-lock {
+  height: 25px;
+  width: 25px;
+}
+
+#ml-count {
+  text-align: center;
+}
+
 /* ---------------------------------------------------------
    Print styles
    ---------------------------------------------------------*/
 @media print {
-  * {
-    color: #000 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    /* background:transparent !important;*/
-  }
-  html {
-    background-color: #fff;
-  }
-  /* Hide navigation */
-  nav {
-    display: none;
-  }
+  :root:has(#cc7Container) {
+    * {
+      color: #000 !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      /* background:transparent !important;*/
+    }
+    html {
+      background-color: #fff;
+    }
+    /* Hide navigation */
+    nav {
+      display: none;
+    }
 
-  /* Show link destinations in brackets after the link text */
-  /* a[href]:after { content: " (" attr(href) ") "; }*/
-  a[href] {
-    font-weight: bold;
-    text-decoration: underline;
-    color: #06c;
-    border: none;
-  }
-  /* Don't show link destinations for JavaScript or internal links */
-  a[href^="javascript:"]:after,
-  a[href^="#"]:after {
-    content: "";
-  }
+    /* Show link destinations in brackets after the link text */
+    /* a[href]:after { content: " (" attr(href) ") "; }*/
+    a[href] {
+      font-weight: bold;
+      text-decoration: underline;
+      color: #06c;
+      border: none;
+    }
+    /* Don't show link destinations for JavaScript or internal links */
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+      content: "";
+    }
 
-  /* Show abbr title value in brackets after the text */
-  abbr[title]:after {
-    content: " (" attr(title) ")";
-  }
+    /* Show abbr title value in brackets after the text */
+    abbr[title]:after {
+      content: " (" attr(title) ")";
+    }
 
-  figure {
-    margin-bottom: 1em;
-    overflow: hidden;
-  }
+    figure {
+      margin-bottom: 1em;
+      overflow: hidden;
+    }
 
-  figure img {
-    border: 1px solid #000;
+    figure img {
+      border: 1px solid #000;
+    }
   }
 }

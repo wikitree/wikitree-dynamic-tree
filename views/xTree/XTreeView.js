@@ -256,6 +256,12 @@ XTreeView.ChromoColoursArray = [
         [0, "Teal", "#008080"],
     ];
 
+var popupDIV =
+    '<div id=popupDIV style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
+    '<span style="color:red; align:left"><A onclick="SuperBigFamView.removePopup();">' +
+    SVGbtnCLOSE +
+    "</A></span></div>";
+
 /*
  * Display a list of ancestors using the ahnen numbering system.
  */
@@ -420,9 +426,13 @@ window.XTreeAncestorList = class XTreeAncestorList {
             wtViewRegistry.hideInfoPanel();
             return;
         }
-        if (p.Privacy < 30/*  && !p.Gender */) {
+        if (p.Privacy < 30 /*  && !p.Gender */) {
             wtViewRegistry.showError(
-                `<p>Sorry, this HERE profile is <a href="/wiki/Privacy">Private</a> ` + p.Privacy  + " " + p.Gender + ` and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
+                `<p>Sorry, this HERE profile is <a href="/wiki/Privacy">Private</a> ` +
+                    p.Privacy +
+                    " " +
+                    p.Gender +
+                    ` and you are not on the profile's <a href="/wiki/Trusted_List">Trusted List</a>.</p>`
             );
             wtViewRegistry.hideInfoPanel();
             return;
@@ -467,12 +477,12 @@ window.XTreeAncestorList = class XTreeAncestorList {
                 ? "<br><br><A target=helpPage href='" + AboutOtherApps + "'>Other Apps by Greg</A>"
                 : "") +
             "</div>";
-            
+
         let btnBarHTML =
             '<table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%">' +
             "&nbsp;" +
-            "<input type=radio name=appMode checked value=Probability onclick='XTreeView.changeMode(0);'>Probability Tree&nbsp;&nbsp; <input type=radio name=appMode value=Random onclick='XTreeView.changeMode(1);'>Random Simulation&nbsp;&nbsp; " +
+            "<label title='Display X-Chromosome Probability Tree, assuming 50% sharing at each recombination'><input type=radio name=appMode checked value=Probability onclick='XTreeView.changeMode(0);'>Probability Tree</label>&nbsp;&nbsp; <label><input  title='Display X-Chromosome Simulation, based on random distribution at each recombination' type=radio name=appMode value=Random onclick='XTreeView.changeMode(1);'>Random Simulation</label>&nbsp;&nbsp; " +
             // "<input type=radio name=appMode value=Edit onclick='XTreeView.changeMode(2);'>Edit &nbsp;&nbsp;" +
             "</td>" +
             '<td width="5%">&nbsp;' +
@@ -481,11 +491,11 @@ window.XTreeAncestorList = class XTreeAncestorList {
             // "</font></A></span>" +
             "</td>" +
             '<td width="30%" align="center">' +
-            ' <A style="cursor:pointer;" onclick="XTreeView.numGens2Display -=1; XTreeView.redraw();">' +
+            ' <A style="cursor:pointer;" title="Decrease # of generations displayed" onclick="XTreeView.numGens2Display -=1; XTreeView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
             "[ <span id=numGensInBBar>5</span> generations ]" +
-            ' <A style="cursor:pointer;" onclick="XTreeView.numGens2Display +=1; XTreeView.redraw();">' +
+            ' <A style="cursor:pointer;" title="Increase # of generations displayed" onclick="XTreeView.numGens2Display +=1; XTreeView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</td>" +
@@ -495,23 +505,32 @@ window.XTreeAncestorList = class XTreeAncestorList {
             // SVGbtnSETTINGS +
             "</font></A>" +
             "&nbsp;&nbsp;" +
-            "<A onclick=XTreeView.toggleAbout();>" +
+            "<A title='About this app' onclick=XTreeView.toggleAbout();>" +
             SVGbtnINFO +
             "</A>" +
             (AboutHelpDoc > ""
                 ? "&nbsp;&nbsp;<A target=helpPage href='" + AboutHelpDoc + "'>" + SVGbtnHELP + "</A>"
                 : "") +
             "&nbsp;&nbsp;</td>" +
-            '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;"></DIV><DIV id="popupDIV" style="width:fit-content;" ></DIV>' + aboutHTML;
+            '</tr></table><DIV id=WarningMessageBelowButtonBar style="text-align:center; background-color:yellow;"></DIV><DIV id="popupDIV" style="width:fit-content;" ></DIV>' +
+            aboutHTML;
 
-            
-
-            
-                
         // Now clear out our tree view and start filling it recursively with generations.
         // $(this.selector).html(btnBarHTML  );
+
+        // Before doing ANYTHING ELSE --> populate the container DIV with the Button Bar HTML code so that it will always be at the top of the window and non-changing in size / location
+        let infoPanel = document.getElementById("info-panel");
+
+        infoPanel.classList.remove("hidden");
+        infoPanel.parentNode.classList.add("stickyDIV");
+        infoPanel.parentNode.style.padding = "0px";
+
+        infoPanel.innerHTML = btnBarHTML + popupDIV;
+        // container.innerHTML = "";
+
+
         $(this.selector).html(
-            btnBarHTML  +
+            // btnBarHTML +
                 `<div id="XTreeTitle"></div>` +
                 `<div id="XTreeFamilyTree"></div>` +
                 `<div id="XTreeAncestorList" style="text-align:center;"></div>`
@@ -523,13 +542,15 @@ window.XTreeAncestorList = class XTreeAncestorList {
             if (aboutDIV) {
                 if (aboutDIV.style.display == "none") {
                     aboutDIV.style.display = "block";
-                    if (settingsDIV) {settingsDIV.style.display = "none";}
+                    if (settingsDIV) {
+                        settingsDIV.style.display = "none";
+                    }
                 } else {
                     aboutDIV.style.display = "none";
                 }
             }
         };
-        
+
         let resultsData = await WikiTreeAPI.postToAPI({
             appId: XTreeView.APP_ID,
             action: "getPeople",
@@ -564,7 +585,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
             }
             if (!thePerson["FirstName"]) {
                 thePerson["FirstName"] = thePerson["RealName"];
-            } 
+            }
             thePeopleList.add(thePerson);
         }
         // if (!ancestorData || !ancestorData[0]["ancestors"] || ancestorData[0]["ancestors"].length <= 0) {
@@ -579,48 +600,46 @@ window.XTreeAncestorList = class XTreeAncestorList {
 
         XTreeView.myAhnentafel.update(thePeopleList[p.Id]);
 
-         let relativeName = [
-             "kid",
-             "self",
-             "Father",
-             "Mother",
-             "Grandfather",
-             "Grandmother",
-             "Grandfather",
-             "Grandmother",
-             "Great-Grandfather",
-             "Great-Grandmother",
-             "Great-Grandfather",
-             "Great-Grandmother",
-             "Great-Grandfather",
-             "Great-Grandmother",
-             "Great-Grandfather",
-             "Great-Grandmother",
-         ];
+        let relativeName = [
+            "kid",
+            "self",
+            "Father",
+            "Mother",
+            "Grandfather",
+            "Grandmother",
+            "Grandfather",
+            "Grandmother",
+            "Great-Grandfather",
+            "Great-Grandmother",
+            "Great-Grandfather",
+            "Great-Grandmother",
+            "Great-Grandfather",
+            "Great-Grandmother",
+            "Great-Grandfather",
+            "Great-Grandmother",
+        ];
 
-         // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
-         for (var a = 1; a < 16; a++) {
-             let thisPeep = thePeopleList[XTreeView.myAhnentafel.list[a]];
-             // condLog("Peep ",a, thisPeep);
-             if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
-                 thisPeep._data["LastNameAtBirth"] = relativeName[a];
-                 if (a % 2 == 0) {
-                     thisPeep._data["Gender"] = "Male";
-                 } else {
-                     thisPeep._data["Gender"] = "Female";
-                 }
-                 // condLog("FOUND a TBD!", thisPeep);
-             }
-         }
-
+        // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+        for (var a = 1; a < 16; a++) {
+            let thisPeep = thePeopleList[XTreeView.myAhnentafel.list[a]];
+            // condLog("Peep ",a, thisPeep);
+            if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                if (a % 2 == 0) {
+                    thisPeep._data["Gender"] = "Male";
+                } else {
+                    thisPeep._data["Gender"] = "Female";
+                }
+                // condLog("FOUND a TBD!", thisPeep);
+            }
+        }
 
         // XTreeView.myAhnentafel.listOfAncestorsForFanChart();
         // Display each generation recursively, starting with our initial profile/person.
         // let people = new Array(p);
-        
-        document.getElementById("XTreeTitle").innerHTML = 
-            `<H3 class='centered'>X-Chromosome Probability Tree<br>for<br/>` + this.displayPersonName(p) + `</H3>`;
 
+        document.getElementById("XTreeTitle").innerHTML =
+            `<H3 class='centered'>X-Chromosome Probability Tree<br>for<br/>` + this.displayPersonName(p) + `</H3>`;
 
         XTreeView.detailsProbabilityTree = `The Probability Tree demonstrates the percentage of X-Chromosome that could be passed along from ancestors to descendants, theoretically.<br/><br/>
         Since recombination occurs most of the time, though not all of the time, when a mother passes along her X-Chromosome to her children,<br/>
@@ -630,7 +649,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
         Though mathematically aesthetically pleasing, this EXACT result is highly unlikely.  <br/>
         However, it should give an idea of which ancestors are more likely than others to have passed on some of their X-Chromosome.<br/>`;
 
-        XTreeView.detailsRandomSimulation = `<button onclick="XTreeView.changeMode(1);" style="padding:2px;">Randomize</button><br/>This Random Simulation generates one possible X-Chromosome Family Tree.<br/> This Family Tree demonstrates how the X-Chromosome can be passed along from ancestors to descendants.<br/><br/>
+        XTreeView.detailsRandomSimulation = `<button class="btn btn-primary" title="Generate another Randomized X-Chromosome Family Tree" onclick="XTreeView.changeMode(1);" style="padding:2px;">Randomize</button><br/>This Random Simulation generates one possible X-Chromosome Family Tree.<br/> This Family Tree demonstrates how the X-Chromosome can be passed along from ancestors to descendants.<br/><br/>
         Since recombination occurs most of the time, though not all of the time, when a mother passes along her X-Chromosome to her children,<br/>
         the range that anyone can inherit from a single ancestor will vary. She can pass on one or the other of her X-chromosomes, or a combination of both.<br/><br/>
         In this Family Tree, there are red lines to indicate the recombination points, where the X-Chromosome being passed along switches from one to the other.<br/>
@@ -644,8 +663,7 @@ window.XTreeAncestorList = class XTreeAncestorList {
         You can display your own X-Chromosome ancestors in the <a target=_blank href="#view=fanchart">Fan Chart</a> &rarr; open the Settings, choose Highlights, then Highlight cells by <I>X-chromosome inheritance</I>.<br/>
         To investigate further and find other relatives that could share some of your ancestors X-Chromosomes, try the <a target=_blank href="https://apps.wikitree.com/apps/clarke11007/Xfriends.php">X-Friends app</a>.`;
 
-        document.getElementById("XTreeAncestorList").innerHTML = XTreeView.detailsProbabilityTree + XTreeView.forMore; 
-         
+        document.getElementById("XTreeAncestorList").innerHTML = XTreeView.detailsProbabilityTree + XTreeView.forMore;
 
         condLog(XTreeView.myAhnentafel.listOfAncestorsForFanChart());
 
@@ -1368,8 +1386,6 @@ window.XTreeAncestorList = class XTreeAncestorList {
     }
 
    
-
-
     /**
      * Show a popup for the person.
      */
@@ -1380,6 +1396,10 @@ window.XTreeAncestorList = class XTreeAncestorList {
             person = thePeopleList[XTreeView.myAhnentafel.list[ahnNum]];
         }
         let thisPeep = thePeopleList[person._data.Id];
+
+        // personPopup.popupHTML(thisPeep);
+        // return;
+
         // console.log("POPUP",person);
         // console.log("POPUP peep",thisPeep._data.Codes);
         var photoUrl = person.getPhotoUrl(75),
