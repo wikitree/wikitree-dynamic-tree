@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "15 June 2025";
+    const AboutUpdateDate = "19 June 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -1287,7 +1287,7 @@ import { PDFs } from "../shared/PDFs.js";
             SVGbtnCLOSE +
             "</a></span>" +
             "<H3 align=center>PDF Generator</H3>" +
-            "NOTE: This <B>Save as PDF</B> feature is still in development. It is currently limited to 7 generations. <br/>Some options on the Fan Chart may not be saved on the PDF.<br/>Some text or graphics placement may still need adjustment.<BR>Thank you for patience as other features and additional generations are added to the PDF programming.<BR/><BR/>" +
+            "NOTE: This <B>Save as PDF</B> feature is still in development.<br/>Some options on the Fan Chart may not be saved on the PDF.<br/>Some text or graphics placement may still need adjustment.<BR>For best results at 9 or 10 generations, use the <img style='height:30px;' src='https://apps.wikitree.com/apps/clarke11007/pix/fan360.png' /> option.<BR>Thank you for patience as other features are added and the outer generations are tweaked in the PDF programming.<BR/><BR/>" +
             "<div id=innerPDFgen>" +
             "<label><input type=checkbox id=PDFshowTitleCheckbox checked> Display Title at top of Fan Chart PDF</label><BR/><input style='margin-left: 20px;' type=text size=100 id=PDFtitleText value='Fan Chart for John Smith'>" +
             "<BR/><BR/>" +
@@ -1425,7 +1425,7 @@ import { PDFs } from "../shared/PDFs.js";
         FanChartView.showPDFgenPopup = function () {
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
-            numGens2PDF = Math.min(7, numGens2PDF);
+            numGens2PDF = Math.min(10, numGens2PDF);
 
             let PDFgenPopupDIV = document.getElementById("PDFgenPopupDIV");
             document.getElementById("PDFgenProgressBar").style.display = "none";
@@ -1530,7 +1530,7 @@ import { PDFs } from "../shared/PDFs.js";
                                 maxAbsVal = Math.max(maxAbsVal, Math.abs(1.0 * Acoords[aIndex]));
                             }
 
-                            console.log(
+                            condLog(
                                 "ADD Wedge with  fill colour:",
                                 thisWedgeFillColour,
                                 "radius:",
@@ -1634,10 +1634,12 @@ import { PDFs } from "../shared/PDFs.js";
                 let thisCrossRadius = 150;
                 let thisRingsInnerRadius = 150;
                 let maxTextWidth = 150;
+                let thisR = 150;
+                let thisGenAngle = 150;
 
                 if (thisElement) {
                     let thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode.parentNode;
-                    if (thisGenNum == 4) {
+                    if (thisGenNum == 4 || thisGenNum >= 7) {
                         thisPersonObject = thisElement.parentNode.parentNode.parentNode.parentNode;
                     }
                     if (thisPersonObject) {
@@ -1653,8 +1655,8 @@ import { PDFs } from "../shared/PDFs.js";
                         }
                     }
 
-                    let thisR = Math.sqrt(thisX * thisX + thisY * thisY);
-                    let thisGenAngle = FanChartView.maxAngle / 2 ** thisGenNum;
+                    thisR = Math.sqrt(thisX * thisX + thisY * thisY);
+                    thisGenAngle = FanChartView.maxAngle / 2 ** thisGenNum;
                     thisCrossRadius = thisR * 2 * Math.PI * (thisGenAngle / 360);
 
                     if (thisGenNum > 4) {
@@ -1782,19 +1784,24 @@ import { PDFs } from "../shared/PDFs.js";
                     continue;
                 }
 
-                condLog(
-                    "The NUMBERS for ",
-                    { index },
-                    { thisGenNum },
-                    { thisPosNum },
-                    { isLeftSide },
-                    { thisRingsInnerRadius },
-                    { maxTextWidth },
-                    { thisCrossRadius },
-                    { thisX },
-                    { thisY }
-                );
-
+                if (thisPosNum == 0 || thisPosNum == 2 ** (thisGenNum - 1)) {
+                    //thisCrossRadius = thisR * 2 * Math.PI * (thisGenAngle / 360);
+                    // console.log(
+                    condLog(
+                        "The NUMBERS for ",
+                        { index },
+                        { thisGenNum },
+                        { thisPosNum },
+                        { isLeftSide },
+                        { thisRingsInnerRadius },
+                        { maxTextWidth },
+                        { thisCrossRadius },
+                        { thisX },
+                        { thisY },
+                        { thisR },
+                        { thisGenAngle }
+                    );
+                }
                 thisID = "extraInfoFor" + index;
                 thisElement = document.getElementById(thisID);
                 PDFs.setPDFfontBasedOnSetting(FanChartView.currentSettings.general_options_font4Extras, false);
@@ -1965,8 +1972,9 @@ import { PDFs } from "../shared/PDFs.js";
                         thisText = thisText.substring(0, splitIndex).trim();
                         thisTextsTextWidth = tmpPDF.getTextWidth(thisText);
                     }
-
-                    //  console.log({ thisText }, { thisX }, { thisY });
+                    if (index > 90) {
+                        //console.log({ index }, { thisText }, { thisX }, { thisY });
+                    }
                     // pdf.setDrawColor("#000000");
                     // pdf.setLineWidth(2);
                     // pdf.setFillColor(thisRRectBkgdClr);
