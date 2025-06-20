@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "19 June 2025";
+    const AboutUpdateDate = "20 June 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -445,7 +445,7 @@ import { PDFs } from "../shared/PDFs.js";
     ];
 
     var numRepeatAncestors = 0;
-    var repeatAncestorTracker = new Object();
+    // var FanChartView.repeatAncestorTracker = new Object();
 
     var categoryList = [];
     var stickerList = [];
@@ -5337,19 +5337,19 @@ import { PDFs } from "../shared/PDFs.js";
 
                 let theClr = "none";
 
-                // SETUP the repeatAncestorTracker
+                // SETUP the FanChartView.repeatAncestorTracker
                 if (FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
                     condLog(
                         "new repeat ancestor:",
                         FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
                     );
-                    if (repeatAncestorTracker[ancestorObject.person._data.Id]) {
-                        theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                    if (FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id]) {
+                        theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                     } else {
                         numRepeatAncestors++;
                         theClr = ColourArray[numRepeatAncestors % ColourArray.length];
                         theClr = LightColoursArray[numRepeatAncestors % LightColoursArray.length][1];
-                        repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
+                        FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
                     }
                 }
                 // BUT ... if we have colourizeRepeats turned off - ignore theClr ...
@@ -5359,7 +5359,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                 // theClr = "orange";
 
-                // condLog(ancestorObject.ahnNum, ancestorObject.person._data.Id, repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
+                // condLog(ancestorObject.ahnNum, ancestorObject.person._data.Id, FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id], WebsView.myAhnentafel.listByPerson[ ancestorObject.person._data.Id ]);
 
                 if (thisGenNum >= 9) {
                     return `
@@ -5739,7 +5739,7 @@ import { PDFs } from "../shared/PDFs.js";
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
                         theClr = getColourFromSortedLocationsIndex(clrIndex);
 
-                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        // theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.backgroundColor = theClr;
 
                         // condLog(
@@ -5751,7 +5751,7 @@ import { PDFs } from "../shared/PDFs.js";
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
                         theClr = getColourFromSortedLocationsIndex(clrIndex);
 
-                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        // theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.backgroundColor = theClr;
 
                         // condLog(
@@ -5760,15 +5760,22 @@ import { PDFs } from "../shared/PDFs.js";
                         // );
                     } else if (
                         FanChartView.currentSettings["general_options_colourizeRepeats"] == true &&
-                        repeatAncestorTracker[ancestorObject.person._data.Id]
+                        FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id]
                     ) {
-                        theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeBox.style.backgroundColor = theClr;
 
-                        // condLog(
-                        //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
-                        //     theClr
-                        // );
+                        condLog(
+                            "in Transform -> theClr for repeat ancestor " +
+                                ancestorObject.ahnNum +
+                                " , Id # " +
+                                ancestorObject.person._data.Id +
+                                ":",
+                            theClr
+                        );
+                        if (thisPersonsWedge) {
+                            thisPersonsWedge.style.fill = theClr;
+                        }
                     } else {
                         theWedgeBox.style.backgroundColor = getBackgroundColourFor(
                             thisGenNum,
@@ -5794,7 +5801,7 @@ import { PDFs } from "../shared/PDFs.js";
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
                         theClr = getColourFromSortedLocationsIndex(clrIndex);
 
-                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        // theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeInfoForBox.style.backgroundColor = theClr;
 
                         // condLog(
@@ -5807,7 +5814,7 @@ import { PDFs } from "../shared/PDFs.js";
                         let clrIndex = theSortedLocationsArray.indexOf(locString);
                         theClr = getColourFromSortedLocationsIndex(clrIndex);
 
-                        // theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        // theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeInfoForBox.style.backgroundColor = theClr;
 
                         // condLog(
@@ -5817,16 +5824,19 @@ import { PDFs } from "../shared/PDFs.js";
                         thisBkgdClr - theClr;
                     } else if (
                         FanChartView.currentSettings["general_options_colourizeRepeats"] == true &&
-                        repeatAncestorTracker[ancestorObject.person._data.Id]
+                        FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id]
                     ) {
-                        theClr = repeatAncestorTracker[ancestorObject.person._data.Id];
+                        theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
                         theWedgeInfoForBox.style.backgroundColor = theClr;
 
+                        if (thisPersonsWedge) {
+                            thisPersonsWedge.style.fill = theClr;
+                        }
                         // condLog(
                         //     "in Transform -> theClr for repeat ancestor " + ancestorObject.ahnNum + ":",
                         //     theClr
                         // );
-                        thisBkgdClr - theClr;
+                        thisBkgdClr = theClr;
                     } else {
                         thisBkgdClr = getBackgroundColourFor(thisGenNum, thisPosNum, ancestorObject.ahnNum);
                         // condLog(
@@ -6667,7 +6677,7 @@ import { PDFs } from "../shared/PDFs.js";
         FanChartView.numGensRetrieved = 5;
         FanChartView.maxNumGens = 10;
         numRepeatAncestors = 0;
-        repeatAncestorTracker = new Object();
+        FanChartView.repeatAncestorTracker = new Object();
 
         Tree.call(this, svg, "ancestor", 1);
         this.children(function (person) {
