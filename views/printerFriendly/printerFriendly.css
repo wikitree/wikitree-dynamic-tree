@@ -70,13 +70,27 @@
   margin: 0.2em 0;
 }
 
-.known-relative h3 {
-  font-size: 1em;
+#profiles .g6 * {
+  font-size: 0.85em;
   line-height: 1em;
 }
 
 @media print {
   #profiles {
     min-width: initial;
+  }
+  #profiles * {
+    font-size: 0.80em;
+    line-height: 1.1;
+  }
+  #profiles .photo {
+    max-height: 6em;
+  }
+  #profiles .g6 * {
+    font-size: .75em;
+    line-height: .8em;
+  }
+  main {
+    padding: 0;
   }
 }
