@@ -80,15 +80,15 @@
     min-width: initial;
   }
   #profiles * {
-    font-size: 0.80em;
+    font-size: 0.85em;
     line-height: 1.1;
   }
   #profiles .photo {
     max-height: 6em;
   }
   #profiles .g6 * {
-    font-size: .75em;
-    line-height: .8em;
+    font-size: 0.8em;
+    line-height: 0.9em;
   }
   main {
     padding: 0;
