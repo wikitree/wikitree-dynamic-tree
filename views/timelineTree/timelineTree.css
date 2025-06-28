@@ -1,0 +1,268 @@
+#ttreeContainer {
+  position: relative;
+  overflow: visible;
+  overflow-x: scroll !important;
+  height: 100vh;
+  padding: 0em;
+  border:solid 2px green;
+  z-index: 2000;
+}
+#ttreeHeader {
+  height: 50px;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0px;
+}
+#ttreeMain {
+  height: 11000px;
+}
+
+.headerRow {
+  fill: #C6DDEA;
+  stroke-width:0;
+}
+.headerText1{
+  fill:black;
+  font-family:Arial, sans-serif;
+  font-size:14px;
+  font-weight:normal;
+}
+.headerText2{
+  fill:black;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:normal;
+}
+
+.gridLine1 {  stroke:#222222;  stroke-width:2 }
+.gridLine2 {  stroke:#BBBBBB;  stroke-width:1; stroke-dasharray:3,3; }
+.gridLine3 {  stroke:#DDDDDD;  stroke-width:1; stroke-dasharray:3,3; }
+
+.gridText {
+  fill:black;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:normal;
+}
+
+.rowEven {  fill: #FFFFFF;  stroke-width:0; }
+.rowOdd  {  fill: #EEEEFF;  stroke-width:0; }
+
+.rowText {
+  fill:black;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:normal;
+}
+
+.barGeneral { stroke-width:0; stroke:#000000; }
+.barTerminate {
+  fill:red;
+  stroke-width:1;
+  stroke:black;
+}
+.barTerminate2 {
+  fill:none;
+  stroke-width:2;
+  stroke:black;
+}
+.familyLine {
+  stroke:#00AA00;
+  stroke-width:1;
+}
+.barTextF {
+  fill:black;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:normal;
+  text-anchor:end;
+}
+.barTextB {
+  fill:black;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:normal;
+}
+.barHighlight { stroke-width:2 !important; stroke-dasharray:5,5 !important; stroke:black !important;  }
+.barHover:hover { stroke-width:2 !important; stroke:#000000 !important; }
+.barHover:hover + rect { stroke-width:2 !important; stroke:#000000 !important; }
+.abar:link { text-decoration: none !important; }
+.abar:visited { text-decoration: none !important; }
+.abar:hover { text-decoration: underline !important; }
+.abar:active { text-decoration: none !important; }
+
+.famDot1 {
+  stroke-width:0;
+  fill:black;
+}
+.famDot2 {
+  stroke-width:0;
+  fill:grey;
+}
+.famDot3 {
+  stroke-width:1;
+  stroke:black;
+  fill:none;
+}
+
+
+
+  #treeSvg {
+    overflow-x: auto;
+    width: 100%;
+  }
+  /* Normalise buttons */
+  .ttree button {
+    font-weight: normal;
+    font-size: 14px !important;
+    min-width: auto !important;
+    padding: 0.5em !important;
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+  }
+  div.ttree table {
+    margin-bottom: 0;
+  }
+  div.ttree td {
+    padding: 0;
+  }
+  
+  #generation,
+  #maxLevel {
+    width: 3em;
+    min-width: 3em;
+    margin-right: 10px;
+    margin-top: 0;
+  }
+  
+  #ttreeOptions {
+    cursor: pointer;
+  }
+  .ttree legend {
+    font-size: 110%;
+    float: none;
+    width: auto;
+    display: table;
+    margin-bottom: 0;
+  }
+  
+  .ttree .node circle {
+    fill: #fff;
+    stroke: steelblue;
+    stroke-width: 3px;
+  }
+  
+  .ttree .node circle.ofinterest {
+    stroke: coral;
+  }
+  
+  .ttree .node circle.end {
+    stroke: red;
+  }
+  
+  .ttree .node rect.dup.marked {
+    stroke-width: 3px;
+    stroke: black;
+  }
+  
+  .ttree .treeHeader,
+  .ttree .node text {
+    font: 12px sans-serif;
+  }
+  
+  .ttree text.marked {
+    font-size: 14px;
+    font-weight: bold;
+  }
+  
+  .ttree .link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+  }
+  
+  .ttree .link.ofinterest {
+    stroke: lightcoral;
+  }
+  
+  .ttree .link.marked {
+    stroke: green;
+  }
+  
+  .ttree .links line {
+    stroke: #999;
+    stroke-opacity: 0.6;
+  }
+  
+  .ttree .nodes circle {
+    stroke: #fff;
+    stroke-width: 1.5px;
+  }
+  
+  #ttreeBrickWallColour {
+    width: 2em;
+    padding: 2px;
+  }
+  
+  .ttree #edgeFactor,
+  .ttree #tHFactor {
+    width: 4em;
+  }
+  
+  #help-text {
+    display: none;
+    border: 3px solid forestgreen;
+    border-radius: 1em;
+    padding: 0.3em 1em;
+    margin: 1em auto;
+    position: absolute;
+    top: 20px;
+    right: 100px;
+    width: 50em;
+    background: white;
+    box-shadow: 1em 1em 1em grey;
+    z-index: 11000;
+    cursor: default;
+  }
+  #spinner {
+    border: 2px solid forestgreen;
+    border-radius: 2em;
+    padding: 0.3em 1em;
+    margin: 1em auto;
+    position: absolute;
+    top: 300px;
+    left: 200px;
+    width: 8em;
+    background: white;
+    box-shadow: 1em 1em 1em grey;
+    z-index: 11000;
+    cursor: default;
+  }
+  
+  xx {
+    position: absolute;
+    top: 0.2em;
+    right: 0.6em;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    color: red;
+  }
+  
+  #help-text:hover {
+    cursor: grab;
+  }
+  #help-text:active {
+    cursor: grabbing;
+  }
+  #help-text h3 {
+    font-size: 1.3em;
+    margin-bottom: 0.5em;
+  }
+    
+  @media print {
+    .ttree-not-printable {
+      display: none;
+    }
+  }
+  
