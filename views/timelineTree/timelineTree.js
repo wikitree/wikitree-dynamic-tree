@@ -72,7 +72,7 @@ const ttreeHelpText = `
     <p>Use this application to view a tree view of the ancestors of a specific individual, but formatted along a timeline.</p>
     <p><em><b>Please note</b>: This is a work in progress</b></em></p>
     <h3>Display and Interaction</h3>
-    <img src="/apps/lowe6667/views/timelineTree/help-annot.png"/><br/>
+    <img src="./views/timelineTree/help-annot.png"/><br/>
     <ul>
         <li>Click on a persons name to show their wikitree page in a new tab
         <li>Click on a primary ancestors bar (shown in darker colours): (a) if parents are already shown then that branch will contract; (b) if that branch is not shown, then it will appear (and load from the server if needed)</li>
