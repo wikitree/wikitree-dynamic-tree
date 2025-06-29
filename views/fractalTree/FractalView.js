@@ -41,7 +41,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "29 May 2025";
+    const AboutUpdateDate = "31 May 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -194,7 +194,7 @@ import { PDFs } from "../shared/PDFs.js";
         "RoyalBlue",
         "FireBrick",
         "Blue",
-        "SlateGrey",
+        "SlateGray",
         "DarkMagenta",
         "Red",
         "DarkOrange",
@@ -954,12 +954,14 @@ import { PDFs } from "../shared/PDFs.js";
                                 { value: "GGrand", text: "Great-Grandparent" },
                                 { value: "GGGrand", text: "2x Great Grandparent" },
                                 { value: "GGGGrand", text: "3x Great Grandparent" },
+                                { value: "BioCheck", text: "Bio Check status" },
                                 { value: "Family", text: "Family Stats" },
                                 { value: "Location", text: "Location" },
 
                                 // { value: "Town", text: "by Place name" },
                                 // { value: "Region", text: "by Region (Province/State)" },
                                 // { value: "Country", text: "by Country" },
+                                // { value: "DNAstatus", text: "Parental status" },
                                 { value: "random", text: "random chaos" },
                             ],
                             defaultValue: "Generation",
@@ -1871,6 +1873,8 @@ import { PDFs } from "../shared/PDFs.js";
                 LegendTitle.textContent = "Birth Country (inner)\nDeath Country (outer)";
             } else if (colourBy == "Location" && colour_options_specifyByLocation == "DeathBirthCountry") {
                 LegendTitle.textContent = "Death Country (inner)\nBirth Country (outer)";
+            } else if (colourBy == "BioCheck") {
+                LegendTitle.textContent = "Bio Check Status";
             }
         };
 
@@ -2930,11 +2934,19 @@ import { PDFs } from "../shared/PDFs.js";
                     FractalView.theAncestors = result[2];
                     // condLog("theAncestors:", FractalView.theAncestors);
                     // condLog("person with which to drawTree:", person);
+                    let myUserID = window.wtViewRegistry.session.lm.user.name;
+
                     for (const index in FractalView.theAncestors) {
                         thePeopleList.add(FractalView.theAncestors[index]);
 
                         let thePerson = new BioCheckPerson();
-                        let canUseThis = thePerson.canUse(FractalView.theAncestors[index], false, true, "Clarke-11007");
+                        let canUseThis = thePerson.canUse(
+                            FractalView.theAncestors[index],
+                            false,
+                            false,
+                            false,
+                            myUserID
+                        );
                         let biography = new Biography(theSourceRules);
                         biography.parse(thePerson.getBio(), thePerson, "");
                         let hasSources = biography.validate();
@@ -3256,6 +3268,7 @@ import { PDFs } from "../shared/PDFs.js";
                 FractalView.theAncestors = result[2];
                 condLog("theAncestors:", FractalView.theAncestors);
                 condLog("person with which to drawTree:", person);
+                let myUserID = window.wtViewRegistry.session.lm.user.name;
                 for (const ancNum in FractalView.theAncestors) {
                     let thePerson = FractalView.theAncestors[ancNum];
                     if (thePerson.Id < 0) {
@@ -3273,7 +3286,7 @@ import { PDFs } from "../shared/PDFs.js";
                     thePeopleList.add(thePerson);
 
                     let theBioPerson = new BioCheckPerson();
-                    let canUseThis = theBioPerson.canUse(thePerson, false, true, "Clarke-11007");
+                    let canUseThis = theBioPerson.canUse(thePerson, false, false, false, myUserID);
                     let biography = new Biography(theSourceRules);
                     biography.parse(theBioPerson.getBio(), theBioPerson, "");
                     let hasSources = biography.validate();
@@ -4871,7 +4884,7 @@ import { PDFs } from "../shared/PDFs.js";
         thisTextColourArray = {};
         let thisColourArray = getColourArray();
 
-        if (settingForColourBy == "Family") {
+        if (settingForColourBy == "Family" || settingForColourBy == "BioCheck" || settingForColourBy == "DNAstatus") {
             // condLog("TextClrSetting = ", txtClrSetting);
 
             let innerCode = "";
@@ -4913,6 +4926,32 @@ import { PDFs } from "../shared/PDFs.js";
                 }
                 innerCode += "<br/>" + clrSwatchArray[11] + " over 100";
             }
+            if (settingForColourBy == "BioCheck") {
+                let clrSwatchUNK =
+                    "<svg width=20 height=20><rect width=20 height=20 style='fill:" +
+                    "white" +
+                    ";stroke:black;stroke-width:1;opacity:1' /><text font-weight=bold x=5 y=15>A</text></svg>";
+
+                innerCode = clrSwatchUNK + " Bio Check status unknown"; // <br/>" +  clrSwatchLIVING + " still living";
+
+                let BioStatuses = [
+                    "No birth nor death dates",
+                    "Unsourced",
+                    "Style issues",
+                    "Bio Check Pass: has sources",
+                ];
+
+                for (let index = 0; index < BioStatuses.length; index++) {
+                    innerCode += "<br/>";
+                    if (index == BioStatuses.length - 1) {
+                        innerCode += clrSwatchArray[clrSwatchArray.length - 1] + " " + BioStatuses[index];
+                    } else {
+                        innerCode += clrSwatchArray[3 * index + 2] + " " + BioStatuses[index];
+                    }
+                }
+                condLog("innerCode:", innerCode);
+            }
+
             //  condLog("thisTextColourArray", thisTextColourArray);
             innerLegendDIV.innerHTML = innerCode;
             legendDIV.style.display = "block";
@@ -6635,6 +6674,47 @@ import { PDFs } from "../shared/PDFs.js";
                 thisColourArray = RainbowArrayLong;
             }
             return thisColourArray[1 + (Math.floor((32 * pos) / numThisGen) % thisColourArray.length)];
+        } else if (settingForColourBy == "BioCheck") {
+            let BioStatuses = [
+                "No birth nor death dates",
+                "Marked Unsourced",
+                "==Sources== or &lt;references/> ?",
+                "No sources found",
+                "Style issues",
+                "Bio Check Pass: has sources",
+            ];
+            thisColourArray[0] = "#FFFFFF";
+            // console.log("Finding the biocheck for ", ahnNum, ":", thePeopleList[FractalView.myAhnentafel.list[ahnNum]]);
+            if (!thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck) {
+                // console.log("No BioCheck for ", ahnNum, " - returning default colour", thisColourArray[0]);
+                return thisColourArray[0];
+            }
+            // console.log("BioCheck ColourArray:", thisColourArray);
+            let theBioCheck = thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck;
+            // let theStyles = thePeopleList[FractalView.myAhnentafel.list[ahnNum]].biocheck.styles;
+            let hasSources = thePeopleList[FractalView.myAhnentafel.list[ahnNum]].bioHasSources;
+            condLog(theBioCheck);
+
+            // if (theBioCheck.isEmpty() ) {
+            //     return thisColourArray[1];
+            // } else
+            if (theBioCheck.isUndated()) {
+                return thisColourArray[2];
+            } else if (theBioCheck.isMarkedUnsourced()) {
+                return thisColourArray[5];
+            } else if (hasSources == false) {
+                return thisColourArray[5];
+            } else if (theBioCheck.isMissingReferencesTag()) {
+                return thisColourArray[8];
+            } else if (theBioCheck.isMissingSourcesHeading()) {
+                return thisColourArray[8];
+            } else if (theBioCheck.hasStyleIssues()) {
+                return thisColourArray[8];
+            } else if (hasSources == true) {
+                return "lime";
+            } else {
+                return thisColourArray[0];
+            }
         } else if (settingForColourBy == "Family") {
             if (settingForSpecifyByFamily == "age") {
                 let thisAge = thePeopleList[FractalView.myAhnentafel.list[ahnNum]]._data.age;

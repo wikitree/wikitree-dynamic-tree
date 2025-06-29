@@ -41,15 +41,12 @@ window.StatsView = class StatsView extends View {
             </li>
         </ul>
     </p>
+    <p>
         You can click on the descriptions in the Relation column to see the profiles that are the source for the
         statistics at each generation. Direct ancestor profiles that occur more than once are marked with an asterisk(*).
         If you want to explore these duplicates more, use the <a id="aleLink" href="#">Ancestor Lines Explorer</a>
         tree app.
-    <p>
-    </p>
-    <p>
-        If you find problems with this app or have suggestions for improvements, please
-        post a comment on <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.
+    
     </p>
     <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>
     `;
@@ -57,7 +54,7 @@ window.StatsView = class StatsView extends View {
     meta() {
         return {
             // short title - will be in select control
-            title: "Generational Statistics",
+            title: "Statistics",
             // some longer description or usage
             description: "",
             // link pointing at some webpage with documentation
@@ -153,8 +150,6 @@ window.StatsView = class StatsView extends View {
                 </table>
                 <div id="results-container"></div>
             </div>
-            <div id="g2g">If you have suggestions for this app, please post a comment on
-                <a href="https://www.wikitree.com/g2g/842589" target="_blank">the G2G post</a>.</div>
         `;
 
         $("#generations").val(StatsView.REQUESTED_GENERATIONS);

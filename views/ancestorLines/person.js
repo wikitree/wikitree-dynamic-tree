@@ -13,7 +13,7 @@ export class Person {
         } else {
             if ("bio" in data && data.Name) {
                 const bioPerson = new BioCheckPerson();
-                if (bioPerson.canUse(data, false, true, data.Name)) {
+                if (bioPerson.canUse(data, false, false, false, window.wtViewRegistry.session.lm.user.id)) {
                     const biography = new Biography(theSourceRules);
                     biography.parse(bioPerson.getBio(), bioPerson, "");
                     biography.validate();

@@ -1019,7 +1019,7 @@ class CC7 {
 
                 if (Settings.current["biocheck_options_biocheckOn"]) {
                     const bioPerson = new BioCheckPerson();
-                    if (bioPerson.canUse(person, false, true, userWTuserID)) {
+                    if (bioPerson.canUse(person, false, false, false, wtViewRegistry.session.lm.user.id)) {
                         const biography = new Biography(theSourceRules);
                         biography.parse(bioPerson.getBio(), bioPerson, "");
                         biography.validate();
