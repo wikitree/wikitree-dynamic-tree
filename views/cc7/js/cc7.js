@@ -164,11 +164,12 @@ class CC7 {
         </ul>
         <h4>Selecting Subsets</h4>
         <ul>
-            <li>Use the select option to the left of the HIERARCHY button to select which subset of the loaded profiles
-                should be displayed. This selection is also valid for the List View, but not for the Hierarchy View.
+            <li>Use the 2 select options to the left of the HIERARCHY button to select which subset of the loaded profiles
+                should be displayed/processed. This selection is also valid for the List and Statistics Views, but not for the
+                other views.
                 Note: Some of these subsets will be partial in the presence of private profiles since the latter will
-                "break" connections and the full subset then cannot be calculated.
-                You have 6 choices:
+                "break" connections and the full subset then cannot be calculated. There are 4 gender options (<b>Male</b>, <b>Female</b>,
+                <b>No Gender Provided</b>, and <b>All</b>) that can be used in combination with the following 6 options:
                 <ul>
                     <li><b>All</b> – All profiles.</li>
                     <li><b>Ancestors</b> – Only direct ancestors of the central person.</li>
@@ -706,10 +707,10 @@ class CC7 {
         if ($("#getExtraDegrees").prop("checked")) {
             setUrlParam("getExtra", "1");
         }
+
         //
         // Set parameters specific to the current view
         //
-        const subset = $("#cc7Subset").val();
 
         function setMissingLinksParams() {
             for (const pm of CC7MLParamMap) {
@@ -722,35 +723,25 @@ class CC7 {
             }
         }
 
-        function setOnlyParam() {
+        function setOnlyParams() {
             clearUrlParam("only");
             clearMissingLinksParams();
+            const subset = $("#cc7Subset").val();
             if (subset && subset != "all") {
                 setUrlParam("only", subset);
                 if (subset == "missing-links") {
                     setMissingLinksParams();
                 }
             }
+            const gender = $("#cc7Gender").val();
+            gender && gender != "all" ? setUrlParam("gender", gender[0]) : clearUrlParam("gender");
         }
 
         switch (PeopleTable.ACTIVE_VIEW) {
             case CC7.VIEWS.TABLE:
             case CC7.VIEWS.LIST:
-                setOnlyParam();
-                break;
-
             case CC7.VIEWS.STATS:
-                if (subset && subset != "all") {
-                    setUrlParam("only", subset);
-                } else {
-                    clearUrlParam("only");
-                }
-                // Only update gender if the select object exists
-                const $genderSelect = $("#gender");
-                if ($genderSelect.length) {
-                    const gender = $genderSelect.val();
-                    gender != "" ? setUrlParam("gender", gender) : clearUrlParam("gender");
-                } // else leave the old value as is
+                setOnlyParams();
                 break;
 
             case CC7.VIEWS.MISSING_LINKS:
@@ -769,6 +760,8 @@ class CC7 {
                         }
                     }
                 }
+                break;
+            case CC7.VIEWS.CIRCLES:
                 break;
             default:
                 console.error(`Unknown view: ${PeopleTable.ACTIVE_VIEW}`);
@@ -1790,6 +1783,7 @@ class CC7 {
                 "#wideTableButton",
                 "#clearTableFiltersButton",
                 "#cc7Subset",
+                "#cc7Gender",
                 "#tableButtons",
                 "#mlButtons",
             ].join(",")
