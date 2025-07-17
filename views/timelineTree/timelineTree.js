@@ -1495,9 +1495,9 @@ function updatePeople() {
 
         // Then update the family Data
         if (family.Data.EarliestBirth == null) family.Data.EarliestBirth = person.Birth.Year;
-        else if (person.Birth.Year < family.Data.EarliestBirth) family.Data.EarliestBirth = person.Birth.Year;
+        else if ((person.Birth.Year != null) && (person.Birth.Year < family.Data.EarliestBirth)) family.Data.EarliestBirth = person.Birth.Year;
         if (family.Data.LatestBirth == null) family.Data.LatestBirth = person.Birth.Year;
-        else if (person.Birth.Year > family.Data.LatestBirth) family.Data.LatestBirth = person.Birth.Year;
+        else if ((person.Birth.Year != null) && (person.Birth.Year > family.Data.LatestBirth)) family.Data.LatestBirth = person.Birth.Year;
 
         //Link person to family as a child
         person.ChildIn = familyIdx;
