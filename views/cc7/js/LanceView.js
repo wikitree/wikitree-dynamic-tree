@@ -13,8 +13,9 @@ export class LanceView {
             degree_7: [],
         };
         const subset = $("#cc7Subset").val();
+        const genderFilter = $("#cc7Gender").val() || "all";
         const lanceTable = $(
-            `<table id='lanceTable' class="cc7ViewTab subsetable ${subset}">` +
+            `<table id='lanceTable' class="cc7ViewTab subsetable ${subset} ${CC7Utils.genderClass(genderFilter)}">` +
                 "<thead>" +
                 "<tr></tr>" +
                 "</thead>" +
@@ -37,7 +38,7 @@ export class LanceView {
 
         for (let aPerson of window.people.values()) {
             // Ignore profiles not in the selected subset
-            if (!CC7Utils.profileIsInSubset(aPerson, subset)) continue;
+            if (!CC7Utils.profileIsInSubset(aPerson, subset, genderFilter)) continue;
             if (!aPerson.Missing) {
                 CC7Utils.addMissingBits(aPerson);
             }

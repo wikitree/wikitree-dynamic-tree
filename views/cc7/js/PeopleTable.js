@@ -35,7 +35,7 @@ class PeopleTable {
         ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
     ]);
 
-    static async addPeopleTable(caption = null) {
+    static async addPeopleTable() {
         $("#savePeople").show();
         // Set root person if it is not already set
         if (window.rootPerson) {
@@ -53,11 +53,9 @@ class PeopleTable {
             });
         }
         window.rootPerson = rootPerson;
-        if (!caption) caption = CC7Utils.tableCaption();
 
         const rootFirstName = rootPerson?.FirstName || window.rootId; // Get first name of root person
         const sortTitle = "title='Click to sort'";
-        const aCaption = `<caption>${caption}</caption>`;
         const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
         const relationTH = `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>`;
         const createdTH = `<th id='created' ${sortTitle} data-order='asc'>Created</th>`;
@@ -75,7 +73,7 @@ class PeopleTable {
 
         const aTable = $(
             `<table id='peopleTable' class='cc7ViewTab subsetable peopleTable'>` +
-                aCaption +
+                `<caption></caption>` +
                 `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
                     bioCheck ? "/B" : ""
                 }</th><th></th><th></th>` +
@@ -131,6 +129,12 @@ class PeopleTable {
                         'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
                         "Complete</option>" +
                         "</select>" +
+                        "<select id='cc7Gender' title='Which gender profiles should be considered'>" +
+                        "<option value='all' selected>All</option>" +
+                        "<option value='Male' title='Males only'>M</option>" +
+                        "<option value='Female' title='Females only'>F</option>" +
+                        "<option value='No Gender' title='No gender specified only'>N</option>" +
+                        "</select>" +
                         "<button class='btn btn-secondary btn-sm viewButton' id='hierarchyViewButton'>Hierarchy</button>" +
                         "<button class='btn btn-secondary btn-sm viewButton' id='listViewButton'>List</button>" +
                         "<button class='btn btn-secondary btn-sm viewButton active' id='tableViewButton'>Table</button>" +
@@ -142,7 +146,9 @@ class PeopleTable {
         }
         PeopleTable.applyViewParameters(CC7.URL_PARAMS);
         const subset = $("#cc7Subset").val() || "all";
-        aTable.addClass(subset);
+        const genderFilter = $("#cc7Gender").val() || "all";
+        aTable.addClass([subset, CC7Utils.genderClass(genderFilter)]);
+        aTable.find("caption").text(CC7Utils.tableCaption());
 
         let complete = 0;
         let totalPeople = 0;
@@ -175,7 +181,7 @@ class PeopleTable {
                 complete++;
             }
             // Ignore profiles not in the selected subset
-            if (!CC7Utils.profileIsInSubset(mPerson, subset)) continue;
+            if (!CC7Utils.profileIsInSubset(mPerson, subset, genderFilter)) continue;
 
             const ajustedDeath = mPerson.adjustedDeath;
             let birthLocation = mPerson.BirthLocation;
@@ -578,9 +584,15 @@ class PeopleTable {
                 PeopleTable.reverseWordOrder($(this));
             });
 
-        $("#cc7Subset")
+        $("#cc7Subset, #cc7Gender")
             .off("change")
             .on("change", function () {
+                if ($("#cc7Subset").val() == "missing-links") {
+                    PeopleTable.showMissingLinksCheckboxes();
+                } else {
+                    $("#mlButtons").hide();
+                }
+                CC7.updateURL();
                 switch (PeopleTable.ACTIVE_VIEW) {
                     case CC7.VIEWS.TABLE:
                         drawPeopleTable();
@@ -598,16 +610,11 @@ class PeopleTable {
                     case CC7.VIEWS.CIRCLES:
                     default:
                 }
-                if ($("#cc7Subset").val() == "missing-links") {
-                    PeopleTable.showMissingLinksCheckboxes();
-                } else {
-                    $("#mlButtons").hide();
-                }
                 CC7.updateURL();
             });
 
         function drawPeopleTable() {
-            PeopleTable.addPeopleTable(CC7Utils.tableCaptionWithSubset());
+            PeopleTable.addPeopleTable();
         }
 
         function drawMissingLinksTable() {
@@ -644,11 +651,18 @@ class PeopleTable {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
 
-                if ($("#lanceTable").length == 0 || !$("#lanceTable").hasClass($("#cc7Subset").val())) {
-                    LanceView.build();
-                } else {
-                    $("#lanceTable").show().addClass("active");
+                const $lanceTable = $("#lanceTable");
+
+                if (
+                    $lanceTable.length &&
+                    $lanceTable.hasClass($("#cc7Subset").val()) &&
+                    $lanceTable.hasClass(CC7Utils.genderClass($("#cc7Gender").val()))
+                ) {
+                    // We don't have to re-draw the table
+                    $lanceTable.show().addClass("active");
                     $("#wideTableButton").hide();
+                } else {
+                    LanceView.build();
                 }
                 $("#cc7Subset option[value='missing-links']").prop("disabled", false);
                 $("#cc7Subset option[value='complete']").prop("disabled", false);
@@ -683,6 +697,7 @@ class PeopleTable {
                     $("#hierarchyView").show().addClass("active");
                 }
                 $("#cc7Subset").hide();
+                $("#cc7Gender").hide();
                 $("#mlButtons").hide();
                 CC7.updateURL();
             });
@@ -699,7 +714,12 @@ class PeopleTable {
                 $("#cc7Subset option[value='missing-links']").prop("disabled", false);
                 $("#cc7Subset option[value='complete']").prop("disabled", false);
                 $("#cc7Subset").show();
-                if ($("#peopleTable").hasClass($("#cc7Subset").val())) {
+                $("#cc7Gender").show();
+                const $peopleTable = $("#peopleTable");
+                if (
+                    $peopleTable.hasClass($("#cc7Subset").val()) &&
+                    $peopleTable.hasClass(CC7Utils.genderClass($("#cc7Gender").val()))
+                ) {
                     // We don't have to re-draw the table
                     $("#peopleTable").show().addClass("active");
                     $("#wideTableButton").show();
@@ -722,14 +742,19 @@ class PeopleTable {
                 $(this).addClass("active");
 
                 $("#cc7Subset").show();
+                $("#cc7Gender").show();
                 // Remember the previous cc7Subset value if it's not what we want
                 const subset = $("#cc7Subset").val();
                 if (subset == "missing-links" || subset == "complete") {
                     // We don't allow missin-links or complete in the stats view, but we want
                     // to return to them when we switch back to another view
-                    PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
+                    PeopleTable.PREVIOUS_SUBSET = subset;
                 }
-                if ($("#statsView").hasClass($("#cc7Subset").val())) {
+                const $statsView = $("#statsView");
+                if (
+                    $statsView.hasClass($("#cc7Subset").val()) &&
+                    $statsView.hasClass(CC7Utils.genderClass($("#cc7Gender").val()))
+                ) {
                     // We don't have to re-draw the table
                     $("#cc7Subset option[value='missing-links']").prop("disabled", true);
                     $("#cc7Subset option[value='complete']").prop("disabled", true);
@@ -753,7 +778,7 @@ class PeopleTable {
                 // Remember the previous cc7Subset value if it's not what we want
                 const subset = $("#cc7Subset").val();
                 if (subset != "missing-links") {
-                    PeopleTable.PREVIOUS_SUBSET = $("#cc7Subset").val();
+                    PeopleTable.PREVIOUS_SUBSET = subset;
                 }
                 // switch to missing links checkboxes
                 PeopleTable.showMissingLinksCheckboxes();
@@ -769,6 +794,7 @@ class PeopleTable {
                 $("#getExtraDegrees").hide();
                 $("#getDegreeButton").hide();
                 $("#cc7Subset").hide();
+                $("#cc7Gender").hide();
                 $("#ancReport").hide();
                 $("label[for='getExtraDegrees']").hide();
                 wtViewRegistry.hideInfoPanel();
@@ -788,6 +814,7 @@ class PeopleTable {
 
                 $("#wideTableButton").hide();
                 $("#cc7Subset").hide();
+                $("#cc7Gender").hide();
                 $("#mlButtons").hide();
                 $("#ml-links").hide();
                 $("#ml-count").hide();
@@ -2433,6 +2460,7 @@ class PeopleTable {
             new Date().toISOString().replace("T", "_").replaceAll(":", "-").slice(0, 19) +
             "_" +
             $("#cc7Subset").val().substring(0, 3) +
+            (CC7.URL_PARAMS["gender"] ? CC7.URL_PARAMS["gender"] : "") +
             (PeopleTable.anyFilterActive() ? "_filtered" : "")
         );
     }
@@ -2482,34 +2510,20 @@ class PeopleTable {
         switch (matchedView) {
             case CC7.VIEWS.TABLE:
             case CC7.VIEWS.LIST:
-                // handle the "only" (i.e. subset) parameter(s)
+            case CC7.VIEWS.STATS:
+                // handle the "only" (i.e. subset) and gender parameter(s)
                 const matchedOption = validSelectOption("#cc7Subset option", params.only || "all");
                 if (matchedOption) {
                     $("#cc7Subset").val(matchedOption);
-                    if (matchedOption == "missing-links") {
+                    if (matchedOption == "missing-links" && matchedView != CC7.VIEWS.STATS) {
                         setMissingLinkOptions();
                         PeopleTable.showMissingLinksCheckboxes();
                     } else {
                         $("#mlButtons").hide();
                     }
                 }
-                break;
-
-            case CC7.VIEWS.STATS:
-                const onlyParam = validSelectOption("#cc7Subset option", params.only || "all");
-                if (onlyParam) {
-                    $("#cc7Subset").val(onlyParam);
-                }
-                // We can't set the stats gender parameter here, but we make sure it's value is correct.
-                // We also can't use validSelectOption() here as the select is not yet available.
-                const validGender = ["Male", "Female", ""];
-                const lowParam = params.gender?.toLowerCase() || "";
-                for (const optVal of validGender) {
-                    if (optVal.toLowerCase() === lowParam) {
-                        CC7.URL_PARAMS.gender = optVal;
-                        break;
-                    }
-                }
+                const urlParam = params.gender?.charAt(0) || "";
+                $("#cc7Gender").val(CC7Utils.genderValue(urlParam));
                 break;
 
             case CC7.VIEWS.MISSING_LINKS:
@@ -2536,6 +2550,9 @@ class PeopleTable {
                 }
                 break;
 
+            case CC7.VIEWS.HIERARCHY:
+                break;
+
             default:
                 console.error(`Unknown view: ${theView}`);
                 break;
@@ -2559,6 +2576,7 @@ class PeopleTable {
             PeopleTable.PREVIOUS_SUBSET = null;
         }
         $("#cc7Subset").show();
+        $("#cc7Gender").show();
         $("#ancReport").show();
         $("label[for='getExtraDegrees']").show();
         $("#ml-count").remove();
