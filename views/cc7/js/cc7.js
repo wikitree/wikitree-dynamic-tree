@@ -761,7 +761,6 @@ class CC7 {
                     }
                 }
                 break;
-            case CC7.VIEWS.CIRCLES:
             case CC7.VIEWS.HIERARCHY:
                 break;
             default:
