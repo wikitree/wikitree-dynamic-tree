@@ -2550,6 +2550,9 @@ class PeopleTable {
                 }
                 break;
 
+            case CC7.VIEWS.HIERARCHY:
+                break;
+
             default:
                 console.error(`Unknown view: ${theView}`);
                 break;
