@@ -3,22 +3,49 @@ import { Utils } from "../../shared/Utils.js";
 export class CC7Utils {
     static CC7_CONTAINER_ID = "cc7Container";
 
-    static subsetWord() {
+    static GENDER_MAP = {
+        "m": { selectValue: "Male", class: "male" },
+        "f": { selectValue: "Female", class: "female" },
+        "n": { selectValue: "No Gender", class: "nogender" },
+        "": { selectValue: "all", class: "allgender" },
+    };
+
+    static genderValue(urlKey) {
+        return this.GENDER_MAP[urlKey.toLowerCase()]?.selectValue || "all";
+    }
+
+    static genderClass(genderValue) {
+        if (genderValue) {
+            for (const v of Object.values(this.GENDER_MAP)) {
+                if (v.selectValue === genderValue) {
+                    return v.class;
+                }
+            }
+        }
+        return "allgender";
+    }
+
+    static subsetWords() {
+        let gender = $("#cc7Gender").val() || "";
+        if (gender == "all") {
+            gender = "";
+        }
+        const genderWord = gender == "" ? "" : gender + " ";
         switch ($("#cc7Subset").val()) {
             case "ancestors":
-                return "Ancestors Only";
+                return genderWord + "Ancestors Only";
             case "descendants":
-                return "Descendants Only";
+                return genderWord + "Descendants Only";
             case "above":
-                return '"Above" Only';
+                return genderWord + '"Above" Only';
             case "below":
-                return '"Below" Only';
+                return genderWord + '"Below" Only';
             case "missing-links":
-                return "Missing Family";
+                return genderWord + "Missing Family";
             case "complete":
-                return "Complete";
+                return genderWord + "Complete";
             default:
-                return "";
+                return gender == "" ? gender : `${gender}s Only`;
         }
     }
 
@@ -36,17 +63,15 @@ export class CC7Utils {
         } else {
             caption = `CC${window.cc7Degree} of ${displName}`;
         }
-        return caption;
-    }
-
-    static tableCaptionWithSubset() {
-        const subsetWord = CC7Utils.subsetWord();
-        return CC7Utils.tableCaption() + (subsetWord == "" ? "" : ` (${subsetWord})`);
+        const subsetWords = CC7Utils.subsetWords();
+        return caption + (subsetWords == "" ? "" : ` (${subsetWords})`);
     }
 
     static profileIsInSubset(person, subset, gender = false) {
         if (person.Hide) return false;
-        if (gender && person.Gender != gender) return false;
+        let personGender = person.Gender;
+        if (!personGender || person.DataStatus?.Gender == "blank") personGender = "No Gender";
+        if (gender && gender != "all" && personGender != gender) return false;
 
         switch (subset) {
             case "above":
