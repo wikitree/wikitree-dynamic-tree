@@ -4,8 +4,8 @@
  * tree. A Couple may also consist of only a single Person if they do not have a (known) spouse.
  */
 export class Couple {
-    static L = -1;
-    static R = 1;
+    static L = -1; // a
+    static R = 1; // b
 
     static #couplesCache = new Map();
 
@@ -136,6 +136,14 @@ export class Couple {
         }
     }
 
+    isInFocus(side) {
+        if (this.focus == Couple.R) {
+            return side == "b";
+        } else {
+            return side == "a";
+        }
+    }
+
     getJointChildrenIds() {
         const otherParent = this.getNotInFocus();
         const childrenIds = this.getInFocus().getChildrenIds() || new Set();
@@ -186,12 +194,31 @@ export class Couple {
         return this.a && this.b;
     }
 
-    isDescendantExpandable() {
+    isDescendantExpandable(show = false) {
+        if (show) {
+            const noD3children = !this.children;
+            const aNotExpanded =
+                !this.a || (!this.a.isNoSpouse && this.a.getSpouseIds?.size > 0 && this.a.getSpouses().length == 0);
+            const bNotExpanded =
+                !this.b || (!this.b.isNoSpouse && this.b.getSpouseIds?.size > 0 && this.b.getSpouses().length == 0);
+            const mayHaveCh = this.mayHaveChildren();
+            const aNoChildIds = this.a && !this.a.getChildrenIds();
+            const bNoChildIds = this.b && !this.b.getChildrenIds();
+            const rslt = noD3children && (aNotExpanded || bNotExpanded || (mayHaveCh && (aNoChildIds || bNoChildIds)));
+            console.log(
+                `isDescendantExpandable ${this.getId()}:\n` +
+                    `noD3children=${noD3children} && (aNotExpanded=${aNotExpanded} || bNotExpanded=${bNotExpanded}) ` +
+                    `|| (mayHaveCh=${mayHaveCh} && (aNoChildIds=${aNoChildIds} || bNoChildIds=${bNoChildIds})) = ${rslt}`
+            );
+        }
         return (
-            !this.children &&
-            !this.isExpanded() &&
-            this.mayHaveChildren() &&
-            ((this.a && !this.a.getChildrenIds()) || (this.b && !this.b.getChildrenIds()))
+            !this.children && // no D3 children and
+            (!this.a ||
+                (!this.a.isNoSpouse && this.a.getSpouseIds?.size > 0 && this.a.getSpouses().length == 0) || // a has unloaded spouse(s) or
+                !this.b ||
+                (!this.b.isNoSpouse && this.b.getSpouseIds?.size > 0 && this.b.getSpouses().length == 0) || // b has unloaded spouse(s) or
+                (this.mayHaveChildren() &&
+                    ((this.a && !this.a.getChildrenIds()) || (this.b && !this.b.getChildrenIds())))) // a or b has no children
         );
     }
 
@@ -200,11 +227,13 @@ export class Couple {
     }
 
     isAExpanded() {
-        return !this.a || this.a.isNoSpouse || (this.a.getExpandedParentIds() && this.a.getSpouses());
+        if (typeof this.a == "undefined") return false;
+        return this.a.isNoSpouse || (this.a.getExpandedParentIds() && this.a.getSpouses());
     }
 
     isBExpanded() {
-        return !this.b || this.b.isNoSpouse || (this.b.getExpandedParentIds() && this.b.getSpouses());
+        if (typeof this.b == "undefined") return false;
+        return this.b.isNoSpouse || (this.b.getExpandedParentIds() && this.b.getSpouses());
     }
 
     mayHaveChildren() {
@@ -251,6 +280,7 @@ export class Couple {
     }
 
     removeAncestors() {
+        // Assume this is a couple in an ancestor tree and we want to hide their ancestors
         // Move the ancestors out of the way rather than completely deleting them so we can restore them later
         if (this.a && this.a._data.Parents) {
             this.a._data._Parents = this.a._data.Parents;
@@ -260,15 +290,14 @@ export class Couple {
             this.b._data._Parents = this.b._data.Parents;
             delete this.b._data.Parents;
         }
-        // this.expanded = false;
-        if (this.children) delete this.children;
         return new Promise((resolve, reject) => {
             resolve(this);
         });
     }
 
     removeDescendants() {
-        // Move the ancestors out of the way rather than completely deleting them so we can restore them later
+        // Assume this is a couple in a descendant tree and we want to hide their descendants
+        // Move the decendants out of the way rather than completely deleting them so we can restore them later
         if (this.a && this.a._data.Children) {
             this.a._data._Children = this.a._data.Children;
             delete this.a._data.Children;
@@ -277,8 +306,6 @@ export class Couple {
             this.b._data._Children = this.b._data.Children;
             delete this.b._data.Children;
         }
-        // this.expanded = false;
-        if (this.children) delete this.children;
         return new Promise((resolve, reject) => {
             resolve(this);
         });

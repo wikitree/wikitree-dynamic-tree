@@ -155,7 +155,7 @@ export class CachedPerson {
         return await Promise.all(CachedPerson.collectWithLoad(this._data.Children));
     }
     hasAChild() {
-        return this._data.HasChildren || this._data.Children?.length > 0;
+        return this._data.Children?.length > 0 || this._data.HasChildren;
     }
 
     // -----------------------------------
@@ -233,6 +233,13 @@ export class CachedPerson {
     }
     setNrOlderGenerations(n) {
         this.nrOlderGenerations = n;
+    }
+    getLowestGeneration() {
+        // Get the lowest generation this person appears in
+        if (this.generations.size == 0) {
+            return 0;
+        }
+        return Math.min(...this.generations.keys());
     }
 
     // -----------------------------------
@@ -362,8 +369,8 @@ export class CachedPerson {
         return CachedPerson.aPromiseFor(undefined);
     }
     // Note that !hasSpouse() is not the same as hasNoSpouse(). The former just means that the current
-    // profile does not have any spouse field(s) loaded while the latter means the profile definitely
-    // has no spouse.
+    // profile does not have any spouse field(s) loaded while the latter means the profile has no spouse
+    // data even after a full load. definitelyHasNoSpouse() also takes the noMoreSpouses flag into account.
     hasSpouse(id) {
         if (id) {
             this._data.Spouses && this._data.Spouses.has(id);
@@ -371,7 +378,10 @@ export class CachedPerson {
         return this._data.Spouses && this._data.PreferredSpouseId;
     }
     hasNoSpouse() {
-        return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.size == 0;
+        return this._data.Spouses && this._data.Spouses.size == 0;
+    }
+    definitelyHasNoSpouse() {
+        return this.hasNoSpouse() && this._data.noMoreSpouses;
     }
     setPreferredSpouse(id) {
         if (this.hasSpouse(id)) {

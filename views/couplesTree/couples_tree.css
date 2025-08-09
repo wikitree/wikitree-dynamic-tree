@@ -159,7 +159,7 @@
 }
 
 .cvtc #ct-help-button {
-  background: #393a3c;
+  background: #25422d;
   color: #fff;
   font-size: 0.8em;
   padding: 0.1em 0.5em;
@@ -204,6 +204,11 @@
 }
 .cvtc #ct-help-text:active {
   cursor: grabbing;
+}
+
+.cvtc .rotated-180 {
+  display: inline-block;
+  transform: rotate(180deg);
 }
 
 @media only screen and (max-width: 767px) {
