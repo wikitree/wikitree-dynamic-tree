@@ -435,7 +435,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 .on("click", (e, d) => toggleDuplicate(e, d, side))
                 .append("title")
                 .text(function (d) {
-                    return birthAndDeathData(d.data[side]);
+                    // return birthAndDeathData(d.data[side]);
+                    return "Click to toggle path(s) to duplicates of this person in the tree.";
                 });
         }
 

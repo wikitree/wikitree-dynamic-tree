@@ -341,7 +341,6 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
         nodeEnter
             .filter((d) => d.data.mayHaveChildren())
             .each(function (d, i) {
-                const self = this;
                 const couple = d.data;
                 const jointChildrenIds = couple.getJointChildrenIds();
                 if (jointChildrenIds.length > 0) {
@@ -367,7 +366,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                         tooltip += ` (${aName} had ${nrA} ${cWord} and ${bName} ${nrB})`;
                     }
                     // Draw the triangle and make it clickable to show the children names
-                    d3.select(self)
+                    d3.select(this)
                         .append("polygon")
                         .attr("class", "node")
                         .attr("points", function (d) {
@@ -375,20 +374,23 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                             return "-5,18 5,18 0,28";
                         })
                         .style("fill", "green")
-                        .on("click", function (event, d) {
+                        .on("click", function (event) {
+                            // Get the most recent data object bound to the d3 node
+                            const d = d3.select(this.parentNode).datum();
                             toggleChildrenList(event, d, $(this), combinedName);
                         })
                         .append("title")
                         .text(tooltip);
                     // Also draw the number of children (an make it clickable as above)
-                    d3.select(self)
+                    d3.select(this)
                         .append("text")
                         .attr("y", "28")
                         .attr("x", "-5")
                         .attr("text-anchor", "end")
                         .text(nrLabel)
                         .style("cursor", "pointer")
-                        .on("click", function (event, d) {
+                        .on("click", function (event) {
+                            const d = d3.select(this.parentNode).datum();
                             toggleChildrenList(event, d, $(this), combinedName);
                         })
                         .append("title")
@@ -446,7 +448,8 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 .on("click", (e, d) => toggleDuplicate(e, d, side))
                 .append("title")
                 .text(function (d) {
-                    return birthAndDeathData(d.data[side]);
+                    // return birthAndDeathData(d.data[side]);
+                    return "Click to toggle path(s) to duplicates of this person in the tree. This will force curved tree links.";
                 });
         }
 
@@ -770,11 +773,11 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                         const updatedD3Root = d3.hierarchy(theTree.rootCouple, function (c) {
                             return CCDE.getD3Children(c, inTree);
                         });
-                        const dCoupleId = d.data.getCoupleId();
+                        const dCoupleId = d.data.getId();
                         updatedD3Root.descendants().forEach(function (newNode) {
-                            const newCoupleId = newNode.data.getCoupleId();
+                            const newCoupleId = newNode.data.getId();
                             if (newCoupleId !== dCoupleId) {
-                                const matchedOldNode = oldDescendants.find((n) => n.data.getCoupleId() === newCoupleId);
+                                const matchedOldNode = oldDescendants.find((n) => n.data.getId() === newCoupleId);
                                 if (matchedOldNode) {
                                     if (matchedOldNode._children) {
                                         collapseSameChildren(newNode, matchedOldNode._children);
@@ -793,13 +796,14 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             }
         }
 
-        // Collapse the children of d that are in hiddenChildren
+        // Collapse the children of d that are in oldHiddenChildren (an array of Jd elements)
         function collapseSameChildren(d, oldHiddenChildren) {
             if (d.children) {
                 const hiddenChildrenIds = new Set(oldHiddenChildren.map((c) => c.data.getId()));
                 const remaining = [];
                 for (const child of d.children) {
                     if (hiddenChildrenIds.has(child.data.getId())) {
+                        if (!d._children) d._children = [];
                         d._children.push(child);
                     } else {
                         remaining.push(child);
@@ -829,7 +833,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             }
             const childrenIds = couple.getJointChildrenIds();
             if (childrenIds.length > 0) {
-                const childrenList = drawChildrenList(couple, childrenIds, combinedName);
+                const childrenList = drawChildrenList(couple, childrenIds, d[savedChildrenField], combinedName);
                 childrenList.id = childListId;
                 showTable(jqClicked, $(childrenList), 5, 5);
             }
@@ -859,6 +863,9 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
 
         // Toggle duplicate highlight on click.
         function toggleDuplicate(event, d, side) {
+            if ($("#etsquare").is(":checked")) {
+                $("#etcurved").prop("checked", true).trigger("change");
+            }
             const p = d.data[side];
             const id = p.getId();
             // find all the paths to this person
@@ -916,7 +923,6 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             }
             d.children.sort(originalChildOrder);
             d[savedChildrenField] = null;
-            d.data.hiddenChildren?.clear(); // clear the hidden children set
             const newDepth = d.depth + d.data.getNrOlderGenerations();
             currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
             updateDisplay(d);
@@ -986,7 +992,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
         elem.css({ top: theClickedOffset.top + tOffset, left: theLeft });
     }
 
-    function drawChildrenList(couple, childrenIds, combinedName) {
+    function drawChildrenList(couple, childrenIds, hiddenJds, combinedName) {
         const listDiv = document.createElement("div");
         listDiv.className = "children-list";
         listDiv.style.display = "none";
@@ -1002,16 +1008,17 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             children.push(theTree.people.get(+childId));
         }
         sortByBirthDate(children);
-        const hiddenChildren = couple["hiddenChildren"];
+        const hiddenChildrenIds = new Set(hiddenJds ? hiddenJds.map((jd) => +jd.data.getInFocus()?.getId()) : []);
+        const parentsId = couple.getId();
         const childrenList = document.createElement("ol");
         for (const [i, child] of children.entries()) {
             const item = document.createElement("li");
             const childName = getPersonName(child, getShortName(child));
-            const hidden = hiddenChildren && hiddenChildren.has(child.getId());
+            const hidden = hiddenChildrenIds && hiddenChildrenIds.has(child.getId());
             item.appendChild(
                 aDivWith(
                     "aChild",
-                    aChildCheckBox(couple, i, child.getId(), !hidden),
+                    aChildCheckBox(parentsId, i, child.getId(), !hidden),
                     document.createTextNode(" "),
                     aProfileLink(childName, child.getWtId(), child.isBrickWall()),
                     document.createTextNode(" "),
@@ -1026,14 +1033,13 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
         return listDiv;
     }
 
-    function aChildCheckBox(parentCouple, idx, personId, isChecked) {
+    function aChildCheckBox(parentsUniqueId, idx, personId, isChecked) {
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
-        const parentId = parentCouple.getId();
-        checkbox.id = parentId + "_child_" + idx;
+        checkbox.id = parentsUniqueId + "_child_" + idx;
         checkbox.value = personId;
         checkbox.checked = isChecked;
-        checkbox.dataset.parent = parentId;
+        checkbox.dataset.parent = parentsUniqueId;
         checkbox.addEventListener("change", function () {
             // const person = theTree.people.get(+this.value);
             const d = d3.select(`#${this.dataset.parent}`).datum();
@@ -1043,15 +1049,12 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 if (!d.children) d.children = [];
                 moveChildById(+this.value, d[savedChildrenField], d.children);
                 d.children.sort(originalChildOrder);
-                couple["hiddenChildren"]?.delete(+this.value);
                 if (d[savedChildrenField]?.length == 0) {
                     d[savedChildrenField] = null; // remove the children array if empty
                 }
             } else {
                 // move child from actual to saved/hidden
                 if (!d[savedChildrenField]) d[savedChildrenField] = [];
-                if (!couple["hiddenChildren"]) couple["hiddenChildren"] = new Set();
-                couple["hiddenChildren"].add(+this.value);
                 moveChildById(+this.value, d.children, d[savedChildrenField]);
                 if (d.children.length == 0) {
                     d.children = null; // remove the children array if empty
