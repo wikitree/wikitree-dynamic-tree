@@ -117,15 +117,15 @@ export class CCDE {
             </label>
           </td>
           <td>
-            <label class="left" title="Choose between curved or square edges.">
-              Edges:
+            <label class="left" title="Choose between curved or straight lines to connect nodes.">
+              Link Lines:
               <label title="Use a Bezier curve to connect nodes.">
                 <input type="radio" id="etcurved" name="edgeType" value="curved" checked />
                 Curved
               </label>
               <label title="Use only horizontal and vertical lines to connect nodes.">
                 <input type="radio" id="etsquare" name="edgeType" value="square" />
-                Square
+                Straight
               </label>
             </label>
           </td>
