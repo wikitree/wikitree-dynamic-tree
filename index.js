@@ -49,6 +49,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "fanchart": new FanChartView(),
         "couples": new CouplesTreeView(),
         "cctree": new CCTView(),
+        "ccdtree": new CCDView(),
         "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
         "timeline": new TimelineView(),
         "fandoku": new FandokuView(),

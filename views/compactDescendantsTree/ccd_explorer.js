@@ -1,5 +1,5 @@
 /*
- * This code was originally adpated from WikiTreeDynamicTreeViewer.js
+ * This code was adpated from compactCoupleTree.js
  * We use the D3.js library to render the graph.
  *
  * The code currently makes use of getPerson API calls. Call counts come down to about one call per person being displayed
@@ -25,15 +25,16 @@
  */
 
 import { CachedPerson } from "../couplesTree/cached_person.js";
-import { Couple } from "./couple.js";
-import { showTree } from "./display.js";
+import { Couple } from "../compactCouplesTree/couple.js";
+import { showTree, sortByBirthDate } from "./display.js";
 import { Utils } from "../shared/Utils.js";
 import { spell } from "../../lib/utilities.js";
+import { Ancestors } from "./ancestors.js";
 
 /**
- * Compact Couples Tree Explorer
+ * Compact Couples Descendants Explorer
  */
-export class CCTE {
+export class CCDE {
     // if addTestInfo is true, a person's (integer) id is displayed in their person box (to assist with reading
     // the debug logs) and, if debug logging is on (see index.html), the Person object is logged to the console
     // whenever one clicks in a person box (i.e. when the person pop-up is generated).
@@ -43,20 +44,20 @@ export class CCTE {
     static originOffsetY = 300;
     static boxWidth = 200;
     static boxHeight = 52;
-    static halfBoxWidth = CCTE.boxWidth / 2;
-    static halfBoxHeight = CCTE.boxHeight / 2;
-    static nodeWidth = CCTE.boxWidth * 1.5;
-    static nodeHeight = CCTE.boxHeight * 3;
+    static halfBoxWidth = CCDE.boxWidth / 2;
+    static halfBoxHeight = CCDE.boxHeight / 2;
+    static nodeWidth = CCDE.boxWidth * 1.5;
+    static nodeHeight = CCDE.boxHeight * 3;
 
     static ANCESTORS = 1;
     static DESCENDANTS = -1;
-    static #COOKIE_NAME = "wt_cct_options";
+    static #COOKIE_NAME = "wt_ccd_options";
 
     static HELP_TEXT = `
         <xx>[ x ]</xx>
-        <h2 style="text-align: center">About Compact Couple Ancestors</h2>
-        <p>The display combines the ancestor trees of two people that are in some relationship
-           (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the ancestors
+        <h2 style="text-align: center">About Compact Couple Descendants</h2>
+        <p>The display combines the descendant trees of two people that are in some relationship
+           (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the descendants
            of both members of the couple. You can expand and contract the tree and change its focus as you please.</p>
         <p>Duplicate nodes are flagged with coloured squares. Click on the square to highlight the other copies.</p>
         <p>Navigation Summary</p>
@@ -70,8 +71,10 @@ export class CCTE {
                 duplicate is flagged in bright blue and is labeled "See [person name]". Only the original node can be
                 expanded, not the duplicate.
             <li><svg width="12" height="12"><polygon points="1,2 11,2 6,12" style="fill:green;" /></svg>
-                - show the children of a couple, or all the spouses of the other member of the couple.
-            <li>⤇ - select this spouse for this couple (can only be done for the root couple).
+                - show the children of a couple, or all the spouses of the other member of the couple. In the children
+                  dropdown, you can select which children should be shown in the tree (be default all are shown).
+            <li>⤇ - select this spouse for this couple. Only the spouse of the root and their direct descendants
+                can be changed, provided of course, that they have more than one spouse.
             <li><img src="https://www.wikitree.com/images/icons/pedigree.gif"/> - make this person the root of the tree.
             <li>Click on a person's name to open that person's profile in a new tab.
             <li>Use scrolling (up/down and left/right) to pan around, or use the left/right buttons at the bottom left.
@@ -82,14 +85,15 @@ export class CCTE {
 
     static ancestorRoot;
     static descendantRoot;
+    static userAncestors;
 
     constructor(containerSelector) {
         $(containerSelector).html(`
-<div id="cctContainer" class="cct">
-  <div id="controlBlock" class="cct-not-printable">
-    <div id="help-text" class="pop-up">${CCTE.HELP_TEXT}</div>
-    <fieldset id="cctFieldset">
-      <legend id="cctOptions" title="Click to Close/Open the options">Options - click here to open/close</legend>
+<div id="ccdContainer" class="ccd">
+  <div id="controlBlock" class="ccd-not-printable">
+    <div id="help-text" class="pop-up">${CCDE.HELP_TEXT}</div>
+    <fieldset id="ccdFieldset">
+      <legend id="ccdOptions" title="Click to Close/Open the options">Options - click here to open/close</legend>
       <table id="optionsTbl" class="table-borderless">
         <tr>
           <td>
@@ -113,6 +117,19 @@ export class CCTE {
             </label>
           </td>
           <td>
+            <label class="left" title="Choose between curved or straight lines to connect nodes.">
+              Link Lines:
+              <label title="Use a Bezier curve to connect nodes.">
+                <input type="radio" id="etcurved" name="edgeType" value="curved" checked />
+                Curved
+              </label>
+              <label title="Use only horizontal and vertical lines to connect nodes.">
+                <input type="radio" id="etsquare" name="edgeType" value="square" />
+                Straight
+              </label>
+            </label>
+          </td>
+          <td>
             <button
               id="drawTreeButton"
               class="btn btn-primary btn-sm"
@@ -123,38 +140,15 @@ export class CCTE {
               <b>?</b>
             </button>
             <!-- DEBUGGING - some help with debugging animation issues
-                <label
-                for="d3delay"
-                title="Animation delay.">
-                Delay</label
-                >
-                <input
-                id="d3delay"
-                type="number"
-                min="0"
-                value="200"
-                title="Links animation delay." />
-                <input
-                id="originalSrc"
-                type="checkbox"
-                title="Use srcNode or d.parent as links animation source." />
-                <label
-                for="originalSrc"
-                title="Use srcNode or d.parent as links animation source."
-                class="right">
-                Use srcNode?</label
-                >
-                <input
-                id="useX0"
-                type="checkbox"
-                title="Links animation src coords: (x0,y0) or (x,y)?." />
-                <label
-                for="useX0"
-                title="Links animation src coords: (x0,y0) or (x,y)?."
-                class="right">
-                X0 Coords?</label
-                >
-                end of DEBUGGING options-->
+            <label for="d3delay" title="Animation delay."> Delay </label>
+            <input id="d3delay" type="number" min="0" value="200" title="Links animation delay." />
+            <input id="originalSrc" type="checkbox" title="Use srcNode or d.parent as links animation source." />
+            <label for="originalSrc" title="Use srcNode or d.parent as links animation source." class="right">
+              Use srcNode?
+            </label>
+            <input id="useX0" type="checkbox" title="Links animation src coords: (x0,y0) or (x,y)?." />
+            <label for="useX0" title="Links animation src coords: (x0,y0) or (x,y)?." class="right"> X0 Coords? </label>
+            end of DEBUGGING options-->
           </td>
         </tr>
         <tr>
@@ -176,10 +170,10 @@ export class CCTE {
             <label
               title="Determines the display height of the tree. Adjust this if adjacent couples are too close to each other.">
               Height Factor
-              <input id="cctTHFactor" type="number" min="1" value="55" />
+              <input id="ccdTHFactor" type="number" min="1" value="55" />
             </label>
           </td>
-          <td>
+          <td colspan="2">
             <label
               title="Position couples along the horizontal tree axis relative to the year of birth of the indicated partner."
               class="left">
@@ -188,10 +182,15 @@ export class CCTE {
               <input type="radio" id="birthScaleb" name="theBirthScale" class="b-radio" value="b" />
             </label>
             <label
-              class="right"
               title="Position couples along the horizontal tree axis relative to the year of birth of the indicated partner.">
               <input type="radio" id="birthScaleno" name="theBirthScale" class="gray-radio" value="no" checked />
               None
+            </label>
+            <label
+              class="right"
+              title="Position couples along the horizontal tree axis relative to the year of birth of the indicated partner.">
+              <input type="radio" id="birthScalec" name="theBirthScale" value="c" />
+              Child
             </label>
           </td>
         </tr>
@@ -199,7 +198,7 @@ export class CCTE {
           <td style="text-align: right">
             <label title='Choose the colour for people categorised as a "brick wall".'>
               Brick wall colour
-              <input id="cctBrickWallColour" type="color" value="#FF0000" />
+              <input id="ccdBrickWallColour" type="color" value="#FF0000" />
             </label>
             &nbsp;
           </td>
@@ -252,27 +251,34 @@ export class CCTE {
               </table>
             </fieldset>
           </td>
+          <td>
+            <label title="Highlight direct descendants of the root person with squares." class="left">
+              <input id="bloodline" type="checkbox" checked />
+              Highlight descendants
+            </label>
+          </td>
           <!--
-            <td>
-                <input
-                id="sleep"
-                type="checkbox" />
-                <label
-                for="sleep"
-                title="Add sleeps in between some steps of drawing the tree (for debugging help)."
-                class="right">
-                Sleep (test)</label
-                >
-            </td>
-            -->
+          <td>
+            <label title="Add sleeps in between some steps of drawing the tree (for debugging help).">
+              <input id="sleep" type="checkbox" />
+              Sleep (test)
+            </label>
+          </td>
+          -->
         </tr>
         <tr>
           <td style="text-align: right; vertical-align: top">
             <label title="Choose the colour for the lines connecting descendants.">
               Link line colour
-              <input id="cctLinkLineColour" type="color" value="#CCCCCC" />
+              <input id="ccdLinkLineColour" type="color" value="#CCCCCC" />
             </label>
             &nbsp;
+          </td>
+          <td>
+            <label title="Draw a box aound my direct ancestors (if any)." class="left">
+              <input id="flagAncestors" type="checkbox" />
+              Flag my direct ancestors
+            </label>
           </td>
         </tr>
       </table>
@@ -282,7 +288,7 @@ export class CCTE {
       <button id="slideRight" title="Scroll right" class="small button">&rarr;</button>
     </div>
   </div>
-  <div id="svgContainer" class="cct-printable">
+  <div id="svgContainer" class="ccd-printable">
     <section id="theSvg"></section>
   </div>
 </div>
@@ -297,24 +303,24 @@ export class CCTE {
                     wtViewRegistry.hideInfoPanel();
                     window.aleShowingInfo = false;
                 }
-                $("#help-text").css("z-index", `${CCTE.getNextZLevel()}`).slideToggle("fast");
+                $("#help-text").css("z-index", `${CCDE.getNextZLevel()}`).slideToggle("fast");
             });
         $("#help-text").draggable();
 
         // Set up pop-ups (help text, alt spouse and children lists) closing and focus
-        $("#cctContainer")
+        $("#ccdContainer")
             .off("dblclick", ".pop-up")
             .on("dblclick", ".pop-up", function () {
                 $(this).slideToggle("fast");
             });
-        $("#cctContainer")
+        $("#ccdContainer")
             .off("click", ".pop-up")
             .on("click", ".pop-up", function () {
                 const self = $(this);
                 const myId = self.attr("id");
-                const [popupAtTop] = CCTE.findTopPopup();
+                const [popupAtTop] = CCDE.findTopPopup();
                 if (myId != popupAtTop.attr("id")) {
-                    self.css("z-index", `${CCTE.getNextZLevel()}`);
+                    self.css("z-index", `${CCDE.getNextZLevel()}`);
                 }
             });
         $("#help-text xx")
@@ -333,13 +339,13 @@ export class CCTE {
                 $("#drawTreeButton").click();
             }
         });
-        $("#cctTHFactor").keyup(function (e) {
+        $("#ccdTHFactor").keyup(function (e) {
             if (e.keyCode == 13) {
                 $("#drawTreeButton").click();
             }
         });
         $(
-            "#cctBrickWallColour, #cctLinkLineColour, #hideTreeHeader, #anonLiving, #privatise, " +
+            "#ccdBrickWallColour, #ccdLinkLineColour, #hideTreeHeader, #anonLiving, #privatise, " +
                 "#noParents, #oneParent, #noNoSpouses, #noNoChildren"
         )
             .off("change")
@@ -351,19 +357,52 @@ export class CCTE {
             .on("change", function (event) {
                 $("#drawTreeButton").click();
             });
+        $('input[name = "edgeType"]')
+            .off("change")
+            .on("change", function () {
+                $("#drawTreeButton").click();
+            });
         $('input[name = "theBirthScale"]')
             .off("change")
             .on("change", function () {
                 $("#drawTreeButton").click();
             });
-        $("#cctOptions")
+        $("#bloodline")
+            .off("change")
+            .on("change", function () {
+                $("#drawTreeButton").click();
+            });
+        $("#flagAncestors")
+            .off("change")
+            .on("change", async function () {
+                if (this.checked) {
+                    const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+                    if (!loggedInUserId) {
+                        window.wtViewRegistry.showWarning(
+                            "You need to be logged in for your ancestors to be highlighted."
+                        );
+                        CCDE.userAncestors = await Ancestors.get();
+                    } else {
+                        console.log(
+                            `Loading ancestors for watcher ${window.wtViewRegistry.session.lm.user.name} (${loggedInUserId})`
+                        );
+                        Utils.showShakingTree("controlBlock");
+                        CCDE.userAncestors = await Ancestors.get(loggedInUserId);
+                        Utils.hideShakingTree();
+                    }
+                } else {
+                    CCDE.userAncestors = await Ancestors.get();
+                }
+                $("#drawTreeButton").click();
+            });
+        $("#ccdOptions")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 $("#optionsTbl").slideToggle("fast");
             });
 
-        CCTE.retrieveOptionsFromCookie();
+        CCDE.retrieveOptionsFromCookie();
 
         const theSvgContainer = $("#theSvg");
         theSvgContainer.floatingScroll();
@@ -390,15 +429,15 @@ export class CCTE {
                 );
             });
 
-        $(document).off("keyup", CCTE.closePopUp).on("keyup", CCTE.closePopUp);
+        $(document).off("keyup", CCDE.closePopUp).on("keyup", CCDE.closePopUp);
     }
 
     static closePopUp(e) {
         if (e.key === "Escape") {
             // Find the popup with the highest z-index and close it
-            const [lastPopup, highestZIndex] = CCTE.findTopPopup();
+            const [lastPopup, highestZIndex] = CCDE.findTopPopup();
             if (lastPopup) {
-                CCTE.setNextZLevel(highestZIndex + 1);
+                CCDE.setNextZLevel(highestZIndex + 1);
                 lastPopup.slideUp("fast");
             }
         }
@@ -422,10 +461,11 @@ export class CCTE {
         const options = {
             connectors: document.getElementById("connectors").checked,
             hideTreeHeader: document.getElementById("hideTreeHeader").checked,
-            brickWallColour: document.getElementById("cctBrickWallColour").value,
-            linkLineColour: document.getElementById("cctLinkLineColour").value,
+            brickWallColour: document.getElementById("ccdBrickWallColour").value,
+            linkLineColour: document.getElementById("ccdLinkLineColour").value,
             edgeFactor: document.getElementById("edgeFactor").value,
-            heightFactor: document.getElementById("cctTHFactor").value,
+            edgeType: document.querySelector('input[name = "edgeType"]:checked').value,
+            heightFactor: document.getElementById("ccdTHFactor").value,
             noParents: document.getElementById("noParents").checked,
             oneParent: document.getElementById("oneParent").checked,
             noNoSpouses: document.getElementById("noNoSpouses").checked,
@@ -433,22 +473,25 @@ export class CCTE {
             checkedScale: document.querySelector('input[name = "theBirthScale"]:checked').value,
             privatise: document.getElementById("privatise").checked,
             anonLiving: document.getElementById("anonLiving").checked,
+            bloodline: document.getElementById("bloodline").checked,
+            flagAncestors: document.getElementById("flagAncestors").checked,
         };
         // console.log(`Saving options ${JSON.stringify(options)}`);
-        Utils.setCookie(CCTE.#COOKIE_NAME, JSON.stringify(options));
+        Utils.setCookie(CCDE.#COOKIE_NAME, JSON.stringify(options));
     }
 
     static retrieveOptionsFromCookie() {
-        const optionsJson = Utils.getCookie(CCTE.#COOKIE_NAME);
+        const optionsJson = Utils.getCookie(CCDE.#COOKIE_NAME);
         // console.log(`Retrieved options ${optionsJson}`);
         if (optionsJson) {
             const opt = JSON.parse(optionsJson);
             $("#connectors").attr("checked", opt.connectors);
             $("#hideTreeHeader").attr("checked", opt.hideTreeHeader);
-            $("#cctBrickWallColour").val(opt.brickWallColour);
-            $("#cctLinkLineColour").val(opt.linkLineColour);
+            $("#ccdBrickWallColour").val(opt.brickWallColour);
+            $("#ccdLinkLineColour").val(opt.linkLineColour);
             $("#edgeFactor").val(opt.edgeFactor);
-            $("#cctTHFactor").val(opt.heightFactor);
+            if (["curved", "square"].includes(opt.edgeType)) $(`#et${opt.edgeType}`).attr("checked", 1);
+            $("#ccdTHFactor").val(opt.heightFactor);
             $("#noParents").attr("checked", opt.noParents);
             $("#oneParent").attr("checked", opt.oneParent);
             $("#noNoSpouses").attr("checked", opt.noNoSpouses);
@@ -456,6 +499,8 @@ export class CCTE {
             if (["a", "b", "no"].includes(opt.checkedScale)) $(`#birthScale${opt.checkedScale}`).attr("checked", 1);
             $("#privatise").attr("checked", opt.privatise);
             $("#anonLiving").attr("checked", opt.anonLiving);
+            $("#bloodline").attr("checked", opt.bloodline);
+            $("#flagAncestors").attr("checked", opt.flagAncestors);
         }
     }
 
@@ -465,19 +510,39 @@ export class CCTE {
     loadAndDraw(id) {
         condLog(`loadAndDraw(${id})`);
         const self = this;
+        window.wtViewRegistry.clearStatus();
         Utils.showShakingTree("controlBlock", function () {
-            self.richLoad(id).then(function (person) {
+            let userAncestorsPromise;
+            if (document.getElementById("flagAncestors").checked) {
+                const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+                if (!loggedInUserId) {
+                    window.wtViewRegistry.showWarning("You need to be logged in for your ancestors to be highlighted.");
+                    userAncestorsPromise = Ancestors.get();
+                } else {
+                    console.log(
+                        `Loading ancestors for watcher ${window.wtViewRegistry.session.lm.user.name} (${loggedInUserId})`
+                    );
+                    // Start loading ancestors, don't await
+                    userAncestorsPromise = Ancestors.get(loggedInUserId);
+                }
+            } else {
+                userAncestorsPromise = Ancestors.get();
+            }
+
+            self.richLoad(id).then(async function (person) {
+                if (!CCDE.userAncestors) {
+                    CCDE.userAncestors = await userAncestorsPromise;
+                }
                 Utils.hideShakingTree();
                 condLog(`=======RICH_LOADed ${person.toString()}`, person);
-                // const aRoot = new Couple("A", { a: person, isRoot: true });
-                // const dRoot = new Couple("D", { a: person, isRoot: true });
-                const aRoot = Couple.get("A", { a: person, isRoot: true });
-                //const dRoot = Couple.get("D", { a: person, isRoot: true });
-                self.drawTree(aRoot, aRoot);
+                // const aRoot = Couple.get("A", { a: person, isRoot: true });
+                const dRoot = Couple.get("D", { a: person, isRoot: true });
+                self.drawTree(null, dRoot);
             });
         });
     }
 
+    // Example usage:
     /**
      * Fetch the given person's data via an API call, and make separate API calls
      * for each of their spouses and children.  This is to ensure that those related
@@ -496,9 +561,9 @@ export class CCTE {
      *
      * These calls are only made if we have not rerieved the relevant data in the past.
      */
-    async richLoad(id, partnerId, direction) {
+    async richLoad(id, partnerId, direction = CCDE.DESCENDANTS) {
         condLog(`=======RICH_LOAD ${id}`);
-        const person = await this.getFullPerson(id);
+        const person = await CCDE.getWithSpousesAndChildren(id);
         condLog(`=======RICH_LOAD completed await getWithChildren ${person.toString()}`);
         return await this.loadRelated(person, partnerId, direction);
     }
@@ -510,20 +575,20 @@ export class CCTE {
 
         // Collect promises for the names of step-parents, i.e. the names of the other spouses (if any)
         // of the father and mother of this person
-        condLog(`loadRelated: getPromisesForParents of ${person.toString()}`);
-        loadPromises = getPromisesForParents(person, loadPromises);
+        // condLog(`loadRelated: getPromisesForParents of ${person.toString()}`);
+        // loadPromises = getPromisesForParents(person, loadPromises);
 
         // Add promises for loading of current partner with the names of all of their children and spouses
         const spouseId = partnerId || person._data.PreferredSpouseId;
         if (spouseId) {
             condLog(`loadRelated: get load promise for spouse ${spouseId}`);
-            loadPromises.push(this.getFullPerson(spouseId));
+            loadPromises.push(CCDE.getWithSpousesAndChildren(spouseId));
         } else {
             condLog(`loadRelated called on Person ${person.toString()} without preferred spouse`, person);
         }
         // Add promises to load all the children, if we're expanding descendants. This is so that we can get
         // the names of all their spouses
-        if (direction != CCTE.ANCESTORS) {
+        if (direction != CCDE.ANCESTORS) {
             let childrenIds = person.getChildrenIds();
             if (childrenIds) {
                 condLog(`loadRelated Children`, childrenIds);
@@ -531,7 +596,7 @@ export class CCTE {
                     const child = person.getChild(childId);
                     if (child && !child.getSpouseIds()) {
                         condLog(`loadRelated: get promise for child ${childId}`);
-                        loadPromises.push(this.getWithSpouses(childId));
+                        loadPromises.push(CCDE.getWithSpousesAndChildren(childId));
                     }
                 }
             } else {
@@ -558,15 +623,16 @@ export class CCTE {
         // parents (including step-parents) and their children for this spouse as well. We need these to create
         // spouse and children drop-downs for the parents.
         loadPromises = [];
-        if (selectedSpouse) {
-            condLog(
-                `=======loadRelated get promises for step parents and their children of selected spouse ${selectedSpouse.toString()}`
-            );
-            loadPromises = getPromisesForParents(selectedSpouse, loadPromises);
-        }
+        // if (selectedSpouse) {
+        //     condLog(
+        //         `=======loadRelated get promises for step parents and their children of selected spouse ${selectedSpouse.toString()}`
+        //     );
+        //     loadPromises = getPromisesForParents(selectedSpouse, loadPromises);
+        // }
+
         // For the same reason as above, if we are expanding descendants, we also need the names of the other
         // spouses and children of each child's spouse.
-        if (direction != CCTE.ANCESTORS) {
+        if (direction != CCDE.ANCESTORS) {
             const children = person.getChildren();
             condLog("=======loadRelated get promises for spouses of children");
             for (const i in children) {
@@ -574,7 +640,7 @@ export class CCTE {
                 const spouseIds = child.getSpouseIds() || new Set();
                 for (const spouseId of spouseIds) {
                     condLog(`loadRelated: get promise for spouse ${spouseId} of child ${child.toString()}`);
-                    loadPromises.push(self.getWithSpouses(spouseId));
+                    loadPromises.push(CCDE.getWithSpousesAndChildren(spouseId));
                 }
             }
         }
@@ -590,7 +656,7 @@ export class CCTE {
             for (const i in parentIds) {
                 const parentIds = [person.getFatherId(), person.getMotherId()];
                 const pId = parentIds[i];
-                if (pId) promises.push(self.getWithSpousesAndChildren(pId));
+                if (pId) promises.push(CCDE.getWithSpousesAndChildren(pId));
             }
             return promises;
         }
@@ -605,34 +671,10 @@ export class CCTE {
         const oldPerson = couple.getInFocus();
         const oldSpouse = couple.getNotInFocus();
         const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
-        // if (direction != CCTE.DESCENDANTS) {
-        //     // Restore ancestors if we have contracted them before
-        //     if (couple.a && couple.a._data._Parents) {
-        //         couple.a._data.Parents = couple.a._data._Parents;
-        //         delete couple.a._data._Parents;
-        //     }
-        //     if (couple.b && couple.b._data._Parents) {
-        //         couple.b._data.Parents = couple.b._data._Parents;
-        //         delete couple.b._data._Parents;
-        //     }
-        // }
-        // if (direction != CCTE.ANCESTORS) {
-        //     // Restore descendants if we have contracted them before
-        //     if (couple.a && couple.a._data._Children) {
-        //         couple.a._data.Children = couple.a._data._Children;
-        //         delete couple.a._data._Children;
-        //     }
-        //     if (couple.b && couple.b._data._Children) {
-        //         couple.b._data.Children = couple.b._data._Children;
-        //         delete couple.b._data._Children;
-        //     }
-        // }
-        // const isNowExpanded = oldPerson && oldPerson.isFullyEnriched();
         if (wasNotExpanded) {
             await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(), direction);
-            const treeInfo = this.validateAndSetGenerations();
+            const treeInfo = this.setDescendantGenerationsAndDuplicates();
             condLog(`expand done for ${couple.toString()}`, couple);
-            // couple.expanded = true;
             return treeInfo;
         } else {
             console.error("Attempted to expand for enriched person", oldPerson);
@@ -641,24 +683,6 @@ export class CCTE {
             });
         }
     }
-
-    // removeAncestors(couple) {
-    //     const self = this;
-    //     condLog(`Removing Ancestors for ${couple.toString()}`, couple);
-    //     return couple.removeAncestors().then(function () {
-    //         couple.expanded = false;
-    //         self.drawTree();
-    //     });
-    // }
-
-    // removeDescendants(couple) {
-    //     const self = this;
-    //     condLog(`Removing Descendants for ${couple.toString()}`, couple);
-    //     return couple.removeDescendants().then(function () {
-    //         couple.expanded = false;
-    //         self.drawTree();
-    //     });
-    // }
 
     /**
      * This is the function that gets called (via callbacks in the tree) when the change partner button
@@ -672,7 +696,7 @@ export class CCTE {
 
         // First make sure we have all the data for the new partner profile
         const newPartner = await this.richLoad(newPartnerID, personId);
-        let foundRoot = false;
+        // let foundRoot = false;
 
         // Find the couple node to change, remove it from the page and then change it
         d3.select(`#${coupleId}`)
@@ -690,7 +714,6 @@ export class CCTE {
                 condLog(
                     `Changing partner for ${personId} in ${subTree} couple ${couple.toString()} to ${newPartnerID}`
                 );
-                foundRoot = foundRoot || couple.isRoot;
                 couple.changePartner(personId, newPartner);
                 condLog(`Couple changed to: ${couple.toString()}`, couple);
             } else {
@@ -713,23 +736,20 @@ export class CCTE {
     drawTree(ancestorRoot, descendantRoot) {
         condLog("=======drawTree for:", ancestorRoot, descendantRoot, CachedPerson.getCache());
         if (ancestorRoot) {
-            CCTE.ancestorRoot = ancestorRoot;
+            CCDE.ancestorRoot = ancestorRoot;
         }
         if (descendantRoot) {
-            CCTE.descendantRoot = descendantRoot;
+            CCDE.descendantRoot = descendantRoot;
         }
-        CCTE.saveOptionCookies();
-        const tInfo = this.validateAndSetGenerations();
+        CCDE.saveOptionCookies();
+        const tInfo = this.setDescendantGenerationsAndDuplicates();
 
         const connectors = document.getElementById("connectors").checked;
         const hideTreeHeader = document.getElementById("hideTreeHeader").checked;
 
-        condLog("draw ancestorTree:", CCTE.ancestorRoot);
+        condLog("draw descendantTree:", CCDE.descendantRoot);
         this.clearDisplay();
         showTree(this, tInfo, connectors, hideTreeHeader);
-        // condLog("draw descendantTree:", this.descendantTree);
-        // this.descendantTree.draw();
-        // condLog("drawTree done", this.ancestorTree, this.descendantTree);
     }
 
     /**
@@ -739,48 +759,41 @@ export class CCTE {
         return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"]);
     }
 
-    async getWithSpousesAndChildren(id) {
+    static async getWithSpousesAndChildren(id) {
         return await CachedPerson.getWithLoad(id, ["Spouses", "Children"]);
     }
 
-    async getWithSpouses(id) {
+    static async getWithSpouses(id) {
         return await CachedPerson.getWithLoad(id, ["Spouses"]);
     }
 
-    static getD3Children(couple, alreadyInTree) {
+    static getD3Children(couple, cplsAlreadyInTree) {
         // condLog(`getD3Children for ${couple.toString()}`, couple);
+        if (couple.IsLink) {
+            condLog(`${couple.toString()} has no DescendantTree children`);
+            return;
+        }
         const children = [];
-        pushD3Child("a");
-        pushD3Child("b");
-        return children;
-
-        function pushD3Child(side) {
-            if (couple[`${side}IsLinkToPerson`]) return;
-            const person = couple[side];
-            if (person?.getLoadedParentIds()) {
-                const father = person.getFather();
-                const mother = person.getMother();
-                if (father || mother) {
-                    // children.push(new Couple(couple.idPrefix + `_${side}`, { a: father, b: mother }));
-                    const cpl = Couple.get(couple.idPrefix + `_${side}`, { a: father, b: mother });
-                    if (alreadyInTree && alreadyInTree.has(father?.getId())) {
-                        cpl.aIsLinkToPerson = true;
-                    } else if (alreadyInTree && father) {
-                        alreadyInTree.add(father.getId());
-                    }
-                    if (alreadyInTree && alreadyInTree.has(mother?.getId())) {
-                        cpl.bIsLinkToPerson = true;
-                    } else if (alreadyInTree && mother) {
-                        alreadyInTree.add(mother.getId());
-                    }
-                    children.push(cpl);
+        const jointChildren = couple.getJointChildrenIds().map((id) => CachedPerson.get(+id));
+        sortByBirthDate(jointChildren);
+        for (const [i, child] of jointChildren.entries()) {
+            const cpl = Couple.get(`${couple.idPrefix}_${i}`, { a: child });
+            if (cplsAlreadyInTree) {
+                const cplId = cpl.getCoupleId();
+                if (cplsAlreadyInTree.has(cplId)) {
+                    cpl.IsLink = true;
+                } else {
+                    cplsAlreadyInTree.add(cplId);
                 }
             }
+            children.push(cpl);
         }
+        condLog(`Returning DescendantTree children for ${couple.toString()}`, children);
+        return children;
     }
 
-    validateAndSetGenerations() {
-        const rootCouple = CCTE.ancestorRoot;
+    setDescendantGenerationsAndDuplicates() {
+        const rootCouple = CCDE.descendantRoot;
         const people = CachedPerson.getCache().getMap();
         const tInfo = {
             rootCouple: rootCouple,
@@ -788,6 +801,7 @@ export class CCTE {
             peopleByWtId: new Map(),
             genCounts: [0],
             minBirthYear: 5000,
+            maxBirthYear: 0,
             maxGeneration: 0,
             duplicates: new Map(),
             profileCount: 0,
@@ -795,23 +809,50 @@ export class CCTE {
         // Clear each person's generation info and add them to the byWtId map
         for (const person of people.values()) {
             person.clearGenerations();
+            person.isUserAncestor = CCDE.userAncestors.has(person.getId());
             tInfo.peopleByWtId.set(person.getWtId(), person);
         }
-        const aMaxGen = rootCouple.a ? validate_and_set_generations(rootCouple.a.getId(), 1, new Set(), 0) : 0;
-        const bMaxGen = rootCouple.b ? validate_and_set_generations(rootCouple.b.getId(), 1, new Set(), 0) : 0;
-        tInfo.maxGeneration = Math.max(aMaxGen, bMaxGen);
+        const q = []; // queue of ids for which to set generation of their children
+        if (rootCouple.b) add_generation(rootCouple.b.getId(), 1);
+        if (rootCouple.a) {
+            const aId = rootCouple.a.getId();
+            add_generation(aId, 1);
+            q.push([aId, 1]);
+            tInfo.maxGeneration = 1;
+        }
+        while (q.length > 0) {
+            const [id, gen] = q.shift();
+            const newGen = gen + 1;
+            const person = people.get(+id);
+            if (person) {
+                add_generation(person._data.PreferredSpouseId, newGen);
+            }
+            for (const childId of getPreferredWifeChildrenIds(person)) {
+                add_generation(childId, newGen, q);
+                if (tInfo.maxGeneration < newGen) {
+                    tInfo.maxGeneration = newGen;
+                }
+            }
+        }
 
-        // Collect the duplicates and assign each a unique number (for colouring later)
+        // Collect the duplicates and assign each a unique number (for colouring later),
+        // set each profile's NrOlderGenerations, and find the minimum and maximum birth year
         let n = 0;
         for (const p of people.values()) {
+            p.setNrOlderGenerations(tInfo.maxGeneration - p.getLowestGeneration());
             const id = p.getId();
             if (p.isDuplicate() && !tInfo.duplicates.has(id)) {
                 tInfo.duplicates.set(id, ++n);
             }
             tInfo.profileCount += p.getNrCopies(tInfo.maxGeneration);
             const bYear = +p.getBirthYear();
-            if (bYear > 0 && bYear < tInfo.minBirthYear) {
-                tInfo.minBirthYear = bYear;
+            if (bYear > 0) {
+                if (bYear < tInfo.minBirthYear) {
+                    tInfo.minBirthYear = bYear;
+                }
+                if (bYear > tInfo.maxBirthYear) {
+                    tInfo.maxBirthYear = bYear;
+                }
             }
         }
         // console.log(`nr profiles=${tInfo.profileCount}, nr duplicates=${tInfo.duplicates.size}`);
@@ -819,24 +860,12 @@ export class CCTE {
 
         return tInfo;
 
-        // Set the generation of each person in the tree using a recursive depth-first search, while
-        // making sure the graph representing the tree is acyclic.
-        // Returns the max generation
-        function validate_and_set_generations(personId, generation, descendants, maxGeneration) {
+        function add_generation(personId, generation, q = null) {
             const id = +personId;
             if (!id || !people.has(id)) {
-                return maxGeneration;
+                return;
             }
             const pers = people.get(id);
-            if (descendants.has(id)) {
-                throw new Error(
-                    `***ERROR*** There is a cycle in the ancestor tree. ${pers.getWtId()} is a descendant of themselves`
-                );
-            }
-            let maxG = maxGeneration;
-            if (maxG < generation) {
-                maxG = generation;
-            }
             pers.addGeneration(generation);
             // Create a record of the number of people at each generation
             if (typeof tInfo.genCounts[generation] == "undefined") {
@@ -844,19 +873,33 @@ export class CCTE {
             } else {
                 tInfo.genCounts[generation] += 1;
             }
+            if (q) {
+                q.push([id, generation]);
+            }
+        }
 
-            // make sure to create a new descendants object before passing it on in the 2 recursive calls
-            descendants = new Set(descendants).add(id);
-            const m1 = validate_and_set_generations(pers.getFatherId(), generation + 1, descendants, maxG);
-            const m2 = validate_and_set_generations(pers.getMotherId(), generation + 1, descendants, maxG);
-            maxG = Math.max(m1, m2);
-            pers.setNrOlderGenerations(maxG - generation);
-            return maxG;
+        function getPreferredWifeChildrenIds(a) {
+            let list = [];
+            if (typeof a == "undefined") return list;
+
+            const childrenIds = a.getChildrenIds() || new Set();
+            const b = a.getSpouse(); // get the preferred spouse
+            if (typeof b == "undefined" || b.isNoSpouse) {
+                list = [...childrenIds];
+            } else {
+                const otherChildrenIds = b.getChildrenIds() || new Set();
+                for (const id of otherChildrenIds) {
+                    if (childrenIds.has(id)) {
+                        list.push(id);
+                    }
+                }
+            }
+            return list;
         }
     }
 
     static updateBrickWallCounts() {
-        const counts = CCTE.markAndCountBricks(
+        const counts = CCDE.markAndCountBricks(
             {
                 noParents: document.getElementById("noParents").checked,
                 oneParent: document.getElementById("oneParent").checked,
@@ -905,7 +948,7 @@ export class CCTE {
     }
 
     static findPaths(otherWtIds, tInfo) {
-        const paths = CCTE.findAllPaths(tInfo, otherWtIds);
+        const paths = CCDE.findAllPaths(tInfo, otherWtIds);
 
         // Convert the paths of the form [[cpl-id-1, cpl-id-2, ...], [cpl-id-1, cpl-id-k, ...], ...] obtained from
         // the above into a set of strings of the form "<src-coupleId>|<dst-coupleId>"
@@ -970,7 +1013,7 @@ export class CCTE {
             if (srcNode.a?.getWtId() == dstWtId || srcNode.b?.getWtId() == dstWtId) {
                 allPaths.push([...path]);
             } else {
-                for (const adjnode of CCTE.getD3Children(srcNode)) {
+                for (const adjnode of CCDE.getD3Children(srcNode)) {
                     path.push(adjnode.getCoupleId());
                     DFS(adjnode, dstWtId, path, allPaths);
                     path.pop();
@@ -979,10 +1022,10 @@ export class CCTE {
         }
     }
     static getNextZLevel() {
-        return CCTE.#nextZLevel++;
+        return CCDE.#nextZLevel++;
     }
 
     static setNextZLevel(n) {
-        CCTE.#nextZLevel = n;
+        CCDE.#nextZLevel = n;
     }
 }

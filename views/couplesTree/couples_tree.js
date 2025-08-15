@@ -78,9 +78,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     const R = 1;
     const ANCESTORS = 1;
     const DESCENDANTS = -1;
-    const DOWN_ARROW = "\u21e9";
-    const UP_ARROW = "\u21e7";
-    const RIGHT_ARROW = "\u2907";
+    // const DOWN_ARROW = "\u21e9";
+    const UNIOCODE_UP_ARROW = "\u21e7";
+    const UNICODE_RIGHT_ARROW = "\u2907";
 
     const HELP_TEXT = `
         <xx>[ x ]</xx>
@@ -103,6 +103,17 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             <li>Click and drag to pan around.
         </ul>
         <p>You can double click in this box, or click the X in the top right corner to remove this About text.</p>`;
+
+    function makeArrow(symbol, rotation = 0) {
+        const span = document.createElement("span");
+        if (rotation !== 0) span.classList.add(`rotated-${rotation}`);
+        span.textContent = symbol;
+        return span;
+    }
+
+    // Factories (return a *new* DOM node each time they're called)
+    const UP_ARROW = () => makeArrow(UNIOCODE_UP_ARROW);
+    const DOWN_ARROW = () => makeArrow(UNIOCODE_UP_ARROW, 180);
 
     /**
      * A Couple consists of two Persons that are either married, or are the parents of a child.
@@ -1011,10 +1022,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
         drawCouple(couple) {
             const div = document.createElement("div"); // Not xhtml:div, that's a D3 hack
-            if (!couple.a || !couple.a.isNoSpouse) {
+            if (!couple.a || !couple.a.isNoSpouse || !couple.b.definitelyHasNoSpouse()) {
                 div.appendChild(this.drawPerson(couple, L));
             }
-            if (!couple.b || !couple.b.isNoSpouse) {
+            if (!couple.b || !couple.b.isNoSpouse || !couple.a.definitelyHasNoSpouse()) {
                 div.appendChild(this.drawPerson(couple, R));
             }
             if (this.direction == ANCESTORS) {
@@ -1036,8 +1047,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             let shortName = "?";
             let lifeSpan = "? - ?";
             let displayName = null;
+            const propperPerson = person && !person.isNoSpouse;
 
-            if (person) {
+            if (propperPerson) {
                 shortName = getShortName(person);
                 displayName = person.getDisplayName();
                 lifeSpan = lifespan(person);
@@ -1046,7 +1058,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             div.className = `person box ${side == R ? "R" : "L"}`;
             div.setAttribute("data-gender", gender);
             div.setAttribute("data-infocus", inFocus);
-            if (person) {
+            if (propperPerson) {
                 div.setAttribute("title", `Click to show more detail on ${displayName}`);
             }
 
@@ -1108,10 +1120,14 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             }
             button.setAttribute("title", `Show the children of ${combinedName}`);
 
-            const up = document.createTextNode(`${UP_ARROW} Children [${children.length}]`);
+            const up = aSpanWith(
+                undefined,
+                UP_ARROW(),
+                aSpanWith(undefined, document.createTextNode(` Children [${children.length}]`))
+            );
             const down = aSpanWith(
                 undefined,
-                document.createTextNode(`${DOWN_ARROW}`),
+                DOWN_ARROW(),
                 aSpanWith("button-words", document.createTextNode(` Children [${children.length}]`))
             );
             button.append(down);
@@ -1679,7 +1695,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 // Create a "change partner" button
                 const button = document.createElement("button");
                 button.className = "select-spouse-button";
-                button.textContent = RIGHT_ARROW;
+                button.textContent = UNICODE_RIGHT_ARROW;
                 button.setAttribute("couple-id", couple.getId());
                 button.setAttribute("person-id", currentSpouse.getId());
                 button.setAttribute("spouse-id", spouseData.id);
@@ -1696,7 +1712,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         // Create a "show other spouses" button
         const button = document.createElement("button");
         button.className = "drop-button";
-        button.textContent = DOWN_ARROW;
+        button._upArrow = UP_ARROW();
+        button._downArrow = DOWN_ARROW();
+        button.appendChild(button._downArrow);
         button.setAttribute("title", `Show other spouses of ${currentSpouseFullName}`);
         button.onclick = (event) => {
             if (wrapper.style.display == "none") {
@@ -1714,11 +1732,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     }
                 });
                 wrapper.style.display = "block";
-                button.textContent = UP_ARROW;
+                button.replaceChild(button._upArrow, button._downArrow); // replace down with up
                 button.setAttribute("title", `Hide other spouses of ${currentSpouseFullName}`);
             } else {
                 wrapper.style.display = "none";
-                button.textContent = DOWN_ARROW;
+                button.replaceChild(button._downArrow, button._upArrow); // replace up with down
                 button.setAttribute("title", `Show other spouses of ${currentSpouseFullName}`);
             }
             event.stopPropagation();
