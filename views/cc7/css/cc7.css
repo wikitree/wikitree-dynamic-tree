@@ -238,6 +238,13 @@ div.cc7Table .timelineTable td {
 .cc7Table #ancReport {
   margin: 0 1em 1em;
 }
+.cc7Table .trueSize {
+  padding-left: 1em !important;
+  text-align: left;
+}
+.cc7Table #sizeWarn {
+  color: red;
+}
 
 .cc7Table #peopleTable.wide {
   white-space: nowrap;
