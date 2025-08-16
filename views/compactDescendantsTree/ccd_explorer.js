@@ -40,15 +40,6 @@ export class CCDE {
     // whenever one clicks in a person box (i.e. when the person pop-up is generated).
     static addTestInfo = typeof debugLoggingOn != "undefined" && debugLoggingOn && true;
 
-    static originOffsetX = 500;
-    static originOffsetY = 300;
-    static boxWidth = 200;
-    static boxHeight = 52;
-    static halfBoxWidth = CCDE.boxWidth / 2;
-    static halfBoxHeight = CCDE.boxHeight / 2;
-    static nodeWidth = CCDE.boxWidth * 1.5;
-    static nodeHeight = CCDE.boxHeight * 3;
-
     static ANCESTORS = 1;
     static DESCENDANTS = -1;
     static #COOKIE_NAME = "wt_ccd_options";
@@ -755,16 +746,18 @@ export class CCDE {
     /**
      * Main WikiTree API calls
      */
+    static ADDITIONAL_FIELDS = ["BirthDateDecade", "DeathDateDecade", "IsLiving", "NoChildren", "Privacy"];
+
     async getFullPerson(id) {
-        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"], CCDE.ADDITIONAL_FIELDS);
     }
 
     static async getWithSpousesAndChildren(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"]);
+        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"], CCDE.ADDITIONAL_FIELDS);
     }
 
     static async getWithSpouses(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses"]);
+        return await CachedPerson.getWithLoad(id, ["Spouses"], CCDE.ADDITIONAL_FIELDS);
     }
 
     static getD3Children(couple, cplsAlreadyInTree) {
@@ -804,7 +797,6 @@ export class CCDE {
             maxBirthYear: 0,
             maxGeneration: 0,
             duplicates: new Map(),
-            profileCount: 0,
         };
         // Clear each person's generation info and add them to the byWtId map
         for (const person of people.values()) {
@@ -812,12 +804,11 @@ export class CCDE {
             person.isUserAncestor = CCDE.userAncestors.has(person.getId());
             tInfo.peopleByWtId.set(person.getWtId(), person);
         }
-        const q = []; // queue of ids for which to set generation of their children
-        if (rootCouple.b) add_generation(rootCouple.b.getId(), 1);
-        if (rootCouple.a) {
-            const aId = rootCouple.a.getId();
-            add_generation(aId, 1);
-            q.push([aId, 1]);
+        const q = []; // queue of ids for which to set generation of their preferred spouse and children
+        const mainPerson = rootCouple.getInFocus();
+        if (mainPerson) {
+            const aId = mainPerson.getId();
+            add_generation(aId, 1, q);
             tInfo.maxGeneration = 1;
         }
         while (q.length > 0) {
@@ -825,7 +816,7 @@ export class CCDE {
             const newGen = gen + 1;
             const person = people.get(+id);
             if (person) {
-                add_generation(person._data.PreferredSpouseId, newGen);
+                add_generation(person._data.PreferredSpouseId, gen);
             }
             for (const childId of getPreferredWifeChildrenIds(person)) {
                 add_generation(childId, newGen, q);
@@ -844,7 +835,6 @@ export class CCDE {
             if (p.isDuplicate() && !tInfo.duplicates.has(id)) {
                 tInfo.duplicates.set(id, ++n);
             }
-            tInfo.profileCount += p.getNrCopies(tInfo.maxGeneration);
             const bYear = +p.getBirthYear();
             if (bYear > 0) {
                 if (bYear < tInfo.minBirthYear) {
@@ -855,7 +845,7 @@ export class CCDE {
                 }
             }
         }
-        // console.log(`nr profiles=${tInfo.profileCount}, nr duplicates=${tInfo.duplicates.size}`);
+        // console.log(`nr duplicates=${tInfo.duplicates.size}`);
         // console.log(`generation counts: ${tInfo.genCounts}`, tInfo.genCounts);
 
         return tInfo;

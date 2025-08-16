@@ -748,15 +748,15 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          */
 
         async getFullPerson(id) {
-            return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+            return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"], ["Photo"]);
         }
 
         async getWithSpousesAndChildren(id) {
-            return await CachedPerson.getWithLoad(id, ["Spouses", "Children"]);
+            return await CachedPerson.getWithLoad(id, ["Spouses", "Children"], ["Photo"]);
         }
 
         async getWithSpouses(id) {
-            return await CachedPerson.getWithLoad(id, ["Spouses"]);
+            return await CachedPerson.getWithLoad(id, ["Spouses"], ["Photo"]);
         }
     }); // End CoupleTreeViewer class definition
 
