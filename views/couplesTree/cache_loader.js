@@ -20,7 +20,6 @@ export class CacheLoader {
         "MiddleInitial",
         "Mother",
         "Name",
-        "Photo",
         "Suffix",
     ];
     static DEFAULT_VARIABLE_FIELDS = ["Parents", "Spouses", "Children"];

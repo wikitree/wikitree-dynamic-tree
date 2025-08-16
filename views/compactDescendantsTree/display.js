@@ -71,6 +71,9 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
 
     const treeHeight = calculateTreeHeight(theTree.genCounts);
     const [treeWidth, svgWidth] = calculateWidths();
+    console.log(
+        `currentMaxShowGen=${currentMaxShowGen}, treeHeight=${treeHeight}, treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`
+    );
 
     // append the svg object to the body of the page
     // appends a 'group' element to 'svg'
