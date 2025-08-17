@@ -1981,7 +1981,7 @@ class CC7 {
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const currentId = wtViewRegistry.getCurrentWtId();
         const trueSize = currentId == loggedInUser ? CC7.getCC7Total() : "";
-        const showWarn = (trueSize && trueSize >= 10000) || (!trueSize && window.people.size > 9500);
+        const showWarn = window.people.size > 9500 && (!trueSize || trueSize >= 10000);
         const rowSpan = $("#trTot").length == 0 ? 2 : 3;
         let msgHtml = `True CC7 size for ${currentId} = ${trueSize ? trueSize : "[not available]"}</br>`;
         if (showWarn) {

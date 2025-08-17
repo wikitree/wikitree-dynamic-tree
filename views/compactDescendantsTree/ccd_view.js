@@ -5,33 +5,9 @@ import { CCDE } from "./ccd_explorer.js";
 
 window.CCDView = class CCDView extends View {
     static #DESCRIPTION = "";
-    static WANTED_PRIMARY_FIELDS = [
-        "BirthDate",
-        "BirthDateDecade",
-        "DeathDateDecade",
-        "BirthLocation",
-        "DataStatus",
-        "DeathDate",
-        "DeathLocation",
-        "Derived.BirthName",
-        "Derived.BirthNamePrivate",
-        "Father",
-        "FirstName",
-        "Gender",
-        "HasChildren",
-        "IsLiving",
-        "Id",
-        "LastNameAtBirth",
-        "LastNameCurrent",
-        "MiddleInitial",
-        "Mother",
-        "Name",
-        "Privacy",
-        "Suffix",
-    ];
     constructor() {
         super();
-        CachedPerson.init(new PeopleCache(new CacheLoader(CCDView.WANTED_PRIMARY_FIELDS)));
+        CachedPerson.init(new PeopleCache(new CacheLoader()));
     }
 
     meta() {

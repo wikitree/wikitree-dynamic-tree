@@ -39,15 +39,6 @@ export class CCTE {
     // whenever one clicks in a person box (i.e. when the person pop-up is generated).
     static addTestInfo = typeof debugLoggingOn != "undefined" && debugLoggingOn && true;
 
-    static originOffsetX = 500;
-    static originOffsetY = 300;
-    static boxWidth = 200;
-    static boxHeight = 52;
-    static halfBoxWidth = CCTE.boxWidth / 2;
-    static halfBoxHeight = CCTE.boxHeight / 2;
-    static nodeWidth = CCTE.boxWidth * 1.5;
-    static nodeHeight = CCTE.boxHeight * 3;
-
     static ANCESTORS = 1;
     static DESCENDANTS = -1;
     static #COOKIE_NAME = "wt_cct_options";
@@ -735,16 +726,18 @@ export class CCTE {
     /**
      * Main WikiTree API calls
      */
+    static ADDITIONAL_FIELDS = ["BirthDateDecade", "DeathDateDecade", "IsLiving", "NoChildren", "Privacy"];
+
     async getFullPerson(id) {
-        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"], CCTE.ADDITIONAL_FIELDS);
     }
 
     async getWithSpousesAndChildren(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"]);
+        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"], CCTE.ADDITIONAL_FIELDS);
     }
 
     async getWithSpouses(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses"]);
+        return await CachedPerson.getWithLoad(id, ["Spouses"], CCTE.ADDITIONAL_FIELDS);
     }
 
     static getD3Children(couple, alreadyInTree) {
@@ -790,7 +783,6 @@ export class CCTE {
             minBirthYear: 5000,
             maxGeneration: 0,
             duplicates: new Map(),
-            profileCount: 0,
         };
         // Clear each person's generation info and add them to the byWtId map
         for (const person of people.values()) {
@@ -808,13 +800,12 @@ export class CCTE {
             if (p.isDuplicate() && !tInfo.duplicates.has(id)) {
                 tInfo.duplicates.set(id, ++n);
             }
-            tInfo.profileCount += p.getNrCopies(tInfo.maxGeneration);
             const bYear = +p.getBirthYear();
             if (bYear > 0 && bYear < tInfo.minBirthYear) {
                 tInfo.minBirthYear = bYear;
             }
         }
-        // console.log(`nr profiles=${tInfo.profileCount}, nr duplicates=${tInfo.duplicates.size}`);
+        // console.log(`nr duplicates=${tInfo.duplicates.size}`);
         // console.log(`generation counts: ${tInfo.genCounts}`, tInfo.genCounts);
 
         return tInfo;
