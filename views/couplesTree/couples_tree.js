@@ -1389,15 +1389,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
         }
         /**
-         * Remove all popups. It will also remove
-         * any popups displayed by other trees on the
-         * page which is what we want. If later we
-         * decide we don't want that then we can just
-         * add the selector class to each popup and
-         * select on it, like we do with nodes and links.
+         * Remove all person popups.
          */
         removePopups() {
-            d3.selectAll(".popup").remove();
+            d3.selectAll(".popup-layer .person-popup").remove();
         }
     } // End Tree class definition
 
