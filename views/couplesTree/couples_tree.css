@@ -131,6 +131,9 @@
 .cvtc .children-list li {
   margin: 6px;
 }
+.cvtc .children-list-wrapper {
+  z-index: 500 !important;
+}
 .cvtc .children-list-wrapper h4 {
   margin: 12px;
   background: #f9f9f9;
