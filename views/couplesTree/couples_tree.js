@@ -448,8 +448,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 .style("position", "absolute")
                 .style("top", 0)
                 .style("left", 0)
-                .style("width", width + "px")
-                .style("height", height + "px");
+                .style("width", 0)
+                .style("height", 0);
 
             this.g = g;
             this.htmlLayer = htmlLayer;
