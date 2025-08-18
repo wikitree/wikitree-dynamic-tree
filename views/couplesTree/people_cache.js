@@ -33,7 +33,7 @@ export class PeopleCache {
             });
         }
         if (this.#loader) {
-            const newPerson = await this.#loader.get(pId, mustHaveFields, additionalFields);
+            const newPerson = await this.#loader.get(pId, this, mustHaveFields, additionalFields);
             cachedPerson = this.#cache.get(pId);
             if (cachedPerson) {
                 if (isSameOrHigherRichness(newPerson._data, cachedPerson._data)) {
@@ -68,7 +68,7 @@ export class PeopleCache {
             //TODO: should we update cachedPerson with any new data??
             return cachedPerson;
         }
-        const newPerson = new CachedPerson(data);
+        const newPerson = new CachedPerson(data, this);
         cachedPerson = this.#cache.get(id);
         if (cachedPerson) {
             condLog(`getWithData updating cache: ${newPerson.toString()}`);

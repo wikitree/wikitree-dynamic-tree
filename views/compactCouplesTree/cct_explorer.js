@@ -24,7 +24,6 @@
  * worthwhile to attempt it. You are welcome to prove me wrong, but you do it. :)  [Riël Smit, 4 Sep 2023]
  */
 
-import { CachedPerson } from "../couplesTree/cached_person.js";
 import { Couple } from "./couple.js";
 import { showTree } from "./display.js";
 import { Utils } from "../shared/Utils.js";
@@ -71,10 +70,12 @@ export class CCTE {
 
     static #nextZLevel = 10000;
 
+    static peopleCache;
     static ancestorRoot;
     static descendantRoot;
 
-    constructor(containerSelector) {
+    constructor(containerSelector, peopleCache) {
+        CCTE.peopleCache = peopleCache;
         $(containerSelector).html(`
 <div id="cctContainer" class="cct">
   <div id="controlBlock" class="cct-not-printable">
@@ -702,7 +703,7 @@ export class CCTE {
      * Draw/redraw the tree
      */
     drawTree(ancestorRoot, descendantRoot) {
-        condLog("=======drawTree for:", ancestorRoot, descendantRoot, CachedPerson.getCache());
+        condLog("=======drawTree for:", ancestorRoot, descendantRoot, CCTE.peopleCache);
         if (ancestorRoot) {
             CCTE.ancestorRoot = ancestorRoot;
         }
@@ -726,18 +727,17 @@ export class CCTE {
     /**
      * Main WikiTree API calls
      */
-    static ADDITIONAL_FIELDS = ["BirthDateDecade", "DeathDateDecade", "IsLiving", "NoChildren", "Privacy"];
 
     async getFullPerson(id) {
-        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"], CCTE.ADDITIONAL_FIELDS);
+        return await CCTE.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
     }
 
     async getWithSpousesAndChildren(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"], CCTE.ADDITIONAL_FIELDS);
+        return await CCTE.peopleCache.getWithLoad(id, ["Spouses", "Children"]);
     }
 
     async getWithSpouses(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses"], CCTE.ADDITIONAL_FIELDS);
+        return await CCTE.peopleCache.getWithLoad(id, ["Spouses"]);
     }
 
     static getD3Children(couple, alreadyInTree) {
@@ -774,7 +774,7 @@ export class CCTE {
 
     validateAndSetGenerations() {
         const rootCouple = CCTE.ancestorRoot;
-        const people = CachedPerson.getCache().getMap();
+        const people = CCTE.peopleCache.getMap();
         const tInfo = {
             rootCouple: rootCouple,
             people: people,
@@ -854,7 +854,7 @@ export class CCTE {
                 noNoSpouses: document.getElementById("noNoSpouses").checked,
                 noNoChildren: document.getElementById("noNoChildren").checked,
             },
-            CachedPerson.getCache().getMap()
+            CCTE.peopleCache.getMap()
         );
 
         for (const id of ["noParents", "oneParent", "noNoSpouses", "noNoChildren"]) {
