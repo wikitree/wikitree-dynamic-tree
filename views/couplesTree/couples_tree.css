@@ -210,7 +210,9 @@
   display: inline-block;
   transform: rotate(180deg);
 }
-
+/* .cvtc foreignObject * {
+  position: static !important;
+} */
 @media only screen and (max-width: 767px) {
   #couples-view-container .ui-draggable-handle {
     -ms-touch-action: auto !important;

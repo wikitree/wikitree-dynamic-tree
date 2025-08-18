@@ -24,7 +24,6 @@
  * worthwhile to attempt it. You are welcome to prove me wrong, but you do it. :)  [Riël Smit, 4 Sep 2023]
  */
 
-import { CachedPerson } from "../couplesTree/cached_person.js";
 import { Couple } from "../compactCouplesTree/couple.js";
 import { showTree, sortByBirthDate } from "./display.js";
 import { Utils } from "../shared/Utils.js";
@@ -74,11 +73,13 @@ export class CCDE {
 
     static #nextZLevel = 10000;
 
+    static peopleCache;
     static ancestorRoot;
     static descendantRoot;
     static userAncestors;
 
-    constructor(containerSelector) {
+    constructor(containerSelector, peopleCache) {
+        CCDE.peopleCache = peopleCache;
         $(containerSelector).html(`
 <div id="ccdContainer" class="ccd">
   <div id="controlBlock" class="ccd-not-printable">
@@ -661,7 +662,8 @@ export class CCDE {
         condLog(`expand couple (direction=${direction}) ${couple.toString()}`, couple);
         const oldPerson = couple.getInFocus();
         const oldSpouse = couple.getNotInFocus();
-        const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
+        // const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
+        const wasNotExpanded = oldPerson && !(oldPerson.getRichness() == 3);
         if (wasNotExpanded) {
             await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(), direction);
             const treeInfo = this.setDescendantGenerationsAndDuplicates();
@@ -725,7 +727,7 @@ export class CCDE {
      * Draw/redraw the tree
      */
     drawTree(ancestorRoot, descendantRoot) {
-        condLog("=======drawTree for:", ancestorRoot, descendantRoot, CachedPerson.getCache());
+        condLog("=======drawTree for:", ancestorRoot, descendantRoot, CCDE.peopleCache);
         if (ancestorRoot) {
             CCDE.ancestorRoot = ancestorRoot;
         }
@@ -746,18 +748,17 @@ export class CCDE {
     /**
      * Main WikiTree API calls
      */
-    static ADDITIONAL_FIELDS = ["BirthDateDecade", "DeathDateDecade", "IsLiving", "NoChildren", "Privacy"];
 
     async getFullPerson(id) {
-        return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"], CCDE.ADDITIONAL_FIELDS);
+        return await CCDE.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
     }
 
     static async getWithSpousesAndChildren(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses", "Children"], CCDE.ADDITIONAL_FIELDS);
+        return await CCDE.peopleCache.getWithLoad(id, ["Spouses", "Children"]);
     }
 
     static async getWithSpouses(id) {
-        return await CachedPerson.getWithLoad(id, ["Spouses"], CCDE.ADDITIONAL_FIELDS);
+        return await CCDE.peopleCache.getWithLoad(id, ["Spouses"]);
     }
 
     static getD3Children(couple, cplsAlreadyInTree) {
@@ -767,7 +768,10 @@ export class CCDE {
             return;
         }
         const children = [];
-        const jointChildren = couple.getJointChildrenIds().map((id) => CachedPerson.get(+id));
+        const jointChildren = couple
+            .getJointChildrenIds()
+            .map((id) => CCDE.peopleCache.getIfPresent(+id))
+            .filter((c) => c);
         sortByBirthDate(jointChildren);
         for (const [i, child] of jointChildren.entries()) {
             const cpl = Couple.get(`${couple.idPrefix}_${i}`, { a: child });
@@ -787,7 +791,7 @@ export class CCDE {
 
     setDescendantGenerationsAndDuplicates() {
         const rootCouple = CCDE.descendantRoot;
-        const people = CachedPerson.getCache().getMap();
+        const people = CCDE.peopleCache.getMap();
         const tInfo = {
             rootCouple: rootCouple,
             people: people,
@@ -896,7 +900,7 @@ export class CCDE {
                 noNoSpouses: document.getElementById("noNoSpouses").checked,
                 noNoChildren: document.getElementById("noNoChildren").checked,
             },
-            CachedPerson.getCache().getMap()
+            CCDE.peopleCache.getMap()
         );
 
         for (const id of ["noParents", "oneParent", "noNoSpouses", "noNoChildren"]) {

@@ -26,15 +26,43 @@
 
 import { PeopleCache } from "./people_cache.js";
 import { CacheLoader } from "./cache_loader.js";
-import { CachedPerson } from "./cached_person.js";
 import { Utils } from "../shared/Utils.js";
 
 window.CouplesTreeView = class CouplesTreeView extends View {
     static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
+    static APP_ID = "CouplesTree";
+    static WANTED_PRIMARY_FIELDS = [
+        "BirthDate",
+        "BirthLocation",
+        "DataStatus",
+        "DeathDate",
+        "DeathLocation",
+        "Derived.BirthName",
+        "Derived.BirthNamePrivate",
+        "Father",
+        "FirstName",
+        "Gender",
+        "HasChildren",
+        "Id",
+        "LastNameAtBirth",
+        "LastNameCurrent",
+        "MiddleInitial",
+        "Mother",
+        "Name",
+        "Photo",
+        "Suffix",
+    ];
+
+    static peopleCache;
+
     #container;
     constructor() {
         super();
-        CachedPerson.init(new PeopleCache(new CacheLoader()));
+        if (!CouplesTreeView.peopleCache) {
+            CouplesTreeView.peopleCache = new PeopleCache(
+                new CacheLoader(CouplesTreeView.APP_ID, CouplesTreeView.WANTED_PRIMARY_FIELDS)
+            );
+        }
     }
 
     meta() {
@@ -47,7 +75,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
     init(container_selector, person_id) {
         // If we need to clear the cache whenever the focus of the tree changes, uncomment the next line
-        // this.#peopleCache.clear();
+        // CouplesTreeView.peopleCache.clear();
         wtViewRegistry.setInfoPanel(CouplesTreeView.#DESCRIPTION);
         wtViewRegistry.showInfoPanel();
         this.#container = document.querySelector(container_selector);
@@ -210,7 +238,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 }
             }
             for (const i in list) {
-                const c = CachedPerson.get(list[i]);
+                const c = window.CouplesTreeView.peopleCache.getIfPresent(list[i]);
                 list[i] = c;
             }
             return sortByBirthDate(list);
@@ -397,19 +425,56 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
             $("#ct-help-text").draggable();
 
-            const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+            const d3Container = d3.select(container);
+            const svg = d3Container.append("svg").attr("width", width).attr("height", height);
             this.svg = svg;
-            const g = svg.append("g");
+            const g = svg.append("g").attr("class", "svg-layer");
+
+            // d3Container.append("div").attr("popup-container", width);
+            d3Container
+                .append("div")
+                .attr("class", "popup-layer")
+                .style("position", "absolute")
+                .style("top", "0px")
+                .style("left", "0px")
+                .style("width", "100%")
+                .style("height", "100%")
+                .style("pointer-events", "none") // let clicks pass through except on popup
+                .style("z-index", 9999);
+
+            const htmlLayer = d3Container
+                .append("div")
+                .attr("class", "html-layer")
+                .style("position", "absolute")
+                .style("top", 0)
+                .style("left", 0)
+                .style("width", width + "px")
+                .style("height", height + "px");
+
+            this.g = g;
+            this.htmlLayer = htmlLayer;
 
             // Setup zoom and pan
             const zoom = d3
                 .zoom()
                 .scaleExtent([0.1, 1])
                 .on("zoom", function (event) {
+                    // move the SVG group
                     g.attr("transform", event.transform);
+
+                    // mirror transform onto HTML overlay
+                    htmlLayer
+                        .style(
+                            "transform",
+                            `translate(${event.transform.x}px, ${event.transform.y}px) scale(${event.transform.k})`
+                        )
+                        .style("transform-origin", "0 0");
                 });
-            svg.call(zoom);
-            svg.call(zoom.transform, d3.zoomIdentity.scale(1).translate(originOffsetX, originOffsetY));
+
+            d3Container.call(zoom);
+
+            // apply initial translation/scale
+            d3Container.call(zoom.transform, d3.zoomIdentity.scale(1).translate(originOffsetX, originOffsetY));
 
             // Setup controllers for the ancestor and descendant trees
             this.ancestorTree = new AncestorTree(g);
@@ -723,7 +788,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          * Draw/redraw the tree
          */
         drawTree(ancestorRoot, descendantRoot) {
-            condLog("=======drawTree for:", ancestorRoot, descendantRoot, CachedPerson.getCache());
+            condLog("=======drawTree for:", ancestorRoot, descendantRoot, window.CouplesTreeView.peopleCache);
             if (ancestorRoot) {
                 this.ancestorTree.setRoot(ancestorRoot);
             }
@@ -735,12 +800,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             condLog("draw descendantTree:", this.descendantTree);
             this.descendantTree.draw();
             condLog("drawTree done", this.ancestorTree, this.descendantTree);
-            this.svg
-                .node()
-                .querySelectorAll("foreignObject")
-                .forEach((e) => {
-                    e.setAttribute("height", Math.max(0.1, e.firstElementChild.clientHeight));
-                }); // https://github.com/wikitree/wikitree-dynamic-tree/issues/42
         }
 
         /**
@@ -748,15 +807,15 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          */
 
         async getFullPerson(id) {
-            return await CachedPerson.getWithLoad(id, ["Parents", "Spouses", "Children"], ["Photo"]);
+            return await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
         }
 
         async getWithSpousesAndChildren(id) {
-            return await CachedPerson.getWithLoad(id, ["Spouses", "Children"], ["Photo"]);
+            return await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Spouses", "Children"]);
         }
 
         async getWithSpouses(id) {
-            return await CachedPerson.getWithLoad(id, ["Spouses"], ["Photo"]);
+            return await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Spouses"]);
         }
     }); // End CoupleTreeViewer class definition
 
@@ -850,7 +909,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 const nodes = rootHierarchy.descendants();
                 const links = rootHierarchy.links();
                 this.drawLinks(links);
-                this.drawNodes(nodes);
+                this.drawHTMLNodes(nodes);
             } else {
                 throw new Error("Missing root");
             }
@@ -928,57 +987,48 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         /**
          * Draw the couple boxes.
          */
-        drawNodes(nodes) {
+        drawHTMLNodes(nodes) {
             const self = this;
+            const spacing = 0;
 
-            // Get a list of existing nodes
-            const nodeUpdate = this.svg.selectAll("g.couple." + this.selector).data(nodes, function (d) {
-                return d.data.getId();
-            });
+            const container = d3.select("#couples-view-container .html-layer");
 
-            // Remove old nodes
-            nodeUpdate.exit().remove();
+            const coupleDivs = container
+                .selectAll("div.couple." + self.selector)
+                .data(nodes, (d) => d.data.getId()) // bind data by couple ID
+                .join(
+                    (
+                        enter // ENTER: create new couple divs
+                    ) =>
+                        enter
+                            .append("div")
+                            .attr("class", (d) => "couple " + self.selector + (d.data.isRoot ? " root" : ""))
+                            .attr("id", (d) => d.data.getId())
+                            .each(function (d) {
+                                const newContent = self.drawNewCouple(d.data);
+                                d3.select(this).node().appendChild(newContent);
+                            }),
+                    (update) => update, // nothing special for UPDATEs for now
+                    (exit) => exit.remove() // EXIT: remove old couple divs
+                );
 
-            // Add new nodes. We flag the root nodes so we can easily find and remove them if we change
-            // a partner in the root node (the only node where we're allowed to do so)
-            const nodeEnter = nodeUpdate
-                .enter()
-                .append("g")
-                .attrs({
-                    class: function (d) {
-                        return "couple " + self.selector + (d.data.isRoot ? " root" : "");
-                    },
-                    id: function (d) {
-                        return d.data.getId();
-                    },
+            coupleDivs
+                .style("position", "absolute")
+                .style("width", boxWidth + "px")
+                .style("height", (d) => (d.data.hasNoSpouse() ? halfBoxHeight + "px" : 2 * boxHeight + spacing + "px"))
+                .style("left", (d) => self.direction * d.y - halfBoxWidth + "px")
+                .style("top", (d) => {
+                    return d.data.hasNoSpouse() ? d.x - halfBoxHeight + "px" : d.x - boxHeight - spacing / 2 + "px";
                 });
-
-            // Draw the person boxes
-            nodeEnter
-                .append("foreignObject")
-                .attrs({
-                    width: boxWidth,
-                    height: 0.01,
-                    x: -halfBoxWidth,
-                    y: function (d) {
-                        return d.data.hasNoSpouse() ? -halfBoxHeight : -boxHeight;
-                    },
-                })
-                .style("overflow", "visible") // so the name will wrap
-                .append((d) => {
-                    return self.drawCouple(d.data);
-                });
-
-            const allNodes = nodeEnter.merge(nodeUpdate);
 
             // Draw the plus icons
-            const expandable = allNodes.filter(function (d) {
+            const expandable = coupleDivs.filter(function (d) {
                 return !d.children && self.direction == ANCESTORS
                     ? d.data.isAncestorExpandable()
                     : d.data.isDescendantExpandable();
             });
 
-            const contractable = allNodes.filter(function (d) {
+            const contractable = coupleDivs.filter(function (d) {
                 return d.children != undefined;
             });
 
@@ -986,38 +1036,60 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             self.drawMinus(contractable.data(), this.selector);
 
-            this.svg.selectAll(".box").on("click", function (event, d) {
+            coupleDivs.selectAll(".person.box").on("click", function (event, d) {
                 event.stopPropagation();
-                let person = undefined;
-                if (this.classList.contains("L")) {
-                    person = this.parentNode.__data__.data.a;
-                } else if (this.classList.contains("R")) {
-                    person = this.parentNode.__data__.data.b;
-                } else {
-                    return;
-                }
+                const couple = this.parentNode.parentNode.__data__;
+                let person = this.classList.contains("L") ? couple.data.a : couple.data.b;
+                if (!person || person.isNoSpouse) return;
+
                 if (event.altKey) {
                     // provide a way to examine the current node and internal person structure
                     console.log(person.toString(), person, this.parentNode.__data__);
                     return;
                 }
-                self.personPopup(person, d3.pointer(event, self.svg.node()));
+
+                // Compute coordinates relative to HTML popup layer
+                const popupLayer = document.querySelector("#couples-view-container .popup-layer");
+                const containerRect = popupLayer.getBoundingClientRect();
+
+                // event.clientX/Y is relative to viewport
+                const xy = [event.clientX - containerRect.left, event.clientY - containerRect.top];
+
+                self.personPopup(person, xy);
             });
 
             // Set up behaviour of the "change partner" buttons in the descendant tree and the
             // ancestor tree root (the only places where it is allowed).
-            this.svg.selectAll(".select-spouse-button").on("click", function (event) {
+            coupleDivs.selectAll(".select-spouse-button").on("click", function (event) {
                 event.stopPropagation();
                 const coupleId = this.getAttribute("couple-id");
                 const personId = this.getAttribute("person-id");
                 const newPartnerId = this.getAttribute("spouse-id");
                 self._partnerChangeCallback(coupleId, personId, newPartnerId);
             });
+        }
 
-            // Position
-            allNodes.attr("transform", function (d) {
-                return "translate(" + self.direction * d.y + "," + d.x + ")";
-            });
+        drawNewCouple(couple) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "couple-wrapper";
+            wrapper.style.display = "flex";
+            wrapper.style.flexDirection = "column";
+            wrapper.style.alignItems = "left";
+            wrapper.style.gap = "1px";
+
+            if (!couple.a?.isNoSpouse || !couple.b.definitelyHasNoSpouse()) {
+                wrapper.appendChild(this.drawPerson(couple, L));
+            }
+            if (!couple.b?.isNoSpouse || !couple.a.definitelyHasNoSpouse()) {
+                wrapper.appendChild(this.drawPerson(couple, R));
+            }
+
+            // Children dropdown
+            if (this.direction === ANCESTORS && couple.getJointChildren().length > 0) {
+                wrapper.appendChild(this.drawChildrenList(couple, couple.getJointChildren()));
+            }
+
+            return wrapper;
         }
 
         drawCouple(couple) {
@@ -1250,64 +1322,70 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          */
         personPopup(person, xy) {
             this.removePopups();
-            if (!person || person.isNoSpouse) {
-                return;
-            }
-
+            if (!person || person.isNoSpouse) return;
             if (addTestInfo) {
                 condLog(`${person.toString()}`, person);
             }
 
-            let photoUrl = person.getPhotoUrl(75),
-                treeUrl = window.location.pathname + "?id=" + person.getWtId();
+            const popupLayer = d3.select("#couples-view-container .popup-layer");
+
+            const gender = (person?.getGender() || "other").toLowerCase();
+            const displayName = person.getDisplayName();
+            let photoUrl = person.getPhotoUrl(75);
 
             // Use generic gender photos if there is no profile photo available
             if (!photoUrl) {
-                if (person.isFemale()) {
-                    photoUrl = "images/icons/female.gif";
-                } else if (person.isMale()) {
-                    photoUrl = "images/icons/male.gif";
-                } else {
-                    photoUrl = "images/icons/no-gender.gif";
-                }
+                if (person.isFemale()) photoUrl = "images/icons/female.gif";
+                else if (person.isMale()) photoUrl = "images/icons/male.gif";
+                else photoUrl = "images/icons/no-gender.gif";
             }
-            const gender = (person?.getGender() || "other").toLowerCase();
-            const displayName = person.getDisplayName();
 
-            const popup = this.svg
-                .append("g")
-                .attr("class", "popup")
-                .attr("transform", "translate(" + xy[0] + "," + xy[1] + ")");
+            // Create the popup HTML
+            const popupDiv = popupLayer
+                .append("div")
+                .attr("class", "person-popup")
+                .style("position", "absolute")
+                .style("left", xy[0] + "px")
+                .style("top", xy[1] + "px")
+                .style("width", "400px")
+                .style("height", "300px")
+                .style("z-index", 1000)
+                .style("pointer-events", "auto") // enable clicks
+                .html(`
+                <div class="popup-box" data-gender="${gender}">
+                    <div class="top-info">
+                        <div class="image-box">
+                            <img src="https://www.wikitree.com/${photoUrl}">
+                        </div>
+                        <div class="vital-info">
+                            <div class="name">
+                                <a href="https://www.wikitree.com/wiki/${person.getWtId()}" 
+                                title="Open the profile of ${displayName}" target="_blank">
+                                ${displayName}
+                                </a>
+                                <span class="tree-links">
+                                    <a href="#name=${person.getWtId()}" 
+                                    title="Make ${displayName} the centre of the tree">
+                                    <img src="https://www.wikitree.com/images/icons/pedigree.gif" />
+                                    </a>
+                                    <a href="#name=${person.getWtId()}&view=fanchart"  
+                                    title="Open a fan chart for ${displayName}" target="_blank">
+                                    <img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" />
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="birth vital">${birthString(person)}</div>
+                            <div class="death vital">${deathString(person)}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
 
-            popup
-                .append("foreignObject")
-                .attrs({
-                    width: 400,
-                    height: 300,
-                })
-                .style("overflow", "visible")
-                .append("xhtml:div").html(`
-				<div class="popup-box" data-gender="${gender}">
-					<div class="top-info">
-						<div class="image-box"><img src="https://www.wikitree.com/${photoUrl}"></div>
-						<div class="vital-info">
-						  <div class="name">
-						    <a href="https://www.wikitree.com/wiki/${person.getWtId()}" title="Open the profile of ${displayName} on a new page" target="_blank">${displayName}</a>
-						    <span class="tree-links">
-                                <a href="#name=${person.getWtId()}" title="Make ${person.getDisplayName()} the centre of the tree"><img src="https://www.wikitree.com/images/icons/pedigree.gif" /></a>
-                                <a href="#name=${person.getWtId()}&view=fanchart"  title="Open a fan chart for ${displayName} on a new page" target="_blank"><img src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></a>
-                            </span>
-						  </div>
-						  <div class="birth vital">${birthString(person)}</div>
-						  <div class="death vital">${deathString(person)}</div>
-						</div>
-					</div>
-
-				</div>
-			`);
-
-            d3.select("#couples-view-container").on("click", function () {
-                popup.remove();
+            // Remove popup on background click
+            const container = d3.select("#couples-view-container");
+            container.on("click.popup", () => {
+                popupDiv.remove();
+                container.on("click.popup", null); // remove this handler after closing
             });
         }
         /**
