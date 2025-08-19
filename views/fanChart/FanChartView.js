@@ -3252,8 +3252,8 @@ import { PDFs } from "../shared/PDFs.js";
                         );
                         if (!canUseThis) {
                             // console.log("BioCheck: canUseThis is false for", thePerson);
-                            thePeopleList[theBioPerson.getProfileId()]["biocheck"] = null;
-                            thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = false;
+                            thePeopleList[thePerson.getProfileId()]["biocheck"] = null;
+                            thePeopleList[thePerson.getProfileId()]["bioHasSources"] = false;
                         } else {
                             let biography = new Biography(theSourceRules);
                             biography.parse(thePerson.getBio(), thePerson, "");
