@@ -932,6 +932,12 @@ class SlippyTree extends View {
         } else {
             stylesheeturl = "https://" + window.location.host + "/wikitree-dynamic-tree/views/slippyTree/style.css";
         }
+        const width = doc.rootElement.getAttribute("width");
+        const height = doc.rootElement.getAttribute("height");
+        // viewBox makes the scaling nicer than using width/height
+        doc.rootElement.setAttribute("viewBox", "0 0 " + width + " " + height);
+        doc.rootElement.removeAttribute("width");
+        doc.rootElement.removeAttribute("height");
         fetch(stylesheeturl)
             .then((response) => response.text())
             .then((text) => {
