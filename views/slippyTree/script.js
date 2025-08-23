@@ -936,8 +936,6 @@ class SlippyTree extends View {
         const height = doc.rootElement.getAttribute("height");
         // viewBox makes the scaling nicer than using width/height
         doc.rootElement.setAttribute("viewBox", "0 0 " + width + " " + height);
-        doc.rootElement.removeAttribute("width");
-        doc.rootElement.removeAttribute("height");
         fetch(stylesheeturl)
             .then((response) => response.text())
             .then((text) => {
@@ -1000,6 +998,8 @@ class SlippyTree extends View {
                         e.appendChild(a);
                     }
                 });
+                doc.rootElement.removeAttribute("width");
+                doc.rootElement.removeAttribute("height");
 
                 src = new XMLSerializer().serializeToString(doc);
                 const blob = new Blob([src], { type: "application/octet-stream" });
