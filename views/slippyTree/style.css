@@ -289,9 +289,32 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 .slippy-tree-container .helpContainer .slippy-settings-wheel > div.selected {
     border-color: red;
 }
-.slippy-tree-container .helpContainer .slippy-categories {
-    display: block;
+.slippy-tree-container .helpContainer .slippy-settings-view  {
     width: 100%;
+    display: flex;
+    align-items: center;
+}
+.slippy-tree-container .helpContainer :is(.slippy-settings-male, .slippy-settings-female) {
+    /* ideally would use accent-color here, but results on Safari are poor */
+    appearance: none;
+    box-sizing: border-box;
+    width: 1em;
+    height: 1em;
+    border: 2px solid var(--gender-color);
+    &:checked {
+        background: var(--gender-color);
+    }
+    margin-left: 4px;
+}
+.slippy-tree-container .helpContainer .slippy-settings-female {
+    --gender-color: var(--female);
+}
+.slippy-tree-container .helpContainer .slippy-settings-male {
+    --gender-color: var(--male);
+}
+.slippy-tree-container .helpContainer .slippy-categories {
+    flex: 1;
+    max-width: calc(100% - 2em - 8px); /*sigh, chrome bug */
 }
 @media (not (hover:hover)) {
     /* this block applies only if there is no mouse present */
