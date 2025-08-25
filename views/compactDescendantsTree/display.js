@@ -33,7 +33,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
     // const useX0 = document.getElementById("useX0").checked;
     // const linksDelay = +$("#d3Delay").val() || 0;
     const edgeFactor = +$("#edgeFactor").val() || 180;
-    const heightFactor = +$("#cccdHFactor").val() || 55;
+    const heightFactor = +$("#ccdTHFactor").val() || 55;
     const brickWallColour = $("#ccdBrickWallColour").val() || "#FF0000";
     const linkLineColour = $("#ccdLinkLineColour").val() || "#000CCC";
     const privatise = $("#privatise").is(":checked");

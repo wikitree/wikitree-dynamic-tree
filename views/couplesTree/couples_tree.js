@@ -430,7 +430,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this.svg = svg;
             const g = svg.append("g").attr("class", "svg-layer");
 
-            // d3Container.append("div").attr("popup-container", width);
             d3Container
                 .append("div")
                 .attr("class", "popup-layer")
@@ -1005,7 +1004,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                             .attr("class", (d) => "couple " + self.selector + (d.data.isRoot ? " root" : ""))
                             .attr("id", (d) => d.data.getId())
                             .each(function (d) {
-                                const newContent = self.drawNewCouple(d.data);
+                                const newContent = self.drawCouple(d.data);
                                 d3.select(this).node().appendChild(newContent);
                             }),
                     (update) => update, // nothing special for UPDATEs for now
@@ -1039,7 +1038,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             coupleDivs.selectAll(".person.box").on("click", function (event, d) {
                 event.stopPropagation();
                 const couple = this.parentNode.parentNode.__data__;
-                let person = this.classList.contains("L") ? couple.data.a : couple.data.b;
+                const person = this.classList.contains("L") ? couple.data.a : couple.data.b;
                 if (!person || person.isNoSpouse) return;
 
                 if (event.altKey) {
@@ -1069,7 +1068,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             });
         }
 
-        drawNewCouple(couple) {
+        drawCouple(couple) {
             const wrapper = document.createElement("div");
             wrapper.className = "couple-wrapper";
             wrapper.style.display = "flex";
@@ -1092,22 +1091,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             return wrapper;
         }
 
-        drawCouple(couple) {
-            const div = document.createElement("div"); // Not xhtml:div, that's a D3 hack
-            if (!couple.a || !couple.a.isNoSpouse || !couple.b.definitelyHasNoSpouse()) {
-                div.appendChild(this.drawPerson(couple, L));
-            }
-            if (!couple.b || !couple.b.isNoSpouse || !couple.a.definitelyHasNoSpouse()) {
-                div.appendChild(this.drawPerson(couple, R));
-            }
-            if (this.direction == ANCESTORS) {
-                const children = couple.getJointChildren();
-                if (children.length > 0) {
-                    div.appendChild(this.drawChildrenList(couple, children));
-                }
-            }
-            return div;
-        }
         /**
          * Draw a person box.
          */
@@ -1349,6 +1332,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 .style("top", xy[1] + "px")
                 .style("width", "400px")
                 .style("height", "300px")
+                .style("overflow", "visible")
                 .style("z-index", 1000)
                 .style("pointer-events", "auto") // enable clicks
                 .html(`
