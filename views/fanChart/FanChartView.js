@@ -69,7 +69,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "20 June 2025";
+    const AboutUpdateDate = "19 August 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -3252,8 +3252,8 @@ import { PDFs } from "../shared/PDFs.js";
                         );
                         if (!canUseThis) {
                             // console.log("BioCheck: canUseThis is false for", thePerson);
-                            thePeopleList[theBioPerson.getProfileId()]["biocheck"] = null;
-                            thePeopleList[theBioPerson.getProfileId()]["bioHasSources"] = false;
+                            thePeopleList[thePerson.getProfileId()]["biocheck"] = null;
+                            thePeopleList[thePerson.getProfileId()]["bioHasSources"] = false;
                         } else {
                             let biography = new Biography(theSourceRules);
                             biography.parse(thePerson.getBio(), thePerson, "");

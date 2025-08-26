@@ -230,7 +230,11 @@ class SlippyTree extends View {
     A multi-root tree showing several parent and child relationships at once.<br/>
     Spouses are displayed together, refocus to change the order.
    </p>
-   <select class="slippy-categories"></select>
+   <div class="slippy-settings-view">
+    <select class="slippy-categories"></select>
+    <input type="checkbox" class="slippy-settings-male"/>
+    <input type="checkbox" class="slippy-settings-female"/>
+   </div>
    <div class="slippy-settings-wheel">
     <div class="slippy-settings-wheel-zoom">
      <img src="{PATHPREFIX}views/slippyTree/resources/mouse.svg"/>
@@ -313,6 +317,20 @@ class SlippyTree extends View {
                 this.setSettings({ wheel: "scroll" }, e);
             });
             document.querySelector(".slippy-categories").addEventListener("click", (e) => {
+                e.stopPropagation();
+            });
+            document.querySelector(".slippy-settings-male").addEventListener("change", (e) => {
+                this.setSettings({ male: !this.settings.male }, e);
+                this.setFocus(this.state.focus);
+            });
+            document.querySelector(".slippy-settings-female").addEventListener("change", (e) => {
+                this.setSettings({ female: !this.settings.female }, e);
+                this.setFocus(this.state.focus);
+            });
+            document.querySelector(".slippy-settings-male").addEventListener("click", (e) => {
+                e.stopPropagation();
+            });
+            document.querySelector(".slippy-settings-female").addEventListener("click", (e) => {
                 e.stopPropagation();
             });
             document.querySelector(".output-name + img").addEventListener("click", (e) => {
@@ -913,13 +931,32 @@ class SlippyTree extends View {
             for (let key in patch) {
                 this.settings[key] = patch[key];
             }
+            // Can't turn off male AND female
+            if (patch.female === false && !this.settings.male) {
+                this.settings.male = true;
+            } else if (patch.male === false && !this.settings.female) {
+                this.settings.female = true;
+            }
+        }
+        if (typeof this.settings.male == "undefined") {     // New setting
+             this.settings.male = true;
+        }
+        if (typeof this.settings.female == "undefined") {     // New setting
+             this.settings.female = true;
+        }
+        if (this.settings.male === false && this.settings.female === false) {
+            this.settings.male = this.settings.female = true;   // just in case
         }
         let zoomButton = document.querySelector(".slippy-settings-wheel-zoom");
         let scrollButton = document.querySelector(".slippy-settings-wheel-scroll");
         let searchFamily = document.querySelector(".slippy-search-family");
+        let male = document.querySelector(".slippy-settings-male");
+        let female = document.querySelector(".slippy-settings-female");
         zoomButton.classList.toggle("selected", this.settings.wheel == "zoom");
         scrollButton.classList.toggle("selected", this.settings.wheel == "scroll");
         searchFamily.classList.toggle("selected", this.settings.search != "individual");
+        male.checked = this.settings.male;
+        female.checked = this.settings.female;
         window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
     }
 
@@ -932,6 +969,10 @@ class SlippyTree extends View {
         } else {
             stylesheeturl = "https://" + window.location.host + "/wikitree-dynamic-tree/views/slippyTree/style.css";
         }
+        const width = doc.rootElement.getAttribute("width");
+        const height = doc.rootElement.getAttribute("height");
+        // viewBox makes the scaling nicer than using width/height
+        doc.rootElement.setAttribute("viewBox", "0 0 " + width + " " + height);
         fetch(stylesheeturl)
             .then((response) => response.text())
             .then((text) => {
@@ -994,6 +1035,8 @@ class SlippyTree extends View {
                         e.appendChild(a);
                     }
                 });
+                doc.rootElement.removeAttribute("width");
+                doc.rootElement.removeAttribute("height");
 
                 src = new XMLSerializer().serializeToString(doc);
                 const blob = new Blob([src], { type: "application/octet-stream" });
@@ -1618,6 +1661,11 @@ class SlippyTree extends View {
         let mingen = 0;
         for (let i = 0; i < q.length; i++) {
             const person = q[i];
+            if (!(person == focus || (person.data.Gender != "Male" && person.data.Gender != "Female") || (person.data.Gender == "Male" && this.settings.male) || (person.data.Gender == "Female" && this.settings.female))) {
+                // If males/females are excluded and not the focus element, skip and continue
+                q.splice(i--, 1);
+                continue;
+            }
             person.hidden = false;
             mingen = Math.min(mingen, person.generation);
             for (let spouse of person.spouses()) {
