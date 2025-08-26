@@ -7,23 +7,8 @@ export class Couple {
     static L = -1; // a
     static R = 1; // b
 
-    static #couplesCache = new Map();
-
-    static init() {
-        Couple.#couplesCache = new Map();
-    }
-
     static get(idPrefix, cd) {
-        //{ a, b, focus, isRoot = false }) {
-        // const id = Couple.formId(idPrefix, cd.a, cd.b);
-        // let c = Couple.#couplesCache.get(id);
-        // if (c) {
-        //     condLog(`Couple.get from cache: ${c.toString()}`, c);
-        //     return c;
-        // }
-
         const c = new Couple(idPrefix, cd);
-        // Couple.#couplesCache.set(id, c);
         return c;
     }
 
@@ -66,6 +51,7 @@ export class Couple {
             this.b = b;
             this.focus = this.focus;
         }
+        this.setJointChildrenIds();
         condLog(`new Couple: ${this.toString()}, focus=${this.focus}`, this.a, this.b);
     }
 
@@ -88,6 +74,7 @@ export class Couple {
             // Change a in this couple to newPartner
             this.a = updatePartner(this.b, newPartner) || this.a;
         }
+        this.setJointChildrenIds();
 
         function updatePartner(stablePartner, newPartner) {
             if (!stablePartner.setPreferredSpouse(newPartner.getId())) {
@@ -144,7 +131,25 @@ export class Couple {
         }
     }
 
+    // joint`ChildrenIds is an array of ids of children that both partners have in common.
+    // This is used in descendant trees to show the children of a couple and is used to
+    // determine the D3 children of tree nodes.
     getJointChildrenIds() {
+        return [...this.getUncollapsedChildrenIds(), ...this.getCollapsedDescendantIds()];
+    }
+
+    jointChildrenCount() {
+        return (
+            (this.jointChildrenIds ? this.jointChildrenIds.length : 0) +
+            (this.collapsedChildrenIds ? this.collapsedChildrenIds.length : 0)
+        );
+    }
+
+    getUncollapsedChildrenIds() {
+        return this.jointChildrenIds || [];
+    }
+
+    setJointChildrenIds() {
         const otherParent = this.getNotInFocus();
         const childrenIds = this.getInFocus().getChildrenIds() || new Set();
         let list = [];
@@ -159,7 +164,15 @@ export class Couple {
                 }
             }
         }
-        return list;
+        this.jointChildrenIds = list;
+    }
+
+    getCollapsedDescendantIds() {
+        return this.collapsedChildrenIds || [];
+    }
+
+    hasCollapsedDescendants() {
+        return this.collapsedChildrenIds && this.collapsedChildrenIds.length > 0;
     }
 
     getNrOlderGenerations() {
@@ -277,6 +290,7 @@ export class Couple {
             }
         }
         oldPerson.refreshFrom(newPerson);
+        this.setJointChildrenIds();
     }
 
     removeAncestors() {
@@ -295,23 +309,78 @@ export class Couple {
         });
     }
 
-    removeDescendants() {
+    collapseAllDescendants() {
         // Assume this is a couple in a descendant tree and we want to hide their descendants
-        // Move the decendants out of the way rather than completely deleting them so we can restore them later
-        if (this.a && this.a._data.Children) {
-            this.a._data._Children = this.a._data.Children;
-            delete this.a._data.Children;
+        // Move all the entries in jointChildren to collapsedChildren, so we can restore them later.
+        // Not that collapsedChildren may already contain some children that were previously collapsed
+        // individually.
+
+        if (!this.jointChildrenIds || this.jointChildrenIds.length == 0) {
+            return;
         }
-        if (this.b && this.b._data.Children) {
-            this.b._data._Children = this.b._data.Children;
-            delete this.b._data.Children;
+        this.collapsedChildrenIds = this.collapsedChildrenIds || []; // ensure it exists
+        // move all children to savedChildren
+        this.collapsedChildrenIds = this.collapsedChildrenIds.concat(this.jointChildrenIds);
+        this.jointChildrenIds = [];
+    }
+
+    collapseDescendant(childId) {
+        this.collapsedChildrenIds = this.collapsedChildrenIds || []; // ensure it exists
+        moveChildById(childId, this.jointChildrenIds, this.collapsedChildrenIds);
+    }
+
+    expandCollapsedDescendants() {
+        // If this couple has collapsed children, expand them by moving them back to jointChildren.
+        // Returns true if there were collapsed children to expand.
+        if (this.collapsedChildrenIds && this.collapsedChildrenIds.length > 0) {
+            if (this.jointChildrenIds) {
+                this.jointChildrenIds = this.jointChildrenIds.concat(this.collapsedChildrenIds);
+            } else {
+                this.jointChildrenIds = this.collapsedChildrenIds;
+            }
+            this.collapsedChildrenIds = [];
+            return true;
         }
-        return new Promise((resolve, reject) => {
-            resolve(this);
-        });
+        return false;
+    }
+
+    expandCollapsedDescendant(childId) {
+        moveChildById(childId, this.collapsedChildrenIds, this.jointChildrenIds);
     }
 
     toString() {
         return `${this.getId()}:[${this.a ? this.a.toString() : "none"}][${this.b ? this.b.toString() : "none"}]`;
+    }
+
+    // Ensure that this couple has the same children collapsed (hidden) as oldCouple
+    collapseSameDescendants(oldCouple) {
+        if (
+            this.jointChildrenIds &&
+            this.jointChildrenIds.length > 0 &&
+            oldCouple.collapsedChildrenIds &&
+            oldCouple.collapsedChildrenIds.length > 0
+        ) {
+            const hiddenChildrenIds = new Set(oldCouple.collapsedChildrenIds);
+            const remaining = [];
+            for (const childId of this.jointChildrenIds) {
+                if (hiddenChildrenIds.has(childId)) {
+                    if (!this.collapsedChildrenIds) this.collapsedChildrenIds = [];
+                    this.collapsedChildrenIds.push(childId);
+                } else {
+                    remaining.push(childId);
+                }
+            }
+
+            this.jointChildrenIds = remaining;
+        }
+    }
+}
+
+function moveChildById(childId, src, dst) {
+    if (!src) return;
+    const index = src.findIndex((id) => id === childId);
+    if (index !== -1) {
+        const [moved] = src.splice(index, 1);
+        dst.push(moved);
     }
 }

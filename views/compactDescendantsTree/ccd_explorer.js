@@ -24,7 +24,7 @@
  * worthwhile to attempt it. You are welcome to prove me wrong, but you do it. :)  [Riël Smit, 4 Sep 2023]
  */
 
-import { Couple } from "../compactCouplesTree/couple.js";
+import { Couple } from "./couple.js";
 import { showTree, sortByBirthDate } from "./display.js";
 import { Utils } from "../shared/Utils.js";
 import { spell } from "../../lib/utilities.js";
@@ -424,6 +424,10 @@ export class CCDE {
         $(document).off("keyup", CCDE.closePopUp).on("keyup", CCDE.closePopUp);
     }
 
+    static createCouple(idPrefix, cd) {
+        return new Couple(idPrefix, cd, CCDE.peopleCache);
+    }
+
     static closePopUp(e) {
         if (e.key === "Escape") {
             // Find the popup with the highest z-index and close it
@@ -527,8 +531,7 @@ export class CCDE {
                 }
                 Utils.hideShakingTree();
                 condLog(`=======RICH_LOADed ${person.toString()}`, person);
-                // const aRoot = Couple.get("A", { a: person, isRoot: true });
-                const dRoot = Couple.get("D", { a: person, isRoot: true });
+                const dRoot = CCDE.createCouple("D", { a: person, isRoot: true });
                 self.drawTree(null, dRoot);
             });
         });
@@ -662,9 +665,7 @@ export class CCDE {
         condLog(`expand couple (direction=${direction}) ${couple.toString()}`, couple);
         const oldPerson = couple.getInFocus();
         const oldSpouse = couple.getNotInFocus();
-        // const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
-        const wasNotExpanded = oldPerson && !(oldPerson.getRichness() == 3);
-        if (wasNotExpanded) {
+        if (couple.isDescendantExpandable()) {
             await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(), direction);
             const treeInfo = this.setDescendantGenerationsAndDuplicates();
             condLog(`expand done for ${couple.toString()}`, couple);
@@ -689,7 +690,6 @@ export class CCDE {
 
         // First make sure we have all the data for the new partner profile
         const newPartner = await this.richLoad(newPartnerID, personId);
-        // let foundRoot = false;
 
         // Find the couple node to change, remove it from the page and then change it
         d3.select(`#${coupleId}`)
@@ -702,12 +702,12 @@ export class CCDE {
         this.drawTree();
 
         function changeIt(couple) {
-            if ([couple.a?.getId(), couple.b?.getId()].includes(+personId)) {
+            if ([couple.a, couple.b].includes(+personId)) {
                 const subTree = couple.idPrefix.startsWith("A") ? "ancestor" : "descendant";
                 condLog(
                     `Changing partner for ${personId} in ${subTree} couple ${couple.toString()} to ${newPartnerID}`
                 );
-                couple.changePartner(personId, newPartner);
+                couple.changePartner(+personId, newPartner);
                 condLog(`Couple changed to: ${couple.toString()}`, couple);
             } else {
                 console.error(`Retrieved wrong couple ${couple.toString()}. It does not contain profile ${personId}`);
@@ -769,12 +769,12 @@ export class CCDE {
         }
         const children = [];
         const jointChildren = couple
-            .getJointChildrenIds()
+            .getUncollapsedChildrenIds()
             .map((id) => CCDE.peopleCache.getIfPresent(+id))
             .filter((c) => c);
         sortByBirthDate(jointChildren);
         for (const [i, child] of jointChildren.entries()) {
-            const cpl = Couple.get(`${couple.idPrefix}_${i}`, { a: child });
+            const cpl = CCDE.createCouple(`${couple.idPrefix}_${i}`, { a: child });
             if (cplsAlreadyInTree) {
                 const cplId = cpl.getCoupleId();
                 if (cplsAlreadyInTree.has(cplId)) {
@@ -1004,7 +1004,7 @@ export class CCDE {
         return allPaths;
 
         function DFS(srcNode, dstWtId, path, allPaths) {
-            if (srcNode.a?.getWtId() == dstWtId || srcNode.b?.getWtId() == dstWtId) {
+            if (srcNode.aPerson()?.getWtId() == dstWtId || srcNode.bPerson()?.getWtId() == dstWtId) {
                 allPaths.push([...path]);
             } else {
                 for (const adjnode of CCDE.getD3Children(srcNode)) {
