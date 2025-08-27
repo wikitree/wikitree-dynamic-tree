@@ -493,7 +493,7 @@ export class CachedPerson {
     }
 }
 
-class NullPerson extends CachedPerson {
+export class NullPerson extends CachedPerson {
     constructor() {
         super({ Id: "0000", Children: {}, DataStatus: { Spouse: "blank" } });
         this.isNoSpouse = true;
@@ -503,11 +503,12 @@ class NullPerson extends CachedPerson {
     }
 }
 
-const NoSpouse = new NullPerson();
+export const NoSpouse = new NullPerson();
 
-class NotLoadedPerson extends CachedPerson {
+export class NotLoadedPerson extends CachedPerson {
     constructor(id) {
         super({ Id: id, BirthName: "Not Loaded", Children: {}, DataStatus: { Spouse: "" } });
+        this.isNotLoaded = true;
     }
 }
 
