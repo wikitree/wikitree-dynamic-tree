@@ -710,8 +710,8 @@ export class CCDE {
                 );
                 const inFocus = couple.inFocus;
                 if (couple.isRoot) {
-                    // We need to create a new root couple (couple,changePartner does not change the couple, just the
-                    // underliying people).
+                    // We need to create a new root couple because couple.changePartner does not change the couple, just the
+                    // underliying people.
                     let aP, bP;
                     if (couple.a == +personId) {
                         aP = couple.aPerson();
