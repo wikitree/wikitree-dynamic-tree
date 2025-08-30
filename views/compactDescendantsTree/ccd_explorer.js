@@ -122,6 +122,16 @@ export class CCDE {
             </label>
           </td>
           <td>
+            <label title='Which gender descendants should be shown.' class="left">
+            Show
+              <select id='ccdGender'>
+                <option value='all' selected>All</option>
+                <option value='Male' title='Male children + no gender specified'>M</option>
+                <option value='Female' title='Female children + no gender specified'>F</option>
+              </select>
+            </label>
+          </td>
+          <td>
             <button
               id="drawTreeButton"
               class="btn btn-primary btn-sm"
@@ -165,7 +175,7 @@ export class CCDE {
               <input id="ccdTHFactor" type="number" min="1" value="55" />
             </label>
           </td>
-          <td colspan="2">
+          <td colspan="3">
             <label
               title="Position couples along the horizontal tree axis relative to the year of birth of the indicated partner."
               class="left">
@@ -243,7 +253,7 @@ export class CCDE {
               </table>
             </fieldset>
           </td>
-          <td>
+          <td colspan="2">
             <label title="Highlight direct descendants of the root person with squares." class="left">
               <input id="bloodline" type="checkbox" checked />
               Highlight descendants
@@ -266,7 +276,7 @@ export class CCDE {
             </label>
             &nbsp;
           </td>
-          <td>
+          <td colspan="2">
             <label title="Draw a box aound my direct ancestors (if any)." class="left">
               <input id="flagAncestors" type="checkbox" />
               Flag my direct ancestors
@@ -338,15 +348,11 @@ export class CCDE {
         });
         $(
             "#ccdBrickWallColour, #ccdLinkLineColour, #hideTreeHeader, #anonLiving, #privatise, " +
-                "#noParents, #oneParent, #noNoSpouses, #noNoChildren"
+                "#noParents, #oneParent, #noNoSpouses, #noNoChildren, #connectors, #bloodline, " +
+                "#ccdGender"
         )
             .off("change")
             .on("change", function () {
-                $("#drawTreeButton").click();
-            });
-        $("#connectors")
-            .off("change")
-            .on("change", function (event) {
                 $("#drawTreeButton").click();
             });
         $('input[name = "edgeType"]')
@@ -355,11 +361,6 @@ export class CCDE {
                 $("#drawTreeButton").click();
             });
         $('input[name = "theBirthScale"]')
-            .off("change")
-            .on("change", function () {
-                $("#drawTreeButton").click();
-            });
-        $("#bloodline")
             .off("change")
             .on("change", function () {
                 $("#drawTreeButton").click();
@@ -707,7 +708,27 @@ export class CCDE {
                 condLog(
                     `Changing partner for ${personId} in ${subTree} couple ${couple.toString()} to ${newPartnerID}`
                 );
-                couple.changePartner(+personId, newPartner);
+                const inFocus = couple.inFocus;
+                if (couple.isRoot) {
+                    // We need to create a new root couple because couple.changePartner does not change the couple, just the
+                    // underliying people.
+                    let aP, bP;
+                    if (couple.a == +personId) {
+                        aP = couple.aPerson();
+                        bP = newPartner;
+                    } else {
+                        aP = newPartner;
+                        bP = couple.bPerson();
+                    }
+                    CCDE.descendantRoot = CCDE.createCouple("D", {
+                        a: aP,
+                        b: bP,
+                        focus: inFocus,
+                        isRoot: true,
+                    });
+                } else {
+                    couple.changePartner(+personId, newPartner);
+                }
                 condLog(`Couple changed to: ${couple.toString()}`, couple);
             } else {
                 console.error(`Retrieved wrong couple ${couple.toString()}. It does not contain profile ${personId}`);
@@ -768,12 +789,18 @@ export class CCDE {
             return;
         }
         const children = [];
-        const jointChildren = couple
+        let jointChildrenToShow = couple
             .getUncollapsedChildrenIds()
             .map((id) => CCDE.peopleCache.getIfPresent(+id))
             .filter((c) => c);
-        sortByBirthDate(jointChildren);
-        for (const [i, child] of jointChildren.entries()) {
+        const genderFilter = $("#ccdGender").val();
+        if (genderFilter != "all") {
+            jointChildrenToShow = jointChildrenToShow.filter(
+                (c) => c.getGender() == genderFilter || c.getGender() == ""
+            );
+        }
+        sortByBirthDate(jointChildrenToShow);
+        for (const [i, child] of jointChildrenToShow.entries()) {
             const cpl = CCDE.createCouple(`${couple.idPrefix}_${i}`, { a: child });
             if (cplsAlreadyInTree) {
                 const cplId = cpl.getCoupleId();
@@ -872,16 +899,16 @@ export class CCDE {
             }
         }
 
-        function getPreferredWifeChildrenIds(a) {
+        function getPreferredWifeChildrenIds(aP) {
             let list = [];
-            if (typeof a == "undefined") return list;
+            if (typeof aP == "undefined") return list;
 
-            const childrenIds = a.getChildrenIds() || new Set();
-            const b = a.getSpouse(); // get the preferred spouse
-            if (typeof b == "undefined" || b.isNoSpouse) {
+            const childrenIds = aP.getChildrenIds() || new Set();
+            const bP = aP.getSpouse(); // get the preferred spouse
+            if (typeof bP == "undefined" || bP.isNoSpouse) {
                 list = [...childrenIds];
             } else {
-                const otherChildrenIds = b.getChildrenIds() || new Set();
+                const otherChildrenIds = bP.getChildrenIds() || new Set();
                 for (const id of otherChildrenIds) {
                     if (childrenIds.has(id)) {
                         list.push(id);
