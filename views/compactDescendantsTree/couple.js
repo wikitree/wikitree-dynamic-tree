@@ -84,7 +84,7 @@ export class Couple {
     }
 
     /**
-     * Change the partner of personId to newPartner
+     * Change the partner of personId to newPartner.
      * @param {*} personId the id of the couple member whose partner should change
      * @param {*} newPartner the new partner
      */
@@ -107,15 +107,13 @@ export class Couple {
 
         function updatePartner(stablePartner, newPartner) {
             if (!stablePartner) {
-                console.error(
-                    `Could not find profile id ${stablePartnerId} in peopleCache in order to change their partner`
-                );
+                console.error(`Could not find profile id ${personId} in peopleCache in order to change their partner`);
                 return;
             }
             if (!stablePartner.setPreferredSpouse(newPartner.getId())) {
                 console.error(
                     `${stablePartner.toString()} does not have ${newPartner.getId()} as a spouse. ` +
-                        `Cannot change partner of couple ${this.toString()}`
+                        `Cannot change partner of couple ${self.toString()}`
                 );
                 return;
             }
@@ -137,10 +135,11 @@ export class Couple {
      * We append the profile id of the 2 partners in the couple as well as the number of collapsed joint children
      * (if > 0) to the couple's idPrefix to form its ID.
      * The way we currently use idPrefixes results in the following ids:
-     *   for decendants couples
+     *   for decendants couples with no collapsed children:
      *     root: D-<aId>-<bId>
      *     arbitrary: D_2_0_1-<aId-<bId> (the root's 3rd child's first child's 2nd child and partner)
-     * If the above arbitrary couple has 2 collapsed children the id would be D_2_0_1-<aId-<bId>-c2
+     * If the above arbitrary couple has 2 collapsed children the id would be
+     *     D_2_0_1-<aId-<bId>-c2
      * @returns The ID of the node represented by this couple
      */
     getId() {
@@ -148,6 +147,9 @@ export class Couple {
         return this.getIdSansCollapsed() + (hCnt ? `-c${hCnt}` : "");
     }
 
+    /**
+     * @returns The unique couple id, but without the last, collapsed children count part
+     */
     getIdSansCollapsed() {
         return Couple.formId(this.idPrefix, this.a, this.b);
     }

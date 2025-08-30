@@ -816,7 +816,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             // 'side' here indicates which partner has the alternate spouses that should be shown.
             //  i.e. it is the 'show alternate spouses' button next to the other person that was clicked
             const personWithAltSpouses = couple.get(side);
-            const spouseListId = `c${couple.focus}${couple.getId()}_spouses`;
+            const spouseListId = `s${side}_${couple.getId()}_spouses`;
             const $spouseList = $(`#${spouseListId}`);
             if ($spouseList.length) {
                 $spouseList.css("z-index", `${CCDE.getNextZLevel()}`).slideToggle("fast", () => {
@@ -974,13 +974,17 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             children.push(theTree.people.get(+childId));
         }
         sortByBirthDate(children);
+        const genderFilter = $("#ccdGender").val();
         const hiddenChildrenIds = new Set(couple.getCollapsedDescendantIds().map((i) => +i) || []);
         const parentsId = couple.getId();
         const childrenList = document.createElement("ol");
         for (const [i, child] of children.entries()) {
             const item = document.createElement("li");
             const childName = getPersonName(child, getShortName(child));
-            const hidden = hiddenChildrenIds && hiddenChildrenIds.has(child.getId());
+            const cGender = child.getGender();
+            const hidden =
+                (hiddenChildrenIds && hiddenChildrenIds.has(child.getId())) ||
+                (genderFilter != "all" && cGender != "" && cGender != genderFilter);
             item.appendChild(
                 aDivWith(
                     "aChild",
@@ -1091,7 +1095,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 )
             );
             const marDiv = aDivWith("marriage-date", document.createTextNode(`x ${spouseData.mDate},`));
-            const mayChangeSpouse = couple.getInFocus().getId() == currentSpouse.getId();
+            const mayChangeSpouse = couple.getInFocus().getId() == currentSpouse.getId() || couple.isRoot;
             if (mayChangeSpouse && personId != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
