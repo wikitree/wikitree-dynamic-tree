@@ -465,9 +465,60 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
         }
 
         // Add labels for the nodes
+
+        // Node symbols (square or circle) have a diameter of 12 and the two of them are 8 apart,
+        // ie. from top/bottom of one to the centre point between them is 16.
+        // Spouses triangle top right is 17 from the centre of the node symbol.
+        // Children triangle is 10 high and its bottom is 28 from the centre point between the two node symbols.
+        const deltaY = 16; // tolerance for treating nodes as "same row"
+        const padding = 17; // space to keep between text and previous node position
         const flagAncestors = document.getElementById("flagAncestors").checked;
+        const rightEdges = collectRightEdges();
+        // console.log("rightEdges", rightEdges);
+
         addLabels("a");
         addLabels("b");
+
+        function collectRightEdges() {
+            const rightEdges = new Map();
+            nodeEnter.merge(gnodes).each(function (d) {
+                const col = Math.round(d.y / deltaY);
+                const rightEdge = d.y + padding;
+
+                // a row
+                const aRow = Math.round((d.x + -7) / deltaY);
+                let edges = rightEdges.get(aRow) || [];
+                edges.push([col, rightEdge]);
+                rightEdges.set(aRow, edges);
+
+                // b row
+                const bRow = Math.round((d.x + 13) / deltaY);
+                edges = rightEdges.get(bRow) || [];
+                edges.push([col, rightEdge]);
+                rightEdges.set(bRow, edges);
+
+                // Cater for a possible children triangle below the b row
+                edges = rightEdges.get(bRow + 1) || [];
+                edges.push([col, rightEdge]);
+                rightEdges.set(bRow + 1, edges);
+            });
+            return rightEdges;
+        }
+
+        function getPreviousEdge(row, col) {
+            const edges = rightEdges.get(row);
+            if (!edges) return -Infinity;
+
+            let prevEdge = -Infinity;
+            for (let i = edges.length - 1; i >= 0; --i) {
+                if (edges[i][0] < col) {
+                    prevEdge = edges[i][1];
+                    break;
+                }
+            }
+            return prevEdge;
+        }
+
         function addLabels(side) {
             const PADDING_X = 3; // horizontal padding inside the box
             const PADDING_Y = 2; // vertical padding inside the box
@@ -490,6 +541,11 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 return `translate(-13,${dy})`;
             });
 
+            const nameParts = [
+                ["FirstName", "MiddleInitials", "LastNameAtBirth"],
+                ["FirstInitial", "MiddleInitials", "LastNameAtBirth"],
+                ["FirstInitial", "LastNameAtBirth"],
+            ];
             // Append text
             const text = labelGroup
                 .append("text")
@@ -499,7 +555,46 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                     const p = d.data.get(side);
                     return getPersonName(p, p?.getDisplayName(), d.data.IsLink || false);
                 })
-                .style("fill", (d) => (d.data.get(side)?.isBrickWall() ? brickWallColour : "inherit"));
+                .style("fill", (d) => (d.data.get(side)?.isBrickWall() ? brickWallColour : "inherit"))
+                .each(function (d) {
+                    // measure text width (no need for actual x,y here)
+                    const width = this.getBBox().width;
+
+                    // use final layout positions instead of initial stacked position
+                    const row = Math.round((d.x + (side === "a" ? -7 : 13)) / deltaY);
+                    const col = Math.round(d.y / deltaY);
+                    const prevRightmost = getPreviousEdge(row, col);
+
+                    // the label’s left edge in final position
+                    // d.y is the node’s x-position in tree layout (horizontal)
+                    // label is right-aligned with an extra -13 shift
+                    let labelLeftEdge = d.y - 13 - width;
+
+                    const p = d.data.get(side);
+                    // console.log(
+                    //     `${p?.getDisplayName()}: [r:${row}, c:${col}] (x:${d.x}, y:${
+                    //         d.y
+                    //     }), rm:${prevRightmost}, left:${labelLeftEdge}, newrm:${d.y + padding}`
+                    // );
+
+                    if (p && labelLeftEdge < prevRightmost) {
+                        // shorten text
+                        const isLink = d.data.IsLink || false;
+                        const display = getPersonName(p, p?.getDisplayName(), isLink);
+                        if (display != "Private" && display != "Living") {
+                            const pName = new window.PersonName(p._data);
+                            for (const wantedParts of nameParts) {
+                                const shorterName = (isLink ? "See " : "") + pName.withParts(wantedParts);
+                                d3.select(this).text(shorterName);
+
+                                // See if name is now short enough
+                                const newWidth = this.getBBox().width;
+                                labelLeftEdge = d.y - 13 - newWidth;
+                                if (labelLeftEdge >= prevRightmost) break;
+                            }
+                        }
+                    }
+                });
 
             text.append("title").text((d) => birthAndDeathData(d.data.get(side)));
 
@@ -682,7 +777,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             if (privatise && person.isPrivate()) {
                 return `${birthString(person, privatise)}\n${deathString(person, privatise)}`;
             }
-            return `${birthString(person)}\n${deathString(person)}`;
+            return `${person.getDisplayName()}\n${birthString(person)}\n${deathString(person)}`;
         }
 
         // Creates a curved diagonal path from source (s) to destination (d)
@@ -793,10 +888,6 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             const childListId = couple.getIdSansCollapsed() + "_children";
             const $childrenList = $(`#${childListId}`);
             if ($childrenList.length) {
-                // $childrenList.css("z-index", `${CCDE.getNextZLevel()}`).slideToggle("fast", () => {
-                //     setOffset(jqClicked, $childrenList, 5, 5);
-                // });
-                // return;
                 // We always redraw the children list, so we may as well remove it when it is being closed here
                 if ($childrenList.is(":visible")) {
                     $childrenList.slideUp("fast");
@@ -816,7 +907,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             // 'side' here indicates which partner has the alternate spouses that should be shown.
             //  i.e. it is the 'show alternate spouses' button next to the other person that was clicked
             const personWithAltSpouses = couple.get(side);
-            const spouseListId = `c${couple.focus}${couple.getId()}_spouses`;
+            const spouseListId = `s${side}_${couple.getId()}_spouses`;
             const $spouseList = $(`#${spouseListId}`);
             if ($spouseList.length) {
                 $spouseList.css("z-index", `${CCDE.getNextZLevel()}`).slideToggle("fast", () => {
@@ -974,13 +1065,17 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             children.push(theTree.people.get(+childId));
         }
         sortByBirthDate(children);
+        const genderFilter = $("#ccdGender").val();
         const hiddenChildrenIds = new Set(couple.getCollapsedDescendantIds().map((i) => +i) || []);
         const parentsId = couple.getId();
         const childrenList = document.createElement("ol");
         for (const [i, child] of children.entries()) {
             const item = document.createElement("li");
             const childName = getPersonName(child, getShortName(child));
-            const hidden = hiddenChildrenIds && hiddenChildrenIds.has(child.getId());
+            const cGender = child.getGender();
+            const hidden =
+                (hiddenChildrenIds && hiddenChildrenIds.has(child.getId())) ||
+                (genderFilter != "all" && cGender != "" && cGender != genderFilter);
             item.appendChild(
                 aDivWith(
                     "aChild",
@@ -1091,7 +1186,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 )
             );
             const marDiv = aDivWith("marriage-date", document.createTextNode(`x ${spouseData.mDate},`));
-            const mayChangeSpouse = couple.getInFocus().getId() == currentSpouse.getId();
+            const mayChangeSpouse = couple.getInFocus().getId() == currentSpouse.getId() || couple.isRoot;
             if (mayChangeSpouse && personId != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
