@@ -333,7 +333,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 })
                 .style("fill", function (d) {
                     const cpl = d.data;
-                    return cpl.hasCollapsedDescendants() || cpl.isDescendantExpandable() ? "lightsteelblue" : "#fff";
+                    return cpl.hasCollapsedChildren() || cpl.isDescendantExpandable() ? "lightsteelblue" : "#fff";
                 })
                 .on("click", function (e, d) {
                     toggleChildren(e, d, side, this);
@@ -393,7 +393,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                         })
                         .append("title")
                         .text(tooltip);
-                    // Also draw the number of children (an make it clickable as above)
+                    // Also draw the number of children (and make it clickable as above)
                     d3.select(this)
                         .append("text")
                         .attr("y", "28")
@@ -433,7 +433,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 })
                 .append("title")
                 .text(function (d) {
-                    return `Show the other spouses of ${d.data.get(side).getDisplayName()}`;
+                    return `Show all the spouses of ${d.data.get(side).getDisplayName()}`;
                 });
 
             function hasAlternateSpouses(person) {
@@ -520,8 +520,8 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
         }
 
         function addLabels(side) {
-            const PADDING_X = 3; // horizontal padding inside the box
-            const PADDING_Y = 2; // vertical padding inside the box
+            const PADDING_X = 3; // horizontal padding inside the ancestor box
+            const PADDING_Y = 2; // vertical padding inside the ancestor box
             const rx = 3,
                 ry = 3; // rounded corners
 
@@ -668,7 +668,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
 
                 // Colour the circles independently for load-expand.
                 function colourOf(cpl, side) {
-                    if (cpl.hasCollapsedDescendants()) return "yellowgreen"; // branch expand
+                    if (cpl.hasCollapsedChildren()) return "yellowgreen"; // branch expand
                     if (cpl[side] && cpl.IsLink) return "rgb(0, 200, 255)";
                     if (!cpl[side] || cpl.get(side)?.isNoSpouse) return "#fff";
                     if (cpl.isDescendantExpandable()) {
@@ -840,10 +840,10 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
                 expandSubtree(d);
                 const newDepth = d.depth + couple.getNrOlderGenerations();
                 currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-            } else if (d.children && !couple.hasCollapsedDescendants()) {
+            } else if (d.children && !couple.hasCollapsedChildren()) {
                 // contract
                 collapseBranch(d);
-            } else if (couple.hasCollapsedDescendants()) {
+            } else if (couple.hasCollapsedChildren()) {
                 // expand
                 expandBranch(d);
             } else {
@@ -979,7 +979,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
 
     function expandSavedChildren(d) {
         const couple = d.data;
-        if (couple.expandAllCollapsedDescendants()) {
+        if (couple.expandAllCollapsedChildren()) {
             const newDepth = d.depth + couple.getNrOlderGenerations();
             currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
             d3Root = updateHierarchy();
@@ -1001,7 +1001,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
 
     function collapseBranch(d) {
         const couple = d.data;
-        couple.collapseAllDescendants();
+        couple.collapseAllChildren();
         d3Root = updateHierarchy();
         updateDisplay(d);
     }
@@ -1066,7 +1066,7 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
         }
         sortByBirthDate(children);
         const genderFilter = $("#ccdGender").val();
-        const hiddenChildrenIds = new Set(couple.getCollapsedDescendantIds().map((i) => +i) || []);
+        const hiddenChildrenIds = new Set(couple.getCollapsedChildrenIds().map((i) => +i) || []);
         const parentsId = couple.getId();
         const childrenList = document.createElement("ol");
         for (const [i, child] of children.entries()) {
@@ -1107,10 +1107,10 @@ export function showTree(ccde, treeInfo, connectors = false, hideTreeHeader = fa
             const couple = d.data;
             if (this.checked) {
                 // move child from saved/hidden to actual
-                couple.expandCollapsedDescendant(this.value);
+                couple.expandCollapsedChild(this.value);
             } else {
                 // move child from actual to saved/hidden
-                couple.collapseDescendant(this.value);
+                couple.collapseChild(this.value);
             }
             d3Root = updateHierarchy();
             updateDisplay(d);
