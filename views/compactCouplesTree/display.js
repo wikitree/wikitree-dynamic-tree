@@ -17,8 +17,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     const markedPaths = new Map();
 
     // Set the dimensions and margins of the diagram
-    const aName = theTree.rootCouple.a?.getDisplayName();
-    const bName = theTree.rootCouple.b?.getDisplayName();
+    const aName = theTree.rootCouple.aPerson()?.getDisplayName();
+    const bName = theTree.rootCouple.bPerson()?.getDisplayName();
     const margin = {
         top: 10,
         right: 10,
@@ -90,11 +90,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             return SEPARATION;
         });
 
-    const inTree = connectors ? new Set() : undefined;
     // Assign parent, children, height, depth
-    var d3Root = d3.hierarchy(theTree.rootCouple, function (cpl) {
-        return CCTE.getD3Children(cpl, inTree);
-    });
+    var d3Root = updateHierarchy();
     d3Root.x0 = treeHeight / 2;
     d3Root.y0 = 0;
     // console.log(`d3Root (x,y)=(${d3Root.x},${d3Root.y}) (x0,y0)=(${d3Root.x0},${d3Root.y0})`, d3Root);
@@ -140,27 +137,12 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
     }
 
-    // Collapse the node and all it's children
-    function collapseSubtree(d) {
-        if (d.children) {
-            const ch = [...d.children];
-            collapseBranch(d, "a");
-            collapseBranch(d, "b");
-            ch.forEach((c) => {
-                collapseSubtree(c);
-            });
-        }
-    }
+    function expandSubtree(couple) {
+        expandCollapsedParents(couple, "a");
+        expandCollapsedParents(couple, "b");
 
-    function expandSubtree(d) {
-        expandBranch(d, "a");
-        expandBranch(d, "b");
-
-        if (d.children) {
-            d.children.forEach((c) => {
-                expandSubtree(c);
-            });
-        }
+        const subtrees = CCTE.getD3Children(couple);
+        subtrees.forEach((c) => expandSubtree(c));
     }
 
     function generationOf(d) {
@@ -194,6 +176,14 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         let name = preferredValue;
         if (name && isLink) name = `See ${name}`;
         return name || "Private";
+    }
+
+    function updateHierarchy() {
+        const inTree = connectors ? new Set() : undefined;
+        const updatedD3Root = d3.hierarchy(theTree.rootCouple, function (c) {
+            return CCTE.getD3Children(c, inTree);
+        });
+        return updatedD3Root;
     }
 
     async function updateDisplay(srcNode) {
@@ -240,8 +230,10 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         // y (and width) here is the horizontal axis and x (and height) the vertical since we'll turn the tree on its side
         const tWidth = edgeFactor * (currentMaxShowGen - 1);
         const maxYear =
-            Math.max(+CCTE.ancestorRoot.a?.getBirthYear() || 0, +CCTE.ancestorRoot.b?.getBirthYear() || 0) ||
-            +new Date().getFullYear();
+            Math.max(
+                +CCTE.ancestorRoot.aPerson()?.getBirthYear() || 0,
+                +CCTE.ancestorRoot.bPerson()?.getBirthYear() || 0
+            ) || +new Date().getFullYear();
         const ageSpan = maxYear - theTree.minBirthYear;
         const whoseBirthScale = document.querySelector('input[name = "theBirthScale"]:checked').value;
         nodes.forEach(function (d) {
@@ -263,8 +255,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             } else {
                 // We position according to the generation
                 d.y = d.depth * edgeFactor;
-                const p = d.data.a;
-                const s = d.data.b;
+                const p = d.data.aPerson();
+                const s = d.data.bPerson();
                 if (p && !p.isNoSpouse) p.birthPlaced = false;
                 if (s && !s.isNoSpouse) s.birthPlaced = false;
             }
@@ -272,8 +264,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             // Get [person, spouse] of a couple such that 'person' is a proper person
             // and preferrably the m side of the couple, otherwise the n side
             function getPS(m, n) {
-                let p = d.data[m];
-                let s = d.data[n];
+                let p = theTree.people.get(+d.data[m]);
+                let s = theTree.people.get(+d.data[n]);
                 if (!p || p.isNoSpouse) {
                     p = s;
                     s = p;
@@ -308,21 +300,21 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             nodeEnter
                 .append("circle")
                 .attr("class", function (d) {
-                    const p = d.data[side];
+                    const p = d.data.get(side);
                     const klass = p && p.birthPlaced ? "birthPlaced " : "";
                     return `node ${klass}${side} ${(p?.getGender() || " other").toLowerCase()}`;
                 })
                 .attr("r", 1e-6)
                 .attr("cy", side == "a" ? -10 : 10)
                 .style("fill", function (d, side) {
-                    return d[savedChildrenFieldFor(side)] ? "lightsteelblue" : "#fff";
+                    return d.data.hasCollapsedParents(side) ? "lightsteelblue" : "#fff"; // !!!!!!!!
                 })
                 .on("click", function (e, d) {
                     toggleAncestors(e, d, side, this);
                 })
                 .append("title")
                 .text(function (d) {
-                    return birthAndDeathData(d.data[side]);
+                    return birthAndDeathData(d.data.get(side));
                 });
         }
 
@@ -334,8 +326,14 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 const couple = d.data;
                 const jointChildrenIds = couple.getJointChildrenIds();
                 if (jointChildrenIds.length > 0) {
-                    const aName = couple.a && !couple.a.isNoSpouse ? couple.a.getDisplayName().split(" ")[0] : null;
-                    const bName = couple.b && !couple.b.isNoSpouse ? couple.b.getDisplayName().split(" ")[0] : null;
+                    const aName =
+                        couple.a && !couple.aPerson().isNoSpouse
+                            ? couple.aPerson().getDisplayName().split(" ")[0]
+                            : null;
+                    const bName =
+                        couple.b && !couple.bPerson().isNoSpouse
+                            ? couple.bPerson().getDisplayName().split(" ")[0]
+                            : null;
                     let combinedName = aName;
                     if (bName) {
                         if (aName) {
@@ -345,8 +343,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         }
                     }
                     const nrC = jointChildrenIds.length;
-                    const nrA = couple.a?.getChildrenIds()?.size || 0;
-                    const nrB = couple.b?.getChildrenIds()?.size || 0;
+                    const nrA = couple.aPerson()?.getChildrenIds()?.size || 0;
+                    const nrB = couple.bPerson()?.getChildrenIds()?.size || 0;
                     let cWord = nrC == 1 ? "child" : "children";
                     let nrLabel = `${nrC}`;
                     let tooltip = `Show the ${nrC} ${cWord} of ${combinedName}`;
@@ -365,11 +363,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         })
                         .style("fill", "green")
                         .on("click", function (event, d) {
-                            showChildren(event, d, $(this), combinedName);
+                            toggleChildrenList(event, d, $(this), combinedName);
                         })
                         .append("title")
                         .text(tooltip);
-                    // Also draw the number of children (an make it clickable as above)
+                    // Also draw the number of children (and make it clickable as above)
                     d3.select(self)
                         .append("text")
                         .attr("y", "28")
@@ -378,7 +376,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         .text(nrLabel)
                         .style("cursor", "pointer")
                         .on("click", function (event, d) {
-                            showChildren(event, d, $(this), combinedName);
+                            toggleChildrenList(event, d, $(this), combinedName);
                         })
                         .append("title")
                         .text(tooltip);
@@ -390,7 +388,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         drawOtherSpousesButton("b");
         function drawOtherSpousesButton(side) {
             nodeEnter
-                .filter((d) => hasAlternateSpouses(d.data[side]))
+                .filter((d) => hasAlternateSpouses(d.data.get(side)))
                 .append("polygon")
                 .attr("class", "node")
                 .attr("points", function (d) {
@@ -408,7 +406,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 })
                 .append("title")
                 .text(function (d) {
-                    return `Show the other spouses of ${d.data[side].getDisplayName()}`;
+                    return `Show all the spouses of ${d.data.get(side).getDisplayName()}`;
                 });
 
             function hasAlternateSpouses(person) {
@@ -422,53 +420,191 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         flagDuplicates("b");
         function flagDuplicates(side) {
             nodeEnter
-                .filter((d) => d.data[side] && d.data[side].isDuplicate())
+                .filter((d) => d.data.get(side)?.isDuplicate())
                 .append("rect")
                 .attr("class", function (d) {
-                    return markedNodes.has(d.data[side].getId()) ? "dup marked" : "dup";
+                    return markedNodes.has(d.data[side]) ? "dup marked" : "dup";
                 })
                 .attr("x", -10)
                 .attr("y", side == "a" ? -20 : 0)
                 .attr("width", 0)
                 .attr("height", 0)
-                .attr("wtId", (d) => d.data[side].getId())
+                .attr("wtId", (d) => d.data[side])
                 .on("click", (e, d) => toggleDuplicate(e, d, side))
                 .append("title")
                 .text(function (d) {
-                    // return birthAndDeathData(d.data[side]);
                     return "Click to toggle path(s) to duplicates of this person in the tree.";
                 });
         }
 
         // Add labels for the nodes
+
+        // Node symbols (square or circle) have a diameter of 12 and the two of them are 8 apart,
+        // ie. from top/bottom of one to the centre point between them is 16.
+        // Spouses triangle top right is 17 from the centre of the node symbol.
+        // Children triangle is 10 high and its bottom is 28 from the centre point between the two node symbols.
+        const deltaY = 16; // tolerance for treating nodes as "same row"
+        const padding = 17; // space to keep between text and previous node position
+        const flagAncestors = document.getElementById("flagAncestors").checked;
+        const rightEdges = collectRightEdges();
+
         addLabels("a");
         addLabels("b");
+
+        function collectRightEdges() {
+            const rightEdges = new Map();
+            nodeEnter.merge(gnodes).each(function (d) {
+                const col = Math.round(d.y / deltaY);
+                const rightEdge = d.y + padding;
+
+                // a row
+                const aRow = Math.round((d.x + -7) / deltaY);
+                let edges = rightEdges.get(aRow) || [];
+                edges.push([col, rightEdge]);
+                rightEdges.set(aRow, edges);
+
+                // b row
+                const bRow = Math.round((d.x + 13) / deltaY);
+                edges = rightEdges.get(bRow) || [];
+                edges.push([col, rightEdge]);
+                rightEdges.set(bRow, edges);
+
+                // Cater for a possible children triangle below the b row
+                edges = rightEdges.get(bRow + 1) || [];
+                edges.push([col, rightEdge]);
+                rightEdges.set(bRow + 1, edges);
+            });
+            return rightEdges;
+        }
+
+        function getPreviousEdge(row, col) {
+            const edges = rightEdges.get(row);
+            if (!edges) return -Infinity;
+
+            let prevEdge = -Infinity;
+            for (let i = edges.length - 1; i >= 0; --i) {
+                if (edges[i][0] < col) {
+                    prevEdge = edges[i][1];
+                    break;
+                }
+            }
+            return prevEdge;
+        }
+
         function addLabels(side) {
-            nodeEnter
+            const PADDING_X = 3; // horizontal padding inside the ancestor box
+            const PADDING_Y = 2; // vertical padding inside the ancestor box
+            const rx = 3,
+                ry = 3; // rounded corners
+
+            const link = nodeEnter
                 .append("a")
                 .attr("xlink:href", function (d) {
-                    const wtId = d.data[side]?.getWtId();
+                    const wtId = d.data.get(side)?.getWtId();
                     return typeof wtId == "undefined"
                         ? "https://www.wikitree.com/wiki/Help:Privacy"
                         : `https://www.wikitree.com/wiki/${wtId}`;
                 })
-                .attr("target", "_blank")
+                .attr("target", "_blank");
+
+            // Create a group for the label
+            const labelGroup = link.append("g").attr("transform", function () {
+                const dy = side === "a" ? -7 : 13;
+                return `translate(-13,${dy})`;
+            });
+
+            const nameParts = [
+                ["FirstName", "MiddleInitials", "LastNameAtBirth"],
+                ["FirstInitial", "MiddleInitials", "LastNameAtBirth"],
+                ["FirstInitial", "LastNameAtBirth"],
+            ];
+            // Append text
+            const text = labelGroup
                 .append("text")
-                .attr("dy", side == "a" ? "-7" : "13")
-                .attr("x", -13)
-                .attr("text-anchor", "end")
-                .attr("wtId", (d) => d.data[side]?.getId())
+                .attr("text-anchor", "end") // right aligned
+                .attr("wtId", (d) => d.data[side])
                 .text(function (d) {
-                    const p = d.data[side];
-                    return getPersonName(p, p?.getDisplayName(), d.data[`${side}IsLinkToPerson`] || false);
+                    const p = d.data.get(side);
+                    return getPersonName(p, p?.getDisplayName(), d.data.IsLink || false);
                 })
-                .style("fill", (d) => {
-                    return d.data[side]?.isBrickWall() ? brickWallColour : "inherit";
-                })
-                .append("title")
-                .text(function (d) {
-                    return birthAndDeathData(d.data[side]);
+                .style("fill", (d) => (d.data.get(side)?.isBrickWall() ? brickWallColour : "inherit"))
+                .each(function (d) {
+                    // measure text width (no need for actual x,y here)
+                    const width = this.getBBox().width;
+
+                    // use final layout positions instead of initial stacked position
+                    const row = Math.round((d.x + (side === "a" ? -7 : 13)) / deltaY);
+                    const col = Math.round(d.y / deltaY);
+                    const prevRightmost = getPreviousEdge(row, col);
+
+                    // the label’s left edge in final position
+                    // d.y is the node’s x-position in tree layout (horizontal)
+                    // label is right-aligned with an extra -13 shift
+                    let labelLeftEdge = d.y - 13 - width;
+
+                    const p = d.data.get(side);
+                    // console.log(
+                    //     `${p?.getDisplayName()}: [r:${row}, c:${col}] (x:${d.x}, y:${
+                    //         d.y
+                    //     }), rm:${prevRightmost}, left:${labelLeftEdge}, newrm:${d.y + padding}`
+                    // );
+
+                    if (p && labelLeftEdge < prevRightmost) {
+                        // shorten text
+                        const isLink = d.data.IsLink || false;
+                        const display = getPersonName(p, p?.getDisplayName(), isLink);
+                        if (display != "Private" && display != "Living") {
+                            const pName = new window.PersonName(p._data);
+                            for (const wantedParts of nameParts) {
+                                const shorterName = (isLink ? "See " : "") + pName.withParts(wantedParts);
+                                d3.select(this).text(shorterName);
+
+                                // See if name is now short enough
+                                const newWidth = this.getBBox().width;
+                                labelLeftEdge = d.y - 13 - newWidth;
+                                if (labelLeftEdge >= prevRightmost) break;
+                            }
+                        }
+                    }
                 });
+
+            text.append("title").text((d) => birthAndDeathData(d.data.get(side)));
+
+            if (flagAncestors) {
+                // For each label group, only insert a rect when datum indicates user-ancestor.
+                labelGroup.each(function (d) {
+                    if (!d?.data?.get(side)?.isUserAncestor) {
+                        return; // no box for this node
+                    }
+
+                    const g = d3.select(this);
+                    const tNode = g.select("text").node();
+
+                    // Measure the text node; text is already in DOM so getBBox() is valid.
+                    const bbox = tNode.getBBox(); // { x, y, width, height }
+
+                    // Compute rect geometry so it's centered vertically on y=0 and right-aligned like the text.
+                    const width = bbox.width + PADDING_X * 2;
+                    const height = bbox.height + PADDING_Y * 2;
+
+                    // Because text-anchor=end, the text's anchor (its "end") is at x=0 in the group.
+                    // So place the rect so its right edge is at x = 0 (right aligned).
+                    const rectX = -width + PADDING_X; // right edge at x=0
+                    const rectY = bbox.y - PADDING_Y; // center vertically on y=0
+
+                    // Insert rect BEFORE the text so it renders behind.
+                    g.insert("rect", "text")
+                        .attr("x", rectX)
+                        .attr("y", rectY)
+                        .attr("width", width)
+                        .attr("height", height)
+                        .attr("rx", rx)
+                        .attr("ry", ry)
+                        .style("fill", "#ffffcc")
+                        .style("stroke", "#999")
+                        .style("stroke-width", 1);
+                });
+            }
         }
 
         // UPDATE
@@ -506,11 +642,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
                 // Colour the circles independently for load-expand.
                 function colourOf(cpl, side) {
-                    if (pd[savedChildrenFieldFor(side)]) return "yellowgreen"; // branch expand
+                    if (cpl.hasCollapsedParents(side)) return "yellowgreen"; // branch expand. !!!!!!!!
                     if (cpl[side] && cpl[`${side}IsLinkToPerson`]) return "rgb(0, 200, 255)";
                     if (
-                        (side == "a" && !cpl.isAExpanded() && cpl.a?.hasAParent()) ||
-                        (side == "b" && !cpl.isBExpanded() && cpl.b?.hasAParent())
+                        (side == "a" && !cpl.isAExpanded() && cpl.aPerson()?.hasAParent()) ||
+                        (side == "b" && !cpl.isBExpanded() && cpl.bPerson()?.hasAParent())
                     ) {
                         return "lightsteelblue"; // load-expand
                     }
@@ -617,7 +753,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             if (privatise && person.isPrivate()) {
                 return `${birthString(person, privatise)}\n${deathString(person, privatise)}`;
             }
-            return `${birthString(person)}\n${deathString(person)}`;
+            return `${person.getDisplayName()}\n${birthString(person)}\n${deathString(person)}`;
         }
 
         // Creates a curved diagonal path from parent to the child nodes
@@ -649,51 +785,36 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         function toggleAncestors(event, dd, side, clicked) {
             const parentNode = d3.select(clicked).node().parentNode;
             const d = d3.select(parentNode).datum();
+            const couple = d.data;
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                console.log(`${d.data.toString()} (is${d.data.isExpanded() ? "" : "Not"}Expanded)`, d);
+                console.log(`${couple.toString()} (is${couple.isExpanded() ? "" : "Not"}Expanded)`, d);
                 return;
             }
-            const epIds = d.data[side]?.getExpandedParentIds();
+            const epIds = couple.get(side)?.getExpandedParentIds();
             const expandedPIds = epIds ? [...epIds.values()].sort() : "noneLoaded";
-            const pIds = (d.data[side]?.getParentIds() || []).sort();
+            const pIds = (couple.get(side)?.getParentIds() || []).sort();
             const isAllParentsLoaded = pIds.toString() == expandedPIds.toString();
             if (event.shiftKey) {
-                expandSubtree(d);
-                const newDepth = d.depth + d.data.getNrOlderGenerations();
+                expandSubtree(couple);
+                const newDepth = d.depth + couple.getNrOlderGenerations();
                 currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-            } else if (isAllParentsLoaded && d.children && !d[savedChildrenFieldFor(side)]) {
+                refreshDisplay(d);
+            } else if (isAllParentsLoaded && !couple.hasCollapsedParents(side)) {
                 // contract
                 collapseBranch(d, side);
-                updateDisplay(d);
-            } else if (isAllParentsLoaded && d[savedChildrenFieldFor(side)]) {
+            } else if (couple.hasCollapsedParents(side)) {
                 // expand
                 expandBranch(d, side);
-            } else if (!isAllParentsLoaded && d.data[side]) {
+            } else {
                 expandBranchWithLoad(d, side, clicked);
             }
         }
 
         function expandBranchWithLoad(d, side, clicked) {
-            if (d.data[`${side}IsLinkToPerson`]) return;
-            const sideChildrenName = savedChildrenFieldFor(side);
-            const sideChildren = d[sideChildrenName];
-            if (sideChildren) {
-                if (d.children) {
-                    // The order of children is important (a before b)...
-                    if (side == "a") {
-                        d.children = sideChildren.concat(d.children);
-                    } else {
-                        d.children = d.children.concat(sideChildren);
-                    }
-                } else {
-                    d.children = sideChildren;
-                }
-                d[sideChildrenName] = null;
-                const newDepth = d.depth + d.data.getNrOlderGenerations();
-                currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-                updateDisplay(d);
-            } else {
+            const couple = d.data;
+            if (couple[`${side}IsLinkToPerson`]) return;
+            if (!expandBranch(d, side)) {
                 const circ = d3.select(clicked);
                 // Display a loading... icon
                 const loader = svg
@@ -708,40 +829,21 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                         const dy = side == "a" ? -10 : 10;
                         return `translate(${d.y + 10}, ${d.x + dy - 8})`;
                     });
-                ccte.expand(d.data, CCTE.ANCESTORS).then(function (newTreeInfo) {
+                ccte.expand(couple, CCTE.ANCESTORS).then(function (newTreeInfo) {
                     loader.remove();
                     if (newTreeInfo) {
                         theTree = newTreeInfo;
-                        const newDepth = d.depth + d.data.getNrOlderGenerations();
+                        const newDepth = d.depth + couple.getNrOlderGenerations();
                         currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-                        const oldDescendants = d3Root.descendants();
-                        const inTree = connectors ? new Set() : undefined;
-                        const updatedD3Root = d3.hierarchy(theTree.rootCouple, function (c) {
-                            return CCTE.getD3Children(c, inTree);
-                        });
-                        const dCoupleId = d.data.getCoupleId();
-                        updatedD3Root.descendants().forEach(function (newNode) {
-                            const newCoupleId = newNode.data.getCoupleId();
-                            if (newCoupleId !== dCoupleId) {
-                                const matchedOldNode = oldDescendants.find((n) => n.data.getCoupleId() === newCoupleId);
-                                if (matchedOldNode) {
-                                    if (matchedOldNode._childrena) collapseBranch(newNode, "a");
-                                    if (matchedOldNode._childrenb) collapseBranch(newNode, "b");
-                                }
-                            }
-                        });
-                        // console.log("Rebuilt root", updatedD3Root);
-                        d3Root = updatedD3Root;
-
-                        updateDisplay(d);
+                        refreshDisplay(d);
                     }
                 });
             }
         }
 
-        function showChildren(event, d, jqClicked, combinedName) {
+        function toggleChildrenList(event, d, jqClicked, combinedName) {
             const couple = d.data;
-            const childListId = couple.getCoupleId() + "_children";
+            const childListId = couple.getIdSansCollapsed() + "_children";
             const $childrenList = $(`#${childListId}`);
             if ($childrenList.length) {
                 $childrenList.css("z-index", `${CCTE.getNextZLevel()}`).slideToggle("fast", () => {
@@ -760,8 +862,8 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         function showOtherSpouses(couple, jqClicked, side) {
             // 'side' here indicates which partner has the alternate spouses that should be shown.
             //  i.e. it is the 'show alternate spouses' button next to the other person that was clicked
-            const personWithAltSpouses = couple[side];
-            const spouseListId = `p${personWithAltSpouses.getId()}_spouses`;
+            const personWithAltSpouses = couple.get(side);
+            const spouseListId = `s${side}_${couple.getId()}_spouses`;
             const $spouseList = $(`#${spouseListId}`);
             if ($spouseList.length) {
                 $spouseList.css("z-index", `${CCTE.getNextZLevel()}`).slideToggle("fast", () => {
@@ -786,7 +888,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
         // Toggle duplicate highlight on click.
         function toggleDuplicate(event, d, side) {
-            const p = d.data[side];
+            const p = d.data.get(side);
             const id = p.getId();
             // find all the paths to this person
             const setMarked = p.toggleMarked();
@@ -833,51 +935,30 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         }
     } // end of update method
 
-    function savedChildrenFieldFor(side) {
-        return `_children${side}`;
+    function refreshDisplay(d) {
+        d3Root = updateHierarchy();
+        updateDisplay(d);
     }
 
     function expandBranch(d, side) {
-        const sideChildrenName = savedChildrenFieldFor(side);
-        const sideChildren = d[sideChildrenName];
-        if (sideChildren) {
-            if (d.children) {
-                // The order of children is important (a before b)...
-                if (side == "a") {
-                    d.children = sideChildren.concat(d.children);
-                } else {
-                    d.children = d.children.concat(sideChildren);
-                }
-            } else {
-                d.children = sideChildren;
-            }
-            d[sideChildrenName] = null;
-            const newDepth = d.depth + d.data.getNrOlderGenerations();
+        const couple = d.data;
+        if (expandCollapsedParents(couple, side)) {
+            const newDepth = d.depth + couple.getNrOlderGenerations();
             currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
-            updateDisplay(d);
+            refreshDisplay(d);
             return true;
         }
         return false;
     }
 
+    function expandCollapsedParents(couple, side) {
+        return couple.expandCollapsedParents(side);
+    }
+
     function collapseBranch(d, side) {
-        if (!d.children) return;
-
-        // Warning: only works for ancestors at the moment
-        const sideChildrenName = savedChildrenFieldFor(side);
-        for (let i = d.children.length - 1; i >= 0; --i) {
-            // move 'side' children out of d.children to d._children<side>
-            // (we start at the end and work to the front so as not to mess up the loop counters)
-            if (isSide(d.children[i].data, side)) {
-                const x = d.children.splice(i, 1); // remove the 'side' child from .children (it is now in an array)
-                d[sideChildrenName] = d[sideChildrenName] ? d[sideChildrenName].concat(x) : x;
-            }
-        }
-        if (d.children.length == 0) d.children = null;
-
-        function isSide(couple, side) {
-            return couple.idPrefix.slice(-1) == side;
-        }
+        const couple = d.data;
+        couple.collapseParents(side);
+        refreshDisplay(d);
     }
 
     function showTable(jqClicked, theTable, lOffset, tOffset) {
@@ -964,12 +1045,12 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
      * spouses of currentSpouse. This list will therefore contain 'person' as well as the possible
      * other spouses of their spouse 'currentSpouse'.
      * @param {*} couple The couple containing 'person' and 'currentSpouse'
-     * @param {*} person The current partner of 'currentSpouse' in couple
+     * @param {*} personId The Id of the current partner of 'currentSpouse' in couple
      * @param {*} currentSpouse The current spouse of 'person' in couple
      * @param {*} mayChangeSpouse true iff we are allowed to add a 'change partner' button
      * @returns spouseList, or null if there is only one spouse
      */
-    function getSpouseSelection(couple, person, currentSpouse, mayChangeSpouse) {
+    function getSpouseSelection(couple, personId, currentSpouse, mayChangeSpouse) {
         if (!currentSpouse) return null;
         const currentSpouseFullName = currentSpouse.getDisplayName();
 
@@ -1028,7 +1109,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 )
             );
             const marDiv = aDivWith("marriage-date", document.createTextNode(`x ${spouseData.mDate},`));
-            if (mayChangeSpouse && person.getId() != spouseData.id) {
+            if (mayChangeSpouse && personId != spouseData.id) {
                 // Create a "change partner" button
                 const button = document.createElement("button");
                 button.className = "select-spouse-button btn btn-sm";

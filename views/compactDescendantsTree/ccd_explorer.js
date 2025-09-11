@@ -50,6 +50,8 @@ export class CCDE {
            (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the descendants
            of both members of the couple. You can expand and contract the tree and change its focus as you please.</p>
         <p>Duplicate nodes are flagged with coloured squares. Click on the square to highlight the other copies.</p>
+        <p>The names of people will be shortened automatically if their name would overlap another node in the tree.
+           If you want the full name to be displayed, adjust the Edge and/or Height Factor to move nodes further apart.</p>
         <p>Navigation Summary</p>
         <ul>
             <li>Click in a grayed-out circle to expand the tree at that node through the loading of more people.
@@ -74,7 +76,6 @@ export class CCDE {
     static #nextZLevel = 10000;
 
     static peopleCache;
-    static ancestorRoot;
     static descendantRoot;
     static userAncestors;
 
@@ -277,7 +278,7 @@ export class CCDE {
             &nbsp;
           </td>
           <td colspan="2">
-            <label title="Draw a box aound my direct ancestors (if any)." class="left">
+            <label title="Draw a box around my direct ancestors (if any)." class="left">
               <input id="flagAncestors" type="checkbox" />
               Flag my direct ancestors
             </label>
@@ -533,7 +534,7 @@ export class CCDE {
                 Utils.hideShakingTree();
                 condLog(`=======RICH_LOADed ${person.toString()}`, person);
                 const dRoot = CCDE.createCouple("D", { a: person, isRoot: true });
-                self.drawTree(null, dRoot);
+                self.drawTree(dRoot);
             });
         });
     }
@@ -747,11 +748,8 @@ export class CCDE {
     /**
      * Draw/redraw the tree
      */
-    drawTree(ancestorRoot, descendantRoot) {
-        condLog("=======drawTree for:", ancestorRoot, descendantRoot, CCDE.peopleCache);
-        if (ancestorRoot) {
-            CCDE.ancestorRoot = ancestorRoot;
-        }
+    drawTree(descendantRoot) {
+        condLog("=======drawTree for:", descendantRoot, CCDE.peopleCache);
         if (descendantRoot) {
             CCDE.descendantRoot = descendantRoot;
         }
